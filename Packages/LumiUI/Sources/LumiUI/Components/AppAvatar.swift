@@ -6,6 +6,7 @@ public struct AppAvatar: View {
     let backgroundTint: Color
     let size: CGFloat
 
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
 
     public init(
@@ -27,12 +28,14 @@ public struct AppAvatar: View {
             .frame(width: size, height: size)
             .background(backgroundTint)
             .clipShape(Circle())
-            .scaleEffect(isHovering ? 1.1 : 1.0)
+            .scaleEffect(isHovering && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
             .brightness(isHovering ? 0.08 : 0)
             .shadow(color: tint.opacity(isHovering ? 0.3 : 0), radius: isHovering ? 6 : 0, y: 2)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
             .onHover { hovering in
-                isHovering = hovering
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
             }
     }
 }

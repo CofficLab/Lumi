@@ -1,11 +1,11 @@
 import Foundation
-import MagicKit
+import LLMKit
 import os
 
 /// LLM 可用性检测服务
 /// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
 final class LLMAvailabilityChecker {
-    static let verbose: Bool = true
+    static let verbose: Bool = false
 
     private let llmService: LLMService
     private let store = LLMAvailabilityStore.shared
@@ -31,7 +31,9 @@ final class LLMAvailabilityChecker {
         if Self.verbose {
             let providersInfo = llmService.allProviders()
             let totalModels = providersInfo.reduce(0) { $0 + $1.availableModels.count }
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
+            }
         }
 
         store.setCheckingAll(true)
@@ -48,7 +50,9 @@ final class LLMAvailabilityChecker {
         let totalModelCount = store.providers.reduce(0) { $0 + $1.models.count }
 
         if Self.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
+            }
         }
     }
 
@@ -93,13 +97,17 @@ final class LLMAvailabilityChecker {
         let providerId = info.id
 
         if Self.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
+            }
         }
 
         // 获取该供应商的 API Key
         guard let providerType = llmService.providerType(forId: providerId) else {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
+                }
             }
             for modelId in info.availableModels {
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("供应商类型未找到"))
@@ -112,7 +120,9 @@ final class LLMAvailabilityChecker {
         // 如果没有 API Key 且不是本地供应商，标记所有模型为不可用
         if apiKey.isEmpty && !info.isLocal {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置 API Key，跳过所有模型")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置 API Key，跳过所有模型")
+                }
             }
             for modelId in info.availableModels {
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置 API Key"))
@@ -127,7 +137,9 @@ final class LLMAvailabilityChecker {
 
         let availableCount = store.providers.first(where: { $0.providerId == providerId })?.availableModels.count ?? 0
         if Self.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
+            }
         }
     }
 
@@ -155,7 +167,9 @@ final class LLMAvailabilityChecker {
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
 
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
+                }
             }
 
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
@@ -164,14 +178,18 @@ final class LLMAvailabilityChecker {
             case .cancelled:
                 // 取消意味着请求已开始执行 → 视为可用
                 if Self.verbose {
-                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
+                    if LLMAvailabilityPlugin.verbose {
+                                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
+                    }
                 }
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
                 return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
             default:
                 let reason = error.errorDescription ?? error.localizedDescription
                 if Self.verbose {
-                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(reason)")
+                    if LLMAvailabilityPlugin.verbose {
+                                            LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(reason)")
+                    }
                 }
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
                 return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
@@ -179,7 +197,9 @@ final class LLMAvailabilityChecker {
         } catch {
             let reason = error.localizedDescription
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(reason)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(reason)")
+                }
             }
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)

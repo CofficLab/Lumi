@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import os
 
 // Forward reference to MLXModels from MLXModels.swift
@@ -18,7 +17,7 @@ private typealias _MLXModels = MLXModels
 public final class MLXModelManager: ObservableObject, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "📦"
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
     // MARK: - Published Properties
 
     /// 已缓存的模型 ID 列表
@@ -48,7 +47,9 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         self.systemRAM = _MLXModels.detectSystemRAM()
 
         if Self.verbose {
-            Self.logger.info("\(self.t) MLXModelManager 已初始化，系统 RAM: \(self.systemRAM)GB")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) MLXModelManager 已初始化，系统 RAM: \(self.systemRAM)GB")
+            }
         }
 
         // 确保缓存目录存在
@@ -84,7 +85,9 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         let changed = newIds != self.cachedModelIds
         self.cachedModelIds = newIds
         if Self.verbose, changed {
-            Self.logger.info("\(self.t) 刷新缓存模型：\(self.cachedModelIds.count) 个")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) 刷新缓存模型：\(self.cachedModelIds.count) 个")
+            }
         }
     }
 
@@ -150,7 +153,9 @@ public final class MLXModelManager: ObservableObject, SuperLog {
 
         guard fileManager.fileExists(atPath: modelDir.path) else {
             if Self.verbose {
-                Self.logger.info("\(self.t) 模型目录不存在：\(id)")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) 模型目录不存在：\(id)")
+                }
             }
             return
         }
@@ -161,7 +166,9 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         self.updateCacheSize()
 
         if Self.verbose {
-            Self.logger.info("\(self.t) 已删除模型：\(id)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) 已删除模型：\(id)")
+            }
         }
     }
 
@@ -178,7 +185,9 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         updateCacheSize()
 
         if Self.verbose {
-            Self.logger.info("\(self.t) 已清空所有缓存")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) 已清空所有缓存")
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 import Foundation
 
@@ -7,9 +7,9 @@ struct ConversationTimelineView: View, SuperLog {
     nonisolated static let emoji = "📅"
     nonisolated static let verbose: Bool = false
 
-    @EnvironmentObject private var conversationVM: ConversationVM
-    @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @State private var messageCount: Int = 0
     @State private var currentContextTokens: Int = 0
     @State private var refreshTask: Task<Void, Never>?

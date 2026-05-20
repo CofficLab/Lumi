@@ -1,16 +1,16 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
 ///
 /// 聚合所有提供 `addPanelIcon()` 的插件图标，
-/// 点击后更新 `PluginVM.activePanelIcon`，驱动内容面板切换。
+/// 点击后更新 `AppPluginVM.activePanelIcon`，驱动内容面板切换。
 ///
 /// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var layoutVM: LayoutVM
-    @EnvironmentObject var themeVM: ThemeVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject var layoutVM: WindowLayoutVM
+    @EnvironmentObject var themeVM: AppThemeVM
 
     /// 图标栏宽度
     static let width: CGFloat = 48
@@ -77,49 +77,21 @@ struct ActivityBarButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @EnvironmentObject private var themeVM: ThemeVM
-    @State private var isHovered = false
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme
 
-        Button(action: action) {
-            ZStack(alignment: .leading) {
-                // 选中指示条：添加过渡动画
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(theme.accentColors().primary)
-                        .frame(width: 2.5, height: 20)
-                        .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
-                }
-
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(iconColor(theme: theme))
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .contentShape(Rectangle())
-            }
-        }
-        .buttonStyle(.plain)
-        .help(title)
-        // 选中状态变化时平滑过渡
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-
-    // MARK: - Private
-
-    /// 根据主题计算图标颜色
-    private func iconColor(theme: any SuperTheme) -> Color {
-        if isSelected {
-            return theme.workspaceTextColor()
-        }
-        if isHovered {
-            return theme.workspaceTextColor().opacity(0.8)
-        }
-        return theme.workspaceSecondaryTextColor()
+        AppActivityIconButton(
+            systemImage: icon,
+            label: title,
+            isActive: isSelected,
+            activeTint: theme.workspaceTextColor(),
+            inactiveTint: theme.workspaceSecondaryTextColor(),
+            hoverTint: theme.workspaceTextColor().opacity(0.8),
+            indicatorTint: theme.accentColors().primary,
+            action: action
+        )
     }
 }
 

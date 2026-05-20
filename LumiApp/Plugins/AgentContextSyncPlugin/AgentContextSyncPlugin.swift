@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -17,7 +16,7 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔄"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "AgentContextSync"
     static let displayName: String = String(localized: "Context Sync", table: "AgentContextSync")
     static let description: String = String(
@@ -34,7 +33,9 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
 
     init() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ AgentContextSyncPlugin 初始化完成")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ AgentContextSyncPlugin 初始化完成")
+            }
         }
     }
 
@@ -42,19 +43,25 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)📝 AgentContextSyncPlugin 已注册")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)📝 AgentContextSyncPlugin 已注册")
+            }
         }
     }
 
     nonisolated func onEnable() {
         if Self.verbose {
-            Self.logger.info("\(self.t)✅ AgentContextSyncPlugin 已启用")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)✅ AgentContextSyncPlugin 已启用")
+            }
         }
     }
 
     nonisolated func onDisable() {
         if Self.verbose {
-            Self.logger.info("\(self.t)⛔️ AgentContextSyncPlugin 已禁用")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)⛔️ AgentContextSyncPlugin 已禁用")
+            }
         }
     }
 

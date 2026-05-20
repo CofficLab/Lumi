@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 会话列表空状态视图
 struct ConversationListEmptyView: View {

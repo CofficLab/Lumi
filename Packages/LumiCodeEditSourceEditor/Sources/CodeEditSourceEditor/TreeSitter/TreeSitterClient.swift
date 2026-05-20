@@ -28,6 +28,7 @@ import OSLog
 /// length, edit length, highlight length and if the object is available for a synchronous call.
 public final class TreeSitterClient: HighlightProviding {
     static let logger: Logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "TreeSitterClient")
+    nonisolated(unsafe) static var verbose: Bool = false
 
     enum TreeSitterClientError: Error {
         case invalidEdit
@@ -112,7 +113,9 @@ public final class TreeSitterClient: HighlightProviding {
     ///               A weak reference will be kept for the lifetime of this object.
     ///   - codeLanguage: The language to use for parsing.
     public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
-        Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.id.rawValue, privacy: .public)")
+        if Self.verbose {
+                    Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.id.rawValue, privacy: .public)")
+        }
 
         let readBlock = textView.createReadBlock()
         let readCallback = textView.createReadCallback()

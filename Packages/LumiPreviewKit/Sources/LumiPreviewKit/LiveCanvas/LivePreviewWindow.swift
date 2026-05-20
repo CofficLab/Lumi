@@ -1,9 +1,20 @@
 import AppKit
 
+/// Live 预览专用的 `NSPanel` 子类。
+///
+/// 特点：
+/// - 无边框、透明背景、圆角内容区域
+/// - 不参与主窗口焦点链（`nonactivatingPanel`）
+/// - 支持全屏辅助模式
+/// - 自动管理子窗口层级（如 Sheet、Popover）
 @MainActor
 package final class LivePreviewWindow: NSPanel {
+    /// 内容视图圆角半径。
     private static let previewCornerRadius: CGFloat = 6
 
+    /// 创建 Live 预览窗口。
+    ///
+    /// - Parameter contentRect: 窗口初始位置和尺寸。
     package init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,

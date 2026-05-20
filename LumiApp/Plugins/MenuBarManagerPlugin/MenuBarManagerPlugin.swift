@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import AppKit
 import Combine
@@ -15,7 +14,7 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧊"
 
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "MenuBarManager"
     static let navigationId: String = "menu_bar_manager"

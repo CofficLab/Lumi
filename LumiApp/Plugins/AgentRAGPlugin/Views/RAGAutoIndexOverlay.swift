@@ -1,4 +1,4 @@
-import MagicKit
+import RAGKit
 import SwiftUI
 
 /// RAG 自动索引覆盖层
@@ -8,7 +8,7 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var autoEnsureTask: Task<Void, Never>?
     @State private var lastAutoEnsureKey = ""
 
@@ -65,7 +65,9 @@ extension RAGAutoIndexOverlay {
                 await service.ensureIndexedBackground(projectPath: path)
             }
             if Self.verbose {
-                RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                if RAGPlugin.verbose {
+                                    RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                }
             }
         }
     }

@@ -312,6 +312,7 @@
       }
     },
     "搜索失败" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -334,7 +335,20 @@
       }
     },
     "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search and install extensions from Open VSX\nSupports thousands of open-source extensions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展"
+          }
+        }
+      }
     },
     "搜索并安装来自 Open VSX 的扩展\\n支持数千个开源扩展" : {
       "extractionState" : "stale",
@@ -358,6 +372,9 @@
           }
         }
       }
+    },
+    "搜索扩展 (如: python, theme)" : {
+
     },
     "无法连接 code-server" : {
       "localizations" : {

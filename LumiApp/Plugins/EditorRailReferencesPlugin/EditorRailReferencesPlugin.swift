@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器引用 Rail 插件：提供 References 标签页
 actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔗"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailReferences"
     static let displayName: String = String(
         localized: "Editor Rail References", table: "EditorRailReferences")
@@ -43,7 +42,7 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
 /// References 标签页内容视图
 struct EditorReferencesRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

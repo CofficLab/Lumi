@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import LLMKit
 
 /// 供应商注册表
 ///
@@ -13,7 +13,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     nonisolated static let emoji = "📋"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 初始化供应商注册表
     ///
     /// 创建新的注册表实例，具体供应商由外部插件通过 `register(...)` 注入。
@@ -78,7 +78,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             .map { type in
                 let instance = createProvider(id: type.id)
                 let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-                let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
+                _ = validatedCapabilities(for: type, isLocal: isLocal)
                 return LLMProviderInfo(
                     id: type.id,
                     displayName: type.displayName,
@@ -88,8 +88,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
                     isEnabled: type.isEnabled,
-                    contextWindowSizes: type.contextWindowSizes,
-                    modelCapabilities: capabilities
+                    contextWindowSizes: type.contextWindowSizes
                 )
             }
             .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
@@ -102,7 +101,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-            let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
+            _ = validatedCapabilities(for: type, isLocal: isLocal)
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
@@ -112,8 +111,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,
                 isEnabled: type.isEnabled,
-                contextWindowSizes: type.contextWindowSizes,
-                modelCapabilities: capabilities
+                contextWindowSizes: type.contextWindowSizes
             )
         }
     }

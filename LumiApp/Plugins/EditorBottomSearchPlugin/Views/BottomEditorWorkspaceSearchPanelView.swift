@@ -1,8 +1,7 @@
 import SwiftUI
-import MagicKit
 
 struct BottomEditorWorkspaceSearchPanelView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var service: EditorService
     var showsToolbar: Bool = true
 

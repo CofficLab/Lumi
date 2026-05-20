@@ -1,11 +1,11 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// LLM 配置错误视图
 ///
 /// `LLMServiceError` 转为错误消息后的专用说明（占位键由 `ChatMessage` 定义）。
 struct LLMInlineConfigErrorView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     let message: ChatMessage
 

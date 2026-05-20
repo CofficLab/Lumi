@@ -1,4 +1,5 @@
 import SwiftUI
+import LLMKit
 import LumiUI
 
 /// 远程供应商模型区块：API Key 配置 + 可用模型列表

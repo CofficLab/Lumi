@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 编辑器 Tab Header 视图
@@ -9,9 +8,9 @@ struct EditorTabHeaderView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var editorVM: EditorVM
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var editorVM: WindowEditorVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var draggedTabSessionID: UUID?
 

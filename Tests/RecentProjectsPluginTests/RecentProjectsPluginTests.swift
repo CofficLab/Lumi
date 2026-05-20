@@ -28,7 +28,8 @@ final class RecentProjectsPluginTests: XCTestCase {
         let rootView = await RecentProjectsPlugin.shared.addRootView {
             EmptyView()
         }
-        let tools = await RecentProjectsPlugin.shared.agentTools()
+        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let tools = await RecentProjectsPlugin.shared.agentTools(context: context)
 
         XCTAssertNotNil(rootView)
         XCTAssertEqual(tools.count, 3)

@@ -1,11 +1,11 @@
 import Foundation
-import MagicKit
+import HttpKit
 import SwiftData
 
 /// 请求日志历史管理器（HTTP 视角）
 actor RequestLogHistoryManager: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = RequestLogHistoryManager()
 
     private let container: ModelContainer
@@ -33,7 +33,7 @@ actor RequestLogHistoryManager: SuperLog {
         }
     }
 
-    func add(metadata: RequestMetadata) async {
+    func add(metadata: HTTPRequestMetadata) async {
         let context = ModelContext(container)
         let item = RequestLogItem(
             requestId: metadata.requestId,
@@ -67,6 +67,10 @@ actor RequestLogHistoryManager: SuperLog {
         descriptor.fetchLimit = 1000
         let items = (try? context.fetch(descriptor)) ?? []
         return items.map { RequestLogItemDTO(from: $0) }
+    }
+
+    nonisolated func getContext() -> ModelContext {
+        ModelContext(container)
     }
 
     func getLatest(limit: Int = 100) async -> [RequestLogItemDTO] {

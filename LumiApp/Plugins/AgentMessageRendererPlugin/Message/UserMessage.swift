@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import LumiUI
 
@@ -7,7 +6,7 @@ struct UserMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
-    @EnvironmentObject private var inputQueueVM: InputQueueVM
+    @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
     /// 当前 macOS 登录用户名称
     private var currentUserName: String {

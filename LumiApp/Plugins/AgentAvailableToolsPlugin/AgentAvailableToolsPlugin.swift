@@ -1,4 +1,3 @@
-import MagicKit
 import os
 import SwiftUI
 
@@ -7,7 +6,7 @@ import SwiftUI
 /// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
 actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧰"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-available-tools")
 
     static let id = "AgentAvailableToolsPlugin"

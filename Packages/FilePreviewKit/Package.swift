@@ -18,10 +18,10 @@ let package = Package(
             path: ".",
             exclude: [
                 "Package.swift",
+                "README.md",
                 "Tests"
             ],
             sources: [
-                "FilePreviewResolver.swift",
                 "FilePreviewView.swift"
             ]
         ),

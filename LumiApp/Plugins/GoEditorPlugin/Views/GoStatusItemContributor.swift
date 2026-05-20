@@ -1,6 +1,6 @@
 import Foundation
+import GoEditorCore
 import SwiftUI
-import MagicKit
 
 /// Go 状态栏贡献者
 ///
@@ -10,9 +10,11 @@ final class GoStatusItemContributor: SuperEditorStatusItemContributor {
     let id: String = "go.status"
 
     private let buildManager: GoBuildManager
+    private let testManager: GoTestManager
 
-    init(buildManager: GoBuildManager) {
+    init(buildManager: GoBuildManager, testManager: GoTestManager) {
         self.buildManager = buildManager
+        self.testManager = testManager
     }
 
     func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion] {
@@ -26,8 +28,13 @@ final class GoStatusItemContributor: SuperEditorStatusItemContributor {
                     dedupeKey: "go-status",
                     whenClause: .equals(.languageId, .string("go"))
                 ),
-                content: { _ in
-                    AnyView(GoStatusIndicatorView(buildManager: self.buildManager))
+                content: { state in
+                    AnyView(GoStatusIndicatorView(
+                        state: state,
+                        buildManager: self.buildManager,
+                        testManager: self.testManager,
+                        env: GoEnvResolver.resolveSnapshot()
+                    ))
                 }
             )
         ]
@@ -37,15 +44,19 @@ final class GoStatusItemContributor: SuperEditorStatusItemContributor {
 // MARK: - 状态指示器视图
 
 private struct GoStatusIndicatorView: View {
+    @ObservedObject var state: EditorState
     @ObservedObject var buildManager: GoBuildManager
+    @ObservedObject var testManager: GoTestManager
+    let env: GoEnvResolver.Snapshot
 
     var body: some View {
         HStack(spacing: 4) {
-            switch buildManager.state {
+            switch displayState {
             case .idle:
                 Image(systemName: "goforward")
                     .font(.system(size: 9))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(idleColor)
+                    .help(statusHelp)
 
             case .building:
                 ProgressView()
@@ -60,6 +71,22 @@ private struct GoStatusIndicatorView: View {
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
                 Text(String(localized: "Testing", table: "GoEditor"))
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+            case .formatting:
+                ProgressView()
+                    .scaleEffect(0.5)
+                    .frame(width: 10, height: 10)
+                Text(String(localized: "Formatting", table: "GoEditor"))
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+            case .tidying:
+                ProgressView()
+                    .scaleEffect(0.5)
+                    .frame(width: 10, height: 10)
+                Text(String(localized: "Tidying", table: "GoEditor"))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -79,6 +106,57 @@ private struct GoStatusIndicatorView: View {
                 }
             }
         }
-        .opacity(buildManager.state == .idle ? 0.4 : 1.0)
+        .opacity(displayState == .idle ? 0.4 : 1.0)
+    }
+
+    private var idleColor: Color {
+        env.goplsPath == nil
+            ? Color(hex: "FF9F0A")
+            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
+
+    private var statusHelp: String {
+        let lsp = env.goplsPath == nil ? "gopls missing" : "gopls ready"
+        let formatter: String
+        if env.goplsPath != nil {
+            formatter = "formatter: gopls"
+        } else if env.gofumptPath != nil {
+            formatter = "formatter: gofumpt"
+        } else if env.goPath != nil {
+            formatter = "formatter: gofmt"
+        } else {
+            formatter = "formatter missing"
+        }
+        return "\(lsp), \(formatter)"
+    }
+
+    private var displayState: DisplayState {
+        if testManager.state == .testing {
+            return .testing
+        }
+        switch buildManager.state {
+        case .idle:
+            return .idle
+        case .building:
+            return .building
+        case .formatting:
+            return .formatting
+        case .tidying:
+            return .tidying
+        case .success:
+            return testManager.state == .success ? .success : .success
+        case .failed:
+            return .failed
+        }
+    }
+
+    private enum DisplayState: Equatable {
+        case idle
+        case building
+        case testing
+        case formatting
+        case tidying
+        case success
+        case failed
     }
 }

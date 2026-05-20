@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// Shell 命令执行工具
 ///
@@ -11,7 +10,7 @@ import MagicKit
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
 struct ShellTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💻"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "run_command"
 
     func description(for language: LanguagePreference) -> String {

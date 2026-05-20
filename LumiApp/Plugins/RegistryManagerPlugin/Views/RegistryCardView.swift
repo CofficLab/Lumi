@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 
 struct RegistryCard: View {
     let type: RegistryType
@@ -15,7 +14,7 @@ struct RegistryCard: View {
     }
 
     var body: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Image(systemName: type.icon)

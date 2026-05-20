@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct AppButton: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovered = false
 
     public enum Style {
@@ -101,8 +102,9 @@ public struct AppButton: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.5 : 1.0)
+        .scaleEffect(isEffectivelyHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering && !isDisabled
             }
         }
@@ -157,18 +159,22 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
+                    .fill(isEffectivelyHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
+                    .fill(isEffectivelyHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.primary : Color.clear)
+                    .fill(isEffectivelyHovered ? theme.primary : Color.clear)
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+                    .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
             }
         }
+    }
+
+    private var isEffectivelyHovered: Bool {
+        isHovered && !isDisabled
     }
 
     private var border: some View {
@@ -177,13 +183,13 @@ public struct AppButton: View {
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
-                        isHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
+                        isEffectivelyHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
                         lineWidth: 1
                     )
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
-                        isHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
+                        isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
                         lineWidth: 1
                     )
             default:

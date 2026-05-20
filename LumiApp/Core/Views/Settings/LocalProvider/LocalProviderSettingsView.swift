@@ -1,5 +1,5 @@
 import AppKit
-import MagicKit
+import LLMKit
 import SwiftUI
 import LumiUI
 
@@ -95,7 +95,7 @@ struct LocalProviderSettingsView: View {
 extension LocalProviderSettingsView {
     /// 本地供应商选择器卡片（固定）
     private var providerSelectorCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "cpu.fill",
@@ -125,7 +125,7 @@ extension LocalProviderSettingsView {
 
     /// 本地模型管理卡片
     private var localModelCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 0) {
                 LocalModelSectionView(
                     localProvider: localProvider,

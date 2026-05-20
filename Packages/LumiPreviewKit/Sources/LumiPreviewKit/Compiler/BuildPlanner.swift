@@ -308,7 +308,7 @@ final class BuildPlanner: Sendable {
 
         let namePattern = /name:\s*"([^"]+)"/
         let pathPattern = /path:\s*"([^"]+)"/
-        let sourcesPattern = /sources:\s*\[([^\]]*)\]/
+        let sourcesPattern = /(?:^|[^a-zA-Z])sources:\s*\[([^\]]*)\]/
         let characters = Array(content)
 
         for declaration in targetDeclarations(in: characters) {
@@ -336,14 +336,14 @@ final class BuildPlanner: Sendable {
 
     private static func targetDeclarations(
         in characters: [Character]
-    ) -> [(kind: TargetInfo.Kind, bodyRange: Range<Int>)] {
+    ) -> [(kind: TargetInfo.Kind, bodyRange: Swift.Range<Int>)] {
         let starters: [(text: String, kind: TargetInfo.Kind)] = [
             (".executableTarget(", .executable),
             (".testTarget(", .test),
             (".target(", .regular)
         ]
 
-        var declarations: [(kind: TargetInfo.Kind, bodyRange: Range<Int>)] = []
+        var declarations: [(kind: TargetInfo.Kind, bodyRange: Swift.Range<Int>)] = []
         var offset = 0
 
         while offset < characters.count {
@@ -458,7 +458,11 @@ final class BuildPlanner: Sendable {
             .resolvingSymlinksInPath()
     }
 
-    fileprivate static func swiftSourceFiles(in roots: [URL], excluding excludedRoots: [URL] = []) -> [URL] {
+    static func swiftSourceFiles(
+        in roots: [URL],
+        excluding excludedRoots: [URL] = [],
+        excludingNestedPackages: Bool = false
+    ) -> [URL] {
         var files: Set<URL> = []
         let fileManager = FileManager.default
         let excludedPaths = excludedRoots
@@ -475,7 +479,7 @@ final class BuildPlanner: Sendable {
             }
 
             if !isDirectory.boolValue {
-                if root.pathExtension == "swift" {
+                if isCompilableSwiftSource(root) {
                     files.insert(root.standardizedFileURL.resolvingSymlinksInPath())
                 }
                 continue
@@ -490,12 +494,24 @@ final class BuildPlanner: Sendable {
             }
 
             for case let fileURL as URL in enumerator {
-                if isExcluded(fileURL, by: excludedPaths) {
+                if excludingNestedPackages,
+                   isNestedPackageDirectory(fileURL, root: root, fileManager: fileManager) {
                     enumerator.skipDescendants()
                     continue
                 }
 
-                guard fileURL.pathExtension == "swift" else {
+                if isExcluded(fileURL, by: excludedPaths) {
+                    // Only call skipDescendants() for directories.
+                    // Calling it on a regular file can cause the enumerator
+                    // to skip subsequent sibling directories on macOS.
+                    let values = try? fileURL.resourceValues(forKeys: [.isDirectoryKey])
+                    if values?.isDirectory == true {
+                        enumerator.skipDescendants()
+                    }
+                    continue
+                }
+
+                guard isCompilableSwiftSource(fileURL) else {
                     continue
                 }
 
@@ -509,11 +525,30 @@ final class BuildPlanner: Sendable {
         return files.sorted { $0.path < $1.path }
     }
 
-    fileprivate static func isExcluded(_ url: URL, by excludedPaths: [String]) -> Bool {
+    static func isExcluded(_ url: URL, by excludedPaths: [String]) -> Bool {
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
         return excludedPaths.contains { excludedPath in
             path == excludedPath || path.hasPrefix(excludedPath + "/")
         }
+    }
+
+    private static func isCompilableSwiftSource(_ url: URL) -> Bool {
+        url.pathExtension == "swift" && url.lastPathComponent != "Package.swift"
+    }
+
+    private static func isNestedPackageDirectory(
+        _ url: URL,
+        root: URL,
+        fileManager: FileManager
+    ) -> Bool {
+        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+        guard values?.isDirectory == true else { return false }
+
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
+        guard path != rootPath else { return false }
+
+        return fileManager.fileExists(atPath: url.appendingPathComponent("Package.swift").path)
     }
 
     private static func defaultPath(for target: TargetInfo) -> String {
@@ -683,7 +718,11 @@ private struct XcodeProjectSourceIndex {
                 }
             }
 
-        return BuildPlanner.swiftSourceFiles(in: [rootURL], excluding: excludedURLs)
+        return BuildPlanner.swiftSourceFiles(
+            in: [rootURL],
+            excluding: excludedURLs,
+            excludingNestedPackages: true
+        )
     }
 
     private func sourceURL(fileRefID: String) -> URL? {
@@ -816,4 +855,3 @@ private extension Array where Element == URL {
         return result
     }
 }
-

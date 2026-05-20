@@ -6,6 +6,8 @@ struct ConversationRenderState {
 
     /// 已持久化的稳定消息行
     var persistedMessages: [ChatMessage] = []
+    /// 已进入发送队列但尚未持久化的消息行。
+    var queuedMessages: [ChatMessage] = []
     /// 活跃流式行（高频可变，仅一条）
     var activeStreamingMessage: ChatMessage?
 

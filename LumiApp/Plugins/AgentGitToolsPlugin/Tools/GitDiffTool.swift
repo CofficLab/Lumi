@@ -1,11 +1,10 @@
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// Git 差异工具
 struct GitDiffTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "git_diff"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -17,20 +16,33 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let pathDesc: String
+        let stagedDesc: String
+        let fileDesc: String
+        switch language {
+        case .chinese:
+            pathDesc = "Git 仓库路径，默认为当前工作目录"
+            stagedDesc = "是否查看暂存区的差异，false 表示查看工作区的差异"
+            fileDesc = "可选，只查看指定文件的差异"
+        case .english:
+            pathDesc = "Git repository path, defaults to current working directory"
+            stagedDesc = "Whether to view staged changes. false means viewing working tree changes"
+            fileDesc = "Optional, only view changes for the specified file"
+        }
+        return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录"
+                    "description": pathDesc
                 ],
                 "staged": [
                     "type": "boolean",
-                    "description": "是否查看暂存区的差异，false 表示查看工作区的差异"
+                    "description": stagedDesc
                 ],
                 "file": [
                     "type": "string",
-                    "description": "可选，只查看指定文件的差异"
+                    "description": fileDesc
                 ]
             ]
         ]
@@ -46,7 +58,9 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
+            }
         }
 
         do {
@@ -57,7 +71,9 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
             )
             return formatDiff(diff)
         } catch {
-            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            }
             return "获取 Git 差异失败：\(error.localizedDescription)"
         }
     }

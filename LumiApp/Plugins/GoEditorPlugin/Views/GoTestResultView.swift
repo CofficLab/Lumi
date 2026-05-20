@@ -1,12 +1,12 @@
 import SwiftUI
-import MagicKit
+import GoEditorCore
 
 /// Go 测试结果面板视图
 ///
 /// 显示 go test 的结果列表。
 struct GoTestResultView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var buildManager: GoBuildManager
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @ObservedObject var testManager: GoTestManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,9 +14,9 @@ struct GoTestResultView: View {
 
             Divider()
 
-            if buildManager.state == .testing {
+            if testManager.state == .testing {
                 loadingState
-            } else if buildManager.testEvents.isEmpty {
+            } else if testManager.testEvents.isEmpty {
                 emptyState
             } else {
                 testList
@@ -34,22 +34,22 @@ struct GoTestResultView: View {
                     themeVM.activeAppTheme.workspaceSecondaryTextColor()
                 )
 
-            if buildManager.state == .testing {
+            if testManager.state == .testing {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
                 Text(String(localized: "Testing...", table: "GoEditor"))
                     .font(.system(size: 11, weight: .medium))
             } else {
-                let passed = buildManager.testEvents.filter { $0.status == .pass }.count
-                let failed = buildManager.testEvents.filter { $0.status == .fail }.count
-                let skipped = buildManager.testEvents.filter { $0.status == .skip }.count
+                let passed = testManager.passedCount
+                let failed = testManager.failedCount
+                let skipped = testManager.skippedCount
 
                 if failed > 0 {
                     Text("\(passed) \(String(localized: "passed", table: "GoEditor")), \(failed) \(String(localized: "failed", table: "GoEditor")), \(skipped) \(String(localized: "skipped", table: "GoEditor"))")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "FF453A"))
-                } else if !buildManager.testEvents.isEmpty {
+                } else if !testManager.testEvents.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
@@ -63,8 +63,8 @@ struct GoTestResultView: View {
 
             Spacer()
 
-            if buildManager.lastBuildDuration > 0 {
-                Text(String(format: "%.1fs", buildManager.lastBuildDuration))
+            if testManager.lastTestDuration > 0 {
+                Text(String(format: "%.1fs", testManager.lastTestDuration))
                     .font(.system(size: 10))
                     .foregroundColor(
                         themeVM.activeAppTheme.workspaceTertiaryTextColor()
@@ -83,7 +83,7 @@ struct GoTestResultView: View {
     private var testList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(buildManager.testEvents) { event in
+                ForEach(testManager.testEvents) { event in
                     testEventRow(event)
                 }
             }

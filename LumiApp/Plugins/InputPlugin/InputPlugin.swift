@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import os
 
@@ -10,7 +9,7 @@ actor InputPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "⌨️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "InputManager"
     static let navigationId: String = "input_manager"

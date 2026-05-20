@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import LumiUI
 
 /// Shared Git commit row used by the panel sidebar and compact status bar popover.

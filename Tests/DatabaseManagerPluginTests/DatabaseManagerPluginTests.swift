@@ -14,12 +14,8 @@ final class DatabaseManagerPluginTests: XCTestCase {
 
     @MainActor
     func testPluginProvidesDatabaseAgentTools() {
-        let factories = DatabaseManagerPlugin.shared.agentToolFactories()
-        XCTAssertEqual(factories.map(\.id), ["database.agent.tools.factory"])
-
-        let tools = factories.flatMap {
-            $0.makeTools(env: SuperAgentToolEnvironment(toolService: ToolService(), llmService: nil))
-        }
+        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let tools = DatabaseManagerPlugin.shared.agentTools(context: context)
         XCTAssertEqual(
             tools.map(\.name),
             [

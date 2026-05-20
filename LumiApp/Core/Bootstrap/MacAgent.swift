@@ -1,6 +1,5 @@
 import AppKit
 import LibGit2Swift
-import MagicKit
 import SwiftUI
 
 /// macOS 应用代理，协调应用生命周期和各个控制器
@@ -10,6 +9,7 @@ import SwiftUI
 /// - 应用启动完成
 /// - 应用即将终止
 /// - 应用激活/失活
+/// - 打开文件/文件夹（拖拽到 Dock 图标）
 ///
 /// 同时管理以下控制器：
 /// - MenuBarController: 菜单栏状态图标和弹窗
@@ -31,7 +31,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Controllers
 
     /// 状态栏控制器
@@ -48,7 +48,8 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 执行以下操作：
     /// 1. 记录启动日志（如果 verbose 为 true）
     /// 2. 初始化各个控制器
-    /// 3. 发送应用启动完成通知
+    /// 3. 恢复保存的窗口状态
+    /// 4. 发送应用启动完成通知
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 启动磁盘日志收集
         FileLogCoordinator.shared.start()
@@ -61,6 +62,15 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         LibGit2.initialize()
 
         setupControllers()
+
+        // 启动自动化 HTTP 服务器（用于自动化测试）
+        AutomationServer.shared.start()
+
+        // 启动自动化控制器（用于路由和处理自动化动作）
+        AutomationController.shared.start()
+
+        // 窗口状态恢复由 WindowPersistencePlugin 负责，内核不再处理。
+        // 插件会在 RootView appear 时自动触发恢复流程。
 
         // 发送应用启动完成的通知
         // 让其他组件知道应用已准备好接受交互
@@ -78,6 +88,8 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         if Self.verbose {
             AppLogger.core.info("\(self.t)应用即将终止")
         }
+
+        // 窗口状态保存由 WindowPersistencePlugin 负责，内核不再处理。
 
         // 停止磁盘日志收集，flush 剩余条目
         FileLogCoordinator.shared.stop()
@@ -118,6 +130,103 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         NotificationCenter.postApplicationDidResignActive()
     }
 
+    // MARK: - Dock Menu
+
+    /// 提供 Dock 右键菜单
+    ///
+    /// 当用户右键点击 Dock 图标时显示的菜单。
+    /// 添加"新建窗口"选项，类似 VS Code 的行为。
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+        let newItem = NSMenuItem(
+            title: "新建窗口",
+            action: #selector(openNewWindowFromDock),
+            keyEquivalent: "n"
+        )
+        newItem.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(newItem)
+        return menu
+    }
+
+    /// 从 Dock 菜单打开新窗口
+    @objc private func openNewWindowFromDock() {
+        NotificationCenter.default.post(
+            name: .openWindowWithRoute,
+            object: nil,
+            userInfo: ["route": LumiWindowRoute()]
+        )
+    }
+
+    // MARK: - Open Files/Folders
+
+    /// 处理打开文件/文件夹请求
+    ///
+    /// 当用户拖拽文件夹到 Dock 图标，或通过命令行参数打开文件时调用。
+    /// 对于文件夹，会在新窗口中打开作为项目。
+    /// 对于文件，会尝试在当前活跃窗口的编辑器中打开。
+    ///
+    /// - Parameter urls: 要打开的文件/文件夹 URL 列表
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📂 收到打开请求: \(urls.map(\.lastPathComponent))")
+        }
+
+        for url in urls {
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+
+            if isDirectory {
+                // 文件夹：在新窗口中打开作为项目
+                openProjectInNewWindow(path: url.path)
+            } else {
+                // 文件：在当前活跃窗口的编辑器中打开
+                openFileInActiveWindow(url: url)
+            }
+        }
+    }
+
+    /// 在新窗口中打开项目
+    ///
+    /// - Parameter path: 项目路径
+    private func openProjectInNewWindow(path: String) {
+        // 检查是否已经有窗口打开了这个项目
+        if let existingWindowId = RootContainer.shared.windowManagerVM.findWindow(withProject: path) {
+            // 聚焦到已有窗口
+            RootContainer.shared.windowManagerVM.activateWindow(existingWindowId)
+            if Self.verbose {
+                AppLogger.core.info("\(self.t)📂 项目已在窗口 \(existingWindowId.uuidString.prefix(8)) 中打开，聚焦该窗口")
+            }
+            return
+        }
+
+        // 创建新窗口打开项目
+        let route = LumiWindowRoute(projectPath: path)
+        NotificationCenter.default.post(
+            name: .openWindowWithRoute,
+            object: nil,
+            userInfo: ["route": route]
+        )
+
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📂 在新窗口中打开项目: \(path)")
+        }
+    }
+
+    /// 在当前活跃窗口的编辑器中打开文件
+    ///
+    /// - Parameter url: 文件 URL
+    private func openFileInActiveWindow(url: URL) {
+        // 通知活跃窗口打开文件
+        NotificationCenter.default.post(
+            name: .openFileInEditor,
+            object: nil,
+            userInfo: ["url": url]
+        )
+
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📄 在编辑器中打开文件: \(url.lastPathComponent)")
+        }
+    }
+
     // MARK: - Setup
 
     /// 设置各个控制器
@@ -128,7 +237,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     private func setupControllers() {
         // 初始化菜单栏控制器
         statusBarController = MenuBarController()
-        statusBarController?.setupMenuBar(pluginProvider: PluginVM.shared)
+        statusBarController?.setupMenuBar(pluginProvider: AppPluginVM.shared)
     }
 
     // MARK: - Cleanup

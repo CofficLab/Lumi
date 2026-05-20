@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 获取当前会话 ID 工具
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import LLMKit
 
 /// LLM 配置获取协议
 @MainActor

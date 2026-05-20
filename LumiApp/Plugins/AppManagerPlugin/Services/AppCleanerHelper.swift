@@ -1,11 +1,10 @@
 import Foundation
 import SwiftUI
-import MagicKit
 
 /// 应用清理助手，用于扫描和清理应用的关联文件
 class AppCleanerHelper: SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     private let fileManager = FileManager.default
 
     // 常见的关联文件搜索路径
@@ -34,7 +33,9 @@ class AppCleanerHelper: SuperLog {
         let bundleID = app.bundleIdentifier ?? ""
 
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
+            }
         }
 
         // 1. 扫描 Application Support 和 Caches
@@ -86,7 +87,9 @@ class AppCleanerHelper: SuperLog {
         // 去重
         let uniqueFiles = Array(Set(relatedFiles))
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
+            }
         }
         return uniqueFiles
     }

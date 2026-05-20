@@ -1,112 +1,43 @@
 import Combine
 import Foundation
-import MagicKit
 import SwiftUI
 
-/// 窗口状态模型
+// MARK: - Window Active Panel
+
+/// 窗口活动面板类型
 ///
-/// 每个窗口独立维护自己的状态，实现窗口级状态隔离
-@MainActor
-final class WindowState: ObservableObject, Identifiable, SuperLog {
-    nonisolated static let emoji = "🪟"
-    nonisolated static let verbose: Bool = true
-    /// 窗口唯一标识
-    let id: UUID
-
-    /// 窗口标题
-    @Published var title: String = "Lumi"
-
-    /// 当前选中的会话 ID
-    @Published var selectedConversationId: UUID?
-
-    /// 当前关联的项目路径
-    @Published var projectPath: String?
-
-    /// 侧边栏可见性
-    @Published var sidebarVisibility: Bool = true
-
-    /// 导航分栏视图的列可见性状态
-    @Published var columnVisibility: NavigationSplitViewVisibility = .automatic
-
-    /// 窗口是否活跃
-    @Published var isActive: Bool = false
-
-    /// 窗口创建时间
-    let createdAt: Date
-
-    /// Combine 订阅集合（用于外部监听）
-    var cancellables = Set<AnyCancellable>()
-
-    /// 初始化
-    /// - Parameters:
-    ///   - id: 窗口唯一标识，默认自动生成
-    ///   - conversationId: 初始选中的会话 ID
-    ///   - projectPath: 初始关联的项目路径
-    init(
-        id: UUID = UUID(),
-        conversationId: UUID? = nil,
-        projectPath: String? = nil
-    ) {
-        self.id = id
-        self.selectedConversationId = conversationId
-        self.projectPath = projectPath
-        self.createdAt = Date()
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)创建窗口状态: \(id.uuidString.prefix(8))")
-        }
-    }
-
-    /// 更新窗口标题
-    func updateTitle(from conversation: Conversation?) {
-        if let conversation = conversation {
-            title = conversation.title
-        } else if let path = projectPath {
-            let url = URL(fileURLWithPath: path)
-            title = "Lumi - \(url.lastPathComponent)"
-        } else {
-            title = "Lumi"
-        }
-    }
-
-    /// 切换到指定会话
-    func switchToConversation(_ conversationId: UUID?) {
-        selectedConversationId = conversationId
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到会话: \(conversationId?.uuidString.prefix(8) ?? "nil")")
-        }
-    }
-
-    /// 切换到指定项目
-    func switchToProject(_ path: String?) {
-        projectPath = path
-        updateTitle(from: nil)
-        if Self.verbose {
-            let pathString = path ?? "nil"
-            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到项目: \(pathString)")
-        }
-    }
-
-    /// 设置窗口活跃状态
-    func setActive(_ active: Bool) {
-        isActive = active
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 活跃状态: \(active)")
-        }
-    }
+/// 标识当前窗口正在显示的主要内容类型
+enum WindowActivePanel: String, Codable, Hashable {
+    /// 聊天面板
+    case chat
+    /// 编辑器面板
+    case editor
+    /// 项目文件树
+    case fileTree
+    /// 终端
+    case terminal
+    /// 设置（全局单例）
+    case settings
+    /// 欢迎页面
+    case welcome
 }
 
-// MARK: - Window State Container
+// MARK: - Window Editor State
 
-/// 窗口状态容器（用于在视图中注入）
-struct WindowStateKey: EnvironmentKey {
-    static let defaultValue: WindowState? = nil
-}
+/// 窗口级编辑器状态
+///
+/// 每个窗口独立维护的编辑器状态
+struct WindowEditorState: Codable, Hashable {
+    /// 当前打开的文件路径列表
+    var openFileURLs: [URL] = []
+    /// 当前活跃的文件 URL
+    var activeFileURL: URL?
+    /// 编辑器分栏数量
+    var splitCount: Int = 1
 
-extension EnvironmentValues {
-    var windowState: WindowState? {
-        get { self[WindowStateKey.self] }
-        set { self[WindowStateKey.self] = newValue }
+    /// 是否有打开的文件
+    var hasOpenFiles: Bool {
+        !openFileURLs.isEmpty
     }
 }
 
@@ -135,6 +66,8 @@ extension Notification.Name {
     static let windowActivated = Notification.Name("windowActivated")
     /// 窗口关闭通知
     static let windowClosed = Notification.Name("windowClosed")
+    /// 窗口作用域已注册（`WindowManagerVM.registerScope`）
+    static let windowScopeDidRegister = Notification.Name("windowScopeDidRegister")
 }
 
 extension NotificationCenter {
@@ -160,6 +93,14 @@ extension NotificationCenter {
         NotificationCenter.default.post(
             name: .windowClosed,
             object: windowId
+        )
+    }
+
+    /// 发送窗口作用域已注册通知
+    static func postWindowScopeDidRegister(_ scope: WindowScope) {
+        NotificationCenter.default.post(
+            name: .windowScopeDidRegister,
+            object: scope
         )
     }
 }

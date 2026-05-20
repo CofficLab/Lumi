@@ -55,7 +55,7 @@ public extension LumiPreviewFacade {
             CacheKey(
                 fingerprint: Self.sha256(
                     [
-                        "entry-cache-v1",
+                        "entry-cache-v2",
                         discovery.id,
                         discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
                         "\(discovery.lineNumber)",
@@ -179,10 +179,7 @@ public extension LumiPreviewFacade {
         }
 
         private static func defaultCacheRootDirectory() -> URL {
-            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("EntryCache", isDirectory: true)
-            ?? FileManager.default.temporaryDirectory.appendingPathComponent("LumiPreviewKit-EntryCache", isDirectory: true)
+            PreviewStorage.paths.entryCacheDirectory
         }
     }
 }

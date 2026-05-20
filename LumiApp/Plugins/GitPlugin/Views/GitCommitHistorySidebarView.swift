@@ -1,6 +1,5 @@
 import LibGit2Swift
 import SwiftUI
-import MagicKit
 
 /// Git 提交历史侧边栏视图
 ///
@@ -8,9 +7,9 @@ import MagicKit
 /// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
 struct GitCommitHistorySidebarView: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var gitVM: GitVM
-    @EnvironmentObject var layoutVM: LayoutVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var gitVM: AppGitVM
+    @EnvironmentObject var layoutVM: WindowLayoutVM
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -275,7 +274,9 @@ struct GitCommitHistorySidebarView: View {
                     self.gitVM.updateUnpushedCommitHashes(unpushedHashes)
                 }
 
-                GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                }
             }
 
             // 加载未提交变更数量（不阻塞 commit 列表的显示）
@@ -349,7 +350,9 @@ struct GitCommitHistorySidebarView: View {
                 await MainActor.run {
                     self.loading = false
                 }
-                GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                }
             }
         }
     }

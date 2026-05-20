@@ -1,11 +1,10 @@
 import Combine
 import Foundation
-import MagicKit
 import DiskManagerKit
 @MainActor
 final class LargeFilesViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var largeFiles: [LargeFileEntry] = []
     @Published var isScanning = false
     @Published var scanProgress: ScanProgress?
@@ -23,7 +22,9 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
         guard !isScanning else { return }
 
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始扫描大文件：\((self.scanPath as NSString).lastPathComponent)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始扫描大文件：\((self.scanPath as NSString).lastPathComponent)")
+            }
         }
 
         isScanning = true
@@ -44,9 +45,11 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                     let now = Date()
                     if self.progressReceivedCount == 1 || now.timeIntervalSince(self.lastProgressLogAt) >= 2.0 {
                         self.lastProgressLogAt = now
-                        DiskManagerPlugin.logger.info(
-                            "\(self.t)[VM] progress recv#\(self.progressReceivedCount) files=\(progress.scannedFiles) dirs=\(progress.scannedDirectories) bytes=\(progress.scannedBytes) path=\(progress.currentPath)"
-                        )
+                        if DiskManagerPlugin.verbose {
+                                                    DiskManagerPlugin.logger.info(
+                                                        "\(self.t)[VM] progress recv#\(self.progressReceivedCount) files=\(progress.scannedFiles) dirs=\(progress.scannedDirectories) bytes=\(progress.scannedBytes) path=\(progress.currentPath)"
+                                                    )
+                        }
                     }
                 }
             }
@@ -69,7 +72,9 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                             self.scanProgress = nil
                             self.progressTask?.cancel()
                             if Self.verbose {
-                                DiskManagerPlugin.logger.info("\(self.t)大文件扫描完成，发现 \(files.count) 个大文件")
+                                if DiskManagerPlugin.verbose {
+                                                                    DiskManagerPlugin.logger.info("\(self.t)大文件扫描完成，发现 \(files.count) 个大文件")
+                                }
                             }
                         }
                     }
@@ -90,7 +95,9 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止扫描大文件")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)停止扫描大文件")
+            }
         }
         scanTask?.cancel()
         progressTask?.cancel()
@@ -101,7 +108,9 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
 
     func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)删除大文件：\(item.name)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)删除大文件：\(item.name)")
+            }
         }
         Task {
             do {
@@ -111,7 +120,9 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                 }
             } catch {
                 await MainActor.run {
-                    DiskManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
+                    }
                     self.errorMessage = String(localized: "Delete failed: \(error.localizedDescription)")
                 }
             }

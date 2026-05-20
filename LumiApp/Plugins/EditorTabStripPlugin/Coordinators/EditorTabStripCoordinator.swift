@@ -1,13 +1,12 @@
 import Combine
 import Foundation
-import MagicKit
 
 /// 编辑器标签页持久化协调器
 ///
 /// 订阅 `EditorSessionStore` 的 tabs 变化，自动防抖保存到磁盘；
 /// 在项目路径变化时保存旧项目标签并恢复新项目标签。
 ///
-/// 通过 `@EnvironmentObject` 获取 `EditorVM` 和 `ProjectVM`，
+/// 通过 `@EnvironmentObject` 获取 `WindowEditorVM` 和 `WindowProjectVM`，
 /// 不依赖任何其他插件。
 @MainActor
 final class EditorTabStripCoordinator: ObservableObject, SuperLog {

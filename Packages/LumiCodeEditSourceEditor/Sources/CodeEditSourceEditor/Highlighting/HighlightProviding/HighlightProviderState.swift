@@ -28,6 +28,7 @@ protocol HighlightProviderStateDelegate: AnyObject {
 @MainActor
 class HighlightProviderState {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "HighlightProviderState")
+    private var verbose: Bool = false
 
     /// The length to chunk ranges into when passing to the highlighter.
     private static let rangeChunkLimit = 4096
@@ -147,7 +148,9 @@ extension HighlightProviderState {
                 if case HighlightProvidingError.operationCancelled = error {
                     self?.invalidate(IndexSet(integersIn: range))
                 } else {
-                    self?.logger.error("Failed to apply edit. Query returned with error: \(error)")
+                    if self?.verbose == true {
+                                            self?.logger.error("Failed to apply edit. Query returned with error: \(error)")
+                    }
                 }
             }
         }
@@ -202,7 +205,9 @@ private extension HighlightProviderState {
                     if let error = error as? HighlightProvidingError, error == .operationCancelled {
                         self.invalidate(IndexSet(integersIn: rangeToHighlight))
                     } else {
-                        self.logger.debug("Highlighter Error: \(error.localizedDescription)")
+                        if self.verbose {
+                                                    self.logger.debug("Highlighter Error: \(error.localizedDescription)")
+                        }
                     }
                 }
             }

@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import LumiUI
 import DeviceMonitorKit
@@ -31,7 +30,7 @@ struct CPUHistoryDetailView: View {
             .padding(.top, 12)
 
             // Graph
-            GlassCard(cornerRadius: 0, padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0), showShadow: false) {
+            AppCard(cornerRadius: 0, padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0), showShadow: false) {
                 CPUHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange

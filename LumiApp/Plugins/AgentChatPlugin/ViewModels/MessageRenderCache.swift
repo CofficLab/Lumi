@@ -18,7 +18,9 @@ final class MessageRenderCache {
         let metadata: MessageRenderMetadata
     }
 
+    private let limit = 512
     private var metadataByMessageId: [UUID: Entry] = [:]
+    private var messageIds: [UUID] = []
 
     func metadata(for message: ChatMessage) -> MessageRenderMetadata {
         let content = message.content
@@ -47,6 +49,20 @@ final class MessageRenderCache {
             shouldDefaultCollapse: shouldDefaultCollapse
         )
         metadataByMessageId[message.id] = Entry(hash: contentHash, metadata: metadata)
+        if !messageIds.contains(message.id) {
+            messageIds.append(message.id)
+        }
+        evictIfNeeded()
         return metadata
+    }
+
+    private func evictIfNeeded() {
+        guard messageIds.count > limit else { return }
+
+        let overflow = messageIds.count - limit
+        for messageId in messageIds.prefix(overflow) {
+            metadataByMessageId.removeValue(forKey: messageId)
+        }
+        messageIds.removeFirst(overflow)
     }
 }

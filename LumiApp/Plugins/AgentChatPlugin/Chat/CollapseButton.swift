@@ -1,5 +1,5 @@
+import LumiUI
 import SwiftUI
-import MagicKit
 
 // MARK: - Collapse Button
 

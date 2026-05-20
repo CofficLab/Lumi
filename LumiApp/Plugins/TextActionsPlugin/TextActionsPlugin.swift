@@ -1,11 +1,10 @@
-import MagicKit
 import SwiftUI
 import os
 
 actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.text-actions")
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "TextActions"
     static let navigationId = "text_actions"
@@ -70,7 +69,9 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
             }
             
             if Self.verbose {
-                TextActionsPlugin.logger.info("\(Self.t)Text Actions plugin enabled, feature \(Self.isEnabled ? "active" : "inactive")")
+                if TextActionsPlugin.verbose {
+                                    TextActionsPlugin.logger.info("\(Self.t)Text Actions plugin enabled, feature \(Self.isEnabled ? "active" : "inactive")")
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 import Foundation
+import GoEditorCore
 import SwiftUI
-import MagicKit
 import CodeEditTextView
 
 /// Go 命令贡献者
@@ -11,9 +11,11 @@ final class GoCommandContributor: SuperEditorCommandContributor {
     let id: String = "go.commands"
 
     private let buildManager: GoBuildManager
+    private let testManager: GoTestManager
 
-    init(buildManager: GoBuildManager) {
+    init(buildManager: GoBuildManager, testManager: GoTestManager) {
         self.buildManager = buildManager
+        self.testManager = testManager
     }
 
     func provideCommands(
@@ -28,6 +30,7 @@ final class GoCommandContributor: SuperEditorCommandContributor {
             testCommand(state: state),
             fmtCommand(state: state),
             modTidyCommand(state: state),
+            debugCommand(state: state),
         ]
     }
 
@@ -97,6 +100,22 @@ final class GoCommandContributor: SuperEditorCommandContributor {
         }
     }
 
+    // MARK: - Go Debug
+
+    private func debugCommand(state: EditorState) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "go.debug.current-file",
+            title: String(localized: "Debug Current Go File", table: "GoEditor"),
+            systemImage: "ladybug",
+            category: String(localized: "Go", table: "GoEditor"),
+            order: 500,
+            isEnabled: state.currentFileURL != nil
+        ) { [weak self, weak state] in
+            guard let self, let state else { return }
+            self.prepareDebugLaunch(state: state)
+        }
+    }
+
     // MARK: - Execution
 
     private func runBuild(state: EditorState) async {
@@ -106,33 +125,26 @@ final class GoCommandContributor: SuperEditorCommandContributor {
 
     private func runTest(state: EditorState) async {
         guard let projectRoot = resolveProjectRoot(state: state) else { return }
-        await buildManager.test(workingDirectory: projectRoot)
+        await testManager.test(workingDirectory: projectRoot)
     }
 
     private func runFmt(state: EditorState) async {
         guard let projectRoot = resolveProjectRoot(state: state) else { return }
-        let runner = GoRunner()
-        let result = await runner.execute(
-            command: "fmt",
-            arguments: ["./..."],
-            workingDirectory: projectRoot
-        )
-        if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go fmt: exit=\(result.exitCode)")
-        }
+        await buildManager.format(workingDirectory: projectRoot)
     }
 
     private func runModTidy(state: EditorState) async {
         guard let projectRoot = resolveProjectRoot(state: state) else { return }
-        let runner = GoRunner()
-        let result = await runner.execute(
-            command: "mod",
-            arguments: ["tidy"],
-            workingDirectory: projectRoot
+        await buildManager.tidyModule(workingDirectory: projectRoot)
+    }
+
+    private func prepareDebugLaunch(state: EditorState) {
+        guard let projectRoot = resolveProjectRoot(state: state) else { return }
+        let config = DelveAdapter.defaultLaunch(
+            fileURL: state.currentFileURL,
+            projectPath: projectRoot
         )
-        if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go mod tidy: exit=\(result.exitCode)")
-        }
+        _ = DelveAdapter.commandLine(for: config)
     }
 
     // MARK: - Helpers

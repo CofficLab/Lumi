@@ -25,8 +25,8 @@ public struct EditorSurfaceHighlightsOverlayView: View {
                                 .stroke(highlight.style.strokeColor, lineWidth: highlight.style.lineWidth)
                         )
                         .frame(
-                            width: max(highlight.rect.width, highlight.style.minimumWidth),
-                            height: max(highlight.rect.height, highlight.style.minimumHeight)
+                            width: Self.effectiveSize(for: highlight).width,
+                            height: Self.effectiveSize(for: highlight).height
                         )
                         .offset(x: highlight.rect.minX, y: highlight.rect.minY)
                         .zIndex(highlight.style.zIndex)
@@ -36,15 +36,45 @@ public struct EditorSurfaceHighlightsOverlayView: View {
         }
     }
 
-    private static func isRenderable(_ highlight: EditorSurfaceHighlight) -> Bool {
-        let width = max(highlight.rect.width, highlight.style.minimumWidth)
-        let height = max(highlight.rect.height, highlight.style.minimumHeight)
+    static func effectiveSize(
+        rect: CGRect,
+        minimumWidth: CGFloat,
+        minimumHeight: CGFloat
+    ) -> CGSize {
+        CGSize(
+            width: max(rect.width, minimumWidth),
+            height: max(rect.height, minimumHeight)
+        )
+    }
 
-        return highlight.rect.minX.isFinite
-            && highlight.rect.minY.isFinite
-            && width.isFinite
-            && height.isFinite
-            && width > 0
-            && height > 0
+    static func isRenderable(
+        rect: CGRect,
+        minimumWidth: CGFloat,
+        minimumHeight: CGFloat
+    ) -> Bool {
+        let size = effectiveSize(rect: rect, minimumWidth: minimumWidth, minimumHeight: minimumHeight)
+
+        return rect.minX.isFinite
+            && rect.minY.isFinite
+            && size.width.isFinite
+            && size.height.isFinite
+            && size.width > 0
+            && size.height > 0
+    }
+
+    private static func effectiveSize(for highlight: EditorSurfaceHighlight) -> CGSize {
+        effectiveSize(
+            rect: highlight.rect,
+            minimumWidth: highlight.style.minimumWidth,
+            minimumHeight: highlight.style.minimumHeight
+        )
+    }
+
+    private static func isRenderable(_ highlight: EditorSurfaceHighlight) -> Bool {
+        isRenderable(
+            rect: highlight.rect,
+            minimumWidth: highlight.style.minimumWidth,
+            minimumHeight: highlight.style.minimumHeight
+        )
     }
 }

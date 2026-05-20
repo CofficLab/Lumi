@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftData
 import os
 
@@ -67,7 +66,9 @@ actor TaskStateManager: SuperLog {
         try? context.save()
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)创建任务：[\(order)] \(title)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)创建任务：[\(order)] \(title)")
+            }
         }
 
         return task
@@ -93,7 +94,9 @@ actor TaskStateManager: SuperLog {
         try? context.save()
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)批量创建 \(items.count) 个任务 (会话: \(conversationId))")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)批量创建 \(items.count) 个任务 (会话: \(conversationId))")
+            }
         }
     }
 
@@ -112,7 +115,9 @@ actor TaskStateManager: SuperLog {
         do {
             return try context.fetch(descriptor)
         } catch {
-            AutoTaskPlugin.logger.error("\(Self.t)查询任务失败：\(error.localizedDescription)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.error("\(Self.t)查询任务失败：\(error.localizedDescription)")
+            }
             return []
         }
     }
@@ -182,7 +187,9 @@ actor TaskStateManager: SuperLog {
 
         guard let task = try? context.fetch(descriptor).first else {
             if Self.verbose {
-                AutoTaskPlugin.logger.warning("\(Self.t)任务不存在：\(id)")
+                if AutoTaskPlugin.verbose {
+                                    AutoTaskPlugin.logger.warning("\(Self.t)任务不存在：\(id)")
+                }
             }
             return false
         }
@@ -192,7 +199,9 @@ actor TaskStateManager: SuperLog {
         try? context.save()
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)任务状态更新：\(task.title) → \(status.rawValue)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)任务状态更新：\(task.title) → \(status.rawValue)")
+            }
         }
 
         return true

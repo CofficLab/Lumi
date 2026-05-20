@@ -1,5 +1,6 @@
-import SwiftUI
 import AppKit
+import LumiUI
+import SwiftUI
 
 /// 字体配置详情视图（Popover 内容）
 ///
@@ -47,13 +48,7 @@ struct FontConfigDetailView: View {
     // MARK: - Subviews
 
     private var currentFontBadge: some View {
-        Text(viewModel.displayName)
-            .font(.system(size: 10, weight: .medium))
-            .foregroundColor(Color(hex: "98989E"))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(hex: "98989E").opacity(0.12))
-            .cornerRadius(6)
+        AppTag(viewModel.displayName, systemImage: "textformat.size")
     }
 
     private var previewSection: some View {
@@ -63,19 +58,14 @@ struct FontConfigDetailView: View {
             .lineSpacing(2)
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(hex: "98989E").opacity(0.06))
-            .cornerRadius(6)
+            .appSurface(style: .subtle, cornerRadius: 6)
     }
 
     private var searchField: some View {
-        TextField(String(localized: "Search fonts...", table: "FontConfig"), text: $searchText)
-            .textFieldStyle(.plain)
-            .font(.system(size: 12))
-            .foregroundColor(Color(hex: "1C1C1E"))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(hex: "98989E").opacity(0.08))
-            .cornerRadius(6)
+        AppSearchBar(
+            text: $searchText,
+            placeholder: LocalizedStringKey(String(localized: "Search fonts...", table: "FontConfig"))
+        )
     }
 
     private var fontList: some View {
@@ -126,7 +116,7 @@ private struct FontRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        AppListRow(isSelected: isSelected, action: action) {
             HStack(spacing: 10) {
                 // 选中指示
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -147,10 +137,6 @@ private struct FontRow: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 }

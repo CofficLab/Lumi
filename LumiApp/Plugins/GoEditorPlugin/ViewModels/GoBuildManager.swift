@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import GoEditorCore
 import os
 
 /// Go 构建管理器
@@ -38,9 +38,6 @@ final class GoBuildManager: ObservableObject, SuperLog {
     /// 上一次构建耗时
     @Published private(set) var lastBuildDuration: TimeInterval = 0
 
-    /// 测试事件列表
-    @Published private(set) var testEvents: [GoTestOutputParser.TestEvent] = []
-
     /// 命令执行器
     private let runner = GoRunner()
 
@@ -49,33 +46,16 @@ final class GoBuildManager: ObservableObject, SuperLog {
     /// 执行 go build
     func build(workingDirectory: String) async {
         state = .building
-        outputLines = []
-        issues = []
-        testEvents = []
+        resetOutput()
         let startTime = Date()
 
         let result = await runner.execute(
-            command: "build",
-            arguments: ["-v", "./..."],
+            GoBuildCommand.allPackages,
             workingDirectory: workingDirectory
         )
 
         lastBuildDuration = Date().timeIntervalSince(startTime)
-
-        // 分割输出行
-        let allOutput = (result.stderr + result.stdout)
-            .components(separatedBy: "\n")
-            .filter { !$0.isEmpty }
-        outputLines = allOutput
-
-        // 解析构建问题
-        var parsed: [GoBuildIssue] = []
-        for line in allOutput {
-            if let issue = GoBuildIssue.parse(from: line) {
-                parsed.append(issue)
-            }
-        }
-        issues = parsed
+        applyBuildResult(result)
 
         if result.isSuccess {
             state = .success
@@ -84,53 +64,51 @@ final class GoBuildManager: ObservableObject, SuperLog {
         }
 
         if GoBuildManager.verbose {
-            GoBuildManager.logger.info("\(GoBuildManager.t)构建完成: \(result.exitCode), errors=\(parsed.filter { $0.severity == .error }.count), warnings=\(parsed.filter { $0.severity == .warning }.count)")
+            GoBuildManager.logger.info("\(GoBuildManager.t)构建完成: \(result.exitCode), errors=\(self.errorCount), warnings=\(self.warningCount)")
         }
     }
 
-    /// 执行 go test
-    func test(workingDirectory: String) async {
-        state = .testing
-        outputLines = []
-        issues = []
-        testEvents = []
+    /// 执行 go fmt ./...
+    func format(workingDirectory: String) async {
+        state = .formatting
+        resetOutput()
         let startTime = Date()
 
         let result = await runner.execute(
-            command: "test",
-            arguments: ["-v", "-json", "./..."],
+            GoFmtCommand.allPackages,
             workingDirectory: workingDirectory
         )
 
         lastBuildDuration = Date().timeIntervalSince(startTime)
+        applyBuildResult(result)
+        state = result.isSuccess ? .success : .failed
+    }
 
-        // 解析测试输出
-        let parsed = GoTestOutputParser.parse(output: result.stdout + result.stderr)
+    /// 执行 go mod tidy
+    func tidyModule(workingDirectory: String) async {
+        state = .tidying
+        resetOutput()
+        let startTime = Date()
 
-        // 去重：只保留最终状态（pass/fail/skip），同一测试名保留最后出现的
-        var deduped: [String: GoTestOutputParser.TestEvent] = [:]
-        for event in parsed where event.status != .run {
-            deduped[event.test] = event
-        }
-        testEvents = Array(deduped.values).sorted { $0.test.localizedCaseInsensitiveCompare($1.test) == .orderedAscending }
+        let result = await runner.execute(
+            GoModCommand.tidy,
+            workingDirectory: workingDirectory
+        )
 
-        // 原始输出行用于日志展示
-        outputLines = (result.stderr + result.stdout)
-            .components(separatedBy: "\n")
-            .filter { !$0.isEmpty }
+        lastBuildDuration = Date().timeIntervalSince(startTime)
+        applyBuildResult(result)
+        state = result.isSuccess ? .success : .failed
+    }
 
-        // 从 test output 中提取构建错误
-        let buildErrors = result.stderr
-            .components(separatedBy: "\n")
-            .compactMap { GoBuildIssue.parse(from: $0) }
-        issues = buildErrors
+    private func resetOutput() {
+        outputLines = []
+        issues = []
+    }
 
-        state = .idle
-
-        if GoBuildManager.verbose {
-            let events = testEvents
-            GoBuildManager.logger.info("\(GoBuildManager.t)测试完成: passed=\(events.filter { $0.status == .pass }.count), failed=\(events.filter { $0.status == .fail }.count)")
-        }
+    private func applyBuildResult(_ result: GoRunResult) {
+        let parsed = GoBuildOutputParser.parse(stdout: result.stdout, stderr: result.stderr)
+        outputLines = parsed.lines
+        issues = parsed.issues
     }
 
     // MARK: - 状态
@@ -138,7 +116,8 @@ final class GoBuildManager: ObservableObject, SuperLog {
     enum BuildState: Equatable {
         case idle
         case building
-        case testing
+        case formatting
+        case tidying
         case success
         case failed
     }

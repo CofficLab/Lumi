@@ -1,12 +1,12 @@
 import Foundation
-import MagicKit
+import os
 
 /// 获取当前文件工具
 ///
 /// 基于 EditorTabStripStore 的 activeTabPath 获取当前活跃文件。
 struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "get_current_file"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -29,9 +29,12 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        // 获取当前项目路径
-        let projectStore = RecentProjectsStore()
-        guard let project = projectStore.getCurrentProject() else {
+        // 获取当前活跃窗口的项目路径
+        let projectPath = await MainActor.run {
+            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
+        }
+
+        guard let projectPath else {
             return """
             ## Current File Status
 
@@ -42,7 +45,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
         }
 
         let store = EditorTabStripStore.shared
-        guard let fileInfo = store.getCurrentFilePath(forProject: project.path) else {
+        guard let fileInfo = store.getCurrentFilePath(forProject: projectPath) else {
             return """
             ## Current File Status
 

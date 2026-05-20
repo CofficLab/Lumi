@@ -1,11 +1,11 @@
 import SwiftUI
-import MagicKit
+import GoEditorCore
 
 /// Go 构建输出面板视图
 ///
 /// 显示 go build 的实时输出和解析后的构建问题列表。
 struct GoBuildOutputView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var buildManager: GoBuildManager
     let projectRoot: String?
 
@@ -60,11 +60,11 @@ struct GoBuildOutputView: View {
                     themeVM.activeAppTheme.workspaceSecondaryTextColor()
                 )
 
-            if buildManager.state == .building {
+            if buildManager.state == .building || buildManager.state == .formatting || buildManager.state == .tidying {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
-                Text(String(localized: "Building...", table: "GoEditor"))
+                Text(runningTitle)
                     .font(.system(size: 11, weight: .medium))
             } else if buildManager.errorCount > 0 {
                 HStack(spacing: 4) {
@@ -110,6 +110,19 @@ struct GoBuildOutputView: View {
         .background(
             themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05)
         )
+    }
+
+    private var runningTitle: String {
+        switch buildManager.state {
+        case .building:
+            String(localized: "Building...", table: "GoEditor")
+        case .formatting:
+            String(localized: "Formatting...", table: "GoEditor")
+        case .tidying:
+            String(localized: "Tidying module...", table: "GoEditor")
+        default:
+            String(localized: "Running...", table: "GoEditor")
+        }
     }
 
     // MARK: - 构建问题行

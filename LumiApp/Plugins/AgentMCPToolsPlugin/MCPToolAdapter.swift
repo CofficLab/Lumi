@@ -1,6 +1,6 @@
 import Foundation
-import MagicKit
 import MCP
+import MCPKit
 
 /// Adapts an MCP Tool to the SuperAgentTool protocol.
 final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
@@ -10,10 +10,10 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
     let mcpTool: MCP.Tool
     let serverName: String
 
-    init(client: Client, tool: MCP.Tool, serverName: String) {
-        self.client = client
-        self.mcpTool = tool
-        self.serverName = serverName
+    init(discoveredTool: MCPDiscoveredTool) {
+        self.client = discoveredTool.client
+        self.mcpTool = discoveredTool.tool
+        self.serverName = discoveredTool.serverName
     }
 
     var name: String {
@@ -52,8 +52,12 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
 
     private func executeMCP(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
         if AgentMCPToolsPlugin.verbose {
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
+            }
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
+            }
         }
 
         let anyArguments: [String: Any] = arguments.mapValues { $0.value }
@@ -63,15 +67,21 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
             let data = try JSONSerialization.data(withJSONObject: anyArguments)
             mcpArguments = try JSONDecoder().decode([String: Value].self, from: data)
             if AgentMCPToolsPlugin.verbose {
-                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 参数数量: \(mcpArguments.count)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 参数数量: \(mcpArguments.count)")
+                }
             }
         } catch {
-            AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 参数转换失败: \(error.localizedDescription)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 参数转换失败: \(error.localizedDescription)")
+            }
             throw error
         }
 
         if AgentMCPToolsPlugin.verbose {
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 调用 client.callTool...")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 调用 client.callTool...")
+            }
         }
         let startTime = Date()
 
@@ -86,7 +96,9 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
             let duration = Date().timeIntervalSince(startTime)
 
             if AgentMCPToolsPlugin.verbose {
-                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
+                }
             }
 
             if result.isError ?? false {
@@ -94,7 +106,9 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
                     if case .text(let text, _, _) = content { return text }
                     return nil
                 }.joined(separator: "\n")
-                AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 工具返回错误: \(errorMessage)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 工具返回错误: \(errorMessage)")
+                }
                 throw NSError(
                     domain: "MCPToolAdapter",
                     code: 1,
@@ -120,12 +134,16 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
             let output = outputParts.joined(separator: "\n")
 
             if AgentMCPToolsPlugin.verbose {
-                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 返回内容长度: \(output.count) 字符")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 返回内容长度: \(output.count) 字符")
+                }
             }
             return output
         } catch {
             let duration = Date().timeIntervalSince(startTime)
-            AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 工具调用失败 (耗时: \(String(format: "%.2f", duration))s): \(error.localizedDescription)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 工具调用失败 (耗时: \(String(format: "%.2f", duration))s): \(error.localizedDescription)")
+            }
             throw error
         }
     }

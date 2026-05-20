@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 解析 package.json，提取项目画像
 struct PackageJSONParser: SuperLog {

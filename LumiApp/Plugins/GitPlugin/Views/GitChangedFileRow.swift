@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// Git changed file row shared by Git panel and status bar popover.
 struct GitChangedFileRow: View {

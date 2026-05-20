@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器文件树 Rail 插件：提供 Explorer 标签页
 actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "📁"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailFileTree"
     static let displayName: String = String(
         localized: "Editor Rail File Tree", table: "EditorRailFileTree")

@@ -39,6 +39,7 @@ actor IdleTimeService {
         }
     }
 
+    /// 获取当前推断快照。仅供 `AppIdleTimeVM` 调用。
     func currentSnapshot(for date: Date = Date()) async -> IdleInferenceSnapshot {
         if let cachedSnapshot,
            date.timeIntervalSince(cachedSnapshot.restWindow?.generatedAt ?? .distantPast) < 6 * 60 * 60 {
@@ -57,22 +58,6 @@ actor IdleTimeService {
         }
 
         return inferencer.infer(events: [], now: date)
-    }
-
-    func inferredRestWindow(for date: Date = Date()) async -> RestWindow? {
-        await currentSnapshot(for: date).restWindow
-    }
-
-    func isInLikelyRestWindow(
-        at date: Date = Date(),
-        minimumConfidence: Double = 0.70
-    ) async -> Bool {
-        guard let window = await inferredRestWindow(for: date),
-              window.source != .defaultFallback,
-              window.confidence >= minimumConfidence else {
-            return false
-        }
-        return window.contains(date)
     }
 
     private func refreshSnapshotIfNeeded(now: Date, force: Bool) async {

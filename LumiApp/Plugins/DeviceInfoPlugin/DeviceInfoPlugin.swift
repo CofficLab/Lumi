@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import os
 import DeviceMonitorKit
@@ -11,7 +10,7 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "DeviceInfo"
     static let navigationId: String = "device_info"

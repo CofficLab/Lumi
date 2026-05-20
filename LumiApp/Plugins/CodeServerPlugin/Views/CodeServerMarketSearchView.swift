@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 // MARK: - Market Search View
@@ -10,47 +11,7 @@ struct MarketSearchView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 搜索栏
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "98989E"))
-
-                TextField("搜索扩展 (如: python, theme)", text: $localSearchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-
-                if manager.isSearching {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 16, height: 16)
-                } else if !localSearchQuery.isEmpty {
-                    Button(action: {
-                        localSearchQuery = ""
-                        manager.searchResults = []
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(hex: "98989E"))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(8)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(6)
-            .onChange(of: localSearchQuery) { _, newValue in
-                debounceTask?.cancel()
-                debounceTask = Task {
-                    try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
-                    if !Task.isCancelled {
-                        await MainActor.run {
-                            manager.searchQuery = newValue
-                            manager.searchMarket(query: newValue, category: manager.selectedCategory)
-                        }
-                    }
-                }
-            }
+            searchBar
 
             // 分类选择
             ScrollView(.horizontal, showsIndicators: false) {
@@ -98,6 +59,37 @@ struct MarketSearchView: View {
         }
         .frame(maxHeight: .infinity)
     }
+
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            AppSearchBar(
+                text: $localSearchQuery,
+                placeholder: LocalizedStringKey(String(localized: "搜索扩展 (如: python, theme)", table: "CodeServer"))
+            )
+
+            if manager.isSearching {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 20, height: 20)
+            }
+        }
+        .onChange(of: localSearchQuery) { _, newValue in
+            if newValue.isEmpty {
+                manager.searchResults = []
+            }
+
+            debounceTask?.cancel()
+            debounceTask = Task {
+                try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        manager.searchQuery = newValue
+                        manager.searchMarket(query: newValue, category: manager.selectedCategory)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Category Button
@@ -108,16 +100,12 @@ struct CategoryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 10))
-                .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(isSelected ? Color(hex: "7C6FFF") : Color.gray.opacity(0.1))
-                .cornerRadius(4)
-        }
-        .buttonStyle(.plain)
+        AppButton(
+            title,
+            style: isSelected ? .primary : .tonal,
+            size: .small,
+            action: action
+        )
     }
 }
 
@@ -125,14 +113,11 @@ struct CategoryButton: View {
 
 struct SearchLoadingView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-            Text(String(localized: "搜索中...", table: "CodeServer"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
-        .frame(maxWidth: .infinity, minHeight: 200)
+        AppLoadingOverlay(
+            message: LocalizedStringKey(String(localized: "搜索中...", table: "CodeServer")),
+            size: .small
+        )
+            .frame(maxWidth: .infinity, minHeight: 200)
     }
 }
 
@@ -142,19 +127,9 @@ struct SearchErrorView: View {
     let message: String
 
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 24))
-                .foregroundColor(Color(hex: "FF9F0A"))
-
-            Text(String(localized: "搜索失败", table: "CodeServer"))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Text(message)
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .multilineTextAlignment(.center)
+        VStack {
+            AppErrorBanner(message: LocalizedStringKey(message))
+                .frame(maxWidth: 360)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
     }
@@ -164,15 +139,10 @@ struct SearchErrorView: View {
 
 struct SearchEmptyView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 24))
-                .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
-
-            Text(String(localized: "未找到相关扩展", table: "CodeServer"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
+        AppEmptyState(
+            icon: "magnifyingglass",
+            title: LocalizedStringKey(String(localized: "未找到相关扩展", table: "CodeServer"))
+        )
         .frame(maxWidth: .infinity, minHeight: 200)
     }
 }
@@ -182,18 +152,12 @@ struct SearchEmptyView: View {
 struct SearchPlaceholderView: View {
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "square.grid.2x2")
-                .font(.system(size: 32))
-                .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
-
-            Text(String(localized: "Open VSX 扩展市场", table: "CodeServer"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Text(String(localized: "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展", table: "CodeServer"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .multilineTextAlignment(.center)
+            AppEmptyState(
+                icon: "square.grid.2x2",
+                title: LocalizedStringKey(String(localized: "Open VSX 扩展市场", table: "CodeServer")),
+                description: LocalizedStringKey(String(localized: "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展", table: "CodeServer"))
+            )
+            .frame(height: 150)
 
             Link(destination: URL(string: "https://open-vsx.org")!) {
                 HStack(spacing: 4) {
@@ -214,14 +178,11 @@ struct SearchPlaceholderView: View {
 
 struct PopularLoadingView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-            Text(String(localized: "正在加载热门扩展...", table: "CodeServer"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
-        .frame(maxWidth: .infinity, minHeight: 200)
+        AppLoadingOverlay(
+            message: LocalizedStringKey(String(localized: "正在加载热门扩展...", table: "CodeServer")),
+            size: .small
+        )
+            .frame(maxWidth: .infinity, minHeight: 200)
     }
 }
 
@@ -276,123 +237,102 @@ struct MarketExtensionRowView: View {
     @State private var isInstalling = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            // 图标
-            AsyncImage(url: ext.iconUrl.flatMap { URL(string: $0) }) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } placeholder: {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.opacity(0.1))
-                    .overlay(
-                        Image(systemName: "puzzlepiece.extension")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(hex: "98989E"))
-                    )
-            }
-            .frame(width: 32, height: 32)
-            .cornerRadius(4)
-
-            // 信息
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(ext.displayName)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        .lineLimit(1)
-
-                    Text(ext.version)
-                        .font(.system(size: 9))
-                        .foregroundColor(Color(hex: "98989E"))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(2)
-                }
-
-                if let description = ext.description, !description.isEmpty {
-                    Text(description)
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        .lineLimit(2)
-                }
-
-                // 下载量和评分
-                HStack(spacing: 8) {
-                    if !ext.formattedDownloads.isEmpty {
-                        HStack(spacing: 2) {
-                            Image(systemName: "arrow.down.circle")
-                                .font(.system(size: 8))
-                            Text(ext.formattedDownloads)
-                                .font(.system(size: 9))
-                        }
-                        .foregroundColor(Color(hex: "98989E"))
-                    }
-
-                    if !ext.ratingStars.isEmpty {
-                        HStack(spacing: 2) {
-                            Text(ext.ratingStars)
-                                .font(.system(size: 9))
-                            Text(String(format: "%.1f", ext.averageRating ?? 0))
-                                .font(.system(size: 9))
-                        }
-                        .foregroundColor(Color(hex: "FF9F0A"))
-                    }
-
-                    Text(ext.publisher ?? "")
-                        .font(.system(size: 9))
-                        .foregroundColor(Color(hex: "98989E"))
-                }
-            }
-
-            Spacer()
-
-            // 安装/已安装按钮
-            if manager.isExtensionInstalled(ext.id) {
-                let isIconTheme = ext.id.lowercased().contains("icon-theme") || ext.id.lowercased().contains("icons")
-                if isIconTheme {
-                    // 已安装的图标主题，显示「应用」按钮
-                    Button(action: {
-                        manager.applyIconTheme(ext.id)
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.circle")
-                                .font(.system(size: 10))
-                            Text(String(localized: "应用", table: "CodeServer"))
-                                .font(.system(size: 10, weight: .medium))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundColor(.blue)
-                    .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
-                    .help(String(localized: "应用此图标主题", table: "CodeServer"))
-                } else {
-                    Label(String(localized: "已安装", table: "CodeServer"), systemImage: "checkmark")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "30D158"))
-                }
-            } else {
-                Button(action: {
-                    install()
-                }) {
-                    if isInstalling {
-                        ProgressView()
-                            .scaleEffect(0.5)
-                            .frame(width: 20, height: 20)
-                    } else {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .disabled(isInstalling)
+        AppListRow {
+            HStack(spacing: 10) {
+                extensionIcon
+                extensionInfo
+                Spacer()
+                installControl
             }
         }
         .padding(.horizontal, 4)
+    }
+
+    private var extensionIcon: some View {
+        AsyncImage(url: ext.iconUrl.flatMap { URL(string: $0) }) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } placeholder: {
+            Image(systemName: "puzzlepiece.extension")
+                .font(.system(size: 14))
+                .foregroundColor(Color(hex: "98989E"))
+                .frame(width: 32, height: 32)
+                .appSurface(style: .subtle, cornerRadius: 4)
+        }
+        .frame(width: 32, height: 32)
+        .appClipRounded(4)
+    }
+
+    private var extensionInfo: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Text(ext.displayName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .lineLimit(1)
+
+                AppTag(ext.version)
+            }
+
+            if let description = ext.description, !description.isEmpty {
+                Text(description)
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .lineLimit(2)
+            }
+
+            metadataRow
+        }
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: 8) {
+            if !ext.formattedDownloads.isEmpty {
+                Label(ext.formattedDownloads, systemImage: "arrow.down.circle")
+            }
+
+            if !ext.ratingStars.isEmpty {
+                Text("\(ext.ratingStars) \(String(format: "%.1f", ext.averageRating ?? 0))")
+                    .foregroundColor(Color(hex: "FF9F0A"))
+            }
+
+            Text(ext.publisher ?? "")
+        }
+        .font(.system(size: 9))
+        .foregroundColor(Color(hex: "98989E"))
+    }
+
+    @ViewBuilder
+    private var installControl: some View {
+        if manager.isExtensionInstalled(ext.id) {
+            let isIconTheme = ext.id.lowercased().contains("icon-theme") || ext.id.lowercased().contains("icons")
+            if isIconTheme {
+                AppButton(
+                    String(localized: "应用", table: "CodeServer"),
+                    systemImage: "checkmark.circle",
+                    style: .tonal,
+                    size: .small
+                ) {
+                    manager.applyIconTheme(ext.id)
+                }
+                .help(String(localized: "应用此图标主题", table: "CodeServer"))
+            } else {
+                AppTag(
+                    String(localized: "已安装", table: "CodeServer"),
+                    systemImage: "checkmark",
+                    style: .accent
+                )
+            }
+        } else if isInstalling {
+            ProgressView()
+                .controlSize(.small)
+                .frame(width: 28, height: 28)
+        } else {
+            AppIconButton(systemImage: "plus", tint: .white, size: .compact) {
+                install()
+            }
+        }
     }
 
     private func install() {

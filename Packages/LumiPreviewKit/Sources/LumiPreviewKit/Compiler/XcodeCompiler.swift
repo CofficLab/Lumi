@@ -3,8 +3,16 @@ import Foundation
 public extension LumiPreviewFacade {
 /// Xcode 编译器：使用 xcodebuild 编译 Xcode 项目中的预览。
 final class XcodeCompiler: Sendable {
+    public let derivedDataPath: URL?
+
     /// 创建 Xcode 编译器。
-    public init() {}
+    public convenience init() {
+        self.init(derivedDataPath: nil)
+    }
+
+    public init(derivedDataPath: URL?) {
+        self.derivedDataPath = derivedDataPath
+    }
 
     /// 编译指定 scheme，返回编译产物路径。
     ///
@@ -23,6 +31,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "build"
             )
 
@@ -34,6 +43,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "-showBuildSettings"
             )
 
@@ -62,6 +72,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "-showBuildSettings"
             )
 
@@ -100,6 +111,7 @@ final class XcodeCompiler: Sendable {
         projectURL: URL,
         scheme: String,
         configuration: String,
+        derivedDataPath: URL?,
         action: String
     ) throws -> BuildResult {
         let process = Process()
@@ -108,13 +120,12 @@ final class XcodeCompiler: Sendable {
             projectURL: projectURL,
             scheme: scheme,
             configuration: configuration,
+            derivedDataPath: derivedDataPath,
             action: action
         )
         process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
-        let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-XcodeCompiler-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: "xcode-compiler")
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
@@ -153,6 +164,7 @@ final class XcodeCompiler: Sendable {
         projectURL: URL,
         scheme: String,
         configuration: String,
+        derivedDataPath: URL?,
         action: String
     ) -> [String] {
         var arguments = ["xcodebuild"]
@@ -166,9 +178,14 @@ final class XcodeCompiler: Sendable {
         arguments.append(contentsOf: [
             "-scheme", scheme,
             "-configuration", configuration,
-            "-destination", "platform=macOS",
-            action
+            "-destination", "platform=macOS"
         ])
+
+        if let derivedDataPath {
+            arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+        }
+
+        arguments.append(action)
 
         return arguments
     }
@@ -227,7 +244,8 @@ final class XcodeCompiler: Sendable {
         let searchPathKeys = [
             "FRAMEWORK_SEARCH_PATHS",
             "LIBRARY_SEARCH_PATHS",
-            "SWIFT_INCLUDE_PATHS"
+            "SWIFT_INCLUDE_PATHS",
+            "HEADER_SEARCH_PATHS"
         ]
 
         var directories: [String] = []
@@ -281,8 +299,109 @@ final class XcodeCompiler: Sendable {
         if let sdkRoot = settings["SDKROOT"], !sdkRoot.isEmpty {
             arguments.append(contentsOf: ["-sdk", sdkRoot])
         }
+        arguments.append(contentsOf: moduleMapArguments(from: settings))
+        if let deploymentTarget = settings["MACOSX_DEPLOYMENT_TARGET"],
+           !deploymentTarget.isEmpty {
+            arguments.append(contentsOf: [
+                "-target",
+                "\(targetArchitecture(from: settings))-apple-macos\(deploymentTarget)"
+            ])
+        }
 
-        return arguments
+        return deduplicatingLinkInputs(arguments)
+    }
+
+    private static func deduplicatingLinkInputs(_ arguments: [String]) -> [String] {
+        var seenLinkInputs: Set<String> = []
+        var result: [String] = []
+
+        for argument in arguments {
+            let url = URL(fileURLWithPath: argument)
+            if url.pathExtension == "o" || url.pathExtension == "a" {
+                guard seenLinkInputs.insert(url.standardizedFileURL.path).inserted else {
+                    continue
+                }
+            }
+            result.append(argument)
+        }
+
+        return result
+    }
+
+    private static func moduleMapArguments(from settings: [String: String]) -> [String] {
+        let urls = moduleMapURLs(from: settings)
+        let includeArguments = urls
+            .map { $0.deletingLastPathComponent().path }
+            .uniqued()
+            .flatMap { ["-Xcc", "-I", "-Xcc", $0] }
+        let moduleMapArguments = urls
+            .sorted { $0.path < $1.path }
+            .flatMap { ["-Xcc", "-fmodule-map-file=\($0.path)"] }
+        return includeArguments + moduleMapArguments
+    }
+
+    private static func moduleMapURLs(from settings: [String: String]) -> [URL] {
+        var urls: [URL] = []
+
+        if let directory = settings["GENERATED_MODULEMAP_DIR"],
+           !directory.isEmpty,
+           let entries = try? FileManager.default.contentsOfDirectory(
+            at: URL(fileURLWithPath: directory, isDirectory: true),
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+           ) {
+            urls.append(contentsOf: entries.filter { $0.pathExtension == "modulemap" })
+        }
+
+        if let builtProductsDirectory = settings["BUILT_PRODUCTS_DIR"] {
+            let derivedDataDirectory = URL(fileURLWithPath: builtProductsDirectory)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+            let checkoutsDirectory = derivedDataDirectory
+                .appendingPathComponent("SourcePackages", isDirectory: true)
+                .appendingPathComponent("checkouts", isDirectory: true)
+            if let enumerator = FileManager.default.enumerator(
+                at: checkoutsDirectory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) {
+                for case let url as URL in enumerator where url.lastPathComponent == "module.modulemap" {
+                    urls.append(url)
+                }
+            }
+        }
+
+        return urls
+            .filter { $0.pathExtension == "modulemap" }
+            .filter { isCompatibleModuleMap($0) }
+            .uniqued()
+    }
+
+    private static func isCompatibleModuleMap(_ url: URL) -> Bool {
+        let path = url.path
+        guard path.contains(".xcframework/") else {
+            return true
+        }
+        return path.contains("/macos-")
+    }
+
+    private static func targetArchitecture(from settings: [String: String]) -> String {
+        for key in ["NATIVE_ARCH_ACTUAL", "CURRENT_ARCH", "ARCHS"] {
+            guard let value = settings[key] else { continue }
+            let candidates = splitBuildSettingList(value)
+            if let architecture = candidates.first(where: { !$0.isEmpty && !$0.contains("$") && $0 != "undefined_arch" }) {
+                return architecture
+            }
+        }
+
+        #if arch(arm64)
+        return "arm64"
+        #elseif arch(x86_64)
+        return "x86_64"
+        #else
+        return "arm64"
+        #endif
     }
 
     /// Collects .o files for SPM package targets built by Xcode.
@@ -320,44 +439,7 @@ final class XcodeCompiler: Sendable {
             }
         }
 
-        // Also search for individual .o files in the Intermediates build directory.
-        // These are produced for the main target and its dependencies.
-        let intermediatesDirectories = productDirectories
-            .map { dir -> URL in
-                dir.deletingLastPathComponent()
-                    .deletingLastPathComponent()
-                    .appendingPathComponent("Intermediates.noindex", isDirectory: true)
-            }
-            .first { FileManager.default.fileExists(atPath: $0.path) }
-
-        if let intermediatesDir = intermediatesDirectories {
-            collectObjectFilesRecursively(
-                from: intermediatesDir,
-                excludingProductNames: Set([mainTargetName, productName].filter { !$0.isEmpty }),
-                into: &objectFiles
-            )
-        }
-
         return objectFiles.sorted().uniqued()
-    }
-
-    /// Recursively collects .o files from a directory tree, excluding specific product names.
-    private static func collectObjectFilesRecursively(
-        from directory: URL,
-        excludingProductNames: Set<String>,
-        into files: inout [String]
-    ) {
-        guard let enumerator = FileManager.default.enumerator(
-            at: directory,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        for case let entry as URL in enumerator where entry.pathExtension == "o" {
-            let baseName = entry.deletingPathExtension().lastPathComponent
-            guard !excludingProductNames.contains(baseName) else { continue }
-            files.append(entry.path)
-        }
     }
 
     private static func splitBuildSettingList(_ value: String) -> [String] {
@@ -436,99 +518,10 @@ final class XcodeCompiler: Sendable {
     }
 
     private static func packageLinkedLibraryArguments(from settings: [String: String]) -> [String] {
-        let productDirectories = [
-            settings["BUILT_PRODUCTS_DIR"],
-            settings["TARGET_BUILD_DIR"],
-            settings["CONFIGURATION_BUILD_DIR"]
-        ]
-            .compactMap { $0 }
-            .filter { !$0.isEmpty }
-            .map { URL(fileURLWithPath: $0, isDirectory: true) }
-
-        var arguments: [String] = []
-
-        // First, try to find SPM package object files from Xcode's DerivedData
-        let spmObjectFiles = productDirectories.flatMap { productDirectory -> [String] in
-            let derivedDataDirectory = productDirectory
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-            return collectSPMPackageObjectFiles(from: derivedDataDirectory)
-        }
-        .uniqued()
-
-        if !spmObjectFiles.isEmpty {
-            arguments.append(contentsOf: spmObjectFiles)
-        } else {
-            // Fallback to -l arguments from Package.swift linkedLibrary declarations
-            let libraryNames = sourcePackageCheckoutDirectories(from: settings)
-                .flatMap(packageLinkedLibraries(in:))
-                .uniqued()
-            arguments.append(contentsOf: libraryNames.map { "-l\($0)" })
-        }
-
-        return arguments
-    }
-
-    /// Collects .o files from SPM packages built by Xcode in DerivedData.
-    ///
-    /// Xcode compiles SPM dependencies to:
-    /// {DerivedData}/SourcePackages/artifacts/{arch}-apple-macosx/{TargetName}.build/*.o
-    private static func collectSPMPackageObjectFiles(from derivedDataDir: URL) -> [String] {
-        let fileManager = FileManager.default
-        let artifactsBaseDir = derivedDataDir
-            .appendingPathComponent("SourcePackages", isDirectory: true)
-            .appendingPathComponent("artifacts", isDirectory: true)
-
-        guard fileManager.fileExists(atPath: artifactsBaseDir.path) else {
-            return []
-        }
-
-        var objectFiles: [String] = []
-
-        // Search for architecture-specific build directories
-        let archDirs = ["arm64-apple-macosx", "x86_64-apple-macosx"]
-        for archDir in archDirs {
-            let archPath = artifactsBaseDir.appendingPathComponent(archDir, isDirectory: true)
-            guard let targetDirs = try? fileManager.contentsOfDirectory(
-                at: archPath,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles]
-            ) else { continue }
-
-            for targetDir in targetDirs {
-                let buildDir = targetDir.appendingPathComponent("\(targetDir.lastPathComponent).build", isDirectory: true)
-                if !fileManager.fileExists(atPath: buildDir.path) {
-                    // Try direct child as build dir
-                    if let entries = try? fileManager.contentsOfDirectory(
-                        at: targetDir,
-                        includingPropertiesForKeys: [.isDirectoryKey],
-                        options: [.skipsHiddenFiles]
-                    ) {
-                        for entry in entries where entry.pathExtension == "build" {
-                            collectObjectFiles(from: entry, into: &objectFiles)
-                        }
-                    }
-                } else {
-                    collectObjectFiles(from: buildDir, into: &objectFiles)
-                }
-            }
-        }
-
-        return objectFiles
-    }
-
-    private static func collectObjectFiles(from directory: URL, into files: inout [String]) {
-        let fileManager = FileManager.default
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        for entry in entries where entry.pathExtension == "o" {
-            files.append(entry.path)
-        }
+        let libraryNames = sourcePackageCheckoutDirectories(from: settings)
+            .flatMap(packageLinkedLibraries(in:))
+            .uniqued()
+        return libraryNames.map { "-l\($0)" }
     }
 
     private static func sourcePackageCheckoutDirectories(from settings: [String: String]) -> [URL] {
@@ -634,3 +627,13 @@ private extension Array where Element == String {
     }
 }
 
+private extension Array where Element == URL {
+    func uniqued() -> [URL] {
+        var seen: Set<String> = []
+        var result: [URL] = []
+        for value in self where seen.insert(value.path).inserted {
+            result.append(value)
+        }
+        return result
+    }
+}

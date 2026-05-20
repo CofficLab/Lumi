@@ -166,18 +166,3 @@ struct DatabaseSampleTableTool: SuperAgentTool {
         return try await DatabaseAgentToolService.shared.sampleTable(connectionId: id, table: table, limit: limit)
     }
 }
-
-@MainActor
-struct DatabaseAgentToolFactory: SuperAgentToolFactory {
-    let id = "database.agent.tools.factory"
-    let order = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
-        [
-            DatabaseListConnectionsTool(),
-            DatabaseDescribeSchemaTool(),
-            DatabaseReadonlyQueryTool(),
-            DatabaseSampleTableTool(),
-        ]
-    }
-}

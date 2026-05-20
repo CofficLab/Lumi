@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -14,7 +13,7 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📦"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Plugin Properties
 
     static let id: String = "GitTools"
@@ -29,25 +28,8 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
-    // MARK: - Agent Tool Factories
-
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(GitToolsFactory())]
-    }
-}
-
-// MARK: - Tools Factory
-
-@MainActor
-private struct GitToolsFactory: SuperAgentToolFactory {
-    let id: String = "git.tools.factory"
-    let order: Int = 0
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
-        [
-            GitStatusTool(),
-            GitDiffTool(),
-            GitLogTool(),
-        ]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [GitStatusTool(), GitDiffTool(), GitLogTool()]
     }
 }

@@ -1,15 +1,12 @@
 # DeviceMonitorKit
 
-System monitoring services and models for Lumi.
-
-`DeviceMonitorKit` provides reusable macOS monitoring logic for CPU, memory, process, and aggregate system metrics. It also includes short history services used by UI surfaces that need recent metric trends.
+可复用的 macOS 系统监控服务与模型包。提供 CPU、内存、进程与聚合系统指标采集，以及供 UI 展示近期趋势的短时历史数据。
 
 ## Package
 
 - Product: `DeviceMonitorKit`
 - Platform: macOS 14+
 - Swift tools: 6.0
-- Dependency: `MagicKit`
 
 ## Main APIs
 
@@ -35,4 +32,4 @@ From this package directory:
 swift test
 ```
 
-The tests cover model behavior and service-level monitoring logic.
+Tests cover model behavior and service-level monitoring logic.

@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_file_content"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,28 +16,54 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "path": [
+                        "type": "string",
+                        "description": "文件路径（如 README.md、src/main.swift）"
+                    ],
+                    "branch": [
+                        "type": "string",
+                        "description": "分支名称，默认为 main"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "path"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "path": [
+                        "type": "string",
+                        "description": "File path (e.g., README.md, src/main.swift)"
+                    ],
+                    "branch": [
+                        "type": "string",
+                        "description": "Branch name, defaults to main"
+                    ]
                 ],
-                "path": [
-                    "type": "string",
-                    "description": "文件路径（如 README.md、src/main.swift）"
-                ],
-                "branch": [
-                    "type": "string",
-                    "description": "分支名称，默认为 main"
-                ]
-            ],
-            "required": ["owner", "repo", "path"]
-        ]
+                "required": ["owner", "repo", "path"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -58,7 +84,9 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
         let branch = arguments["branch"]?.value as? String ?? "main"
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
+            }
         }
 
         do {
@@ -75,7 +103,9 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
 
             return "📄 **\(fileContent.name)**\n\n```\(content)```"
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
+            }
             return "获取文件失败：\(error.localizedDescription)"
         }
     }

@@ -62,7 +62,7 @@ enum Themes {
         }
     }
 
-    /// 统一主题对象（由 ThemeVM 驱动）
+    /// 统一主题对象（由 AppThemeVM 驱动）
     nonisolated(unsafe) static var currentTheme: any SuperTheme = MidnightTheme()
 
     // MARK: - 颜色配置（动态加载）
@@ -230,7 +230,7 @@ extension View {
     ScrollView(.vertical) {
         VStack(spacing: 24) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                GlassCard {
+                AppCard {
                     HStack {
                         // 使用每个主题的特定颜色
                         ZStack {

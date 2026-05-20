@@ -1,8 +1,6 @@
 # SkillKit
 
-Skill discovery, metadata parsing, and prompt assembly for Lumi.
-
-`SkillKit` scans project skill directories, validates metadata, loads `SKILL.md` content, and builds prompt text for active skills.
+可复用的 Skill 发现、元数据解析与 prompt 组装工具包。扫描项目 skill 目录、校验元数据、加载 `SKILL.md` 并为选中的 skill 构建 prompt 文本。
 
 ## Package
 
@@ -34,8 +32,8 @@ From this package directory:
 swift test
 ```
 
-The tests cover metadata decoding, filesystem scanning, service caching, and prompt building.
+Tests cover metadata decoding, filesystem scanning, service caching, and prompt building.
 
-## App Integration
+## Host integration
 
-Keep UI selection, plugin wiring, and conversation policy in the app target. Keep reusable scan, validation, and prompt assembly behavior in this package.
+Keep UI selection, plugin wiring, and conversation policy in the host app. Keep reusable scan, validation, and prompt assembly in this package.

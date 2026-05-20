@@ -1,12 +1,11 @@
 import Foundation
-import MagicKit
 import os
 import SwiftUI
 
 actor CodeReviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.code-review")
     nonisolated static let emoji = "🔎"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "CodeReview"
     static let displayName: String = "Code Review"
@@ -19,17 +18,7 @@ actor CodeReviewPlugin: SuperPlugin, SuperLog {
     static let shared = CodeReviewPlugin()
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(CodeReviewToolsFactory())]
-    }
-}
-
-@MainActor
-private struct CodeReviewToolsFactory: SuperAgentToolFactory {
-    let id: String = "code.review.tools.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
-        [RunReviewTool(llmService: env.llmService)]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [RunReviewTool(llmService: context.llmService)]
     }
 }

@@ -10,10 +10,17 @@ final class PreviewEntryBuilder: Sendable {
     /// The C symbol dynamic preview dylibs can export to return a retained `NSView`.
     public static let viewSymbolName = "lumi_preview_make_nsview"
 
+    /// Swift condition flags for preview entry dylibs, matching Xcode Debug `#Preview` builds.
+    public static let previewDebugConditionArguments: [String] = ["-DDEBUG"]
+
     private let incrementalCompiler: IncrementalCompiler
     private let spmCompiler: SPMCompiler
     private let xcodeCompiler: XcodeCompiler
-    private let encoder = JSONEncoder()
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
 
     /// Creates a preview entry builder.
     public init(
@@ -69,75 +76,46 @@ final class PreviewEntryBuilder: Sendable {
     ///
     /// When target context is available, the generated entry is compiled with
     /// sanitized target sources so `#Preview` bodies can reference sibling files.
+    ///
+    /// - Parameter forceSourceInclude: When `true`, always collects and inlines target
+    ///   source files instead of attempting module import. This is necessary for targets
+    ///   like Xcode app targets that don't export internal symbols via their swiftmodule.
     public func buildEntry(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy? = nil
+        buildStrategy: BuildStrategy? = nil,
+        forceSourceInclude: Bool = false
     ) async throws -> URL {
-        do {
-            let generatedSources = try viewEntrySources(
-                for: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy
-            )
-            let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
-            let fingerprint = Self.fingerprint(
-                discovery: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy,
-                generatedSources: generatedSources,
-                compilerArguments: compilerArguments
-            )
-            let directory = Self.cacheDirectory(for: fingerprint)
-            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
-            if FileManager.default.fileExists(atPath: dylibURL.path) {
-                return dylibURL
-            }
-
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let viewSourceURLs = try write(generatedSources, to: directory)
-            let dylib = try await incrementalCompiler.compileLibrary(
-                sourceURLs: viewSourceURLs,
-                dylibURL: dylibURL,
-                compilerArguments: compilerArguments,
-                moduleName: Self.moduleName(for: fingerprint)
-            )
-            try await incrementalCompiler.codesign(dylibURL: dylib)
-            return dylib
-        } catch {
-            let fingerprint = Self.fallbackFingerprint(
-                discovery: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy,
-                error: error
-            )
-            let directory = Self.cacheDirectory(for: fingerprint)
-            let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
-            let objectURL = directory.appendingPathComponent("PreviewEntry.o")
-            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
-            if FileManager.default.fileExists(atPath: dylibURL.path) {
-                return dylibURL
-            }
-
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try descriptorEntrySource(
-                for: discovery,
-                configuration: configuration,
-                viewEntryBuildError: Self.diagnosticMessage(from: error)
-            ).write(to: sourceURL, atomically: true, encoding: .utf8)
-            return try await compileEntry(sourceURL: sourceURL, objectURL: objectURL)
-        }
-    }
-
-    private func compileEntry(sourceURL: URL, objectURL: URL) async throws -> URL {
-        let objectFile = try await incrementalCompiler.compile(
-            fileURL: sourceURL,
-            compileCommand: "/usr/bin/env swiftc -c \(Self.shellQuoted(sourceURL.path)) -o \(Self.shellQuoted(objectURL.path))"
+        let generatedSources = try viewEntrySources(
+            for: discovery,
+            configuration: configuration,
+            buildStrategy: buildStrategy,
+            forceSourceInclude: forceSourceInclude
         )
-        let dylibURL = try await incrementalCompiler.link(objectFileURL: objectFile)
-        try await incrementalCompiler.codesign(dylibURL: dylibURL)
+        let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
+        let fingerprint = Self.fingerprint(
+            discovery: discovery,
+            configuration: configuration,
+            buildStrategy: buildStrategy,
+            generatedSources: generatedSources,
+            compilerArguments: compilerArguments
+        )
+        let directory = Self.cacheDirectory(for: fingerprint)
+        let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+        if FileManager.default.fileExists(atPath: dylibURL.path) {
+            return dylibURL
+        }
 
-        return dylibURL
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let viewSourceURLs = try write(generatedSources, to: directory)
+        let dylib = try await incrementalCompiler.compileLibrary(
+            sourceURLs: viewSourceURLs,
+            dylibURL: dylibURL,
+            compilerArguments: compilerArguments,
+            moduleName: Self.moduleName(for: fingerprint)
+        )
+        try await incrementalCompiler.codesign(dylibURL: dylib)
+        return dylib
     }
 
     private static func cacheDirectory(for fingerprint: String) -> URL {
@@ -146,8 +124,7 @@ final class PreviewEntryBuilder: Sendable {
     }
 
     private static var cacheRootDirectory: URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
+        PreviewStorage.paths.previewEntryCacheDirectory
     }
 
     private static func moduleName(for fingerprint: String) -> String {
@@ -178,26 +155,10 @@ final class PreviewEntryBuilder: Sendable {
         return sha256(parts.joined(separator: "\u{1e}"))
     }
 
-    private static func fallbackFingerprint(
-        discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?,
-        error: Error
-    ) -> String {
-        sha256([
-            "fallback-v2",
-            discovery.id,
-            discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
-            "\(discovery.lineNumber)-\(discovery.endLineNumber)",
-            discovery.bodySource ?? "",
-            String(describing: buildStrategy),
-            configurationFingerprint(configuration),
-            diagnosticMessage(from: error)
-        ].joined(separator: "\u{1e}"))
-    }
-
     private static func configurationFingerprint(_ configuration: PreviewRenderConfiguration) -> String {
-        guard let data = try? JSONEncoder().encode(configuration),
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(configuration),
               let text = String(data: data, encoding: .utf8) else {
             return String(describing: configuration)
         }
@@ -211,18 +172,24 @@ final class PreviewEntryBuilder: Sendable {
     }
 
     private func viewEntryCompilerArguments(for buildStrategy: BuildStrategy?) async throws -> [String] {
+        var arguments: [String]
         switch buildStrategy {
         case .spm(let packageDirectory, let targetName):
-            return spmCompiler.previewCompilerArguments(packageDirectory: packageDirectory, targetName: targetName)
+            arguments = spmCompiler.previewCompilerArguments(
+                packageDirectory: packageDirectory,
+                targetName: targetName
+            )
         case .xcode(let projectURL, let scheme, let configuration):
-            return try await xcodeCompiler.previewCompilerArguments(
+            arguments = try await xcodeCompiler.previewCompilerArguments(
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration
             )
         case .incremental, .none:
-            return []
+            arguments = []
         }
+        arguments.append(contentsOf: Self.previewDebugConditionArguments)
+        return arguments
     }
 
     private struct GeneratedSource {
@@ -233,14 +200,21 @@ final class PreviewEntryBuilder: Sendable {
     private func viewEntrySources(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
     ) throws -> [GeneratedSource] {
-        let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
+        let targetSourceURLs = sourceFiles(
+            for: discovery,
+            buildStrategy: buildStrategy,
+            forceSourceInclude: forceSourceInclude
+        )
+        let moduleNameToRemove = selfImportModuleName(for: buildStrategy)
         var generatedSources: [GeneratedSource] = []
         for (index, targetSourceURL) in targetSourceURLs.enumerated() {
             let sanitizedSource = try sanitizedSourceFile(
                 at: targetSourceURL,
-                currentDiscovery: discovery
+                currentDiscovery: discovery,
+                removingSelfImportModuleName: moduleNameToRemove
             )
             generatedSources.append(
                 GeneratedSource(
@@ -250,12 +224,15 @@ final class PreviewEntryBuilder: Sendable {
             )
         }
 
+        let inlinesTargetSources = !targetSourceURLs.isEmpty
         generatedSources.append(
             GeneratedSource(
                 fileName: "PreviewEntry.swift",
                 content: try viewEntrySource(
                     for: discovery,
-                    configuration: configuration
+                    configuration: configuration,
+                    buildStrategy: buildStrategy,
+                    forceSourceInclude: forceSourceInclude || inlinesTargetSources
                 )
             )
         )
@@ -276,47 +253,38 @@ final class PreviewEntryBuilder: Sendable {
 
     private func viewEntrySource(
         for discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
     ) throws -> String {
         let descriptorSource = try descriptorFunctionSource(for: discovery, configuration: configuration)
         let bodySource = discovery.bodySource?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let viewBody = (bodySource?.isEmpty == false) ? bodySource! : #"Text("Empty Preview")"#
+        let rootViewSource = Self.rootViewSource(for: viewBody, layout: discovery.layout)
+        // When force-including source files, don't import the module —
+        // all types are available via inlined source files.
+        let importLine: String
+        if forceSourceInclude {
+            importLine = ""
+        } else {
+            importLine = importModuleName(for: buildStrategy).map { "import \($0)\n" } ?? ""
+        }
 
         return """
         import AppKit
         import Darwin
         import SwiftUI
-
+        \(importLine)
         \(descriptorSource)
 
         @_cdecl("\(Self.viewSymbolName)")
         public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-            let rootView = AnyView({
-        \(Self.indented(viewBody, spaces: 8))
-            }())
+            let rootView = \(rootViewSource)
             let view = NSHostingView(rootView: rootView)
             view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
             return Unmanaged.passRetained(view).toOpaque()
         }
-        """
-    }
-
-    private func descriptorEntrySource(
-        for discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration,
-        viewEntryBuildError: String? = nil
-    ) throws -> String {
-        let descriptorSource = try descriptorFunctionSource(
-            for: discovery,
-            configuration: configuration,
-            viewEntryBuildError: viewEntryBuildError
-        )
-
-        return """
-        import Darwin
-
-        \(descriptorSource)
         """
     }
 
@@ -366,12 +334,27 @@ final class PreviewEntryBuilder: Sendable {
         return parts.isEmpty ? nil : parts.joined(separator: "\n")
     }
 
-    private func sourceFiles(for discovery: PreviewDiscovery, buildStrategy: BuildStrategy?) -> [URL] {
+    private func sourceFiles(
+        for discovery: PreviewDiscovery,
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
+    ) -> [URL] {
         let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
+
+        if !forceSourceInclude,
+           buildStrategy != nil,
+           LumiPreviewFacade.ModuleImportEligibilityChecker().shouldUseModuleImport(discovery: discovery) {
+            return []
+        }
+
         var sourceURLs: [URL]
 
         if case .spm(let packageDirectory, let targetName) = buildStrategy {
-            sourceURLs = BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: targetName)
+            sourceURLs = spmTargetSourceFiles(
+                packageDirectory: packageDirectory,
+                targetName: targetName,
+                currentSourceURL: currentSourceURL
+            )
         } else if case .xcode(let projectURL, let scheme, _) = buildStrategy {
             sourceURLs = BuildPlanner.swiftSourceFiles(
                 projectURL: projectURL,
@@ -379,7 +362,7 @@ final class PreviewEntryBuilder: Sendable {
                 containing: currentSourceURL
             )
         } else {
-            sourceURLs = []
+            sourceURLs = [currentSourceURL]
         }
 
         if !sourceURLs.contains(currentSourceURL) {
@@ -393,9 +376,66 @@ final class PreviewEntryBuilder: Sendable {
             .sorted { $0.path < $1.path }
     }
 
+    private func spmTargetSourceFiles(
+        packageDirectory: URL,
+        targetName: String,
+        currentSourceURL: URL
+    ) -> [URL] {
+        let targetDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent(targetName, isDirectory: true)
+        guard let enumerator = FileManager.default.enumerator(
+            at: targetDirectory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            return [currentSourceURL]
+        }
+
+        var sourceURLs: [URL] = []
+        for case let url as URL in enumerator where url.pathExtension == "swift" {
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
+            if values?.isRegularFile != false {
+                sourceURLs.append(url)
+            }
+        }
+        if sourceURLs.isEmpty {
+            sourceURLs.append(currentSourceURL)
+        }
+        return sourceURLs
+    }
+
+    private func linksPrebuiltModuleArtifacts(for buildStrategy: BuildStrategy) -> Bool {
+        switch buildStrategy {
+        case .spm(let packageDirectory, let targetName):
+            let arguments = spmCompiler.previewCompilerArguments(
+                packageDirectory: packageDirectory,
+                targetName: targetName
+            )
+            return arguments.contains { $0.hasSuffix(".o") }
+        case .xcode:
+            return true
+        case .incremental:
+            return false
+        }
+    }
+
+    private func importModuleName(for buildStrategy: BuildStrategy?) -> String? {
+        guard let buildStrategy else { return nil }
+        switch buildStrategy {
+        case .spm(_, let targetName):
+            return targetName
+        case .xcode(_, let scheme, _):
+            return scheme
+        case .incremental:
+            return nil
+        }
+    }
+
     private func sanitizedSourceFile(
         at sourceFileURL: URL,
-        currentDiscovery: PreviewDiscovery
+        currentDiscovery: PreviewDiscovery,
+        removingSelfImportModuleName moduleName: String?
     ) throws -> String {
         let normalizedSourceURL = sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
         let currentSourceURL = currentDiscovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
@@ -419,7 +459,30 @@ final class PreviewEntryBuilder: Sendable {
         }
 
         removeMainAttribute(from: &lines)
+        if let moduleName {
+            removeSelfImports(of: moduleName, from: &lines)
+        }
+        Self.replaceBundleModuleReferences(in: &lines)
         return lines.joined(separator: "\n")
+    }
+
+    private func selfImportModuleName(for buildStrategy: BuildStrategy?) -> String? {
+        guard case .spm(_, let targetName) = buildStrategy else {
+            return nil
+        }
+        return targetName
+    }
+
+    private func removeSelfImports(of moduleName: String, from lines: inout [String]) {
+        guard !moduleName.isEmpty else { return }
+        let escapedModuleName = NSRegularExpression.escapedPattern(for: moduleName)
+        let pattern = #"^\s*(?:(?:@testable|@_exported)\s+)?import\s+\#(escapedModuleName)\s*(?://.*)?$"#
+
+        for index in lines.indices.reversed() {
+            if lines[index].range(of: pattern, options: .regularExpression) != nil {
+                lines.remove(at: index)
+            }
+        }
     }
 
     private func removeMainAttribute(from lines: inout [String]) {
@@ -434,12 +497,48 @@ final class PreviewEntryBuilder: Sendable {
         }
     }
 
+    /// Replaces `Bundle.module` with `Bundle.main` so preview entry dylibs compile
+    /// outside the original SPM target context.
+    ///
+    /// SwiftPM auto-generates a `resource_bundle_accessor.swift` that declares
+    /// `Bundle.module` as `internal`.  Preview entry dylibs are compiled in an
+    /// isolated context without that accessor, so any `Bundle.module` reference
+    /// produces "'module' is inaccessible due to 'internal' protection level".
+    private static func replaceBundleModuleReferences(in lines: inout [String]) {
+        for index in lines.indices {
+            if lines[index].contains("Bundle.module") {
+                lines[index] = lines[index].replacingOccurrences(
+                    of: "Bundle.module",
+                    with: "Bundle.main"
+                )
+            }
+        }
+    }
+
     private static func indented(_ value: String, spaces: Int) -> String {
         let padding = String(repeating: " ", count: spaces)
         return value
             .split(separator: "\n", omittingEmptySubsequences: false)
             .map { "\(padding)\($0)" }
             .joined(separator: "\n")
+    }
+
+    private static func rootViewSource(
+        for body: String,
+        layout: PreviewDiscovery.Layout
+    ) -> String {
+        let expression: String
+        switch layout {
+        case .automatic, .sizeThatFits:
+            expression = "{\n\(indented(body, spaces: 8))\n}()"
+        case let .fixed(width, height):
+            expression = "{\n\(indented(body, spaces: 8))\n}()\n.frame(width: \(literal(width)), height: \(literal(height)))"
+        }
+        return "AnyView(\(expression))"
+    }
+
+    private static func literal(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(value)
     }
 
     private static func swiftStringLiteralContents(_ value: String) -> String {
@@ -486,4 +585,3 @@ private extension Array where Element == URL {
         return result
     }
 }
-

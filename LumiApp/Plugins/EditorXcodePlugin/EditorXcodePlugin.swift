@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import XcodeKit
-import MagicKit
 import os
 
 /// Xcode 插件日志辅助（插件内共享）
@@ -35,52 +34,72 @@ actor EditorXcodePlugin: SuperPlugin, SuperLog {
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)开始注册编辑器扩展")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)开始注册编辑器扩展")
+            }
         }
         
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
+            }
         }
         
         registry.registerCompletionContributor(XcodePlistCompletionContributor())
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistCompletionContributor")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistCompletionContributor")
+            }
         }
         
         registry.registerHoverContributor(XcodePlistHoverContributor())
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistHoverContributor")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistHoverContributor")
+            }
         }
         
         registry.registerHoverContributor(XcodePackageManifestHoverContributor())
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 XcodePackageManifestHoverContributor")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePackageManifestHoverContributor")
+            }
         }
         
         registry.registerQuickOpenContributor(XcodeProjectQuickOpenContributor())
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 XcodeProjectQuickOpenContributor")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 XcodeProjectQuickOpenContributor")
+            }
         }
         
         registry.registerProjectContextCapability(projectContextCapability)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 projectContextCapability")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 projectContextCapability")
+            }
         }
         
         registry.registerSemanticCapability(semanticCapability)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 semanticCapability")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 semanticCapability")
+            }
         }
         
         registry.registerLanguageIntegrationCapability(languageIntegrationCapability)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)已注册 languageIntegrationCapability")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)已注册 languageIntegrationCapability")
+            }
         }
         
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)编辑器扩展注册完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)编辑器扩展注册完成")
+            }
         }
     }
 

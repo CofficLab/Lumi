@@ -1,25 +1,31 @@
 import AppKit
-import MagicKit
+import Combine
+import LumiUI
 import SwiftUI
 
 /// 主内容视图，管理应用的整体布局和导航结构
 ///
 /// 布局完全由各插件自行决定，核心只提供活动栏 + 面板内容区。
 /// 不再有全局右侧栏，右侧栏由各插件在自己的面板视图内自行管理。
+///
+/// ## 多窗口架构
+///
+/// ContentView 从 `WindowScope` 获取窗口级 VM，每个窗口拥有独立的 VM 实例。
+/// 不再需要双向同步，窗口状态天然隔离。
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
-    nonisolated static let verbose: Bool = true
+    nonisolated static var verbose: Bool { false }
 
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeVM: ThemeVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject var themeVM: AppThemeVM
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
-    @EnvironmentObject var layoutVM: LayoutVM
+    @EnvironmentObject var layoutVM: WindowLayoutVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
-
-    /// 窗口级状态（每个窗口独立）
-    @StateObject private var windowState: WindowState
+    @Environment(\.windowScope) private var windowScope
 
     /// 默认侧边栏可见性
     var defaultSidebarVisibility: Bool?
@@ -38,17 +44,30 @@ struct ContentView: View, SuperLog {
         self.defaultSidebarVisibility = defaultSidebarVisibility
         self.initialConversationId = initialConversationId
         self.initialProjectPath = initialProjectPath
-
-        _windowState = StateObject(wrappedValue: WindowState(
-            conversationId: initialConversationId,
-            projectPath: initialProjectPath
-        ))
     }
 
     var body: some View {
+        Group {
+            if let scope = windowScope {
+                contentViewBody(scope: scope)
+            } else {
+                // 无 WindowScope 时显示空白（不应该发生）
+                Color.clear
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func contentViewBody(scope: WindowScope) -> some View {
         ContentViewBody(
-            sidebarVisibility: $windowState.sidebarVisibility,
-            columnVisibility: $windowState.columnVisibility,
+            sidebarVisibility: Binding(
+                get: { scope.sidebarVisibility },
+                set: { scope.sidebarVisibility = $0 }
+            ),
+            columnVisibility: Binding(
+                get: { scope.columnVisibility },
+                set: { scope.columnVisibility = $0 }
+            ),
             pluginProvider: pluginProvider,
             themeVM: themeVM,
             content: {
@@ -59,8 +78,8 @@ struct ContentView: View, SuperLog {
             },
             openSettings: openSettings,
             openPluginSettings: openPluginSettings,
-            onAppear: onAppear,
-            onChangeColumnVisibility: onChangeColumnVisibility
+            onAppear: { onAppear(scope: scope) },
+            onChangeColumnVisibility: { onChangeColumnVisibility(scope: scope) }
         )
         .toolbar {
             let leadingViews = pluginProvider.getToolbarLeadingViews()
@@ -90,7 +109,13 @@ struct ContentView: View, SuperLog {
                 }
             }
         }
-        .environment(\.windowState, windowState)
+        .environment(\.windowScope, scope)
+        .background {
+            WindowAccessor { window in
+                RootContainer.shared.windowManagerVM.associateWindow(window, with: scope.id)
+                window.title = scope.title
+            }
+        }
     }
 
     /// 主内容区域：活动栏 + Rail + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
@@ -107,27 +132,18 @@ struct ContentView: View, SuperLog {
                 let sidebarSections = pluginProvider.getSidebarSections()
                 let hasRail = pluginProvider.hasRailTabs()
 
-                // 根据分栏组合生成布局签名，避免不同分栏数共享 autosaveName 导致位置错乱
                 let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
 
                 if !sidebarSections.isEmpty && hasRail {
-                    // 4 栏: ActivityBar(固定) | Rail | Panel | RightSidebar
                     HSplitView {
-                        // 图标栏（固定 48px）
                         ActivityBar()
-
-                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
                         RailView()
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-
-                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
-
-                        // 右侧栏：聚合所有插件提供的 Section 视图，VStack 垂直堆叠
                         RightSidebarContainerView(sections: sidebarSections)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
@@ -136,15 +152,9 @@ struct ContentView: View, SuperLog {
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else if !sidebarSections.isEmpty {
-                    // 3 栏: ActivityBar(固定) | Panel | RightSidebar
                     HSplitView {
-                        // 图标栏（固定 48px）
                         ActivityBar()
-
-                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
-
-                        // 右侧栏：聚合所有插件提供的 Section 视图，VStack 垂直堆叠
                         RightSidebarContainerView(sections: sidebarSections)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
@@ -153,29 +163,19 @@ struct ContentView: View, SuperLog {
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else if hasRail {
-                    // 3 栏: ActivityBar(固定) | Rail | Panel
                     HSplitView {
-                        // 图标栏（固定 48px）
                         ActivityBar()
-
-                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
                         RailView()
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-
-                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else {
-                    // 2 栏: ActivityBar(固定) | Panel
                     HSplitView {
-                        // 图标栏（固定 48px）
                         ActivityBar()
-
-                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -187,16 +187,10 @@ struct ContentView: View, SuperLog {
 
     // MARK: - Layout Helpers
 
-    /// 根据分栏组合生成布局签名
-    /// - Parameters:
-    ///   - hasRail: 是否有 Rail 栏
-    ///   - hasSidebar: 是否有右侧栏
-    /// - Returns: 布局签名字符串，如 "SRB"、"S" 等
     private static func layoutSignature(hasRail: Bool, hasSidebar: Bool) -> String {
         var signature = ""
         if hasSidebar { signature += "S" }
         if hasRail { signature += "R" }
-        // B = Base (always present: ActivityBar + Panel)
         signature += "B"
         return signature
     }
@@ -205,10 +199,12 @@ struct ContentView: View, SuperLog {
 // MARK: - Content View Body
 
 struct ContentViewBody<Content: View>: View {
+    @LumiMotionPreferenceReader private var motionPreference
+
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
-    @ObservedObject var pluginProvider: PluginVM
-    @ObservedObject var themeVM: ThemeVM
+    @ObservedObject var pluginProvider: AppPluginVM
+    @ObservedObject var themeVM: AppThemeVM
     let content: Content
     let openSettings: () -> Void
     let openPluginSettings: () -> Void
@@ -218,8 +214,8 @@ struct ContentViewBody<Content: View>: View {
     init(
         sidebarVisibility: Binding<Bool>,
         columnVisibility: Binding<NavigationSplitViewVisibility>,
-        pluginProvider: PluginVM,
-        themeVM: ThemeVM,
+        pluginProvider: AppPluginVM,
+        themeVM: AppThemeVM,
         @ViewBuilder content: () -> Content,
         openSettings: @escaping () -> Void,
         openPluginSettings: @escaping () -> Void,
@@ -237,9 +233,6 @@ struct ContentViewBody<Content: View>: View {
         self.onChangeColumnVisibility = onChangeColumnVisibility
     }
 
-    /// 根据当前应用主题计算应使用的 colorScheme，
-    /// 使得 `Color.adaptive(light:dark:)` 等基于 colorScheme 的颜色
-    /// 能与主题保持一致（例如 One Dark 深色主题在浅色系统模式下也使用深色文字色）。
     private var preferredColorScheme: ColorScheme {
         themeVM.activeAppTheme.isDarkTheme ? .dark : .light
     }
@@ -254,14 +247,14 @@ struct ContentViewBody<Content: View>: View {
                     themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
-            // 主题切换时平滑过渡颜色变化
-            .animation(.easeInOut(duration: 0.25), value: themeVM.currentThemeId)
+            .animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference), value: themeVM.currentThemeId)
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()
             }
-            .overlay(alignment: .bottom) {
+            .overlay {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
     }
 }
@@ -269,43 +262,42 @@ struct ContentViewBody<Content: View>: View {
 // MARK: - Event Handler
 
 extension ContentView {
-    func onAppear() {
+    func onAppear(scope: WindowScope) {
         // 注册窗口到 WindowManager
-        WindowManager.shared.registerWindow(windowState)
+        RootContainer.shared.windowManagerVM.registerScope(scope)
 
-        // 配置窗口标题
-        if let window = NSApplication.shared.keyWindow ?? NSApplication.shared.windows.last {
-            WindowManager.shared.associateWindow(window, with: windowState.id)
-            window.title = windowState.title
+        if let path = initialProjectPath, !path.isEmpty, !scope.projectVM.isProjectSelected {
+            let name = URL(fileURLWithPath: path).lastPathComponent
+            scope.projectVM.switchProject(
+                to: Project(name: name, path: path, lastUsed: Date())
+            )
         }
 
         // 应用默认配置
         if let defaultSidebarVisibility = defaultSidebarVisibility {
-            windowState.sidebarVisibility = defaultSidebarVisibility
+            scope.sidebarVisibility = defaultSidebarVisibility
         }
 
-        setupWindowTitleObserver()
+        // 设置标题同步
+        setupWindowTitleObserver(scope: scope)
     }
 
-    private func setupWindowTitleObserver() {
-        let windowId = windowState.id
-        windowState.$title
+    private func setupWindowTitleObserver(scope: WindowScope) {
+        scope.$title
             .receive(on: DispatchQueue.main)
             .sink { newTitle in
-                if let window = NSApplication.shared.windows.first(where: { _ in
-                    WindowManager.shared.getWindowState(windowId) != nil
-                }) {
+                if let window = RootContainer.shared.windowManagerVM.window(for: scope.id) {
                     window.title = newTitle
                 }
             }
-            .store(in: &windowState.cancellables)
+            .store(in: &scope.cancellables)
     }
 
-    func onChangeColumnVisibility() {
-        if windowState.columnVisibility == .detailOnly {
-            windowState.sidebarVisibility = false
+    func onChangeColumnVisibility(scope: WindowScope) {
+        if scope.columnVisibility == .detailOnly {
+            scope.sidebarVisibility = false
         } else {
-            windowState.sidebarVisibility = true
+            scope.sidebarVisibility = true
         }
     }
 
@@ -322,6 +314,6 @@ extension ContentView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView(scope: WindowScope(container: RootContainer.shared))
         .withDebugBar()
 }

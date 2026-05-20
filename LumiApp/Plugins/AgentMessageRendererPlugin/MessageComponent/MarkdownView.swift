@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import MarkdownKit
 
 /// Markdown 消息视图，负责渲染聊天消息内容

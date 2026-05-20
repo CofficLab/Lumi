@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftData
 import SwiftUI
 
@@ -9,6 +8,8 @@ struct ConversationItemView: View {
     let conversation: Conversation
     /// 删除回调：用户确认删除后调用
     let onDelete: () -> Void
+
+    @Environment(\.openWindow) private var openWindow
 
     /// 是否显示删除确认对话框
     @State private var showDeleteConfirmation = false
@@ -30,6 +31,17 @@ struct ConversationItemView: View {
             Spacer()
         }
         .contextMenu {
+            Button {
+                openWindow(
+                    id: MainWindowID.main,
+                    value: LumiWindowRoute(conversationId: conversation.id)
+                )
+            } label: {
+                Label(String(localized: "Open in New Window", table: "ConversationList"), systemImage: "macwindow.badge.plus")
+            }
+
+            Divider()
+
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {

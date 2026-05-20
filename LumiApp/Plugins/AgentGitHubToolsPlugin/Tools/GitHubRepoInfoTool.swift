@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 仓库信息工具
 struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_repo_info"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,16 +16,26 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let ownerDesc: String
+        let repoDesc: String
+        switch language {
+        case .chinese:
+            ownerDesc = "仓库所有者（用户名或组织名）"
+            repoDesc = "仓库名称"
+        case .english:
+            ownerDesc = "Repository owner (username or organization)"
+            repoDesc = "Repository name"
+        }
+        return [
             "type": "object",
             "properties": [
                 "owner": [
                     "type": "string",
-                    "description": "仓库所有者（用户名或组织名）"
+                    "description": ownerDesc
                 ],
                 "repo": [
                     "type": "string",
-                    "description": "仓库名称"
+                    "description": repoDesc
                 ]
             ],
             "required": ["owner", "repo"]
@@ -47,7 +57,9 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+            }
         }
 
         do {
@@ -57,7 +69,9 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
             )
             return formatRepoInfo(repoInfo)
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
+            }
             return "获取仓库信息失败：\(error.localizedDescription)"
         }
     }

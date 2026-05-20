@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import Combine
 
 /// 工具服务：负责管理所有可用工具
@@ -65,7 +64,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🧰"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Properties
 
     /// 所有可用工具（原始，未本地化）
@@ -86,6 +85,9 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// LLM 服务（可选）
     private let llmService: LLMService?
+
+    /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
+    weak var llmVM: AppLLMVM?
 
     /// Combine 订阅集合
     ///
@@ -150,12 +152,8 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
-        let env = SuperAgentToolEnvironment(toolService: self, llmService: llmService)
-        let directTools = PluginVM.shared.getAgentTools()
-        let factories = PluginVM.shared.getAgentToolFactories()
-        let factoryTools = factories.flatMap { $0.makeTools(env: env) }
-
-        pluginTools = directTools + factoryTools
+        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM)
+        pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
         allTools = builtInTools + pluginTools
     }
 

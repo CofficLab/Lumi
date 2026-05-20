@@ -1,6 +1,7 @@
 import Foundation
 import os
-import MagicKit
+import FileTreeKit
+import LibGit2Swift
 
 /// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
 private final class WeakBox<T: AnyObject>: @unchecked Sendable {
@@ -10,26 +11,30 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
 
 /// Editor Rail 文件树刷新协调器
 ///
-/// 作为 EditorFileTreeWatcher 和 SwiftUI 视图之间的桥梁：
+/// 作为 FileTreeKit.FileTreeWatcher 和 SwiftUI 视图之间的桥梁：
 /// - 接收 watcher 的文件系统变化通知
 /// - 跟踪当前已展开的目录列表
 /// - 合并短时间内的文件系统事件
 /// - 通过刷新令牌驱动 SwiftUI 视图重新加载数据
+/// - 管理文件树 Git 状态快照
 ///
 /// 使用方式：
 /// 1. EditorFileTreeView 持有 coordinator
 /// 2. EditorFileTreeNodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
 /// 3. coordinator 自动更新 watcher 的监控列表
-/// 4. 文件系统变化时 coordinator 递增刷新令牌
+/// 4. 文件系统变化时 coordinator 递增刷新令牌并刷新 Git 状态
 final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
 
     nonisolated static let emoji = "🌳"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
     @Published var refreshToken: Int = 0
+
+    /// Git 状态快照，视图通过只读映射查询
+    @Published var gitStatusSnapshot: EditorFileTreeGitStatusSnapshot = .empty
 
     /// 当前项目根路径
     private var projectRootPath: String = ""
@@ -37,8 +42,17 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
     /// 当前已展开的目录相对路径集合
     private var expandedPaths: Set<String> = []
 
-    /// 文件系统监听器
-    private let watcher: EditorFileTreeWatcher
+    /// 文件系统监听器（来自 FileTreeKit）
+    private let watcher: FileTreeWatcher
+
+    /// Git 状态提供器（线程安全，无 MainActor 依赖）
+    private let gitStatusProvider = EditorFileTreeGitStatusProvider()
+
+    /// Git 状态刷新任务
+    private var gitStatusRefreshTask: Task<Void, Never>?
+
+    /// Git 状态防抖任务
+    private var gitStatusDebounceTask: Task<Void, Never>?
 
     /// 防抖任务
     private var debounceTask: Task<Void, Never>?
@@ -46,13 +60,19 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
     /// 防抖间隔（纳秒）
     private let debounceInterval: UInt64 = 300_000_000 // 0.3 秒
 
+    /// Git 状态防抖间隔（纳秒）
+    private let gitStatusDebounceInterval: UInt64 = 200_000_000 // 0.2 秒
+
+    /// 是否为 Git 仓库（缓存，避免每次都调用 LibGit2）
+    private var isGitRepo: Bool = false
+
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.coordinator")
 
     // MARK: - Init
 
     init() {
         let weakBox = WeakBox<EditorFileTreeRefreshCoordinator>()
-        watcher = EditorFileTreeWatcher { changedURL in
+        watcher = FileTreeWatcher { changedURL in
             weakBox.value?.handleDirectoryChanged(url: changedURL)
         }
         weakBox.value = self
@@ -60,6 +80,8 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
 
     deinit {
         watcher.stopAll()
+        gitStatusRefreshTask?.cancel()
+        gitStatusDebounceTask?.cancel()
     }
 
     // MARK: - Public - Lifecycle
@@ -71,14 +93,26 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
         // 清理旧项目的状态
         watcher.stopAll()
         expandedPaths.removeAll()
+        gitStatusRefreshTask?.cancel()
+        gitStatusDebounceTask?.cancel()
 
         projectRootPath = path
 
-        // 从 store 恢复展开状态
+        // 重置 Git 状态
+        gitStatusSnapshot = .empty
+
         if !path.isEmpty {
             let store = EditorFileTreeStore.shared
             expandedPaths = store.expandedPaths(for: path)
             updateWatcher()
+
+            // 检测是否为 Git 仓库并启动首次 Git 状态刷新
+            isGitRepo = LibGit2.isGitRepository(at: path)
+            if isGitRepo {
+                refreshGitStatus()
+            }
+        } else {
+            isGitRepo = false
         }
     }
 
@@ -86,6 +120,8 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
     func stop() {
         watcher.stopAll()
         debounceTask?.cancel()
+        gitStatusRefreshTask?.cancel()
+        gitStatusDebounceTask?.cancel()
     }
 
     // MARK: - Public - Expansion Tracking
@@ -122,7 +158,7 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
         triggerRefresh()
     }
 
-    // MARK: - Private
+    // MARK: - Private - File System Watcher
 
     /// 将已展开的相对路径列表转换为绝对 URL 并更新 watcher
     private func updateWatcher() {
@@ -156,6 +192,14 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
             }
         }
 
+        for manifestURL in EditorPackageDependencyResolver.watchedManifestURLs(projectRootURL: rootURL) {
+            let directoryURL = manifestURL.deletingLastPathComponent().standardizedFileURL
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: directoryURL.path, isDirectory: &isDir), isDir.boolValue {
+                directoryURLs.insert(directoryURL)
+            }
+        }
+
         watcher.updateWatchedDirectories(directoryURLs)
 
         if Self.verbose {
@@ -169,6 +213,7 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
             Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
         }
         triggerRefresh()
+        scheduleGitStatusRefresh()
     }
 
     /// 防抖刷新：短时间内多次变化合并为一次
@@ -182,6 +227,43 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
             if Self.verbose {
                 Self.logger.info("\(Self.t)✅ 刷新令牌递增：\(self.refreshToken)")
             }
+        }
+    }
+
+    // MARK: - Private - Git Status Refresh
+
+    /// 立即刷新 Git 状态（用于项目切换后的首次加载）
+    private func refreshGitStatus() {
+        let path = projectRootPath
+        guard !path.isEmpty, isGitRepo else { return }
+
+        gitStatusRefreshTask?.cancel()
+        gitStatusRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            let snapshot = await Task.detached(priority: .utility) { [provider = self.gitStatusProvider] in
+                provider.captureSnapshot(projectRootPath: path)
+            }.value
+
+            guard let snapshot, !Task.isCancelled else { return }
+
+            // 校验结果仍属于当前项目
+            guard self.projectRootPath == path else { return }
+
+            self.gitStatusSnapshot = snapshot
+        }
+    }
+
+    /// 防抖刷新 Git 状态（用于文件系统变化后的增量刷新）
+    private func scheduleGitStatusRefresh() {
+        guard isGitRepo else { return }
+
+        gitStatusDebounceTask?.cancel()
+        let interval = self.gitStatusDebounceInterval
+        gitStatusDebounceTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: interval)
+            guard let self else { return }
+            self.refreshGitStatus()
         }
     }
 }

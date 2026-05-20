@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import MagicAlert
-import MagicKit
 import SwiftData
 import SwiftUI
 
@@ -10,79 +9,91 @@ import SwiftUI
 ///
 /// ## 架构说明
 ///
-/// 所有服务和 ViewModel 均为全局单例，通过 `RootViewContainer.shared` 管理。
-/// 主窗口与设置等窗口通过 `.inRootView()` 注入同一套环境。
+/// 全局共享 VM 通过 `RootContainer.shared` 注入。
+/// 窗口级 VM 通过 `WindowScope` 注入，每个窗口拥有独立的 VM 实例。
 ///
 /// ## 使用方式
 ///
 /// ```swift
 /// ContentLayout()
-///     .inRootView()
+///     .inRootView(scope: windowScope)
 /// ```
 struct RootView<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     /// 视图内容
     var content: Content
 
+    /// 窗口作用域（每窗口独立）
+    @ObservedObject var scope: WindowScope
+
     /// 全局服务容器（单例）。
     @StateObject var container = RootContainer.shared
 
-    /// 发送与回合管线（与 `container` 同源，见 `SendController.init(container:)`）。
-    @StateObject var sendController = SendController(container: RootContainer.shared)
+    /// 发送与回合管线（每窗口独立，直接访问窗口级 VM）。
+    /// 从 WindowScope 获取，不自行创建。
+    private var sendController: SendController { scope.sendController }
 
-    /// 项目上下文与系统提示词（与 `container` 同源，见 `ProjectController.init(container:)`）。
-    @StateObject var projectController = ProjectController(container: RootContainer.shared)
+    /// 项目上下文与系统提示词（每窗口独立）。
+    private var projectController: ProjectController { scope.projectController }
 
-    /// 会话控制器（创建、删除、重命名等会话操作）。
-    @StateObject var conversationController = ConversationController(container: RootContainer.shared)
+    /// 会话控制器（每窗口独立）。
+    private var conversationController: ConversationController { scope.conversationController }
 
-    init(@ViewBuilder content: () -> Content) {
+    init(scope: WindowScope, @ViewBuilder content: () -> Content) {
+        self._scope = ObservedObject(wrappedValue: scope)
         self.content = content()
     }
 
     var body: some View {
         content
             .withMagicToast()
+            // 全局 VM（所有窗口共享）
+            .environmentObject(container.windowManagerVM)
             .environmentObject(container.themeVM)
-            .environmentObject(container.projectVM)
-            .environmentObject(container.layoutVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(container.messageRendererVM)
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.chatHistoryVM)
-            .environmentObject(container.conversationVM)
-            .environmentObject(container.messagePendingVM)
-            .environmentObject(container.messageQueueVM)
-            .environmentObject(container.agentAttachmentsVM)
-            .environmentObject(container.inputQueueVM)
-            .environmentObject(container.permissionHandlingVM)
-            .environmentObject(container.conversationCreationVM)
-            .environmentObject(container.commandSuggestionVM)
-            .environmentObject(container.permissionRequestVM)
-            .environmentObject(container.taskCancellationVM)
-            .environmentObject(container.chatTimelineViewModel)
-            .environmentObject(container.conversationSendStatusVM)
-            .environmentObject(container.projectContextRequestVM)
+            .environmentObject(container.recentProjectsVM)
             .environmentObject(container.gitVM)
-            .environmentObject(container.editorVM)
+            .environmentObject(container.idleTimeVM)
+            // 窗口级 VM（每窗口独立）
+            .environmentObject(scope.editorVM)
+            .environmentObject(scope.conversationVM)
+            .environmentObject(scope.projectVM)
+            .environmentObject(scope.layoutVM)
+            .environmentObject(scope.messagePendingVM)
+            .environmentObject(scope.messageQueueVM)
+            .environmentObject(scope.agentAttachmentsVM)
+            .environmentObject(scope.inputQueueVM)
+            .environmentObject(scope.chatDraftVM)
+            .environmentObject(scope.permissionHandlingVM)
+            .environmentObject(scope.conversationCreationVM)
+            .environmentObject(scope.commandSuggestionVM)
+            .environmentObject(scope.permissionRequestVM)
+            .environmentObject(scope.taskCancellationVM)
+            .environmentObject(scope.chatTimelineViewModel)
+            .environmentObject(scope.conversationSendStatusVM)
+            .environmentObject(scope.projectContextRequestVM)
+            .environment(\.windowScope, scope)
             .modelContainer(container.modelContainer)
-            .onReceive(container.messageQueueVM.$queueVersion.dropFirst()) { _ in
+            .onReceive(scope.messageQueueVM.$queueVersion.dropFirst()) { _ in
                 onMessageQueueChanged()
             }
-            .onReceive(container.inputQueueVM.$queueVersion.dropFirst()) { _ in
-                onInputQueueRequested()
+            .onReceive(scope.inputQueueVM.enqueueRequests) { request in
+                onInputQueueRequested(request)
             }
-            .onReceive(container.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
+            .onReceive(scope.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
                 onConversationCreationRequested()
             }
-            .onReceive(container.taskCancellationVM.$conversationIdToCancel.compactMap { $0 }) { _ in
+            .onReceive(scope.taskCancellationVM.$conversationIdToCancel.compactMap { $0 }) { _ in
                 onTaskCancellationRequested()
             }
-            .onReceive(container.projectContextRequestVM.$request.compactMap { $0 }) { _ in
+            .onReceive(scope.projectContextRequestVM.$request.compactMap { $0 }) { _ in
                 onProjectContextRequestChanged()
             }
             .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
@@ -92,9 +103,18 @@ struct RootView<Content>: View, SuperLog where Content: View {
 
 extension View {
     /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
+    /// - Parameter scope: 窗口作用域
     /// - Returns: 包装在 RootView 中的视图
+    func inRootView(scope: WindowScope) -> some View {
+        RootView(scope: scope, content: { self })
+    }
+
+    /// Preview 专用：使用 fallback WindowScope 注入环境对象
+    ///
+    /// 生产代码请使用 `inRootView(scope:)` 传入窗口作用域。
+    /// 此方法仅用于 #Preview 和设置窗口等无窗口上下文的场景。
     func inRootView() -> some View {
-        RootView(content: { self })
+        inRootView(scope: WindowScope(container: RootContainer.shared))
     }
 }
 
@@ -115,7 +135,7 @@ extension RootView {
 
     /// 待发送的Message队列版本发生变化
     func onMessageQueueChanged() {
-        if self.container.messageQueueVM.messages.isEmpty {
+        if scope.messageQueueVM.messages.isEmpty {
             return
         }
 
@@ -129,25 +149,17 @@ extension RootView {
     }
 
     @MainActor
-    func onInputQueueRequested() {
-        guard let requestId = container.inputQueueVM.pendingRequest?.id else {
-            AppLogger.core.warning("\(Self.t) 收到输入队列版本变化，但没有待处理输入请求")
+    func onInputQueueRequested(_ request: WindowInputQueueVM.InputEnqueueRequest) {
+        guard scope.inputQueueVM.consumePendingRequest(id: request.id) != nil else {
             return
         }
-        guard let request = container.inputQueueVM.consumePendingRequest(id: requestId) else {
-            AppLogger.core.warning("\(Self.t) 输入请求已不存在或 ID 不匹配，忽略：\(requestId)")
-            return
-        }
-
-        guard let conversationId = container.conversationVM.selectedConversationId else {
-            AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略")
+        guard let conversationId = scope.conversationVM.selectedConversationId else {
             return
         }
 
-        let pendingImages = container.agentAttachmentsVM.drainPendingImageAttachments()
+        let pendingImages = scope.agentAttachmentsVM.drainPendingImageAttachments()
         let allImages = request.images + pendingImages
         guard !request.text.isEmpty || !allImages.isEmpty else {
-            AppLogger.core.warning("\(Self.t) 用户输入了数据，但是文本和图片都为空，忽略")
             return
         }
         
@@ -155,37 +167,44 @@ extension RootView {
             AppLogger.core.info("\(Self.t)将用户的输入加入消息队列")
         }
 
-        container.messageQueueVM.enqueueMessage(ChatMessage(
+        let message = ChatMessage(
             role: .user,
             conversationId: conversationId,
             content: request.text,
-            images: allImages)
+            images: allImages
         )
+        scope.messageQueueVM.enqueueMessage(message)
+        scope.chatTimelineViewModel.handleMessageQueued(message)
+        Task {
+            await sendController.attemptBeginNextQueuedSend()
+        }
     }
 
     func onConversationCreationRequested() {
-        guard let requestId = container.conversationCreationVM.pendingRequest else { return }
-        guard container.conversationCreationVM.consumePendingRequest(id: requestId) != nil else { return }
+        guard let requestId = scope.conversationCreationVM.pendingRequest else { return }
+        guard scope.conversationCreationVM.consumePendingRequest(id: requestId) != nil else { return }
 
         Task { await conversationController.handleCreationRequest(requestId: requestId) }
     }
 
     func onTaskCancellationRequested() {
-        guard let conversationId = container.taskCancellationVM.conversationIdToCancel else { return }
+        guard let conversationId = scope.taskCancellationVM.conversationIdToCancel else { return }
 
-        container.taskCancellationVM.consumeRequest()
+        scope.taskCancellationVM.consumeRequest()
         sendController.cancelSend(conversationId: conversationId)
 
-        AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
+        }
     }
 
     @MainActor
     func onProjectContextRequestChanged() {
-        guard let request = container.projectContextRequestVM.request else { return }
+        guard let request = scope.projectContextRequestVM.request else { return }
 
         Task {
             await projectController.handleProjectContextRequest(request)
-            container.projectContextRequestVM.request = nil
+            scope.projectContextRequestVM.request = nil
         }
     }
 }
@@ -194,6 +213,6 @@ extension RootView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView(scope: WindowScope(container: RootContainer.shared))
         .withDebugBar()
 }

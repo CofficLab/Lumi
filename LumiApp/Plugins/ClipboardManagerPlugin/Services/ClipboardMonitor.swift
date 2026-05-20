@@ -1,12 +1,11 @@
 import Foundation
-import MagicKit
 import AppKit
 import Combine
 
 @MainActor
 class ClipboardMonitor: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     static let shared = ClipboardMonitor()
     
@@ -33,7 +32,9 @@ class ClipboardMonitor: ObservableObject, SuperLog {
         timer?.invalidate()
         timer = nil
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
+            }
         }
     }
     
@@ -59,7 +60,9 @@ class ClipboardMonitor: ObservableObject, SuperLog {
             }
             
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)📝 Captured text clipboard item")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)📝 Captured text clipboard item")
+                }
             }
         }
         
@@ -84,10 +87,14 @@ class ClipboardMonitor: ObservableObject, SuperLog {
                     }
                     
                     if Self.verbose {
-                        ClipboardManagerPlugin.logger.info("\(Self.t)🖼️ Captured image clipboard item")
+                        if ClipboardManagerPlugin.verbose {
+                                                    ClipboardManagerPlugin.logger.info("\(Self.t)🖼️ Captured image clipboard item")
+                        }
                     }
                 } catch {
-                    ClipboardManagerPlugin.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
+                    if ClipboardManagerPlugin.verbose {
+                                            ClipboardManagerPlugin.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
+                    }
                 }
             }
         }
@@ -104,7 +111,9 @@ class ClipboardMonitor: ObservableObject, SuperLog {
                 }
                 
                 if Self.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)📁 Captured file clipboard item: \(url.lastPathComponent)")
+                    if ClipboardManagerPlugin.verbose {
+                                            ClipboardManagerPlugin.logger.info("\(Self.t)📁 Captured file clipboard item: \(url.lastPathComponent)")
+                    }
                 }
             }
         }

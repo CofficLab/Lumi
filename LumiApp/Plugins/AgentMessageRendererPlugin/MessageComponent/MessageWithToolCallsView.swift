@@ -1,17 +1,18 @@
+import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 助手消息与工具调用视图
 struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
 
-    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
-    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
+    @EnvironmentObject var permissionRequestViewModel: WindowPermissionRequestVM
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
+    @LumiMotionPreferenceReader private var motionPreference
 
     @State private var showRawMessage: Bool = false
-    @State private var expandedParameterToolCallIDs = Set<String>()
-    @State private var expandedResultToolCallIDs = Set<String>()
+    @State private var parameterPopoverToolCallID: String?
+    @State private var resultPopoverToolCallID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -36,8 +37,8 @@ struct MessageWithToolCallsView: View {
 
     @ViewBuilder
     private func toolCallRow(for toolCall: ToolCall) -> some View {
-        let isParametersExpanded = expandedParameterToolCallIDs.contains(toolCall.id)
-        let isResultsExpanded = expandedResultToolCallIDs.contains(toolCall.id)
+        let isParametersPresented = parameterPopoverToolCallID == toolCall.id
+        let isResultsPresented = resultPopoverToolCallID == toolCall.id
         let isLoadingResult = timelineViewModel.isLoadingToolOutput(for: toolCall.id)
         let resultMessages = timelineViewModel.toolOutputs(for: toolCall.id)
         let effectiveResults = resultMessages.isEmpty
@@ -76,39 +77,44 @@ struct MessageWithToolCallsView: View {
 
                     AppIconButton(
                         systemImage: "slider.horizontal.3",
-                        tint: isParametersExpanded
+                        tint: isParametersPresented
                             ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
                             : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
                         size: .regular,
-                        isActive: isParametersExpanded
+                        isActive: isParametersPresented
                     ) {
-                        toggleParameterSection(for: toolCall.id)
+                        toggleParameterPopover(for: toolCall.id)
+                    }
+                    .help(String(localized: "调用参数", table: "CoreMessageRenderer"))
+                    .popover(isPresented: popoverBinding(for: toolCall.id, selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
+                        ToolDetailPopoverView(
+                            title: String(localized: "调用参数", table: "CoreMessageRenderer"),
+                            systemImage: "slider.horizontal.3"
+                        ) {
+                            ToolCallContentSectionView(toolCall: toolCall)
+                        }
                     }
 
-                    if isLoadingResult {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        AppIconButton(
-                            systemImage: "doc.text.magnifyingglass",
-                            tint: isResultsExpanded
-                                ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                                : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
-                            size: .regular,
-                            isActive: isResultsExpanded
+                    AppIconButton(
+                        systemImage: isLoadingResult ? "hourglass" : "doc.text.magnifyingglass",
+                        tint: isResultsPresented
+                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
+                        size: .regular,
+                        isActive: isResultsPresented
+                    ) {
+                        toggleResultPopover(for: toolCall.id)
+                    }
+                    .help(String(localized: "调用结果", table: "CoreMessageRenderer"))
+                    .popover(isPresented: popoverBinding(for: toolCall.id, selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
+                        ToolDetailPopoverView(
+                            title: String(localized: "调用结果", table: "CoreMessageRenderer"),
+                            systemImage: "doc.text.magnifyingglass"
                         ) {
-                            toggleResultSection(for: toolCall.id)
+                            ToolResultSectionView(outputs: effectiveResults, isLoading: isLoadingResult)
                         }
                     }
                 }
-            }
-
-            if isParametersExpanded {
-                ToolCallContentSectionView(toolCall: toolCall)
-            }
-
-            if isResultsExpanded {
-                ToolResultSectionView(outputs: effectiveResults, isLoading: isLoadingResult)
             }
         }
     }
@@ -134,26 +140,55 @@ struct MessageWithToolCallsView: View {
         return lines.count <= toolCount + 1
     }
 
-    private func toggleParameterSection(for toolCallID: String) {
-        if expandedParameterToolCallIDs.contains(toolCallID) {
-            expandedParameterToolCallIDs.remove(toolCallID)
-        } else {
-            expandedParameterToolCallIDs.insert(toolCallID)
-        }
+    private func toggleParameterPopover(for toolCallID: String) {
+        parameterPopoverToolCallID = parameterPopoverToolCallID == toolCallID ? nil : toolCallID
     }
 
-    private func toggleResultSection(for toolCallID: String) {
-        if expandedResultToolCallIDs.contains(toolCallID) {
-            expandedResultToolCallIDs.remove(toolCallID)
-            return
-        }
+    private func toggleResultPopover(for toolCallID: String) {
+        let shouldShow = resultPopoverToolCallID != toolCallID
 
-        if !timelineViewModel.hasLoadedToolOutput(for: toolCallID) {
+        if shouldShow && !timelineViewModel.hasLoadedToolOutput(for: toolCallID) {
             timelineViewModel.loadToolOutput(for: message, toolCallID: toolCallID)
         }
-        expandedResultToolCallIDs.insert(toolCallID)
+
+        resultPopoverToolCallID = shouldShow ? toolCallID : nil
     }
 
+    private func popoverBinding(for toolCallID: String, selection: Binding<String?>) -> Binding<Bool> {
+        Binding {
+            selection.wrappedValue == toolCallID
+        } set: { isPresented in
+            if !isPresented, selection.wrappedValue == toolCallID {
+                selection.wrappedValue = nil
+            }
+        }
+    }
+
+}
+
+private struct ToolDetailPopoverView<Content: View>: View {
+    let title: String
+    let systemImage: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            }
+
+            content
+        }
+        .padding(12)
+        .frame(width: 520)
+        .background(Material.regularMaterial)
+    }
 }
 
 private struct ToolCallContentSectionView: View {
@@ -181,6 +216,11 @@ private struct ToolCallContentSectionView: View {
     var body: some View {
         if let formattedArguments {
             GenericToolSectionView(content: formattedArguments)
+        } else {
+            EmptyToolSectionView(
+                systemImage: "info.circle",
+                text: String(localized: "没有可显示的调用参数", table: "CoreMessageRenderer")
+            )
         }
     }
 }
@@ -210,15 +250,10 @@ private struct ToolResultSectionView: View {
         } else if !combinedContent.isEmpty {
             GenericToolSectionView(content: combinedContent)
         } else {
-            HStack(spacing: 8) {
-                Image(systemName: "info.circle")
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                Text(String(localized: "点击结果后会在这里显示工具输出", table: "CoreMessageRenderer"))
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .modifier(SubtleToolCardModifier())
+            EmptyToolSectionView(
+                systemImage: "info.circle",
+                text: String(localized: "暂无工具输出", table: "CoreMessageRenderer")
+            )
         }
     }
 }
@@ -231,12 +266,32 @@ private struct GenericToolSectionView: View {
             style: .subtle,
             padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
         ) {
-            Text(content)
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+            ScrollView(.vertical, showsIndicators: true) {
+                Text(content)
+                    .font(.system(size: 13, weight: .regular, design: .monospaced))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .frame(maxHeight: 360)
         }
+    }
+}
+
+private struct EmptyToolSectionView: View {
+    let systemImage: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            Text(text)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(SubtleToolCardModifier())
     }
 }
 

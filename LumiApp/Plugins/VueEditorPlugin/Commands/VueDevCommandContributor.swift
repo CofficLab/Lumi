@@ -125,7 +125,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
         let command = ViteBridge.devServerCommand(projectPath: projectRoot)
 
         if VueEditorPlugin.verbose {
-            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)启动 Vite 开发服务器: \(command)")
+            if VueEditorPlugin.verbose {
+                            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)启动 Vite 开发服务器: \(command)")
+            }
         }
 
         // 在终端中执行
@@ -139,7 +141,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
         let command = ViteBridge.buildCommand(projectPath: projectRoot)
 
         if VueEditorPlugin.verbose {
-            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)执行构建: \(command)")
+            if VueEditorPlugin.verbose {
+                            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)执行构建: \(command)")
+            }
         }
 
         Task {
@@ -152,7 +156,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
         let command = "npm run preview"
 
         if VueEditorPlugin.verbose {
-            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)执行预览: \(command)")
+            if VueEditorPlugin.verbose {
+                            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)执行预览: \(command)")
+            }
         }
 
         Task {
@@ -197,10 +203,14 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
             let output = String(data: data, encoding: .utf8) ?? ""
 
             if VueEditorPlugin.verbose {
-                VueEditorPlugin.logger.info("\(VueEditorPlugin.t)命令输出: \(output.prefix(500))")
+                if VueEditorPlugin.verbose {
+                                    VueEditorPlugin.logger.info("\(VueEditorPlugin.t)命令输出: \(output.prefix(500))")
+                }
             }
         } catch {
-            VueEditorPlugin.logger.error("\(VueEditorPlugin.t)执行命令失败: \(error.localizedDescription)")
+            if VueEditorPlugin.verbose {
+                            VueEditorPlugin.logger.error("\(VueEditorPlugin.t)执行命令失败: \(error.localizedDescription)")
+            }
         }
     }
 }

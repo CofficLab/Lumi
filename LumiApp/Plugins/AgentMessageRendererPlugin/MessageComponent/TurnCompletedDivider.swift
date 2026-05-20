@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import LumiUI
 
@@ -9,7 +8,8 @@ import LumiUI
 struct TurnCompletedDivider: View {
     let message: ChatMessage
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @LumiMotionPreferenceReader private var motionPreference
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     private var endText: String {
         switch projectVM.languagePreference {
@@ -28,5 +28,6 @@ struct TurnCompletedDivider: View {
 
     var body: some View {
         AppLabeledDivider(title: endText, detail: timeText)
+            .appStatusPresentationTransition(preference: motionPreference)
     }
 }

@@ -1,8 +1,6 @@
 # DockerKit
 
-Docker models and service logic for Lumi.
-
-`DockerKit` contains reusable Docker domain types and command-facing service behavior. It is the core package for Docker-related app plugins and views.
+可复用的 Docker 领域模型与服务逻辑包。提供 Docker 相关类型定义与面向命令的服务行为，供宿主应用或插件复用。
 
 ## Package
 
@@ -23,8 +21,8 @@ From this package directory:
 swift test
 ```
 
-The tests cover Docker models and service behavior. Prefer mocked command execution for new tests unless a test explicitly needs a local Docker daemon.
+Tests cover Docker models and service behavior. Prefer mocked command execution for new tests unless a test explicitly needs a local Docker daemon.
 
-## App Integration
+## Host integration
 
-Keep Docker UI, user confirmations, and plugin registration in the app target. Put command parsing, Docker state models, and reusable service behavior in this package.
+Keep Docker UI, user confirmations, and plugin registration in the host app. Put command parsing, Docker state models, and reusable service behavior in this package.

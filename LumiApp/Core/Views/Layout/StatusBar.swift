@@ -3,8 +3,8 @@ import LumiUI
 
 /// 底部状态栏视图
 struct StatusBar: View {
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme

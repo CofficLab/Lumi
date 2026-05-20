@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 更新任务状态工具
 ///
@@ -7,7 +6,7 @@ import MagicKit
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
 struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "update_task"
     func description(for language: LanguagePreference) -> String {
@@ -48,20 +47,21 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let taskId = arguments["task_id"]?.value as? String else {
-            return "Error: task_id is required"
+            return String(localized: "Error: task_id is required", table: "AutoTask")
         }
 
         guard let statusString = arguments["status"]?.value as? String,
               let status = TaskItem.TaskStatus(rawValue: statusString)
         else {
-            return "Error: status must be one of: in_progress, completed, skipped"
+            return String(localized: "Error: status must be one of: in_progress, completed, skipped", table: "AutoTask")
         }
 
         let manager = TaskStateManager.shared
         let success = await manager.updateTaskStatus(id: taskId, status: status)
 
         guard success else {
-            return "Error: task not found (id: \(taskId))"
+            let notFoundLabel = String(localized: "Error: task not found", table: "AutoTask")
+            return "\(notFoundLabel) (id: \(taskId))"
         }
 
         let updatedTask = await manager.fetchTask(id: taskId)
@@ -83,7 +83,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         case .pending: statusEmoji = "📋"
         }
 
-        var result = "\(statusEmoji) Task status updated to **\(status.rawValue)**."
+        var result = "\(statusEmoji) \(String(localized: "Task status updated", table: "AutoTask")): **\(status.rawValue)**"
 
         // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
         if (status == .completed || status == .skipped), let updatedTask {
@@ -98,17 +98,22 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
                     userInfo: ["conversationId": updatedTask.conversationId]
                 )
 
-                result += "\n\n📌 **Next task auto-started:** \(nextTask.title) (id: `\(nextTask.id)`)"
-                result += "\nContinue working on this task now."
+                let autoStartedLabel = String(localized: "Next task auto-started", table: "AutoTask")
+                result += "\n\n📌 **\(autoStartedLabel): \(nextTask.title) (id: \(nextTask.id))**"
+                result += "\n\(String(localized: "Continue working on this task now.", table: "AutoTask"))"
 
                 if Self.verbose {
-                    AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")
+                    if AutoTaskPlugin.verbose {
+                                            AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")
+                    }
                 }
             }
         }
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Task \(taskId) → \(status.rawValue)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)Task \(taskId) → \(status.rawValue)")
+            }
         }
 
         return result

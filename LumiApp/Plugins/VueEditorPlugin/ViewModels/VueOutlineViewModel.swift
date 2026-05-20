@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import Combine
 import os
@@ -9,7 +8,7 @@ import os
 /// 从当前 `.vue` 文件中解析出组件结构信息（区块、Props、Emits、Slots），
 /// 并以树形大纲形式展示，支持点击跳转。
 ///
-/// 绑定到 EditorVM 的文档变化自动刷新大纲。
+/// 绑定到 WindowEditorVM 的文档变化自动刷新大纲。
 @MainActor
 final class VueOutlineViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🌳"

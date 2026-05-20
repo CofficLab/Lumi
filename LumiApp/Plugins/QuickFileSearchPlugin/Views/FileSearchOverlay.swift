@@ -6,7 +6,7 @@ import SwiftUI
 /// 监听项目变化和快捷键事件，在原有内容上叠加搜索框
 struct FileSearchOverlay<Content: View>: View {
     /// 项目 ViewModel
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     /// 热键管理器
     @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared

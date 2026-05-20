@@ -53,7 +53,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             HStack(alignment: .top, spacing: 16) {
                 GlassSectionHeader(
                     icon: "keyboard",
@@ -76,7 +76,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private var controlsCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "command",
@@ -108,7 +108,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private var emptyStateCard: some View {
-        GlassCard {
+        AppCard {
             VStack(spacing: 16) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 36))
@@ -128,7 +128,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private func warningCard(_ message: String) -> some View {
-        GlassCard {
+        AppCard {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(Color(hex: "FF9F0A"))
@@ -142,7 +142,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private func categoryCard(_ category: EditorCommandCategory, commands: [EditorShortcutDefinition]) -> some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: iconName(for: category),

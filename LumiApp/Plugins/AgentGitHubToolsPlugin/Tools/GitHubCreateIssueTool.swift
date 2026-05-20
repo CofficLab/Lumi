@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✍️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_create_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,42 +16,82 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "Issue 标题"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Issue 描述（支持 Markdown 格式）"
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "指派的用户名数组"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "里程碑编号"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "title"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "Issue title"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Issue description (Markdown supported)"
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "Array of label names, e.g. [\"bug\", \"help wanted\"]"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "Array of usernames to assign"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "Milestone number"
+                    ]
                 ],
-                "title": [
-                    "type": "string",
-                    "description": "Issue 标题"
-                ],
-                "body": [
-                    "type": "string",
-                    "description": "Issue 描述（支持 Markdown 格式）"
-                ],
-                "labels": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
-                ],
-                "assignees": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "指派的用户名数组"
-                ],
-                "milestone": [
-                    "type": "number",
-                    "description": "里程碑编号"
-                ]
-            ],
-            "required": ["owner", "repo", "title"]
-        ]
+                "required": ["owner", "repo", "title"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -75,7 +115,9 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
         let milestone = arguments["milestone"]?.value as? Int
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
+            }
         }
 
         do {
@@ -90,7 +132,9 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
             )
             return formatCreatedIssue(issue)
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
+            }
             return "创建 Issue 失败：\(error.localizedDescription)"
         }
     }

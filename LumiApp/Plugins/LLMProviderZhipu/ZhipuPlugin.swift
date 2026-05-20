@@ -1,13 +1,12 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 智谱 LLM 供应商插件
 actor ZhipuPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.zhipu")
     nonisolated static let emoji = "🔴"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "LLMProviderZhipu"
     static let navigationId: String? = nil
@@ -30,7 +29,8 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         if Self.verbose {
-            Self.logger.info("\(Self.t)提供 ZhipuQuotaStatusBarView")
+                            Self.logger.info("\(Self.t)提供 ZhipuQuotaStatusBarView")
+
         }
         return AnyView(ZhipuQuotaStatusBarView())
     }

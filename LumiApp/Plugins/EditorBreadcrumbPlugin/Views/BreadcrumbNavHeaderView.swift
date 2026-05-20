@@ -1,5 +1,5 @@
 import CodeEditLanguages
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// 面包屑导航头部视图
@@ -7,8 +7,8 @@ import SwiftUI
 /// 在编辑器面板中显示当前文件的路径面包屑导航。
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 struct BreadcrumbNavHeaderView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     var body: some View {
         // 仅在有文件打开时显示
@@ -22,8 +22,9 @@ struct BreadcrumbNavHeaderView: View {
 
 /// 面包屑路径视图
 struct BreadcrumbNavPathView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
+    @LumiMotionPreferenceReader private var motionPreference
 
     let fileURL: URL
 
@@ -132,12 +133,12 @@ struct BreadcrumbNavPathView: View {
                 }
             )
             .onChange(of: textWidth) { _, _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference)) {
                     recalculateTruncation()
                 }
             }
             .onChange(of: containerWidth) { _, _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference)) {
                     recalculateTruncation()
                 }
             }
@@ -157,7 +158,7 @@ struct BreadcrumbNavPathView: View {
         }
     }
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     // MARK: - Truncation Logic
 
@@ -213,7 +214,8 @@ struct BreadcrumbNavComponent: View {
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
     @State private var isMenuVisible = false
 
@@ -285,7 +287,7 @@ struct BreadcrumbNavComponent: View {
             )
             .clipped()
             .onHover { hover in
-                withAnimation(.easeInOut(duration: 0.15)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
                     isHovering = hover
                 }
             }

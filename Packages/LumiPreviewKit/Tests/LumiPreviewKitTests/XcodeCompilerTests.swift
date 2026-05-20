@@ -25,6 +25,35 @@ struct XcodeCompilerTests {
         #expect(productURL.lastPathComponent == "TinyTool")
     }
 
+    @Test("编译 .xcodeproj 时使用自定义 DerivedData")
+    func buildXcodeProjectUsesCustomDerivedDataPath() async throws {
+        let project = try makeTemporaryXcodeProject(
+            targetName: "TinyTool",
+            source: """
+            print("hello")
+            """
+        )
+        let derivedDataURL = project.rootDirectory
+            .appendingPathComponent("CustomDerivedData", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
+
+        let productURL = try await LumiPreviewFacade.XcodeCompiler(
+            derivedDataPath: derivedDataURL
+        ).build(
+            projectURL: project.projectURL,
+            scheme: "TinyTool",
+            configuration: "Debug"
+        )
+
+        #expect(FileManager.default.fileExists(atPath: productURL.path))
+        #expect(productURL.path.hasPrefix(derivedDataURL.path))
+        #expect(FileManager.default.fileExists(
+            atPath: derivedDataURL
+                .appendingPathComponent("Build/Intermediates.noindex/XCBuildData/build.db")
+                .path
+        ))
+    }
+
     @Test("编译不存在的 Xcode 项目 → 抛出 compilationFailed")
     func buildMissingProjectThrowsCompilationFailed() async throws {
         let missingProjectURL = FileManager.default.temporaryDirectory
@@ -61,6 +90,31 @@ struct XcodeCompilerTests {
         let command = LumiPreviewFacade.XcodeCompiler().extractCompileCommand(for: fileURL, buildLog: buildLog)
 
         #expect(command == expectedCommand)
+    }
+
+    @Test("preview compiler arguments include Xcode deployment target")
+    func previewCompilerArgumentsIncludeDeploymentTarget() async throws {
+        let project = try makeTemporaryXcodeProject(
+            targetName: "TinyTool",
+            source: """
+            print("hello")
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
+
+        let arguments = try await LumiPreviewFacade.XcodeCompiler().previewCompilerArguments(
+            projectURL: project.projectURL,
+            scheme: "TinyTool",
+            configuration: "Debug"
+        )
+
+        guard let targetIndex = arguments.firstIndex(of: "-target"),
+              arguments.indices.contains(arguments.index(after: targetIndex)) else {
+            Issue.record("Expected preview compiler arguments to include -target, got \(arguments)")
+            return
+        }
+
+        #expect(arguments[arguments.index(after: targetIndex)].contains("-apple-macos14.0"))
     }
 
     private func makeTemporaryXcodeProject(

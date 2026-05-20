@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器工作区符号 Rail 插件：提供 Symbols 标签页
 actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔣"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailWorkspaceSymbols"
     static let displayName: String = String(
         localized: "Editor Rail Workspace Symbols", table: "EditorRailWorkspaceSymbols")
@@ -43,7 +42,7 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
 /// Symbols 标签页内容视图
 struct EditorWorkspaceSymbolsRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

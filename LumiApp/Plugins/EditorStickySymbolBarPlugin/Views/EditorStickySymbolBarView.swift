@@ -1,9 +1,8 @@
 import SwiftUI
-import MagicKit
 
 /// 编辑器符号面包屑头部视图。
 struct EditorStickySymbolBarHeaderView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 
@@ -27,7 +26,7 @@ struct EditorStickySymbolBarHeaderView: View {
 /// 提供快速导航功能，点击任意符号可跳转到对应代码位置。
 /// 固定在编辑器顶部区域，滚动代码时始终可见，帮助开发者在大型或深层嵌套的文件中保持上下文感知。
 struct EditorStickySymbolBarView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 编辑器服务门面（用于获取光标行号、执行符号跳转等操作）
     @ObservedObject private var service: EditorService

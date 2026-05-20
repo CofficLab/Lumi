@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// GitHub CLI 检测插件
@@ -11,7 +10,7 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🐚"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Plugin Properties
 
     static let id: String = "GitHubCLIDetect"
@@ -26,22 +25,8 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
-    // MARK: - Agent Tool Factories
-
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(CLIDetectToolsFactory())]
-    }
-}
-
-// MARK: - Tools Factory
-
-@MainActor
-private struct CLIDetectToolsFactory: SuperAgentToolFactory {
-    let id: String = "github.cli.detect.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [GitHubCLICheckTool()]
     }
 }

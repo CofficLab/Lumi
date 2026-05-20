@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 编辑器 Tab 栏插件
 ///
@@ -32,7 +31,7 @@ actor EditorTabStripPlugin: SuperPlugin {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GetCurrentFileTool(),
             SetCurrentFileTool(),

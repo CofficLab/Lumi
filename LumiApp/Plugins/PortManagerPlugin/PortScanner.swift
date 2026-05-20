@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import MagicKit
 import ShellKit
 
 struct PortInfo: Identifiable, Hashable {
@@ -15,7 +14,7 @@ struct PortInfo: Identifiable, Hashable {
 
 final class PortScanner: Sendable, SuperLog {
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = PortScanner()
 
     private init() {}
@@ -31,7 +30,9 @@ final class PortScanner: Sendable, SuperLog {
             return parseLsofOutput(result.stdout)
         } catch {
             if Self.verbose {
-                PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
+                if PortManagerPlugin.verbose {
+                                    PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
+                }
             }
             return []
         }
@@ -80,7 +81,9 @@ final class PortScanner: Sendable, SuperLog {
             _ = try await Shell.execute(executable: "/bin/kill", arguments: ["-9", pid])
         } catch {
             if Self.verbose {
-                PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
+                if PortManagerPlugin.verbose {
+                                    PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
+                }
             }
             throw error
         }

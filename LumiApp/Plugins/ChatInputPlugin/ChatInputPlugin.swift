@@ -1,38 +1,24 @@
-import MagicKit
 import SwiftUI
 import os
 
 /// 聊天输入插件
 ///
-/// 负责右侧栏的输入区域 Section，包括文本编辑器、工具栏、
-/// 模型选择器、命令建议、附件预览、截图等输入相关功能。
+/// 负责右侧栏的输入区域 Section，包括文本编辑器和命令建议。
+///
+/// 发送控制、待发送消息、模型选择器、附件、截图等能力由独立插件注入。
 actor ChatInputPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-input")
 
     nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "ChatInput"
-    static let displayName = String(localized: "Chat Input", table: "AgentChat")
-    static let description = String(localized: "Chat input area with editor, toolbar and model selector", table: "AgentChat")
+    static let displayName = String(localized: "Chat Input", table: "ChatInputPlugin")
+    static let description = String(localized: "Chat input area with editor and command suggestions", table: "ChatInputPlugin")
     static let iconName = "keyboard"
-    static var order: Int { 95 }
+    static var order: Int { 96 }
     nonisolated static let enable: Bool = true
     static let shared = ChatInputPlugin()
-
-    // MARK: - Lifecycle
-
-    nonisolated func onRegister() {
-        // Init
-    }
-
-    nonisolated func onEnable() {
-        // Init
-    }
-
-    nonisolated func onDisable() {
-        // Cleanup
-    }
 
     // MARK: - UI Contributions
 

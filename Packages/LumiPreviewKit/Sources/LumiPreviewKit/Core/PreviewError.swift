@@ -2,7 +2,7 @@ import Foundation
 
 public extension LumiPreviewFacade {
 /// 预览相关错误。
-enum PreviewError: Error, Sendable, Equatable {
+enum PreviewError: Error, LocalizedError, Sendable, Equatable {
     /// 找不到文件所属的 target。
     case targetNotFound(file: String)
 
@@ -26,6 +26,27 @@ enum PreviewError: Error, Sendable, Equatable {
 
     /// 视图依赖缺失，例如 `@EnvironmentObject` 未注入。
     case missingDependency(description: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .targetNotFound(let file):
+            return "Preview target not found for file: \(file)"
+        case .unsupportedProjectType(let path):
+            return "Unsupported preview project type: \(path)"
+        case .compilationFailed(let message):
+            return message
+        case .buildProductNotFound:
+            return "Preview build product was not found."
+        case .hostLaunchFailed(let message):
+            return "Preview host launch failed: \(message)"
+        case .runtimeCrashed(let message):
+            return "Preview runtime crashed: \(message)"
+        case .timedOut(let seconds):
+            return "Preview operation timed out after \(seconds) seconds."
+        case .missingDependency(let description):
+            return "Preview is missing a dependency: \(description)"
+        }
+    }
 }
 
 }

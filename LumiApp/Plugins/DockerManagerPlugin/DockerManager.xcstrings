@@ -45,6 +45,9 @@
         }
       }
     },
+    "Confirm" : {
+
+    },
     "Confirm Delete" : {
       "localizations" : {
         "en" : {
@@ -222,6 +225,9 @@
         }
       }
     },
+    "Import" : {
+
+    },
     "Local Docker image management and monitoring" : {
       "localizations" : {
         "en" : {
@@ -288,6 +294,9 @@
         }
       }
     },
+    "Pull" : {
+
+    },
     "Pull New Image" : {
       "localizations" : {
         "en" : {
@@ -310,6 +319,9 @@
         }
       }
     },
+    "Refresh" : {
+
+    },
     "Scan" : {
       "localizations" : {
         "en" : {
@@ -331,6 +343,9 @@
           }
         }
       }
+    },
+    "Search images..." : {
+
     },
     "Security Scan" : {
       "localizations" : {

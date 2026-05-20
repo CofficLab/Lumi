@@ -168,9 +168,7 @@ public extension LumiPreviewFacade {
         }
 
         public static func defaultDirectory(fileManager: FileManager = .default) -> URL {
-            fileManager.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("SharedFrames", isDirectory: true)
+            PreviewStorage.paths.sharedMemoryDirectory
         }
 
         public init(

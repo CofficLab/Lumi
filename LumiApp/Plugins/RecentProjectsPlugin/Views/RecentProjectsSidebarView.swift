@@ -1,9 +1,11 @@
+import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
+    @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
@@ -107,6 +109,16 @@ struct RecentProjectsSidebarView: View {
         } preview: {
             RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
+        .contextMenu {
+            Button {
+                openWindow(
+                    id: MainWindowID.main,
+                    value: LumiWindowRoute(projectPath: project.path)
+                )
+            } label: {
+                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
+            }
+        }
     }
 
     // MARK: - Git Branch Badge
@@ -152,7 +164,7 @@ struct RecentProjectsSidebarView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        projectVM.recentProjects
+        recentProjectsVM.recentProjects
     }
 
     private var tipsCard: some View {
@@ -193,7 +205,9 @@ struct RecentProjectsSidebarView: View {
             guard let folderURL = urls.first else { return }
             addProjectAndSwitch(to: folderURL.standardizedFileURL)
         case .failure(let error):
-            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -205,7 +219,7 @@ struct RecentProjectsSidebarView: View {
         )
 
         store.addProject(name: project.name, path: project.path)
-        projectVM.setRecentProjects(store.loadProjects())
+        recentProjectsVM.addProject(project)
         projectVM.switchProject(to: project)
     }
 

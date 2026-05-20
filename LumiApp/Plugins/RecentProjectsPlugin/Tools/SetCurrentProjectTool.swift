@@ -1,10 +1,9 @@
 import Foundation
-import MagicKit
 
 /// 设置当前项目工具
 struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "set_current_project"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -38,7 +37,9 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Setting current project: \(path)")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.info("\(Self.t)Setting current project: \(path)")
+            }
         }
 
         // 验证路径是否存在且为目录
@@ -55,11 +56,11 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
         
-        // 使用 store 设置当前项目（会自动添加到最近列表）
+        // 将项目添加到最近列表
         let store = RecentProjectsStore()
-        store.setCurrentProject(name: projectName, path: path)
+        store.addProject(name: projectName, path: path)
         
-        // 发送通知，告知 RootView 同步到 ProjectVM
+        // 发送通知，告知 RootView 同步到 WindowProjectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         return """

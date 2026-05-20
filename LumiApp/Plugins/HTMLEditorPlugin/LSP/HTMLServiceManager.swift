@@ -38,6 +38,7 @@ final class HTMLServiceManager {
         // 预加载 HTML 字典到内存
         _ = HTMLKnowledgeBase.tags
         _ = HTMLKnowledgeBase.globalAttributes
+        _ = HTMLTreeSitterRegistration.languageDefinition
     }
 
     /// 停止 HTML 语言服务
@@ -83,6 +84,7 @@ final class HTMLServiceManager {
 
     /// 获取悬浮提示
     func provideHover(for symbol: String) -> String? {
-        return HTMLKnowledgeBase.hoverMarkdown(for: symbol)
+        return HTMLKnowledgeBase.hoverMarkdown(for: symbol) ??
+            ARIAAttributeDatabase.hoverMarkdown(for: symbol)
     }
 }

@@ -1,13 +1,12 @@
 import Foundation
 import Combine
-import MagicKit
 
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
     static let shared = NetworkManagerViewModel()
 
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
 
@@ -64,7 +63,9 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     init() {
         if Self.verbose {
-            NetworkManagerPlugin.logger.info("\(self.t)NetworkManagerViewModel initialized")
+            if NetworkManagerPlugin.verbose {
+                            NetworkManagerPlugin.logger.info("\(self.t)NetworkManagerViewModel initialized")
+            }
         }
         startMonitoring()
         
@@ -73,7 +74,9 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] processes in
                 if Self.verbose {
-                    NetworkManagerPlugin.logger.info("\(self?.t ?? NetworkManagerViewModel.t)Received process updates: \(processes.count)")
+                    if NetworkManagerPlugin.verbose {
+                                            NetworkManagerPlugin.logger.info("\(self?.t ?? NetworkManagerViewModel.t)Received process updates: \(processes.count)")
+                    }
                 }
                 self?.processes = processes
             }
@@ -106,7 +109,9 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         isMonitoring = true
 
         if Self.verbose {
-            NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
+            if NetworkManagerPlugin.verbose {
+                            NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
+            }
         }
 
         // Subscribe to NetworkService updates

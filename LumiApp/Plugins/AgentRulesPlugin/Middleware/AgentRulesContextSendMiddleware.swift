@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Agent 规则上下文注入中间件
@@ -21,7 +20,7 @@ import os
 @MainActor
 final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let id: String = "agent-rules-context"
     let order: Int = 0
 
@@ -34,14 +33,20 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if Self.verbose {
-            AgentRulesPlugin.logger.info("\(Self.t)📜 Agent Rules 上下文中间件：检查项目路径")
-            AgentRulesPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            if AgentRulesPlugin.verbose {
+                            AgentRulesPlugin.logger.info("\(Self.t)📜 Agent Rules 上下文中间件：检查项目路径")
+            }
+            if AgentRulesPlugin.verbose {
+                            AgentRulesPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            }
         }
 
         // 未选择项目时跳过
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (未选择项目)")
+                if AgentRulesPlugin.verbose {
+                                    AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (未选择项目)")
+                }
             }
             await next(ctx)
             return
@@ -54,7 +59,9 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
             // 无规则时跳过
             guard !rules.isEmpty else {
                 if Self.verbose {
-                    AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (无规则)")
+                    if AgentRulesPlugin.verbose {
+                                            AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (无规则)")
+                    }
                 }
                 await next(ctx)
                 return
@@ -68,13 +75,19 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
             ctx.transientSystemPrompts.append(prompt)
 
             if Self.verbose {
-                AgentRulesPlugin.logger.info("\(Self.t)   ✅ 已注入 \(rules.count) 条规则摘要")
-                AgentRulesPlugin.logger.info("\(Self.t)   📝 提示词长度：\(prompt.count) 字符")
+                if AgentRulesPlugin.verbose {
+                                    AgentRulesPlugin.logger.info("\(Self.t)   ✅ 已注入 \(rules.count) 条规则摘要")
+                }
+                if AgentRulesPlugin.verbose {
+                                    AgentRulesPlugin.logger.info("\(Self.t)   📝 提示词长度：\(prompt.count) 字符")
+                }
             }
         } catch {
             // 规则目录不存在时静默跳过
             if Self.verbose {
-                AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (读取失败：\(error.localizedDescription))")
+                if AgentRulesPlugin.verbose {
+                                    AgentRulesPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (读取失败：\(error.localizedDescription))")
+                }
             }
         }
 

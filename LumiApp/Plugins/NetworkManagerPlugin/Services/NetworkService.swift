@@ -1,14 +1,14 @@
 import Foundation
+import HttpKit
 import SystemConfiguration
 import Darwin
-import MagicKit
 import Combine
 import ShellKit
 
 @MainActor
 class NetworkService: SuperLog, ObservableObject {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = NetworkService()
 
     // Published properties for subscribers
@@ -29,7 +29,9 @@ class NetworkService: SuperLog, ObservableObject {
 
     private init() {
         if Self.verbose {
-            NetworkManagerPlugin.logger.info("\(Self.t)NetworkService initialized")
+            if NetworkManagerPlugin.verbose {
+                            NetworkManagerPlugin.logger.info("\(Self.t)NetworkService initialized")
+            }
         }
 
         // Initialize baseline
@@ -43,7 +45,9 @@ class NetworkService: SuperLog, ObservableObject {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                NetworkManagerPlugin.logger.info("\(Self.t)Starting network monitoring")
+                if NetworkManagerPlugin.verbose {
+                                    NetworkManagerPlugin.logger.info("\(Self.t)Starting network monitoring")
+                }
             }
             // Reset baseline to avoid huge spike if paused for long time
             let (In, Out) = Self.getInterfaceCounters()
@@ -63,7 +67,9 @@ class NetworkService: SuperLog, ObservableObject {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                NetworkManagerPlugin.logger.info("\(Self.t)Stopping network monitoring")
+                if NetworkManagerPlugin.verbose {
+                                    NetworkManagerPlugin.logger.info("\(Self.t)Stopping network monitoring")
+                }
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
@@ -207,44 +213,42 @@ class NetworkService: SuperLog, ObservableObject {
 
         let services = domesticServices + internationalServices
 
-        // 创建一个不使用缓存的 Session 配置
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 2
-        config.timeoutIntervalForResource = 2
-
-        let session = URLSession(configuration: config)
+        // 使用 HttpKit 的 ephemeral 配置客户端
+        let client = HTTPClient(timeoutIntervalForRequest: 2, timeoutIntervalForResource: 2) { config in
+            config.urlCache = nil
+            config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        }
 
         for service in services {
             guard let url = URL(string: service) else { continue }
             do {
-                let (data, response) = try await session.data(from: url)
-
-                // 检查 HTTP 状态码
-                if let httpResponse = response as? HTTPURLResponse,
-                   !(200...299).contains(httpResponse.statusCode) {
-                    if Self.verbose {
-                        NetworkManagerPlugin.logger.info("\(Self.t)⚠️ HTTP 错误：\(service) - 状态码：\(httpResponse.statusCode)")
-                    }
-                    continue
-                }
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+                let data = try await client.sendRequest(request: request)
 
                 let ip = parseIP(from: String(data: data, encoding: .utf8) ?? "")
 
                 if let ip = ip, isValidIPv4(ip) {
                     if Self.verbose {
-                        NetworkManagerPlugin.logger.info("\(Self.t)✅ 获取公网 IP 成功：\(ip) (来源：\(service))")
+                        if NetworkManagerPlugin.verbose {
+                            NetworkManagerPlugin.logger.info("\(Self.t)✅ 获取公网 IP 成功：\(ip) (来源：\(service))")
+                        }
                     }
                     return ip
                 }
             } catch {
                 if Self.verbose {
-                    NetworkManagerPlugin.logger.info("\(Self.t)⚠️ 获取公网 IP 失败：\(service) - \(error.localizedDescription)")
+                    if NetworkManagerPlugin.verbose {
+                        NetworkManagerPlugin.logger.info("\(Self.t)⚠️ 获取公网 IP 失败：\(service) - \(error.localizedDescription)")
+                    }
                 }
                 continue
             }
         }
 
-        NetworkManagerPlugin.logger.error("\(Self.t)❌ 所有公网 IP 服务均不可用")
+        if NetworkManagerPlugin.verbose {
+            NetworkManagerPlugin.logger.error("\(Self.t)❌ 所有公网 IP 服务均不可用")
+        }
         return nil
     }
 

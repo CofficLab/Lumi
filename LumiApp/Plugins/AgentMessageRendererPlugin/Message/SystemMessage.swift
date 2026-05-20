@@ -1,5 +1,6 @@
-import MagicKit
 import SwiftUI
+import LLMKit
+import LumiUI
 
 // MARK: - System Message
 //
@@ -71,7 +72,7 @@ struct SystemMessage: View {
 
 /// 本地模型正在加载或已就绪时，在系统消息中渲染的专用视图，展示状态与 LocalModelInfo 字段。
 struct LoadingLocalModelSystemMessageView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     let message: ChatMessage

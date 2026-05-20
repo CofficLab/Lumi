@@ -1,12 +1,11 @@
 import Foundation
 import SwiftUI
 import Combine
-import MagicKit
 
 @MainActor
 class HostsManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var entries: [HostEntry] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -76,7 +75,9 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
     
     func loadHosts() async {
         if Self.verbose {
-            HostsManagerPlugin.logger.info("\(self.t)Loading hosts file")
+            if HostsManagerPlugin.verbose {
+                            HostsManagerPlugin.logger.info("\(self.t)Loading hosts file")
+            }
         }
         isLoading = true
         errorMessage = nil
@@ -84,10 +85,14 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
             let content = try await HostsFileService.shared.readHosts()
             self.entries = HostsParser.parse(content: content)
             if Self.verbose {
-                HostsManagerPlugin.logger.info("\(self.t)Hosts file loaded successfully: \(self.entries.count) entries")
+                if HostsManagerPlugin.verbose {
+                                    HostsManagerPlugin.logger.info("\(self.t)Hosts file loaded successfully: \(self.entries.count) entries")
+                }
             }
         } catch {
-            HostsManagerPlugin.logger.error("\(self.t)Failed to load hosts file: \(error.localizedDescription)")
+            if HostsManagerPlugin.verbose {
+                            HostsManagerPlugin.logger.error("\(self.t)Failed to load hosts file: \(error.localizedDescription)")
+            }
             errorMessage = "Load failed: \(error.localizedDescription)"
         }
         isLoading = false
@@ -95,7 +100,9 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
 
     func saveHosts() async {
         if Self.verbose {
-            HostsManagerPlugin.logger.info("\(self.t)Saving hosts file")
+            if HostsManagerPlugin.verbose {
+                            HostsManagerPlugin.logger.info("\(self.t)Saving hosts file")
+            }
         }
         isLoading = true
         errorMessage = nil
@@ -103,12 +110,16 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
             let content = HostsParser.serialize(entries: entries)
             try await HostsFileService.shared.saveHosts(content: content)
             if Self.verbose {
-                HostsManagerPlugin.logger.info("\(self.t)Hosts file saved successfully")
+                if HostsManagerPlugin.verbose {
+                                    HostsManagerPlugin.logger.info("\(self.t)Hosts file saved successfully")
+                }
             }
             // Reload to reflect changes (and formatting)
             await loadHosts()
         } catch {
-            HostsManagerPlugin.logger.error("\(self.t)Failed to save hosts file: \(error.localizedDescription)")
+            if HostsManagerPlugin.verbose {
+                            HostsManagerPlugin.logger.error("\(self.t)Failed to save hosts file: \(error.localizedDescription)")
+            }
             errorMessage = "Save failed: \(error.localizedDescription)"
         }
         isLoading = false

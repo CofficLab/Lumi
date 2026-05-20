@@ -1,12 +1,14 @@
 import SwiftUI
+import LumiUI
 
 /// Rail 视图：位于活动栏与面板内容区之间的辅助栏
 ///
 /// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailTabs()` 提供 tab 定义，
 /// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
 struct RailView: View {
-    @EnvironmentObject private var pluginProvider: PluginVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @LumiMotionPreferenceReader private var motionPreference
+    @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var selectedTabId: String?
 
@@ -14,7 +16,7 @@ struct RailView: View {
     static let minWidth: CGFloat = 200
 
     /// Rail 栏默认最大宽度
-    static let maxWidth: CGFloat = 300
+    static let maxWidth: CGFloat = 420
 
     /// 持久化 key
     private let selectedTabStorageKey = "Split.Rail.SelectedTab"
@@ -53,37 +55,17 @@ struct RailView: View {
 
     private func railTabBar(tabs: [RailTab]) -> some View {
         HStack(spacing: 6) {
-            ForEach(tabs) { tab in
-                Button {
-                    selectedTabId = tab.id
-                    persistSelection(tab.id)
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(height: 16)
-                        Rectangle()
-                            .fill(
-                                selectedTabId == tab.id
-                                    ? Color(hex: "7C6FFF").opacity(0.9)
-                                    : Color.clear
-                            )
-                            .frame(height: 2)
+            AppTabBar(
+                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                selectedTab: Binding(
+                    get: { selectedTabId ?? tabs.first?.id ?? "" },
+                    set: { newValue in
+                        selectedTabId = newValue
+                        persistSelection(newValue)
                     }
-                    .foregroundColor(
-                        selectedTabId == tab.id
-                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
-                    )
-                    .padding(.horizontal, 6)
-                    .padding(.top, 2)
-                    .contentShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-                .help(tab.title)
-                // Tab 选中状态变化时平滑过渡
-                .animation(.easeInOut(duration: 0.15), value: selectedTabId == tab.id)
-            }
+                ),
+                showText: false
+            )
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)
@@ -107,7 +89,7 @@ struct RailView: View {
             if let contentView {
                 contentView
                     // Rail 内容切换时平滑过渡
-                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
                     .id(currentId ?? "empty")
             } else {
                 Color.clear

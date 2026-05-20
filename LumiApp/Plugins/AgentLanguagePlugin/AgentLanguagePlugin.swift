@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 语言切换插件
@@ -7,7 +6,7 @@ import SwiftUI
 /// 并通过中间件自动将语言偏好注入 LLM 系统提示。
 actor AgentLanguagePlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "AgentLanguageHeader"
     static let displayName = String(localized: "Language Selector", table: "AgentLanguageHeader")
     static let description = String(localized: "AI response language in header", table: "AgentLanguageHeader")

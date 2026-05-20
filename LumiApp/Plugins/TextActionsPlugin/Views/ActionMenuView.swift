@@ -30,7 +30,7 @@ struct ActionMenuView: View {
                         .fontWeight(.medium)
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text("版本 \(appVersion)")
+                    Text(String(format: String(localized: "Version %@", table: "TextActions"), appVersion))
                         .font(.caption2)
                         .foregroundColor(Color(hex: "98989E"))
                 }

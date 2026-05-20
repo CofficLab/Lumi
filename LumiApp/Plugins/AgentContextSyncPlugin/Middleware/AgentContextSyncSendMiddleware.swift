@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Agent 上下文同步中间件
@@ -20,7 +19,7 @@ import os
 @MainActor
 final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let id: String = "agent-context-sync"
     let order: Int = 0  // 较早执行，优先注入项目上下文
 
@@ -34,20 +33,32 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
         let selectedFileURL = ctx.currentFileURL
         let codeSelectionRange = ctx.projectVM.codeSelectionRange
-        let recentProjects = ctx.projectVM.getRecentProjects()
+        let recentProjects = ctx.recentProjectsVM.getRecentProjects()
 
         if Self.verbose {
-            AgentContextSyncPlugin.logger.info("\(Self.t)🔄 Agent Context Sync 中间件：检查项目信息")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   项目名称：\(projectName.isEmpty ? "<未选择>" : projectName)")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   选中文件：\(selectedFileURL?.path ?? "<未选择>")")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   代码选区：\(codeSelectionRange?.description ?? "<无>")")
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)🔄 Agent Context Sync 中间件：检查项目信息")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   项目名称：\(projectName.isEmpty ? "<未选择>" : projectName)")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   选中文件：\(selectedFileURL?.path ?? "<未选择>")")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   代码选区：\(codeSelectionRange?.description ?? "<无>")")
+            }
         }
 
         // 未选择项目时跳过
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                AgentContextSyncPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (未选择项目)")
+                if AgentContextSyncPlugin.verbose {
+                                    AgentContextSyncPlugin.logger.info("\(Self.t)   ⏭️ 跳过 (未选择项目)")
+                }
             }
             await next(ctx)
             return
@@ -65,9 +76,15 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            AgentContextSyncPlugin.logger.info("\(Self.t)   ✅ 已注入项目上下文")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   📝 提示词长度：\(prompt.count) 字符")
-            AgentContextSyncPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   ✅ 已注入项目上下文")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   📝 提示词长度：\(prompt.count) 字符")
+            }
+            if AgentContextSyncPlugin.verbose {
+                            AgentContextSyncPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
+            }
         }
 
         await next(ctx)

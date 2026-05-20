@@ -1,8 +1,12 @@
 # WebFetchKit
 
-Core web fetching and content extraction utilities for Lumi.
+可复用的网页抓取与内容提取工具包。提供 URL 校验、HTTP 抓取、HTML→Markdown 转换、响应格式化、缓存与段落提取等能力。
 
-`WebFetchKit` contains the reusable logic behind the Web Fetch plugin. The app plugin should stay as a thin adapter around this package.
+## Package
+
+- Product: `WebFetchKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
 
 ## Features
 
@@ -59,7 +63,7 @@ struct MockFetcher: WebFetchFetching {
 let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
 ```
 
-## Running Tests
+## Testing
 
 From this package directory:
 
@@ -67,8 +71,8 @@ From this package directory:
 swift test
 ```
 
-The test suite covers HTML conversion, malformed list handling, response formatting, redirects, caching, prompt extraction, and binary file output.
+Tests cover HTML conversion, malformed list handling, response formatting, redirects, caching, prompt extraction, and binary file output.
 
-## App Integration
+## Host integration
 
-The Lumi Web Fetch plugin imports `WebFetchKit` and delegates execution to `WebFetchService`. Keep plugin-specific code, tool schemas, permissions, and MagicKit integration in the app target; keep fetching, formatting, caching, and conversion behavior in this package.
+Keep plugin-specific code, tool schemas, permissions, and logging integration in the host app; keep fetching, formatting, caching, and conversion in this package.

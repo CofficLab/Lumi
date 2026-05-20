@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 public struct CopyMessageButton: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     let content: String
@@ -35,10 +36,11 @@ public struct CopyMessageButton: View {
         .buttonStyle(.plain)
         .help("复制消息内容")
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering
             }
         }
+        .animation(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference), value: showFeedback)
     }
 
     private var iconName: String {
@@ -65,10 +67,14 @@ public struct CopyMessageButton: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(content, forType: .string)
 
-        showFeedback = true
+        AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+            showFeedback = true
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            showFeedback = false
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+                showFeedback = false
+            }
         }
     }
 }

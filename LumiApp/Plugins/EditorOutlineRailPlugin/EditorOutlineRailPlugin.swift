@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器大纲 Rail 插件：提供 Outline 标签页
 actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "📋"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorOutlineRail"
     static let displayName: String = String(
         localized: "Editor Outline Rail", table: "EditorOutlineRail")
@@ -43,7 +42,7 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
 
 /// Outline 标签页内容视图
 struct EditorOutlineRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

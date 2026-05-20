@@ -5,7 +5,7 @@ import SwiftUI
 /// 当当前面板没有选中文件时显示，引导用户从文件树或其他入口选择一个文件
 /// 开始编辑。
 struct EditorEmptyStateView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(spacing: 8) {

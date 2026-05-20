@@ -1,19 +1,24 @@
 import Combine
-import MagicKit
 import SwiftUI
 
 /// 对话列表视图
 /// 使用分页方式渲染会话列表，避免一次性加载全部历史记录
+///
+/// 支持多窗口模式，优先从 WindowState 获取和设置当前窗口的会话选择。
 struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
-    /// 会话管理 ViewModel
-    @EnvironmentObject var conversationVM: ConversationVM
+    nonisolated static let verbose: Bool = false
     
-    /// 项目管理 ViewModel
-    @EnvironmentObject var projectVM: ProjectVM
+    /// 窗口作用域（多窗口支持）
+    @Environment(\.windowScope) private var windowScope
+    
+    /// 会话管理 ViewModel（全局）
+    @EnvironmentObject var conversationVM: WindowConversationVM
+    
+    /// 项目管理 ViewModel（全局）
+    @EnvironmentObject var projectVM: WindowProjectVM
     
     private let selectionStore = ConversationListLocalStore.shared
 
@@ -124,13 +129,24 @@ extension ConversationListView {
 // MARK: - Action
 
 extension ConversationListView {
+    /// 获取当前选中的会话 ID（优先从 WindowState 获取）
+    private var currentSelectedConversationId: UUID? {
+        // 优先使用窗口级状态
+        if let windowScope = windowScope,
+           let conversationId = windowScope.selectedConversationId {
+            return conversationId
+        }
+        // 回退到全局 VM
+        return conversationVM.selectedConversationId
+    }
+    
     /// 同步 VM 的选中状态到本地 List
     /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
-        let vmId = conversationVM.selectedConversationId
+        let selectedId = currentSelectedConversationId
 
-        // 如果 VM 有选中的会话，同步到本地
-        if let selectedId = vmId {
+        // 如果有选中的会话，同步到本地
+        if let selectedId = selectedId {
             // 检查选中的会话是否存在于当前列表中
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
@@ -139,12 +155,14 @@ extension ConversationListView {
             } else {
                 // 选中的会话不存在于列表中，清除选择
                 if Self.verbose {
-                    ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
+                    if ConversationListPlugin.verbose {
+                                            ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
+                    }
                 }
                 localSelectedConversationId = nil
             }
         } else {
-            // VM 没有选中会话，清除本地选择
+            // 没有选中会话，清除本地选择
             if localSelectedConversationId != nil {
                 localSelectedConversationId = nil
             }
@@ -155,7 +173,9 @@ extension ConversationListView {
     /// - Parameter conversation: 要删除的会话
     private func handleDelete(_ conversation: Conversation) {
         if Self.verbose {
-            ConversationListPlugin.logger.info("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
+            if ConversationListPlugin.verbose {
+                            ConversationListPlugin.logger.info("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
+            }
         }
 
         // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
@@ -164,7 +184,9 @@ extension ConversationListView {
             if let nextConversation = remainingConversations.first {
                 localSelectedConversationId = nextConversation.id
                 if Self.verbose {
-                    ConversationListPlugin.logger.info("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
+                    if ConversationListPlugin.verbose {
+                                            ConversationListPlugin.logger.info("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
+                    }
                 }
             } else {
                 localSelectedConversationId = nil
@@ -295,7 +317,9 @@ extension ConversationListView {
     private func switchToProjectIfNeeded(for conversation: Conversation) {
         guard let projectId = conversation.projectId else {
             if Self.verbose {
-                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.title)」未关联项目")
+                if ConversationListPlugin.verbose {
+                                    ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.title)」未关联项目")
+                }
             }
             return
         }
@@ -304,7 +328,9 @@ extension ConversationListView {
         let projectPath = projectId
         guard FileManager.default.fileExists(atPath: projectPath) else {
             if Self.verbose {
-                ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+                if ConversationListPlugin.verbose {
+                                    ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+                }
             }
             return
         }
@@ -312,7 +338,9 @@ extension ConversationListView {
         // 检查当前项目是否已经是目标项目
         if projectVM.currentProject?.path == projectPath {
             if Self.verbose {
-                ConversationListPlugin.logger.info("\(self.t)✅ 已是当前项目，无需切换：\(projectPath)")
+                if ConversationListPlugin.verbose {
+                                    ConversationListPlugin.logger.info("\(self.t)✅ 已是当前项目，无需切换：\(projectPath)")
+                }
             }
             return
         }
@@ -324,7 +352,9 @@ extension ConversationListView {
         projectVM.switchProject(to: project)
         
         if Self.verbose {
-            ConversationListPlugin.logger.info("\(self.t)🔄 已切换到项目：\(projectName) (\(projectPath))")
+            if ConversationListPlugin.verbose {
+                            ConversationListPlugin.logger.info("\(self.t)🔄 已切换到项目：\(projectName) (\(projectPath))")
+            }
         }
     }
 }
@@ -338,24 +368,34 @@ extension ConversationListView {
         if let localId = localSelectedConversationId {
             if !newConversations.contains(where: { $0.id == localId }) {
                 if Self.verbose {
-                    ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                    if ConversationListPlugin.verbose {
+                                            ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                    }
                 }
                 localSelectedConversationId = nil
             }
         }
     }
 
-    /// 处理选择变化：同步到 ConversationVM
+    /// 处理选择变化：同步到 WindowConversationVM 和 WindowState
     func handleLocalSelectionChange() {
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != conversationVM.selectedConversationId else {
+        let currentSelected = currentSelectedConversationId
+        guard localSelectedConversationId != currentSelected else {
             return
         }
 
         if let newId = self.localSelectedConversationId {
             if Self.verbose {
-                ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
+                if ConversationListPlugin.verbose {
+                                    ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
+                }
             }
+            
+            // 同步到窗口级状态
+            windowScope?.switchToConversation(newId)
+            
+            // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(newId)
             
             // 选择会话时，切换到关联的项目
@@ -364,8 +404,15 @@ extension ConversationListView {
             }
         } else {
             if Self.verbose {
-                ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
+                if ConversationListPlugin.verbose {
+                                    ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
+                }
             }
+            
+            // 同步到窗口级状态
+            windowScope?.switchToConversation(nil)
+            
+            // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(nil)
         }
     }
@@ -374,7 +421,9 @@ extension ConversationListView {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
         let vmId = conversationVM.selectedConversationId?.uuidString ?? "nil"
         if Self.verbose {
-            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+            if ConversationListPlugin.verbose {
+                            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+            }
         }
 
         // 只在值确实不同时才更新，避免循环
@@ -389,13 +438,17 @@ extension ConversationListView {
                     lastReloadSelectionId = conversationId
                     reloadFromFirstPage()
                 } else if Self.verbose {
-                    ConversationListPlugin.logger.info("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
+                    if ConversationListPlugin.verbose {
+                                            ConversationListPlugin.logger.info("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
+                    }
                 }
             }
 
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
                 if Self.verbose {
-                    ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                    if ConversationListPlugin.verbose {
+                                            ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                    }
                 }
                 self.localSelectedConversationId = conversationId
                 lastReloadSelectionId = nil

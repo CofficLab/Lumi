@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器问题面板 Rail 插件：提供 Problems 标签页
 actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "⚠️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailProblems"
     static let displayName: String = String(
         localized: "Editor Rail Problems", table: "EditorRailProblems")
@@ -43,7 +42,7 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
 
 /// Problems 标签页内容视图
 struct EditorProblemsRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

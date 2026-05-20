@@ -1,4 +1,5 @@
 import Foundation
+import MCPKit
 
 final class AgentMCPPluginLocalStore: @unchecked Sendable {
     private let fileManager = FileManager.default
@@ -13,6 +14,16 @@ final class AgentMCPPluginLocalStore: @unchecked Sendable {
         self.settingsDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+    }
+
+    func mcpServerConfigs(forKey key: String) -> [MCPServerConfig] {
+        migrateLegacyValueIfMissing(forKey: key)
+        guard let data = data(forKey: key),
+              let configs = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
+        else {
+            return []
+        }
+        return configs
     }
 
     func migrateLegacyValueIfMissing(forKey key: String) {

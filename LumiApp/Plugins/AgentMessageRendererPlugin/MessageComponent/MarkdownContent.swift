@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import MarkdownKit
 import CodeEditSourceEditor
 
@@ -8,7 +7,7 @@ import CodeEditSourceEditor
 struct MarkdownContent: View {
     let content: String
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         MarkdownBlockRenderer(

@@ -1,12 +1,13 @@
+import LumiUI
 import SwiftUI
 
 /// 空状态视图 - 未选择会话时显示
 struct EmptyStateView: View {
-    @EnvironmentObject private var ConversationVM: ConversationVM
-    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
+    @EnvironmentObject private var WindowConversationVM: WindowConversationVM
+    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
 
     private var hasAnyConversation: Bool {
-        !ConversationVM.fetchAllConversations().isEmpty
+        !WindowConversationVM.fetchAllConversations().isEmpty
     }
 
     var body: some View {

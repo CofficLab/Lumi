@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 远程模型选择行组件 - 支持点击选中、默认状态标记和能力徽章展示

@@ -1,13 +1,14 @@
 import Foundation
-import MagicKit
 import SwiftUI
+import WorkspaceFileKit
 
 /// 文件写入工具
 ///
 /// 允许 AI 助手创建新文件或覆盖现有文件。
 struct WriteFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
+    private let writer = WorkspaceFileWriter()
     let name = "write_file"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -54,27 +55,8 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
             AgentCoreToolsPlugin.logger.info("\(self.t)写入文件：\(fileName)（\(content.count) 字符）")
         }
 
-        let fileURL = URL(fileURLWithPath: path)
-        let directoryURL = fileURL.deletingLastPathComponent()
-
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: directoryURL.path) {
-            if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t)目录不存在，正在创建：\(directoryURL.path)")
-            }
-            do {
-                try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-                if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)目录创建成功")
-                }
-            } catch {
-                AgentCoreToolsPlugin.logger.error("\(self.t)创建目录失败：\(error.localizedDescription)")
-                return "Error creating directory: \(error.localizedDescription)"
-            }
-        }
-
         do {
-            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            try writer.write(path: path, content: content)
             if Self.verbose {
                 AgentCoreToolsPlugin.logger.info("\(self.t)文件写入成功：\(fileName)")
             }

@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// Menu bar popup view for Network Manager plugin

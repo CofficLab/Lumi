@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import os
 
@@ -7,7 +6,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🎯"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.model-preference")
 
@@ -59,7 +58,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过保存")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过保存")
+                }
             }
             return
         }
@@ -68,7 +69,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.savePreference(forProject: projectPath, provider: provider, model: model)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)💾 保存模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(provider) - \(model)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)💾 保存模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(provider) - \(model)")
+            }
         }
     }
 
@@ -79,7 +82,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过读取")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过读取")
+                }
             }
             return nil
         }
@@ -89,9 +94,13 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         
         if Self.verbose {
             if let result {
-                Self.logger.info("\(self.t)📂 读取模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(result.provider) - \(result.model)")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)📂 读取模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(result.provider) - \(result.model)")
+                }
             } else {
-                Self.logger.info("\(self.t)📂 未找到模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)📂 未找到模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
+                }
             }
         }
         
@@ -104,7 +113,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过清除")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过清除")
+                }
             }
             return
         }
@@ -113,7 +124,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.clearPreference(forProject: projectPath)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)🗑️ 已清除模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)🗑️ 已清除模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
+            }
         }
     }
 }

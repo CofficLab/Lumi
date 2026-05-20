@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 
 /// 对话时间线的数据整理和统计逻辑。
 struct ConversationTimelineService {

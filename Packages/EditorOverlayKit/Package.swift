@@ -28,6 +28,11 @@ let package = Package(
                 .product(name: "MagicKit", package: "MagicKit"),
             ],
             path: "Sources/EditorOverlayKit"
+        ),
+        .testTarget(
+            name: "EditorOverlayKitTests",
+            dependencies: ["EditorOverlayKit"],
+            path: "Tests/EditorOverlayKitTests"
         )
     ]
 )

@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import os
 
 // Forward reference to MLXModels
@@ -98,7 +97,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 } else {
                     await self.updateStatus(.idle)
                 }
-                Self.logger.error("\(self.t)模型下载失败：\(modelId), 错误：\(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.error("\(self.t)模型下载失败：\(modelId), 错误：\(error.localizedDescription)")
+                }
             }
         }
 
@@ -380,7 +381,9 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
            let size = attrs[.size] as? Int64 {
             actualSize = size
             if expectedSize > 0 && size != expectedSize {
-                Self.logger.warning("\(self.t)大小不匹配：期望 \(expectedSize), 实际 \(size)")
+                if Self.verbose {
+                                    Self.logger.warning("\(self.t)大小不匹配：期望 \(expectedSize), 实际 \(size)")
+                }
             }
             try? fileManager.removeItem(at: destURL)
             try? fileManager.moveItem(at: incompleteURL, to: destURL)
@@ -397,7 +400,9 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
         guard let taskInfo = task.taskDescription else { return }
 
         if let error = error {
-            Self.logger.error("\(self.t)下载失败：\(error.localizedDescription)")
+            if Self.verbose {
+                            Self.logger.error("\(self.t)下载失败：\(error.localizedDescription)")
+            }
             if let context = DownloadContext.remove(id: taskInfo) {
                 context.resume(throwing: error)
             }

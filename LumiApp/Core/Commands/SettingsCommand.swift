@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 设置命令：在应用菜单中添加设置入口
@@ -8,7 +7,7 @@ struct SettingsCommand: Commands, SuperLog {
     nonisolated static let emoji = "⚙️"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     var body: some Commands {
         #if os(macOS)
             CommandGroup(after: .appInfo) {

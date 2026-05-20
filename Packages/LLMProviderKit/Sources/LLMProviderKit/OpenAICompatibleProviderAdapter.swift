@@ -100,6 +100,13 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             }
         }
 
+        if configuration.includesReasoningContentInMessages,
+           message.role == .assistant,
+           let reasoningContent = message.reasoningContent,
+           !reasoningContent.isEmpty {
+            dict["reasoning_content"] = reasoningContent
+        }
+
         return dict
     }
 
@@ -114,7 +121,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         ]
     }
 
-    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?) {
         if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
             throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -133,7 +140,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             )
         }
 
-        return (choiceMessage.content ?? "", toolCalls)
+        return (choiceMessage.content ?? "", toolCalls, choiceMessage.reasoningContent)
     }
 
     public func parseStreamChunk(data: Data) throws -> StreamChunk? {
@@ -180,6 +187,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         if let choices = json["choices"] as? [[String: Any]],
            let firstChoice = choices.first,
            let delta = firstChoice["delta"] as? [String: Any] {
+            if let reasoningContent = delta["reasoning_content"] as? String {
+                return StreamChunk(content: reasoningContent, eventType: .thinkingDelta)
+            }
+
             if let content = delta["content"] as? String {
                 return StreamChunk(content: content, eventType: .textDelta)
             }

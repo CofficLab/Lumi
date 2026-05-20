@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import os
 import SkillKit
 import SwiftUI
@@ -13,7 +13,7 @@ struct SkillStatusBarView: View, SuperLog {
     nonisolated static var verbose: Bool { SkillPlugin.verbose }
     nonisolated static var logger: Logger { SkillPlugin.logger }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var skills: [SkillMetadata] = []
     @State private var refreshTask: Task<Void, Never>?
 
@@ -58,11 +58,15 @@ struct SkillStatusBarView: View, SuperLog {
     private func refreshSkills() {
         let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         if Self.verbose {
-            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            }
         }
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
+                }
             }
             refreshTask?.cancel()
             refreshTask = nil
@@ -80,9 +84,13 @@ struct SkillStatusBarView: View, SuperLog {
                 skills = loaded
             }
             if Self.verbose {
-                Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
+                if Self.verbose {
+                                    Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
+                }
                 for s in loaded {
-                    Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
+                    if Self.verbose {
+                                            Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
+                    }
                 }
             }
         }
@@ -133,32 +141,31 @@ struct SkillRow: View {
     let skill: SkillMetadata
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // 图标
-            Image(systemName: "sparkle")
-                .font(.system(size: 12))
-                .foregroundColor(Color(hex: "7C6FFF"))
-                .padding(.top, 2)
+        AppListRow {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .padding(.top, 2)
 
-            // 信息
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(skill.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(skill.title)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text("v\(skill.version)")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "98989E"))
+                        Text("v\(skill.version)")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(hex: "98989E"))
+                    }
+
+                    Text(skill.description)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .lineLimit(2)
                 }
-
-                Text(skill.description)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    .lineLimit(2)
             }
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -166,7 +173,7 @@ struct SkillRow: View {
 
 #Preview("SkillStatusBarView") {
     SkillStatusBarView()
-        .environmentObject(ProjectVM(
+        .environmentObject(WindowProjectVM(
             contextService: ContextService(),
             llmService: LLMService(registry: LLMProviderRegistry())
         ))

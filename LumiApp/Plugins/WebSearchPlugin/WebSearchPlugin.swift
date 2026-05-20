@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Web Search 插件
@@ -15,7 +14,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔍"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "WebSearch"
     static let displayName: String = String(localized: "Web Search", table: "WebSearch")
     static let description: String = String(localized: "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。", table: "WebSearch")
@@ -32,19 +31,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(WebSearchToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct WebSearchToolFactory: SuperAgentToolFactory {
-    let id: String = "web.search.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [WebSearchTool()]
     }
 }

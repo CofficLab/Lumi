@@ -9,7 +9,8 @@ final class HTMLHoverContributor: SuperEditorHoverContributor {
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {
         guard HTMLKnowledgeBase.isSupported(languageId: context.languageId) else { return [] }
-        guard let markdown = HTMLKnowledgeBase.hoverMarkdown(for: context.symbol) else { return [] }
+        guard let markdown = HTMLKnowledgeBase.hoverMarkdown(for: context.symbol) ??
+            ARIAAttributeDatabase.hoverMarkdown(for: context.symbol) else { return [] }
         return [.init(markdown: markdown, priority: 120)]
     }
 }

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 剪贴板存储
 ///
@@ -7,7 +6,7 @@ import MagicKit
 /// 存储位置：AppConfig.getDBFolderURL()/ClipboardManager/history.sqlite
 actor ClipboardStorage: SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     static let shared = ClipboardStorage()
     
@@ -42,7 +41,9 @@ actor ClipboardStorage: SuperLog {
         await cleanupIfNeeded()
         
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)➕ 已添加剪贴板项：\(item.content.prefix(50))...")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)➕ 已添加剪贴板项：\(item.content.prefix(50))...")
+            }
         }
     }
     
@@ -65,7 +66,9 @@ actor ClipboardStorage: SuperLog {
     func clear(keepPinned: Bool = true) async {
         await historyManager.clearAll(keepPinned: keepPinned)
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空剪贴板历史")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空剪贴板历史")
+            }
         }
     }
     
@@ -75,7 +78,9 @@ actor ClipboardStorage: SuperLog {
         if let item = items.first(where: { $0.id == id }) {
             await historyManager.updatePinStatus(id: id, isPinned: !item.isPinned)
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)📌 已切换固定状态：\(id)")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)📌 已切换固定状态：\(id)")
+                }
             }
         }
     }
@@ -86,7 +91,9 @@ actor ClipboardStorage: SuperLog {
         await historyManager.delete(id: id)
         if Self.verbose {
             let wasPinned = item?.isPinned ?? false
-            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
+            }
         }
     }
     
@@ -94,7 +101,9 @@ actor ClipboardStorage: SuperLog {
     func delete(ids: [UUID]) async {
         await historyManager.delete(ids: ids)
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+            }
         }
     }
     
@@ -131,7 +140,9 @@ actor ClipboardStorage: SuperLog {
             await historyManager.delete(ids: Array(itemsToDelete))
             
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(itemsToDelete.count) 项超出限制的历史")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(itemsToDelete.count) 项超出限制的历史")
+                }
             }
         }
     }

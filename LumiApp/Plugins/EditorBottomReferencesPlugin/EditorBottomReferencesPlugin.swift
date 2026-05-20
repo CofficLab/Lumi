@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -13,7 +12,7 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔗"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorBottomReferences"
     static let displayName: String = String(
         localized: "Editor Bottom References", table: "EditorBottomReferences")
@@ -47,7 +46,7 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
 
 /// References 底部面板内容视图
 struct EditorBottomReferencesContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

@@ -1,5 +1,6 @@
 import Foundation
-import MagicKit
+import LLMKit
+import HttpKit
 
 // MARK: - 重试策略
 
@@ -45,20 +46,20 @@ final class LLMRequester: SuperLog {
     nonisolated static let emoji = "🧠"
 
     private let llmService: LLMService
-    let agentSessionConfig: LLMVM
+    let agentSessionConfig: AppLLMVM
     private let toolService: ToolService
-    private let pluginVM: PluginVM
-    private let statusVM: ConversationStatusVM
+    private let pluginVM: AppPluginVM
+    private let statusVM: WindowConversationStatusVM
     private let retryPolicy: StreamRetryPolicy
-    private let projectVM: ProjectVM
+    private let projectVM: WindowProjectVM
 
     init(
         llmService: LLMService,
-        agentSessionConfig: LLMVM,
+        agentSessionConfig: AppLLMVM,
         toolService: ToolService,
-        pluginVM: PluginVM,
-        statusVM: ConversationStatusVM,
-        projectVM: ProjectVM,
+        pluginVM: AppPluginVM,
+        statusVM: WindowConversationStatusVM,
+        projectVM: WindowProjectVM,
         retryPolicy: StreamRetryPolicy = .default
     ) {
         self.llmService = llmService
@@ -89,7 +90,6 @@ final class LLMRequester: SuperLog {
             baseMessages: messages,
             additionalSystemPrompts: additionalSystemPrompts
         )
-        let config = agentSessionConfig.getCurrentConfig()
 
         // 将语言偏好注入工具服务，使 tools 返回本地化后的描述
         toolService.languagePreference = projectVM.languagePreference
@@ -100,6 +100,7 @@ final class LLMRequester: SuperLog {
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools
+        let config = resolveRequestConfig(messages: messagesForLLM, allowsTools: toolsArg != nil)
 
         let onStreamChunk = makeStreamChunkHandler(conversationId: conversationId)
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -201,7 +202,7 @@ final class LLMRequester: SuperLog {
     private func makeRequestStartHandler(
         conversationId: UUID,
         metadataHolder: MetadataHolder
-    ) -> @Sendable (RequestMetadata) async -> Void {
+    ) -> @Sendable (HTTPRequestMetadata) async -> Void {
         let statusVM = self.statusVM
         return { metadata in
             await metadataHolder.set(metadata)
@@ -209,6 +210,32 @@ final class LLMRequester: SuperLog {
                 statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
             }
         }
+    }
+
+    private func resolveRequestConfig(messages: [ChatMessage], allowsTools: Bool) -> LLMConfig {
+        let fallback = agentSessionConfig.getCurrentConfig()
+        guard agentSessionConfig.isAutoMode else {
+            agentSessionConfig.lastAutoRouteSummary = nil
+            return fallback
+        }
+
+        let signal = AutoRouteSignal(
+            hasImages: messages.contains { !$0.images.isEmpty },
+            chatMode: agentSessionConfig.chatMode,
+            messageLength: messages.reduce(0) { $0 + $1.content.count },
+            allowsTools: allowsTools,
+            currentProviderId: fallback.providerId,
+            currentModel: fallback.model
+        )
+
+        let router = AutoModelRouter(llmService: llmService)
+        guard let result = router.route(signal: signal) else {
+            agentSessionConfig.lastAutoRouteSummary = "Auto 未找到可用候选，已使用当前选择"
+            return fallback
+        }
+
+        agentSessionConfig.lastAutoRouteSummary = "\(result.providerDisplayName) · \(result.config.model)（\(result.reason)）"
+        return result.config
     }
 
     private func updateStatusBeforeRequest(conversationId: UUID, attempt: Int) {
@@ -254,7 +281,7 @@ final class LLMRequester: SuperLog {
         mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
         if let error {
             mutableMetadata.error = error
-            if let apiError = error as? APIError,
+            if let apiError = error as? HTTPClientError,
                case let .httpError(statusCode, _) = apiError {
                 mutableMetadata.responseStatusCode = statusCode
             }
@@ -285,8 +312,8 @@ final class LLMRequester: SuperLog {
             }
         }
 
-        // ── APIError（由 LLMAPIService 直接抛出）──
-        if let apiError = error as? APIError {
+        // ── HTTPClientError（由 LLMAPIService 直接抛出）──
+        if let apiError = error as? HTTPClientError {
             switch apiError {
             case let .httpError(statusCode, _):
                 if statusCode == 429 { return true }

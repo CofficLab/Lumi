@@ -4,10 +4,10 @@ import LumiUI
 /// 插件设置视图：控制各个插件的启用/禁用状态
 struct PluginSettingsView: View {
     /// 插件设置存储
-    private let settingsStore = PluginSettingsVM.shared
+    private let settingsStore = AppPluginSettingsVM.shared
 
     /// 插件 VM
-    @EnvironmentObject var pluginProvider: PluginVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
 
     /// 插件启用状态
     @State private var pluginStates: [String: Bool] = [:]
@@ -45,7 +45,7 @@ struct PluginSettingsView: View {
     // MARK: - Header Card
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             GlassSectionHeader(
                 icon: "puzzlepiece.extension.fill",
                 title: "插件管理",
@@ -57,7 +57,7 @@ struct PluginSettingsView: View {
     // MARK: - Plugin List Card
 
     private var pluginListCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(configurablePlugins) { plugin in
                     PluginToggleRow(
@@ -83,7 +83,7 @@ struct PluginSettingsView: View {
     // MARK: - Empty State Card
 
     private var emptyStateCard: some View {
-        GlassCard {
+        AppCard {
             VStack(spacing: 24) {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 48))

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器调用层级 Rail 插件：提供 Call Hierarchy 标签页
 actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "📞"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorCallHierarchyRail"
     static let displayName: String = String(
         localized: "Editor Call Hierarchy Rail", table: "EditorCallHierarchyRail")
@@ -43,7 +42,7 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 
 /// Call Hierarchy 标签页内容视图
 struct EditorCallHierarchyRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

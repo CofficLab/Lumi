@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 可用工具列表详情视图（在 popover 中展示）
 struct AvailableToolsListDetailView: View {
-    @EnvironmentObject var conversationTurnServices: ConversationTurnServices
+    @EnvironmentObject var conversationTurnServices: AppConversationTurnServicesVM
     @State private var query = ""
     @State private var selectedLanguage: LanguagePreference = .english
 

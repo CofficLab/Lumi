@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import AppKit
 
 /// 字体配置状态栏入口视图
@@ -6,7 +7,7 @@ import AppKit
 /// 在编辑器底部状态栏右侧显示当前字体名称缩写，
 /// 点击后弹出 popover 选择字体。
 struct FontStatusBarView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
     @StateObject private var viewModel = FontConfigViewModel()
 
     var body: some View {

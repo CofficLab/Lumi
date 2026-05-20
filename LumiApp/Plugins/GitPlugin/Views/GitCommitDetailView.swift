@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// Git Commit 详情视图
 ///
@@ -12,9 +11,9 @@ struct GitCommitDetailView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var gitVM: GitVM
-    @EnvironmentObject private var layoutVM: LayoutVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var gitVM: AppGitVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?
@@ -738,7 +737,9 @@ struct GitCommitDetailView: View {
                 do {
                     return try await GitCommitDetailService.loadUncommittedFiles(path: path)
                 } catch {
-                    GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    if GitPlugin.verbose {
+                                            GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    }
                     return []
                 }
             }()
@@ -799,7 +800,9 @@ struct GitCommitDetailView: View {
                 self.loading = false
                 self.errorMessage = error.localizedDescription
 
-                GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -845,7 +848,9 @@ struct GitCommitDetailView: View {
                     self.loadingDiff = false
                 }
 
-                GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                }
             }
         }
     }

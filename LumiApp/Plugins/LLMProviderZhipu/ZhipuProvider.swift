@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 // MARK: - Zhipu AI 供应商
@@ -11,7 +10,7 @@ import os
 final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.zhipu")
     nonisolated static let emoji = "🔴"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     static let id = "zhipu"
@@ -139,7 +138,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         // 先检测 [DONE] 标记（Zhipu 特有）
         if text.contains("data: [DONE]") || text.trimmingCharacters(in: .whitespacesAndNewlines) == "[DONE]" {
             if Self.verbose {
-                Self.logger.info("\(self.t) 检测到 [DONE] 标记，流式响应结束")
+                                    Self.logger.info("\(self.t) 检测到 [DONE] 标记，流式响应结束")
             }
             return StreamChunk(isDone: true, eventType: .messageStop)
         }
@@ -278,7 +277,8 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
             return StreamChunk(eventType: .unknown, rawEvent: text)
         } catch {
             if Self.verbose {
-                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+                                    Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+
             }
             return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
         }
@@ -316,7 +316,8 @@ extension ZhipuProvider {
 
         if !message.images.isEmpty {
             if Self.verbose {
-                Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
+                                    Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
+
             }
 
             var content: [[String: Any]] = []
@@ -328,7 +329,8 @@ extension ZhipuProvider {
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                                            Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+
                 }
                 content.append([
                     "type": "image",
@@ -337,7 +339,9 @@ extension ZhipuProvider {
             }
 
             if Self.verbose {
-                Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
+                                    Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
+
+
             }
 
             return ["role": message.role.rawValue, "content": content]
@@ -387,5 +391,43 @@ extension ZhipuProvider {
 extension ZhipuProvider {
     func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
+    }
+}
+
+// MARK: - 响应模型
+
+private struct ZhipuResponse: Decodable {
+    let content: [ContentBlock]
+
+    struct ContentBlock: Decodable {
+        let type: String
+        let text: String?
+        let id: String?
+        let name: String?
+        let input: [String: ZhipuAnySendable]?
+    }
+}
+
+private struct ZhipuAnySendable: Decodable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else if let dictValue = try? container.decode([String: ZhipuAnySendable].self) {
+            value = dictValue.mapValues { $0.value }
+        } else if let arrayValue = try? container.decode([ZhipuAnySendable].self) {
+            value = arrayValue.map { $0.value }
+        } else {
+            value = ""
+        }
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 import os
-import MagicKit
+import GoEditorCore
 import ShellKit
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数
@@ -89,6 +89,14 @@ struct LSPConfig: SuperLog {
         case "typescript", "javascript":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
         case "go":
+            if let goConfig = GoLSPConfig.resolve() {
+                return ServerConfig(
+                    languageId: languageId,
+                    execPath: goConfig.goplsPath,
+                    arguments: goConfig.serverArguments,
+                    env: goConfig.processEnvironment
+                )
+            }
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["serve"])
         case "html", "css", "scss", "sass", "less":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])

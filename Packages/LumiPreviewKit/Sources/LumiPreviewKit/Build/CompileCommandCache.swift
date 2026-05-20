@@ -127,11 +127,7 @@ public extension LumiPreviewFacade {
         }
 
         private static func defaultCacheDirectory() -> URL {
-            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("CompileCommandCache", isDirectory: true)
-            ?? FileManager.default.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit-CompileCommandCache", isDirectory: true)
+            PreviewStorage.paths.compileCommandCacheDirectory
         }
 
         private static func buildStrategyFingerprint(_ buildStrategy: LumiPreviewFacade.BuildStrategy) -> String {

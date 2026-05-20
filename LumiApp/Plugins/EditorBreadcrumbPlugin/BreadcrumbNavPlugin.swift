@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 面包屑导航插件：在编辑器面板头部显示当前文件路径的面包屑导航
 ///
@@ -12,7 +11,7 @@ actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🧭"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "BreadcrumbNav"
     static let displayName: String = String(localized: "Breadcrumb Navigation", table: "BreadcrumbNav")
     static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", table: "BreadcrumbNav")

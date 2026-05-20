@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 模型偏好根视图包裹器
@@ -23,9 +22,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @EnvironmentObject var llmVM: LLMVM
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var conversationVM: ConversationVM
+    @EnvironmentObject var llmVM: AppLLMVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
 
     // 用于记录之前的模型配置，避免重复保存
     @State private var lastSavedProvider: String = ""
@@ -83,15 +82,19 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         if !projectPath.isEmpty {
             loadProjectPreference(for: projectPath, source: "项目") {
                 if Self.verbose {
-                    Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 LLMVM 默认值")
+                    if Self.verbose {
+                                            Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 AppLLMVM 默认值")
+                    }
                 }
             }
             return
         }
 
-        // 优先级 3：LLMVM 全局兜底（ensureProviderAndModelSelection 已在 init 中调用）
+        // 优先级 3：AppLLMVM 全局兜底（ensureProviderAndModelSelection 已在 init 中调用）
         if Self.verbose {
-            Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 LLMVM 默认值")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 AppLLMVM 默认值")
+            }
         }
         isLoadingConfig = false
     }
@@ -141,7 +144,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         lastSavedProjectPath = currentProjectPath
 
         if Self.verbose {
-            Self.logger.info("\(self.t)💾 已保存模型偏好（对话+项目）：\(currentProvider) - \(currentModel)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)💾 已保存模型偏好（对话+项目）：\(currentProvider) - \(currentModel)")
+            }
         }
     }
 
@@ -170,7 +175,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             let projectName = projectVM.currentProjectName
             loadProjectPreference(for: projectPath, source: "项目[\(projectName)]") {
                 if Self.verbose {
-                    Self.logger.info("\(self.t)🔄 切换对话时无对话/项目偏好，保持 LLMVM 当前值")
+                    if Self.verbose {
+                                            Self.logger.info("\(self.t)🔄 切换对话时无对话/项目偏好，保持 AppLLMVM 当前值")
+                    }
                 }
                 lastSavedProvider = llmVM.selectedProviderId
                 lastSavedModel = llmVM.currentModel
@@ -178,9 +185,11 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             return
         }
 
-        // 优先级 3：保持 LLMVM 当前值（全局兜底）
+        // 优先级 3：保持 AppLLMVM 当前值（全局兜底）
         if Self.verbose {
-            Self.logger.info("\(self.t)🔄 切换对话时无对话/项目偏好，保持 LLMVM 当前值")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)🔄 切换对话时无对话/项目偏好，保持 AppLLMVM 当前值")
+            }
         }
 
         // 更新 lastSaved 状态，避免触发不必要的保存
@@ -205,7 +214,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
 
         guard !newPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)📁 已清除项目，不加载模型偏好")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)📁 已清除项目，不加载模型偏好")
+                }
             }
             isLoadingConfig = false
             return
@@ -214,7 +225,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         // 优先级 1：当前对话的偏好（如果对话有独立偏好，项目切换不影响）
         if let conversationPref = conversationVM.getModelPreference() {
             if Self.verbose {
-                Self.logger.info("\(self.t)📂 项目切换，但当前对话有独立偏好，保持不变：\(conversationPref.providerId) - \(conversationPref.model)")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)📂 项目切换，但当前对话有独立偏好，保持不变：\(conversationPref.providerId) - \(conversationPref.model)")
+                }
             }
             lastSavedProvider = conversationPref.providerId
             lastSavedModel = conversationPref.model
@@ -226,9 +239,11 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         // 优先级 2：新项目的偏好
         let projectName = projectVM.currentProjectName
         loadProjectPreference(for: newPath, source: "项目[\(projectName)]") {
-            // 优先级 3：保持 LLMVM 当前值
+            // 优先级 3：保持 AppLLMVM 当前值
             if Self.verbose {
-                Self.logger.info("\(self.t)📂 项目 '\(projectName)' 没有保存的模型偏好，保持当前值")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)📂 项目 '\(projectName)' 没有保存的模型偏好，保持当前值")
+                }
             }
             lastSavedProvider = llmVM.selectedProviderId
             lastSavedModel = llmVM.currentModel
@@ -237,7 +252,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
 
     // MARK: - 辅助方法
 
-    /// 将配置应用到 LLMVM，并更新去重状态
+    /// 将配置应用到 AppLLMVM，并更新去重状态
     private func applyConfig(provider: String, model: String, source: String) {
         llmVM.selectedProviderId = provider
         llmVM.currentModel = model
@@ -248,7 +263,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         lastSavedProjectPath = projectVM.currentProjectPath
 
         if Self.verbose {
-            Self.logger.info("\(self.t)📂 已加载 \(source) 的模型偏好：\(provider) - \(model)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)📂 已加载 \(source) 的模型偏好：\(provider) - \(model)")
+            }
         }
     }
 

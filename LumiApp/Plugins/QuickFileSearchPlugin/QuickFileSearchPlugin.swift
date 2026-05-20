@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// Quick File Search Plugin: 快速文件搜索插件
 ///
@@ -14,7 +13,7 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔍"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "QuickFileSearch"
     static let displayName = String(localized: "Quick File Search", table: "QuickFileSearch")
@@ -31,7 +30,9 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)📝 QuickFileSearchPlugin 已注册")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)📝 QuickFileSearchPlugin 已注册")
+            }
         }
     }
 
@@ -41,7 +42,9 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ QuickFileSearchPlugin 已启用，快捷键监听已启动")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ QuickFileSearchPlugin 已启用，快捷键监听已启动")
+            }
         }
     }
 
@@ -51,7 +54,9 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)⛔️ QuickFileSearchPlugin 已禁用")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)⛔️ QuickFileSearchPlugin 已禁用")
+            }
         }
     }
 
@@ -71,10 +76,7 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] { [] }
-
-    @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
+    func agentTools(context: ToolContext) -> [SuperAgentTool] { [] }
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }

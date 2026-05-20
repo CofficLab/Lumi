@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -29,7 +28,7 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🖼️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "ShowImage"
     static let displayName: String = String(localized: "Show Image", table: "ShowImage")
     static let description: String = String(localized: "Display images in the UI with support for local paths and remote URLs.", table: "ShowImage")
@@ -43,19 +42,25 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {
         if Self.verbose {
-            Self.logger.info("\(self.t)📝 已注册")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)📝 已注册")
+            }
         }
     }
 
     nonisolated func onEnable() {
         if Self.verbose {
-            Self.logger.info("\(self.t)✅ 已启用")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)✅ 已启用")
+            }
         }
     }
 
     nonisolated func onDisable() {
         if Self.verbose {
-            Self.logger.info("\(self.t)⛔️ 已禁用")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)⛔️ 已禁用")
+            }
         }
     }
 
@@ -65,19 +70,7 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(ShowImageToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct ShowImageToolFactory: SuperAgentToolFactory {
-    let id: String = "show.image.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [ShowImageTool()]
     }
 }

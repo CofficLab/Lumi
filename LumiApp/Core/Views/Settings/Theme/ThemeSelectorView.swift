@@ -7,7 +7,7 @@ import LumiUI
 ///
 struct ThemeSelectorView: View {
     // MARK: - 环境
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     // MARK: - 主体
     var body: some View {
@@ -67,5 +67,5 @@ struct ThemeOptionCard: View {
 #Preview("主题选择器") {
     ThemeSelectorView()
         .mystiqueBackground()
-        .environmentObject(ThemeVM())
+        .environmentObject(AppThemeVM())
 }

@@ -117,7 +117,7 @@ struct EditorSettingsView: View {
     }
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             GlassSectionHeader(
                 icon: "chevron.left.forwardslash.chevron.right",
                 title: "编辑器设置",
@@ -127,7 +127,7 @@ struct EditorSettingsView: View {
     }
 
     private var searchCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "magnifyingglass",
@@ -144,7 +144,7 @@ struct EditorSettingsView: View {
     }
 
     private var scopedOverridesCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "slider.horizontal.below.rectangle",
@@ -226,7 +226,7 @@ struct EditorSettingsView: View {
     }
 
     private var extensionEmptyStateCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 8) {
                 GlassSectionHeader(
                     icon: "slider.horizontal.3",
@@ -242,7 +242,7 @@ struct EditorSettingsView: View {
     }
 
     private var emptySearchCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("没有匹配的设置项")
                     .font(.system(size: 15, weight: .medium))
@@ -254,7 +254,7 @@ struct EditorSettingsView: View {
     }
 
     private func sectionCard(_ section: EditorSettingsSectionModel) -> some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: icon(for: section.id),

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import CommonCrypto
 import os
 
@@ -53,7 +52,9 @@ final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
             
             if Self.verbose {
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-                Self.logger.info("\(Self.t)保存项目偏好：\(projectName) -> \(provider) / \(model)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)保存项目偏好：\(projectName) -> \(provider) / \(model)")
+                }
             }
         }
     }
@@ -78,7 +79,9 @@ final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
             
             if Self.verbose {
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-                Self.logger.info("\(Self.t)读取项目偏好：\(projectName) -> \(provider) / \(model)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)读取项目偏好：\(projectName) -> \(provider) / \(model)")
+                }
             }
             
             return (provider, model, lastUpdated)
@@ -95,10 +98,14 @@ final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
                 try fileManager.removeItem(at: fileURL)
                 if Self.verbose {
                     let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-                    Self.logger.info("\(Self.t)清除项目偏好：\(projectName)")
+                    if Self.verbose {
+                                            Self.logger.info("\(Self.t)清除项目偏好：\(projectName)")
+                    }
                 }
             } catch {
-                Self.logger.error("\(Self.t)❌ 清除项目偏好失败：\(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.error("\(Self.t)❌ 清除项目偏好失败：\(error.localizedDescription)")
+                }
             }
         }
     }
@@ -168,7 +175,9 @@ final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
             format: .binary,
             options: 0
         ) else {
-            Self.logger.error("\(Self.t)❌ 无法序列化 plist")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)❌ 无法序列化 plist")
+            }
             return
         }
 
@@ -185,7 +194,9 @@ final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
                 try fileManager.moveItem(at: tmpURL, to: url)
             }
         } catch {
-            Self.logger.error("\(Self.t)❌ 写入偏好文件失败：\(error.localizedDescription)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)❌ 写入偏好文件失败：\(error.localizedDescription)")
+            }
             try? fileManager.removeItem(at: tmpURL)
         }
     }

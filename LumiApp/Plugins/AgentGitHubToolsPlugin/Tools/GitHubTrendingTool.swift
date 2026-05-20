@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 趋势项目工具
 struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔥"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_trending"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,17 +16,27 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let sinceDesc: String
+        let limitDesc: String
+        switch language {
+        case .chinese:
+            sinceDesc = "时间范围：daily、weekly、monthly"
+            limitDesc = "返回数量限制，默认 10"
+        case .english:
+            sinceDesc = "Time range: daily, weekly, monthly"
+            limitDesc = "Maximum number of results, default 10"
+        }
+        return [
             "type": "object",
             "properties": [
                 "since": [
                     "type": "string",
-                    "description": "时间范围：daily、weekly、monthly",
+                    "description": sinceDesc,
                     "enum": ["daily", "weekly", "monthly"]
                 ],
                 "limit": [
                     "type": "number",
-                    "description": "返回数量限制，默认 10"
+                    "description": limitDesc
                 ]
             ]
         ]
@@ -41,14 +51,18 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         let limit = arguments["limit"]?.value as? Int ?? 10
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
+            }
         }
 
         do {
             let repos = try await GitHubAPIService.shared.getTrendingRepositories(since: since)
             return formatTrendingRepos(Array(repos.prefix(limit)))
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            }
             return "获取趋势项目失败：\(error.localizedDescription)"
         }
     }

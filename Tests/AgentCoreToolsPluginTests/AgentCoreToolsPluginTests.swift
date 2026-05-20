@@ -29,12 +29,15 @@ final class AgentCoreToolsPluginTests: XCTestCase {
     }
 
     @MainActor
-    func testPluginExposesSingleCoreToolsFactory() async {
-        let factories = await AgentCoreToolsPlugin.shared.agentToolFactories()
+    func testPluginExposesCoreAgentTools() async {
+        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let tools = await AgentCoreToolsPlugin.shared.agentTools(context: context)
 
-        XCTAssertEqual(factories.count, 1)
-        XCTAssertEqual(factories.first?.id, "core.tools.factory")
-        XCTAssertEqual(factories.first?.order, 0)
+        XCTAssertEqual(tools.count, 5)
+        XCTAssertEqual(
+            Set(tools.map(\.name)),
+            ["ls", "read_file", "write_file", "edit_file", "run_command"]
+        )
     }
 
     func testCommandRiskEvaluatorTreatsUnknownCommandsAsMediumRisk() {

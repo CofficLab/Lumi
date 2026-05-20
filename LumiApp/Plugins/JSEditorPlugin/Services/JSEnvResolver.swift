@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import ShellKit
 
 /// 探测 Node.js / Bun 运行时路径
@@ -61,7 +60,7 @@ struct JSEnvResolver: SuperLog {
 
     // MARK: - Private
 
-    private static func findCommand(_ command: String) -> String? {
+    static func findCommand(_ command: String) -> String? {
         Shell.findCommandSync(command)
     }
 

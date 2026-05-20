@@ -1,10 +1,13 @@
+import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var projectContextRequestVM: WindowProjectContextRequestVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
+    @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool
 
@@ -91,7 +94,7 @@ struct ProjectSelectorView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        Array(projectVM.recentProjects
+        Array(recentProjectsVM.recentProjects
             .prefix(maxRecentProjects)
             .filter { project in
                 project.path != projectVM.currentProjectPath
@@ -197,6 +200,17 @@ struct ProjectSelectorView: View {
                 .padding(.trailing, 8)
             }
         }
+        .contextMenu {
+            Button {
+                openWindow(
+                    id: MainWindowID.main,
+                    value: LumiWindowRoute(projectPath: project.path)
+                )
+                isPresented = false
+            } label: {
+                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
+            }
+        }
         .padding(.horizontal)
     }
 
@@ -258,8 +272,7 @@ extension ProjectSelectorView {
     private func deleteProject(_ project: Project) {
         withAnimation {
             store.removeProject(project)
-            // 更新 projectVM 中的列表
-            projectVM.setRecentProjects(store.loadProjects())
+            recentProjectsVM.removeProject(project)
         }
     }
 
@@ -282,7 +295,9 @@ extension ProjectSelectorView {
                 }
             }
         case .failure(let error):
-            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            }
         }
     }
 }

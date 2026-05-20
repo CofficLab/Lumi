@@ -5,9 +5,9 @@ import SwiftUI
 /// 在窗口工具栏右上角显示一个数据库图标，点击后弹出 Popover
 /// 展示消息/对话历史数据，支持 Tab 切换和分页浏览。
 struct HistoryDBToolbarButton: View {
-    @EnvironmentObject private var themeVM: ThemeVM
-    @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
-    @EnvironmentObject private var conversationVM: ConversationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @State private var isPresented = false
 
     private let iconSize: CGFloat = 14

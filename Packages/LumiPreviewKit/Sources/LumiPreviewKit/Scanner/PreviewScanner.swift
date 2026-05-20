@@ -32,8 +32,9 @@ public extension LumiPreviewFacade {
                     continue
                 }
 
+                let signature = source.string(from: previewOffset, to: openingBraceOffset)
                 let lineNumber = source.lineNumber(at: previewOffset)
-                let title = Self.title(in: source.string(from: previewOffset, to: openingBraceOffset))
+                let title = Self.title(in: signature)
                     ?? String(format: "Preview %d", previews.count + 1)
 
                 previews.append(
@@ -45,6 +46,7 @@ public extension LumiPreviewFacade {
                         endLineNumber: source.lineNumber(at: body.closingBraceOffset),
                         primaryTypeName: Self.primaryTypeName(in: body.source),
                         bodySource: body.source,
+                        layout: Self.layout(in: signature),
                         sourceText: sourceText
                     )
                 )
@@ -81,6 +83,37 @@ public extension LumiPreviewFacade {
             }
 
             return nil
+        }
+
+        /// 从 `#Preview` 签名中提取 Xcode-style layout traits。
+        ///
+        /// 当前支持：
+        /// - `traits: .sizeThatFitsLayout`
+        /// - `traits: .fixedLayout(width: 320, height: 480)`，仅解析数字字面量。
+        private static func layout(in signature: String) -> PreviewDiscovery.Layout {
+            if signature.contains(".sizeThatFitsLayout") {
+                return .sizeThatFits
+            }
+
+            guard signature.contains(".fixedLayout") else {
+                return .automatic
+            }
+
+            let pattern = #"\.fixedLayout\s*\(\s*width\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*height\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*\)"#
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(
+                      in: signature,
+                      range: NSRange(signature.startIndex..<signature.endIndex, in: signature)
+                  ),
+                  match.numberOfRanges == 3,
+                  let widthRange = Swift.Range(match.range(at: 1), in: signature),
+                  let heightRange = Swift.Range(match.range(at: 2), in: signature),
+                  let width = Double(signature[widthRange]),
+                  let height = Double(signature[heightRange]) else {
+                return .automatic
+            }
+
+            return .fixed(width: width, height: height)
         }
 
         /// 从闭包 body 源码中提取主视图类型名。
@@ -308,7 +341,7 @@ public extension LumiPreviewFacade {
                 && characters[safe: offset + 2] == "\""
         }
 
-        private static func markNonCode(in range: Range<Int>, mask: inout [Bool]) {
+        private static func markNonCode(in range: Swift.Range<Int>, mask: inout [Bool]) {
             for offset in range where offset < mask.count {
                 mask[offset] = false
             }

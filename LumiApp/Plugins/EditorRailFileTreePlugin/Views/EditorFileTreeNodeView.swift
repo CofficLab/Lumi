@@ -1,9 +1,8 @@
-import MagicKit
 import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
 struct EditorFileTreeNodeView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     let url: URL
     let depth: Int
 
@@ -21,6 +20,9 @@ struct EditorFileTreeNodeView: View {
 
     /// 展开/折叠变化回调，通知协调器更新文件系统监听列表
     let onExpansionChange: ((String, Bool) -> Void)?
+
+    /// Git 状态快照（由协调器提供，节点视图只读查询）
+    let gitStatusSnapshot: EditorFileTreeGitStatusSnapshot
 
     /// 本地展开状态
     @State private var isExpanded: Bool = false
@@ -78,7 +80,8 @@ struct EditorFileTreeNodeView: View {
         onSelect: @escaping (URL) -> Void,
         refreshToken: Int = 0,
         projectRootPath: String = "",
-        onExpansionChange: ((String, Bool) -> Void)? = nil
+        onExpansionChange: ((String, Bool) -> Void)? = nil,
+        gitStatusSnapshot: EditorFileTreeGitStatusSnapshot = .empty
     ) {
         self.url = url
         self.depth = depth
@@ -87,6 +90,7 @@ struct EditorFileTreeNodeView: View {
         self.refreshToken = refreshToken
         self.projectRootPath = projectRootPath
         self.onExpansionChange = onExpansionChange
+        self.gitStatusSnapshot = gitStatusSnapshot
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = EditorFileTreeService.isDirectory(url)
@@ -132,6 +136,15 @@ struct EditorFileTreeNodeView: View {
                     .lineLimit(1)
 
                 Spacer()
+
+                // Git 状态标记
+                if let gitStatus = currentGitStatus {
+                    Text(gitStatus.displayLetter)
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected, theme: theme))
+                        .frame(width: 16, alignment: .trailing)
+                        .help(gitStatus.tooltip)
+                }
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 6)
@@ -191,7 +204,8 @@ struct EditorFileTreeNodeView: View {
                                 onSelect: onSelect,
                                 refreshToken: refreshToken,
                                 projectRootPath: projectRootPath,
-                                onExpansionChange: onExpansionChange
+                                onExpansionChange: onExpansionChange,
+                                gitStatusSnapshot: gitStatusSnapshot
                             )
                         }
                     }
@@ -282,6 +296,52 @@ struct EditorFileTreeNodeView: View {
     }
 
     // MARK: - View Helpers
+
+    /// 当前节点的 Git 状态（从 snapshot 查询，文件查文件状态，目录查聚合状态）
+    private var currentGitStatus: EditorFileTreeGitStatus? {
+        guard !gitStatusSnapshot.isEmpty else { return nil }
+        let path = gitRelativePath
+        if isDirectory {
+            return gitStatusSnapshot.aggregateStatusForDirectory(path)
+        } else {
+            return gitStatusSnapshot.statusForPath(path)
+        }
+    }
+
+    /// 用于 Git 状态查询的相对路径（与 snapshot 中 key 的格式匹配）
+    private var gitRelativePath: String {
+        guard !projectRootPath.isEmpty else { return "" }
+        let rootPath = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
+        let nodePath = url.standardizedFileURL.path
+        guard nodePath.hasPrefix(rootPath + "/") else { return "" }
+        let rel = String(nodePath.dropFirst(rootPath.count + 1))
+        return rel
+    }
+
+    /// Git 状态标记颜色
+    private func gitStatusColor(
+        _ status: EditorFileTreeGitStatus,
+        isSelected: Bool,
+        theme: any SuperTheme
+    ) -> Color {
+        // 选中行时使用更亮的颜色保持对比度
+        let baseColor: Color
+        switch status {
+        case .modified:
+            baseColor = Color.orange
+        case .added, .untracked:
+            baseColor = Color.green
+        case .deleted:
+            baseColor = Color.red
+        case .renamed:
+            baseColor = Color.purple
+        case .staged:
+            baseColor = Color.orange.opacity(0.7)
+        case .conflicted:
+            baseColor = Color.red
+        }
+        return isSelected ? baseColor.opacity(0.9) : baseColor.opacity(0.7)
+    }
 
     private var resolvedIcon: LumiFileIcon {
         let context = LumiFileIconContext(

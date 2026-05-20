@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 /// 工具执行服务
 /// 负责处理工具调用的执行、权限检查和风险评估
 ///
@@ -25,7 +24,7 @@ import MagicKit
 /// ```
 final class ToolExecutionService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "⚙️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - 依赖
 
     /// 工具服务

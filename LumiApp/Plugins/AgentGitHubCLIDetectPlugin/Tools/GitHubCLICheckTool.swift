@@ -1,12 +1,11 @@
 import Foundation
-import MagicKit
 
 /// GitHub CLI 安装检测工具
 ///
 /// 检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
 struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_cli_check"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -30,7 +29,9 @@ struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")
+            if GitHubCLIDetectPlugin.verbose {
+                            GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")
+            }
         }
 
         let result = GitHubCLIDetectService.shared.getDetectionDetails()

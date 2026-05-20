@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import LLMKit
 
 // MARK: - 对话操作扩展
 

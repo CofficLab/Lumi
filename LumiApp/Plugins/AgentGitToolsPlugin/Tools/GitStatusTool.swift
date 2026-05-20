@@ -1,10 +1,9 @@
 import Foundation
-import MagicKit
 
 /// Git 状态工具
 struct GitStatusTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "git_status"
 
     func description(for language: LanguagePreference) -> String {
@@ -43,14 +42,18 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         let path = arguments["path"]?.value as? String
 
         if Self.verbose {
-            GitToolsPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
+            }
         }
 
         do {
             let status = try await GitService.shared.getStatus(path: path)
             return formatStatus(status)
         } catch {
-            GitToolsPlugin.logger.error("\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
+            }
             return "获取 Git 状态失败：\(error.localizedDescription)"
         }
     }

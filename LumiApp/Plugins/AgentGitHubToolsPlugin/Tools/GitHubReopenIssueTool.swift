@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_reopen_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,24 +16,46 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber"]
-        ]
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -52,7 +74,9 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -63,7 +87,9 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
             )
             return formatReopenedIssue(issue)
         } catch {
-            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+            }
             return "重新打开 Issue 失败：\(error.localizedDescription)"
         }
     }

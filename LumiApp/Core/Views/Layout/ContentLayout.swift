@@ -3,13 +3,13 @@ import SwiftUI
 /// 应用程序的主视图组件
 /// 提供便捷的初始化方法和修饰符来配置 ContentView 的行为
 ///
-/// 支持多窗口模式，每个窗口有独立的 WindowState
+/// 支持多窗口模式，每个窗口有独立的 WindowScope
 struct ContentLayout: View {
     /// 应用状态提供者环境对象
-    @EnvironmentObject var themeVM: ThemeVM
+    @EnvironmentObject var themeVM: AppThemeVM
 
     /// 插件 VM 环境对象
-    @EnvironmentObject var pluginProvider: PluginVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
 
     /// 初始侧边栏可见性
     private(set) var initialSidebarVisibility: Bool?
@@ -89,6 +89,6 @@ extension ContentLayout {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView(scope: WindowScope(container: RootContainer.shared))
         .withDebugBar()
 }

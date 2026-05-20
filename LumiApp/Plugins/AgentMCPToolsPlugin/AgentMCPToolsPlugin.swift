@@ -1,4 +1,4 @@
-import MagicKit
+import MCPKit
 import SwiftUI
 import os
 
@@ -8,7 +8,7 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mcp-tools")
 
     nonisolated static let emoji = "🐘"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "AgentMCPTools"
     static let displayName = String(localized: "MCP Tools", table: "AgentMCPTools")
     static let description = String(localized: "MCP-backed tools (hidden)", table: "AgentMCPTools")
@@ -18,7 +18,9 @@ actor AgentMCPToolsPlugin: SuperPlugin {
 
     static let shared = AgentMCPToolsPlugin()
 
-    nonisolated let mcpService = MCPService()
+    nonisolated let mcpService = MCPService(
+        configs: AgentMCPPluginLocalStore().mcpServerConfigs(forKey: "MCPService_Configs")
+    )
 
     nonisolated func onRegister() {
         // no-op
@@ -31,7 +33,7 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     nonisolated func onDisable() {}
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         // 当前版本暂不启用 MCP 工具，返回空列表以避免访问未初始化状态导致崩溃
         return []
     }

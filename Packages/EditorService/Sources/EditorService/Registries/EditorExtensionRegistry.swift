@@ -67,13 +67,17 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
         installedPlugins = sorted
 
-        Self.logger.info("\(self.t)recordInstalledPlugins: 记录 \(sorted.count) 个插件, ids=\(sorted.map(\.id))")
+        if Self.verbose {
+                    Self.logger.info("\(self.t)recordInstalledPlugins: 记录 \(sorted.count) 个插件, ids=\(sorted.map(\.id))")
+        }
     }
 
     /// 卸载所有已安装的编辑器插件
     public func uninstallAll() {
         reset()
-        Self.logger.info("\(self.t)已卸载所有编辑器插件")
+        if Self.verbose {
+                    Self.logger.info("\(self.t)已卸载所有编辑器插件")
+        }
     }
 
     // MARK: - Contributor Storage
@@ -188,11 +192,15 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
     public func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {
         if commandContributors.contains(where: { $0.id == contributor.id }) {
-            Self.logger.info("\(self.t)registerCommandContributor: 已存在，跳过 id=\(contributor.id), count=\(self.commandContributors.count)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)registerCommandContributor: 已存在，跳过 id=\(contributor.id), count=\(self.commandContributors.count)")
+            }
             return
         }
         commandContributors.append(contributor)
-        Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)")
+        if Self.verbose {
+                    Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)")
+        }
     }
 
     public func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
@@ -542,9 +550,13 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
         if beforeFilter > 0 && filtered.isEmpty {
             if Self.verbose {
-                Self.logger.warning("\(self.t)contextMenuSuggestions: 所有命令被过滤掉了")
+                if Self.verbose {
+                                    Self.logger.warning("\(self.t)contextMenuSuggestions: 所有命令被过滤掉了")
+                }
                 for item in merged.prefix(5) {
-                    Self.logger.warning("\(self.t)contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
+                    if Self.verbose {
+                                            Self.logger.warning("\(self.t)contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
+                    }
                 }
             }
         }

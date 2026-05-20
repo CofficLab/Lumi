@@ -1,9 +1,10 @@
 import SwiftUI
+import LumiUI
 
 /// 统一主题选择器（全局状态栏入口）：
-/// 直接操作 ThemeVM 的单一主题状态。
+/// 直接操作 AppThemeVM 的单一主题状态。
 struct ThemeStatusBarView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         StatusBarHoverContainer(

@@ -21,6 +21,27 @@ struct RailTab: Identifiable, Equatable {
     }
 }
 
+/// 右侧栏底部工具栏项定义
+///
+/// 插件通过 `addSidebarLeadingToolbarItems()` 或 `addSidebarTrailingToolbarItems()` 返回此结构体，
+/// 由内核聚合渲染为右侧栏底部的水平工具栏。
+/// 每个工具栏项是一个小按钮（如模式切换、模型选择器），点击后可展示 Popover 或执行操作。
+/// 当工具栏项需要展示自定义内容时，内核会调用 `addSidebarToolbarItemView()` 获取对应视图。
+struct SidebarToolbarItem: Identifiable, Equatable {
+    /// 唯一标识
+    let id: String
+    /// 显示标题（用于 tooltip / accessibility）
+    let title: String
+    /// SF Symbol 图标名
+    let systemImage: String
+    /// 排序优先级（数字越小越靠左）
+    let priority: Int
+
+    static func == (lhs: SidebarToolbarItem, rhs: SidebarToolbarItem) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 底部面板标签页定义
 ///
 /// 插件通过 `addBottomPanelTabs()` 返回此结构体，由内核聚合渲染为统一的底部面板 Tab Bar。
@@ -79,7 +100,7 @@ struct BottomPanelTab: Identifiable, Equatable {
 protocol SuperPlugin: Actor {
     /// 插件共享实例。
     ///
-    /// PluginVM 的自动发现阶段通过类型暴露的共享实例拿到插件，
+    /// AppPluginVM 的自动发现阶段通过类型暴露的共享实例拿到插件，
     /// 避免使用 ObjC Runtime 的 `alloc/init` 或给 Actor 增加同步构造约束。
     static var shared: Self { get }
 
@@ -146,6 +167,17 @@ protocol SuperPlugin: Actor {
     /// 多个插件的根视图包裹会按照插件注册顺序依次执行，
     /// 外层包裹先执行，内层包裹后执行。
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
+
+    /// 包裹右侧栏根视图
+    ///
+    /// 允许插件只包裹右侧栏内容，用于右侧栏范围内的拖放检测、浮层提示等能力。
+    /// 插件之间仍通过窗口级 VM 交换状态，避免具体插件互相持有引用。
+    ///
+    /// - Parameters:
+    ///   - content: 右侧栏原始内容。
+    ///   - activeIcon: 当前被激活的 ActivityBar 图标名称。
+    /// - Returns: 包裹后的右侧栏内容。
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView
 
     /// 添加工具栏前导视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
@@ -242,6 +274,33 @@ protocol SuperPlugin: Actor {
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
 
+
+    /// 提供右侧栏底部工具栏左侧项列表
+    ///
+    /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏左侧。
+    /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），按 `priority` 升序排列。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件可据此判断是否提供工具栏项（例如仅在 Editor 模式激活时注入）。
+    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+
+    /// 提供右侧栏底部工具栏右侧项列表
+    ///
+    /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏右侧。
+    /// 每个工具栏项按 `priority` 升序排列。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+
+    /// 提供指定右侧栏工具栏项对应的自定义按钮视图
+    ///
+    /// 内核在渲染工具栏时，优先使用此方法返回的自定义视图作为按钮内容。
+    /// 如果返回 nil，内核会使用 `SidebarToolbarItem` 的 `systemImage` 渲染默认图标按钮。
+    ///
+    /// - Parameter itemId: 工具栏项 id，与 leading/trailing toolbar items 返回的 `SidebarToolbarItem.id` 对应。
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView?
+
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
 
@@ -278,11 +337,8 @@ protocol SuperPlugin: Actor {
 
     // MARK: - Agent Tools Hooks
 
-    /// 提供 Agent 工具列表。
-    @MainActor func agentTools() -> [SuperAgentTool]
-
-    /// 提供 Agent 工具工厂列表（带依赖注入）。
-    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]
+    /// 提供 Agent 工具列表（可按需使用 `context` 注入依赖）。
+    @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool]
 
     // MARK: - Send Pipeline
 
@@ -292,14 +348,14 @@ protocol SuperPlugin: Actor {
     /// 插件提供的 LLM 供应商类型
     ///
     /// 如果插件是一个 LLM 供应商插件，返回对应的 `SuperLLMProvider.Type`。
-    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
+    /// `AppPluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
     /// 默认返回 `nil`，表示该插件不提供 LLM 供应商。
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)?
 
     /// 插件提供的消息渲染器列表
     ///
     /// 如果插件提供自定义消息渲染器，返回 `SuperMessageRenderer` 实例数组。
-    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `MessageRendererVM`。
+    /// `AppPluginVM` 会在插件注册阶段自动收集并注册到 `AppMessageRendererVM`。
     /// 默认返回空数组，表示该插件不提供消息渲染器。
     @MainActor func messageRenderers() -> [any SuperMessageRenderer]
 
@@ -309,7 +365,7 @@ protocol SuperPlugin: Actor {
     ///
     /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
     ///（如补全、hover、code action、LSP 服务等）。
-    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
+    /// `AppPluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
     /// 默认返回 `false`。
     nonisolated var providesEditorExtensions: Bool { get }
 

@@ -1,30 +1,40 @@
 # FilePreviewKit
 
-Lumi 内部的文件预览组件（SwiftPM 包）。
+可复用的 macOS 文件预览 SwiftUI 组件包。支持图片、PDF 与 Quick Look 预览。
+
+## Package
+
+- Product: `FilePreviewKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
 
 ## 提供什么
 
-- **按文件类型选择预览方式**：图片、PDF 等走原生渲染，其他类型可回退到系统 Quick Look。
-- **SwiftUI 预览视图封装**：对上层提供可复用的预览 View。
+- 根据文件类型自动选择预览方式（图片 / PDF / Quick Look）
+- SwiftUI `FilePreviewView` 组件，供宿主嵌入使用
 
-## 使用方式
-
-在其他 SwiftPM 包的 `Package.swift` 中添加依赖：
+## 依赖与集成
 
 ```swift
-.package(path: "../FilePreviewKit")
+dependencies: [
+    .package(path: "../FilePreviewKit"),
+],
+targets: [
+    .target(name: "YourTarget", dependencies: ["FilePreviewKit"]),
+]
 ```
 
-然后在目标依赖中引入：
+## 基本用法
 
 ```swift
-.product(name: "FilePreviewKit", package: "FilePreviewKit")
+import SwiftUI
+import FilePreviewKit
+
+struct PreviewScreen: View {
+    let fileURL: URL
+
+    var body: some View {
+        FilePreviewView(fileURL: fileURL)
+    }
+}
 ```
-
-## 运行测试
-
-```bash
-cd Packages/FilePreviewKit
-swift test
-```
-

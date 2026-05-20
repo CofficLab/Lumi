@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 import DeviceMonitorKit
 

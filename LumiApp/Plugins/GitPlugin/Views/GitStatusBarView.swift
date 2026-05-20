@@ -1,5 +1,5 @@
 import SwiftUI
-import MagicKit
+import LumiUI
 
 /// Git 分支状态栏视图
 ///
@@ -8,7 +8,7 @@ import MagicKit
 /// - 项目路径变化（`onChange(of: currentProjectPath)`）
 /// - 从其他应用切回（`applicationDidBecomeActive`）
 struct GitPluginStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var branch: String?
 
     var body: some View {

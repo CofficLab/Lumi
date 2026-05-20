@@ -1,5 +1,5 @@
+import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 import MarkdownKit
 
@@ -8,8 +8,9 @@ struct MessageListView: View {
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
-    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
-    @EnvironmentObject var conversationSendStatusVM: ConversationStatusVM
+    @LumiMotionPreferenceReader private var motionPreference
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
+    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
@@ -41,7 +42,7 @@ struct MessageListView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
+            let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.visibleMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
             let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
             let lastMessageID = displayRows.last?.id
@@ -142,6 +143,7 @@ extension MessageListView {
                 .padding(.vertical, 4)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
+                .appMessageInsertionTransition(preference: motionPreference)
             }
 
             Color.clear
@@ -160,6 +162,7 @@ extension MessageListView {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.preferOuterScroll, true)
+        .animation(LumiMotion.enabled(LumiMotion.messageInsertion, preference: motionPreference), value: lastMessageID)
         .accessibilityLabel(String(localized: "Message List", table: "AgentChat"))
         .accessibilityHint(String(localized: "Message List Hint", table: "AgentChat"))
         .overlay(alignment: .topLeading) {
@@ -274,7 +277,7 @@ extension MessageListView {
     }
 
     private func handleLastMessageChanged(proxy: ScrollViewProxy, isStreamingContentUpdate: Bool) {
-        guard !windowedHistoryRows(from: timelineViewModel.persistedMessages).isEmpty else { return }
+        guard !windowedHistoryRows(from: timelineViewModel.visibleMessages).isEmpty else { return }
 
         if forceScrollToBottomOnNextChange {
             forceScrollToBottomOnNextChange = false
@@ -303,7 +306,7 @@ extension MessageListView {
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
         beginProgrammaticScrolling()
         if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
                 proxy.scrollTo(bottomAnchorId, anchor: .bottom)
             }
         } else {
@@ -315,7 +318,7 @@ extension MessageListView {
         guard let latestUserMessageId = latestVisibleUserMessageId() else { return }
         beginProgrammaticScrolling()
         if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
                 proxy.scrollTo(latestUserMessageId, anchor: .top)
             }
         } else {
@@ -324,7 +327,7 @@ extension MessageListView {
     }
 
     private func latestVisibleUserMessageId() -> UUID? {
-        windowedHistoryRows(from: timelineViewModel.persistedMessages)
+        windowedHistoryRows(from: timelineViewModel.visibleMessages)
             .last(where: { $0.role == .user })?
             .id
     }
@@ -620,14 +623,16 @@ private struct ScrollPositionObserver: NSViewRepresentable {
 // MARK: - Preview
 
 #Preview("MessageListView - Small") {
-    RootView { MessageListView() }
+    MessageListView()
+        .inRootView()
         .padding()
         .background(Color.black)
         .frame(width: 800, height: 600)
 }
 
 #Preview("MessageListView - Large") {
-    RootView { MessageListView() }
+    MessageListView()
+        .inRootView()
         .padding()
         .background(Color.black)
         .frame(width: 1200, height: 1200)

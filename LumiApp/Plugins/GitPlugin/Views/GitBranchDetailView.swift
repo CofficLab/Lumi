@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// Git 分支详情视图（在 popover 中显示）
 struct GitBranchDetailView: View {

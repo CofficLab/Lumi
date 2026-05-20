@@ -9,7 +9,7 @@ struct AppUpdateStatusBarContentView: View {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 11, weight: .semibold))
-                Text("更新")
+                Text(String(localized: "Update", table: "AppUpdateStatusBar"))
                     .font(.system(size: 10, weight: .medium))
             }
             .foregroundColor(Color(hex: "0A84FF"))
@@ -34,11 +34,11 @@ struct AppUpdateStatusBarPopupView: View {
                         .frame(width: 22)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("新版本已准备好")
+                        Text(String(localized: "New version is ready", table: "AppUpdateStatusBar"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                        Text("Lumi \(version) 已下载完成")
+                        Text(String(format: String(localized: "Lumi %@ downloaded", table: "AppUpdateStatusBar"), version))
                             .font(.system(size: 11))
                             .foregroundColor(Color(hex: "98989E"))
                     }
@@ -46,7 +46,7 @@ struct AppUpdateStatusBarPopupView: View {
                     Spacer(minLength: 8)
 
                     Button(action: store.installPreparedUpdate) {
-                        Text("重启更新")
+                        Text(String(localized: "Restart to Update", table: "AppUpdateStatusBar"))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)

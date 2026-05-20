@@ -1,25 +1,22 @@
 @preconcurrency import Foundation
+import HttpKit
 
 public protocol WebFetchFetching: Sendable {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
 }
 
+/// 基于 HttpKit 的 HTTP 请求实现
 public struct URLSessionWebFetchFetcher: WebFetchFetching {
-    private let session: URLSession
+    private let client: HTTPClient
 
     public init() {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 60
-        sessionConfig.httpMaximumConnectionsPerHost = 5
-        self.session = URLSession(configuration: sessionConfig, delegate: RedirectDelegate(), delegateQueue: nil)
+        self.client = HTTPClient(timeoutIntervalForRequest: 60) { config in
+            config.httpMaximumConnectionsPerHost = 5
+        }
     }
 
     public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw WebFetchError.invalidResponseType
-        }
-        return (data, httpResponse)
+        try await client.sendRequestWithResponse(request: request)
     }
 }
 
@@ -416,17 +413,5 @@ Note: This is an image file. The file has been saved to the path above.
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return formatter.string(from: date)
-    }
-}
-
-private final class RedirectDelegate: NSObject, URLSessionTaskDelegate {
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        willPerformHTTPRedirection response: HTTPURLResponse,
-        newRequest request: URLRequest,
-        completionHandler: @escaping @Sendable (URLRequest?) -> Void
-    ) {
-        completionHandler(nil)
     }
 }

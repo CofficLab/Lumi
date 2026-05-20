@@ -1,0 +1,136 @@
+import Foundation
+import SwiftUI
+import CodeEditTextView
+
+@MainActor
+final class JSCommandContributor: SuperEditorCommandContributor {
+    let id = "js.commands"
+
+    private let taskManager: JSTaskManager
+
+    init(taskManager: JSTaskManager) {
+        self.taskManager = taskManager
+    }
+
+    func provideCommands(
+        context: EditorCommandContext,
+        state: EditorState,
+        textView: TextView?
+    ) -> [EditorCommandSuggestion] {
+        guard isJSLanguage(context.languageId) else { return [] }
+        let projectPath = resolveProjectRoot(state: state)
+        let package = projectPath.flatMap { PackageJSONParser.parse(projectPath: $0) }
+
+        var commands = [
+            buildCommand(state: state, projectPath: projectPath, package: package),
+            testCommand(state: state, projectPath: projectPath, package: package),
+            lintCommand(state: state, projectPath: projectPath),
+            formatCommand(state: state, projectPath: projectPath),
+            debugCommand(state: state, projectPath: projectPath),
+        ]
+
+        if let package {
+            commands.append(contentsOf: package.scripts.keys.sorted().prefix(8).map {
+                scriptCommand(script: $0, state: state, projectPath: projectPath)
+            })
+        }
+
+        return commands
+    }
+
+    private func buildCommand(state: EditorState, projectPath: String?, package: JSPackageInfo?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.build",
+            title: String(localized: "JS Build", table: "JSEditor"),
+            systemImage: "hammer",
+            category: String(localized: "JavaScript", table: "JSEditor"),
+            shortcut: EditorCommandShortcut(key: "b", modifiers: [.command]),
+            order: 100,
+            isEnabled: projectPath != nil
+        ) { [weak self, weak state] in
+            guard let self, let state, let projectPath = self.resolveProjectRoot(state: state) else { return }
+            Task { await self.taskManager.build(projectPath: projectPath, package: PackageJSONParser.parse(projectPath: projectPath)) }
+        }
+    }
+
+    private func testCommand(state: EditorState, projectPath: String?, package: JSPackageInfo?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.test",
+            title: String(localized: "JS Test", table: "JSEditor"),
+            systemImage: "testtube.2",
+            category: String(localized: "JavaScript", table: "JSEditor"),
+            order: 200,
+            isEnabled: projectPath != nil && TestRunnerDetector.preferredScript(package: package) != nil
+        ) { [weak self, weak state] in
+            guard let self, let state, let projectPath = self.resolveProjectRoot(state: state) else { return }
+            Task { await self.taskManager.test(projectPath: projectPath, package: PackageJSONParser.parse(projectPath: projectPath)) }
+        }
+    }
+
+    private func lintCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.lint",
+            title: String(localized: "ESLint Current File", table: "JSEditor"),
+            systemImage: "checklist",
+            category: String(localized: "JavaScript", table: "JSEditor"),
+            order: 300,
+            isEnabled: projectPath != nil
+        ) { [weak self, weak state] in
+            guard let self, let state, let projectPath = self.resolveProjectRoot(state: state) else { return }
+            Task { await self.taskManager.lint(fileURL: state.currentFileURL, projectPath: projectPath) }
+        }
+    }
+
+    private func formatCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.format.prettier",
+            title: String(localized: "Format with Prettier", table: "JSEditor"),
+            systemImage: "text.alignleft",
+            category: String(localized: "JavaScript", table: "JSEditor"),
+            shortcut: EditorCommandShortcut(key: "l", modifiers: [.shift, .command]),
+            order: 400,
+            isEnabled: projectPath != nil
+        ) { [weak self, weak state] in
+            guard let self, let state else { return }
+            Task { await self.taskManager.format(fileURL: state.currentFileURL, projectPath: self.resolveProjectRoot(state: state)) }
+        }
+    }
+
+    private func debugCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.debug.node",
+            title: String(localized: "Debug Current File", table: "JSEditor"),
+            systemImage: "ladybug",
+            category: String(localized: "JavaScript", table: "JSEditor"),
+            order: 500,
+            isEnabled: projectPath != nil && state.currentFileURL != nil
+        ) { [weak state] in
+            guard let state, let projectPath = projectPath else { return }
+            let config = NodeDAPAdapter.defaultLaunch(fileURL: state.currentFileURL, projectPath: projectPath)
+            _ = NodeDAPAdapter.commandLine(for: config)
+        }
+    }
+
+    private func scriptCommand(script: String, state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: "js.script.\(script)",
+            title: String(format: String(localized: "Run Script: %@", table: "JSEditor"), script),
+            systemImage: "terminal",
+            category: String(localized: "npm Scripts", table: "JSEditor"),
+            order: 600,
+            isEnabled: projectPath != nil
+        ) { [weak self, weak state] in
+            guard let self, let state, let projectPath = self.resolveProjectRoot(state: state) else { return }
+            Task { await self.taskManager.run(script: script, projectPath: projectPath) }
+        }
+    }
+
+    private func resolveProjectRoot(state: EditorState) -> String? {
+        guard let fileURL = state.currentFileURL else { return nil }
+        return WorkspaceDetector.findRoot(from: fileURL)?.path
+    }
+
+    private func isJSLanguage(_ languageId: String) -> Bool {
+        languageId == "javascript" || languageId == "typescript"
+    }
+}

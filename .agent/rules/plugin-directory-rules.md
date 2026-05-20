@@ -225,12 +225,13 @@ struct DockerImageListView: View {
 
 ## 插件主入口模板
 
-每个插件必须提供一个主入口文件，实现 `SuperPlugin` 协议：
+每个插件必须提供一个主入口文件，实现 `SuperPlugin` 协议。
+
+`SuperPlugin`、`SuperLog` 等由 `Global.swift` 的 `@_exported import MagicKit` 提供，**无需**在插件文件中 `import MagicKit`（仅需 `import SwiftUI` 等框架）。
 
 ```swift
 import Foundation
 import SwiftUI
-import MagicKit
 
 /// <PluginName> 插件
 ///

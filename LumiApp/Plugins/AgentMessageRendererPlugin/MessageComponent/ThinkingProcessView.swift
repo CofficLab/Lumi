@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// 思考过程展示视图（可展开/折叠）
@@ -6,6 +6,7 @@ import SwiftUI
 struct ThinkingProcessView: View {
     /// 思考内容文本
     let thinkingText: String
+    @LumiMotionPreferenceReader private var motionPreference
     /// 是否已展开
     @State private var isExpanded: Bool = false
 
@@ -53,22 +54,28 @@ struct ThinkingProcessView: View {
                 .padding(.vertical, 8)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    isExpanded.toggle()
+                    LumiMotion.animate(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference)) {
+                        isExpanded.toggle()
+                    }
                 }
 
-                // 思考内容（展开时显示）
-                if isExpanded && !thinkingText.isEmpty {
-                    Divider()
-                        .opacity(0.2)
-                    Text(thinkingText)
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    // 思考内容（展开时显示）
+                    if isExpanded && !thinkingText.isEmpty {
+                        Divider()
+                            .opacity(0.2)
+                        Text(thinkingText)
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .appDisclosureContentTransition(preference: motionPreference)
             }
         }
         .padding(.vertical, 4)
+        .animation(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference), value: isExpanded)
     }
 }
 

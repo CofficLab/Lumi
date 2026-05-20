@@ -1,8 +1,6 @@
 # TerminalCoreKit
 
-Terminal session core for Lumi.
-
-`TerminalCoreKit` wraps terminal session state, SwiftTerm-based rendering, shell integration, theme adaptation, and tab management for app terminal surfaces.
+可复用的终端会话核心包。封装基于 SwiftTerm 的终端渲染、Shell 集成、主题适配与多标签会话管理。
 
 ## Package
 
@@ -21,7 +19,7 @@ Terminal session core for Lumi.
 
 - `TerminalSession`: owns one terminal process/session state.
 - `TerminalTabsViewModel`: coordinates multiple terminal sessions.
-- `LumiTerminalView`: SwiftUI-facing terminal view.
+- `LumiTerminalView`: SwiftUI/AppKit terminal view wrapper.
 - `TerminalShellIntegration`: shell integration and prompt/status parsing.
 
 ## Testing

@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 编辑器符号面包屑插件
@@ -11,7 +10,7 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🧩"
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorStickySymbolBar"
     static let displayName: String = String(
         localized: "Editor Sticky Symbol Bar", table: "EditorStickySymbolBar")

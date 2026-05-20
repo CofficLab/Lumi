@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器工作区搜索 Rail 插件：提供 Search 标签页
 actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
@@ -10,7 +9,7 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔍"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailWorkspaceSearch"
     static let displayName: String = String(
         localized: "Editor Rail Workspace Search", table: "EditorRailWorkspaceSearch")
@@ -43,7 +42,7 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 
 /// Search 标签页内容视图
 struct EditorWorkspaceSearchRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

@@ -5,7 +5,7 @@ struct SidebarEmptyStateView: View {
     let message: String
     let subtitle: String
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme

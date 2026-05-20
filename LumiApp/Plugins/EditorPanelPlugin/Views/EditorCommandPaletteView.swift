@@ -1,6 +1,6 @@
 import SwiftUI
-import MagicKit
 import CodeEditSourceEditor
+import LumiUI
 
 /// 编辑器命令面板视图。
 ///
@@ -12,6 +12,7 @@ struct EditorCommandPaletteView: View {
     let onOpenFile: (URL, CursorPosition?, Bool) -> Void
     let onDismiss: () -> Void
 
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var query = ""
     @State private var selectedItemID: String?
     @State private var selectedCategory: EditorCommandCategory?
@@ -121,19 +122,20 @@ struct EditorCommandPaletteView: View {
                                     .padding(.horizontal, 4)
 
                                 ForEach(recentCommands) { command in
-                                    Button {
-                                        execute(command)
-                                    } label: {
-                                        commandRow(for: command, emphasizeRecent: true)
+                                    AppListRow(
+                                        isSelected: selectedItemID == commandSelectionID(for: command),
+                                        action: { execute(command) }
+                                    ) {
+                                        commandRowContent(for: command, emphasizeRecent: true)
                                     }
                                     .id(commandSelectionID(for: command))
-                                    .buttonStyle(.plain)
                                     .disabled(!command.isEnabled)
                                     .onHover { hovering in
                                         if hovering {
                                             selectedItemID = commandSelectionID(for: command)
                                         }
                                     }
+                                    .opacity(command.isEnabled ? 1 : 0.6)
                                 }
                             }
                         }
@@ -146,19 +148,20 @@ struct EditorCommandPaletteView: View {
                                     .padding(.horizontal, 4)
 
                                 ForEach(frequentCommands) { command in
-                                    Button {
-                                        execute(command)
-                                    } label: {
-                                        commandRow(for: command, emphasizeFrequent: true)
+                                    AppListRow(
+                                        isSelected: selectedItemID == commandSelectionID(for: command),
+                                        action: { execute(command) }
+                                    ) {
+                                        commandRowContent(for: command, emphasizeFrequent: true)
                                     }
                                     .id(commandSelectionID(for: command))
-                                    .buttonStyle(.plain)
                                     .disabled(!command.isEnabled)
                                     .onHover { hovering in
                                         if hovering {
                                             selectedItemID = commandSelectionID(for: command)
                                         }
                                     }
+                                    .opacity(command.isEnabled ? 1 : 0.6)
                                 }
                             }
                         }
@@ -171,19 +174,20 @@ struct EditorCommandPaletteView: View {
                                     .padding(.horizontal, 4)
 
                                 ForEach(section.commands) { command in
-                                    Button {
-                                        execute(command)
-                                    } label: {
-                                        commandRow(for: command)
+                                    AppListRow(
+                                        isSelected: selectedItemID == commandSelectionID(for: command),
+                                        action: { execute(command) }
+                                    ) {
+                                        commandRowContent(for: command)
                                     }
                                     .id(commandSelectionID(for: command))
-                                    .buttonStyle(.plain)
                                     .disabled(!command.isEnabled)
                                     .onHover { hovering in
                                         if hovering {
                                             selectedItemID = commandSelectionID(for: command)
                                         }
                                     }
+                                    .opacity(command.isEnabled ? 1 : 0.6)
                                 }
                             }
                         }
@@ -193,7 +197,7 @@ struct EditorCommandPaletteView: View {
             }
             .onChange(of: selectedItemID) { _, itemID in
                 guard let itemID else { return }
-                withAnimation(.easeInOut(duration: 0.12)) {
+                LumiMotion.animate(LumiMotion.listEnabled(LumiMotion.scroll, preference: motionPreference)) {
                     proxy.scrollTo(itemID, anchor: .center)
                 }
             }
@@ -210,19 +214,20 @@ struct EditorCommandPaletteView: View {
                     .padding(.horizontal, 4)
 
                 ForEach(section.items) { item in
-                    Button {
-                        execute(item)
-                    } label: {
-                        quickOpenRow(for: item)
+                    AppListRow(
+                        isSelected: selectedItemID == quickOpenSelectionID(for: item),
+                        action: { execute(item) }
+                    ) {
+                        quickOpenRowContent(for: item)
                     }
                     .id(quickOpenSelectionID(for: item))
-                    .buttonStyle(.plain)
                     .disabled(!item.isEnabled)
                     .onHover { hovering in
                         if hovering {
                             selectedItemID = quickOpenSelectionID(for: item)
                         }
                     }
+                    .opacity(item.isEnabled ? 1 : 0.6)
                 }
             }
         }
@@ -373,7 +378,10 @@ struct EditorCommandPaletteView: View {
         .buttonStyle(.plain)
     }
 
-    private func commandRow(
+    // MARK: - Row Content (used inside AppListRow)
+
+    @ViewBuilder
+    private func commandRowContent(
         for command: EditorCommandSuggestion,
         emphasizeRecent: Bool = false,
         emphasizeFrequent: Bool = false
@@ -407,29 +415,10 @@ struct EditorCommandPaletteView: View {
                     .foregroundColor(Color(hex: "98989E"))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    selectedItemID == commandSelectionID(for: command)
-                        ? Color(hex: "7C6FFF").opacity(command.isEnabled ? 0.14 : 0.08)
-                        : Color(hex: "98989E").opacity(command.isEnabled ? 0.06 : 0.03)
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(
-                    selectedItemID == commandSelectionID(for: command)
-                        ? Color(hex: "7C6FFF").opacity(0.35)
-                        : .clear,
-                    lineWidth: 1
-                )
-        )
-        .opacity(command.isEnabled ? 1 : 0.6)
     }
 
-    private func quickOpenRow(for item: EditorQuickOpenItemSuggestion) -> some View {
+    @ViewBuilder
+    private func quickOpenRowContent(for item: EditorQuickOpenItemSuggestion) -> some View {
         HStack(spacing: 10) {
             Image(systemName: item.systemImage)
                 .font(.system(size: 11))
@@ -460,26 +449,6 @@ struct EditorCommandPaletteView: View {
                     .clipShape(Capsule())
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    selectedItemID == quickOpenSelectionID(for: item)
-                        ? Color(hex: "7C6FFF").opacity(item.isEnabled ? 0.14 : 0.08)
-                        : Color(hex: "98989E").opacity(item.isEnabled ? 0.06 : 0.03)
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(
-                    selectedItemID == quickOpenSelectionID(for: item)
-                        ? Color(hex: "7C6FFF").opacity(0.35)
-                        : .clear,
-                    lineWidth: 1
-                )
-        )
-        .opacity(item.isEnabled ? 1 : 0.6)
     }
 
     private func execute(_ command: EditorCommandSuggestion) {

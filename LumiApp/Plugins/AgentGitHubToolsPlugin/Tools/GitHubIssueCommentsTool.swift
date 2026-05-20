@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub Issue 评论列表工具
 struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_issue_comments"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,32 +16,62 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ],
+                    "page": [
+                        "type": "number",
+                        "description": "页码，默认 1"
+                    ],
+                    "perPage": [
+                        "type": "number",
+                        "description": "每页数量，默认 10，最大 100"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ],
+                    "page": [
+                        "type": "number",
+                        "description": "Page number, default 1"
+                    ],
+                    "perPage": [
+                        "type": "number",
+                        "description": "Results per page, default 10, max 100"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ],
-                "page": [
-                    "type": "number",
-                    "description": "页码，默认 1"
-                ],
-                "perPage": [
-                    "type": "number",
-                    "description": "每页数量，默认 10，最大 100"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber"]
-        ]
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -63,7 +93,9 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -76,7 +108,9 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
             )
             return formatComments(comments)
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            }
             return "获取 Issue 评论失败：\(error.localizedDescription)"
         }
     }

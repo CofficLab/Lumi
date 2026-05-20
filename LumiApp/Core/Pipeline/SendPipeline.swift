@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 
 /// 消息发送管线中的「下一环」。
 typealias SendPipelineNext = @MainActor (SendMessageContext) async -> Void
@@ -10,7 +11,7 @@ struct AnySuperSendMiddleware: SuperSendMiddleware {
     let order: Int
     
     private let _handle: @MainActor (SendMessageContext, @escaping @MainActor (SendMessageContext) async -> Void) async -> Void
-    private let _handlePost: @MainActor (RequestMetadata, ChatMessage?) async -> Void
+    private let _handlePost: @MainActor (HTTPRequestMetadata, ChatMessage?) async -> Void
 
     init<M: SuperSendMiddleware>(_ middleware: M) {
         self.id = middleware.id
@@ -31,7 +32,7 @@ struct AnySuperSendMiddleware: SuperSendMiddleware {
     }
     
     func handlePost(
-        metadata: RequestMetadata,
+        metadata: HTTPRequestMetadata,
         response: ChatMessage?
     ) async {
         await _handlePost(metadata, response)
@@ -80,7 +81,7 @@ final class SendPipeline {
     /// - Parameters:
     ///   - metadata: 请求元数据
     ///   - response: LLM 响应消息（如果失败则为 nil）
-    func runPost(metadata: RequestMetadata, response: ChatMessage?) async {
+    func runPost(metadata: HTTPRequestMetadata, response: ChatMessage?) async {
         for middleware in middlewares {
             await middleware.handlePost(metadata: metadata, response: response)
         }

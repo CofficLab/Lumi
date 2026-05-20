@@ -1,12 +1,13 @@
+import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 消息头部通用容器，统一悬浮态、边距和背景样式。
 struct MessageHeaderView<Leading: View, Trailing: View>: View {
     let leading: Leading
     let trailing: Trailing
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @LumiMotionPreferenceReader private var motionPreference
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
     init(
@@ -35,7 +36,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
                 isHovered = hovering
             }
         }

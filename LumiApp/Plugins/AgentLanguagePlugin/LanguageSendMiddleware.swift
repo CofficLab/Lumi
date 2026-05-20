@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 语言偏好注入中间件
@@ -9,13 +8,13 @@ import os
 /// 让大模型知道应该用什么语言回复。
 ///
 /// ## 设计决策
-/// - 语言偏好从 ProjectVM 读取，来源统一
+/// - 语言偏好从 WindowProjectVM 读取，来源统一
 /// - 使用 `LanguagePreference.systemPromptDescription` 作为注入内容
 /// - order 设为 -10（很低），确保在其他中间件之前注入，使后续中间件能看到语言上下文
 @MainActor
 final class LanguageSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let id: String = "language-preference"
     /// 优先级设为 -10，在大多数中间件之前执行
     let order: Int = -10

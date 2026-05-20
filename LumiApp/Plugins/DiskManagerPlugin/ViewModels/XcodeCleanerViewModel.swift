@@ -1,12 +1,11 @@
 import Foundation
 import Combine
-import MagicKit
 import DiskManagerKit
 
 @MainActor
 class XcodeCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🧹"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
     @Published var isScanning = false
     @Published var isCleaning = false
@@ -36,7 +35,9 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     func scanAll() async {
         guard !isScanning else { return }
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始扫描 Xcode 缓存")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始扫描 Xcode 缓存")
+            }
         }
 
         isScanning = true
@@ -71,7 +72,9 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                     let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
                     let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-                    DiskManagerPlugin.logger.info("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.info("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
+                    }
                 }
             }
 
@@ -87,7 +90,9 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             }
 
             if Self.verbose {
-                DiskManagerPlugin.logger.info("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+                if DiskManagerPlugin.verbose {
+                                    DiskManagerPlugin.logger.info("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+                }
             }
         }
     }
@@ -99,7 +104,9 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止扫描 Xcode 缓存")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)停止扫描 Xcode 缓存")
+            }
         }
         scanTask?.cancel()
         progressTask?.cancel()
@@ -142,17 +149,23 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
         if Self.verbose {
             let size = itemsToDelete.reduce(0 as Int64) { $0 + $1.size }
             let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(itemsToDelete.count) 项，共 \(sizeString)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(itemsToDelete.count) 项，共 \(sizeString)")
+            }
         }
 
         do {
             try await service.delete(items: itemsToDelete)
             if Self.verbose {
-                DiskManagerPlugin.logger.info("\(self.t)清理完成")
+                if DiskManagerPlugin.verbose {
+                                    DiskManagerPlugin.logger.info("\(self.t)清理完成")
+                }
             }
             await scanAll()
         } catch {
-            DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
+            }
             let nsError = error as NSError
             let isPermission = (nsError.domain == NSCocoaErrorDomain && nsError.code == 513) ||
                 (nsError.domain == NSPOSIXErrorDomain && nsError.code == 13) ||

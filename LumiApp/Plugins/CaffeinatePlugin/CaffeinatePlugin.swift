@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import AppKit
 import Combine
@@ -15,7 +14,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "☕️"
 
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "Caffeinate"
     static let navigationId: String = "caffeinate_settings"
@@ -41,7 +40,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             CaffeinateActivateTool(),
             CaffeinateDeactivateTool(),

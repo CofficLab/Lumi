@@ -13,6 +13,7 @@ import NetworkExtension
 class IPCConnection: NSObject, @unchecked Sendable {
     static let shared = IPCConnection()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
+    private var verbose: Bool = false
     
     var listener: NSXPCListener?
     var currentConnection: NSXPCConnection?
@@ -79,7 +80,9 @@ class IPCConnection: NSObject, @unchecked Sendable {
         newConnection.resume()
 
         guard let providerProxy = newConnection.remoteObjectProxyWithErrorHandler({ registerError in
-            self.logger.error("Failed to register with the provider: \(registerError.localizedDescription)")
+            if self.verbose {
+                            self.logger.error("Failed to register with the provider: \(registerError.localizedDescription)")
+            }
             self.currentConnection?.invalidate()
             self.currentConnection = nil
             completionHandler(false)
@@ -106,7 +109,9 @@ class IPCConnection: NSObject, @unchecked Sendable {
         }
 
         guard let appProxy = connection.remoteObjectProxyWithErrorHandler({ promptError in
-            self.logger.error("Failed to prompt the user: \(promptError.localizedDescription)")
+            if self.verbose {
+                            self.logger.error("Failed to prompt the user: \(promptError.localizedDescription)")
+            }
             self.currentConnection = nil
             responseHandler(true)
         }) as? AppCommunication else {
@@ -131,7 +136,9 @@ class IPCConnection: NSObject, @unchecked Sendable {
         }
         
         guard let appProxy = connection.remoteObjectProxyWithErrorHandler({ promptError in
-            self.logger.error("🧩 Failed to prompt the user: \(promptError.localizedDescription)")
+            if self.verbose {
+                            self.logger.error("🧩 Failed to prompt the user: \(promptError.localizedDescription)")
+            }
         }) as? AppCommunication else {
             logger.critical("🧩 Failed to create a remote object proxy for the app")
             return

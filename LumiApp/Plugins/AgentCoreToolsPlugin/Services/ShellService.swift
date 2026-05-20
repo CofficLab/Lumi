@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import ShellKit
 
 /// Shell 服务：负责执行 Shell 命令
@@ -100,7 +99,7 @@ class ShellService: SuperLog {
     // MARK: - Logger
 
     nonisolated static let emoji = "🐚"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Singleton
 
     static let shared = ShellService()

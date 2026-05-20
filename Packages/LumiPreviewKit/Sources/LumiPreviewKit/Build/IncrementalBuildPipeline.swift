@@ -56,7 +56,7 @@ public extension LumiPreviewFacade {
                     xcodeCompiler: xcodeCompiler
                 )
             self.moduleNameResolver = moduleNameResolver
-                ?? Self.defaultModuleNameResolver()
+                ?? Self.defaultModuleNameResolver(xcodeCompiler: xcodeCompiler)
             self.moduleImportPlanCache = moduleImportPlanCache
         }
 
@@ -68,7 +68,8 @@ public extension LumiPreviewFacade {
                 return try await captureXcodeBuildLog(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: xcodeCompiler.derivedDataPath
                 )
             case .spm, .incremental:
                 return nil
@@ -108,7 +109,8 @@ public extension LumiPreviewFacade {
                 inputPaths: objectURLs.map(\.path),
                 dylibOutputPath: dylibURL.path,
                 additionalArguments: [],
-                enableInterposableLinking: true
+                enableInterposableLinking: true,
+                enableDeadStripLinking: true
             )
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/zsh")
@@ -152,9 +154,7 @@ public extension LumiPreviewFacade {
                 buildStrategy: buildStrategy,
                 importPlan: importPlan
             )
-            let directory = FileManager.default.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit-ImportEntry-\(UUID().uuidString)", isDirectory: true)
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let directory = PreviewStoragePaths.makeTransientWorkDirectory(component: "import-entry")
 
             let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
             let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
@@ -167,7 +167,9 @@ public extension LumiPreviewFacade {
             let dylib = try await compileLibrary(
                 sourceURLs: [sourceURL],
                 dylibURL: dylibURL,
-                compilerArguments: importPlan.compilerArguments,
+                compilerArguments: LumiPreviewFacade.SPMCompiler.filterDedicatedPreviewObjectArguments(
+                    importPlan.compilerArguments
+                ),
                 moduleName: moduleName
             )
             try await incrementalCompiler.codesign(dylibURL: dylib)
@@ -180,9 +182,7 @@ public extension LumiPreviewFacade {
             buildStrategy: LumiPreviewFacade.BuildStrategy
         ) async throws -> URL {
             let compilerArguments = try await compilerArgumentResolver(buildStrategy)
-            let directory = FileManager.default.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit-SourceEntry-\(UUID().uuidString)", isDirectory: true)
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let directory = PreviewStoragePaths.makeTransientWorkDirectory(component: "source-entry")
 
             let currentSourceURL = directory.appendingPathComponent("CurrentSource.swift")
             let entrySourceURL = directory.appendingPathComponent("PreviewEntry.swift")
@@ -201,10 +201,19 @@ public extension LumiPreviewFacade {
                 previewID: discovery.id,
                 importedModuleName: "SourceInclude"
             )
+            let prebuiltObjectName = discovery.sourceFileURL
+                .deletingPathExtension()
+                .lastPathComponent + ".swift.o"
+            let linkArguments = LumiPreviewFacade.SPMCompiler.filterDedicatedPreviewObjectArguments(
+                Self.filterCompilerArguments(
+                    compilerArguments,
+                    excludingPrebuiltObjectNamed: prebuiltObjectName
+                )
+            )
             let dylib = try await compileLibrary(
                 sourceURLs: [currentSourceURL, entrySourceURL],
                 dylibURL: dylibURL,
-                compilerArguments: compilerArguments,
+                compilerArguments: linkArguments,
                 moduleName: moduleName
             )
             try await incrementalCompiler.codesign(dylibURL: dylib)
@@ -350,7 +359,8 @@ public extension LumiPreviewFacade {
         private func captureXcodeBuildLog(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) async throws -> String {
             try await Task.detached {
                 let process = Process()
@@ -358,7 +368,8 @@ public extension LumiPreviewFacade {
                 process.arguments = Self.xcodebuildArguments(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: derivedDataPath
                 )
                 process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
@@ -400,7 +411,8 @@ public extension LumiPreviewFacade {
         private static func xcodebuildArguments(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) -> [String] {
             var arguments = ["xcodebuild"]
 
@@ -413,9 +425,14 @@ public extension LumiPreviewFacade {
             arguments.append(contentsOf: [
                 "-scheme", scheme,
                 "-configuration", configuration,
-                "-destination", "platform=macOS",
-                "build"
+                "-destination", "platform=macOS"
             ])
+
+            if let derivedDataPath {
+                arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+            }
+
+            arguments.append("build")
 
             return arguments
         }
@@ -449,30 +466,40 @@ public extension LumiPreviewFacade {
             }
         }
 
+        static func previewEntryCompilerArguments(
+            appendingTo arguments: [String]
+        ) -> [String] {
+            arguments + LumiPreviewFacade.PreviewEntryBuilder.previewDebugConditionArguments
+        }
+
         private static func defaultCompilerArgumentResolver(
             spmCompiler: LumiPreviewFacade.SPMCompiler,
             xcodeCompiler: LumiPreviewFacade.XcodeCompiler
         ) -> @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> [String] {
             { buildStrategy in
+                let arguments: [String]
                 switch buildStrategy {
                 case .spm(let packageDirectory, let targetName):
-                    return spmCompiler.previewCompilerArguments(
+                    arguments = spmCompiler.previewCompilerArguments(
                         packageDirectory: packageDirectory,
                         targetName: targetName
                     )
                 case .xcode(let projectURL, let scheme, let configuration):
-                    return try await xcodeCompiler.previewCompilerArguments(
+                    arguments = try await xcodeCompiler.previewCompilerArguments(
                         projectURL: projectURL,
                         scheme: scheme,
                         configuration: configuration
                     )
                 case .incremental:
-                    return []
+                    arguments = []
                 }
+                return Self.previewEntryCompilerArguments(appendingTo: arguments)
             }
         }
 
-        private static func defaultModuleNameResolver() -> @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> String? {
+        private static func defaultModuleNameResolver(
+            xcodeCompiler: LumiPreviewFacade.XcodeCompiler
+        ) -> @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> String? {
             { buildStrategy in
                 switch buildStrategy {
                 case .spm(_, let targetName):
@@ -481,7 +508,8 @@ public extension LumiPreviewFacade {
                     return try await resolveXcodeModuleName(
                         projectURL: projectURL,
                         scheme: scheme,
-                        configuration: configuration
+                        configuration: configuration,
+                        derivedDataPath: xcodeCompiler.derivedDataPath
                     )
                 case .incremental:
                     return nil
@@ -554,7 +582,8 @@ public extension LumiPreviewFacade {
         private static func resolveXcodeModuleName(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) async throws -> String? {
             try await Task.detached {
                 let process = Process()
@@ -562,7 +591,8 @@ public extension LumiPreviewFacade {
                 process.arguments = xcodebuildSettingsArguments(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: derivedDataPath
                 )
                 process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
@@ -613,7 +643,8 @@ public extension LumiPreviewFacade {
         private static func xcodebuildSettingsArguments(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) -> [String] {
             var arguments = ["xcodebuild"]
 
@@ -626,9 +657,14 @@ public extension LumiPreviewFacade {
             arguments.append(contentsOf: [
                 "-scheme", scheme,
                 "-configuration", configuration,
-                "-destination", "platform=macOS",
-                "-showBuildSettings"
+                "-destination", "platform=macOS"
             ])
+
+            if let derivedDataPath {
+                arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+            }
+
+            arguments.append("-showBuildSettings")
 
             return arguments
         }
@@ -667,7 +703,8 @@ public extension LumiPreviewFacade {
                     inputPaths: sourceArguments,
                     dylibOutputPath: dylibURL.path,
                     additionalArguments: extraArguments,
-                    enableInterposableLinking: true
+                    enableInterposableLinking: true,
+                    enableDeadStripLinking: true
                 )
 
                 let process = Process()
@@ -722,7 +759,7 @@ public extension LumiPreviewFacade {
             previewID: String,
             importedModuleName: String
         ) -> String {
-            let raw = "LumiHotPreview_\(importedModuleName)_\(previewID)"
+            let raw = "LumiPreview_\(importedModuleName)_\(previewID)"
             let sanitizedScalars = raw.unicodeScalars.map { scalar -> Character in
                 if CharacterSet.alphanumerics.contains(scalar) || scalar == "_" {
                     return Character(scalar)
@@ -739,6 +776,19 @@ public extension LumiPreviewFacade {
                 .replacingOccurrences(of: "\n", with: "\\n")
                 .replacingOccurrences(of: "\r", with: "\\r")
                 .replacingOccurrences(of: "\t", with: "\\t")
+        }
+
+        static func filterCompilerArguments(
+            _ arguments: [String],
+            excludingPrebuiltObjectNamed objectName: String
+        ) -> [String] {
+            guard !objectName.isEmpty else { return arguments }
+            return arguments.filter { argument in
+                guard argument.hasSuffix(".o") || argument.hasSuffix(".a") else {
+                    return true
+                }
+                return !argument.hasSuffix(objectName)
+            }
         }
 
         private static func compilerArguments(
@@ -766,14 +816,19 @@ public extension LumiPreviewFacade {
             inputPaths: [String],
             dylibOutputPath: String,
             additionalArguments: [String],
-            enableInterposableLinking: Bool
+            enableInterposableLinking: Bool,
+            enableDeadStripLinking: Bool = false
         ) -> String {
             let inputs = inputPaths
                 .map(shellQuoted)
                 .joined(separator: " ")
-            let linkerArguments = enableInterposableLinking
-                ? ["-Xlinker", "-interposable"]
-                : []
+            var linkerArguments: [String] = []
+            if enableDeadStripLinking {
+                linkerArguments.append(contentsOf: ["-Xlinker", "-dead_strip"])
+            }
+            if enableInterposableLinking {
+                linkerArguments.append(contentsOf: ["-Xlinker", "-interposable"])
+            }
             let extraArguments = (additionalArguments + linkerArguments)
                 .map(shellQuoted)
                 .joined(separator: " ")
@@ -813,6 +868,7 @@ public extension LumiPreviewFacade {
                 lines.replaceSubrange(start...end, with: [])
             }
             Self.removeMainAttribute(from: &lines)
+            Self.replaceBundleModuleReferences(in: &lines)
             return lines.joined(separator: "\n")
         }
 
@@ -824,6 +880,24 @@ public extension LumiPreviewFacade {
                 } else if trimmed.hasPrefix("@main "),
                           let range = lines[index].range(of: "@main") {
                     lines[index].removeSubrange(range)
+                }
+            }
+        }
+
+        /// Replaces `Bundle.module` with `Bundle.main` so preview entry dylibs compile
+        /// outside the original SPM target context.
+        ///
+        /// SwiftPM auto-generates a `resource_bundle_accessor.swift` that declares
+        /// `Bundle.module` as `internal`.  Preview entry dylibs are compiled in an
+        /// isolated context without that accessor, so any `Bundle.module` reference
+        /// produces "'module' is inaccessible due to 'internal' protection level".
+        private static func replaceBundleModuleReferences(in lines: inout [String]) {
+            for index in lines.indices {
+                if lines[index].contains("Bundle.module") {
+                    lines[index] = lines[index].replacingOccurrences(
+                        of: "Bundle.module",
+                        with: "Bundle.main"
+                    )
                 }
             }
         }

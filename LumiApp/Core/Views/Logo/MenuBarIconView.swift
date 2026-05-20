@@ -3,7 +3,7 @@ import SwiftUI
 /// 菜单栏图标视图
 /// 显示 Logo 图标和插件提供的内容视图
 struct MenuBarIconView: View {
-    @ObservedObject var viewModel: MenuBarIconVM
+    @ObservedObject var viewModel: AppMenuBarIconVM
 
     var body: some View {
         HStack(spacing: 4) {

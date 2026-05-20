@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeSpringPlugin: SuperPlugin {
     static let shared = ThemeSpringPlugin()

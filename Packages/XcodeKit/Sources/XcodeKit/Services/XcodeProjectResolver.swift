@@ -41,7 +41,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let isWorkspace = workspaceURL.pathExtension == "xcworkspace"
         guard isProject || isWorkspace else {
-            Self.logger.warning("\(Self.t)无效的项目路径: \(workspaceURL.path, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)无效的项目路径: \(workspaceURL.path, privacy: .public)")
+            }
             return nil
         }
 
@@ -51,7 +53,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
         // 获取 xcodebuild -list -json 输出
         guard let listResult = await fetchBuildList(workspaceURL: workspacePath, projectURL: projectPath) else {
-            Self.logger.error("\(Self.t)无法获取构建列表: \(workspaceURL.path, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)无法获取构建列表: \(workspaceURL.path, privacy: .public)")
+            }
             return nil
         }
 
@@ -157,7 +161,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         do {
             return try XcodeBuildSettingsParser.parseListOutput(data)
         } catch {
-            Self.logger.error("\(Self.t)解析构建列表失败: \(error.localizedDescription, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)解析构建列表失败: \(error.localizedDescription, privacy: .public)")
+            }
             return nil
         }
     }
@@ -187,7 +193,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         do {
             return try XcodeBuildSettingsParser.parseBuildSettingsOutput(data)
         } catch {
-            Self.logger.error("\(Self.t)解析构建设置失败: \(error.localizedDescription, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)解析构建设置失败: \(error.localizedDescription, privacy: .public)")
+            }
             return nil
         }
     }
@@ -213,7 +221,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         }
 
         guard let graph = try? XcodePBXProjParser.parseMembershipGraph(projectURL: projectURL) else {
-            Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
+            }
             return [:]
         }
 
@@ -275,7 +285,9 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         do {
             try process.run()
         } catch {
-            Self.logger.error("\(Self.t)xcodebuild 启动失败: \(error.localizedDescription, privacy: .public)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)xcodebuild 启动失败: \(error.localizedDescription, privacy: .public)")
+            }
             return nil
         }
 

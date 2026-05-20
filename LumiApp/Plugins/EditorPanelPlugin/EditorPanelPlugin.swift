@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -12,7 +11,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "✏️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "LumiEditor"
     static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
     static let description: String = String(

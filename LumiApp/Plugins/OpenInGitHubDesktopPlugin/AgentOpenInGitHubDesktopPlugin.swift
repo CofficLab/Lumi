@@ -1,5 +1,5 @@
+import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 在 GitHub Desktop 中打开项目插件
@@ -17,7 +17,7 @@ import SwiftUI
 /// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
 actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "AgentOpenInGitHubDesktop"
     static let displayName = String(localized: "Open in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
     static let description = String(localized: "Open current project in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
@@ -48,7 +48,7 @@ actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
 
 /// GitHub Desktop 打开状态栏视图
 struct OpenInGitHubDesktopStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         Group {
@@ -109,7 +109,7 @@ struct OpenInGitHubDesktopStatusBarView: View {
 
 /// GitHub Desktop 打开详情视图（在 popover 中显示）
 struct OpenInGitHubDesktopDetailView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

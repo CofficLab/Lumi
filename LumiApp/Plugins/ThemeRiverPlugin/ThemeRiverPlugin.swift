@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeRiverPlugin: SuperPlugin {
     static let shared = ThemeRiverPlugin()

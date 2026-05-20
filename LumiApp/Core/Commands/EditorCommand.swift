@@ -1,10 +1,9 @@
 import SwiftUI
-import MagicKit
 
 /// 编辑器命令：提供 LSP 快捷动作入口
 struct EditorCommand: Commands, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @ObservedObject private var keybindingStore = EditorKeybindingStore.shared
 
     @MainActor

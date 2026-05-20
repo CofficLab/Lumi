@@ -29,29 +29,20 @@ final class TagHighlighter: SuperEditorDecorationContributor {
     static func highlightRegions(lines: [String], line: Int, character: Int) -> [(line: Int, startColumn: Int, length: Int)] {
         var regions: [(line: Int, startColumn: Int, length: Int)] = []
 
-        // 找到光标所在的标签
-        guard let currentTag = extractTagAtCursor(lines: lines, line: line, character: character) else {
+        guard let match = TagMatcher.findTagPair(lines: lines, line: line, character: character) else {
             return regions
         }
 
-        // 查找匹配标签
-        let matchingTag = TagMatcher.findMatchingTag(lines: lines, line: line, character: character)
-
         // 高亮当前标签
+        let currentTag = match.current
         regions.append((line: currentTag.startLine, startColumn: currentTag.startColumn, length: currentTag.name.utf16.count + (currentTag.isClosing ? 2 : 1)))
 
         // 高亮匹配标签
-        if let matching = matchingTag {
+        if let matching = match.matching {
             let tagLength = matching.name.utf16.count + (matching.isClosing ? 2 : 1)
             regions.append((line: matching.startLine, startColumn: matching.startColumn, length: tagLength))
         }
 
         return regions
-    }
-
-    // MARK: - 私有方法
-
-    private static func extractTagAtCursor(lines: [String], line: Int, character: Int) -> TagLocation? {
-        return TagMatcher.findMatchingTag(lines: lines, line: line, character: character)
     }
 }

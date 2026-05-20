@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Browser 插件
@@ -14,7 +13,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖼️"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "Browser"
     static let displayName: String = "Browser"
@@ -29,19 +28,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(BrowserToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct BrowserToolFactory: SuperAgentToolFactory {
-    let id: String = "browser.screenshot.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [BrowserScreenshotTool()]
     }
 }

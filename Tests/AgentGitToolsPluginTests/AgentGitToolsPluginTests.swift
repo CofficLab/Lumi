@@ -13,12 +13,15 @@ final class AgentGitToolsPluginTests: XCTestCase {
     }
 
     @MainActor
-    func testPluginExposesSingleGitToolsFactory() async {
-        let factories = await GitToolsPlugin.shared.agentToolFactories()
+    func testPluginExposesGitAgentTools() async {
+        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let tools = await GitToolsPlugin.shared.agentTools(context: context)
 
-        XCTAssertEqual(factories.count, 1)
-        XCTAssertEqual(factories.first?.id, "git.tools.factory")
-        XCTAssertEqual(factories.first?.order, 0)
+        XCTAssertEqual(tools.count, 3)
+        XCTAssertEqual(
+            Set(tools.map(\.name)),
+            ["git_status", "git_diff", "git_log"]
+        )
     }
 }
 #endif

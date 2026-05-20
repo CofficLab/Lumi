@@ -1,17 +1,5 @@
+import RAGKit
 import SwiftUI
-
-// MARK: - Progress Model
-
-struct RAGIndexProgressEvent: Sendable {
-    let projectPath: String
-    let scannedFiles: Int
-    let totalFiles: Int
-    let indexedFiles: Int
-    let skippedFiles: Int
-    let chunkCount: Int
-    let currentFilePath: String
-    let isFinished: Bool
-}
 
 // MARK: - Notification Extension
 

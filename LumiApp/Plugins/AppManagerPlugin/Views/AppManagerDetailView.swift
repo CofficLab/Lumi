@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 应用详情与相关文件列表

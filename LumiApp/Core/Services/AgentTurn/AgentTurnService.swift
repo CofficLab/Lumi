@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// Agent 回合服务
 ///
@@ -24,16 +23,16 @@ final class AgentTurnService: SuperLog {
     private let toolCallExecutor: ToolCallExecutor
     private let turnFinalizer: TurnFinalizer
     private let chatHistoryService: ChatHistoryService
-    private let conversationVM: ConversationVM
-    private let messageQueueVM: MessageQueueVM
+    private let conversationVM: WindowConversationVM
+    private let messageQueueVM: WindowMessageQueueVM
 
     init(
         llmRequester: LLMRequester,
         toolCallExecutor: ToolCallExecutor,
         turnFinalizer: TurnFinalizer,
         chatHistoryService: ChatHistoryService,
-        conversationVM: ConversationVM,
-        messageQueueVM: MessageQueueVM
+        conversationVM: WindowConversationVM,
+        messageQueueVM: WindowMessageQueueVM
     ) {
         self.llmRequester = llmRequester
         self.toolCallExecutor = toolCallExecutor

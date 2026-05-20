@@ -16,21 +16,17 @@ final class TagRenamer {
     static func findLinkedTags(lines: [String], line: Int, character: Int) -> [(line: Int, startColumn: Int, length: Int)] {
         var linkedTags: [(line: Int, startColumn: Int, length: Int)] = []
 
-        guard let currentTag = TagMatcher.findMatchingTag(lines: lines, line: line, character: character) else {
+        guard let match = TagMatcher.findTagPair(lines: lines, line: line, character: character) else {
             return linkedTags
         }
 
-        // 找到匹配的标签
-        let matchingTag = TagMatcher.findMatchingTag(lines: lines, line: line, character: character)
-
         // 如果找到了匹配标签，添加为联动编辑点
-        if let matching = matchingTag, matching.name == currentTag.name {
+        let currentTag = match.current
+        if let matching = match.matching, matching.name == currentTag.name {
             // 当前标签
-            let currentLength = currentTag.name.utf16.count + (currentTag.isClosing ? 2 : 1)
             linkedTags.append((line: currentTag.startLine, startColumn: currentTag.startColumn + (currentTag.isClosing ? 2 : 1), length: currentTag.name.utf16.count))
 
             // 匹配标签
-            let matchLength = matching.name.utf16.count + (matching.isClosing ? 2 : 1)
             linkedTags.append((line: matching.startLine, startColumn: matching.startColumn + (matching.isClosing ? 2 : 1), length: matching.name.utf16.count))
         }
 

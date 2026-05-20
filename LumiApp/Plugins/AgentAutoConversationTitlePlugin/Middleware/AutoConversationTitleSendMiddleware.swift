@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 在管线继续后异步生成标题，避免阻塞后续 `send`。
 @MainActor
@@ -31,7 +30,7 @@ struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         userText: String,
         role: MessageRole,
         chatHistoryService: ChatHistoryService,
-        agentSessionConfig: LLMVM
+        agentSessionConfig: AppLLMVM
     ) async {
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
 

@@ -3,7 +3,7 @@ import SwiftUI
 struct HistoryDBDetailView: View {
     @StateObject private var viewModel: HistoryDBBrowserViewModel
 
-    init(chatHistoryVM: ChatHistoryVM, conversationVM: ConversationVM) {
+    init(chatHistoryVM: AppChatHistoryVM, conversationVM: WindowConversationVM) {
         _viewModel = StateObject(
             wrappedValue: HistoryDBBrowserViewModel(
                 chatHistoryVM: chatHistoryVM,

@@ -9,6 +9,12 @@
 - **平台**: macOS APP
 - **技术栈**: SwiftUI, Swift, MagicKit
 
+### 模块导入（LumiApp）
+
+`LumiApp/Core/Bootstrap/Global.swift` 通过 `@_exported import` 向整个 **LumiApp** 模块透出 `MagicKit`（`SuperLog`、`SuperPlugin`、`SuperAgentTool` 等）与 `EditorService`。因此 **LumiApp 内**（含 `Core/`、`Plugins/`）一般**不必**再写 `import MagicKit` 或 `import EditorService`。
+
+独立 **SPM Package**（如 `Packages/RAGKit`）仍是独立模块，须按需自行 `import MagicKit`，并尽量少依赖。
+
 ---
 
 ## 通用规则
@@ -38,3 +44,4 @@
 - [目录结构规范](./plugin-directory-rules.md)
 - [国际化规范](./plugin-i18n-rules.md)
 - [最少功能原则](./minimal-functionality.md)
+- [自动化测试 / 大模型自测](./automation-system-rules.md)

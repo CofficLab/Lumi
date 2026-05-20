@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import HttpKit
 import os
 
 /// Code Server 扩展信息
@@ -219,7 +219,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
     ///   - openPath: 启动后自动打开的项目路径（可选）
     func start(port: Int = 8080, openPath: String? = nil) {
         guard !isRunning else {
-            CodeServerPlugin.logger.info("\(self.t)已在运行中")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)已在运行中")
+            }
             return
         }
 
@@ -227,7 +229,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
 
         guard let codeServerPath = findCodeServer() else {
             errorMessage = "未找到 code-server，请先安装：brew install code-server"
-            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
+            }
             return
         }
 
@@ -251,7 +255,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
         // 添加要打开的项目路径
         if let openPath, FileManager.default.fileExists(atPath: openPath) {
             arguments.append(openPath)
-            CodeServerPlugin.logger.info("\(self.t)启动时自动打开项目：\(openPath)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)启动时自动打开项目：\(openPath)")
+            }
         }
 
         // 3. 启动进程
@@ -271,7 +277,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
         outHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
-                CodeServerPlugin.logger.debug("\(CodeServerManager.t)\(line.trimmingCharacters(in: .newlines))")
+                if CodeServerPlugin.verbose {
+                                    CodeServerPlugin.logger.debug("\(CodeServerManager.t)\(line.trimmingCharacters(in: .newlines))")
+                }
             }
         }
 
@@ -279,7 +287,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
         errHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
-                CodeServerPlugin.logger.error("\(CodeServerManager.t)code-server 错误：\(line.trimmingCharacters(in: .newlines))")
+                if CodeServerPlugin.verbose {
+                                    CodeServerPlugin.logger.error("\(CodeServerManager.t)code-server 错误：\(line.trimmingCharacters(in: .newlines))")
+                }
             }
         }
 
@@ -295,10 +305,14 @@ final class CodeServerManager: ObservableObject, SuperLog {
             process = task
             isRunning = true
             errorMessage = nil
-            CodeServerPlugin.logger.info("\(self.t)已启动，端口：\(port)，数据目录：\(self.dataDirectory.path)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)已启动，端口：\(port)，数据目录：\(self.dataDirectory.path)")
+            }
         } catch {
             errorMessage = "启动 code-server 失败: \(error.localizedDescription)"
-            CodeServerPlugin.logger.error("\(self.t)启动失败：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.error("\(self.t)启动失败：\(error.localizedDescription)")
+            }
         }
     }
 
@@ -310,7 +324,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
         process?.waitUntilExit()
         process = nil
         isRunning = false
-        CodeServerPlugin.logger.info("\(self.t)已停止")
+        if CodeServerPlugin.verbose {
+                    CodeServerPlugin.logger.info("\(self.t)已停止")
+        }
     }
 
     /// 检查 code-server 是否可访问
@@ -320,12 +336,11 @@ final class CodeServerManager: ObservableObject, SuperLog {
         var request = URLRequest(url: url)
         request.timeoutInterval = 2.0
 
+        let client = HTTPClient(timeoutIntervalForRequest: 2, timeoutIntervalForResource: 2)
+
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse {
-                return httpResponse.statusCode < 500
-            }
-            return false
+            let (_, response) = try await client.sendRequestWithResponse(request: request)
+            return response.statusCode < 500
         } catch {
             return false
         }
@@ -357,10 +372,14 @@ final class CodeServerManager: ObservableObject, SuperLog {
 
             let data = try JSONSerialization.data(withJSONObject: Self.defaultSettings, options: .prettyPrinted)
             try data.write(to: url)
-            CodeServerPlugin.logger.info("\(self.t)已创建默认配置：\(url.path)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)已创建默认配置：\(url.path)")
+            }
             return true
         } catch {
-            CodeServerPlugin.logger.warning("\(self.t)写入配置失败：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.warning("\(self.t)写入配置失败：\(error.localizedDescription)")
+            }
             return false
         }
     }
@@ -385,10 +404,14 @@ final class CodeServerManager: ObservableObject, SuperLog {
                 return false
             }
             try newData.write(to: url)
-            CodeServerPlugin.logger.info("\(self.t)已合并默认配置：\(url.path)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)已合并默认配置：\(url.path)")
+            }
             return true
         } catch {
-            CodeServerPlugin.logger.warning("\(self.t)合并配置失败：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.warning("\(self.t)合并配置失败：\(error.localizedDescription)")
+            }
             return false
         }
     }
@@ -512,7 +535,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
     private func reloadServer() {
         // 设置重载标志，触发 WKWebView 重新加载
         shouldReloadWebView = true
-        CodeServerPlugin.logger.info("\(self.t)已触发重载，扩展将立即生效")
+        if CodeServerPlugin.verbose {
+                    CodeServerPlugin.logger.info("\(self.t)已触发重载，扩展将立即生效")
+        }
         
         // 延迟重置标志，以便下次安装时能再次触发
         Task { @MainActor [weak self] in
@@ -574,9 +599,13 @@ final class CodeServerManager: ObservableObject, SuperLog {
                 Task { @MainActor [weak self] in
                     if !success {
                         self?.extensionError = "安装扩展失败: \(errText)"
-                        CodeServerPlugin.logger.error("\(CodeServerManager.t)安装扩展失败：\(errText)")
+                        if CodeServerPlugin.verbose {
+                                                    CodeServerPlugin.logger.error("\(CodeServerManager.t)安装扩展失败：\(errText)")
+                        }
                     } else {
-                        CodeServerPlugin.logger.info("\(CodeServerManager.t)已安装扩展：\(extensionId)")
+                        if CodeServerPlugin.verbose {
+                                                    CodeServerPlugin.logger.info("\(CodeServerManager.t)已安装扩展：\(extensionId)")
+                        }
                         // 如果是图标主题扩展，自动启用
                         self?.applyThemeIfApplicable(extensionId)
                         // 触发 code-server 重载，使扩展立即生效
@@ -606,7 +635,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
     private func applyThemeIfApplicable(_ extensionId: String) {
         // 查找扩展目录下的 package.json
         guard let packageURL = findExtensionPackageJSON(extensionId) else {
-            CodeServerPlugin.logger.debug("\(self.t)未找到扩展 \(extensionId) 的 package.json，跳过自动应用主题")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.debug("\(self.t)未找到扩展 \(extensionId) 的 package.json，跳过自动应用主题")
+            }
             return
         }
 
@@ -622,7 +653,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
                let firstTheme = iconThemes.first,
                let themeId = firstTheme["id"] as? String ?? firstTheme["label"] as? String {
                 updateSetting(key: "workbench.iconTheme", value: themeId)
-                CodeServerPlugin.logger.info("\(self.t)已自动启用图标主题：\(themeId)")
+                if CodeServerPlugin.verbose {
+                                    CodeServerPlugin.logger.info("\(self.t)已自动启用图标主题：\(themeId)")
+                }
             }
 
             // 处理颜色主题
@@ -639,10 +672,14 @@ final class CodeServerManager: ObservableObject, SuperLog {
                     }
                 }
                 updateSetting(key: "workbench.colorTheme", value: selectedTheme)
-                CodeServerPlugin.logger.info("\(self.t)已自动启用颜色主题：\(selectedTheme)")
+                if CodeServerPlugin.verbose {
+                                    CodeServerPlugin.logger.info("\(self.t)已自动启用颜色主题：\(selectedTheme)")
+                }
             }
         } catch {
-            CodeServerPlugin.logger.warning("\(self.t)解析扩展 package.json 失败：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.warning("\(self.t)解析扩展 package.json 失败：\(error.localizedDescription)")
+            }
         }
     }
 
@@ -713,7 +750,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
             let newData = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
             try newData.write(to: settingsURL)
         } catch {
-            CodeServerPlugin.logger.warning("\(self.t)更新配置失败 [\(key)]：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.warning("\(self.t)更新配置失败 [\(key)]：\(error.localizedDescription)")
+            }
         }
     }
 
@@ -753,9 +792,13 @@ final class CodeServerManager: ObservableObject, SuperLog {
                 Task { @MainActor [weak self] in
                     if !success {
                         self?.extensionError = "卸载扩展失败: \(errText)"
-                        CodeServerPlugin.logger.error("\(CodeServerManager.t)卸载扩展失败：\(errText)")
+                        if CodeServerPlugin.verbose {
+                                                    CodeServerPlugin.logger.error("\(CodeServerManager.t)卸载扩展失败：\(errText)")
+                        }
                     } else {
-                        CodeServerPlugin.logger.info("\(CodeServerManager.t)已卸载扩展：\(extensionId)")
+                        if CodeServerPlugin.verbose {
+                                                    CodeServerPlugin.logger.info("\(CodeServerManager.t)已卸载扩展：\(extensionId)")
+                        }
                         self?.loadInstalledExtensions()
                     }
                 }
@@ -781,12 +824,16 @@ final class CodeServerManager: ObservableObject, SuperLog {
     /// - Parameter path: 项目路径
     func openInNewWindow(path: String) {
         guard let codeServerPath = findCodeServer() else {
-            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
+            }
             return
         }
 
         guard FileManager.default.fileExists(atPath: path) else {
-            CodeServerPlugin.logger.warning("\(self.t)项目路径不存在：\(path)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.warning("\(self.t)项目路径不存在：\(path)")
+            }
             return
         }
 
@@ -805,9 +852,13 @@ final class CodeServerManager: ObservableObject, SuperLog {
 
         do {
             try task.run()
-            CodeServerPlugin.logger.info("\(self.t)已在新窗口打开项目：\(path)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.info("\(self.t)已在新窗口打开项目：\(path)")
+            }
         } catch {
-            CodeServerPlugin.logger.error("\(self.t)打开项目失败：\(error.localizedDescription)")
+            if CodeServerPlugin.verbose {
+                            CodeServerPlugin.logger.error("\(self.t)打开项目失败：\(error.localizedDescription)")
+            }
         }
     }
 
@@ -818,7 +869,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
         stop()
         try? FileManager.default.removeItem(at: dataDirectory)
         try? FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
-        CodeServerPlugin.logger.info("\(self.t)已清除所有数据")
+        if CodeServerPlugin.verbose {
+                    CodeServerPlugin.logger.info("\(self.t)已清除所有数据")
+        }
     }
 
     /// 获取数据目录占用的磁盘空间（字节）
@@ -969,21 +1022,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
             }
 
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      httpResponse.statusCode == 200 else {
-                    await MainActor.run { [weak self] in
-                        if isSearch {
-                            self?.searchError = "搜索请求失败"
-                            self?.isSearching = false
-                        } else {
-                            self?.popularError = "加载热门扩展失败"
-                            self?.isLoadingPopular = false
-                        }
-                    }
-                    return
-                }
+                let client = HTTPClient()
+                let request = URLRequest(url: url)
+                let data = try await client.sendRequest(request: request)
 
                 // 解析 JSON 响应
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],

@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 延时消息插件的 RootView 覆盖层
@@ -16,8 +15,8 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @EnvironmentObject private var conversationVM: ConversationVM
-    @EnvironmentObject private var messageQueueVM: MessageQueueVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var messageQueueVM: WindowMessageQueueVM
 
     @State private var hasAppeared = false
 
@@ -35,12 +34,14 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
 
     private func syncAll() {
         // 同步 VM 引用（只需一次）
-        DelayMessageState.shared.syncMessageQueueVM(messageQueueVM)
+        DelayMessageState.shared.syncWindowMessageQueueVM(messageQueueVM)
         // 同步当前会话 ID
         DelayMessageState.shared.syncConversationId(conversationVM.selectedConversationId)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 已同步 VM 引用到 DelayMessageState")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ 已同步 VM 引用到 DelayMessageState")
+            }
         }
     }
 }

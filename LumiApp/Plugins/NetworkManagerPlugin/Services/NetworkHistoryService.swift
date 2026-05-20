@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 
 struct NetworkDataPoint: Identifiable, Codable {
     var id: TimeInterval { timestamp }
@@ -40,7 +39,7 @@ enum TimeRange: String, CaseIterable, Identifiable {
 class NetworkHistoryService: ObservableObject, SuperLog {
     static let shared = NetworkHistoryService()
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // Recent history (high resolution: 1 point per second for last hour)
     @Published var recentHistory: [NetworkDataPoint] = []
@@ -159,7 +158,9 @@ class NetworkHistoryService: ObservableObject, SuperLog {
                 let data = try JSONEncoder().encode(history)
                 try data.write(to: url)
             } catch {
-                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to save network history: \(error.localizedDescription)")
+                if NetworkManagerPlugin.verbose {
+                                    NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to save network history: \(error.localizedDescription)")
+                }
             }
         }
     }

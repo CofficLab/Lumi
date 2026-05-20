@@ -1,8 +1,6 @@
 # ShellKit
 
-Async shell command execution utilities for Lumi.
-
-`ShellKit` wraps `Process` with async/await APIs, streaming output callbacks, timeout handling, cancellation behavior, and structured results.
+可复用的异步 Shell 命令执行工具包。封装 `Process`，提供 async/await API、流式输出回调、超时与取消，以及结构化结果。
 
 ## Package
 

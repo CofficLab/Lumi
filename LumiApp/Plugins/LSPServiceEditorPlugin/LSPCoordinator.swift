@@ -6,14 +6,13 @@ import CodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os
-import MagicKit
 
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
 class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     nonisolated static let emoji = "😊"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService
@@ -614,8 +613,39 @@ struct SemanticTokenMap: Sendable {
             legend = options.legend
         }
         
-        tokenTypeMap = legend.tokenTypes.map { CaptureName.fromString($0) }
+        tokenTypeMap = legend.tokenTypes.map { Self.captureName(forSemanticTokenType: $0) }
         modifierMap = legend.tokenModifiers.map { CaptureModifier.fromString($0) }
+    }
+
+    static func captureName(forSemanticTokenType tokenType: String) -> CaptureName? {
+        switch tokenType {
+        case "namespace":
+            return .type
+        case "type", "class", "enum", "interface", "struct", "typeParameter":
+            return .type
+        case "parameter":
+            return .parameter
+        case "variable":
+            return .variable
+        case "property", "enumMember", "event":
+            return .property
+        case "function":
+            return .function
+        case "method":
+            return .method
+        case "macro":
+            return .function
+        case "keyword", "modifier", "operator":
+            return .keyword
+        case "comment":
+            return .comment
+        case "string", "regexp":
+            return .string
+        case "number":
+            return .number
+        default:
+            return CaptureName.fromString(tokenType)
+        }
     }
     
     /// 使用 LineOffsetTable 优化的快速解码（O(n) + O(m)，替代 O(n×m)）

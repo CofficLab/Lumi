@@ -20,7 +20,7 @@ public enum EditorSettingsLifecycle {
     public nonisolated(unsafe) static var loadEditorCommandPaletteCategory: (() -> String?)?
     public nonisolated(unsafe) static var saveEditorCommandPaletteCategory: ((String?) -> Void)?
 
-    /// 切换「编辑器功能插件」开关（宿主通常映射到 `PluginSettingsVM`）。
+    /// 切换「编辑器功能插件」开关（宿主通常映射到 `AppPluginSettingsVM`）。
     public nonisolated(unsafe) static var setEditorFeaturePluginEnabled: ((String, Bool) -> Void)?
 
     /// 将宿主主题贡献中的 `editorThemeContributor` 注册到编辑器 registry。

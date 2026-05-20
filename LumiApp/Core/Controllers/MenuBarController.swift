@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 菜单栏控制器
@@ -9,7 +8,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     nonisolated static let emoji = "📊"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // MARK: - Properties
 
@@ -30,7 +29,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 管理图标的状态和内容视图。
     /// 使用 MVVM 模式管理 SwiftUI 视图的数据。
-    private var iconViewModel = MenuBarIconVM()
+    private var iconViewModel = AppMenuBarIconVM()
     
     /// 菜单栏图标的主机视图
     ///
@@ -52,7 +51,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 弱引用避免循环引用。
     /// 用于获取插件提供的状态栏相关视图。
-    private weak var pluginProvider: PluginVM?
+    private weak var pluginProvider: AppPluginVM?
     
     /// 调整 popover 窗口的空间行为，避免在全屏 Space 下不可见
     private func configurePopoverWindowForSpaces() {
@@ -69,7 +68,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 此方法应在应用启动后调用。
     ///
     /// - Parameter pluginProvider: 插件 VM实例
-    func setupMenuBar(pluginProvider: PluginVM?) {
+    func setupMenuBar(pluginProvider: AppPluginVM?) {
         self.pluginProvider = pluginProvider
 
         // 创建状态栏项，使用 variableLength 以便根据内容动态调整宽度
@@ -455,6 +454,6 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
 // MARK: - Preview
 
 #Preview("MenuBar") {
-    MenuBarIconView(viewModel: MenuBarIconVM())
+    MenuBarIconView(viewModel: AppMenuBarIconVM())
         .frame(width: 20, height: 20)
 }

@@ -1,10 +1,18 @@
 import Foundation
 
+/// 将相关的缓存 GitHub 生态参考注入到外发聊天上下文中。
+///
+/// 中间件仅在推荐、依赖、框架或生态相关提示中启用。它会读取当前项目的
+/// 本地知识库，并追加包含最相关缓存条目的临时系统提示。
 @MainActor
 final class GitHubKBMiddleware: SuperSendMiddleware {
+    /// 发送流水线使用的稳定中间件标识。
     let id = "github-insight-kb"
+
+    /// 中间件在发送流水线中的执行顺序。
     let order = 60
 
+    /// 处理外发消息，并在相关时追加 GitHub 生态上下文。
     func handle(
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
@@ -34,6 +42,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         await next(ctx)
     }
 
+    /// 判断消息是否看起来需要生态或依赖建议。
     private func shouldInject(for message: String) -> Bool {
         let lowercased = message.lowercased()
         let keywords = [
@@ -43,22 +52,13 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         return keywords.contains { lowercased.contains($0) }
     }
 
+    /// 按相关性排序缓存条目。
     private func filter(entries: [GitHubInsightKBEntry], for message: String) -> [GitHubInsightKBEntry] {
-        let lowercased = message.lowercased()
-        let relation: GitHubInsightRelationType?
-        if lowercased.contains("alternative") || lowercased.contains("替代") {
-            relation = .alternative
-        } else if lowercased.contains("example") || lowercased.contains("best practice") || lowercased.contains("最佳实践") || lowercased.contains("示例") {
-            relation = .example
-        } else {
-            relation = nil
-        }
-
         return entries
-            .filter { relation == nil || $0.relationType == relation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
+    /// 构建用于概括缓存生态参考的临时系统提示。
     private func buildPrompt(entries: [GitHubInsightKBEntry], languagePreference: LanguagePreference) -> String {
         var lines: [String]
 
@@ -69,8 +69,8 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
                 "",
                 "以下缓存的 GitHub 生态参考可能相关。请将它们视为需要验证的线索，而不是权威结论。",
                 "",
-                "| 仓库 | 类型 | 信号 |",
-                "|------|------|------|"
+                "| 仓库 | 信号 |",
+                "|------|------|"
             ]
         case .english:
             lines = [
@@ -78,14 +78,14 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
                 "",
                 "The following cached GitHub ecosystem references may be relevant. Treat them as leads to verify, not as authoritative conclusions.",
                 "",
-                "| Repo | Type | Signal |",
-                "|------|------|--------|"
+                "| Repo | Signal |",
+                "|------|--------|"
             ]
         }
 
         for entry in entries {
             let insight = entry.keyInsights.first ?? entry.description
-            lines.append("| `\(entry.fullName)` | \(entry.relationType.title) | \(insight) |")
+            lines.append("| `\(entry.fullName)` | \(insight) |")
         }
 
         lines.append("")

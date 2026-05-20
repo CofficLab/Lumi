@@ -1,12 +1,11 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 
 struct MenuBarSettingsView: View {
     @StateObject private var service = MenuBarManagerService.shared
     
     var body: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
                 HStack {
@@ -23,14 +22,17 @@ struct MenuBarSettingsView: View {
                     Spacer()
                     
                     if !service.isPermissionGranted {
-                        Button(String(localized: "Grant Permission", table: "MenuBarManager")) {
+                        AppButton(
+                            String(localized: "Grant Permission", table: "MenuBarManager"),
+                            systemImage: "lock.open",
+                            style: .primary
+                        ) {
                             service.requestPermission()
                         }
-                        .buttonStyle(.borderedProminent)
                     }
                 }
                 
-                Divider()
+                GlassDivider()
                 
                 if service.isPermissionGranted {
                     // Item List
@@ -47,16 +49,22 @@ struct MenuBarSettingsView: View {
                     
                     HStack {
                         Spacer()
-                        Button(String(localized: "Refresh", table: "MenuBarManager")) {
+                        AppButton(
+                            String(localized: "Refresh", table: "MenuBarManager"),
+                            systemImage: "arrow.clockwise",
+                            style: .secondary,
+                            size: .small
+                        ) {
                             service.refreshMenuBarItems()
                         }
                     }
                 } else {
-                    ContentUnavailableView(
-                        "Permission Required",
-                        systemImage: "lock.fill",
-                        description: Text(String(localized: "Accessibility permission is required to manage menu bar items.", table: "MenuBarManager"))
+                    AppEmptyState(
+                        icon: "lock.fill",
+                        title: LocalizedStringKey(String(localized: "Permission Required", table: "MenuBarManager")),
+                        description: LocalizedStringKey(String(localized: "Accessibility permission is required to manage menu bar items.", table: "MenuBarManager"))
                     )
+                    .frame(minHeight: 220)
                 }
             }
             .padding()
@@ -74,30 +82,30 @@ struct MenuBarItemRow: View {
     let onToggle: () -> Void
     
     var body: some View {
-        HStack {
-            if let icon = item.icon {
-                AppImageThumbnail(
-                    image: Image(nsImage: icon),
-                    size: CGSize(width: 16, height: 16),
-                    shape: .none
-                )
-            } else {
-                Image(systemName: "app.dashed")
+        AppListRow {
+            HStack(spacing: 10) {
+                if let icon = item.icon {
+                    AppImageThumbnail(
+                        image: Image(nsImage: icon),
+                        size: CGSize(width: 16, height: 16),
+                        shape: .none
+                    )
+                } else {
+                    Image(systemName: "app.dashed")
+                }
+
+                Text(item.name)
+                    .font(.body)
+
+                Spacer()
+
+                AppIconButton(
+                    systemImage: isHidden ? "eye.slash" : "eye",
+                    tint: isHidden ? .secondary : .primary
+                ) {
+                    onToggle()
+                }
             }
-            
-            Text(item.name)
-                .font(.body)
-            
-            Spacer()
-            
-            Button(action: onToggle) {
-                Image(systemName: isHidden ? "eye.slash" : "eye")
-                    .foregroundStyle(isHidden ? .secondary : .primary)
-            }
-            .buttonStyle(.plain)
         }
-        .padding(10)
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(8)
     }
 }

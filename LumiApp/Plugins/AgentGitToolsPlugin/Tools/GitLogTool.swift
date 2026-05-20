@@ -1,10 +1,9 @@
 import Foundation
-import MagicKit
 
 /// Git 日志工具
 struct GitLogTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "git_log"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,24 +15,40 @@ struct GitLogTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let pathDesc: String
+        let countDesc: String
+        let branchDesc: String
+        let fileDesc: String
+        switch language {
+        case .chinese:
+            pathDesc = "Git 仓库路径，默认为当前工作目录"
+            countDesc = "显示的提交数量，默认 10"
+            branchDesc = "可选，查看特定分支的日志"
+            fileDesc = "可选，查看特定文件的提交历史"
+        case .english:
+            pathDesc = "Git repository path, defaults to current working directory"
+            countDesc = "Number of commits to display, default 10"
+            branchDesc = "Optional, view logs for a specific branch"
+            fileDesc = "Optional, view commit history for a specific file"
+        }
+        return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录"
+                    "description": pathDesc
                 ],
                 "count": [
                     "type": "number",
-                    "description": "显示的提交数量，默认 10"
+                    "description": countDesc
                 ],
                 "branch": [
                     "type": "string",
-                    "description": "可选，查看特定分支的日志"
+                    "description": branchDesc
                 ],
                 "file": [
                     "type": "string",
-                    "description": "可选，查看特定文件的提交历史"
+                    "description": fileDesc
                 ]
             ]
         ]
@@ -50,7 +65,9 @@ struct GitLogTool: SuperAgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            GitToolsPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
+            }
         }
 
         do {
@@ -62,7 +79,9 @@ struct GitLogTool: SuperAgentTool, SuperLog {
             )
             return formatLog(logs)
         } catch {
-            GitToolsPlugin.logger.error("\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
+            }
             return "获取 Git 日志失败：\(error.localizedDescription)"
         }
     }

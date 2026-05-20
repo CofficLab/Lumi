@@ -1,10 +1,11 @@
+import LumiUI
 import SwiftUI
 
 /// 设置界面视图，使用 HStack 实现左右并排布局
 struct SettingView: View {
     /// 插件 VM
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeVM: ThemeVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject var themeVM: AppThemeVM
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about

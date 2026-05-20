@@ -2,14 +2,13 @@ import AppKit
 import ApplicationServices
 import Combine
 import SwiftUI
-import MagicKit
 
 /// 菜单栏管理服务
 /// 负责获取和管理菜单栏图标
 @MainActor
 class MenuBarManagerService: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍎"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = MenuBarManagerService()
     
     // MARK: - Published Properties

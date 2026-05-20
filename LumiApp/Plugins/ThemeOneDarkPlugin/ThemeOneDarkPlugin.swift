@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeOneDarkPlugin: SuperPlugin {
     static let shared = ThemeOneDarkPlugin()

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeMountainPlugin: SuperPlugin {
     static let shared = ThemeMountainPlugin()

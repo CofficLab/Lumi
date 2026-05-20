@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftData
 import SwiftUI
 
@@ -17,7 +16,7 @@ struct CacheStats {
 /// 缓存管理器 - 使用 SwiftData 持久化
 actor CacheManager: SuperLog {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = CacheManager()
 
     private let container: ModelContainer
@@ -55,7 +54,9 @@ actor CacheManager: SuperLog {
         guard let item = try? context.fetch(descriptor).first else {
             stats.missCount += 1
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
+                }
             }
             return nil
         }
@@ -64,13 +65,17 @@ actor CacheManager: SuperLog {
         if abs(item.lastModified - currentModificationDate.timeIntervalSince1970) < 1.0 {
             stats.hitCount += 1
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)缓存命中：\(item.name)")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)缓存命中：\(item.name)")
+                }
             }
             return item.toDTO()
         } else {
             stats.missCount += 1
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)缓存已过期：\(item.name)，已移除")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)缓存已过期：\(item.name)，已移除")
+                }
             }
             context.delete(item)
             try? context.save()
@@ -110,7 +115,9 @@ actor CacheManager: SuperLog {
         try? context.save()
 
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)缓存已更新：\(app.displayName)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)缓存已更新：\(app.displayName)")
+            }
         }
     }
 
@@ -131,7 +138,9 @@ actor CacheManager: SuperLog {
         if removedCount > 0 {
             try? context.save()
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
+                }
             }
         }
     }
@@ -156,7 +165,9 @@ actor CacheManager: SuperLog {
         stats = CacheStats()
 
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
+            }
         }
     }
 

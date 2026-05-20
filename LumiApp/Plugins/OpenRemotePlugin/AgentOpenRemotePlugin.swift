@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 import Foundation
 import os
@@ -12,7 +12,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🌐"
 
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "AgentOpenRemote"
     static let displayName: String = String(localized: "Open Remote Repository", table: "AgentOpenRemote")
@@ -40,7 +40,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
 /// 远程仓库状态栏视图
 struct OpenRemoteStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var remoteURL: URL?
     @State private var isLoading = false
 

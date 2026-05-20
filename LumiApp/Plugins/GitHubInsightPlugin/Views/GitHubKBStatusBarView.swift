@@ -1,12 +1,20 @@
 import SwiftUI
+import LumiUI
 import AppKit
 
+/// 为 UI 加载、同步并暴露 GitHub 生态缓存状态的视图模型。
 @MainActor
 final class GitHubKBStatusBarViewModel: ObservableObject {
+    /// 状态栏和弹窗显示的当前同步状态。
     @Published var state: GitHubInsightSyncState = .idle
+
+    /// 当前项目的缓存条目。
     @Published var entries: [GitHubInsightKBEntry] = []
+
+    /// 当前项目的缓存项目画像。
     @Published var profile: GitHubInsightProjectProfile?
 
+    /// 加载缓存数据，并在需要时同步项目缓存。
     func load(projectPath: String, force: Bool = false) {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else {
@@ -28,6 +36,7 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
         }
     }
 
+    /// 仅加载持久化缓存，不触发 GitHub 发现。
     func loadCache(projectPath: String) async {
         guard let store = await GitHubInsightKnowledgeBaseManager.shared.loadStore(projectPath: projectPath) else {
             entries = []
@@ -43,8 +52,11 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
     }
 }
 
+/// 展示当前项目 GitHub 生态缓存状态的状态栏入口。
+///
+/// 视图会在出现、当前项目变化以及应用变为活跃时自动尝试同步缓存。
 struct GitHubKBStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = GitHubKBStatusBarViewModel()
 
     var body: some View {
@@ -55,12 +67,14 @@ struct GitHubKBStatusBarView: View {
                     popoverWidth: 720,
                     id: "github-insight-kb"
                 ) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: iconName)
                             .font(.system(size: 10))
-                        Text(label)
-                            .font(.system(size: 11))
-                            .lineLimit(1)
+                        if let count = displayCount {
+                            Text("\(count)")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .monospacedDigit()
+                        }
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 8)
@@ -101,31 +115,38 @@ struct GitHubKBStatusBarView: View {
         }
     }
 
-    private var label: String {
+    private var displayCount: Int? {
         switch viewModel.state {
         case .idle:
-            return viewModel.entries.isEmpty ? "GitHub KB" : "\(viewModel.entries.count) insights"
+            return viewModel.entries.isEmpty ? nil : viewModel.entries.count
         case .syncing:
-            return "Syncing..."
+            return nil
         case .ready(let count):
-            return "\(count) insights"
-        case .rateLimited:
-            return "Rate limited"
-        case .failed:
-            return "Insight error"
+            return count
+        case .rateLimited, .failed:
+            return nil
         }
     }
 }
 
+/// 展示缓存 GitHub 生态条目和手动同步控件的弹窗。
 struct GitHubKBPopover: View {
     @ObservedObject var viewModel: GitHubKBStatusBarViewModel
+
+    /// 用户触发强制同步时使用的项目路径。
     let projectPath: String
-    @State private var selectedRelation: GitHubInsightRelationType?
+
+    private var primaryTextColor: Color {
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
-            relationPicker
             entriesList
             footer
         }
@@ -133,46 +154,34 @@ struct GitHubKBPopover: View {
         .frame(minWidth: 620, minHeight: 360)
     }
 
+    /// 显示知识库标题和项目画像摘要的头部区域。
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Image(systemName: "network")
-                Text("GitHub Ecosystem KB")
+                    .foregroundColor(primaryTextColor)
+                Text(String(localized: "GitHub Ecosystem KB", table: "GitHubInsight"))
                     .font(.headline)
+                    .foregroundColor(primaryTextColor)
                 Spacer()
                 Text("\(viewModel.entries.count)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
             if let profile = viewModel.profile {
-                Text("Profile: \(profile.shortTitle)")
+                Text(String(format: String(localized: "Profile: %@", table: "GitHubInsight"), profile.shortTitle))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
         }
     }
 
-    private var relationPicker: some View {
-        Picker("Relation", selection: Binding(
-            get: { selectedRelation?.rawValue ?? "all" },
-            set: { selectedRelation = $0 == "all" ? nil : GitHubInsightRelationType(rawValue: $0) }
-        )) {
-            Text("All").tag("all")
-            ForEach(GitHubInsightRelationType.allCases, id: \.rawValue) { relation in
-                Text(relation.title).tag(relation.rawValue)
-            }
-        }
-        .pickerStyle(.segmented)
-    }
-
+    /// 过滤后知识库条目的可滚动列表。
     private var entriesList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
                 if filteredEntries.isEmpty {
-                    Text(emptyText)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, minHeight: 180)
+                    emptyStateView
                 } else {
                     ForEach(filteredEntries) { entry in
                         GitHubKBEntryRow(entry: entry)
@@ -182,88 +191,114 @@ struct GitHubKBPopover: View {
         }
     }
 
+    /// 使用 LumiUI 统一空状态组件展示同步中或暂无数据状态。
+    @ViewBuilder
+    private var emptyStateView: some View {
+        switch viewModel.state {
+        case .syncing:
+            AppEmptyState(
+                icon: "arrow.triangle.2.circlepath",
+                title: LocalizedStringKey(String(localized: "Syncing GitHub ecosystem references...", table: "GitHubInsight"))
+            )
+            .frame(maxWidth: .infinity, minHeight: 220)
+        default:
+            AppEmptyState(
+                icon: "magnifyingglass",
+                title: LocalizedStringKey(String(localized: "No cached GitHub ecosystem references yet.", table: "GitHubInsight")),
+                description: LocalizedStringKey(String(localized: "Click Sync Now to discover related GitHub repositories.", table: "GitHubInsight")),
+                actionTitle: LocalizedStringKey(String(localized: "Sync Now", table: "GitHubInsight"))
+            ) {
+                viewModel.load(projectPath: projectPath, force: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 240)
+        }
+    }
+
+    /// 显示同步状态和手动刷新按钮的底部区域。
     private var footer: some View {
         HStack {
             Text(statusText)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundColor(secondaryTextColor)
             Spacer()
             Button {
                 viewModel.load(projectPath: projectPath, force: true)
             } label: {
-                Label("Sync Now", systemImage: "arrow.clockwise")
+                Label(String(localized: "Sync Now", table: "GitHubInsight"), systemImage: "arrow.clockwise")
             }
         }
     }
 
+    /// 按相关性排序后的条目。
     private var filteredEntries: [GitHubInsightKBEntry] {
         viewModel.entries
-            .filter { selectedRelation == nil || $0.relationType == selectedRelation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
-    private var emptyText: String {
-        switch viewModel.state {
-        case .syncing:
-            return "Syncing GitHub ecosystem references..."
-        default:
-            return "No cached GitHub ecosystem references yet."
-        }
-    }
-
+    /// 显示在弹窗底部的可读同步状态。
     private var statusText: String {
         switch viewModel.state {
         case .idle:
-            return "Idle"
+            return String(localized: "Idle", table: "GitHubInsight")
         case .syncing:
-            return "Syncing"
+            return String(localized: "Syncing", table: "GitHubInsight")
         case .ready(let count):
-            return "Ready: \(count) entries"
+            return String(format: String(localized: "Ready: %lld entries", table: "GitHubInsight"), count)
         case .rateLimited:
-            return "GitHub rate limited"
+            return String(localized: "GitHub rate limited", table: "GitHubInsight")
         case .failed(let message):
             return message
         }
     }
 }
 
+/// 单个缓存 GitHub 仓库参考的行视图。
 private struct GitHubKBEntryRow: View {
+    /// 当前行渲染的知识库条目。
     let entry: GitHubInsightKBEntry
+
+    private var primaryTextColor: Color {
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
+
+    private var rowBackgroundColor: Color {
+        Color.adaptive(light: "F5F5F7", dark: "1C1C1E")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(entry.fullName)
                     .font(.system(size: 13, weight: .semibold))
-                Text(entry.relationType.title)
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .foregroundColor(primaryTextColor)
                 Spacer()
                 Label("\(entry.stars)", systemImage: "star")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
 
             if !entry.description.isEmpty {
                 Text(entry.description)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
                     .lineLimit(2)
             }
 
             if let insight = entry.keyInsights.first {
                 Text(insight)
                     .font(.caption)
+                    .foregroundColor(primaryTextColor.opacity(0.8))
                     .lineLimit(2)
             }
 
             HStack {
                 Text(entry.language ?? "Unknown")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
                 Spacer()
                 Button {
                     if let url = URL(string: entry.repoURL) {
@@ -276,7 +311,7 @@ private struct GitHubKBEntryRow: View {
             }
         }
         .padding(10)
-        .background(Color.primary.opacity(0.04))
+        .background(rowBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

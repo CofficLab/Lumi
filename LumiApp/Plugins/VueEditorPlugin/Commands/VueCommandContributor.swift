@@ -91,7 +91,9 @@ final class VueCommandContributor: SuperEditorCommandContributor {
         state.cursorColumn = 1
 
         if VueEditorPlugin.verbose {
-            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)导航到 \(blockType.tagName) 区块，行 \(targetLine)")
+            if VueEditorPlugin.verbose {
+                            VueEditorPlugin.logger.info("\(VueEditorPlugin.t)导航到 \(blockType.tagName) 区块，行 \(targetLine)")
+            }
         }
     }
 }

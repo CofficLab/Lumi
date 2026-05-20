@@ -19,14 +19,19 @@
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiPreviewKit */; };
+		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
+		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
+		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = B58B244CDF214E2CB80C1953 /* LLMKit */; };
 		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
@@ -43,6 +48,13 @@
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
+		C0FF1C112FB4000000000001 /* HttpKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C122FB4000000000001 /* HttpKit */; };
+		C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF2A112FB5000000000001 /* GitHubKit */; };
+		C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF2B112FB6000000000001 /* ProjectProfileKit */; };
+		C0FF6F012FCF000000000001 /* GoEditorCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF6F022FCF000000000001 /* GoEditorCore */; };
+		C0FF7A012FD0000000000001 /* MCPKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7A022FD0000000000001 /* MCPKit */; };
+		C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7B022FD1000000000001 /* WorkspaceFileKit */; };
+		F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2A3022FC2000100000001 /* FileTreeKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -130,6 +142,10 @@
 		0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
 		0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
+		0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
+		0B4630542FB9C747007E52B1 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		0BC901B12FAD5B56003651CA /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
 		0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
@@ -176,6 +192,8 @@
 		F567FE922FAF42620054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640662F3ED1910039A761 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
+		F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Atomics.xcodeproj; sourceTree = "<group>"; };
+		F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
@@ -291,6 +309,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
+				0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
@@ -304,6 +323,10 @@
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
+				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
+				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
+				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
+				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -314,6 +337,8 @@
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
 				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
+				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
+				0B52000330C3000000AA0001 /* RAGKit in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
@@ -327,12 +352,17 @@
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 				A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */,
+				0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */,
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
 				B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */,
+				F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */,
+				C0FF6F012FCF000000000001 /* GoEditorCore in Frameworks */,
+				C0FF7A012FD0000000000001 /* MCPKit in Frameworks */,
+				C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +392,34 @@
 			sourceTree = "<group>";
 		};
 		0B1781FB2FAF5C0F00F8A599 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B462F082FB9C743007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B462F0A2FB9C743007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B4631E72FB9C747007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B4631E92FB9C747007E52B1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -672,6 +730,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		F5AB36082FBDB32800C953CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5AB360A2FBDB32800C953CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F5AE9B752FAD6E0900F014F8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -790,7 +862,7 @@
 				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
 				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
-				D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */,
+				A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
 			);
@@ -833,6 +905,9 @@
 				A1B2C4132F70000100AAA101 /* LumiUI */,
 				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
 				C0FF1C022FB3000000000001 /* WebFetchKit */,
+				C0FF1C122FB4000000000001 /* HttpKit */,
+				C0FF2A112FB5000000000001 /* GitHubKit */,
+				C0FF2B112FB6000000000001 /* ProjectProfileKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
 				A1B2C4182F70000100AAA102 /* DockerKit */,
@@ -843,8 +918,17 @@
 				B1C2D3512F80000200BBB201 /* XcodeKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
+				0B9A100230C9000000CE0001 /* ChatInputEditorKit */,
+				F1E2A3022FC2000100000001 /* FileTreeKit */,
+				C0FF6F022FCF000000000001 /* GoEditorCore */,
+				C0FF7A022FD0000000000001 /* MCPKit */,
+				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
+				0B462A912FB976B4007E52B1 /* LumiPreviewKit */,
+				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
+				B58B244CDF214E2CB80C1953 /* LLMKit */,
+				0B52000230C3000000AA0001 /* RAGKit */,
 			);
-			productName = "SwiftUI-Template";
+			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -929,6 +1013,9 @@
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
 				C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */,
+				C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */,
+				C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */,
+				C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
 				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
@@ -938,6 +1025,14 @@
 				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
 				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
+				0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */,
+				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
+				C0FF6F032FCF000000000001 /* XCLocalSwiftPackageReference "Packages/GoEditorCore" */,
+				C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */,
+				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
+				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
+				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
+				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -966,6 +1061,10 @@
 				{
 					ProductGroup = F5679F7D2FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */;
+				},
+				{
+					ProductGroup = F5AB36082FBDB32800C953CA /* Products */;
+					ProjectRef = F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */;
 				},
 				{
 					ProductGroup = F56701292FAF42620054AB4B /* Products */;
@@ -1000,6 +1099,10 @@
 					ProjectRef = F5370B292FB1E52500AF4705 /* Collections.xcodeproj */;
 				},
 				{
+					ProductGroup = F5AB360A2FBDB32800C953CA /* Products */;
+					ProjectRef = F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */;
+				},
+				{
 					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679E842FAF405D0054AB4B /* copy.xcodeproj */;
 				},
@@ -1018,6 +1121,10 @@
 				{
 					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC901B12FAD5B56003651CA /* Demo.xcodeproj */;
+				},
+				{
+					ProductGroup = 0B4631E72FB9C747007E52B1 /* Products */;
+					ProjectRef = 0B4630542FB9C747007E52B1 /* Demo.xcodeproj */;
 				},
 				{
 					ProductGroup = F56701272FAF42620054AB4B /* Products */;
@@ -1040,6 +1147,10 @@
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
 				},
 				{
+					ProductGroup = 0B4631E92FB9C747007E52B1 /* Products */;
+					ProjectRef = 0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */;
+				},
+				{
 					ProductGroup = F5E211592FAEF3440005256B /* Products */;
 					ProjectRef = F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */;
 				},
@@ -1050,6 +1161,10 @@
 				{
 					ProductGroup = F53711392FB1E52800AF4705 /* Products */;
 					ProjectRef = F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */;
+				},
+				{
+					ProductGroup = 0B462F0A2FB9C743007E52B1 /* Products */;
+					ProjectRef = 0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */;
 				},
 				{
 					ProductGroup = F53711332FB1E52800AF4705 /* Products */;
@@ -1147,6 +1262,10 @@
 					ProductGroup = F53707E72FB1E52400AF4705 /* Products */;
 					ProjectRef = F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */;
 				},
+				{
+					ProductGroup = 0B462F082FB9C743007E52B1 /* Products */;
+					ProjectRef = 0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */;
+				},
 			);
 			projectRoot = "";
 			targets = (
@@ -1191,6 +1310,34 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderer.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderLoop.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewDemoView.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotStdioPreviewHost.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewEventDispatcher.swift",
+				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
+			);
+			name = "Embed Inline Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
+		};
 		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1218,30 +1365,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-swiftui-preview-host.sh\"\n";
-		};
-		D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiHotPreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Frames/HotRenderResponse.swift",
-				"$(SRCROOT)/scripts/embed-editor-hot-preview-host.sh",
-			);
-			name = "Embed Editor Hot Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiHotPreviewHostApp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/embed-editor-hot-preview-host.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1776,9 +1899,25 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/RAGKit;
+		};
 		0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorOverlayKit;
+		};
+		0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ChatInputEditorKit;
+		};
+		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LLMProviderKit;
+		};
+		6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LLMKit;
 		};
 		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -1839,6 +1978,34 @@
 		C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/WebFetchKit;
+		};
+		C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/HttpKit;
+		};
+		C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/GitHubKit;
+		};
+		C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ProjectProfileKit;
+		};
+		C0FF6F032FCF000000000001 /* XCLocalSwiftPackageReference "Packages/GoEditorCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/GoEditorCore;
+		};
+		C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MCPKit;
+		};
+		C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/WorkspaceFileKit;
+		};
+		F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FileTreeKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -2020,6 +2187,16 @@
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
 		};
+		0B462A912FB976B4007E52B1 /* LumiPreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
+			productName = LumiPreviewKit;
+		};
+		0B52000230C3000000AA0001 /* RAGKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */;
+			productName = RAGKit;
+		};
 		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
@@ -2034,6 +2211,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */;
 			productName = MagicKit;
+		};
+		0B9A100230C9000000CE0001 /* ChatInputEditorKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */;
+			productName = ChatInputEditorKit;
 		};
 		0BBB11DF2F85467D00F53902 /* SwiftTerm */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2054,6 +2236,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */;
 			productName = MCP;
+		};
+		0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LLMProviderKit;
 		};
 		223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2135,10 +2321,50 @@
 			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
 			productName = XcodeKit;
 		};
+		B58B244CDF214E2CB80C1953 /* LLMKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */;
+			productName = LLMKit;
+		};
 		C0FF1C022FB3000000000001 /* WebFetchKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */;
 			productName = WebFetchKit;
+		};
+		C0FF1C122FB4000000000001 /* HttpKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */;
+			productName = HttpKit;
+		};
+		C0FF2A112FB5000000000001 /* GitHubKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */;
+			productName = GitHubKit;
+		};
+		C0FF2B112FB6000000000001 /* ProjectProfileKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */;
+			productName = ProjectProfileKit;
+		};
+		C0FF6F022FCF000000000001 /* GoEditorCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF6F032FCF000000000001 /* XCLocalSwiftPackageReference "Packages/GoEditorCore" */;
+			productName = GoEditorCore;
+		};
+		C0FF7A022FD0000000000001 /* MCPKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */;
+			productName = MCPKit;
+		};
+		C0FF7B022FD1000000000001 /* WorkspaceFileKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */;
+			productName = WorkspaceFileKit;
+		};
+		F1E2A3022FC2000100000001 /* FileTreeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */;
+			productName = FileTreeKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

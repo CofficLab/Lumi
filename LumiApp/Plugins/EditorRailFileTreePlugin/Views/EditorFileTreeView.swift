@@ -1,22 +1,24 @@
-import MagicKit
 import os
 import SwiftUI
 
 /// Editor Rail 文件树根视图
 struct EditorFileTreeView: View, SuperLog {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var editorVM: EditorVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var editorVM: WindowEditorVM
 
     // MARK: - Logging Configuration
 
     /// 日志详细程度控制
     nonisolated static let emoji = "🌳"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 使用插件的 logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = EditorFileTreeRefreshCoordinator()
+
+    /// Swift Package Dependencies 数据源
+    @StateObject private var packageStore = EditorPackageDependencyStore()
 
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
@@ -27,19 +29,33 @@ struct EditorFileTreeView: View, SuperLog {
                 EditorFileTreeNoProjectView()
             } else {
                 ScrollView {
-                    EditorFileTreeNodeView(
-                        url: URL(fileURLWithPath: projectVM.currentProjectPath),
-                        depth: 0,  // depth == 0 表示根节点
-                        selectedURL: editorVM.service.currentFileURL,
-                        onSelect: { selectedURL in
-                            openProjectFile(selectedURL)
-                        },
-                        refreshToken: rootRefreshToken,
-                        projectRootPath: projectVM.currentProjectPath,
-                        onExpansionChange: { relativePath, isExpanded in
-                            handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
-                        }
-                    )
+                    VStack(alignment: .leading, spacing: 6) {
+                        EditorFileTreeNodeView(
+                            url: URL(fileURLWithPath: projectVM.currentProjectPath),
+                            depth: 0,  // depth == 0 表示根节点
+                            selectedURL: editorVM.service.currentFileURL,
+                            onSelect: { selectedURL in
+                                openProjectFile(selectedURL)
+                            },
+                            refreshToken: rootRefreshToken,
+                            projectRootPath: projectVM.currentProjectPath,
+                            onExpansionChange: { relativePath, isExpanded in
+                                handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
+                            },
+                            gitStatusSnapshot: coordinator.gitStatusSnapshot
+                        )
+
+                        Divider()
+                            .opacity(0.35)
+
+                        EditorPackageDependencySection(
+                            projectRootPath: projectVM.currentProjectPath,
+                            dependencies: packageStore.dependencies,
+                            isLoading: packageStore.isLoading,
+                            diagnostic: packageStore.diagnostic,
+                            onRetry: { packageStore.refresh() }
+                        )
+                    }
                 }
             }
         }
@@ -72,9 +88,12 @@ struct EditorFileTreeView: View, SuperLog {
     private func onProjectPathChanged() {
         // 项目路径变化时，更新协调器并递增刷新令牌
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
+        packageStore.setProjectRootPath(projectVM.currentProjectPath)
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
+            }
         }
     }
 
@@ -82,9 +101,12 @@ struct EditorFileTreeView: View, SuperLog {
         // 首次渲染时初始化协调器（解决应用启动恢复上次项目时 onChange 不触发的问题）
         if !projectVM.currentProjectPath.isEmpty {
             coordinator.setProjectRootPath(projectVM.currentProjectPath)
+            packageStore.setProjectRootPath(projectVM.currentProjectPath)
             rootRefreshToken += 1
             if Self.verbose {
-                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                }
             }
         }
     }
@@ -96,7 +118,9 @@ struct EditorFileTreeView: View, SuperLog {
     private func onDisappear() {
         coordinator.stop()
         if Self.verbose {
-            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
+            }
         }
     }
 
@@ -104,8 +128,11 @@ struct EditorFileTreeView: View, SuperLog {
     private func onCoordinatorRefresh(_ newToken: Int) {
         guard newToken > 0 else { return }
         rootRefreshToken += 1
+        packageStore.refresh()
         if Self.verbose {
-            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
+            }
         }
     }
 
@@ -114,12 +141,16 @@ struct EditorFileTreeView: View, SuperLog {
         if isExpanded {
             coordinator.addExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("\(Self.t)节点展开：\(relativePath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)节点展开：\(relativePath)")
+                }
             }
         } else {
             coordinator.removeExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
+                }
             }
         }
     }

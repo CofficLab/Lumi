@@ -1,15 +1,10 @@
-import MagicKit
 import SwiftUI
 
 /// 命令建议视图
 /// 显示与当前输入匹配的命令建议列表，支持键盘上下键选择
-struct CommandSuggestionView: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "💡"
-    /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+struct CommandSuggestionView: View {
     /// 环境对象：命令建议视图模型
-    @EnvironmentObject var viewModel: CommandSuggestionVM
+    @EnvironmentObject var viewModel: WindowCommandSuggestionVM
 
     /// 命令选择回调：当用户选择建议命令时触发
     var onSelect: (CommandSuggestion) -> Void

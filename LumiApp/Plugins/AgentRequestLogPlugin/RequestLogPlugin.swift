@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import SwiftUI
 
 /// 请求日志插件
 ///
@@ -7,7 +7,7 @@ import MagicKit
 /// 用于调试和审计。
 actor RequestLogPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "RequestLog"
     static let displayName: String = String(localized: "PluginName", table: "RequestLog")
     static let description: String = String(localized: "PluginDescription", table: "RequestLog")
@@ -23,5 +23,10 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(RequestLogSuperSendMiddleware())]
+    }
+
+    @MainActor
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(RequestLogStatusBarView())
     }
 }

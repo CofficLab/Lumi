@@ -1,11 +1,23 @@
 import Foundation
 
+/// 管理本地项目持久化的 GitHub 生态知识库文件。
+///
+/// 每个项目都会保存为一个 JSON 文件，文件名由项目路径的稳定哈希生成。
+/// 管理器为这些存储提供隔离的读取、写入和刷新检查能力。
 actor GitHubInsightKnowledgeBaseManager {
+    /// 插件使用的共享知识库管理器。
     static let shared = GitHubInsightKnowledgeBaseManager()
 
+    /// 用于缓存目录和文件操作的文件系统工具。
     private let fileManager = FileManager.default
+
+    /// 存放所有项目缓存 JSON 文件的根目录。
     private let rootDirectory: URL
+
+    /// 用于持久化项目存储的 JSON 解码器。
     private let decoder = JSONDecoder()
+
+    /// 用于持久化项目存储的 JSON 编码器。
     private let encoder = JSONEncoder()
 
     private init() {
@@ -15,16 +27,19 @@ actor GitHubInsightKnowledgeBaseManager {
         try? fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
     }
 
+    /// 加载某个项目路径对应的完整持久化存储。
     func loadStore(projectPath: String) -> GitHubInsightProjectStore? {
         let url = storeURL(for: projectPath)
         guard let data = try? Data(contentsOf: url) else { return nil }
         return try? decoder.decode(GitHubInsightProjectStore.self, from: data)
     }
 
+    /// 仅加载某个项目路径对应的缓存条目。
     func loadEntries(projectPath: String) -> [GitHubInsightKBEntry] {
         loadStore(projectPath: projectPath)?.entries ?? []
     }
 
+    /// 加载所有项目存储中的缓存条目。
     func loadAllEntries() -> [GitHubInsightKBEntry] {
         guard let urls = try? fileManager.contentsOfDirectory(
             at: rootDirectory,
@@ -42,6 +57,7 @@ actor GitHubInsightKnowledgeBaseManager {
             }
     }
 
+    /// 持久化项目画像和发现到的 GitHub 生态条目。
     func save(projectPath: String, profile: GitHubInsightProjectProfile, entries: [GitHubInsightKBEntry]) throws {
         let store = GitHubInsightProjectStore(
             projectPath: projectPath,
@@ -60,15 +76,18 @@ actor GitHubInsightKnowledgeBaseManager {
         }
     }
 
+    /// 判断项目缓存是否缺失或超过允许的最大年龄。
     func shouldRefresh(projectPath: String, maxAge: TimeInterval = 24 * 60 * 60) -> Bool {
         guard let store = loadStore(projectPath: projectPath) else { return true }
         return Date().timeIntervalSince(store.syncedAt) > maxAge
     }
 
+    /// 为项目路径构建对应的 JSON 文件 URL。
     private func storeURL(for projectPath: String) -> URL {
         rootDirectory.appendingPathComponent(stableHash(projectPath) + ".json")
     }
 
+    /// 计算用于缓存文件命名的稳定 FNV-1a 哈希。
     private func stableHash(_ input: String) -> String {
         var hash: UInt64 = 14695981039346656037
         for byte in input.utf8 {

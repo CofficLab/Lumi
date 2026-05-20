@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import LumiUI
 import DeviceMonitorKit
@@ -29,7 +28,7 @@ struct MemoryHistoryDetailView: View {
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
-            GlassCard(cornerRadius: 0, padding: EdgeInsets(), showShadow: false) {
+            AppCard(cornerRadius: 0, padding: EdgeInsets(), showShadow: false) {
                 MemoryHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange

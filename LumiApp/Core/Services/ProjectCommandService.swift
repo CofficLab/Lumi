@@ -1,11 +1,10 @@
 import Foundation
-import MagicKit
 import ShellKit
 
 /// 项目命令加载服务 - 负责从 .agent/commands 目录加载命令
 actor ProjectCommandLoader: SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     private let fileManager: FileManager
     
@@ -156,7 +155,7 @@ actor ProjectCommandLoader: SuperLog {
 /// 命令执行服务 - 负责处理和执行项目命令
 actor ProjectCommandExecutor: SuperLog {
     nonisolated static let emoji = "⚡"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     private let commandLoader: ProjectCommandLoader
     private var loadedCommands: [ProjectCommand] = []

@@ -94,6 +94,64 @@ struct ModuleImportEligibilityCheckerTests {
         #expect(!checker.shouldUseModuleImport(discovery: rejectedDiscovery))
     }
 
+    @Test("allows module import when referenced type has public and private initializers")
+    func allowsModuleImportForTypeWithPublicAndPrivateInitializers() {
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
+            id: "preview.mixed-init",
+            title: "Mixed Init Preview",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
+            lineNumber: 18,
+            endLineNumber: 22,
+            primaryTypeName: "MixedInitView",
+            bodySource: #"MixedInitView("Visible")"#,
+            sourceText: #"""
+            public struct MixedInitView: View {
+                public init(_ title: String) {}
+
+                private init(title: Text) {}
+
+                public var body: some View { Text("Visible") }
+            }
+
+            #Preview {
+                MixedInitView("Visible")
+            }
+            """#
+        )
+
+        #expect(checker.shouldUseModuleImport(discovery: discovery))
+    }
+
+    @Test("does not treat SwiftUI modifier names as private symbol references")
+    func ignoresModifierNamesThatMatchPrivateComputedProperties() {
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
+            id: "preview.modifier-name",
+            title: "Modifier Name Preview",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
+            lineNumber: 14,
+            endLineNumber: 18,
+            primaryTypeName: "Button",
+            bodySource: #"Text("Visible").background(Color.gray)"#,
+            sourceText: #"""
+            public struct ModifierNameView: View {
+                private var background: some View {
+                    Color.blue
+                }
+
+                public var body: some View { background }
+            }
+
+            #Preview {
+                Text("Visible").background(Color.gray)
+            }
+            """#
+        )
+
+        #expect(checker.shouldUseModuleImport(discovery: discovery))
+    }
+
     @Test("rejects module import when preview body references private extension members")
     func rejectsModuleImportForPrivateExtensionMembers() {
         let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()

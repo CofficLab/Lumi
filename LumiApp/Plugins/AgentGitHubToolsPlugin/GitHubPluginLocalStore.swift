@@ -1,4 +1,5 @@
 import Foundation
+import GitHubKit
 
 final class GitHubPluginLocalStore: @unchecked Sendable {
     private let fileManager = FileManager.default
@@ -63,5 +64,11 @@ final class GitHubPluginLocalStore: @unchecked Sendable {
     private func sanitize(_ key: String) -> String {
         let safe = key.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) || $0 == "_" ? String($0) : "_" }.joined()
         return safe.isEmpty ? "key" : safe
+    }
+}
+
+extension GitHubPluginLocalStore: GitHubTokenProviding {
+    var accessToken: String? {
+        string(forKey: "GitHubToken")
     }
 }

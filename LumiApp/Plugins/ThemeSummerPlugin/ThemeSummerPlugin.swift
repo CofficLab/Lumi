@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeSummerPlugin: SuperPlugin {
     static let shared = ThemeSummerPlugin()

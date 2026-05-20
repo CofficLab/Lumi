@@ -1,10 +1,9 @@
 import Foundation
-import MagicKit
 
 /// 获取当前项目工具
 struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "get_current_project"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -28,28 +27,34 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
+            }
         }
 
-        let store = RecentProjectsStore()
-        guard let project = store.getCurrentProject() else {
+        // 获取当前活跃窗口的项目
+        let projectPath = await MainActor.run {
+            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
+        }
+
+        guard let projectPath else {
             return """
             ## Current Project Status
-            
+
             **Status**: No project selected
-            
+
             Use the `set_current_project` tool to select a project.
             """
         }
 
+        let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+
         return """
         ## Current Project Info
-        
-        **Project Name**: \(project.name)
-        
-        **Project Path**: \(project.path)
-        
-        **Last Used**: \(formatDate(project.lastUsed))
+
+        **Project Name**: \(projectName)
+
+        **Project Path**: \(projectPath)
         """
     }
     

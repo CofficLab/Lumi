@@ -1,10 +1,12 @@
-import MagicKit
 import SwiftUI
+import LumiUI
 
 // MARK: - 项目下拉菜单
 
 struct ProjectDropdownMenu: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
+    @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 
     let onSelect: (Project) -> Void
@@ -14,7 +16,7 @@ struct ProjectDropdownMenu: View {
     private let store = RecentProjectsStore()
 
     private var recentProjects: [Project] {
-        Array(projectVM.recentProjects
+        Array(recentProjectsVM.recentProjects
             .prefix(10)
             .filter { $0.path != projectVM.currentProjectPath })
     }
@@ -49,6 +51,17 @@ struct ProjectDropdownMenu: View {
                         onSelect(project)
                     }
                 )
+                .contextMenu {
+                    Button {
+                        openWindow(
+                            id: MainWindowID.main,
+                            value: LumiWindowRoute(projectPath: project.path)
+                        )
+                        isPresented = false
+                    } label: {
+                        Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
+                    }
+                }
             }
 
             // 浏览按钮
@@ -97,7 +110,9 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
                 }
             }
         case .failure(let error):
-            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            }
         }
     }
 }
@@ -112,10 +127,8 @@ private struct DropdownItemView: View {
     let isCurrent: Bool
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(action: action) {
+        AppListRow(isSelected: isCurrent, action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 13))
@@ -145,27 +158,6 @@ private struct DropdownItemView: View {
                         .foregroundColor(.accentColor)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(hoverBackgroundColor)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-    }
-
-    private var hoverBackgroundColor: Color {
-        if isCurrent {
-            return isHovered ? Color.accentColor.opacity(0.12) : Color.accentColor.opacity(0.06)
-        } else {
-            return isHovered ? Color.black.opacity(0.08) : Color.clear
         }
     }
 }

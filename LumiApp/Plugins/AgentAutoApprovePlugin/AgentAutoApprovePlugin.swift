@@ -1,11 +1,10 @@
-import MagicKit
 import os
 import SwiftUI
 
 /// 自动批准开关插件
 actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-auto-approve")
 
     static let id = "AgentAutoApprovePlugin"

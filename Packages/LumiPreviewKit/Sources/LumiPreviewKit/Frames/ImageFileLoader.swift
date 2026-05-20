@@ -2,7 +2,10 @@ import AppKit
 import Foundation
 
 public extension LumiPreviewFacade {
-    /// Loads PNG preview frames written by the hot preview host.
+    /// 预览帧图片加载器，支持文件和共享内存两种帧源。
+    ///
+    /// 内置 LRU 缓存，避免重复解码相同的 PNG 文件或共享内存帧。
+    /// 线程安全：通过 `NSLock` 保护缓存读写。
     final class ImageFileLoader: @unchecked Sendable {
         private let fileManager: FileManager
         private let cacheLimit: Int
@@ -96,9 +99,11 @@ public extension LumiPreviewFacade {
         }
 
         public static func defaultFrameDirectory(fileManager: FileManager = .default) -> URL {
-            fileManager.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("Frames", isDirectory: true)
+            if let override = ProcessInfo.processInfo.environment[PreviewStoragePaths.framesDirectoryEnvironmentKey],
+               !override.isEmpty {
+                return URL(fileURLWithPath: override, isDirectory: true)
+            }
+            return PreviewStorage.paths.framesDirectory
         }
 
         @discardableResult

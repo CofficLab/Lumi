@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import Foundation
 import SwiftUI
 import os
@@ -10,7 +9,7 @@ import os
 @MainActor
 final class FileSearchService: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = FileSearchService()
 
     // MARK: - Published Properties
@@ -71,7 +70,7 @@ final class FileSearchService: ObservableObject, SuperLog {
         searchQuery = ""
     }
 
-    /// 选择文件并更新 ProjectVM
+    /// 选择文件并更新 WindowProjectVM
     func selectFile(_ result: FileResult) {
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📄 选择文件: \(result.relativePath)")

@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 struct QuickStartActionsView: View {
@@ -6,10 +7,10 @@ struct QuickStartActionsView: View {
         case sendInCurrentConversation
     }
 
-    @EnvironmentObject private var inputQueueVM: InputQueueVM
-    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
+    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var llmVM: AppLLMVM
 
     let sendStrategy: SendStrategy
 

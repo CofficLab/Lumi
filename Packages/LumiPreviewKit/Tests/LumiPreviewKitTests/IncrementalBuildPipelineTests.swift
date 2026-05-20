@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import LumiPreviewKit
 import Testing
 @testable import LumiPreviewKit
@@ -224,11 +225,13 @@ struct IncrementalBuildPipelineTests {
             inputPaths: ["/tmp/PreviewEntry.o"],
             dylibOutputPath: "/tmp/PreviewEntry.dylib",
             additionalArguments: ["-module-name", "DemoPreview"],
-            enableInterposableLinking: true
+            enableInterposableLinking: true,
+            enableDeadStripLinking: true
         )
 
         #expect(command.contains("-Xlinker"))
         #expect(command.contains("-interposable"))
+        #expect(command.contains("-dead_strip"))
         #expect(command.contains("DemoPreview"))
         #expect(command.contains("/tmp/PreviewEntry.dylib"))
     }
@@ -260,16 +263,6 @@ struct IncrementalBuildPipelineTests {
     func currentSourceSanitizationStripsPreviewBlocksAndMainAttribute() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let fileManager = FileManager.default
-        let tempDirectory = fileManager.temporaryDirectory
-        let existingGeneratedDirectories = Set(
-            (try? fileManager.contentsOfDirectory(
-                at: tempDirectory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ))?.filter { $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-") }
-            .map(\.path) ?? []
-        )
         let sourceURL = directory.appendingPathComponent("Demo.swift")
         try """
         import SwiftUI
@@ -301,25 +294,13 @@ struct IncrementalBuildPipelineTests {
             sourceText: try String(contentsOf: sourceURL, encoding: .utf8)
         )
 
-        _ = try await pipeline.compilePreviewEntryIncludingCurrentSource(
+        let entryURL = try await pipeline.compilePreviewEntryIncludingCurrentSource(
             discovery: discovery,
             configuration: .empty,
             buildStrategy: .incremental(fileURL: sourceURL, compileCommand: "/usr/bin/env swiftc")
         )
 
-        let generatedDirectories = try fileManager.contentsOfDirectory(
-            at: tempDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ).filter {
-            $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-")
-                && !existingGeneratedDirectories.contains($0.path)
-        }
-        #expect(generatedDirectories.count == 1)
-        guard let latestDirectory = generatedDirectories.first else {
-            Issue.record("Expected generated source entry directory")
-            return
-        }
+        let latestDirectory = entryURL.deletingLastPathComponent()
 
         let sanitizedSource = try String(
             contentsOf: latestDirectory.appendingPathComponent("CurrentSource.swift"),
@@ -328,6 +309,134 @@ struct IncrementalBuildPipelineTests {
         #expect(!sanitizedSource.contains("#Preview"))
         #expect(!sanitizedSource.contains("@main"))
         #expect(sanitizedSource.contains("struct DemoView"))
+    }
+
+    @Test("SPM package preview with internal type and same-target helpers produces real NSView entry")
+    func packagePreviewWithInternalTypeAndSameTargetHelpersProducesRealNSViewEntry() async throws {
+        let packageDirectory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        try """
+        // swift-tools-version: 5.9
+        import PackageDescription
+
+        let package = Package(
+            name: "InternalPreviewFixture",
+            platforms: [.macOS(.v14)],
+            products: [
+                .library(name: "InternalPreviewFixture", targets: ["InternalPreviewFixture"])
+            ],
+            targets: [
+                .target(name: "InternalPreviewFixture")
+            ]
+        )
+        """.write(
+            to: packageDirectory.appendingPathComponent("Package.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let sourceDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("InternalPreviewFixture", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+
+        let previewSourceURL = sourceDirectory.appendingPathComponent("PreviewSource.swift")
+        try """
+        import SwiftUI
+
+        struct InternalPreviewView: View {
+            var body: some View {
+                Text("Preview")
+                    .fixturePadding()
+            }
+        }
+
+        #Preview("Internal Package Preview") {
+            InternalPreviewView()
+        }
+        """.write(to: previewSourceURL, atomically: true, encoding: .utf8)
+
+        try """
+        import SwiftUI
+
+        public extension View {
+            func fixturePadding() -> some View {
+                padding(8)
+            }
+        }
+        """.write(
+            to: sourceDirectory.appendingPathComponent("View+FixturePadding.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        try """
+        import SwiftUI
+        import InternalPreviewFixture
+
+        struct SameTargetSelfImportUse: View {
+            var body: some View {
+                Text("Self import")
+                    .fixturePadding()
+            }
+        }
+        """.write(
+            to: sourceDirectory.appendingPathComponent("SameTargetSelfImportUse.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        try runSwiftBuild(packageDirectory: packageDirectory, targetName: "InternalPreviewFixture")
+
+        let sourceText = try String(contentsOf: previewSourceURL, encoding: .utf8)
+        let discovery = try #require(
+            LumiPreviewFacade.PreviewScanner()
+                .scan(fileURL: previewSourceURL, sourceText: sourceText)
+                .first
+        )
+
+        let entryURL = try await LumiPreviewFacade.PreviewEntryBuilder().buildEntry(
+            for: discovery,
+            configuration: .empty,
+            buildStrategy: .spm(
+                packageDirectory: packageDirectory,
+                targetName: "InternalPreviewFixture"
+            ),
+            forceSourceInclude: true
+        )
+
+        guard let handle = dlopen(entryURL.path, RTLD_NOW | RTLD_LOCAL) else {
+            let message = dlerror().map { String(cString: $0) } ?? "unknown dlopen error"
+            Issue.record("Failed to open preview entry dylib: \(message)")
+            return
+        }
+        defer { dlclose(handle) }
+
+        #expect(dlsym(handle, LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName) != nil)
+    }
+
+    private func runSwiftBuild(packageDirectory: URL, targetName: String) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["swift", "build", "--target", targetName]
+        process.currentDirectoryURL = packageDirectory
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            let output = String(
+                data: outputPipe.fileHandleForReading.readDataToEndOfFile(),
+                encoding: .utf8
+            ) ?? ""
+            Issue.record("swift build failed: \(output)")
+            return
+        }
     }
 
     private func makeTemporaryDirectory() throws -> URL {

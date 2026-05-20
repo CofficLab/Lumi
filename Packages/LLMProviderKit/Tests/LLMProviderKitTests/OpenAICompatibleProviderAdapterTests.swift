@@ -7,8 +7,8 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
             configuration: .init(
                 baseURL: "https://example.com/v1/chat/completions",
                 additionalHeaders: [
-                    "HTTP-Referer": "Lumi",
-                    "X-Title": "Lumi",
+                    "HTTP-Referer": "ExampleApp",
+                    "X-Title": "ExampleApp",
                 ]
             )
         )
@@ -21,8 +21,8 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer secret")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "Lumi")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "Lumi")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "ExampleApp")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "ExampleApp")
     }
 
     func testBuildRequestBodyIncludesMessagesAndStreamFalse() throws {
@@ -150,7 +150,12 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
     }
 
     func testTransformAssistantMessageWithToolCalls() throws {
-        let adapter = makeAdapter()
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: .init(
+                baseURL: "https://example.com",
+                includesReasoningContentInMessages: true
+            )
+        )
 
         let message = adapter.transformMessage(
             ChatMessage(
@@ -158,11 +163,13 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
                 content: "",
                 toolCalls: [
                     ToolCall(id: "call_123", name: "read_file", arguments: #"{"path":"README.md"}"#),
-                ]
+                ],
+                reasoningContent: "Need to inspect the file first."
             )
         )
 
         XCTAssertEqual(message["role"] as? String, "assistant")
+        XCTAssertEqual(message["reasoning_content"] as? String, "Need to inspect the file first.")
         let toolCalls = try XCTUnwrap(message["tool_calls"] as? [[String: Any]])
         XCTAssertEqual(toolCalls.count, 1)
         XCTAssertEqual(toolCalls[0]["id"] as? String, "call_123")
@@ -171,6 +178,18 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         let function = try XCTUnwrap(toolCalls[0]["function"] as? [String: String])
         XCTAssertEqual(function["name"], "read_file")
         XCTAssertEqual(function["arguments"], #"{"path":"README.md"}"#)
+    }
+
+    func testTransformAssistantMessageOmitsReasoningContentByDefault() {
+        let message = makeAdapter().transformMessage(
+            ChatMessage(
+                role: .assistant,
+                content: "Done",
+                reasoningContent: "Internal reasoning"
+            )
+        )
+
+        XCTAssertNil(message["reasoning_content"])
     }
 
     func testParseResponseReturnsContentAndToolCalls() throws {
@@ -191,7 +210,8 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
                           "arguments": "{\\"path\\":\\"README.md\\"}"
                         }
                       }
-                    ]
+                    ],
+                    "reasoning_content": "Need to inspect the file first."
                   }
                 }
               ]
@@ -206,6 +226,7 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
             result.toolCalls,
             [ToolCall(id: "call_123", name: "read_file", arguments: #"{"path":"README.md"}"#)]
         )
+        XCTAssertEqual(result.reasoningContent, "Need to inspect the file first.")
     }
 
     func testParseResponseUsesEmptyContentWhenContentIsNull() throws {
@@ -242,6 +263,14 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         )
 
         XCTAssertEqual(chunk, StreamChunk(content: "Hello", eventType: .textDelta))
+    }
+
+    func testParseStreamReasoningContentDelta() throws {
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data(#"data: {"choices":[{"delta":{"reasoning_content":"Thinking"}}]}"#.utf8)
+        )
+
+        XCTAssertEqual(chunk, StreamChunk(content: "Thinking", eventType: .thinkingDelta))
     }
 
     func testParseStreamDone() throws {

@@ -5,7 +5,7 @@ import SwiftUI
 /// 负责状态管理和启动逻辑，按需展示 WebView 或状态视图。
 struct CodeServerView: View {
     @StateObject private var manager = CodeServerManager.shared
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isLoading = true
     @State private var serverReady = false
     @State private var didAttemptStart = false

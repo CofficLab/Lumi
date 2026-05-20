@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 // MARK: - Anthropic Provider
@@ -31,7 +30,7 @@ import os
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Basic Info
 
     static let id = "anthropic"
@@ -290,7 +289,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             return StreamChunk(eventType: .unknown, rawEvent: text)
         } catch {
             if Self.verbose {
-                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+                Self.logger.warning("\(self.t)解析流式数据块失败: \(error.localizedDescription)")
             }
             return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
         }
@@ -436,5 +435,43 @@ enum AnthropicToolResultContentBuilder {
 extension AnthropicProvider {
     func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
+    }
+}
+
+// MARK: - 响应模型
+
+private struct AnthropicResponse: Decodable {
+    let content: [ContentBlock]
+
+    struct ContentBlock: Decodable {
+        let type: String
+        let text: String?
+        let id: String?
+        let name: String?
+        let input: [String: AnthropicAnySendable]?
+    }
+}
+
+private struct AnthropicAnySendable: Decodable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else if let dictValue = try? container.decode([String: AnthropicAnySendable].self) {
+            value = dictValue.mapValues { $0.value }
+        } else if let arrayValue = try? container.decode([AnthropicAnySendable].self) {
+            value = arrayValue.map { $0.value }
+        } else {
+            value = ""
+        }
     }
 }

@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import os
 
@@ -10,7 +9,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🗄️"
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "DatabaseManager"
     static let navigationId = "database_manager"
@@ -34,8 +33,13 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(DatabaseAgentToolFactory())]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [
+            DatabaseListConnectionsTool(),
+            DatabaseDescribeSchemaTool(),
+            DatabaseReadonlyQueryTool(),
+            DatabaseSampleTableTool(),
+        ]
     }
 }
 

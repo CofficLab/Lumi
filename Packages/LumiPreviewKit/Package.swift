@@ -12,20 +12,25 @@ let package = Package(
             targets: ["LumiPreviewKit"]
         ),
         .executable(
-            name: "LumiHotPreviewHostApp",
-            targets: ["LumiHotPreviewHostApp"]
+            name: "LumiPreviewHostApp",
+            targets: ["LumiPreviewHostApp"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/CofficLab/MagicKit", branch: "main")
+    ],
     targets: [
         .target(
             name: "LumiPreviewKit",
+            dependencies: [
+                .product(name: "MagicKit", package: "MagicKit")
+            ],
             path: "Sources/LumiPreviewKit"
         ),
         .executableTarget(
-            name: "LumiHotPreviewHostApp",
+            name: "LumiPreviewHostApp",
             dependencies: ["LumiPreviewKit"],
-            path: "Sources/LumiHotPreviewHostApp"
+            path: "Sources/LumiPreviewHostApp"
         ),
         .testTarget(
             name: "LumiPreviewKitTests",

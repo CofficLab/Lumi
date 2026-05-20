@@ -1,5 +1,5 @@
-import MagicKit
 import SwiftUI
+import LumiUI
 
 // MARK: - Error Message
 //
@@ -8,7 +8,7 @@ struct ErrorMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     private var zh: Bool {
         projectVM.languagePreference == .chinese

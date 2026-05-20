@@ -158,9 +158,9 @@
         "package": "MagicKit",
         "repositoryURL": "https://github.com/CofficLab/MagicKit",
         "state": {
-          "branch": null,
+          "branch": "main",
           "revision": "ad6bc183adde0cbf22cdfe805deb5efd45f9a371",
-          "version": "1.5.23"
+          "version": null
         }
       },
       {

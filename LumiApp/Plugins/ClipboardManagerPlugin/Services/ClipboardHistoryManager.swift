@@ -1,6 +1,5 @@
 import Foundation
 import SwiftData
-import MagicKit
 
 /// 剪贴板历史管理器
 ///
@@ -8,7 +7,7 @@ import MagicKit
 /// 使用 SwiftData 持久化到 `AppConfig.getDBFolderURL()/ClipboardManager/history.sqlite`
 actor ClipboardHistoryManager: SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // MARK: - Singleton
     
@@ -68,7 +67,9 @@ actor ClipboardHistoryManager: SuperLog {
         try? context.save()
         
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)➕ 添加剪贴板项：\(item.content.prefix(50))...")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)➕ 添加剪贴板项：\(item.content.prefix(50))...")
+            }
         }
     }
     
@@ -89,7 +90,9 @@ actor ClipboardHistoryManager: SuperLog {
         try? context.save()
         
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)📦 批量添加 \(items.count) 个剪贴板项")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)📦 批量添加 \(items.count) 个剪贴板项")
+            }
         }
     }
     
@@ -105,7 +108,9 @@ actor ClipboardHistoryManager: SuperLog {
         do {
             return try context.fetch(descriptor)
         } catch {
-            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            }
             return []
         }
     }
@@ -123,7 +128,9 @@ actor ClipboardHistoryManager: SuperLog {
         do {
             return try context.fetch(descriptor)
         } catch {
-            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            }
             return []
         }
     }
@@ -190,7 +197,9 @@ actor ClipboardHistoryManager: SuperLog {
             try? context.save()
             
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)📌 更新固定状态：\(id) -> \(isPinned)")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)📌 更新固定状态：\(id) -> \(isPinned)")
+                }
             }
         }
     }
@@ -208,7 +217,9 @@ actor ClipboardHistoryManager: SuperLog {
             try? context.save()
             
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除：\(id)")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除：\(id)")
+                }
             }
         }
     }
@@ -228,7 +239,9 @@ actor ClipboardHistoryManager: SuperLog {
             try? context.save()
             
             if Self.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+                if ClipboardManagerPlugin.verbose {
+                                    ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+                }
             }
         }
     }
@@ -254,7 +267,9 @@ actor ClipboardHistoryManager: SuperLog {
         try? context.save()
         
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空 \(itemsToDelete.count) 项历史记录")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空 \(itemsToDelete.count) 项历史记录")
+            }
         }
     }
     
@@ -285,7 +300,9 @@ actor ClipboardHistoryManager: SuperLog {
         try? context.save()
         
         if Self.verbose {
-            ClipboardManagerPlugin.logger.info("\(Self.t)✅ 迁移完成：\(items.count) 项")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)✅ 迁移完成：\(items.count) 项")
+            }
         }
     }
     
@@ -311,7 +328,9 @@ actor ClipboardHistoryManager: SuperLog {
         try? context.save()
         
         if Self.verbose && !oldItems.isEmpty {
-            ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(oldItems.count) 条过期记录")
+            if ClipboardManagerPlugin.verbose {
+                            ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(oldItems.count) 条过期记录")
+            }
         }
     }
 }

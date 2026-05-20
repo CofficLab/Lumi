@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub 添加 Issue 评论工具
 struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_add_issue_comment"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,28 +16,54 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "评论内容（支持 Markdown 格式）"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber", "body"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Comment body (Markdown supported)"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ],
-                "body": [
-                    "type": "string",
-                    "description": "评论内容（支持 Markdown 格式）"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber", "body"]
-        ]
+                "required": ["owner", "repo", "issueNumber", "body"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -57,7 +83,9 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -69,7 +97,9 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
             )
             return formatAddedComment(comment)
         } catch {
-            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+            }
             return "添加评论失败：\(error.localizedDescription)"
         }
     }

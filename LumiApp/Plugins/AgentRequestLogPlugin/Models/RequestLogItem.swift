@@ -65,7 +65,7 @@ final class RequestLogItem {
     }
 }
 
-struct RequestLogItemDTO: Sendable {
+struct RequestLogItemDTO: Sendable, Identifiable {
     let id: UUID
     let requestId: UUID
     let timestamp: Date

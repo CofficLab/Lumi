@@ -18,10 +18,12 @@ struct OpenAICompatibleResponse: Decodable {
     struct Message: Decodable {
         let content: String?
         let toolCalls: [ToolCallData]?
+        let reasoningContent: String?
 
         enum CodingKeys: String, CodingKey {
             case content
             case toolCalls = "tool_calls"
+            case reasoningContent = "reasoning_content"
         }
     }
 

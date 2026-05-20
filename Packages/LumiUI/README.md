@@ -108,7 +108,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 24) {
             // 使用设计令牌
-            Text("欢迎使用 LumiUI")
+            Text("Hello, LumiUI")
                 .font(DesignTokens.Typography.title1)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -514,7 +514,6 @@ LumiUI 采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
 
 ## 🔗 相关链接
 
-- **Lumi 项目**: [CofficLab/Lumi](https://github.com/CofficLab/Lumi)
 - **SwiftUI 官方文档**: [Apple Developer](https://developer.apple.com/documentation/swiftui)
 - **Swift Package Manager**: [Swift.org](https://swift.org/package-manager/)
 

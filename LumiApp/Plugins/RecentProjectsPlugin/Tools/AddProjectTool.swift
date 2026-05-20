@@ -1,10 +1,9 @@
 import Foundation
-import MagicKit
 
 /// 添加项目到最近列表工具
 struct AddProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "add_recent_project"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -38,7 +37,9 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Adding project to recent list: \(path)")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.info("\(Self.t)Adding project to recent list: \(path)")
+            }
         }
 
         // 验证路径是否存在且为目录
@@ -59,7 +60,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         let store = RecentProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 发送通知，RecentProjectsPersistenceOverlay 会自动更新 projectVM
+        // 2. 发送通知，RecentProjectsOverlay 会自动更新 projectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         // 3. 加载更新后的最近项目列表

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeVscodeDarkPlugin: SuperPlugin {
     static let shared = ThemeVscodeDarkPlugin()

@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import DiskManagerKit
 
 /// 大文件列表视图

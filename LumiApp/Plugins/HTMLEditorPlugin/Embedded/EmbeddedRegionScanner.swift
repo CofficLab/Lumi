@@ -38,34 +38,21 @@ enum EmbeddedRegionScanner {
     static func scanRegions(in content: String) -> [HTMLEmbeddedRegion] {
         var regions: [HTMLEmbeddedRegion] = []
         let lines = content.components(separatedBy: .newlines)
-        var currentOffset = 0
 
-        var i = 0
-        while i < lines.count {
-            let line = lines[i]
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
+        regions.append(contentsOf: scanTagRegions(
+            in: content,
+            lines: lines,
+            tagName: "style",
+            languageResolver: { _ in "css" }
+        ))
+        regions.append(contentsOf: scanTagRegions(
+            in: content,
+            lines: lines,
+            tagName: "script",
+            languageResolver: scriptLanguage
+        ))
 
-            // 检测 <style> 区域
-            if let region = detectStyleRegion(lines: lines, startIndex: i, currentOffset: currentOffset) {
-                regions.append(region)
-                currentOffset += region.endOffset - region.startOffset
-                i = lineOffset(for: region.endOffset, in: lines)
-                continue
-            }
-
-            // 检测 <script> 区域
-            if let region = detectScriptRegion(lines: lines, startIndex: i, currentOffset: currentOffset) {
-                regions.append(region)
-                currentOffset += region.endOffset - region.startOffset
-                i = lineOffset(for: region.endOffset, in: lines)
-                continue
-            }
-
-            currentOffset += line.utf16.count + 1 // +1 for newline
-            i += 1
-        }
-
-        return regions
+        return regions.sorted { $0.startOffset < $1.startOffset }
     }
 
     /// 获取指定偏移量所处的内嵌语言区域
@@ -75,121 +62,45 @@ enum EmbeddedRegionScanner {
 
     // MARK: - 私有方法
 
-    private static func detectStyleRegion(lines: [String], startIndex: Int, currentOffset: Int) -> HTMLEmbeddedRegion? {
-        let line = lines[startIndex]
-        let lowercased = line.lowercased()
+    private static func scanTagRegions(
+        in content: String,
+        lines: [String],
+        tagName: String,
+        languageResolver: (String) -> String
+    ) -> [HTMLEmbeddedRegion] {
+        let pattern = "(?is)<\(tagName)\\b([^>]*)>(.*?)</\(tagName)>"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let nsContent = content as NSString
+        let fullRange = NSRange(location: 0, length: nsContent.length)
 
-        // 匹配 <style 或 <style>
-        guard lowercased.contains("<style") else { return nil }
-
-        // 找到开始位置
-        let startOffset = currentOffset
-
-        // 收集内容直到 </style>
-        var virtualLines: [String] = []
-        var j = startIndex
-        var foundEnd = false
-        var totalOffset = currentOffset
-
-        while j < lines.count {
-            let currentLine = lines[j]
-            let currentLower = currentLine.lowercased()
-
-            if currentLower.contains("</style>") {
-                // 提取 </style> 之前的内容
-                if let endIdx = currentLower.range(of: "</style>") {
-                    let beforeEnd = String(currentLine[currentLine.startIndex..<endIdx.lowerBound])
-                    if !beforeEnd.trimmingCharacters(in: .whitespaces).isEmpty {
-                        virtualLines.append(beforeEnd)
-                    }
-                }
-                totalOffset += currentLine.utf16.count + 1
-                foundEnd = true
-                j += 1
-                break
-            } else {
-                virtualLines.append(currentLine)
-                totalOffset += currentLine.utf16.count + 1
-            }
-            j += 1
+        return regex.matches(in: content, range: fullRange).compactMap { match in
+            guard match.numberOfRanges >= 3 else { return nil }
+            let attributes = nsContent.substring(with: match.range(at: 1))
+            let bodyRange = match.range(at: 2)
+            let body = nsContent.substring(with: bodyRange)
+            let startPosition = OffsetMapper.lineAndCharacter(from: bodyRange.location, in: lines)
+            return HTMLEmbeddedRegion(
+                language: languageResolver(attributes),
+                startOffset: bodyRange.location,
+                endOffset: bodyRange.location + bodyRange.length,
+                virtualContent: body,
+                lineOffset: startPosition?.line ?? 0
+            )
         }
-
-        guard foundEnd else { return nil }
-
-        let virtualContent = virtualLines.joined(separator: "\n")
-        return HTMLEmbeddedRegion(
-            language: "css",
-            startOffset: startOffset,
-            endOffset: totalOffset,
-            virtualContent: virtualContent,
-            lineOffset: startIndex
-        )
     }
 
-    private static func detectScriptRegion(lines: [String], startIndex: Int, currentOffset: Int) -> HTMLEmbeddedRegion? {
-        let line = lines[startIndex]
-        let lowercased = line.lowercased()
-
-        // 匹配 <script 或 <script>
-        guard lowercased.contains("<script") else { return nil }
-
-        // 确定语言类型
-        var language = "javascript"
-        if lowercased.contains("type=\"text/typescript\"") || lowercased.contains("type=\"typescript\"") {
-            language = "typescript"
-        } else if lowercased.contains("lang=\"ts\"") {
-            language = "typescript"
+    private static func scriptLanguage(attributes: String) -> String {
+        let normalized = attributes.lowercased()
+        if normalized.contains("type=\"text/typescript\"") ||
+            normalized.contains("type='text/typescript'") ||
+            normalized.contains("type=\"typescript\"") ||
+            normalized.contains("type='typescript'") ||
+            normalized.contains("lang=\"ts\"") ||
+            normalized.contains("lang='ts'") ||
+            normalized.contains("lang=\"typescript\"") ||
+            normalized.contains("lang='typescript'") {
+            return "typescript"
         }
-
-        let startOffset = currentOffset
-
-        var virtualLines: [String] = []
-        var j = startIndex
-        var foundEnd = false
-        var totalOffset = currentOffset
-
-        while j < lines.count {
-            let currentLine = lines[j]
-            let currentLower = currentLine.lowercased()
-
-            if currentLower.contains("</script>") {
-                if let endIdx = currentLower.range(of: "</script>") {
-                    let beforeEnd = String(currentLine[currentLine.startIndex..<endIdx.lowerBound])
-                    if !beforeEnd.trimmingCharacters(in: .whitespaces).isEmpty {
-                        virtualLines.append(beforeEnd)
-                    }
-                }
-                totalOffset += currentLine.utf16.count + 1
-                foundEnd = true
-                j += 1
-                break
-            } else {
-                virtualLines.append(currentLine)
-                totalOffset += currentLine.utf16.count + 1
-            }
-            j += 1
-        }
-
-        guard foundEnd else { return nil }
-
-        let virtualContent = virtualLines.joined(separator: "\n")
-        return HTMLEmbeddedRegion(
-            language: language,
-            startOffset: startOffset,
-            endOffset: totalOffset,
-            virtualContent: virtualContent,
-            lineOffset: startIndex
-        )
-    }
-
-    private static func lineOffset(for offset: Int, in lines: [String]) -> Int {
-        var current = 0
-        for (index, line) in lines.enumerated() {
-            current += line.utf16.count + 1
-            if current >= offset {
-                return index + 1
-            }
-        }
-        return lines.count
+        return "javascript"
     }
 }

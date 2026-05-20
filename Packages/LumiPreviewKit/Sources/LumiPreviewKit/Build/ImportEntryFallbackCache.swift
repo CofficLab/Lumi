@@ -24,7 +24,8 @@ public extension LumiPreviewFacade {
             CacheKey(
                 fingerprint: Self.sha256(
                     [
-                        "import-entry-fallback-v1",
+                        "import-entry-fallback-v2",
+                        LumiPreviewFacade.PreviewEntryBuilder.previewDebugConditionArguments.joined(separator: " "),
                         discovery.id,
                         discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
                         "\(discovery.lineNumber)",

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeDraculaPlugin: SuperPlugin {
     static let shared = ThemeDraculaPlugin()

@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import GitHubKit
 import os
 import SwiftUI
 
@@ -12,7 +12,7 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🐙"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Plugin Properties
 
     static let id: String = "GitHubTools"
@@ -25,37 +25,21 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
 
     static let shared = GitHubToolsPlugin()
 
-    private init() {}
-
-    // MARK: - Agent Tool Factories
-
-    @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(GitHubToolsFactory())]
+    private init() {
+        let settingsStore = GitHubPluginLocalStore()
+        settingsStore.migrateLegacyValueIfMissing(forKey: "GitHubToken")
+        GitHubAPIService.shared.setTokenProvider(settingsStore)
     }
 
-    // MARK: - Settings View
+    // MARK: - Agent Tools
 
     @MainActor
-    func addSettingsView() -> AnyView? {
-        AnyView(GitHubPluginSettingsView())
-    }
-}
-
-// MARK: - Tools Factory
-
-@MainActor
-private struct GitHubToolsFactory: SuperAgentToolFactory {
-    let id: String = "github.tools.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GitHubRepoInfoTool(),
             GitHubSearchTool(),
             GitHubFileContentTool(),
             GitHubTrendingTool(),
-            // Issue 相关工具
             GitHubIssueListTool(),
             GitHubIssueDetailTool(),
             GitHubCreateIssueTool(),
@@ -65,5 +49,12 @@ private struct GitHubToolsFactory: SuperAgentToolFactory {
             GitHubIssueCommentsTool(),
             GitHubAddIssueCommentTool(),
         ]
+    }
+
+    // MARK: - Settings View
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        AnyView(GitHubPluginSettingsView())
     }
 }

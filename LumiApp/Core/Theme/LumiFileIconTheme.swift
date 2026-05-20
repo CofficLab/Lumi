@@ -320,9 +320,9 @@ enum LumiFileIconThemeCatalog {
                 ".github": folder("point.3.connected.trianglepath.dotted", "point.3.connected.trianglepath.dotted"),
             ],
             extraFileNames: [
-                ".gitignore": .systemImage("arrow.triangle.branch.fill"),
-                ".gitattributes": .systemImage("arrow.triangle.branch.fill"),
-                ".gitmodules": .systemImage("arrow.triangle.branch.fill"),
+                ".gitignore": .systemImage("arrow.triangle.branch"),
+                ".gitattributes": .systemImage("arrow.triangle.branch"),
+                ".gitmodules": .systemImage("arrow.triangle.branch"),
             ]
         )
     }

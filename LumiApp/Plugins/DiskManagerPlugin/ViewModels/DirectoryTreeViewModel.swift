@@ -1,11 +1,10 @@
 import Combine
 import Foundation
-import MagicKit
 import DiskManagerKit
 @MainActor
 final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var rootEntries: [DirectoryEntry] = []
     @Published var isScanning = false
     @Published var scanProgress: ScanProgress?
@@ -21,7 +20,9 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
         guard !isScanning else { return }
 
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始分析目录结构：\((self.scanPath as NSString).lastPathComponent)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始分析目录结构：\((self.scanPath as NSString).lastPathComponent)")
+            }
         }
 
         isScanning = true
@@ -65,7 +66,9 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
+            }
         }
         scanTask?.cancel()
         progressTask?.cancel()

@@ -1,77 +1,56 @@
 import Foundation
 import SwiftUI
-import MagicKit
 import AppKit
+import FileTreeKit
 
 /// Editor Rail 文件树文件服务
 /// 负责处理文件相关的无状态逻辑：图标、名称、过滤、排序等
+///
+/// 作为 FileTreeKit.FileTreeService 的薄包装层，
+/// 保留插件特有的方法（openInTerminal、openInVSCode 等 UI 操作）。
 enum EditorFileTreeService {
+    // MARK: - 委托给 FileTreeKit
+
     /// 过滤并排序目录内容
     /// - Parameter urls: 目录下的 URL 列表
     /// - Returns: 过滤并排序后的 URL 列表（文件夹在前）
     static func filterAndSortContents(_ urls: [URL]) -> [URL] {
-        // 过滤 .DS_Store 和 .git
-        let filtered = urls.filter { url in
-            let name = url.lastPathComponent
-            return name != ".DS_Store" && name != ".git"
-        }
-
-        // 排序：文件夹在前
-        let sorted = filtered.sorted { a, b in
-            let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            if aIsDir == bIsDir {
-                return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
-            }
-            return aIsDir
-        }
-
-        return sorted
+        FileTreeService.filterAndSortContents(urls)
     }
 
     /// 获取文件图标
     /// - Parameter url: 文件 URL
     /// - Returns: 图标 SF Symbol 名称
     static func getFileIcon(for url: URL) -> String {
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-
-        if isDirectory {
-            return "folder.fill"
-        }
-
-        return getFileIcon(fileExtension: url.pathExtension)
+        FileTreeService.iconSFSymbol(for: url)
     }
 
     /// 获取非目录文件图标，避免文件树行在 SwiftUI body 求值时反复查询文件系统资源值。
     /// - Parameter fileExtension: 文件扩展名
     /// - Returns: 图标 SF Symbol 名称
     static func getFileIcon(fileExtension: String) -> String {
-        LumiDefaultFileIconThemeContributor.systemImageName(forFileExtension: fileExtension) ?? "doc"
+        FileTreeService.iconSFSymbol(forFileExtension: fileExtension)
     }
 
     /// 获取文件显示名称
     /// - Parameter url: 文件 URL
     /// - Returns: 显示名称
     static func getFileName(for url: URL) -> String {
-        url.lastPathComponent
+        FileTreeService.displayName(for: url)
     }
 
     /// 格式化文件修改日期
     /// - Parameter date: 日期
     /// - Returns: 格式化后的字符串
     static func formatDate(_ date: Date?) -> String {
-        guard let date = date else { return "" }
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        FileTreeService.formatDate(date)
     }
 
     /// 获取文件修改日期
     /// - Parameter url: 文件 URL
     /// - Returns: 修改日期
     static func getModificationDate(for url: URL) -> Date? {
-        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        FileTreeService.modificationDate(for: url)
     }
 
     /// 检查文件是否应该显示修改日期
@@ -79,24 +58,67 @@ enum EditorFileTreeService {
     /// - Returns: 是否显示
     static func shouldShowModificationDate(for url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()
-        // 仅对常见文档类型显示修改日期
         let documentExtensions = ["swift", "m", "h", "md", "txt", "json", "xml", "yaml", "yml"]
         return documentExtensions.contains(ext)
     }
+
+    // MARK: - 文件系统查询
+
+    /// 判断 URL 是否为目录
+    /// - Parameter url: 文件或目录 URL
+    /// - Returns: 是否为目录
+    static func isDirectory(_ url: URL) -> Bool {
+        FileTreeService.isDirectory(url)
+    }
+
+    /// 读取目录内容（过滤并排序后返回）
+    /// - Parameter url: 目录 URL
+    /// - Returns: 过滤并排序后的子项 URL 列表
+    /// - Throws: 文件系统读取错误
+    static func loadContents(of url: URL) throws -> [URL] {
+        try FileTreeService.loadContents(of: url)
+    }
+
+    // MARK: - 文件操作
+
+    /// 在指定目录下创建新文件
+    @discardableResult
+    static func createFile(in parentURL: URL, name: String) -> URL? {
+        FileTreeService.createFile(in: parentURL, name: name)
+    }
+
+    /// 在指定目录下创建新文件夹
+    @discardableResult
+    static func createFolder(in parentURL: URL, name: String) -> URL? {
+        FileTreeService.createFolder(in: parentURL, name: name)
+    }
+
+    /// 重命名文件或文件夹
+    @discardableResult
+    static func renameItem(at url: URL, newName: String) -> URL? {
+        FileTreeService.renameItem(at: url, newName: newName)
+    }
+
+    /// 将文件或文件夹移入废纸篓
+    @discardableResult
+    static func trashItem(at url: URL) -> Bool {
+        FileTreeService.trashItem(at: url)
+    }
+
+    // MARK: - 外部应用（插件特有，依赖 AppKit）
 
     /// 在终端中打开指定路径
     /// - Parameter url: 文件或目录 URL
     static func openInTerminal(_ url: URL) {
         let targetPath: String
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        let isDir = FileTreeService.isDirectory(url)
 
-        if isDirectory {
+        if isDir {
             targetPath = url.path
         } else {
             targetPath = url.deletingLastPathComponent().path
         }
 
-        // 使用 AppleScript 打开 Terminal 并 cd 到目标目录
         let script = """
         tell application "Terminal"
             activate
@@ -112,7 +134,6 @@ enum EditorFileTreeService {
             var errorDict: NSDictionary?
             scriptObject.executeAndReturnError(&errorDict)
             if errorDict != nil {
-                // 备选方案：直接打开 Terminal.app
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
             }
         }
@@ -128,7 +149,6 @@ enum EditorFileTreeService {
         do {
             try process.run()
         } catch {
-            // 备选方案：使用 NSWorkspace 打开
             NSWorkspace.shared.open(url)
         }
     }
@@ -139,95 +159,6 @@ enum EditorFileTreeService {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.path, forType: .string)
     }
-
-    // MARK: - 文件系统查询
-
-    /// 判断 URL 是否为目录
-    /// - Parameter url: 文件或目录 URL
-    /// - Returns: 是否为目录
-    static func isDirectory(_ url: URL) -> Bool {
-        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-    }
-
-    /// 读取目录内容（过滤并排序后返回）
-    ///
-    /// 使用 `skipsSubdirectoryDescendants` 避免递归遍历子目录，
-    /// 同时利用预取的 `isDirectoryKey` 资源值做排序，减少额外 I/O。
-    /// - Parameter url: 目录 URL
-    /// - Returns: 过滤并排序后的子项 URL 列表
-    /// - Throws: 文件系统读取错误
-    static func loadContents(of url: URL) throws -> [URL] {
-        let contents = try FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: .skipsSubdirectoryDescendants
-        )
-        return filterAndSortContents(contents)
-    }
-
-    // MARK: - 文件操作
-
-    /// 在指定目录下创建新文件
-    /// - Parameters:
-    ///   - parentURL: 父目录 URL
-    ///   - name: 新文件名
-    /// - Returns: 创建成功返回新文件 URL，失败返回 nil
-    @discardableResult
-    static func createFile(in parentURL: URL, name: String) -> URL? {
-        guard !name.isEmpty else { return nil }
-        let fileURL = parentURL.appendingPathComponent(name)
-        let success = FileManager.default.createFile(atPath: fileURL.path, contents: nil)
-        return success ? fileURL : nil
-    }
-
-    /// 在指定目录下创建新文件夹
-    /// - Parameters:
-    ///   - parentURL: 父目录 URL
-    ///   - name: 新文件夹名
-    /// - Returns: 创建成功返回新文件夹 URL，失败返回 nil
-    @discardableResult
-    static func createFolder(in parentURL: URL, name: String) -> URL? {
-        guard !name.isEmpty else { return nil }
-        let folderURL = parentURL.appendingPathComponent(name)
-        do {
-            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
-            return folderURL
-        } catch {
-            return nil
-        }
-    }
-
-    /// 重命名文件或文件夹
-    /// - Parameters:
-    ///   - url: 原始 URL
-    ///   - newName: 新名称
-    /// - Returns: 重命名成功返回新 URL，失败返回 nil
-    @discardableResult
-    static func renameItem(at url: URL, newName: String) -> URL? {
-        guard !newName.isEmpty else { return nil }
-        let newURL = url.deletingLastPathComponent().appendingPathComponent(newName)
-        do {
-            try FileManager.default.moveItem(at: url, to: newURL)
-            return newURL
-        } catch {
-            return nil
-        }
-    }
-
-    /// 将文件或文件夹移入废纸篓
-    /// - Parameter url: 要删除的 URL
-    /// - Returns: 是否成功
-    @discardableResult
-    static func trashItem(at url: URL) -> Bool {
-        do {
-            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    // MARK: - 外部应用
 
     /// 在 Finder 中显示文件
     /// - Parameter url: 文件或目录 URL

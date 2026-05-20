@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct AppTag: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     public enum Style {
@@ -45,11 +46,13 @@ public struct AppTag: View {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                 .stroke(borderColor, lineWidth: 1)
         )
-        .scaleEffect(isHovered ? 1.04 : 1)
+        .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1)
         .shadow(color: hoverShadowColor, radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
-        .animation(.easeOut(duration: 0.16), value: isHovered)
+        .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovered)
         .onHover { hovering in
-            isHovered = hovering
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
         }
     }
 

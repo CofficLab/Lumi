@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct AppEmptyState: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     let icon: String
@@ -42,10 +43,12 @@ public struct AppEmptyState: View {
             Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundColor(theme.textSecondary.opacity(0.6))
-                .scaleEffect(isHovering ? 1.08 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+                .scaleEffect(isHovering && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
+                .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
                 .onHover { hovering in
-                    isHovering = hovering
+                    AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                        isHovering = hovering
+                    }
                 }
 
             Text(title)

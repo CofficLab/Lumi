@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 // MARK: - Latency Progress Bar

@@ -1,5 +1,5 @@
+import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 在 GitOK 中打开项目插件
@@ -17,7 +17,7 @@ import SwiftUI
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
 actor AgentOpenInGitOKPlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "AgentOpenInGitOK"
     static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
     static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
@@ -48,7 +48,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
 
 /// GitOK 打开状态栏视图
 struct OpenInGitOKStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
     var body: some View {
@@ -115,7 +115,7 @@ struct OpenInGitOKStatusBarView: View {
 
 /// GitOK 打开详情视图（在 popover 中显示）
 struct OpenInGitOKDetailView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
     var body: some View {

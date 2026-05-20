@@ -1,5 +1,5 @@
+import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 在 Finder 中打开项目插件
@@ -7,7 +7,7 @@ import SwiftUI
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Finder 中打开当前项目目录。
 actor AgentOpenInFinderPlugin: SuperPlugin {
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id = "AgentOpenInFinder"
     static let displayName = String(localized: "Open in Finder", table: "AgentOpenInFinder")
     static let description = String(localized: "Open current project in Finder", table: "AgentOpenInFinder")
@@ -38,7 +38,7 @@ actor AgentOpenInFinderPlugin: SuperPlugin {
 
 /// Finder 打开状态栏视图
 struct OpenInFinderStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         Group {
@@ -97,7 +97,7 @@ struct OpenInFinderStatusBarView: View {
 
 /// Finder 打开详情视图（在 popover 中显示）
 struct OpenInFinderDetailView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

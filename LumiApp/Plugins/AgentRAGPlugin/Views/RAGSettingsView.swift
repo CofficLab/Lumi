@@ -1,12 +1,12 @@
 import SwiftUI
-import MagicKit
+import RAGKit
 
 @MainActor
 struct RAGSettingsView: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     private let recentProjectsStore = RecentProjectsStore()
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
@@ -68,7 +68,7 @@ struct RAGSettingsView: View, SuperLog {
         .onRAGIndexProgressDidChange { event in
             progressByPath[event.projectPath] = event
             if event.isFinished {
-                message = "索引更新完成：\(event.projectPath)"
+                message = String(format: String(localized: "Index update completed: %@", table: "RAG"), event.projectPath)
                 Task { await loadStatus() }
             }
         }
@@ -85,7 +85,7 @@ extension RAGSettingsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fontWeight(.medium)
-            Text("向量后端：\(info.vectorBackend.rawValue)")
+            Text(String(format: String(localized: "Vector Backend: %@", table: "RAG"), info.vectorBackend.rawValue))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -135,7 +135,7 @@ extension RAGSettingsView {
 
             if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                 ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
-                Text("进度：\(progress.scannedFiles)/\(progress.totalFiles)")
+                Text(String(format: String(localized: "Progress: %lld/%lld", table: "RAG"), progress.scannedFiles, progress.totalFiles))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -186,7 +186,7 @@ extension RAGSettingsView {
             statusesByPath = next
             message = nil
         } catch {
-            message = "读取索引状态失败：\(error.localizedDescription)"
+            message = String(format: String(localized: "Failed to load index status: %@", table: "RAG"), error.localizedDescription)
         }
     }
 
@@ -195,7 +195,7 @@ extension RAGSettingsView {
         guard !projects.isEmpty else { return }
 
         isLoading = true
-        message = "正在重建全部索引..."
+        message = String(localized: "Rebuilding all indexes...", table: "RAG")
         defer { isLoading = false }
 
         do {
@@ -204,9 +204,9 @@ extension RAGSettingsView {
                 try await service.ensureIndexed(projectPath: project.path, force: true)
             }
             await loadStatus()
-            message = "全部项目索引更新完成。"
+            message = String(localized: "All project indexes updated.", table: "RAG")
         } catch {
-            message = "重建索引失败：\(error.localizedDescription)"
+            message = String(format: String(localized: "Failed to rebuild indexes: %@", table: "RAG"), error.localizedDescription)
         }
     }
 
@@ -220,9 +220,9 @@ extension RAGSettingsView {
             if status == nil {
                 statusesByPath.removeValue(forKey: projectPath)
             }
-            message = "已刷新：\(projectPath)"
+            message = String(format: String(localized: "Refreshed: %@", table: "RAG"), projectPath)
         } catch {
-            message = "刷新失败：\(error.localizedDescription)"
+            message = String(format: String(localized: "Refresh failed: %@", table: "RAG"), error.localizedDescription)
         }
     }
 
@@ -234,9 +234,9 @@ extension RAGSettingsView {
             try await service.ensureIndexed(projectPath: projectPath, force: true)
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status
-            message = "已重建：\(projectPath)"
+            message = String(format: String(localized: "Rebuilt: %@", table: "RAG"), projectPath)
         } catch {
-            message = "重建失败：\(error.localizedDescription)"
+            message = String(format: String(localized: "Rebuild failed: %@", table: "RAG"), error.localizedDescription)
         }
     }
 }

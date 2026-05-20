@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 import os
 
@@ -11,7 +10,7 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💿"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "DiskManager"
     static let navigationId = "disk_manager"

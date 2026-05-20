@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import Foundation
 import os
@@ -8,7 +7,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "GitPlugin"
     static let navigationId: String? = nil

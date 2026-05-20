@@ -1,10 +1,10 @@
 import Foundation
-import MagicKit
+import GitHubKit
 
 /// GitHub Issue 列表工具
 struct GitHubIssueListTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_issues"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -16,33 +16,64 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者（用户名或组织名）"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者（用户名或组织名）"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "state": [
+                        "type": "string",
+                        "description": "Issue 状态：open（开放）、closed（已关闭）、all（全部），默认 open",
+                        "enum": ["open", "closed", "all"]
+                    ],
+                    "page": [
+                        "type": "number",
+                        "description": "页码，默认 1"
+                    ],
+                    "perPage": [
+                        "type": "number",
+                        "description": "每页数量，默认 10，最大 100"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner (username or organization)"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "state": [
+                        "type": "string",
+                        "description": "Issue state: open, closed, or all. Default: open",
+                        "enum": ["open", "closed", "all"]
+                    ],
+                    "page": [
+                        "type": "number",
+                        "description": "Page number, default 1"
+                    ],
+                    "perPage": [
+                        "type": "number",
+                        "description": "Results per page, default 10, max 100"
+                    ]
                 ],
-                "state": [
-                    "type": "string",
-                    "description": "Issue 状态：open（开放）、closed（已关闭）、all（全部），默认 open",
-                    "enum": ["open", "closed", "all"]
-                ],
-                "page": [
-                    "type": "number",
-                    "description": "页码，默认 1"
-                ],
-                "perPage": [
-                    "type": "number",
-                    "description": "每页数量，默认 10，最大 100"
-                ]
-            ],
-            "required": ["owner", "repo"]
-        ]
+                "required": ["owner", "repo"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -65,7 +96,9 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
+            }
         }
 
         do {
@@ -78,7 +111,9 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
             )
             return formatIssues(issues)
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
+            }
             return "获取 Issue 列表失败：\(error.localizedDescription)"
         }
     }

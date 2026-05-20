@@ -45,7 +45,7 @@ struct AboutView: View {
     // MARK: - Header Card
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             GlassSectionHeader(
                 icon: "info.circle.fill",
                 title: "关于 Lumi",

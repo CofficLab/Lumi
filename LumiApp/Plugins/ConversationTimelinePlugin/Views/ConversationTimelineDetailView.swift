@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import Foundation
 
@@ -7,11 +6,11 @@ import Foundation
 /// 对话时间线详情视图（在 Popover 中显示）
 struct ConversationTimelineDetailView: View, SuperLog {
     nonisolated static let emoji = "📅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let conversationId: UUID
-    @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @State private var timelineItems: [MessageTimelineItem] = []
     private let timelineService = ConversationTimelineService()
 

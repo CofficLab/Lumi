@@ -1,10 +1,9 @@
-import MagicKit
 import LibGit2Swift
 import SwiftUI
 
 /// Git 状态栏弹出面板
 struct GitPluginPopoverView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var branches: [GitBranch] = []
     @State private var commits: [GitCommitLog] = []
     @State private var uncommittedFiles: [GitChangedFile] = []

@@ -2,7 +2,6 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
-import MagicKit
 import EditorOverlayKit
 
 /// 代码编辑器主视图。
@@ -12,7 +11,7 @@ import EditorOverlayKit
 /// EditorPanel 中源码编辑体验的核心入口。
 struct SourceEditorView: View, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     @ObservedObject var state: EditorState
     private let adapter = SourceEditorAdapter()

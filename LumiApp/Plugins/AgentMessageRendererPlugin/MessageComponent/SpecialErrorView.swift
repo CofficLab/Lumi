@@ -1,4 +1,4 @@
-import MagicKit
+import LumiUI
 import SwiftUI
 
 /// 原始 HTTP 错误详情折叠视图
@@ -7,8 +7,9 @@ import SwiftUI
 /// 便于用户或开发者排查问题。
 struct RawErrorDetailView: View {
     let rawDetail: String
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @LumiMotionPreferenceReader private var motionPreference
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isExpanded = false
 
     private var zh: Bool {
@@ -24,7 +25,7 @@ struct RawErrorDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference)) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -52,8 +53,10 @@ struct RawErrorDetailView: View {
                         )
                 }
                 .frame(maxHeight: 150)
+                .appDisclosureContentTransition(preference: motionPreference)
             }
         }
+        .animation(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference), value: isExpanded)
     }
 }
 
@@ -101,7 +104,7 @@ struct SpecialErrorView: View {
     let suggestion: String?
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -134,7 +137,7 @@ struct DefaultErrorView: View {
     let message: String
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

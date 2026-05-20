@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Agent Core Tools 插件
@@ -19,24 +18,12 @@ actor AgentCoreToolsPlugin: SuperPlugin {
     static let shared = AgentCoreToolsPlugin()
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(CoreToolsFactory())]
-    }
-}
-
-@MainActor
-private struct CoreToolsFactory: SuperAgentToolFactory {
-    let id: String = "core.tools.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
-            // 文件系统工具
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
             EditFileTool(),
-            // 命令执行
             ShellTool(),
         ]
     }

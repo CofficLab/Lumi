@@ -39,6 +39,15 @@ final class LSPServiceEditorPluginTests: XCTestCase {
         XCTAssertNil(LSPConfig.defaultConfig(for: "kotlin"))
     }
 
+    func testSemanticTokenTypesMapToEditorCaptures() {
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "class"), .type)
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "struct"), .type)
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "enumMember"), .property)
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "operator"), .keyword)
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "regexp"), .string)
+        XCTAssertEqual(SemanticTokenMap.captureName(forSemanticTokenType: "function"), .function)
+    }
+
     func testDebounceCancelsEarlierRequestForSameKey() async {
         let debouncer = LSPDebouncer()
 

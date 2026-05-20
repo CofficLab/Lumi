@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import GoEditorCore
 import os
 
 /// Go 命令执行器
@@ -56,7 +56,9 @@ actor GoRunner: SuperLog {
         currentProcess = process
 
         if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(Self.t)执行: go \(command) \(arguments.joined(separator: " "))")
+            if GoEditorPlugin.verbose {
+                            GoEditorPlugin.logger.info("\(Self.t)执行: go \(command) \(arguments.joined(separator: " "))")
+            }
         }
 
         do {
@@ -83,13 +85,26 @@ actor GoRunner: SuperLog {
         )
     }
 
+    func execute(
+        _ toolCommand: any GoToolCommand,
+        workingDirectory: String
+    ) async -> GoRunResult {
+        await execute(
+            command: toolCommand.command,
+            arguments: toolCommand.arguments,
+            workingDirectory: workingDirectory
+        )
+    }
+
     /// 取消当前正在执行的进程
     func cancel() {
         guard let process = currentProcess, process.isRunning else { return }
         process.terminate()
         currentProcess = nil
         if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(Self.t)已取消正在执行的命令")
+            if GoEditorPlugin.verbose {
+                            GoEditorPlugin.logger.info("\(Self.t)已取消正在执行的命令")
+            }
         }
     }
 }

@@ -1,12 +1,12 @@
 import os
+import LLMKit
 import SwiftUI
 import LumiUI
-import MagicKit
 
 /// 云端大模型设置视图（仅展示远程/API 供应商）
 struct RemoteProviderSettingsView: View, SuperLog {
     nonisolated static let emoji = "☁️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     // MARK: - State
 
@@ -90,7 +90,7 @@ struct RemoteProviderSettingsView: View, SuperLog {
 extension RemoteProviderSettingsView {
     /// 云端供应商卡片（固定）
     private var cloudProviderCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "cloud.fill",
@@ -127,7 +127,7 @@ extension RemoteProviderSettingsView {
 
     /// 配置卡片
     private var configurationCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 32) {
                 // API Key 区块
                 apiKeySection
@@ -185,7 +185,7 @@ extension RemoteProviderSettingsView {
             VStack(spacing: 0) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(models, id: \.self) { model in
-                    let capabilities = selectedProvider?.modelCapabilities[model]
+                    let capabilities = selectedProviderType?.modelCapabilities[model]
                     RemoteModelRow(
                         model: model,
                         isDefault: selectedModel == model,
