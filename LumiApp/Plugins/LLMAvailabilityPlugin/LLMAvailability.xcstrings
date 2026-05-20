@@ -288,6 +288,7 @@
       }
     },
     "No LLM" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

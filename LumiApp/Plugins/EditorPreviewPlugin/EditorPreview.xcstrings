@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add to Chat" : {
+
+    },
     "Automation: start preview stream" : {
       "localizations" : {
         "en" : {
@@ -89,27 +92,8 @@
         }
       }
     },
-    "Clear Inline Preview build cache" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Inline Preview build cache"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清理预览构建缓存"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清理內嵌預覽建置快取"
-          }
-        }
-      }
+    "Cancel" : {
+
     },
     "Choose which #Preview in the current Swift file to build and render." : {
       "localizations" : {
@@ -129,6 +113,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇目前 Swift 檔案中要建置和算繪的 #Preview。"
+          }
+        }
+      }
+    },
+    "Clean all stale String Catalog keys in this project?" : {
+
+    },
+    "Clean Project String Catalogs" : {
+
+    },
+    "Clean stale keys in every String Catalog file in the current project" : {
+
+    },
+    "Clean stale keys in the current String Catalog file" : {
+
+    },
+    "Clear Inline Preview build cache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Inline Preview build cache"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清理预览构建缓存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清理內嵌預覽建置快取"
           }
         }
       }
@@ -243,6 +261,28 @@
         }
       }
     },
+    "entry · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "entry · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入口 · %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入口 · %@"
+          }
+        }
+      }
+    },
     "Entry debug state" : {
       "localizations" : {
         "en" : {
@@ -265,27 +305,11 @@
         }
       }
     },
-    "entry · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "entry · %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "入口 · %@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "入口 · %@"
-          }
-        }
-      }
+    "Failed to clean project String Catalogs: %@" : {
+
+    },
+    "Failed to clean String Catalog: %@" : {
+
     },
     "Failed to load image: %@" : {
       "localizations" : {
@@ -551,6 +575,9 @@
         }
       }
     },
+    "No stale String Catalog keys found." : {
+
+    },
     "No String Catalog content to preview." : {
       "localizations" : {
         "en" : {
@@ -749,6 +776,19 @@
         }
       }
     },
+    "Removed %d stale key(s) from %d String Catalog file(s)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removed %1$d stale key(s) from %2$d String Catalog file(s)."
+          }
+        }
+      }
+    },
+    "Removed %d stale String Catalog key(s)." : {
+
+    },
     "running · %@" : {
       "localizations" : {
         "en" : {
@@ -771,6 +811,9 @@
         }
       }
     },
+    "Scanned %d String Catalog file(s); no stale keys found." : {
+
+    },
     "SDK resolution failed" : {
       "localizations" : {
         "en" : {
@@ -789,6 +832,31 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SDK 解析失敗"
+          }
+        }
+      }
+    },
+    "Select a project before cleaning String Catalogs." : {
+
+    },
+    "Show entry debug state" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show entry debug state"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示入口调试状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示入口除錯狀態"
           }
         }
       }
@@ -815,27 +883,8 @@
         }
       }
     },
-    "Show entry debug state" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show entry debug state"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示入口调试状态"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示入口除錯狀態"
-          }
-        }
-      }
+    "Stale String Catalog keys in the current file" : {
+
     },
     "starting" : {
       "localizations" : {
@@ -924,6 +973,9 @@
           }
         }
       }
+    },
+    "This rewrites every .xcstrings file under the current project and removes entries marked as stale." : {
+
     },
     "warming" : {
       "localizations" : {
