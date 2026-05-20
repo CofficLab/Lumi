@@ -405,9 +405,6 @@
         }
       }
     },
-    "Query the local cached GitHub ecosystem knowledge base for repositories related to the current project." : {
-
-    },
     "Rate limited" : {
       "extractionState" : "stale",
       "localizations" : {

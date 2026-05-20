@@ -1093,6 +1093,7 @@
       }
     },
     "Confirm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1733,6 +1734,7 @@
       }
     },
     "Import" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2259,6 +2261,7 @@
       }
     },
     "Permission Required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2436,6 +2439,7 @@
       }
     },
     "Pull" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2667,6 +2671,7 @@
       }
     },
     "Search images..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3884,9 +3889,6 @@
 
     },
     "搜索快捷键或命令…" : {
-
-    },
-    "搜索扩展 (如: python, theme)" : {
 
     },
     "搜索文件..." : {
