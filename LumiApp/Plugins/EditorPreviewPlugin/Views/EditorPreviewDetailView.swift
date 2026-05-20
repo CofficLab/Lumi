@@ -923,6 +923,13 @@ private struct EditorPreviewMarkdownView: View {
                     .contentShape(Rectangle())
                     .help(heading.title)
                     .draggable(makeDragContent(for: heading))
+                    .contextMenu {
+                        Button {
+                            addToChat(heading: heading)
+                        } label: {
+                            Label(String(localized: "Add to Chat", table: "EditorPreview"), systemImage: "bubble.left")
+                        }
+                    }
                 }
             }
             .padding(.vertical, 14)
@@ -938,6 +945,11 @@ private struct EditorPreviewMarkdownView: View {
         // 行号从 0 开始，显示时 +1
         let lineNumber = heading.lineNumber + 1
         return "\(fileURL.path):\(lineNumber) \(heading.title)"
+    }
+
+    private func addToChat(heading: MarkdownTOCHeading) {
+        let text = makeDragContent(for: heading)
+        NotificationCenter.postAddToChat(text: text)
     }
 
     private var previewTheme: MarkdownTheme {
