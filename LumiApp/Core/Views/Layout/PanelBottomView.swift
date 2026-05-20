@@ -7,7 +7,7 @@ import SwiftUI
 /// 由内核统一维护，聚合所有插件提供的 `BottomPanelTab`，
 /// 渲染统一的 Tab 栏 + 内容切换器。各插件只需提供 Tab 入口
 /// （图标 + 标题 + 内容视图），无需关心 Tab 栏的渲染和切换逻辑。
-struct BottomPanelBarView: View {
+struct PanelBottomView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
