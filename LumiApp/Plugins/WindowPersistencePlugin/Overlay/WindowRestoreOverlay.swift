@@ -9,6 +9,7 @@ struct WindowRestoreOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
+    @EnvironmentObject private var windowManagerVM: WindowManagerVM
     @State private var restored = false
 
     private let store = WindowStateStore()
@@ -36,7 +37,7 @@ extension WindowRestoreOverlay {
 
         let snapshots = store.loadWindowStates()
         guard !snapshots.isEmpty else {
-            RootContainer.shared.windowManagerVM.markInitialStateRestorationComplete()
+            windowManagerVM.markInitialStateRestorationComplete()
             restored = true
             return
         }
@@ -49,7 +50,7 @@ extension WindowRestoreOverlay {
             )
         }
 
-        RootContainer.shared.windowManagerVM.restoreSavedWindowStates(
+        windowManagerVM.restoreSavedWindowStates(
             routes: routes,
             openAdditionalWindow: { route in
                 NotificationCenter.default.post(
@@ -77,7 +78,7 @@ extension WindowRestoreOverlay {
 
     @MainActor
     private func saveCurrentStates() {
-        let scopes = RootContainer.shared.windowManagerVM.windowScopes
+        let scopes = windowManagerVM.windowScopes
         store.saveWindowStates(from: scopes)
     }
 }

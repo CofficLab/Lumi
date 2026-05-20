@@ -51,6 +51,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
         content
             .withMagicToast()
             // 全局 VM（所有窗口共享）
+            .environmentObject(container.windowManagerVM)
             .environmentObject(container.themeVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
