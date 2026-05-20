@@ -22,9 +22,13 @@ struct EditorPreviewDetailView: View, SuperLog {
     nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var editorVM: WindowEditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var viewModel = EditorPreviewViewModel()
     @StateObject private var automationState = InlinePreviewAutomationState.shared
+    @State private var isCleaningCurrentStringCatalog = false
+    @State private var isCleaningProjectStringCatalogs = false
+    @State private var isConfirmingProjectStringCatalogClean = false
 
     private var sourceText: String? {
         editorVM.service.content?.string
@@ -132,6 +136,7 @@ struct EditorPreviewDetailView: View, SuperLog {
             } else {
                 staticPreviewModeBadge
                 markdownTODOBadge
+                stringCatalogControls
             }
 
             Spacer()
@@ -150,6 +155,18 @@ struct EditorPreviewDetailView: View, SuperLog {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+        .confirmationDialog(
+            String(localized: "Clean all stale String Catalog keys in this project?", table: "EditorPreview"),
+            isPresented: $isConfirmingProjectStringCatalogClean,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "Clean Project String Catalogs", table: "EditorPreview"), role: .destructive) {
+                cleanProjectStringCatalogs()
+            }
+            Button(String(localized: "Cancel", table: "EditorPreview"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "This rewrites every .xcstrings file under the current project and removes entries marked as stale.", table: "EditorPreview"))
+        }
     }
 
     @ViewBuilder
@@ -193,6 +210,59 @@ struct EditorPreviewDetailView: View, SuperLog {
             .lineLimit(1)
             .help(String(localized: "Markdown TODO completion", table: "EditorPreview"))
         }
+    }
+
+    @ViewBuilder
+    private var stringCatalogControls: some View {
+        if case .stringCatalog = viewModel.previewMode {
+            if let catalog = currentStringCatalog {
+                if catalog.staleEntryCount > 0 {
+                    Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .help(String(localized: "Stale String Catalog keys in the current file", table: "EditorPreview"))
+                }
+
+                Button {
+                    cleanCurrentStringCatalog()
+                } label: {
+                    if isCleaningCurrentStringCatalog {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "trash")
+                    }
+                }
+                .buttonStyle(.borderless)
+                .disabled(isCleaningCurrentStringCatalog || catalog.staleEntryCount == 0)
+                .help(String(localized: "Clean stale keys in the current String Catalog file", table: "EditorPreview"))
+            }
+
+            Button {
+                isConfirmingProjectStringCatalogClean = true
+            } label: {
+                if isCleaningProjectStringCatalogs {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "trash.slash")
+                }
+            }
+            .buttonStyle(.borderless)
+            .disabled(
+                isCleaningProjectStringCatalogs ||
+                projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            )
+            .help(String(localized: "Clean stale keys in every String Catalog file in the current project", table: "EditorPreview"))
+        }
+    }
+
+    private var currentStringCatalog: StringCatalog? {
+        guard case .stringCatalog = viewModel.previewMode,
+              let sourceText else {
+            return nil
+        }
+        return try? StringCatalogParser.parse(sourceText)
     }
 
     @ViewBuilder
@@ -292,6 +362,84 @@ struct EditorPreviewDetailView: View, SuperLog {
         formatter.timeStyle = .medium
         return formatter
     }()
+
+    private func cleanCurrentStringCatalog() {
+        guard !isCleaningCurrentStringCatalog else { return }
+        isCleaningCurrentStringCatalog = true
+        defer { isCleaningCurrentStringCatalog = false }
+
+        do {
+            let removedCount = try viewModel.cleanCurrentStringCatalog(
+                fileURL: currentFileURL,
+                sourceText: sourceText,
+                editorService: editorVM.service
+            )
+            if removedCount > 0 {
+                alert_success(
+                    String(
+                        format: String(localized: "Removed %d stale String Catalog key(s).", table: "EditorPreview"),
+                        removedCount
+                    )
+                )
+            } else {
+                alert_info(String(localized: "No stale String Catalog keys found.", table: "EditorPreview"))
+            }
+        } catch {
+            alert_error(
+                String(
+                    format: String(localized: "Failed to clean String Catalog: %@", table: "EditorPreview"),
+                    error.localizedDescription
+                )
+            )
+        }
+    }
+
+    private func cleanProjectStringCatalogs() {
+        guard !isCleaningProjectStringCatalogs else { return }
+        let projectRootPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !projectRootPath.isEmpty else {
+            alert_warning(String(localized: "Select a project before cleaning String Catalogs.", table: "EditorPreview"))
+            return
+        }
+
+        isCleaningProjectStringCatalogs = true
+        Task {
+            do {
+                let summary = try await viewModel.cleanProjectStringCatalogs(
+                    projectRootPath: projectRootPath,
+                    currentFileURL: currentFileURL,
+                    currentSourceText: sourceText,
+                    editorService: editorVM.service
+                )
+                isCleaningProjectStringCatalogs = false
+
+                if summary.removedEntryCount > 0 {
+                    alert_success(
+                        String(
+                            format: String(localized: "Removed %d stale key(s) from %d String Catalog file(s).", table: "EditorPreview"),
+                            summary.removedEntryCount,
+                            summary.changedFileCount
+                        )
+                    )
+                } else {
+                    alert_info(
+                        String(
+                            format: String(localized: "Scanned %d String Catalog file(s); no stale keys found.", table: "EditorPreview"),
+                            summary.scannedFileCount
+                        )
+                    )
+                }
+            } catch {
+                isCleaningProjectStringCatalogs = false
+                alert_error(
+                    String(
+                        format: String(localized: "Failed to clean project String Catalogs: %@", table: "EditorPreview"),
+                        error.localizedDescription
+                    )
+                )
+            }
+        }
+    }
 
     @ViewBuilder
     private var entryStatusBadge: some View {

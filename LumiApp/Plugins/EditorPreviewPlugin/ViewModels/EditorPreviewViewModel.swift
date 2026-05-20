@@ -4,6 +4,7 @@ import LumiPreviewKit
 import MagicKit
 import os
 import SwiftUI
+import StringCatalogKit
 
 /// 预览插件的视图模型。
 ///
@@ -119,6 +120,12 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         let usedCache: Bool
         let previewCount: Int
         let selectedTitle: String
+    }
+
+    struct StringCatalogProjectCleanSummary: Equatable, Sendable {
+        let scannedFileCount: Int
+        let changedFileCount: Int
+        let removedEntryCount: Int
     }
 
     // MARK: - 已发布状态
@@ -929,6 +936,146 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     private func isFailed(_ status: SessionStatus) -> Bool {
         if case .failed = status { return true }
         return false
+    }
+
+    func cleanCurrentStringCatalog(
+        fileURL: URL?,
+        sourceText: String?,
+        editorService: EditorService
+    ) throws -> Int {
+        guard let fileURL, fileURL.pathExtension.lowercased() == "xcstrings" else {
+            return 0
+        }
+
+        let source: String
+        if let sourceText {
+            source = sourceText
+        } else {
+            source = try String(contentsOf: fileURL, encoding: .utf8)
+        }
+        let result = try StringCatalogCleaner.removingStaleEntries(from: source)
+        guard result.removedCount > 0 else {
+            return 0
+        }
+
+        if editorService.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
+            _ = editorService.replaceCurrentDocumentText(
+                result.source,
+                reason: "string_catalog_remove_stale_entries"
+            )
+            editorService.saveNow()
+        } else {
+            try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+
+        return result.removedCount
+    }
+
+    func cleanProjectStringCatalogs(
+        projectRootPath: String,
+        currentFileURL: URL?,
+        currentSourceText: String?,
+        editorService: EditorService
+    ) async throws -> StringCatalogProjectCleanSummary {
+        let rootURL = URL(fileURLWithPath: projectRootPath)
+        let currentStandardizedURL = currentFileURL?.standardizedFileURL
+        let cleanResult = try await Task.detached(priority: .userInitiated) {
+            try Self.cleanStringCatalogs(
+                under: rootURL,
+                currentFileURL: currentStandardizedURL,
+                currentSourceText: currentSourceText
+            )
+        }.value
+
+        if let currentCleanedSource = cleanResult.currentCleanedSource,
+           let currentStandardizedURL,
+           editorService.currentFileURL?.standardizedFileURL == currentStandardizedURL {
+            _ = editorService.replaceCurrentDocumentText(
+                currentCleanedSource,
+                reason: "string_catalog_remove_project_stale_entries"
+            )
+            editorService.saveNow()
+        }
+
+        return cleanResult.summary
+    }
+
+    private struct StringCatalogProjectCleanResult: Sendable {
+        let summary: StringCatalogProjectCleanSummary
+        let currentCleanedSource: String?
+    }
+
+    private nonisolated static func cleanStringCatalogs(
+        under rootURL: URL,
+        currentFileURL: URL?,
+        currentSourceText: String?
+    ) throws -> StringCatalogProjectCleanResult {
+        let fileManager = FileManager.default
+        let skipDirectoryNames: Set<String> = [
+            ".build", ".git", ".swiftpm", "DerivedData", "node_modules"
+        ]
+        guard let enumerator = fileManager.enumerator(
+            at: rootURL,
+            includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return StringCatalogProjectCleanResult(
+                summary: StringCatalogProjectCleanSummary(
+                    scannedFileCount: 0,
+                    changedFileCount: 0,
+                    removedEntryCount: 0
+                ),
+                currentCleanedSource: nil
+            )
+        }
+
+        var scannedFileCount = 0
+        var changedFileCount = 0
+        var removedEntryCount = 0
+        var currentCleanedSource: String?
+
+        for case let fileURL as URL in enumerator {
+            let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey])
+            if resourceValues.isDirectory == true {
+                if skipDirectoryNames.contains(fileURL.lastPathComponent) {
+                    enumerator.skipDescendants()
+                }
+                continue
+            }
+
+            guard resourceValues.isRegularFile == true,
+                  fileURL.pathExtension.lowercased() == "xcstrings" else {
+                continue
+            }
+
+            scannedFileCount += 1
+            let standardizedURL = fileURL.standardizedFileURL
+            let source: String
+            if standardizedURL == currentFileURL, let currentSourceText {
+                source = currentSourceText
+            } else {
+                source = try String(contentsOf: fileURL, encoding: .utf8)
+            }
+
+            let result = try StringCatalogCleaner.removingStaleEntries(from: source)
+            guard result.removedCount > 0 else { continue }
+
+            try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
+            if standardizedURL == currentFileURL {
+                currentCleanedSource = result.source
+            }
+            changedFileCount += 1
+            removedEntryCount += result.removedCount
+        }
+
+        return StringCatalogProjectCleanResult(
+            summary: StringCatalogProjectCleanSummary(
+                scannedFileCount: scannedFileCount,
+                changedFileCount: changedFileCount,
+                removedEntryCount: removedEntryCount
+            ),
+            currentCleanedSource: currentCleanedSource
+        )
     }
 
     private static let imageExtensions: Set<String> = [
