@@ -113,7 +113,7 @@ struct ContentView: View, SuperLog {
         .environment(\.windowScope, scope)
         .background {
             WindowAccessor { window in
-                WindowManager.shared.associateWindow(window, with: scope.id)
+                RootContainer.shared.windowManagerVM.associateWindow(window, with: scope.id)
                 window.title = scope.title
             }
         }
@@ -264,7 +264,7 @@ struct ContentViewBody<Content: View>: View {
 extension ContentView {
     func onAppear(scope: WindowScope) {
         // 注册窗口到 WindowManager
-        WindowManager.shared.registerScope(scope)
+        RootContainer.shared.windowManagerVM.registerScope(scope)
 
         // 应用默认配置
         if let defaultSidebarVisibility = defaultSidebarVisibility {
@@ -279,7 +279,7 @@ extension ContentView {
         scope.$title
             .receive(on: DispatchQueue.main)
             .sink { newTitle in
-                if let window = WindowManager.shared.window(for: scope.id) {
+                if let window = RootContainer.shared.windowManagerVM.window(for: scope.id) {
                     window.title = newTitle
                 }
             }

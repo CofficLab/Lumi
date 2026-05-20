@@ -190,9 +190,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// - Parameter path: 项目路径
     private func openProjectInNewWindow(path: String) {
         // 检查是否已经有窗口打开了这个项目
-        if let existingWindowId = WindowManager.shared.findWindow(withProject: path) {
+        if let existingWindowId = RootContainer.shared.windowManagerVM.findWindow(withProject: path) {
             // 聚焦到已有窗口
-            WindowManager.shared.activateWindow(existingWindowId)
+            RootContainer.shared.windowManagerVM.activateWindow(existingWindowId)
             if Self.verbose {
                 AppLogger.core.info("\(self.t)📂 项目已在窗口 \(existingWindowId.uuidString.prefix(8)) 中打开，聚焦该窗口")
             }

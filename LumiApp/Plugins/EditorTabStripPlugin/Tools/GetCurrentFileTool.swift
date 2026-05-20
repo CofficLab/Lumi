@@ -32,7 +32,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         // 获取当前活跃窗口的项目路径
         let projectPath = await MainActor.run {
-            WindowManager.shared.activeWindowScope?.projectPath
+            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
         }
 
         guard let projectPath else {

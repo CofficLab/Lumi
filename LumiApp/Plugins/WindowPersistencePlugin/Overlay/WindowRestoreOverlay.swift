@@ -36,7 +36,7 @@ extension WindowRestoreOverlay {
 
         let snapshots = store.loadWindowStates()
         guard !snapshots.isEmpty else {
-            WindowManager.shared.markInitialStateRestorationComplete()
+            RootContainer.shared.windowManagerVM.markInitialStateRestorationComplete()
             restored = true
             return
         }
@@ -49,7 +49,7 @@ extension WindowRestoreOverlay {
             )
         }
 
-        WindowManager.shared.restoreSavedWindowStates(
+        RootContainer.shared.windowManagerVM.restoreSavedWindowStates(
             routes: routes,
             openAdditionalWindow: { route in
                 NotificationCenter.default.post(
@@ -77,7 +77,7 @@ extension WindowRestoreOverlay {
 
     @MainActor
     private func saveCurrentStates() {
-        let scopes = WindowManager.shared.windowScopes
+        let scopes = RootContainer.shared.windowManagerVM.windowScopes
         store.saveWindowStates(from: scopes)
     }
 }

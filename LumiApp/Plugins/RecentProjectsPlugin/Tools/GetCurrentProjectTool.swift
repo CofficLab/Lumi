@@ -35,7 +35,7 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
         // 获取当前活跃窗口的项目
         let projectPath = await MainActor.run {
-            WindowManager.shared.activeWindowScope?.projectPath
+            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
         }
 
         guard let projectPath else {

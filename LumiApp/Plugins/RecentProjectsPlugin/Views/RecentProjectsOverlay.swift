@@ -103,7 +103,7 @@ extension RecentProjectsOverlay {
 extension RecentProjectsOverlay {
     @MainActor
     private func handleOnAppear() {
-        if WindowManager.shared.hasCompletedInitialStateRestoration {
+        if RootContainer.shared.windowManagerVM.hasCompletedInitialStateRestoration {
             initialWindowStateRestored = true
         }
         restoreIfNeeded()

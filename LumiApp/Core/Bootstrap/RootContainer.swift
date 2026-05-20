@@ -44,6 +44,7 @@ final class RootContainer: ObservableObject, SuperLog {
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
     
+    let windowManagerVM: WindowManagerVM
     let pluginVM: AppPluginVM
     let messageRendererVM: AppMessageRendererVM
     let themeVM: AppThemeVM
@@ -60,12 +61,12 @@ final class RootContainer: ObservableObject, SuperLog {
     
     /// 活跃窗口的 WindowConversationVM（过渡兼容，新代码用 WindowScope）
     var conversationVM: WindowConversationVM {
-        WindowManager.shared.activeWindowScope?.conversationVM ?? _fallbackWindowConversationVM
+        windowManagerVM.activeWindowScope?.conversationVM ?? _fallbackWindowConversationVM
     }
     
     /// 活跃窗口的 WindowLayoutVM（过渡兼容，新代码用 WindowScope）
     var layoutVM: WindowLayoutVM {
-        WindowManager.shared.activeWindowScope?.layoutVM ?? _fallbackWindowLayoutVM
+        windowManagerVM.activeWindowScope?.layoutVM ?? _fallbackWindowLayoutVM
     }
     
     // Fallback 实例（仅 conversationVM 需要兜底；layoutVM 和 editorVM 使用动态创建）
@@ -104,6 +105,7 @@ final class RootContainer: ObservableObject, SuperLog {
         // 全局 ViewModel
         // ========================================
         
+        self.windowManagerVM = WindowManagerVM()
         self.messageRendererVM = AppMessageRendererVM.shared
         self.themeVM = AppThemeVM()
         
@@ -237,6 +239,6 @@ final class RootContainer: ObservableObject, SuperLog {
     
     /// 活跃窗口的 EditorVM（过渡兼容）
     var editorVM: WindowEditorVM {
-        WindowManager.shared.activeWindowScope?.editorVM ?? WindowEditorVM(service: EditorService(editorExtensionRegistry: createEditorExtensionRegistry()))
+        windowManagerVM.activeWindowScope?.editorVM ?? WindowEditorVM(service: EditorService(editorExtensionRegistry: createEditorExtensionRegistry()))
     }
 }
