@@ -23,10 +23,9 @@ struct DockerImagesView: View {
             VStack(spacing: 0) {
                 // Toolbar
                 HStack {
-                    GlassTextField(
-                        title: "搜索",
+                    AppSearchBar(
                         text: $viewModel.searchText,
-                        placeholder: "Search images..."
+                        placeholder: LocalizedStringKey(String(localized: "Search images...", table: "DockerManager"))
                     )
 
                     Menu {
@@ -44,7 +43,11 @@ struct DockerImagesView: View {
                         .frame(width: 90)
                     }
 
-                    GlassButton(title: "Refresh", style: .secondary) {
+                    AppIconButton(
+                        systemImage: "arrow.clockwise",
+                        label: String(localized: "Refresh", table: "DockerManager"),
+                        size: .regular
+                    ) {
                         Task { await viewModel.refreshImages() }
                     }
                 }
@@ -94,10 +97,10 @@ struct DockerImagesView: View {
                         .font(.caption)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
-                    GlassButton(title: "Import", style: .secondary) {
+                    AppButton(String(localized: "Import", table: "DockerManager"), style: .secondary, size: .small) {
                         showFileImporter = true
                     }
-                    GlassButton(title: "Pull", style: .primary) {
+                    AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary, size: .small) {
                         showPullSheet = true
                     }
                 }
@@ -110,14 +113,10 @@ struct DockerImagesView: View {
             if let selected = viewModel.selectedImage {
                 DockerImageDetailView(image: selected, detail: viewModel.selectedImageDetail, history: viewModel.selectedImageHistory, viewModel: viewModel)
             } else {
-                VStack {
-                    Image(systemName: "cube.box")
-                        .font(.system(size: 48))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text(String(localized: "Select an image to view details", table: "DockerManager"))
-                        .font(.title2)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                }
+                AppEmptyState(
+                    icon: "cube.box",
+                    title: LocalizedStringKey(String(localized: "Select an image to view details", table: "DockerManager"))
+                )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Material.regularMaterial)
             }
@@ -139,8 +138,8 @@ struct DockerImagesView: View {
                 }
 
                 HStack {
-                    GlassButton(title: "Cancel", style: .ghost) { showPullSheet = false }
-                    GlassButton(title: "Pull", style: .primary) {
+                    AppButton(String(localized: "Cancel", table: "DockerManager"), style: .ghost) { showPullSheet = false }
+                    AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary) {
                         Task {
                             await viewModel.pullImage(pullImageName)
                             showPullSheet = false
@@ -169,8 +168,8 @@ struct DockerImagesView: View {
                 .frame(width: 320)
 
                 HStack {
-                    GlassButton(title: "Cancel", style: .ghost) { showTagSheet = false }
-                    GlassButton(title: "Confirm", style: .primary) {
+                    AppButton(String(localized: "Cancel", table: "DockerManager"), style: .ghost) { showTagSheet = false }
+                    AppButton(String(localized: "Confirm", table: "DockerManager"), style: .primary) {
                         if let img = imageToTag {
                             Task {
                                 await viewModel.tagImage(img, newTag: newTag)
@@ -236,10 +235,10 @@ struct DockerImageRow: View {
     let image: DockerImage
 
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             Image(systemName: "cube")
                 .foregroundColor(Color(hex: "0A84FF"))
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(image.name)
                     .font(.body)
                     .fontWeight(.medium)
@@ -250,13 +249,9 @@ struct DockerImageRow: View {
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             Spacer()
-            VStack(alignment: .trailing) {
-                Text(image.size)
-                    .font(.caption)
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text(image.createdSince)
-                    .font(.caption2)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            VStack(alignment: .trailing, spacing: 4) {
+                AppTag(image.size)
+                AppTag(image.createdSince)
             }
         }
         .padding(.vertical, 4)
@@ -274,18 +269,15 @@ struct DockerImageDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
-                HStack {
+                AppCard(style: .subtle, cornerRadius: 8) {
+                    HStack {
                     VStack(alignment: .leading) {
                         Text(image.repository)
                             .font(.title)
                             .fontWeight(.bold)
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         HStack {
-                            Text(image.tag)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(hex: "0A84FF").opacity(0.1))
-                                .cornerRadius(4)
+                            AppTag(image.tag, style: .accent)
                             Text(image.imageID)
                                 .font(.monospaced(.caption)())
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
@@ -301,13 +293,12 @@ struct DockerImageDetailView: View {
                         showDeleteAlert = true
                     }
                 }
-                .padding()
-                .background(Material.regularMaterial)
-                .cornerRadius(8)
+                }
 
                 // Scan Result
                 if let scanResult = viewModel.scanResult {
-                    VStack(alignment: .leading, spacing: 8) {
+                    AppCard(style: .subtle, cornerRadius: 8) {
+                        VStack(alignment: .leading, spacing: 8) {
                         Text(String(localized: "Security Scan", table: "DockerManager"))
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
@@ -322,26 +313,24 @@ struct DockerImageDetailView: View {
                         .background(Material.regularMaterial)
                         .cornerRadius(4)
                     }
-                    .padding()
-                    .background(Material.regularMaterial)
-                    .cornerRadius(8)
+                    }
                 }
 
                 // Info Grid
                 if let detail = detail {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    AppCard(style: .subtle, cornerRadius: 8) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         InfoRow(title: "Architecture", value: detail.Architecture)
                         InfoRow(title: "OS", value: detail.Os)
                         InfoRow(title: "Author", value: detail.Author ?? "-")
                         InfoRow(title: "Virtual Size", value: ByteCountFormatter.string(fromByteCount: detail.VirtualSize ?? 0, countStyle: .file))
                     }
-                    .padding()
-                    .background(Material.regularMaterial)
-                    .cornerRadius(8)
+                    }
 
                     // Config
                     if let config = detail.Config {
-                        VStack(alignment: .leading, spacing: 8) {
+                        AppCard(style: .subtle, cornerRadius: 8) {
+                            VStack(alignment: .leading, spacing: 8) {
                             Text(String(localized: "Configuration", table: "DockerManager"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
@@ -368,14 +357,13 @@ struct DockerImageDetailView: View {
                                 }
                             }
                         }
-                        .padding()
-                        .background(Material.regularMaterial)
-                        .cornerRadius(8)
+                        }
                     }
                 }
 
                 // History/Layers
-                VStack(alignment: .leading, spacing: 8) {
+                AppCard(style: .subtle, cornerRadius: 8) {
+                    VStack(alignment: .leading, spacing: 8) {
                     Text(String(localized: "History / Layers", table: "DockerManager"))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
@@ -402,9 +390,7 @@ struct DockerImageDetailView: View {
                         GlassDivider()
                     }
                 }
-                .padding()
-                .background(Material.regularMaterial)
-                .cornerRadius(8)
+                }
             }
             .padding()
         }
@@ -426,14 +412,7 @@ struct InfoRow: View {
     let value: String
 
     var body: some View {
-        HStack {
-            Text(title)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            Spacer()
-            Text(value)
-                .fontWeight(.medium)
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-        }
+        GlassKeyValueRow(label: title, value: value)
     }
 }
 
