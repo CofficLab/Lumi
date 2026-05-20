@@ -1,5 +1,6 @@
 import Foundation
 import os
+import GoEditorCore
 import MagicKit
 import ShellKit
 
@@ -89,6 +90,14 @@ struct LSPConfig: SuperLog {
         case "typescript", "javascript":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
         case "go":
+            if let goConfig = GoLSPConfig.resolve() {
+                return ServerConfig(
+                    languageId: languageId,
+                    execPath: goConfig.goplsPath,
+                    arguments: goConfig.serverArguments,
+                    env: goConfig.processEnvironment
+                )
+            }
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["serve"])
         case "html", "css", "scss", "sass", "less":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])

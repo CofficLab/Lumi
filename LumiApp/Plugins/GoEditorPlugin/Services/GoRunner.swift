@@ -1,4 +1,5 @@
 import Foundation
+import GoEditorCore
 import MagicKit
 import os
 
@@ -82,6 +83,17 @@ actor GoRunner: SuperLog {
             exitCode: Int(process.terminationStatus),
             stdout: String(data: stdoutData, encoding: .utf8) ?? "",
             stderr: String(data: stderrData, encoding: .utf8) ?? ""
+        )
+    }
+
+    func execute(
+        _ toolCommand: any GoToolCommand,
+        workingDirectory: String
+    ) async -> GoRunResult {
+        await execute(
+            command: toolCommand.command,
+            arguments: toolCommand.arguments,
+            workingDirectory: workingDirectory
         )
     }
 

@@ -34,14 +34,22 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         let buildManager = GoBuildManager()
+        let testManager = GoTestManager()
+        registry.registerLanguageIntegrationCapability(
+            GoLanguageIntegrationCapability()
+        )
+        registry.registerCompletionContributor(
+            GoCompletionContributor()
+        )
         registry.registerCommandContributor(
-            GoCommandContributor(buildManager: buildManager)
+            GoCommandContributor(buildManager: buildManager, testManager: testManager)
         )
         registry.registerPanelContributor(
-            GoPanelContributor(buildManager: buildManager)
+            GoPanelContributor(buildManager: buildManager, testManager: testManager)
         )
         registry.registerStatusItemContributor(
-            GoStatusItemContributor(buildManager: buildManager)
+            GoStatusItemContributor(buildManager: buildManager, testManager: testManager)
         )
+        registry.registerGutterDecorationContributor(GoTestGutterContributor())
     }
 }

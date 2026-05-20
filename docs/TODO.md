@@ -382,30 +382,30 @@
 
 ### Phase 1: LSP 基础
 
-- [ ] GoLSPConfig: gopls 配置管理
-- [ ] GoProjectDetector: go.mod 定位
-- [ ] GoEnvResolver: GOPATH/GOROOT 解析
-- [ ] GoCompletionPipeline: 补全策略定制
+- [x] GoLSPConfig: gopls 配置管理
+- [x] GoProjectDetector: go.mod 定位
+- [x] GoEnvResolver: GOPATH/GOROOT 解析
+- [x] GoCompletionPipeline: 补全策略定制
 
 ### Phase 2: 工程命令
 
-- [ ] GoBuildCommand + GoBuildManager: go build 封装
-- [ ] GoBuildOutputParser + GoBuildOutputView: 构建输出解析与面板
-- [ ] GoFmtCommand、GoModCommand
+- [x] GoBuildCommand + GoBuildManager: go build 封装
+- [x] GoBuildOutputParser + GoBuildOutputView: 构建输出解析与面板
+- [x] GoFmtCommand、GoModCommand
 
 ### Phase 3: 测试系统
 
-- [ ] GoTestCommand + GoTestManager、GoTestOutputParser
-- [ ] GoTestResultView、Gutter 测试图标集成
+- [x] GoTestCommand + GoTestManager、GoTestOutputParser
+- [x] GoTestResultView、Gutter 测试图标集成
 
 ### Phase 4: 体验打磨
 
-- [ ] GoInlayHintPipeline、保存时自动格式化
-- [ ] GoStatusBarIndicator、代码透镜
+- [x] GoInlayHintPipeline、保存时自动格式化
+- [x] GoStatusBarIndicator、代码透镜
 
 ### Phase 5: 调试系统
 
-- [ ] DelveAdapter: Delve DAP 适配
+- [x] DelveAdapter: Delve DAP 适配
 
 ---
 

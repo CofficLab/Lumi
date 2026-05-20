@@ -1,4 +1,5 @@
 import Foundation
+import GoEditorCore
 import SwiftUI
 import MagicKit
 
@@ -16,18 +17,20 @@ final class GoPanelContributor: SuperEditorPanelContributor {
     }
 
     private let buildManager: GoBuildManager
+    private let testManager: GoTestManager
 
     /// 当前激活的面板 nil（由面板系统管理）
     @State private var activeTab: Tab = .build
 
-    init(buildManager: GoBuildManager) {
+    init(buildManager: GoBuildManager, testManager: GoTestManager) {
         self.buildManager = buildManager
+        self.testManager = testManager
     }
 
     func providePanels(state: EditorState) -> [EditorPanelSuggestion] {
         // 仅对 Go 文件显示面板
         guard state.detectedLanguage?.tsName == "go" else { return [] }
-        guard buildManager.state != .idle || !buildManager.issues.isEmpty || !buildManager.testEvents.isEmpty || buildManager.state == .building || buildManager.state == .testing else {
+        guard buildManager.state != .idle || !buildManager.issues.isEmpty || testManager.state != .idle || !testManager.testEvents.isEmpty else {
             return []
         }
 
@@ -68,7 +71,7 @@ final class GoPanelContributor: SuperEditorPanelContributor {
                 content: { [weak self] _ in
                     guard let self else { return AnyView(EmptyView()) }
                     return AnyView(
-                        GoTestResultView(buildManager: self.buildManager)
+                        GoTestResultView(testManager: self.testManager)
                     )
                 }
             )
@@ -80,6 +83,8 @@ final class GoPanelContributor: SuperEditorPanelContributor {
     private func shouldShow(for state: EditorState) -> Bool {
         guard state.detectedLanguage?.tsName == "go" else { return false }
         return buildManager.state == .building
+            || buildManager.state == .formatting
+            || buildManager.state == .tidying
             || buildManager.state == .success
             || buildManager.state == .failed
             || !buildManager.issues.isEmpty
@@ -87,7 +92,7 @@ final class GoPanelContributor: SuperEditorPanelContributor {
 
     private func shouldShowTest(for state: EditorState) -> Bool {
         guard state.detectedLanguage?.tsName == "go" else { return false }
-        return buildManager.state == .testing
-            || !buildManager.testEvents.isEmpty
+        return testManager.state == .testing
+            || !testManager.testEvents.isEmpty
     }
 }
