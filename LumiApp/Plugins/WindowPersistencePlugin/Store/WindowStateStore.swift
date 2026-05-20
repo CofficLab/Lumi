@@ -16,18 +16,17 @@ final class WindowStateStore: @unchecked Sendable {
     /// 从 WindowScope 列表保存窗口状态（异步）
     @MainActor
     func saveWindowStates(from scopes: [WindowScope]) {
-        let records = scopes.prefix(Self.maxPersistedWindowCount).map { scope in
-            WindowPersistenceRecord(
-                windowId: scope.id,
-                conversationId: scope.selectedConversationId,
-                projectPath: scope.projectPath,
-                activePanel: scope.activePanel.rawValue,
-                editorState: scope.editorState,
-                sidebarVisibility: scope.sidebarVisibility,
-                createdAt: scope.createdAt
-            )
-        }
+        let records = records(from: scopes)
         queue.async { [self] in
+            persist(records)
+        }
+    }
+
+    /// 从 WindowScope 列表保存窗口状态（同步）
+    @MainActor
+    func saveWindowStatesSynchronously(from scopes: [WindowScope]) {
+        let records = records(from: scopes)
+        queue.sync { [self] in
             persist(records)
         }
     }
@@ -80,5 +79,20 @@ final class WindowStateStore: @unchecked Sendable {
     private func statesFileURL() -> URL {
         settingsDirURL()
             .appendingPathComponent(Self.statesFileName, isDirectory: false)
+    }
+
+    @MainActor
+    private func records(from scopes: [WindowScope]) -> [WindowPersistenceRecord] {
+        scopes.prefix(Self.maxPersistedWindowCount).map { scope in
+            WindowPersistenceRecord(
+                windowId: scope.id,
+                conversationId: scope.selectedConversationId,
+                projectPath: scope.projectPath,
+                activePanel: scope.activePanel.rawValue,
+                editorState: scope.editorState,
+                sidebarVisibility: scope.sidebarVisibility,
+                createdAt: scope.createdAt
+            )
+        }
     }
 }

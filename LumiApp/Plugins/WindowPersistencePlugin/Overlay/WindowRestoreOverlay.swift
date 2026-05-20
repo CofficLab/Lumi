@@ -1,3 +1,4 @@
+import AppKit
 import MagicKit
 import SwiftUI
 
@@ -10,81 +11,143 @@ struct WindowRestoreOverlay<Content: View>: View, SuperLog {
     let content: Content
 
     @EnvironmentObject private var windowManagerVM: WindowManagerVM
-    @State private var restored = false
-
-    private let maxRestoredWindowCount = 20
-    private let store = WindowStateStore()
 
     var body: some View {
         content
             .onAppear {
-                handleOnAppear()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
-                handleWindowWillClose(notification)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-                handleAppWillTerminate()
+                let coordinator = WindowPersistenceCoordinator.shared
+                coordinator.attach(windowManagerVM: windowManagerVM)
+                coordinator.restoreIfNeeded(
+                    windowManagerVM: windowManagerVM,
+                    openAdditionalWindow: { route in
+                        NotificationCenter.default.post(
+                            name: .openWindowWithRoute,
+                            object: nil,
+                            userInfo: ["route": route]
+                        )
+                    }
+                )
             }
     }
 }
 
-// MARK: - Event Handler
+// MARK: - Coordinator
 
-extension WindowRestoreOverlay {
-    @MainActor
-    private func handleOnAppear() {
-        guard !restored else { return }
-        guard windowManagerVM.beginInitialStateRestorationIfNeeded() else {
-            restored = true
-            return
-        }
+@MainActor
+private final class WindowPersistenceCoordinator {
+    static let shared = WindowPersistenceCoordinator()
 
-        let snapshots = store.loadWindowStates()
-        guard !snapshots.isEmpty else {
-            windowManagerVM.markInitialStateRestorationComplete()
-            restored = true
-            return
-        }
+    private let maxRestoredWindowCount = 20
+    private let store = WindowStateStore()
 
-        let routes = snapshots.prefix(maxRestoredWindowCount).map { snapshot in
-            LumiWindowRoute(
-                id: snapshot.windowId,
-                conversationId: snapshot.conversationId,
-                projectPath: snapshot.projectPath
-            )
-        }
+    private weak var windowManagerVM: WindowManagerVM?
+    private var observers: [NSObjectProtocol] = []
+    private var pendingRecords: [UUID: WindowPersistenceRecord] = [:]
 
-        windowManagerVM.restoreSavedWindowStates(
-            routes: routes,
-            openAdditionalWindow: { route in
-                NotificationCenter.default.post(
-                    name: .openWindowWithRoute,
-                    object: nil,
-                    userInfo: ["route": route]
-                )
+    func attach(windowManagerVM: WindowManagerVM) {
+        self.windowManagerVM = windowManagerVM
+        guard observers.isEmpty else { return }
+
+        let windowClosedObserver = NotificationCenter.default.addObserver(
+            forName: .windowClosed,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.saveCurrentStates()
             }
+        }
+
+        let willTerminateObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.saveCurrentStatesSynchronously()
+            }
+        }
+
+        observers = [windowClosedObserver, willTerminateObserver]
+    }
+
+    func restoreIfNeeded(
+        windowManagerVM: WindowManagerVM,
+        openAdditionalWindow: (LumiWindowRoute) -> Void
+    ) {
+        applyPendingRecords(to: windowManagerVM.windowScopes)
+
+        guard windowManagerVM.beginInitialStateRestorationIfNeeded() else { return }
+
+        let records = Array(store.loadWindowStates().prefix(maxRestoredWindowCount))
+        guard !records.isEmpty else {
+            windowManagerVM.markInitialStateRestorationComplete()
+            return
+        }
+
+        pendingRecords.removeAll()
+        for record in records {
+            pendingRecords[record.windowId] = record
+        }
+
+        if let firstScope = windowManagerVM.windowScopes.first,
+           let firstRecord = records.first {
+            apply(firstRecord, to: firstScope)
+        } else {
+            Task { @MainActor [weak self, weak windowManagerVM] in
+                guard let windowManagerVM else { return }
+                self?.applyPendingRecords(to: windowManagerVM.windowScopes)
+            }
+        }
+
+        for record in records.dropFirst() {
+            openAdditionalWindow(route(for: record))
+        }
+
+        windowManagerVM.markInitialStateRestorationComplete()
+    }
+
+    private func applyPendingRecords(to scopes: [WindowScope]) {
+        for scope in scopes {
+            guard let record = pendingRecords[scope.id] else { continue }
+            apply(record, to: scope)
+        }
+    }
+
+    private func apply(_ record: WindowPersistenceRecord, to scope: WindowScope) {
+        scope.applyRoute(route(for: record))
+
+        if let activePanel = record.activePanel.flatMap(WindowActivePanel.init(rawValue:)) {
+            scope.activePanel = activePanel
+        }
+
+        if let editorState = record.editorState {
+            scope.editorState = editorState
+        }
+
+        if let sidebarVisibility = record.sidebarVisibility {
+            scope.sidebarVisibility = sidebarVisibility
+        }
+
+        pendingRecords.removeValue(forKey: scope.id)
+    }
+
+    private func route(for record: WindowPersistenceRecord) -> LumiWindowRoute {
+        LumiWindowRoute(
+            id: record.windowId,
+            conversationId: record.conversationId,
+            projectPath: record.projectPath
         )
-
-        restored = true
     }
 
-    private func handleWindowWillClose(_ notification: Notification) {
-        Task { @MainActor in
-            saveCurrentStates()
-        }
-    }
-
-    private func handleAppWillTerminate() {
-        Task { @MainActor in
-            saveCurrentStates()
-        }
-    }
-
-    @MainActor
     private func saveCurrentStates() {
-        let scopes = windowManagerVM.windowScopes
+        guard let scopes = windowManagerVM?.windowScopes else { return }
         store.saveWindowStates(from: scopes)
+    }
+
+    private func saveCurrentStatesSynchronously() {
+        guard let scopes = windowManagerVM?.windowScopes else { return }
+        store.saveWindowStatesSynchronously(from: scopes)
     }
 }
 
