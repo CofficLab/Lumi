@@ -123,7 +123,6 @@ final class PreviewRenderer {
     init() {
         ensureWindow()
         installDemoView()
-        diagnostic("init pointSize=\(format(pointSize)) scale=\(format(scale))")
     }
 
     // MARK: - 公开方法
@@ -145,7 +144,6 @@ final class PreviewRenderer {
     /// 符号约定：`@_cdecl(symbolName) func -> UnsafeMutableRawPointer?`，
     /// 返回 `Unmanaged.passRetained(view).toOpaque()`（+1 retained `NSView`）。
     func loadDylib(path: String, symbolName: String) throws {
-        diagnostic("loadDylib begin path=\((path as NSString).lastPathComponent) pointSize=\(format(pointSize)) previewBefore=\(describe(previewView)) window=\(describe(window))")
         guard FileManager.default.fileExists(atPath: path) else {
             throw LoadDylibError.fileNotFound(path)
         }
@@ -189,12 +187,10 @@ final class PreviewRenderer {
         debugStateProvider = makeDebugStateProvider(handle: handle)
         usesDefaultCanvasForUnconstrainedPreview = true
         installView(view)
-        diagnostic("loadDylib installed path=\((path as NSString).lastPathComponent) previewAfter=\(describe(previewView)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize))")
     }
 
     /// 卸载当前用户 dylib，恢复内置空白视图。
     func unloadDylib() {
-        diagnostic("unloadDylib previewBefore=\(describe(previewView))")
         installDemoView()
         debugStateProvider = nil
         if let handle = loadedDylibHandle {
@@ -355,7 +351,6 @@ final class PreviewRenderer {
         // 让 hosting view 成为 firstResponder：键盘事件能直达 SwiftUI TextField。
         // NSHostingView 通过 _NSResponderChain 内部转发到具体控件。
         window.makeFirstResponder(view)
-        diagnostic("installView type=\(String(describing: type(of: view))) frame=\(format(view.frame.size)) bounds=\(format(view.bounds.size)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize)) window=\(describe(window))")
     }
 
     private func applyRenderSize() {
@@ -408,7 +403,6 @@ final class PreviewRenderer {
         window?.setContentSize(pointSize)
         markDirty()
         prepareForInputDispatch()
-        diagnostic("updateExistingPreview applied preview=\(describe(previewView)) fitting=\(format(previewView.fittingSize)) intrinsic=\(format(previewView.intrinsicContentSize))")
         return true
     }
 
