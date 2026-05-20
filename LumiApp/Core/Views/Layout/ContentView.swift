@@ -252,8 +252,9 @@ struct ContentViewBody<Content: View>: View {
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()
             }
-            .overlay(alignment: .bottom) {
+            .overlay {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
     }
 }
@@ -264,6 +265,13 @@ extension ContentView {
     func onAppear(scope: WindowScope) {
         // 注册窗口到 WindowManager
         RootContainer.shared.windowManagerVM.registerScope(scope)
+
+        if let path = initialProjectPath, !path.isEmpty, !scope.projectVM.isProjectSelected {
+            let name = URL(fileURLWithPath: path).lastPathComponent
+            scope.projectVM.switchProject(
+                to: Project(name: name, path: path, lastUsed: Date())
+            )
+        }
 
         // 应用默认配置
         if let defaultSidebarVisibility = defaultSidebarVisibility {

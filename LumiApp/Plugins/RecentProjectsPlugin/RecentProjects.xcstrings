@@ -111,24 +111,24 @@
         }
       }
     },
-    "Manage recent projects and current project state": {
+    "Manage the global recent projects list": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage recent projects and current project state"
+            "value": "Manage the global recent projects list"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理最近项目和当前项目状态"
+            "value": "管理全局最近项目列表"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理最近專案和當前專案狀態"
+            "value": "管理全域最近專案列表"
           }
         }
       }

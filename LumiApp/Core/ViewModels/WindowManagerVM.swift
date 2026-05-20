@@ -60,6 +60,7 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         windowScopes.append(scope)
         scopeMap[scope.id] = scope
         setActiveWindow(scope.id)
+        NotificationCenter.postWindowScopeDidRegister(scope)
 
         if Self.verbose {
             let count = self.windowScopes.count
@@ -69,14 +70,15 @@ final class WindowManagerVM: ObservableObject, SuperLog {
 
     /// 窗口关闭时注销，仅发出通知（存储由插件负责）
     func unregisterScope(_ windowId: UUID) {
+        // 先通知持久化（此时 scope 仍在 windowScopes 中），避免保存空列表覆盖磁盘状态
+        NotificationCenter.postWindowClosed(windowId)
+
         windowScopes.removeAll { $0.id == windowId }
         scopeMap.removeValue(forKey: windowId)
 
         if activeWindowId == windowId {
             activeWindowId = windowScopes.first?.id
         }
-
-        NotificationCenter.postWindowClosed(windowId)
     }
 
     /// 设置活跃窗口

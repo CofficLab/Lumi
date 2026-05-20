@@ -1,5 +1,6 @@
-import Foundation
+import AppKit
 import Combine
+import Foundation
 import MagicAlert
 import os
 
@@ -77,6 +78,14 @@ final class AutomationController: SuperLog {
         case "button.click", "buttonClick":
             handleButtonClick(payload: payload)
 
+        // 项目持久化自测
+        case "project.select", "projectSelect":
+            handleProjectSelect(payload: payload)
+        case "project.debug_state", "projectDebugState":
+            handleProjectDebugState()
+        case "app.terminate", "appTerminate":
+            handleAppTerminate()
+
         default:
             Self.logger.info("🤖 Unhandled action: \(action, privacy: .public)")
         }
@@ -146,6 +155,50 @@ final class AutomationController: SuperLog {
 
         Self.logger.info("🤖 File opened: \(url.lastPathComponent, privacy: .public)")
         alert_info("自动化测试：打开文件 \(url.lastPathComponent)")
+    }
+
+    /// 模拟用户选择当前窗口项目并触发持久化
+    private func handleProjectSelect(payload: [String: Any]?) {
+        guard let path = payload?["path"] as? String, !path.isEmpty else {
+            Self.logger.warning("🤖 project.select: missing 'path' in payload")
+            return
+        }
+
+        guard let scope = RootContainer.shared.windowManagerVM.activeWindowScope else {
+            Self.logger.warning("🤖 project.select: no active window scope")
+            return
+        }
+
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        scope.projectVM.switchProject(to: Project(name: name, path: path, lastUsed: Date()))
+        NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
+        NotificationCenter.postCurrentProjectDidChange(name: name, path: path)
+
+        Self.logger.info("🤖 project.select: \(path, privacy: .public)")
+        alert_info("自动化测试：选择项目 \(name)")
+    }
+
+    /// 输出窗口/磁盘项目状态到日志
+    private func handleProjectDebugState() {
+        let snapshot = WindowPersistenceCoordinator.shared.debugSnapshot()
+        if let data = try? JSONSerialization.data(withJSONObject: snapshot, options: [.prettyPrinted]),
+           let text = String(data: data, encoding: .utf8) {
+            Self.logger.info("🤖 project.debug_state:\n\(text, privacy: .public)")
+        }
+        let windowManagerVM = RootContainer.shared.windowManagerVM
+        let scope = windowManagerVM.activeWindowScope
+        let selected = scope?.projectVM.isProjectSelected ?? false
+        let path = scope?.projectPath ?? ""
+        let scopeCount = windowManagerVM.windowScopes.count
+        let wouldShowOverlay = !(scope?.projectVM.isProjectSelected ?? false)
+        alert_info(
+            "自动化：scopes=\(scopeCount) 项目=\(selected ? path : "无") 选项目界面=\(wouldShowOverlay ? "会显示" : "不显示")"
+        )
+    }
+
+    private func handleAppTerminate() {
+        Self.logger.info("🤖 app.terminate")
+        NSApp.terminate(nil)
     }
 
     /// 处理通用按钮点击

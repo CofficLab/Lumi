@@ -1,8 +1,13 @@
 import Foundation
+import os
 
 /// 窗口状态持久化存储
 /// 负责窗口状态的磁盘读写，独立于内核（WindowManager）。
 final class WindowStateStore: @unchecked Sendable {
+    private static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.window-persistence.store"
+    )
     private let queue = DispatchQueue(label: "WindowStateStore.queue", qos: .userInitiated)
 
     private static let pluginDirName = "WindowPersistence"
@@ -34,8 +39,23 @@ final class WindowStateStore: @unchecked Sendable {
     /// 加载所有窗口的状态快照（同步）
     func loadWindowStates() -> [WindowPersistenceRecord] {
         queue.sync { [self] in
-            guard let data = try? Data(contentsOf: statesFileURL()) else { return [] }
-            return (try? JSONDecoder().decode([WindowPersistenceRecord].self, from: data)) ?? []
+            let fileURL = statesFileURL()
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                Self.logger.info("🪟 window_states.json missing at \(fileURL.path, privacy: .public)")
+                return []
+            }
+            guard let data = try? Data(contentsOf: fileURL) else {
+                Self.logger.error("🪟 failed to read window_states.json")
+                return []
+            }
+            do {
+                let records = try JSONDecoder().decode([WindowPersistenceRecord].self, from: data)
+                Self.logger.info("🪟 decoded \(records.count, privacy: .public) window state record(s)")
+                return records
+            } catch {
+                Self.logger.error("🪟 decode window_states.json failed: \(String(describing: error), privacy: .public)")
+                return []
+            }
         }
     }
 
@@ -87,6 +107,7 @@ final class WindowStateStore: @unchecked Sendable {
             WindowPersistenceRecord(
                 windowId: scope.id,
                 conversationId: scope.selectedConversationId,
+                projectPath: scope.projectPath,
                 activePanel: scope.activePanel.rawValue,
                 editorState: scope.editorState,
                 sidebarVisibility: scope.sidebarVisibility,

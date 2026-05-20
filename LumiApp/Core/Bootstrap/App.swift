@@ -60,15 +60,7 @@ struct CoreApp: App {
         // 工具栏使用统一样式，不显示传统标题。
         // 每个窗口创建独立的 WindowScope，实现窗口级状态隔离。
         WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
-            let scope = WindowScope(
-                route: route.wrappedValue ?? LumiWindowRoute(),
-                container: RootContainer.shared
-            )
-            ContentLayout(
-                conversationId: route.wrappedValue?.conversationId,
-                projectPath: route.wrappedValue?.projectPath
-            )
-                .inRootView(scope: scope)
+            MainWindowRootView(route: route.wrappedValue ?? LumiWindowRoute())
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
