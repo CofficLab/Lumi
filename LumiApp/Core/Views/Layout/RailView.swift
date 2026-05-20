@@ -16,7 +16,7 @@ struct RailView: View {
     static let minWidth: CGFloat = 200
 
     /// Rail 栏默认最大宽度
-    static let maxWidth: CGFloat = 300
+    static let maxWidth: CGFloat = 420
 
     /// 持久化 key
     private let selectedTabStorageKey = "Split.Rail.SelectedTab"
