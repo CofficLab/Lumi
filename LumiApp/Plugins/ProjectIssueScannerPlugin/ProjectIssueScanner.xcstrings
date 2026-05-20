@@ -1,0 +1,50 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Project Issue Scanner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project Issue Scanner"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目问题扫描"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案問題掃描"
+          }
+        }
+      }
+    },
+    "Scans for project issues during idle time and hints them to the LLM." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scans for project issues during idle time and hints them to the LLM."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空闲时扫描项目中的潜在问题，并在对话时提示给 LLM。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
