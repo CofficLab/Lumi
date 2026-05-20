@@ -1,19 +1,20 @@
 import MagicKit
 import SwiftUI
 
-/// 最近项目持久化覆盖层
-/// 在 RootView 出现时恢复最近项目列表和当前项目，监听项目切换保存，
+/// 最近项目覆盖层
+/// 在 RootView 出现时恢复最近项目列表，监听项目切换保存，
 /// 并在项目切换时自动联动切换到关联的对话。
 ///
 /// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
-struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
+/// 窗口级项目状态（当前项目）的持久化由 WindowPersistencePlugin 负责。
+struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
-    @EnvironmentObject private var recentProjectsVM: AppRecentProjectsVM
+    @EnvironmentObject private var recentProjectsVM: AppProjectsVM
 
     let content: Content
 
@@ -34,6 +35,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
                     recentProjects: recentProjectsVM.recentProjects,
                     isFileImporterPresented: $isFileImporterPresented,
                     onSelectProject: { project in
+                        recentProjectsVM.addProject(project)
                         projectVM.switchProject(to: project)
                     },
                     onAddProject: { url in
@@ -64,29 +66,22 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     }
 }
 
-// MARK: - View
-
 // MARK: - Action
 
-extension RecentProjectsPersistenceOverlay {
+extension RecentProjectsOverlay {
     private func restoreIfNeeded() {
         guard !restored, restoreTask == nil else { return }
 
+        // 窗口级项目状态由 WindowPersistencePlugin 负责恢复，
+        // 这里只恢复全局最近项目列表
         restoreTask = Task { @MainActor [store] in
-            let snapshot = await Task.detached(priority: .utility) {
-                (
-                    projects: store.loadProjects(),
-                    currentProject: store.getCurrentProject()
-                )
+            let projects = await Task.detached(priority: .utility) {
+                store.loadProjects()
             }.value
 
             guard !Task.isCancelled else { return }
 
-            recentProjectsVM.setRecentProjects(snapshot.projects)
-
-            if let currentProject = snapshot.currentProject {
-                projectVM.switchProject(to: currentProject)
-            }
+            recentProjectsVM.setRecentProjects(projects)
 
             setRestored(true)
             restoreTask = nil
@@ -96,7 +91,7 @@ extension RecentProjectsPersistenceOverlay {
 
 // MARK: - Setter
 
-extension RecentProjectsPersistenceOverlay {
+extension RecentProjectsOverlay {
     @MainActor
     private func setRestored(_ value: Bool) {
         restored = value
@@ -105,7 +100,7 @@ extension RecentProjectsPersistenceOverlay {
 
 // MARK: - Event Handler
 
-extension RecentProjectsPersistenceOverlay {
+extension RecentProjectsOverlay {
     @MainActor
     private func handleOnAppear() {
         if WindowManager.shared.hasCompletedInitialStateRestoration {
@@ -119,9 +114,6 @@ extension RecentProjectsPersistenceOverlay {
         guard !newPath.isEmpty else { return }
         let name = projectVM.currentProjectName
         store.addProject(name: name, path: newPath)
-
-        // 同时更新持久化的当前项目
-        store.setCurrentProject(name: name, path: newPath)
 
         // 项目切换 → 联动切换对话
         // 仅在真正切换时触发（oldPath != newPath），跳过首次恢复
@@ -151,7 +143,7 @@ extension RecentProjectsPersistenceOverlay {
 
 // MARK: - Project Add Helper
 
-extension RecentProjectsPersistenceOverlay {
+extension RecentProjectsOverlay {
     private func addProjectAndSwitch(to url: URL) {
         let standardizedURL = url.standardizedFileURL
         let project = Project(
@@ -160,16 +152,14 @@ extension RecentProjectsPersistenceOverlay {
             lastUsed: Date()
         )
         store.addProject(name: project.name, path: project.path)
-        var projects = recentProjectsVM.recentProjects.filter { $0.path != project.path }
-        projects.insert(project, at: 0)
-        recentProjectsVM.setRecentProjects(projects)
+        recentProjectsVM.addProject(project)
         projectVM.switchProject(to: project)
     }
 }
 
 // MARK: - Project-Conversation Sync
 
-extension RecentProjectsPersistenceOverlay {
+extension RecentProjectsOverlay {
     /// 项目切换时，自动切换到该项目最近使用的对话
     /// 如果该项目没有关联对话，则新建一个
     private func switchConversationForProject(_ projectPath: String) {
@@ -200,6 +190,6 @@ extension RecentProjectsPersistenceOverlay {
 // MARK: - Preview
 
 #Preview("Recent Projects Persistence Overlay") {
-    RecentProjectsPersistenceOverlay(content: Text("Content"))
+    RecentProjectsOverlay(content: Text("Content"))
         .inRootView()
 }

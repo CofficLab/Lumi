@@ -5,7 +5,7 @@ import MagicKit
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
     @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
@@ -220,7 +220,7 @@ struct RecentProjectsSidebarView: View {
         )
 
         store.addProject(name: project.name, path: project.path)
-        recentProjectsVM.setRecentProjects(store.loadProjects())
+        recentProjectsVM.addProject(project)
         projectVM.switchProject(to: project)
     }
 

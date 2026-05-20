@@ -6,7 +6,7 @@ import LumiUI
 
 struct ProjectDropdownMenu: View {
     @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
     @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 

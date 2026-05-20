@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct ProjectSelectorView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject private var projectContextRequestVM: WindowProjectContextRequestVM
-    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
+    @EnvironmentObject var recentProjectsVM: AppProjectsVM
     @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool
@@ -272,8 +272,7 @@ extension ProjectSelectorView {
     private func deleteProject(_ project: Project) {
         withAnimation {
             store.removeProject(project)
-            // 更新 projectVM 中的列表
-            recentProjectsVM.setRecentProjects(store.loadProjects())
+            recentProjectsVM.removeProject(project)
         }
     }
 

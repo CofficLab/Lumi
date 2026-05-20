@@ -41,13 +41,13 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     /// 根视图包裹：用于持久化最近项目列表和当前项目/文件
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(RecentProjectsPersistenceOverlay(content: content()))
+        AnyView(RecentProjectsOverlay(content: content()))
     }
 
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             ListRecentProjectsTool(),
             GetCurrentProjectTool(),

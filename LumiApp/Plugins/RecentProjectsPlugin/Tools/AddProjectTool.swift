@@ -61,7 +61,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         let store = RecentProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 发送通知，RecentProjectsPersistenceOverlay 会自动更新 projectVM
+        // 2. 发送通知，RecentProjectsOverlay 会自动更新 projectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         // 3. 加载更新后的最近项目列表
