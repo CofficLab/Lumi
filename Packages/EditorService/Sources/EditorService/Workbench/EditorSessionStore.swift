@@ -148,6 +148,20 @@ public final class EditorSessionStore: ObservableObject {
     }
 
     @discardableResult
+    func closeTabsToLeft(of sessionID: EditorSession.ID) -> EditorSession? {
+        closeTabs(relativeTo: sessionID) { tabIndex, referenceIndex in
+            tabIndex < referenceIndex
+        }
+    }
+
+    @discardableResult
+    func closeTabsToRight(of sessionID: EditorSession.ID) -> EditorSession? {
+        closeTabs(relativeTo: sessionID) { tabIndex, referenceIndex in
+            tabIndex > referenceIndex
+        }
+    }
+
+    @discardableResult
     func goBack() -> EditorSession? {
         guard let entry = navigationHistory.goBack() else { return nil }
         activeSessionID = entry.sessionID
@@ -208,5 +222,51 @@ public final class EditorSessionStore: ObservableObject {
         if orderedSessions.count == sessions.count {
             sessions = orderedSessions
         }
+    }
+
+    @discardableResult
+    private func closeTabs(
+        relativeTo sessionID: EditorSession.ID,
+        selecting shouldCloseIndex: (Int, Int) -> Bool
+    ) -> EditorSession? {
+        guard let referenceIndex = tabs.firstIndex(where: { $0.sessionID == sessionID }) else {
+            return activeSession
+        }
+
+        let sessionIDsToClose = tabs.enumerated()
+            .filter { shouldCloseIndex($0.offset, referenceIndex) }
+            .map { $0.element.sessionID }
+
+        guard !sessionIDsToClose.isEmpty else { return activeSession }
+
+        let closingSet = Set(sessionIDsToClose)
+        let wasActiveClosed = activeSessionID.map { closingSet.contains($0) } ?? false
+
+        sessions.removeAll { closingSet.contains($0.id) }
+        tabs.removeAll { closingSet.contains($0.sessionID) }
+        sessionIDsToClose.forEach { navigationHistory.remove($0) }
+
+        guard !sessions.isEmpty else {
+            activeSessionID = nil
+            navigationHistory.clear()
+            return nil
+        }
+
+        syncSessionsToTabOrder()
+
+        guard wasActiveClosed else {
+            return activeSession
+        }
+
+        if let referenceSession = session(for: sessionID) {
+            activeSessionID = referenceSession.id
+            recordActivation(for: referenceSession)
+            return referenceSession
+        }
+
+        let fallbackSession = sessions[0]
+        activeSessionID = fallbackSession.id
+        recordActivation(for: fallbackSession)
+        return fallbackSession
     }
 }

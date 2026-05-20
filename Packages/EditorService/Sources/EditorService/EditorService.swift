@@ -240,6 +240,18 @@ public final class EditorService: ObservableObject {
         sessionStore.closeOthers(keeping: id)
     }
 
+    /// 关闭指定会话左侧的所有标签页
+    @discardableResult
+    public func closeTabsToLeft(of id: EditorSession.ID) -> EditorSession? {
+        sessionStore.closeTabsToLeft(of: id)
+    }
+
+    /// 关闭指定会话右侧的所有标签页
+    @discardableResult
+    public func closeTabsToRight(of id: EditorSession.ID) -> EditorSession? {
+        sessionStore.closeTabsToRight(of: id)
+    }
+
     /// 关闭所有会话
     public func closeAllSessions() {
         sessionStore.closeAll()

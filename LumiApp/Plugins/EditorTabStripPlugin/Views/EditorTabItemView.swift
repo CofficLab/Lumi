@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import MagicKit
 import UniformTypeIdentifiers
 
@@ -7,6 +8,7 @@ import UniformTypeIdentifiers
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
 struct EditorTabItemView: View {
     @EnvironmentObject var editorVM: WindowEditorVM
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovered = false
 
     let tab: EditorTab
@@ -22,6 +24,20 @@ struct EditorTabItemView: View {
 
     private var isDirty: Bool {
         tab.isDirty || (isActive && service.currentFileURL == tab.fileURL && service.hasUnsavedChanges)
+    }
+
+    private var tabIndex: Int? {
+        service.tabs.firstIndex(where: { $0.sessionID == tab.sessionID })
+    }
+
+    private var canCloseTabsToLeft: Bool {
+        guard let tabIndex else { return false }
+        return tabIndex > 0
+    }
+
+    private var canCloseTabsToRight: Bool {
+        guard let tabIndex else { return false }
+        return tabIndex < service.tabs.count - 1
     }
 
     var body: some View {
@@ -45,6 +61,15 @@ struct EditorTabItemView: View {
             Button(String(localized: "Close Others", table: "LumiEditor")) {
                 closeOtherSessions()
             }
+            Button(String(localized: "Close Tabs to the Left", table: "LumiEditor")) {
+                closeTabsToLeft()
+            }
+            .disabled(!canCloseTabsToLeft)
+
+            Button(String(localized: "Close Tabs to the Right", table: "LumiEditor")) {
+                closeTabsToRight()
+            }
+            .disabled(!canCloseTabsToRight)
         }
         .onDrag {
             onStartDrag(tab)
@@ -109,8 +134,12 @@ struct EditorTabItemView: View {
             RoundedRectangle(cornerRadius: 7)
                 .stroke(theme.workspaceTextColor().opacity(borderOpacity), lineWidth: 1)
         )
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovered)
+        .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isActive)
         .onHover { hovered in
-            isHovered = hovered
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovered
+            }
         }
     }
 
@@ -172,5 +201,57 @@ struct EditorTabItemView: View {
 
     private func togglePinned() {
         service.togglePinned(sessionID: tab.sessionID)
+    }
+
+    private func closeTabsToLeft() {
+        closeTabsOnSide(
+            closesActiveSession: activeSessionIsLeftOfTab,
+            close: { service.closeTabsToLeft(of: $0) }
+        )
+    }
+
+    private func closeTabsToRight() {
+        closeTabsOnSide(
+            closesActiveSession: activeSessionIsRightOfTab,
+            close: { service.closeTabsToRight(of: $0) }
+        )
+    }
+
+    private func closeTabsOnSide(
+        closesActiveSession: Bool,
+        close: (EditorSession.ID) -> EditorSession?
+    ) {
+        let previousActiveSessionID = service.activeSessionID
+        if closesActiveSession, service.hasUnsavedChanges {
+            service.saveNow()
+        }
+
+        let nextSession = close(tab.sessionID)
+        guard nextSession?.id != previousActiveSessionID else { return }
+
+        service.loadFile(from: nextSession?.fileURL)
+        if let nextSession {
+            service.applySessionRestore(nextSession)
+        }
+    }
+
+    private var activeSessionIsLeftOfTab: Bool {
+        guard let activeSessionID = service.activeSessionID,
+              let activeIndex = service.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
+              let targetIndex = tabIndex else {
+            return false
+        }
+
+        return activeIndex < targetIndex
+    }
+
+    private var activeSessionIsRightOfTab: Bool {
+        guard let activeSessionID = service.activeSessionID,
+              let activeIndex = service.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
+              let targetIndex = tabIndex else {
+            return false
+        }
+
+        return activeIndex > targetIndex
     }
 }
