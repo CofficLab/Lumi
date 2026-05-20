@@ -3,6 +3,7 @@ import LumiUI
 
 /// 权限请求视图，用于显示工具执行请求并获取用户批准
 struct PermissionRequestView: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var permissionHandlingVM: WindowPermissionHandlingVM
     @EnvironmentObject private var permissionRequestViewModel: WindowPermissionRequestVM
 
@@ -12,7 +13,11 @@ struct PermissionRequestView: View {
                 backgroundOverlay
                 permissionCard(for: request)
             }
-            .transition(.opacity)
+            .appStatusPresentationTransition(preference: motionPreference)
+            .animation(
+                LumiMotion.enabled(LumiMotion.statusPresentation, preference: motionPreference),
+                value: permissionRequestViewModel.pendingPermissionRequest?.id
+            )
             .accessibilityElement(children: .contain)
             .accessibilityLabel(String(localized: "Accessibility Label - Permission Request", table: "AgentToolPermission"))
             .accessibilityHint(String(localized: "Accessibility Hint - Permission Request", table: "AgentToolPermission"))

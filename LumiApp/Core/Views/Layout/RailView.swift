@@ -6,6 +6,7 @@ import LumiUI
 /// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailTabs()` 提供 tab 定义，
 /// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
 struct RailView: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
@@ -83,7 +84,7 @@ struct RailView: View {
                 .buttonStyle(.plain)
                 .help(tab.title)
                 // Tab 选中状态变化时平滑过渡
-                .animation(.easeInOut(duration: 0.15), value: selectedTabId == tab.id)
+                .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: selectedTabId == tab.id)
             }
             Spacer(minLength: 0)
         }
@@ -108,7 +109,7 @@ struct RailView: View {
             if let contentView {
                 contentView
                     // Rail 内容切换时平滑过渡
-                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
                     .id(currentId ?? "empty")
             } else {
                 Color.clear

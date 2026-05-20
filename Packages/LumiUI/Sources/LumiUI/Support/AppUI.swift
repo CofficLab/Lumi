@@ -7,5 +7,6 @@ enum AppUI {
     typealias Radius = DesignTokens.Radius
     typealias Material = DesignTokens.Material
     typealias Duration = DesignTokens.Duration
+    typealias Motion = DesignTokens.Motion
     typealias Shadow = DesignTokens.Shadow
 }

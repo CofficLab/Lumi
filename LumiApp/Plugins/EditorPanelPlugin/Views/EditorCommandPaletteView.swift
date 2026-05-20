@@ -13,6 +13,7 @@ struct EditorCommandPaletteView: View {
     let onOpenFile: (URL, CursorPosition?, Bool) -> Void
     let onDismiss: () -> Void
 
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var query = ""
     @State private var selectedItemID: String?
     @State private var selectedCategory: EditorCommandCategory?
@@ -197,7 +198,7 @@ struct EditorCommandPaletteView: View {
             }
             .onChange(of: selectedItemID) { _, itemID in
                 guard let itemID else { return }
-                withAnimation(.easeInOut(duration: 0.12)) {
+                LumiMotion.animate(LumiMotion.listEnabled(LumiMotion.scroll, preference: motionPreference)) {
                     proxy.scrollTo(itemID, anchor: .center)
                 }
             }

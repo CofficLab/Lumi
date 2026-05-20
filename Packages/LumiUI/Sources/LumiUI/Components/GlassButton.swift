@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GlassButton: View {
     @Environment(\.colorScheme) private var colorScheme
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     public enum Style {
@@ -49,7 +50,8 @@ public struct GlassButton: View {
             GlassButtonStyle(
                 style: style,
                 isHovering: $isHovering,
-                isPressing: $isPressing
+                isPressing: $isPressing,
+                preference: motionPreference
             )
         )
     }
@@ -70,8 +72,8 @@ public struct GlassButton: View {
         .background(buttonBackground)
         .overlay(buttonBorder)
         .cornerRadius(buttonCornerRadius)
-        .scaleEffect(isPressing ? 0.97 : 1.0)
-        .animation(.spring(response: 0.3), value: isPressing)
+        .scaleEffect(isPressing && motionPreference.allowsMotion ? AppUI.Motion.pressScale : 1.0)
+        .animation(AppUI.Motion.enabled(AppUI.Motion.press, preference: motionPreference), value: isPressing)
     }
 
     private var buttonFont: Font {
@@ -142,14 +144,19 @@ private struct GlassButtonStyle: ButtonStyle {
     let style: GlassButton.Style
     @Binding var isHovering: Bool
     @Binding var isPressing: Bool
+    let preference: LumiMotionPreference
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .onHover { hovering in
-                isHovering = hovering
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: preference)) {
+                    isHovering = hovering
+                }
             }
             .onChange(of: configuration.isPressed) { _, isPressed in
-                isPressing = isPressed
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.press, preference: preference)) {
+                    isPressing = isPressed
+                }
             }
     }
 }

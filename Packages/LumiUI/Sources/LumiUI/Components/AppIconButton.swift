@@ -2,6 +2,8 @@ import SwiftUI
 
 public struct AppIconButton: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
+    @State private var isHovered = false
 
     public enum Size {
         case compact
@@ -52,13 +54,21 @@ public struct AppIconButton: View {
                     .stroke(borderColor, lineWidth: 1)
             )
             .contentShape(Rectangle())
+            .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
+        }
     }
 
     private var backgroundColor: Color {
         if isActive {
             theme.textSecondary.opacity(0.16)
+        } else if isHovered {
+            theme.textSecondary.opacity(0.12)
         } else {
             theme.textSecondary.opacity(0.08)
         }
@@ -67,6 +77,8 @@ public struct AppIconButton: View {
     private var borderColor: Color {
         if isActive {
             theme.textSecondary.opacity(0.22)
+        } else if isHovered {
+            theme.textSecondary.opacity(0.14)
         } else {
             .clear
         }

@@ -1,4 +1,5 @@
 import MagicAlert
+import LumiUI
 import SwiftUI
 
 /// 全局底部面板视图
@@ -7,6 +8,7 @@ import SwiftUI
 /// 渲染统一的 Tab 栏 + 内容切换器。各插件只需提供 Tab 入口
 /// （图标 + 标题 + 内容视图），无需关心 Tab 栏的渲染和切换逻辑。
 struct BottomPanelBarView: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
@@ -27,7 +29,7 @@ struct BottomPanelBarView: View {
                     .frame(maxWidth: .infinity)
                     .frame(maxHeight: .infinity)
                     // Bottom Panel 内容切换时平滑过渡
-                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
                     .id(activeTabId)
             }
         }
@@ -87,6 +89,7 @@ struct BottomPanelBarView: View {
 
 /// 底部面板的单个标签按钮，支持 hover 高亮效果
 private struct BottomPanelTabButton: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var themeVM: AppThemeVM
 
     let tab: BottomPanelTab
@@ -112,14 +115,17 @@ private struct BottomPanelTabButton: View {
                     .fill(backgroundColor)
             )
             .contentShape(RoundedRectangle(cornerRadius: 7))
+            .scaleEffect(isHovering && !isActive && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            isHovering = hovering
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovering = hovering
+            }
         }
         // hover / 选中状态变化时平滑过渡
-        .animation(.easeInOut(duration: 0.15), value: isActive)
-        .animation(.easeInOut(duration: 0.15), value: isHovering)
+        .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isActive)
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovering)
     }
 
     // MARK: - Computed Colors

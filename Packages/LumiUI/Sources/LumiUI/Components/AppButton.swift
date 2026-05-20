@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct AppButton: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovered = false
 
     public enum Style {
@@ -101,8 +102,9 @@ public struct AppButton: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.5 : 1.0)
+        .scaleEffect(isEffectivelyHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering && !isDisabled
             }
         }

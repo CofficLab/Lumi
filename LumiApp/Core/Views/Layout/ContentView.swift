@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import LumiUI
 import MagicKit
 import SwiftUI
 
@@ -199,6 +200,8 @@ struct ContentView: View, SuperLog {
 // MARK: - Content View Body
 
 struct ContentViewBody<Content: View>: View {
+    @LumiMotionPreferenceReader private var motionPreference
+
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
     @ObservedObject var pluginProvider: AppPluginVM
@@ -245,7 +248,7 @@ struct ContentViewBody<Content: View>: View {
                     themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
-            .animation(.easeInOut(duration: 0.25), value: themeVM.currentThemeId)
+            .animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference), value: themeVM.currentThemeId)
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()

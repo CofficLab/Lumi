@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct AppErrorBanner: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     let message: LocalizedStringKey
@@ -46,6 +47,7 @@ public struct AppErrorBanner: View {
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                 .stroke(theme.error.opacity(0.2), lineWidth: 1)
         )
+        .appStatusPresentationTransition(preference: motionPreference)
     }
 }
 

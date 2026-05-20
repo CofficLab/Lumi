@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GlassRow<Content: View>: View {
     let content: Content
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
 
     public init(@ViewBuilder content: () -> Content) {
@@ -15,7 +16,7 @@ public struct GlassRow<Content: View>: View {
             .overlay(rowBorder)
             .contentShape(Rectangle())
             .onHover { hovering in
-                withAnimation(.easeOut(duration: DesignTokens.Duration.micro)) {
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                     isHovering = hovering
                 }
             }

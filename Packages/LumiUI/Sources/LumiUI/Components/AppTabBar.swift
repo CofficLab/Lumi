@@ -46,6 +46,7 @@ public struct AppTabBar: View {
 
 private struct AppTabButton: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     let title: String
     let icon: String?
@@ -72,10 +73,12 @@ private struct AppTabButton: View {
             .padding(.vertical, 6)
             .background(background)
             .cornerRadius(6)
+            .scaleEffect(isHovered && !isSelected && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.selection, preference: motionPreference), value: isSelected)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering
             }
         }

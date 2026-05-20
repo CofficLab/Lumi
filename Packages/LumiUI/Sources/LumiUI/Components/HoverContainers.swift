@@ -56,6 +56,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     let arrowEdge: Edge
 
     @ObservedObject private var coordinator = HoverCoordinator.shared
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isPresented = false
     @State private var isHovering = false
 
@@ -92,14 +93,16 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     private var baseContent: some View {
         let view = content
             .background(hoverBackground)
-            .animation(.easeOut(duration: 0.15), value: isHovering)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
             .onHover { hovering in
-                isHovering = hovering
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
             }
             .onTapGesture {
                 guard detailView != nil else { return }
 
-                withAnimation(.easeOut(duration: 0.15)) {
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
                     if isPresented {
                         isPresented = false
                         coordinator.close(id: self.id)
@@ -181,6 +184,7 @@ public struct HoverableContainerView<Content: View, Detail: View>: View {
     let id: String
 
     @ObservedObject private var coordinator = HoverCoordinator.shared
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isPresented = false
 
     public init(detailView: Detail, id: String = UUID().uuidString, @ViewBuilder content: () -> Content) {
@@ -192,7 +196,7 @@ public struct HoverableContainerView<Content: View, Detail: View>: View {
     public var body: some View {
         content
             .background(background(isHovering: isPresented))
-            .animation(.easeInOut(duration: 0.2), value: isPresented)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference), value: isPresented)
             .onHover { hovering in
                 coordinator.onHover(id: self.id, isHovering: hovering)
             }
@@ -208,7 +212,9 @@ public struct HoverableContainerView<Content: View, Detail: View>: View {
             .onReceive(coordinator.$visibleID) { visibleID in
                 let shouldShow = visibleID == self.id
                 if isPresented != shouldShow {
-                    isPresented = shouldShow
+                    AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+                        isPresented = shouldShow
+                    }
                 }
             }
             .onChange(of: isPresented) { oldValue, newValue in

@@ -24,6 +24,7 @@ public struct AppCard<Content: View>: View {
     let glowColor: SwiftUI.Color?
     let borderIntensity: Double
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
     @Environment(\.colorScheme) private var colorScheme
     @ViewBuilder let content: Content
     @State private var isHovering = false
@@ -84,15 +85,17 @@ public struct AppCard<Content: View>: View {
             .background(elevatedBackground)
             .overlay(elevatedBorder)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .scaleEffect(isHovering && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
             .shadow(
                 color: Color.black.opacity(isHovering ? 0.08 : 0.02),
                 radius: isHovering ? 12 : 4,
                 y: isHovering ? 6 : 2
             )
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
             .onHover { hovering in
-                isHovering = hovering
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
             }
     }
 

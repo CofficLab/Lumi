@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GlassSelectionCard<Content: View>: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     var isSelected: Bool
     var showCheckmark: Bool
@@ -49,13 +50,15 @@ public struct GlassSelectionCard<Content: View>: View {
             .background(cardBackground)
             .overlay(cardBorder)
             .cornerRadius(DesignTokens.Radius.md)
-            .scaleEffect(isHovering ? 1.02 : 1.0)
-            .animation(.interactiveSpring(response: 0.15, dampingFraction: 0.76), value: isHovering)
+            .scaleEffect(isHovering && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.selection, preference: motionPreference), value: isSelected)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            isHovering = hovering
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                isHovering = hovering
+            }
         }
     }
 

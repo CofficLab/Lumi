@@ -1,4 +1,5 @@
 import MagicKit
+import LumiUI
 import SwiftUI
 
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
@@ -77,6 +78,7 @@ struct ActivityBarButton: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
@@ -98,14 +100,17 @@ struct ActivityBarButton: View {
                     .foregroundColor(iconColor(theme: theme))
                     .frame(maxWidth: .infinity, minHeight: 40)
                     .contentShape(Rectangle())
+                    .scaleEffect(isHovered && !isSelected && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
             }
         }
         .buttonStyle(.plain)
         .help(title)
         // 选中状态变化时平滑过渡
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isSelected)
         .onHover { hovering in
-            isHovered = hovering
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
         }
     }
 

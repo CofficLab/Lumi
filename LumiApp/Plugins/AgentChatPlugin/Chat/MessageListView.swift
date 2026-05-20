@@ -9,6 +9,7 @@ struct MessageListView: View {
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
     @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
 
@@ -143,6 +144,7 @@ extension MessageListView {
                 .padding(.vertical, 4)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
+                .appMessageInsertionTransition(preference: motionPreference)
             }
 
             Color.clear
@@ -161,6 +163,7 @@ extension MessageListView {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.preferOuterScroll, true)
+        .animation(LumiMotion.enabled(LumiMotion.messageInsertion, preference: motionPreference), value: lastMessageID)
         .accessibilityLabel(String(localized: "Message List", table: "AgentChat"))
         .accessibilityHint(String(localized: "Message List Hint", table: "AgentChat"))
         .overlay(alignment: .topLeading) {
@@ -304,7 +307,7 @@ extension MessageListView {
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
         beginProgrammaticScrolling()
         if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
                 proxy.scrollTo(bottomAnchorId, anchor: .bottom)
             }
         } else {
@@ -316,7 +319,7 @@ extension MessageListView {
         guard let latestUserMessageId = latestVisibleUserMessageId() else { return }
         beginProgrammaticScrolling()
         if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
                 proxy.scrollTo(latestUserMessageId, anchor: .top)
             }
         } else {

@@ -1,4 +1,5 @@
 import CodeEditLanguages
+import LumiUI
 import MagicKit
 import SwiftUI
 
@@ -24,6 +25,7 @@ struct BreadcrumbNavHeaderView: View {
 struct BreadcrumbNavPathView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var editorVM: WindowEditorVM
+    @LumiMotionPreferenceReader private var motionPreference
 
     let fileURL: URL
 
@@ -132,12 +134,12 @@ struct BreadcrumbNavPathView: View {
                 }
             )
             .onChange(of: textWidth) { _, _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference)) {
                     recalculateTruncation()
                 }
             }
             .onChange(of: containerWidth) { _, _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference)) {
                     recalculateTruncation()
                 }
             }
@@ -214,6 +216,7 @@ struct BreadcrumbNavComponent: View {
     let onSelectFile: (URL) -> Void
 
     @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
     @State private var isMenuVisible = false
 
@@ -285,7 +288,7 @@ struct BreadcrumbNavComponent: View {
             )
             .clipped()
             .onHover { hover in
-                withAnimation(.easeInOut(duration: 0.15)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
                     isHovering = hover
                 }
             }

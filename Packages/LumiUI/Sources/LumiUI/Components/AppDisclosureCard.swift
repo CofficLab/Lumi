@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct AppDisclosureCard<Content: View>: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
     let title: LocalizedStringKey
@@ -25,6 +26,7 @@ public struct AppDisclosureCard<Content: View>: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             content
                 .padding(.top, AppUI.Spacing.sm)
+                .appDisclosureContentTransition(preference: motionPreference)
         } label: {
             HStack(spacing: AppUI.Spacing.sm) {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
@@ -51,6 +53,7 @@ public struct AppDisclosureCard<Content: View>: View {
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                 .fill(AppUI.Material.glass)
         )
+        .animation(AppUI.Motion.enabled(AppUI.Motion.disclosure, preference: motionPreference), value: isExpanded)
     }
 }
 

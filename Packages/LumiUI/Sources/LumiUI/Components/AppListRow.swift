@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct AppListRow<Content: View>: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     let isSelected: Bool
     let action: (() -> Void)?
@@ -30,13 +31,13 @@ public struct AppListRow<Content: View>: View {
                 .background(rowBackground)
                 .overlay(rowBorder)
                 .cornerRadius(AppUI.Radius.sm)
-                .scaleEffect(isHovered ? 1.01 : 1.0)
+                .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.rowHoverScale : 1.0)
                 .shadow(color: Color.black.opacity(isHovered ? 0.06 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering
             }
         }

@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 面板内容视图：显示当前激活插件的面板内容
@@ -6,6 +7,7 @@ import SwiftUI
 /// - 上半部分：Header + 主内容区
 /// - 下半部分：底部面板区（可拖拽分隔线调节高度）
 struct PanelContentView: View {
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var pluginProvider: AppPluginVM
 
     var body: some View {
@@ -26,7 +28,7 @@ struct PanelContentView: View {
 
                         activeItem.view
                             // Panel 内容切换时平滑过渡
-                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+                            .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
                             .id(activeItem.id)
                     }
 
