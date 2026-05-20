@@ -1,11 +1,12 @@
 import Foundation
+import MagicKit
 
 /// Discovers GitHub repositories related to a project's inferred technology ecosystem.
 ///
 /// Discovery is driven by repository search queries built from frameworks,
 /// dependencies, language, and README keywords. Results are scored and categorized
 /// as alternatives, complementary projects, or examples.
-struct GitHubInsightDiscoverer {
+struct GitHubInsightDiscoverer: SuperLog {
     /// Searches GitHub and returns the most relevant repository references for a profile.
     ///
     /// - Parameters:
@@ -14,17 +15,33 @@ struct GitHubInsightDiscoverer {
     /// - Returns: Deduplicated and relevance-sorted knowledge base entries.
     func discover(profile: GitHubInsightProjectProfile, limitPerQuery: Int = 8) async throws -> [GitHubInsightKBEntry] {
         var entriesByRepo: [String: GitHubInsightKBEntry] = [:]
+        let queries = buildQueries(profile: profile)
 
-        for request in buildQueries(profile: profile) {
+        GitHubInsightPlugin.logger.info("\(Self.t)开始 GitHub 发现：project=\(profile.projectPath)，queries=\(queries.count)，limitPerQuery=\(limitPerQuery)")
+
+        for (index, request) in queries.enumerated() {
+            GitHubInsightPlugin.logger.info("\(Self.t)请求 GitHub 仓库搜索[\(index + 1)/\(queries.count)]：type=\(request.relationType.rawValue)，query=\(request.query)")
             let result = try await GitHubAPIService.shared.searchRepositories(
                 query: request.query,
                 perPage: limitPerQuery
             )
 
+            var archivedCount = 0
+            var lowSignalForkCount = 0
+            var existingDependencyCount = 0
+            var acceptedCount = 0
+
             for repo in result.items {
-                guard repo.archived != true else { continue }
-                if repo.fork == true && repo.stargazersCount < 50 { continue }
+                guard repo.archived != true else {
+                    archivedCount += 1
+                    continue
+                }
+                if repo.fork == true && repo.stargazersCount < 50 {
+                    lowSignalForkCount += 1
+                    continue
+                }
                 if profile.dependencies.contains(where: { sameDependency($0, repo.name) || sameDependency($0, repo.fullName) }) {
+                    existingDependencyCount += 1
                     continue
                 }
 
@@ -36,16 +53,22 @@ struct GitHubInsightDiscoverer {
                 } else {
                     entriesByRepo[entry.fullName] = entry
                 }
+                acceptedCount += 1
             }
+
+            GitHubInsightPlugin.logger.info("\(Self.t)GitHub 搜索完成[\(index + 1)/\(queries.count)]：返回=\(result.items.count)，接受=\(acceptedCount)，归档过滤=\(archivedCount)，低信号 fork 过滤=\(lowSignalForkCount)，已有依赖过滤=\(existingDependencyCount)，累计唯一仓库=\(entriesByRepo.count)")
         }
 
-        return entriesByRepo.values
+        let entries = entriesByRepo.values
             .sorted { lhs, rhs in
                 if lhs.relevanceScore != rhs.relevanceScore { return lhs.relevanceScore > rhs.relevanceScore }
                 return lhs.stars > rhs.stars
             }
             .prefix(24)
             .map { $0 }
+
+        GitHubInsightPlugin.logger.info("\(Self.t)GitHub 发现结束：候选唯一仓库=\(entriesByRepo.count)，输出条目=\(entries.count)")
+        return entries
     }
 
     /// Builds bounded GitHub repository search queries from the project profile.
