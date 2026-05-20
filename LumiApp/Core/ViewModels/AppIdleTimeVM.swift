@@ -2,20 +2,17 @@ import Combine
 import Foundation
 import SwiftUI
 
-/// 空闲时间 ViewModel，通过环境注入供所有插件和视图使用。
+/// 空闲时间 ViewModel
 ///
 /// 数据来源：`IdleTimePlugin` 内部的 `IdleTimeService` 通过
 /// `NotificationCenter` 推送快照变更，VM 在主线程更新 `@Published` 属性。
 ///
-/// 其他插件只需：
-/// ```swift
-/// @EnvironmentObject var idleTimeVM: AppIdleTimeVM
-/// ```
+/// **生命周期约束：**
+/// - 必须且只能在 ``RootContainer`` 中初始化（全局唯一实例）。
+/// - 由 ``RootView`` 通过 `.environmentObject()` 注入到 SwiftUI 环境。
 ///
-/// ## 初始化规则
-///
-/// 由 `RootContainer` 持有，不通过 `.environmentObject()` 注入。
-/// 插件按需直接访问 `RootContainer.shared.idleTimeVM`。
+/// **插件获取方式：**
+/// - 在视图层通过 `@EnvironmentObject` 获取（如 `@EnvironmentObject var idleTimeVM: AppIdleTimeVM`）。
 @MainActor
 final class AppIdleTimeVM: ObservableObject {
 
