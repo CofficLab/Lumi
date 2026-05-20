@@ -456,9 +456,6 @@
         }
       }
     },
-    "%lld 条消息" : {
-
-    },
     "%lld 行" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1327,7 +1324,6 @@
 
     },
     "Auto" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3140,9 +3136,6 @@
           }
         }
       }
-    },
-    "Lumi %@ 已下载完成" : {
-
     },
     "Lumi Agent" : {
 
@@ -5485,19 +5478,6 @@
         }
       }
     },
-    "上下文 %@" : {
-
-    },
-    "上下文 %@/%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "上下文 %1$@/%2$@"
-          }
-        }
-      }
-    },
     "上传图片" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5516,6 +5496,7 @@
       }
     },
     "下一步" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5715,9 +5696,6 @@
         }
       }
     },
-    "停止中…" : {
-
-    },
     "停止分析" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5772,9 +5750,6 @@
         }
       }
     },
-    "停止本轮" : {
-
-    },
     "停止生成" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5813,6 +5788,9 @@
           }
         }
       }
+    },
+    "最近一次路由" : {
+
     },
     "最近项目" : {
       "extractionState" : "stale",
@@ -6319,9 +6297,6 @@
     "后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。" : {
 
     },
-    "向量后端：%@" : {
-
-    },
     "启动选项" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6338,6 +6313,9 @@
           }
         }
       }
+    },
+    "启用 Auto 模型路由" : {
+
     },
     "启用或禁用应用的插件功能" : {
       "extractionState" : "stale",
@@ -6877,6 +6855,7 @@
       }
     },
     "开始使用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6925,6 +6904,9 @@
           }
         }
       }
+    },
+    "当前为基础路由版本：不可用模型会被排除，已检测可用模型优先；未检测模型仍可作为候选。" : {
+
     },
     "当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。" : {
       "localizations" : {
@@ -7023,9 +7005,6 @@
           }
         }
       }
-    },
-    "总计 %@" : {
-
     },
     "总计：%@" : {
       "extractionState" : "stale",
@@ -7561,6 +7540,7 @@
       }
     },
     "文件 \"%@\" 将被永久删除。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7646,9 +7626,6 @@
           }
         }
       }
-    },
-    "新版本已准备好" : {
-
     },
     "显示上一个窗口" : {
       "extractionState" : "stale",
@@ -7889,9 +7866,6 @@
         }
       }
     },
-    "更新" : {
-
-    },
     "未发现可清理的项目" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8074,6 +8048,9 @@
           }
         }
       }
+    },
+    "根据消息内容、工具需求、模型能力和可用性自动选择模型。" : {
+
     },
     "格式化文档" : {
 
@@ -8478,6 +8455,7 @@
       }
     },
     "版本 %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8560,6 +8538,7 @@
       }
     },
     "确定要删除此文件吗？" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -9091,16 +9070,6 @@
         }
       }
     },
-    "输出：%lld 行，%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "输出：%1$lld 行，%2$@"
-          }
-        }
-      }
-    },
     "这是主题效果的示例" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9114,16 +9083,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "這是主題效果的示例"
-          }
-        }
-      }
-    },
-    "进度：%lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "进度：%1$lld/%2$lld"
           }
         }
       }
@@ -9349,9 +9308,6 @@
           }
         }
       }
-    },
-    "重启更新" : {
-
     },
     "重命名符号" : {
 
