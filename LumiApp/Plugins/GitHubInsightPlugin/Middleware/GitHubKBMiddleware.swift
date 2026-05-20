@@ -52,20 +52,9 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         return keywords.contains { lowercased.contains($0) }
     }
 
-    /// 按请求的关系类型过滤缓存条目，并按相关性排序。
+    /// 按相关性排序缓存条目。
     private func filter(entries: [GitHubInsightKBEntry], for message: String) -> [GitHubInsightKBEntry] {
-        let lowercased = message.lowercased()
-        let relation: GitHubInsightRelationType?
-        if lowercased.contains("alternative") || lowercased.contains("替代") {
-            relation = .alternative
-        } else if lowercased.contains("example") || lowercased.contains("best practice") || lowercased.contains("最佳实践") || lowercased.contains("示例") {
-            relation = .example
-        } else {
-            relation = nil
-        }
-
         return entries
-            .filter { relation == nil || $0.relationType == relation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
@@ -80,8 +69,8 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
                 "",
                 "以下缓存的 GitHub 生态参考可能相关。请将它们视为需要验证的线索，而不是权威结论。",
                 "",
-                "| 仓库 | 类型 | 信号 |",
-                "|------|------|------|"
+                "| 仓库 | 信号 |",
+                "|------|------|"
             ]
         case .english:
             lines = [
@@ -89,14 +78,14 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
                 "",
                 "The following cached GitHub ecosystem references may be relevant. Treat them as leads to verify, not as authoritative conclusions.",
                 "",
-                "| Repo | Type | Signal |",
-                "|------|------|--------|"
+                "| Repo | Signal |",
+                "|------|--------|"
             ]
         }
 
         for entry in entries {
             let insight = entry.keyInsights.first ?? entry.description
-            lines.append("| `\(entry.fullName)` | \(entry.relationType.title) | \(insight) |")
+            lines.append("| `\(entry.fullName)` | \(insight) |")
         }
 
         lines.append("")

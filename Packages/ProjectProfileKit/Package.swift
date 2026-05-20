@@ -17,5 +17,10 @@ let package = Package(
             name: "ProjectProfileKit",
             path: "Sources/ProjectProfileKit"
         ),
+        .testTarget(
+            name: "ProjectProfileKitTests",
+            dependencies: ["ProjectProfileKit"],
+            path: "Tests/ProjectProfileKitTests"
+        ),
     ]
 )

@@ -21,5 +21,10 @@ let package = Package(
             dependencies: ["HttpKit"],
             path: "Sources/GitHubKit"
         ),
+        .testTarget(
+            name: "GitHubKitTests",
+            dependencies: ["GitHubKit"],
+            path: "Tests/GitHubKitTests"
+        ),
     ]
 )

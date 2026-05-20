@@ -54,16 +54,20 @@ public final class GitHubAPIService: @unchecked Sendable {
     public func searchRepositories(
         query: String,
         page: Int = 1,
-        perPage: Int = 10
+        perPage: Int = 10,
+        sort: String? = nil,
+        order: String? = nil
     ) async throws -> GitHubSearchResult {
-        try await fetch(
+        return try await fetch(
             "/search/repositories",
-            params: [
-                "q": query,
-                "page": "\(page)",
-                "per_page": "\(perPage)",
-            ]
-        )
+            params: searchRepositoryParameters(
+                query: query,
+                page: page,
+                perPage: perPage,
+                sort: sort,
+                order: order
+            )
+        ) as GitHubSearchResult
     }
 
     /// 获取文件内容。
@@ -222,6 +226,28 @@ public final class GitHubAPIService: @unchecked Sendable {
         request.httpMethod = "GET"
         applyAuth(request: &request)
         return request
+    }
+
+    /// 构建仓库搜索请求参数，保持空排序参数不会进入 URL。
+    func searchRepositoryParameters(
+        query: String,
+        page: Int,
+        perPage: Int,
+        sort: String?,
+        order: String?
+    ) -> [String: String] {
+        var params = [
+            "q": query,
+            "page": "\(page)",
+            "per_page": "\(perPage)",
+        ]
+        if let sort, !sort.isEmpty {
+            params["sort"] = sort
+        }
+        if let order, !order.isEmpty {
+            params["order"] = order
+        }
+        return params
     }
 
     /// 构建带 body 的 URLRequest。

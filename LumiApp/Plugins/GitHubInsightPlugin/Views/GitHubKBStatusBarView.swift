@@ -135,7 +135,6 @@ struct GitHubKBPopover: View {
 
     /// 用户触发强制同步时使用的项目路径。
     let projectPath: String
-    @State private var selectedRelation: GitHubInsightRelationType?
 
     private var primaryTextColor: Color {
         Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
@@ -148,7 +147,6 @@ struct GitHubKBPopover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
-            relationPicker
             entriesList
             footer
         }
@@ -178,35 +176,41 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// 用于按关系类型过滤条目的分段控件。
-    private var relationPicker: some View {
-        Picker("Relation", selection: Binding(
-            get: { selectedRelation?.rawValue ?? "all" },
-            set: { selectedRelation = $0 == "all" ? nil : GitHubInsightRelationType(rawValue: $0) }
-        )) {
-            Text(String(localized: "All", table: "GitHubInsight")).tag("all")
-            ForEach(GitHubInsightRelationType.allCases, id: \.rawValue) { relation in
-                Text(relation.title).tag(relation.rawValue)
-            }
-        }
-        .pickerStyle(.segmented)
-    }
-
     /// 过滤后知识库条目的可滚动列表。
     private var entriesList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
                 if filteredEntries.isEmpty {
-                    Text(emptyText)
-                        .font(.callout)
-                        .foregroundColor(secondaryTextColor)
-                        .frame(maxWidth: .infinity, minHeight: 180)
+                    emptyStateView
                 } else {
                     ForEach(filteredEntries) { entry in
                         GitHubKBEntryRow(entry: entry)
                     }
                 }
             }
+        }
+    }
+
+    /// 使用 LumiUI 统一空状态组件展示同步中或暂无数据状态。
+    @ViewBuilder
+    private var emptyStateView: some View {
+        switch viewModel.state {
+        case .syncing:
+            AppEmptyState(
+                icon: "arrow.triangle.2.circlepath",
+                title: LocalizedStringKey(String(localized: "Syncing GitHub ecosystem references...", table: "GitHubInsight"))
+            )
+            .frame(maxWidth: .infinity, minHeight: 220)
+        default:
+            AppEmptyState(
+                icon: "magnifyingglass",
+                title: LocalizedStringKey(String(localized: "No cached GitHub ecosystem references yet.", table: "GitHubInsight")),
+                description: LocalizedStringKey(String(localized: "Click Sync Now to discover related GitHub repositories.", table: "GitHubInsight")),
+                actionTitle: LocalizedStringKey(String(localized: "Sync Now", table: "GitHubInsight"))
+            ) {
+                viewModel.load(projectPath: projectPath, force: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 240)
         }
     }
 
@@ -225,21 +229,10 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// 按选中关系过滤并按相关性排序后的条目。
+    /// 按相关性排序后的条目。
     private var filteredEntries: [GitHubInsightKBEntry] {
         viewModel.entries
-            .filter { selectedRelation == nil || $0.relationType == selectedRelation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
-    }
-
-    /// 基于当前同步状态的空状态文本。
-    private var emptyText: String {
-        switch viewModel.state {
-        case .syncing:
-            return String(localized: "Syncing GitHub ecosystem references...", table: "GitHubInsight")
-        default:
-            return String(localized: "No cached GitHub ecosystem references yet.", table: "GitHubInsight")
-        }
     }
 
     /// 显示在弹窗底部的可读同步状态。
@@ -282,13 +275,6 @@ private struct GitHubKBEntryRow: View {
                 Text(entry.fullName)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(primaryTextColor)
-                Text(entry.relationType.title)
-                    .font(.caption2)
-                    .foregroundColor(Color.adaptive(light: "FFFFFF", dark: "FFFFFF"))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.8))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
                 Spacer()
                 Label("\(entry.stars)", systemImage: "star")
                     .font(.caption)

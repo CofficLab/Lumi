@@ -25,6 +25,7 @@
       }
     },
     "All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47,6 +48,7 @@
       }
     },
     "Alternative" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -90,7 +92,30 @@
         }
       }
     },
+    "Click Sync Now to discover related GitHub repositories." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Sync Now to discover related GitHub repositories."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击“立即同步”来发现相关的 GitHub 仓库。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「立即同步」來發現相關的 GitHub 倉庫。"
+          }
+        }
+      }
+    },
     "Complementary" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -113,6 +138,7 @@
       }
     },
     "Example" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -357,6 +383,7 @@
       }
     },
     "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -377,6 +404,9 @@
           }
         }
       }
+    },
+    "Query the local cached GitHub ecosystem knowledge base for repositories related to the current project." : {
+
     },
     "Rate limited" : {
       "extractionState" : "stale",

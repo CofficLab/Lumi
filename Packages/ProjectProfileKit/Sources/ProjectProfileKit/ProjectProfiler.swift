@@ -68,6 +68,22 @@ public struct ProjectProfiler {
             languages["Kotlin", default: 0] += 2
         }
 
+        if containsXcodeProject(at: root) {
+            languages["Swift", default: 0] += 4
+            platform = platform ?? "Apple platforms"
+        }
+
+        for manifest in nestedSwiftPackageManifests(at: root) {
+            languages["Swift", default: 0] += 2
+            dependencies.formUnion(swiftPackageDependencies(at: manifest))
+        }
+
+        let sourceSignals = scanSourceSignals(at: root)
+        for (language, score) in sourceSignals.languages {
+            languages[language, default: 0] += score
+        }
+        frameworks.formUnion(sourceSignals.frameworks)
+
         let readme = readReadme(at: root)
         let description = readme.description
         let keywords = readme.keywords
@@ -116,6 +132,23 @@ public struct ProjectProfiler {
             "electron": "Electron"
         ]
         return dependencies.compactMap { map[$0.lowercased()] }
+    }
+
+    /// 检查根目录是否包含 Xcode 工程或 workspace。
+    private func containsXcodeProject(at root: URL) -> Bool {
+        guard let items = try? fileManager.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) else {
+            return false
+        }
+        return items.contains { item in
+            item.pathExtension == "xcodeproj" || item.pathExtension == "xcworkspace"
+        }
+    }
+
+    /// 查找子目录中的 Swift Package 清单文件。
+    private func nestedSwiftPackageManifests(at root: URL) -> [URL] {
+        let rootManifest = root.appendingPathComponent("Package.swift").standardizedFileURL
+        return projectFiles(at: root, matchingExtensions: ["swift"])
+            .filter { $0.lastPathComponent == "Package.swift" && $0.standardizedFileURL != rootManifest }
     }
 
     /// 从 `Package.swift` 提取 Swift 包依赖仓库名称。
@@ -180,12 +213,69 @@ public struct ProjectProfiler {
         let requirements = root.appendingPathComponent("requirements.txt")
         if let text = try? String(contentsOf: requirements, encoding: .utf8) {
             result += text.split(separator: "\n").compactMap { line in
-                let clean = line.split(separator: "#").first?.trimmingCharacters(in: .whitespaces) ?? ""
+                let clean = line
+                    .split(separator: "#", omittingEmptySubsequences: false)
+                    .first?
+                    .trimmingCharacters(in: .whitespaces) ?? ""
                 guard !clean.isEmpty else { return nil }
                 return clean.split(whereSeparator: { "=<>~ ".contains($0) }).first.map(String.init)
             }
         }
         return result
+    }
+
+    /// 递归扫描源码文件，补充语言和框架信号。
+    private func scanSourceSignals(at root: URL) -> (languages: [String: Int], frameworks: Set<String>) {
+        var languages: [String: Int] = [:]
+        var frameworks = Set<String>()
+        for file in projectFiles(at: root, matchingExtensions: Set(Self.sourceLanguageByExtension.keys)) {
+            let ext = file.pathExtension.lowercased()
+            if let language = Self.sourceLanguageByExtension[ext] {
+                languages[language, default: 0] += 1
+            }
+            if ext == "swift", file.lastPathComponent != "Package.swift" {
+                frameworks.formUnion(swiftFrameworkImports(at: file))
+            }
+        }
+        return (languages, frameworks)
+    }
+
+    /// 返回项目内符合扩展名条件的文件，跳过依赖、构建缓存和隐藏目录。
+    private func projectFiles(at root: URL, matchingExtensions extensions: Set<String>) -> [URL] {
+        guard let enumerator = fileManager.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        var files: [URL] = []
+        for case let url as URL in enumerator {
+            let name = url.lastPathComponent
+            if Self.ignoredDirectoryNames.contains(name), isDirectory(url) {
+                enumerator.skipDescendants()
+                continue
+            }
+            guard extensions.contains(url.pathExtension.lowercased()) else {
+                continue
+            }
+            files.append(url)
+        }
+        return files
+    }
+
+    /// 判断 URL 是否指向目录。
+    private func isDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
+    }
+
+    /// 从 Swift 源码 import 声明中提取常见框架。
+    private func swiftFrameworkImports(at url: URL) -> [String] {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        let imports = regexMatches(pattern: #"(?m)^\s*import\s+([A-Za-z_][A-Za-z0-9_]*)"#, text: text)
+        return imports.filter { Self.swiftFrameworkNames.contains($0) }
     }
 
     /// 从 README 内容中提取简短描述和高频关键词。
@@ -246,5 +336,50 @@ public struct ProjectProfiler {
         "the", "and", "for", "with", "from", "this", "that", "you", "are", "was", "were",
         "have", "has", "can", "will", "your", "our", "use", "using", "into", "about",
         "一个", "项目", "使用", "支持"
+    ]
+
+    /// 源码扩展名到语言名称的映射。
+    private static let sourceLanguageByExtension: [String: String] = [
+        "swift": "Swift",
+        "m": "Objective-C",
+        "mm": "Objective-C",
+        "h": "Objective-C",
+        "ts": "TypeScript",
+        "tsx": "TypeScript",
+        "js": "JavaScript",
+        "jsx": "JavaScript",
+        "py": "Python",
+        "go": "Go",
+        "rs": "Rust",
+        "kt": "Kotlin",
+        "kts": "Kotlin",
+        "java": "Java"
+    ]
+
+    /// 递归扫描时忽略的目录。
+    private static let ignoredDirectoryNames: Set<String> = [
+        ".build",
+        ".git",
+        ".swiftpm",
+        "DerivedData",
+        "node_modules",
+        "Pods",
+        "Carthage",
+        ".bundle"
+    ]
+
+    /// 用作项目画像框架信号的 Swift 模块。
+    private static let swiftFrameworkNames: Set<String> = [
+        "SwiftUI",
+        "AppKit",
+        "UIKit",
+        "Combine",
+        "Foundation",
+        "SwiftData",
+        "CoreData",
+        "Network",
+        "WebKit",
+        "XCTest",
+        "Vapor"
     ]
 }

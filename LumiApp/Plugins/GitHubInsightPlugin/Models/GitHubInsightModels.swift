@@ -10,25 +10,6 @@ typealias GitHubInsightProjectProfile = ProjectProfile
 /// GitHubInsight 使用的项目画像器兼容别名。
 typealias GitHubInsightProjectProfiler = ProjectProfiler
 
-/// 发现仓库与当前项目之间的关系。
-enum GitHubInsightRelationType: String, Codable, CaseIterable, Sendable {
-    /// 仓库可能替换当前依赖或与其竞争。
-    case alternative
-    /// 仓库可能与当前技术栈配套使用。
-    case complementary
-    /// 仓库可能展示约定或使用模式。
-    case example
-
-    /// 关系类型的本地化展示标题。
-    var title: String {
-        switch self {
-        case .alternative: return String(localized: "Alternative", table: "GitHubInsight")
-        case .complementary: return String(localized: "Complementary", table: "GitHubInsight")
-        case .example: return String(localized: "Example", table: "GitHubInsight")
-        }
-    }
-}
-
 /// 为项目生态发现并缓存的 GitHub 仓库参考。
 struct GitHubInsightKBEntry: Identifiable, Codable, Sendable {
     /// 用于 SwiftUI 列表和持久化的稳定标识。
@@ -49,8 +30,6 @@ struct GitHubInsightKBEntry: Identifiable, Codable, Sendable {
     let lastPushedAt: Date?
     /// 针对当前项目画像的启发式相关性分数。
     let relevanceScore: Double
-    /// 与当前项目的发现关系。
-    let relationType: GitHubInsightRelationType
     /// 解释该条目为什么可能有用的可读信号。
     let keyInsights: [String]
     /// 该条目的同步时间。
