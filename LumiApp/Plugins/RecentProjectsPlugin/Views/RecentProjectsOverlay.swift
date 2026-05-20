@@ -72,36 +72,41 @@ extension RecentProjectsOverlay {
         guard !restored, restoreTask == nil else { return }
 
         restoreTask = Task { @MainActor [store, windowScope] in
-            // 并行加载最近项目列表和窗口-项目关联
+            // 加载最近项目列表（恢复 NoProjectOverlay 需要显示）
             async let projectsTask = Task.detached(priority: .utility) {
                 store.loadProjects()
             }.value
-            async let windowProjectsTask = Task.detached(priority: .utility) {
-                store.loadWindowProjects()
-            }.value
 
             let projects = await projectsTask
-            let windowProjects = await windowProjectsTask
-
             guard !Task.isCancelled else { return }
-
             recentProjectsVM.setRecentProjects(projects)
 
-            // 将保存的窗口-项目关联应用到当前窗口
-            if let scope = windowScope,
-               let record = windowProjects.first(where: { $0.windowId == scope.id }),
-               let projectPath = record.projectPath,
-               !projectPath.isEmpty {
-                let matchedProject = projects.first(where: { $0.path == projectPath })
-                let project = matchedProject ?? Project(
-                    name: URL(fileURLWithPath: projectPath).lastPathComponent,
-                    path: projectPath,
-                    lastUsed: Date()
-                )
-                scope.switchToProject(projectPath)
-                // 同步到 projectVM（如果还没设置的话）
-                if !projectVM.isProjectSelected {
-                    projectVM.switchProject(to: project)
+            // 等待 WindowPersistencePlugin 完成窗口恢复
+            await waitForWindowRestoration()
+            guard !Task.isCancelled else { return }
+
+            // 按位置索引加载并应用窗口-项目关联
+            let windowProjectPaths = await Task.detached(priority: .utility) {
+                store.loadWindowProjectPaths()
+            }.value
+            guard !Task.isCancelled else { return }
+
+            if let scope = windowScope {
+                let scopes = windowManagerVM.windowScopes
+                if let index = scopes.firstIndex(where: { $0.id == scope.id }),
+                   index < windowProjectPaths.count,
+                   let projectPath = windowProjectPaths[index],
+                   !projectPath.isEmpty {
+                    let matchedProject = projects.first(where: { $0.path == projectPath })
+                    let project = matchedProject ?? Project(
+                        name: URL(fileURLWithPath: projectPath).lastPathComponent,
+                        path: projectPath,
+                        lastUsed: Date()
+                    )
+                    scope.switchToProject(projectPath)
+                    if !projectVM.isProjectSelected {
+                        projectVM.switchProject(to: project)
+                    }
                 }
             }
 
@@ -114,6 +119,15 @@ extension RecentProjectsOverlay {
 
             setRestored(true)
             restoreTask = nil
+        }
+    }
+
+    /// 等待 WindowPersistencePlugin 完成初始窗口状态恢复
+    private func waitForWindowRestoration() async {
+        guard !windowManagerVM.hasCompletedInitialStateRestoration else { return }
+        for await notification in NotificationCenter.default.notifications(named: .initialWindowStateRestorationDidFinish) {
+            _ = notification
+            return
         }
     }
 }
