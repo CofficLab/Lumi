@@ -10,6 +10,81 @@
 
 > 目标：让 Lumi 在输入、聊天流式、面板切换、主题/布局刷新等高频 UI 路径中更流畅。
 
+### 动效体验规划
+
+- [ ] 梳理全 App 动效入口，按“导航/面板切换、列表增删、弹层、按钮反馈、状态变化、流式内容、编辑器 overlay”建立动效清单。
+- [x] 在 `LumiUI` 增加统一 motion tokens（duration、curve、spring、delay、stagger），避免各处散落 `0.12`、`0.15`、`0.2`、`.spring`。
+- [x] 增加 `MotionPreference` 或等价环境配置，统一处理 `Reduce Motion`、低性能模式和高频更新场景。
+- [ ] 建立动效验收标准：不影响快速输入、不打断滚动、不改变焦点、不制造布局跳动、不对流式 token 更新逐帧重排。
+- [ ] 👤 需要用户参与：用真实使用路径录屏评审动效节奏，确认“顺滑但不花哨”。
+
+### Priority 0: 全局动效基建
+
+- [x] 检查 `Packages/LumiUI/Sources/LumiUI/Components` 中已有 hover/press 动画，提取统一按钮、卡片、列表行反馈。
+- [x] 为 `AppButton`、`AppIconButton`、`GlassButton`、`AppListRow`、`AppTabBar` 统一 hover、press、selection 动效。（已接入 `GlassSelectionCard`、`GlassRow`）
+- [x] 为状态变化定义通用 transition：`.opacity`、轻微 `.scale`、`.move(edge:)` 的使用边界和默认参数。（已增加消息插入、disclosure 内容、status presentation 过渡）
+- [ ] 为所有无限循环动画添加可见性和 reduce-motion gating，避免后台或不可见面板持续动画。（LumiUI 组件硬编码 hover/status 动画已收敛，循环动画待单独扫描）
+- [ ] 增加一个轻量 `MotionDebugOverlay` 或日志开关，定位过度动画、重复动画和高频状态抖动。
+
+### Priority 1: 主框架导航和面板切换
+
+- [x] 检查 `ContentView.swift`、`LeftBar.swift`、`RailView.swift`、`PanelContentView.swift`、`BottomPanelBarView.swift`。
+- [x] 为左侧栏选中态、Rail tab 选中态、底部面板出现/隐藏统一 spring/opacity 过渡。
+- [ ] 面板内容切换使用稳定身份和 `contentTransition`/opacity，避免整个树突兀重建。（已统一 Rail、主面板、底部面板 opacity transition）
+- [ ] 底部面板高度变化使用受控动画；拖动/连续 resize 时禁用动画，结束后再恢复。
+- [x] 主题切换背景动画限制在低频路径，避免 `themeVM.currentThemeId` 触发大面积重绘时掉帧。
+
+### Priority 2: 聊天体验动效
+
+- [ ] 检查 `MessageListView.swift`、`StreamingAssistantRowView.swift`、`AssistantMessage.swift`、`UserMessage.swift`、`MessageWithToolCallsView.swift`。（已完成 `MessageListView`、`MessageWithToolCallsView`、`SpecialErrorView`、`ToolExecutionStatusCardView`、`ThinkingProcessView`、`MessageHeaderView`）
+- [x] 新消息插入使用轻量 fade+offset；历史消息恢复和首屏加载不播放逐条动画。
+- [ ] 流式消息正文更新不对每个 token 做布局动画，只对“开始回答、完成回答、工具状态变化”做状态动效。
+- [x] 工具调用卡片展开/折叠使用统一 disclosure 动效，保持内容高度变化可预测。
+- [x] 自动滚动区分用户主动滚动和模型流式更新；流式期间禁用不必要的 scroll animation。
+- [x] 权限请求、错误消息、完成分隔线使用一致的出现/消失 transition。
+
+### Priority 3: 编辑器和开发者工作流动效
+
+- [ ] 检查 `SourceEditorView.swift`、`EditorCommandPaletteView.swift`、`EditorTabHeaderView.swift`、`EditorTabItemView.swift`、`BreadcrumbNavHeaderView.swift`。（已完成 `EditorTabItemView`、`BreadcrumbNavHeaderView`、`EditorCommandPaletteView` 滚动路径）
+- [ ] 编辑器 tab 新增、关闭、选中态增加稳定且不改变宽度的过渡。（已统一 hover/selection/close affordance 动效）
+- [ ] Command Palette 打开/关闭、搜索结果更新使用轻量 transition；快速输入搜索时禁用列表重排动画。（已接入 selection scroll motion preference）
+- [x] Breadcrumb hover、菜单、路径切换统一微交互反馈。
+- [ ] 编辑器 overlay（peek、inline rename、signature help、code action）恢复后统一进入/退出动画，并确保不遮挡光标和当前行。
+- [ ] 文件树/搜索结果/引用结果列表增加插入、删除、选中动效，但大结果集和批量刷新时禁用逐项动画。
+
+### Priority 4: 弹层、Popover、Toast 和状态栏细节
+
+- [ ] 检查 `QuickFileSearchOverlay`、`ShowImageOverlay`、`PermissionRequestView`、各 StatusBar detail popover。
+- [ ] 统一 popover/detail 面板出现节奏，避免不同插件各自使用不同 spring。
+- [ ] Toast、错误横幅、权限请求采用一致的 move+opacity transition，并处理重复触发队列。（已接入 `AppErrorBanner`、`PermissionRequestView`，Toast 队列待检查）
+- [ ] 状态栏 loading/progress 使用统一符号动效；完成/失败时提供短促状态过渡。
+- [ ] 图片预览、文件搜索、主题选择器等 overlay 关闭时保留退出动画，不直接从视图树消失。
+
+### Priority 5: 列表、设置和插件页面
+
+- [ ] 检查设置页、插件列表、模型选择器、会话列表、历史库、磁盘管理等长列表页面。
+- [ ] 为 `List`/`LazyVStack` 行 hover、selection、展开/折叠建立统一样式。
+- [ ] 搜索过滤和排序变化使用批量动画或禁用动画，避免大列表重排卡顿。
+- [ ] 空状态、加载态、错误态之间增加统一 crossfade。
+- [ ] 扫描进度页保留必要 loading 动效，但减少重复的自定义无限动画实现。
+
+### Priority 6: 可访问性和性能约束
+
+- [x] 接入 macOS Reduce Motion；开启后保留 opacity，禁用 scale、move、spring 和循环动画。
+- [x] 为低性能模式或大文件/大列表场景提供 `animation(nil)` 路径。
+- [ ] 对输入、流式聊天、编辑器滚动、窗口 resize 等高频路径设置“默认不动画，只在状态边界动画”的规则。
+- [ ] 👤 需要用户参与：在低端 Mac 或电池模式验证动效不会造成明显掉帧。
+- [ ] 👤 需要用户参与：验证 VoiceOver/键盘导航下焦点不因动画丢失。
+
+### 动效成功标准
+
+- [ ] 主导航、面板、弹层切换都有一致且克制的过渡。
+- [ ] 按钮、列表行、tab、卡片 hover/press/selection 反馈一致。
+- [ ] 流式聊天和快速输入没有被动画拖慢。
+- [ ] 大列表刷新、搜索、窗口 resize 不出现大面积抖动。
+- [ ] Reduce Motion 生效后界面仍可理解且无突兀跳变。
+- [ ] 👤 需要用户参与：完成一轮全 App 视觉走查，记录剩余不顺滑细节。
+
 ### Priority 0: 基线和测量
 
 - [ ] 👤 需要用户参与：Instruments 测量各场景。
