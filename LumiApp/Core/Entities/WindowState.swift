@@ -42,19 +42,6 @@ struct WindowEditorState: Codable, Hashable {
     }
 }
 
-// MARK: - Window State Snapshot
-
-/// 窗口状态快照（用于持久化）
-struct WindowStateSnapshot: Codable {
-    let windowId: UUID
-    let conversationId: UUID?
-    let projectPath: String?
-    let activePanel: WindowActivePanel
-    let editorState: WindowEditorState
-    let sidebarVisibility: Bool
-    let createdAt: Date
-}
-
 // MARK: - Window Events
 
 /// 窗口间通信事件

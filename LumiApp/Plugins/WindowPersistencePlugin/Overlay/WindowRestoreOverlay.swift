@@ -64,13 +64,18 @@ extension WindowRestoreOverlay {
     }
 
     private func handleWindowWillClose(_ notification: Notification) {
-        saveCurrentStates()
+        Task { @MainActor in
+            saveCurrentStates()
+        }
     }
 
     private func handleAppWillTerminate() {
-        saveCurrentStates()
+        Task { @MainActor in
+            saveCurrentStates()
+        }
     }
 
+    @MainActor
     private func saveCurrentStates() {
         let scopes = WindowManager.shared.windowScopes
         store.saveWindowStates(from: scopes)

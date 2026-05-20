@@ -26,6 +26,7 @@ final class WindowStateStore: @unchecked Sendable {
     // MARK: - Public API
 
     /// 从 WindowScope 列表保存窗口状态（异步）
+    @MainActor
     func saveWindowStates(from scopes: [WindowScope]) {
         let records = scopes.map { scope in
             WindowPersistenceRecord(
