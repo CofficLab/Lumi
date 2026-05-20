@@ -678,6 +678,7 @@ private struct EditorPreviewMarkdownView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     let markdown: String
+    @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
         MarkdownTOCScanner.scan(markdown)
@@ -691,11 +692,19 @@ private struct EditorPreviewMarkdownView: View {
             } else if scannedTOC.headings.isEmpty {
                 markdownScrollView(sections: scannedTOC.sections)
             } else {
-                ScrollViewReader { proxy in
-                    HStack(spacing: 0) {
-                        markdownTOCSidebar(headings: scannedTOC.headings, proxy: proxy)
-                        Divider()
+                HStack(spacing: 0) {
+                    markdownTOCSidebar(headings: scannedTOC.headings)
+                    Divider()
+                    ScrollViewReader { proxy in
                         markdownScrollView(sections: scannedTOC.sections)
+                            .onChange(of: scrollToID) { _, newValue in
+                                if let id = newValue {
+                                    withAnimation(.easeInOut(duration: 0.18)) {
+                                        proxy.scrollTo(id, anchor: .top)
+                                    }
+                                    scrollToID = nil
+                                }
+                            }
                     }
                 }
             }
@@ -737,8 +746,7 @@ private struct EditorPreviewMarkdownView: View {
     }
 
     private func markdownTOCSidebar(
-        headings: [MarkdownTOCHeading],
-        proxy: ScrollViewProxy
+        headings: [MarkdownTOCHeading]
     ) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
@@ -750,9 +758,7 @@ private struct EditorPreviewMarkdownView: View {
 
                 ForEach(headings) { heading in
                     Button {
-                        withAnimation(.easeInOut(duration: 0.18)) {
-                            proxy.scrollTo(heading.id, anchor: .top)
-                        }
+                        scrollToID = heading.id
                     } label: {
                         Text(heading.title)
                             .font(.system(size: 12, weight: heading.level <= 2 ? .semibold : .regular))
