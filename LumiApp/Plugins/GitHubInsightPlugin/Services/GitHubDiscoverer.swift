@@ -1,6 +1,17 @@
 import Foundation
 
+/// Discovers GitHub repositories related to a project's inferred technology ecosystem.
+///
+/// Discovery is driven by repository search queries built from frameworks,
+/// dependencies, language, and README keywords. Results are scored and categorized
+/// as alternatives, complementary projects, or examples.
 struct GitHubInsightDiscoverer {
+    /// Searches GitHub and returns the most relevant repository references for a profile.
+    ///
+    /// - Parameters:
+    ///   - profile: Project profile used to build search queries and relevance scores.
+    ///   - limitPerQuery: Maximum number of repositories requested per generated query.
+    /// - Returns: Deduplicated and relevance-sorted knowledge base entries.
     func discover(profile: GitHubInsightProjectProfile, limitPerQuery: Int = 8) async throws -> [GitHubInsightKBEntry] {
         var entriesByRepo: [String: GitHubInsightKBEntry] = [:]
 
@@ -37,6 +48,7 @@ struct GitHubInsightDiscoverer {
             .map { $0 }
     }
 
+    /// Builds bounded GitHub repository search queries from the project profile.
     private func buildQueries(profile: GitHubInsightProjectProfile) -> [(query: String, relationType: GitHubInsightRelationType)] {
         let language = profile.primaryLanguage.map { "language:\($0)" } ?? ""
         let recency = "pushed:>2024-01-01"
@@ -68,6 +80,7 @@ struct GitHubInsightDiscoverer {
         return Array(queries.prefix(8))
     }
 
+    /// Converts a GitHub API repository response into a cache entry.
     private func entry(
         from repo: GitHubRepository,
         relationType: GitHubInsightRelationType,
@@ -91,6 +104,7 @@ struct GitHubInsightDiscoverer {
         )
     }
 
+    /// Calculates a heuristic relevance score for a repository and project profile.
     private func relevanceScore(repo: GitHubRepository, profile: GitHubInsightProjectProfile) -> Double {
         let languageMatch = repo.language?.caseInsensitiveCompare(profile.primaryLanguage ?? "") == .orderedSame ? 1.0 : 0.0
         let text = ([repo.fullName, repo.description ?? ""] + (repo.topics ?? [])).joined(separator: " ").lowercased()
@@ -102,6 +116,7 @@ struct GitHubInsightDiscoverer {
         return languageMatch * 0.35 + overlap * 0.25 + starsScore * 0.20 + recencyScore * 0.20
     }
 
+    /// Builds short human-readable signals explaining why a repository was selected.
     private func keyInsights(
         repo: GitHubRepository,
         relationType: GitHubInsightRelationType,
@@ -129,6 +144,7 @@ struct GitHubInsightDiscoverer {
         return insights
     }
 
+    /// Scores repository freshness using the last pushed or updated timestamp.
     private func recencyScore(date: Date?) -> Double {
         guard let date else { return 0.3 }
         let ageDays = max(Date().timeIntervalSince(date) / 86_400, 0)
@@ -139,15 +155,18 @@ struct GitHubInsightDiscoverer {
         return 0.2
     }
 
+    /// Parses ISO-8601 dates returned by the GitHub API.
     private func parseGitHubDate(_ value: String?) -> Date? {
         guard let value else { return nil }
         return ISO8601DateFormatter().date(from: value)
     }
 
+    /// Returns whether two dependency names refer to the same package after normalization.
     private func sameDependency(_ lhs: String, _ rhs: String) -> Bool {
         normalizeDependency(lhs) == normalizeDependency(rhs)
     }
 
+    /// Normalizes package and repository names for dependency comparison.
     private func normalizeDependency(_ value: String) -> String {
         value
             .lowercased()

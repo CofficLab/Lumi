@@ -1,8 +1,18 @@
 import Foundation
 
+/// Builds a technology profile for a local project by inspecting common manifest files.
+///
+/// The profiler reads package manifests and README content to infer language,
+/// frameworks, dependencies, project type, keywords, and platform hints used by
+/// GitHub ecosystem discovery.
 struct GitHubInsightProjectProfiler {
+    /// File system helper used to inspect project files.
     private let fileManager = FileManager.default
 
+    /// Creates a project profile for a readable local project directory.
+    ///
+    /// - Parameter projectPath: Local project root path.
+    /// - Returns: An inferred project profile, or `nil` when the path is not a directory.
     func profile(projectPath: String) -> GitHubInsightProjectProfile? {
         let root = URL(fileURLWithPath: projectPath).standardizedFileURL
         var isDirectory: ObjCBool = false
@@ -75,12 +85,14 @@ struct GitHubInsightProjectProfiler {
         )
     }
 
+    /// Reads a JSON object from disk.
     private func readJSON(_ url: URL) -> [String: Any]? {
         guard let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return json
     }
 
+    /// Extracts dependency names from selected package JSON keys.
     private func dependencyNames(from json: [String: Any], keys: [String]) -> [String] {
         keys.flatMap { key -> [String] in
             guard let dependencies = json[key] as? [String: Any] else { return [] }
@@ -88,6 +100,7 @@ struct GitHubInsightProjectProfiler {
         }
     }
 
+    /// Detects well-known JavaScript frameworks from dependency names.
     private func detectJSFrameworks(from dependencies: [String]) -> [String] {
         let map: [String: String] = [
             "react": "React",
@@ -101,6 +114,7 @@ struct GitHubInsightProjectProfiler {
         return dependencies.compactMap { map[$0.lowercased()] }
     }
 
+    /// Extracts Swift package dependency repository names from `Package.swift`.
     private func swiftPackageDependencies(at url: URL) -> [String] {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
         var result = Set<String>()
@@ -113,11 +127,13 @@ struct GitHubInsightProjectProfiler {
         return Array(result)
     }
 
+    /// Extracts CocoaPods dependency names from a `Podfile`.
     private func podDependencies(at url: URL) -> [String] {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
         return regexMatches(pattern: #"pod\s+['"]([^'"]+)['"]"#, text: text)
     }
 
+    /// Extracts the platform declaration from a `Podfile`.
     private func podPlatform(at url: URL) -> String? {
         guard let text = try? String(contentsOf: url, encoding: .utf8),
               let value = regexMatches(pattern: #"platform\s+:(\w+),\s*['"]([^'"]+)['"]"#, text: text).first else {
@@ -126,6 +142,7 @@ struct GitHubInsightProjectProfiler {
         return value
     }
 
+    /// Extracts direct Go module requirements from `go.mod`.
     private func goDependencies(at url: URL) -> [String] {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
         return text.split(separator: "\n").compactMap { line in
@@ -135,6 +152,7 @@ struct GitHubInsightProjectProfiler {
         }
     }
 
+    /// Extracts dependency names from the `[dependencies]` section of a TOML file.
     private func tomlDependencyNames(at url: URL) -> [String] {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
         var inDependencies = false
@@ -152,6 +170,7 @@ struct GitHubInsightProjectProfiler {
         return names
     }
 
+    /// Extracts Python dependency names from supported Python manifest files.
     private func pythonDependencies(at root: URL) -> [String] {
         var result: [String] = []
         let requirements = root.appendingPathComponent("requirements.txt")
@@ -165,6 +184,7 @@ struct GitHubInsightProjectProfiler {
         return result
     }
 
+    /// Extracts a short description and frequent keywords from README content.
     private func readReadme(at root: URL) -> (description: String, keywords: [String]) {
         let candidates = ["README.md", "README_zh.md", "Readme.md", "readme.md"]
         guard let url = candidates.map({ root.appendingPathComponent($0) }).first(where: { fileManager.fileExists(atPath: $0.path) }),
@@ -190,6 +210,7 @@ struct GitHubInsightProjectProfiler {
         return (String(description.prefix(240)), Array(top))
     }
 
+    /// Infers the broad project type from files, frameworks, and dependencies.
     private func inferProjectType(root: URL, frameworks: Set<String>, dependencies: Set<String>) -> GitHubInsightProjectType {
         if frameworks.contains("SwiftUI") || fileManager.fileExists(atPath: root.appendingPathComponent("Podfile").path) {
             return .mobile
@@ -206,6 +227,7 @@ struct GitHubInsightProjectProfiler {
         return .unknown
     }
 
+    /// Returns the first capture group for all matches of a regular expression.
     private func regexMatches(pattern: String, text: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let nsText = text as NSString
@@ -215,6 +237,7 @@ struct GitHubInsightProjectProfiler {
         }
     }
 
+    /// Words ignored when deriving README keywords.
     private static let stopWords: Set<String> = [
         "the", "and", "for", "with", "from", "this", "that", "you", "are", "was", "were",
         "have", "has", "can", "will", "your", "our", "use", "using", "into", "about",

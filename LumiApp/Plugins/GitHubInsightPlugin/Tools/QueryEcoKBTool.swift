@@ -1,13 +1,20 @@
 import Foundation
 import MagicKit
 
+/// Agent tool for searching the local GitHub ecosystem knowledge base.
+///
+/// The tool performs an offline search over cached repository entries and returns
+/// matching alternatives, complementary projects, or example repositories.
 struct QueryEcoKBTool: SuperAgentTool {
+    /// Tool name exposed to the agent.
     let name = "query_eco_kb"
 
+    /// Returns the localized tool description shown to the agent.
     func description(for language: LanguagePreference) -> String {
         String(localized: "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools.", table: "GitHubInsight")
     }
 
+    /// Defines the JSON schema accepted by the tool.
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
@@ -34,10 +41,12 @@ struct QueryEcoKBTool: SuperAgentTool {
         ]
     }
 
+    /// Declares the tool as low risk because it only reads local cached data.
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 
+    /// Executes a keyword search against project-specific or global cached entries.
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let query = (arguments["query"]?.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {

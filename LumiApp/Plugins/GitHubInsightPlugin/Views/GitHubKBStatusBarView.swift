@@ -2,12 +2,19 @@ import SwiftUI
 import LumiUI
 import AppKit
 
+/// View model that loads, syncs, and exposes GitHub ecosystem cache state for the UI.
 @MainActor
 final class GitHubKBStatusBarViewModel: ObservableObject {
+    /// Current sync state displayed by the status bar and popover.
     @Published var state: GitHubInsightSyncState = .idle
+
+    /// Cached entries for the active project.
     @Published var entries: [GitHubInsightKBEntry] = []
+
+    /// Cached project profile for the active project.
     @Published var profile: GitHubInsightProjectProfile?
 
+    /// Loads cached data and synchronizes the project cache when needed.
     func load(projectPath: String, force: Bool = false) {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else {
@@ -29,6 +36,7 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
         }
     }
 
+    /// Loads only the persisted cache without triggering GitHub discovery.
     func loadCache(projectPath: String) async {
         guard let store = await GitHubInsightKnowledgeBaseManager.shared.loadStore(projectPath: projectPath) else {
             entries = []
@@ -44,6 +52,10 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
     }
 }
 
+/// Status bar entry that shows GitHub ecosystem cache state for the current project.
+///
+/// The view automatically attempts a cache sync when it appears, when the active
+/// project changes, and when the application becomes active.
 struct GitHubKBStatusBarView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = GitHubKBStatusBarViewModel()
@@ -118,8 +130,11 @@ struct GitHubKBStatusBarView: View {
     }
 }
 
+/// Popover displaying cached GitHub ecosystem entries and manual sync controls.
 struct GitHubKBPopover: View {
     @ObservedObject var viewModel: GitHubKBStatusBarViewModel
+
+    /// Project path used when the user triggers a forced sync.
     let projectPath: String
     @State private var selectedRelation: GitHubInsightRelationType?
 
@@ -142,6 +157,7 @@ struct GitHubKBPopover: View {
         .frame(minWidth: 620, minHeight: 360)
     }
 
+    /// Header showing the knowledge base title and project profile summary.
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -163,6 +179,7 @@ struct GitHubKBPopover: View {
         }
     }
 
+    /// Segmented control for filtering entries by relation type.
     private var relationPicker: some View {
         Picker("Relation", selection: Binding(
             get: { selectedRelation?.rawValue ?? "all" },
@@ -176,6 +193,7 @@ struct GitHubKBPopover: View {
         .pickerStyle(.segmented)
     }
 
+    /// Scrollable list of filtered knowledge base entries.
     private var entriesList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
@@ -193,6 +211,7 @@ struct GitHubKBPopover: View {
         }
     }
 
+    /// Footer showing sync state and the manual refresh button.
     private var footer: some View {
         HStack {
             Text(statusText)
@@ -207,12 +226,14 @@ struct GitHubKBPopover: View {
         }
     }
 
+    /// Entries filtered by the selected relation and sorted by relevance.
     private var filteredEntries: [GitHubInsightKBEntry] {
         viewModel.entries
             .filter { selectedRelation == nil || $0.relationType == selectedRelation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
+    /// Empty-state text based on the current sync state.
     private var emptyText: String {
         switch viewModel.state {
         case .syncing:
@@ -222,6 +243,7 @@ struct GitHubKBPopover: View {
         }
     }
 
+    /// Human-readable sync status shown in the popover footer.
     private var statusText: String {
         switch viewModel.state {
         case .idle:
@@ -238,7 +260,9 @@ struct GitHubKBPopover: View {
     }
 }
 
+/// Row view for a single cached GitHub repository reference.
 private struct GitHubKBEntryRow: View {
+    /// Knowledge base entry rendered by this row.
     let entry: GitHubInsightKBEntry
 
     private var primaryTextColor: Color {

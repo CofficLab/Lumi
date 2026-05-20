@@ -1,10 +1,19 @@
 import Foundation
 
+/// Injects relevant cached GitHub ecosystem references into outgoing chat context.
+///
+/// The middleware only activates for recommendation, dependency, framework, or
+/// ecosystem-related prompts. It reads the current project's local knowledge base
+/// and appends a transient system prompt with the most relevant cached entries.
 @MainActor
 final class GitHubKBMiddleware: SuperSendMiddleware {
+    /// Stable middleware identifier used by the send pipeline.
     let id = "github-insight-kb"
+
+    /// Middleware execution order within the send pipeline.
     let order = 60
 
+    /// Processes an outgoing message and appends GitHub ecosystem context when relevant.
     func handle(
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
@@ -34,6 +43,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         await next(ctx)
     }
 
+    /// Returns whether the message appears to need ecosystem or dependency guidance.
     private func shouldInject(for message: String) -> Bool {
         let lowercased = message.lowercased()
         let keywords = [
@@ -43,6 +53,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         return keywords.contains { lowercased.contains($0) }
     }
 
+    /// Filters cached entries by requested relation type and sorts them by relevance.
     private func filter(entries: [GitHubInsightKBEntry], for message: String) -> [GitHubInsightKBEntry] {
         let lowercased = message.lowercased()
         let relation: GitHubInsightRelationType?
@@ -59,6 +70,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
+    /// Builds the transient system prompt that summarizes cached ecosystem references.
     private func buildPrompt(entries: [GitHubInsightKBEntry], languagePreference: LanguagePreference) -> String {
         var lines: [String]
 
