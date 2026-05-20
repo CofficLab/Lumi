@@ -25,23 +25,26 @@ final class ProjectIssueScannerViewModel: ObservableObject {
         Task {
             state = .scanning
             await IdleScannerService.shared.forceScan(projectPath: path)
-            await reloadIssues()
+            await reloadIssues(projectPath: path)
             state = .ready
         }
     }
 
     /// 从 Store 重新加载问题列表
-    func reloadIssues() async {
-        issues = await ProjectIssueStore.shared.fetchOpen()
+    func reloadIssues(projectPath: String) async {
+        let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        issues = path.isEmpty
+            ? []
+            : await ProjectIssueStore.shared.fetchOpen(projectPath: path)
         if state != .scanning {
             state = issues.isEmpty ? .idle : .ready
         }
     }
 
     /// 忽略指定问题
-    func dismiss(id: UUID) async {
+    func dismiss(id: UUID, projectPath: String) async {
         await ProjectIssueStore.shared.updateStatus(id: id, status: .dismissed)
-        await reloadIssues()
+        await reloadIssues(projectPath: projectPath)
     }
 }
 
@@ -89,13 +92,13 @@ struct ProjectIssueScannerStatusBarView: View {
             }
         }
         .onAppear {
-            Task { await viewModel.reloadIssues() }
+            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
-            Task { await viewModel.reloadIssues() }
+            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
         }
         .onApplicationDidBecomeActive {
-            Task { await viewModel.reloadIssues() }
+            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
         }
     }
 
@@ -161,7 +164,7 @@ struct ProjectIssueScannerPopover: View {
                 } else {
                     ForEach(viewModel.issues) { issue in
                         IssueRow(issue: issue) {
-                            Task { await viewModel.dismiss(id: issue.id) }
+                            Task { await viewModel.dismiss(id: issue.id, projectPath: projectPath) }
                         }
                     }
                 }

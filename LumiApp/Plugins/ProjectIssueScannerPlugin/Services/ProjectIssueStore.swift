@@ -52,6 +52,14 @@ actor ProjectIssueStore {
         issues.filter(\.isOpen)
     }
 
+    /// 获取指定项目所有未解决的问题
+    func fetchOpen(projectPath: String) -> [ProjectIssue] {
+        let normalizedPath = normalizeProjectPath(projectPath)
+        return issues.filter { issue in
+            issue.isOpen && (issue.projectPath.isEmpty || normalizeProjectPath(issue.projectPath) == normalizedPath)
+        }
+    }
+
     /// 获取所有问题
     func fetchAll() -> [ProjectIssue] {
         issues
@@ -81,6 +89,36 @@ actor ProjectIssueStore {
         try? persist()
     }
 
+    /// 替换某个项目下指定来源的问题，保留用户已确认/忽略的问题状态。
+    func replaceIssues(projectPath: String, source: ProjectIssueSource, with newIssues: [ProjectIssue]) {
+        let normalizedPath = normalizeProjectPath(projectPath)
+        let previousByKey = Dictionary(uniqueKeysWithValues: issues.map { ($0.dedupeKey, $0) })
+        let incomingKeys = Set(newIssues.map(\.dedupeKey))
+
+        issues.removeAll { issue in
+            normalizeProjectPath(issue.projectPath) == normalizedPath
+                && issue.source == source
+                && issue.isOpen
+                && !incomingKeys.contains(issue.dedupeKey)
+        }
+
+        for issue in newIssues {
+            var nextIssue = issue
+            if let previous = previousByKey[issue.dedupeKey] {
+                nextIssue.status = previous.status
+                nextIssue.updatedAt = Date()
+            }
+
+            if let index = issues.firstIndex(where: { $0.dedupeKey == nextIssue.dedupeKey }) {
+                issues[index] = nextIssue
+            } else {
+                issues.append(nextIssue)
+            }
+        }
+
+        try? persist()
+    }
+
     /// 清空所有问题
     func clearAll() {
         issues.removeAll()
@@ -105,5 +143,9 @@ actor ProjectIssueStore {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(issues)
         try data.write(to: issuesFileURL, options: [.atomic])
+    }
+
+    private func normalizeProjectPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
     }
 }

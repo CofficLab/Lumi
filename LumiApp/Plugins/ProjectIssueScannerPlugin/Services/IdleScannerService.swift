@@ -45,18 +45,24 @@ actor IdleScannerService {
         isScanning = true
         defer { isScanning = false; lastScanAt = Date() }
 
-        // TODO: 第一层 — 本地规则扫描
-        // let localIssues = await localRuleScanner.scan(projectPath: projectPath)
-        // await ProjectIssueStore.shared.upsertBatch(localIssues)
+        let localIssues = localRuleScanner.scan(projectPath: projectPath)
+        await ProjectIssueStore.shared.replaceIssues(
+            projectPath: projectPath,
+            source: .localRule,
+            with: localIssues
+        )
 
-        // TODO: 第二层 — LLM 深度分析（按需、限流）
-        // resetDailyCounterIfNeeded()
-        // if todayLLMAnalysisCount < maxLLMAnalysisPerDay {
-        //     if let llmIssues = await deepAnalyzer.analyze(projectPath: projectPath) {
-        //         await ProjectIssueStore.shared.upsertBatch(llmIssues)
-        //         todayLLMAnalysisCount += 1
-        //     }
-        // }
+        resetDailyCounterIfNeeded()
+        if todayLLMAnalysisCount < maxLLMAnalysisPerDay,
+           await deepAnalyzer.isReady(),
+           let llmIssues = await deepAnalyzer.analyze(projectPath: projectPath) {
+            await ProjectIssueStore.shared.replaceIssues(
+                projectPath: projectPath,
+                source: .llmAnalysis,
+                with: llmIssues
+            )
+            todayLLMAnalysisCount += 1
+        }
     }
 
     /// 手动触发扫描（用户主动请求）
@@ -67,9 +73,21 @@ actor IdleScannerService {
         isScanning = true
         defer { isScanning = false; lastScanAt = Date() }
 
-        // TODO: 执行完整的本地规则扫描
-        // let localIssues = await localRuleScanner.scan(projectPath: projectPath)
-        // await ProjectIssueStore.shared.upsertBatch(localIssues)
+        let localIssues = localRuleScanner.scan(projectPath: projectPath)
+        await ProjectIssueStore.shared.replaceIssues(
+            projectPath: projectPath,
+            source: .localRule,
+            with: localIssues
+        )
+
+        if await deepAnalyzer.isReady(),
+           let llmIssues = await deepAnalyzer.analyze(projectPath: projectPath) {
+            await ProjectIssueStore.shared.replaceIssues(
+                projectPath: projectPath,
+                source: .llmAnalysis,
+                with: llmIssues
+            )
+        }
     }
 
     // MARK: - Private

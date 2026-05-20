@@ -13,16 +13,22 @@ struct IssueHintSendMiddleware: SuperSendMiddleware {
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
-        let issues = await ProjectIssueStore.shared.fetchOpen()
+        let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let issues = projectPath.isEmpty
+            ? await ProjectIssueStore.shared.fetchOpen()
+            : await ProjectIssueStore.shared.fetchOpen(projectPath: projectPath)
 
         guard !issues.isEmpty else {
             await next(ctx)
             return
         }
 
-        // TODO: 实现智能匹配 — 根据用户消息内容筛选相关问题
-        // 当前策略：取最近的 Top N 个未解决问题
-        let relevantIssues = Array(issues.prefix(5))
+        let relevantIssues = pickRelevantIssues(
+            issues: issues,
+            message: ctx.message.content,
+            currentFileURL: ctx.currentFileURL,
+            projectPath: projectPath
+        )
 
         let prompt = buildPrompt(from: relevantIssues)
         ctx.transientSystemPrompts.append(prompt)
@@ -42,5 +48,71 @@ struct IssueHintSendMiddleware: SuperSendMiddleware {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    private func pickRelevantIssues(
+        issues: [ProjectIssue],
+        message: String,
+        currentFileURL: URL?,
+        projectPath: String
+    ) -> [ProjectIssue] {
+        let messageTokens = Set(tokenize(message))
+        let currentRelativePath = currentFileURL.map { url in
+            relativePath(for: url, projectPath: projectPath)
+        }
+
+        let scored = issues.map { issue in
+            var score = severityScore(issue.severity)
+
+            if let currentRelativePath, issue.filePath == currentRelativePath {
+                score += 8
+            }
+
+            let issuePathTokens = Set(tokenize(issue.filePath))
+            let issueTextTokens = Set(tokenize([issue.title, issue.description, issue.suggestion ?? ""].joined(separator: " ")))
+            score += messageTokens.intersection(issuePathTokens).count * 3
+            score += messageTokens.intersection(issueTextTokens).count
+
+            if issue.source == .llmAnalysis {
+                score += 1
+            }
+
+            return (issue: issue, score: score)
+        }
+
+        return scored
+            .sorted(by: { lhs, rhs in
+                if lhs.score == rhs.score {
+                    return lhs.issue.updatedAt > rhs.issue.updatedAt
+                }
+                return lhs.score > rhs.score
+            })
+            .prefix(5)
+            .map(\.issue)
+    }
+
+    private func severityScore(_ severity: ProjectIssueSeverity) -> Int {
+        switch severity {
+        case .critical: return 6
+        case .warning: return 4
+        case .info: return 2
+        }
+    }
+
+    private func tokenize(_ text: String) -> [String] {
+        text
+            .lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map(String.init)
+            .filter { $0.count >= 3 }
+    }
+
+    private func relativePath(for fileURL: URL, projectPath: String) -> String {
+        let rootPath = URL(fileURLWithPath: projectPath).standardizedFileURL.path
+        let filePath = fileURL.standardizedFileURL.path
+        guard filePath.hasPrefix(rootPath) else { return filePath }
+
+        let start = filePath.index(filePath.startIndex, offsetBy: rootPath.count)
+        return String(filePath[start...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
 }

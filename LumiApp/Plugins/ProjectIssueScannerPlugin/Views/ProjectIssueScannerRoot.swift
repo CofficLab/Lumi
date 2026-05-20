@@ -38,7 +38,7 @@ struct ProjectIssueScannerRoot<Content: View>: View {
         Task {
             await DeepIssueAnalyzer.shared.configure(
                 llmService: llmVM.llmService,
-                configProvider: llmVM
+                config: llmVM.getCurrentConfig()
             )
         }
     }
