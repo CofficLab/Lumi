@@ -38,7 +38,9 @@ struct ToolExecutionStatusCardView: View {
                             didRequestStop = true
                             taskCancellationVM.requestCancel(conversationId: conversationId)
                         } label: {
-                            Text(didRequestStop ? "停止中…" : "停止本轮")
+                            Text(didRequestStop
+                            ? String(localized: "Stopping…", table: "CoreMessageRenderer")
+                            : String(localized: "Stop Current Turn", table: "CoreMessageRenderer"))
                                 .font(.system(size: 11, weight: .regular))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
@@ -88,7 +90,7 @@ struct ToolExecutionStatusCardView: View {
                         }
 
                         if let lines = snapshot.shellLines, let bytes = snapshot.shellBytes {
-                            Text("输出：\(lines) 行，\(Self.byteFormatter.string(fromByteCount: Int64(bytes)))")
+                            Text(String(format: String(localized: "Output: %lld lines, %@", table: "CoreMessageRenderer"), lines, Self.byteFormatter.string(fromByteCount: Int64(bytes))))
                                 .font(.system(size: 11, weight: .regular))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -131,10 +133,10 @@ struct ToolExecutionStatusSnapshot {
 
         var label: String {
             switch self {
-            case .running: return "进行中"
-            case .completed: return "已完成"
-            case .failed: return "失败"
-            case .cancelled: return "已停止"
+            case .running: return String(localized: "Running", table: "CoreMessageRenderer")
+            case .completed: return String(localized: "Completed", table: "CoreMessageRenderer")
+            case .failed: return String(localized: "Failed", table: "CoreMessageRenderer")
+            case .cancelled: return String(localized: "Stopped", table: "CoreMessageRenderer")
             }
         }
     }
@@ -235,7 +237,7 @@ struct ToolExecutionStatusSnapshot {
         guard content == "已停止执行工具" else { return nil }
         return ToolExecutionStatusSnapshot(
             phase: .cancelled,
-            toolName: "工具",
+            toolName: String(localized: "Tool", table: "CoreMessageRenderer"),
             current: nil,
             total: nil,
             elapsedSeconds: nil,

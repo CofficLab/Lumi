@@ -17,7 +17,7 @@ struct ConversationTimelineHeader: View {
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 HStack(spacing: 12) {
-                    Text("\(itemCount) 条消息")
+                    Text(String(format: String(localized: "%lld messages", table: "ConversationTimeline"), itemCount))
                         .font(.system(size: 11))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -29,10 +29,10 @@ struct ConversationTimelineHeader: View {
                             let currentText = timelineService.formatToken(currentContextTokens)
                             if contextLimit > 0 {
                                 let limitText = timelineService.formatToken(contextLimit)
-                                Text("上下文 \(currentText)/\(limitText)")
+                                Text(String(format: String(localized: "Context %@/%@", table: "ConversationTimeline"), currentText, limitText))
                                     .font(.system(size: 11))
                             } else {
-                                Text("上下文 \(currentText)")
+                                Text(String(format: String(localized: "Context %@", table: "ConversationTimeline"), currentText))
                                     .font(.system(size: 11))
                             }
                         }

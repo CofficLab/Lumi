@@ -1,0 +1,102 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "App Update Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Update Status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态"
+          }
+        }
+      }
+    },
+    "Shows a menu bar reminder when an app update is ready to install.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows a menu bar reminder when an app update is ready to install."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当应用更新准备安装时显示菜单栏提醒。"
+          }
+        }
+      }
+    },
+    "Update": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        }
+      }
+    },
+    "New version is ready": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New version is ready"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新版本已准备好"
+          }
+        }
+      }
+    },
+    "Lumi %@ downloaded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi %@ downloaded"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi %@ 已下载完成"
+          }
+        }
+      }
+    },
+    "Restart to Update": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart to Update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重启更新"
+          }
+        }
+      }
+    }
+  }
+}

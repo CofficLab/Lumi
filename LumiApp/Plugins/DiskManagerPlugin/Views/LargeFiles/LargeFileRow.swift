@@ -62,13 +62,13 @@ struct LargeFileRow: View {
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "删除文件", table: "DiskManager"))
-                .confirmationDialog("确定要删除此文件吗？", isPresented: $showDeleteConfirm) {
+                .confirmationDialog(String(localized: "Are you sure you want to delete this file?", table: "DiskManager"), isPresented: $showDeleteConfirm) {
                     Button(String(localized: "删除", table: "DiskManager"), role: .destructive) {
                         viewModel.deleteFile(item)
                     }
                     Button(String(localized: "取消", table: "DiskManager"), role: .cancel) {}
                 } message: {
-                    Text("文件 \"\(item.name)\" 将被永久删除。")
+                    Text(String(format: String(localized: "File \"%@\" will be permanently deleted.", table: "DiskManager"), item.name))
                 }
             }
             .padding(.leading, 8)

@@ -116,7 +116,7 @@ struct MessageTimelineRow: View {
                                 .font(.system(size: 10))
                         }
                         if totalTokens > 0 {
-                            Text("总计 \(timelineService.formatToken(totalTokens))")
+                            Text(String(format: String(localized: "Total %@", table: "ConversationTimeline"), timelineService.formatToken(totalTokens)))
                                 .font(.system(size: 10))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -133,7 +133,7 @@ struct MessageTimelineRow: View {
     private var messagePreview: String {
         let content = item.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if content.isEmpty {
-            return "[空内容]"
+            return String(localized: "[Empty]", table: "ConversationTimeline")
         }
         if content.count <= 50 {
             return content
@@ -173,19 +173,19 @@ struct MessageTimelineRow: View {
     private var roleLabel: String {
         switch item.role {
         case .user:
-            return "用户"
+            return String(localized: "User", table: "ConversationTimeline")
         case .assistant:
-            return "助手"
+            return String(localized: "Assistant", table: "ConversationTimeline")
         case .system:
-            return "系统"
+            return String(localized: "System", table: "ConversationTimeline")
         case .tool:
-            return "工具"
+            return String(localized: "Tool", table: "ConversationTimeline")
         case .status:
-            return "状态"
+            return String(localized: "Status", table: "ConversationTimeline")
         case .error:
-            return "错误"
+            return String(localized: "Error", table: "ConversationTimeline")
         case .unknown:
-            return "未知"
+            return String(localized: "Unknown", table: "ConversationTimeline")
         }
     }
 
