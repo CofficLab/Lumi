@@ -9,6 +9,7 @@ import LumiUI
 struct TurnCompletedDivider: View {
     let message: ChatMessage
 
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     private var endText: String {
@@ -28,5 +29,6 @@ struct TurnCompletedDivider: View {
 
     var body: some View {
         AppLabeledDivider(title: endText, detail: timeText)
+            .appStatusPresentationTransition(preference: motionPreference)
     }
 }

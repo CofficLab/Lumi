@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import MagicKit
 
@@ -6,6 +7,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     let leading: Leading
     let trailing: Trailing
 
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
@@ -35,7 +37,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
                 isHovered = hovering
             }
         }

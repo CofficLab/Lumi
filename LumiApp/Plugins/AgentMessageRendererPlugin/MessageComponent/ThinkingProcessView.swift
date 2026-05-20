@@ -7,6 +7,7 @@ import SwiftUI
 struct ThinkingProcessView: View {
     /// 思考内容文本
     let thinkingText: String
+    @LumiMotionPreferenceReader private var motionPreference
     /// 是否已展开
     @State private var isExpanded: Bool = false
 
@@ -54,7 +55,9 @@ struct ThinkingProcessView: View {
                 .padding(.vertical, 8)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    isExpanded.toggle()
+                    LumiMotion.animate(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference)) {
+                        isExpanded.toggle()
+                    }
                 }
 
                 // 思考内容（展开时显示）
@@ -67,9 +70,11 @@ struct ThinkingProcessView: View {
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .appDisclosureContentTransition(preference: motionPreference)
             }
         }
         .padding(.vertical, 4)
+        .animation(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference), value: isExpanded)
     }
 }
 

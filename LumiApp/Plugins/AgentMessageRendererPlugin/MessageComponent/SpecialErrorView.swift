@@ -8,6 +8,7 @@ import SwiftUI
 /// 便于用户或开发者排查问题。
 struct RawErrorDetailView: View {
     let rawDetail: String
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isExpanded = false
@@ -25,7 +26,7 @@ struct RawErrorDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference)) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -53,8 +54,10 @@ struct RawErrorDetailView: View {
                         )
                 }
                 .frame(maxHeight: 150)
+                .appDisclosureContentTransition(preference: motionPreference)
             }
         }
+        .animation(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference), value: isExpanded)
     }
 }
 

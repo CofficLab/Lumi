@@ -6,6 +6,7 @@ import SwiftUI
 struct ToolExecutionStatusCardView: View {
     let snapshot: ToolExecutionStatusSnapshot
     let conversationId: UUID
+    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var taskCancellationVM: WindowTaskCancellationVM
     @State private var isExpanded: Bool
     @State private var didRequestStop = false
@@ -60,7 +61,7 @@ struct ToolExecutionStatusCardView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference)) {
                     isExpanded.toggle()
                 }
             }
@@ -111,9 +112,11 @@ struct ToolExecutionStatusCardView: View {
                     }
                     .padding(12)
                 }
+                .appDisclosureContentTransition(preference: motionPreference)
             }
         }
         .padding(.vertical, 4)
+        .animation(LumiMotion.enabled(LumiMotion.disclosure, preference: motionPreference), value: isExpanded)
     }
 
     private static let byteFormatter: ByteCountFormatter = {
