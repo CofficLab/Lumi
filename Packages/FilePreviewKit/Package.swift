@@ -17,11 +17,18 @@ let package = Package(
             name: "FilePreviewKit",
             path: ".",
             exclude: [
-                "Package.swift"
+                "Package.swift",
+                "README.md",
+                "Tests"
             ],
             sources: [
                 "FilePreviewView.swift"
             ]
+        ),
+        .testTarget(
+            name: "FilePreviewKitTests",
+            dependencies: ["FilePreviewKit"],
+            path: "Tests/FilePreviewKitTests"
         )
     ]
 )

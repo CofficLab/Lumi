@@ -7,13 +7,13 @@ import UniformTypeIdentifiers
 
 // MARK: - Preview Kind
 
-private enum FilePreviewKind: Equatable {
+enum FilePreviewKind: Equatable {
     case image
     case pdf
     case quickLook
 }
 
-private enum FilePreviewResolver {
+enum FilePreviewResolver {
     static func previewKind(for fileURL: URL) -> FilePreviewKind {
         let ext = fileURL.pathExtension.lowercased()
         let utType = ext.isEmpty ? nil : UTType(filenameExtension: ext)
