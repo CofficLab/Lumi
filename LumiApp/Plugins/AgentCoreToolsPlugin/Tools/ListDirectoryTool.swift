@@ -1,10 +1,12 @@
 import Foundation
 import MagicKit
 import SwiftUI
+import WorkspaceFileKit
 
 struct ListDirectoryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = false
+    private let lister = WorkspaceDirectoryLister()
     let name = "ls"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -47,75 +49,26 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
             AgentCoreToolsPlugin.logger.info("\(self.t)列出目录：\(path.components(separatedBy: "/").last ?? path)（递归：\(recursive ? "是" : "否")）")
         }
 
-        let fileManager = FileManager.default
-        var result = ""
-        let rootURL = URL(fileURLWithPath: path)
-
-        guard fileManager.fileExists(atPath: path) else {
+        do {
+            let listing = try lister.list(path: path, recursive: recursive)
+            if recursive {
+                if listing.truncated, Self.verbose {
+                    AgentCoreToolsPlugin.logger.info("\(self.t)文件数量过多，已停止列表（限制 500 个）")
+                }
+                if Self.verbose {
+                    AgentCoreToolsPlugin.logger.info("\(self.t)递归列表完成：\(listing.itemCount) 个项目")
+                }
+            } else {
+                if Self.verbose {
+                    AgentCoreToolsPlugin.logger.info("\(self.t)目录列表完成：\(listing.itemCount) 个项目")
+                }
+            }
+            return listing.output
+        } catch let error as WorkspaceFileError {
             if Self.verbose {
                 AgentCoreToolsPlugin.logger.error("\(self.t)路径不存在：\(path)")
             }
-            return "Error: Path does not exist."
-        }
-
-        do {
-            if recursive {
-                var stack = [rootURL]
-                var count = 0
-
-                while !stack.isEmpty {
-                    if count > 500 {
-                        result += "... (Too many files, stopping list)\n"
-                        if Self.verbose {
-                            AgentCoreToolsPlugin.logger.info("\(self.t)文件数量过多，已停止列表（限制 500 个）")
-                        }
-                        break
-                    }
-
-                    let currentURL = stack.removeFirst()
-
-                    // Skip hidden
-                    if currentURL.lastPathComponent.hasPrefix(".") && currentURL != rootURL { continue }
-
-                    // Add to result (if not root)
-                    if currentURL != rootURL {
-                        let relativePath = currentURL.path.replacingOccurrences(of: path, with: "")
-                        let isDir = (try? currentURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-
-                        // Clean up leading slash if present
-                        let cleanPath = relativePath.hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath
-                        result += "\(cleanPath)\(isDir ? "/" : "")\n"
-                        count += 1
-                    }
-
-                    // If directory, add children to stack
-                    let isDir = (try? currentURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                    if isDir {
-                        let contents = try fileManager.contentsOfDirectory(at: currentURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
-                        stack.append(contentsOf: contents)
-                    }
-                }
-
-                if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)递归列表完成：\(count) 个项目")
-                }
-                return result.isEmpty ? "(Empty directory)" : result
-            } else {
-                let contents = try fileManager.contentsOfDirectory(atPath: path)
-                var visibleCount = 0
-                for item in contents {
-                    if item.hasPrefix(".") { continue } // Skip hidden
-                    let fullPath = (path as NSString).appendingPathComponent(item)
-                    var isDir: ObjCBool = false
-                    fileManager.fileExists(atPath: fullPath, isDirectory: &isDir)
-                    result += "\(item)\(isDir.boolValue ? "/" : "")\n"
-                    visibleCount += 1
-                }
-                if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)目录列表完成：\(visibleCount) 个项目")
-                }
-                return result.isEmpty ? "(Empty directory)" : result
-            }
+            return "Error: \(error.localizedDescription)"
         } catch {
             AgentCoreToolsPlugin.logger.error("\(self.t)列出目录失败：\(error.localizedDescription)")
             return "Error listing directory: \(error.localizedDescription)"

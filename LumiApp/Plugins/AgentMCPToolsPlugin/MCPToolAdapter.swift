@@ -1,6 +1,7 @@
 import Foundation
 import MagicKit
 import MCP
+import MCPKit
 
 /// Adapts an MCP Tool to the SuperAgentTool protocol.
 final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
@@ -10,10 +11,10 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
     let mcpTool: MCP.Tool
     let serverName: String
 
-    init(client: Client, tool: MCP.Tool, serverName: String) {
-        self.client = client
-        self.mcpTool = tool
-        self.serverName = serverName
+    init(discoveredTool: MCPDiscoveredTool) {
+        self.client = discoveredTool.client
+        self.mcpTool = discoveredTool.tool
+        self.serverName = discoveredTool.serverName
     }
 
     var name: String {
