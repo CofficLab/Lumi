@@ -10,7 +10,6 @@ import SwiftUI
 /// ## 监听的事件
 /// - 消息队列变化 (`messageQueueVM.$queueVersion`)
 /// - 输入队列请求 (`inputQueueVM.enqueueRequests`)
-/// - 会话创建请求 (`conversationCreationVM.$pendingRequest`)
 /// - 任务取消请求 (`taskCancellationVM.$conversationIdToCancel`)
 /// - 项目上下文请求 (`projectContextRequestVM.$request`)
 /// - Tool 权限恢复发送 (`onResumeSendAfterToolPermission`)
@@ -31,9 +30,6 @@ struct RootEventMonitorView<Content>: View, SuperLog where Content: View {
     /// 项目上下文与系统提示词（每窗口独立）。
     private var projectController: ProjectController { scope.projectController }
 
-    /// 会话控制器（每窗口独立）。
-    private var conversationController: ConversationController { scope.conversationController }
-
     init(scope: WindowScope, @ViewBuilder content: () -> Content) {
         self._scope = ObservedObject(wrappedValue: scope)
         self.content = content()
@@ -46,9 +42,6 @@ struct RootEventMonitorView<Content>: View, SuperLog where Content: View {
             }
             .onReceive(scope.inputQueueVM.enqueueRequests) { request in
                 onInputQueueRequested(request)
-            }
-            .onReceive(scope.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
-                onConversationCreationRequested()
             }
             .onReceive(scope.taskCancellationVM.$conversationIdToCancel.compactMap { $0 }) { _ in
                 onTaskCancellationRequested()
@@ -121,13 +114,6 @@ extension RootEventMonitorView {
         Task {
             await sendController.attemptBeginNextQueuedSend()
         }
-    }
-
-    func onConversationCreationRequested() {
-        guard let requestId = scope.conversationCreationVM.pendingRequest else { return }
-        guard scope.conversationCreationVM.consumePendingRequest(id: requestId) != nil else { return }
-
-        Task { await conversationController.handleCreationRequest(requestId: requestId) }
     }
 
     func onTaskCancellationRequested() {

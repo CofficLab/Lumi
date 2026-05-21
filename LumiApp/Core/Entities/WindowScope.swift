@@ -65,7 +65,7 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     let conversationSendStatusVM: WindowConversationStatusVM
 
     /// 会话创建（跟随当前窗口）
-    let conversationCreationVM: WindowConversationCreationVM
+    lazy var conversationCreationVM: WindowConversationCreationVM = WindowConversationCreationVM(scope: self, global: self._container)
 
     /// 任务取消（跟随当前窗口）
     let taskCancellationVM: WindowTaskCancellationVM
@@ -186,7 +186,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
             toolExecutionService: container.toolExecutionService
         )
         self.conversationSendStatusVM = WindowConversationStatusVM()
-        self.conversationCreationVM = WindowConversationCreationVM()
         self.commandSuggestionVM = WindowCommandSuggestionVM(
             slashCommandService: container.slashCommandService
         )

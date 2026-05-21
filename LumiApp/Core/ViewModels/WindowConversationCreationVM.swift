@@ -1,37 +1,63 @@
 import Foundation
+import MagicKit
 
+/// 窗口级会话创建 ViewModel
 ///
-/// ## 初始化规则
-///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 通过 `scope.conversationCreationVM` 监听创建请求。
-/// 负责收集“创建新会话”所需的数据并发布创建请求。
-///
-/// ## 初始化规则
-///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
-/// RootView 通过 `scope.conversationCreationVM` 监听创建请求。
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。
+/// 直接执行创建新会话的完整流程。
 @MainActor
 final class WindowConversationCreationVM: ObservableObject {
-    @Published private(set) var pendingRequest: UUID?
-    private var requestContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
+    private weak var scope: WindowScope?
+    private let global: RootContainer
 
+    init(scope: WindowScope, global: RootContainer) {
+        self.scope = scope
+        self.global = global
+    }
+
+    /// 创建新会话
     func createNewConversation() async {
-        let request = UUID()
-        pendingRequest = request
+        guard let scope else { return }
 
-        await withCheckedContinuation { continuation in
-            requestContinuations[request] = continuation
+        let projectId = scope.projectVM.isProjectSelected ? scope.projectVM.currentProjectPath : nil
+        let projectName = scope.projectVM.isProjectSelected ? scope.projectVM.currentProjectName : nil
+        let projectPath = scope.projectVM.isProjectSelected ? scope.projectVM.currentProjectPath : nil
+        let languagePreference = scope.projectVM.languagePreference
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+
+        let conversation = global.chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date()),
+            chatMode: global.agentSessionConfig.chatMode.rawValue
+        )
+
+        scope.conversationVM.setSelectedConversation(conversation.id)
+        NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
+
+        let systemMessage = await global.promptService.getSystemContextMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !systemMessage.isEmpty {
+            scope.conversationVM.saveMessage(
+                ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage),
+                to: conversation.id
+            )
         }
-    }
 
-    func consumePendingRequest(id: UUID) -> UUID? {
-        guard let request = pendingRequest, request == id else { return nil }
-        pendingRequest = nil
-        return request
-    }
-
-    func completeRequest(id: UUID) {
-        guard let continuation = requestContinuations.removeValue(forKey: id) else { return }
-        continuation.resume()
+        let welcomeMessage = await global.promptService.getEmptySessionWelcomeMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !welcomeMessage.isEmpty {
+            scope.conversationVM.saveMessage(
+                ChatMessage(role: .assistant, conversationId: conversation.id, content: welcomeMessage),
+                to: conversation.id
+            )
+        }
     }
 }
