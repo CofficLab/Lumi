@@ -18,7 +18,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @State private var isFileImporterPresented = false
     @State private var restoreTask: Task<Void, Never>?
 
     private let store = RecentProjectsStore()
@@ -28,18 +27,8 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
             content
 
             if projectVM.isProjectSelected == false {
-                NoProjectOverlay(
-                    recentProjects: recentProjectsVM.recentProjects,
-                    isFileImporterPresented: $isFileImporterPresented,
-                    onSelectProject: { project in
-                        recentProjectsVM.addProject(project)
-                        projectVM.switchProject(to: project)
-                    },
-                    onAddProject: { url in
-                        addProjectAndSwitch(to: url)
-                    }
-                )
-                .transition(.opacity)
+                NoProjectOverlay()
+                    .transition(.opacity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -127,22 +116,6 @@ extension RecentProjectsOverlay {
 
             switchConversationForProject(path)
         }
-    }
-}
-
-// MARK: - Project Add Helper
-
-extension RecentProjectsOverlay {
-    private func addProjectAndSwitch(to url: URL) {
-        let standardizedURL = url.standardizedFileURL
-        let project = Project(
-            name: standardizedURL.lastPathComponent,
-            path: standardizedURL.path,
-            lastUsed: Date()
-        )
-        store.addProject(name: project.name, path: project.path)
-        recentProjectsVM.addProject(project)
-        projectVM.switchProject(to: project)
     }
 }
 
