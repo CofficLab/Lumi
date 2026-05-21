@@ -16,6 +16,7 @@ struct ModelSelectorView: View, SuperLog {
 
     @EnvironmentObject var llmVM: AppLLMVM
     @EnvironmentObject var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     /// 模型性能统计
@@ -371,7 +372,7 @@ extension ModelSelectorView {
 // MARK: - Action
 
 extension ModelSelectorView {
-    /// 选择模型并保存到项目配置
+    /// 选择模型并保存到当前对话
     /// - Parameters:
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
@@ -379,6 +380,9 @@ extension ModelSelectorView {
         llmVM.isAutoMode = false
         llmVM.selectedProviderId = providerId
         llmVM.currentModel = model
+
+        // 直接保存到当前对话的模型偏好
+        conversationVM.saveModelPreference(providerId: providerId, model: model)
 
         dismiss()
     }
