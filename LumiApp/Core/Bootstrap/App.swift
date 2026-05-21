@@ -46,6 +46,7 @@ struct CoreApp: App {
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
+        .defaultSize(width: 1000, height: 800)
         .commands {
             DebugCommand()
             SettingsCommand()
