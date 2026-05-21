@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
 struct ProjectOverviewTool: SuperAgentTool, SuperLog {

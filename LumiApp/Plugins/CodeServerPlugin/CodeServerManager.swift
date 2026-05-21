@@ -1,6 +1,5 @@
 import Foundation
 import HttpKit
-import MagicKit
 import os
 
 /// Code Server 扩展信息

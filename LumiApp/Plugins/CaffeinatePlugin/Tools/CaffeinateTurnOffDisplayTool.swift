@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 防休眠并立即关闭屏幕工具
 ///

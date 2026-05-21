@@ -1,4 +1,3 @@
-import MagicKit
 import RAGKit
 import SwiftUI
 import os

@@ -1,6 +1,5 @@
 import Foundation
 import LLMProviderKit
-import MagicKit
 
 /// OpenAI API 供应商实现
 ///

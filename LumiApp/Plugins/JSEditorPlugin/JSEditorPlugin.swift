@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import MagicKit
 import os
 
 /// JavaScript / TypeScript 编辑器插件

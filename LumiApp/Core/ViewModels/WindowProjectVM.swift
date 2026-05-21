@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 项目管理 ViewModel

@@ -47,6 +47,9 @@ extension Notification.Name {
     /// 请求在当前活跃窗口的编辑器中打开文件
     /// userInfo: ["url": URL]
     static let openFileInEditor = Notification.Name("openFileInEditor")
+
+    /// 请求将当前窗口状态写入磁盘（如项目切换后）
+    static let windowStateShouldPersist = Notification.Name("windowStateShouldPersist")
 }
 
 // MARK: - NotificationCenter Extension

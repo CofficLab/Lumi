@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 struct EditorProblemsPanelView: View {
     @EnvironmentObject private var themeVM: AppThemeVM

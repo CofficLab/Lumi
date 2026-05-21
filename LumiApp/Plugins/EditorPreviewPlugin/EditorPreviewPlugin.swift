@@ -1,6 +1,5 @@
 import Foundation
 import LumiPreviewKit
-import MagicKit
 import SwiftUI
 import os
 

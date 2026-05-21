@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 调试命令：在应用菜单中添加调试相关的功能入口

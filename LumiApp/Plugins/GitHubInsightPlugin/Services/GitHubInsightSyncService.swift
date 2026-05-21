@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 协调项目画像、GitHub 发现和本地缓存持久化。
 ///

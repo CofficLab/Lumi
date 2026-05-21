@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 struct BottomEditorReferencesWorkspacePanelView: View {
     @EnvironmentObject private var themeVM: AppThemeVM

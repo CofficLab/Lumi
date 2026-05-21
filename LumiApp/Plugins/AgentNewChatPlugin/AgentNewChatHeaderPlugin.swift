@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 新建对话头部插件

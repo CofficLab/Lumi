@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 聊天消息列表视图组件

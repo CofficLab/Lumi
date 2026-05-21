@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 列出最近项目工具
 struct ListRecentProjectsTool: SuperAgentTool, SuperLog {

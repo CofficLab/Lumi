@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftData
 import SwiftUI
 

@@ -1,7 +1,6 @@
 import CodeEditSourceEditor
 import Combine
 import FilePreviewKit
-import MagicKit
 import MarkdownKit
 import SwiftUI
 import UniformTypeIdentifiers

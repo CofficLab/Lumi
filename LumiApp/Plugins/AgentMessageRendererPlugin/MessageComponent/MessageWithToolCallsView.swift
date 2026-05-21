@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 助手消息与工具调用视图
 struct MessageWithToolCallsView: View {

@@ -1,6 +1,5 @@
 import Foundation
 import XcodeKit
-import MagicKit
 import os
 
 @MainActor

@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 窗口活动面板类型
@@ -65,6 +64,8 @@ extension Notification.Name {
     static let windowActivated = Notification.Name("windowActivated")
     /// 窗口关闭通知
     static let windowClosed = Notification.Name("windowClosed")
+    /// 窗口作用域已注册（`WindowManagerVM.registerScope`）
+    static let windowScopeDidRegister = Notification.Name("windowScopeDidRegister")
 }
 
 extension NotificationCenter {
@@ -90,6 +91,14 @@ extension NotificationCenter {
         NotificationCenter.default.post(
             name: .windowClosed,
             object: windowId
+        )
+    }
+
+    /// 发送窗口作用域已注册通知
+    static func postWindowScopeDidRegister(_ scope: WindowScope) {
+        NotificationCenter.default.post(
+            name: .windowScopeDidRegister,
+            object: scope
         )
     }
 }

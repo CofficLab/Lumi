@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import Sparkle
 
 /// 更新控制器，负责应用的自动更新功能

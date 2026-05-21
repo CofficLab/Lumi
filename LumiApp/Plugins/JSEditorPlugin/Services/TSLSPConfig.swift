@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 struct TSLSPConfig: SuperLog {
     nonisolated static let emoji = "🟦"

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 请求日志插件

@@ -7,7 +7,7 @@ import SwiftUI
 /// 由内核统一维护，聚合所有插件提供的 `BottomPanelTab`，
 /// 渲染统一的 Tab 栏 + 内容切换器。各插件只需提供 Tab 入口
 /// （图标 + 标题 + 内容视图），无需关心 Tab 栏的渲染和切换逻辑。
-struct BottomPanelBarView: View {
+struct PanelBottomView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
@@ -68,18 +68,29 @@ struct BottomPanelBarView: View {
     // MARK: - Tab Bar
 
     private func tabBar(tabs: [BottomPanelTab]) -> some View {
-        HStack(spacing: 8) {
-            AppTabBar(
-                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
-                selectedTab: Binding(
-                    get: { activeTabId ?? tabs.first?.id ?? "" },
-                    set: { activeTabId = $0 }
-                )
-            )
-            Spacer(minLength: 0)
+        let appTabs = tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) }
+        let selectedTab = Binding(
+            get: { activeTabId ?? tabs.first?.id ?? "" },
+            set: { activeTabId = $0 }
+        )
+
+        return ViewThatFits(in: .horizontal) {
+            tabBarRow(tabs: appTabs, selectedTab: selectedTab, showText: true)
+            tabBarRow(tabs: appTabs, selectedTab: selectedTab, showText: false)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+    }
+
+    private func tabBarRow(
+        tabs: [AppTabBar.Tab],
+        selectedTab: Binding<String>,
+        showText: Bool
+    ) -> some View {
+        HStack(spacing: 8) {
+            AppTabBar(tabs: tabs, selectedTab: selectedTab, showText: showText)
+            Spacer(minLength: 0)
+        }
     }
 }

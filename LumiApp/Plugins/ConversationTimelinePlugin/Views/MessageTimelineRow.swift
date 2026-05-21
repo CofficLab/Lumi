@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 // MARK: - 消息时间线行

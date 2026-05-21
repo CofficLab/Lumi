@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import WorkspaceFileKit
 
 /// 文件编辑工具

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 网页搜索工具
 ///

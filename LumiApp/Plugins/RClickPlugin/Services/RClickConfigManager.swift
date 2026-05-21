@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// RClick 配置管理器
 ///

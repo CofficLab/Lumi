@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 /// LSP 上下文命令编辑器插件。
 ///

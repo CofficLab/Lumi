@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import LumiUI
 
 /// 流式阶段助手消息：仅渲染纯文本，避免高频 Markdown 解析。

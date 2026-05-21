@@ -1,6 +1,5 @@
 import AppKit
 import LibGit2Swift
-import MagicKit
 import SwiftUI
 
 /// macOS 应用代理，协调应用生命周期和各个控制器

@@ -3,7 +3,6 @@ import SwiftUI
 import LanguageClient
 import LanguageServerProtocol
 import os
-import MagicKit
 import Combine
 
 /// LSP 服务管理器

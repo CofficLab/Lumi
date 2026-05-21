@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// LLM 配置错误视图

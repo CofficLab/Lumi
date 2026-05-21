@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// AutoTask 右侧栏视图
 ///

@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 // MARK: - Raw Message Toggle Button
 

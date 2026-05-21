@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Web Search 插件

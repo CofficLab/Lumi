@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 消息头部通用容器，统一悬浮态、边距和背景样式。
 struct MessageHeaderView<Leading: View, Trailing: View>: View {

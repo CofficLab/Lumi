@@ -1,6 +1,5 @@
 import Foundation
 import os
-import MagicKit
 
 @MainActor
 final class EditorPackageDependencyStore: ObservableObject, SuperLog {

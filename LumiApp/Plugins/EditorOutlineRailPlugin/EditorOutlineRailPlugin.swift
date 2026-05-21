@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器大纲 Rail 插件：提供 Outline 标签页
 actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {

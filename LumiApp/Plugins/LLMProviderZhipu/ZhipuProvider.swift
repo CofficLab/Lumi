@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 // MARK: - Zhipu AI 供应商

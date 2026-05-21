@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 检测指定供应商+模型可用性的工具

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 设置当前文件工具
 ///

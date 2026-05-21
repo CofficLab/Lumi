@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 快速文件搜索设置视图
 struct QuickFileSearchSettingsView: View {

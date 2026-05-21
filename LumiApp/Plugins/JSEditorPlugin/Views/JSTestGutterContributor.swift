@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 @MainActor
 final class JSTestGutterContributor: SuperEditorGutterDecorationContributor {

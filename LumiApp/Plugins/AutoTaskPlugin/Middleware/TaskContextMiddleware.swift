@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// AutoTask 进度注入中间件
 ///

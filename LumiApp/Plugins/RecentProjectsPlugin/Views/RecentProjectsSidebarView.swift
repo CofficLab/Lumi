@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {

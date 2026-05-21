@@ -1,6 +1,5 @@
 import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 在 Cursor 中打开项目插件

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import LLMKit
 
 /// 供应商注册表

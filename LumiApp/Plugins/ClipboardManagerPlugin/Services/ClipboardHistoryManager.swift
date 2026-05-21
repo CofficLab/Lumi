@@ -1,6 +1,5 @@
 import Foundation
 import SwiftData
-import MagicKit
 
 /// 剪贴板历史管理器
 ///

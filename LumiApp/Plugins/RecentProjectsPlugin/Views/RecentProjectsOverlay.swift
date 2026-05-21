@@ -2,11 +2,10 @@ import MagicKit
 import SwiftUI
 
 /// 最近项目覆盖层
-/// 在 RootView 出现时恢复最近项目列表，监听项目切换保存，
-/// 并在项目切换时自动联动切换到关联的对话。
+/// 在 RootView 出现时恢复全局最近项目列表，并在未选项目时显示引导遮罩。
+/// 项目切换时自动联动切换到关联的对话。
 ///
-/// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
-/// 窗口级项目状态（当前项目）的持久化由 WindowPersistencePlugin 负责。
+/// 各窗口当前项目的持久化与恢复由 `WindowPersistencePlugin` 负责。
 struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
@@ -14,6 +13,8 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
+    @EnvironmentObject private var windowManagerVM: WindowManagerVM
+    @Environment(\.windowScope) private var windowScope
 
     let content: Content
 
@@ -27,8 +28,9 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         ZStack {
             content
 
-            // 未选择项目时显示引导遮罩
-            if !projectVM.isProjectSelected {
+            // 恢复完成且未选择项目时，显示引导遮罩
+            // 等待 WindowPersistencePlugin 完成窗口恢复后再显示，避免闪烁
+            if shouldShowNoProjectOverlay {
                 NoProjectOverlay(
                     recentProjects: recentProjectsVM.recentProjects,
                     isFileImporterPresented: $isFileImporterPresented,
@@ -48,6 +50,11 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         .onAppear {
             handleOnAppear()
         }
+        .onChange(of: windowManagerVM.hasCompletedInitialStateRestoration) { _, completed in
+            guard completed else { return }
+            syncProjectFromScopeIfNeeded()
+            logOverlayDecisionIfNeeded()
+        }
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
@@ -64,23 +71,80 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 // MARK: - Action
 
 extension RecentProjectsOverlay {
+    /// 仅在全局恢复结束且窗口 scope / projectVM 均无项目时展示选项目界面
+    private var shouldShowNoProjectOverlay: Bool {
+        guard restored else { return false }
+        guard windowManagerVM.hasCompletedInitialStateRestoration else { return false }
+        if projectVM.isProjectSelected { return false }
+        if let path = windowScope?.projectPath, !path.isEmpty { return false }
+        return true
+    }
+
     private func restoreIfNeeded() {
         guard !restored, restoreTask == nil else { return }
 
-        // 窗口级项目状态由 WindowPersistencePlugin 负责恢复，
-        // 这里只恢复全局最近项目列表
         restoreTask = Task { @MainActor [store] in
             let projects = await Task.detached(priority: .utility) {
                 store.loadProjects()
             }.value
-
             guard !Task.isCancelled else { return }
-
             recentProjectsVM.setRecentProjects(projects)
 
+            await waitForWindowRestoration()
+            guard !Task.isCancelled else { return }
+
+            syncProjectFromScopeIfNeeded()
+            logOverlayDecisionIfNeeded()
             setRestored(true)
             restoreTask = nil
         }
+    }
+
+    /// 等待 WindowPersistencePlugin 完成初始窗口状态恢复（含各窗口当前项目）
+    ///
+    /// 不能仅用 `hasCompletedInitialStateRestoration`：该标志可能在「等待首个 scope」之前就为 true（无磁盘记录），
+    /// 或在 scope 注册与 `applyFirstRecord` 之间存在间隙，导致过早展示选项目界面。
+    private func waitForWindowRestoration() async {
+        if WindowPersistenceCoordinator.shared.isInitialRestorationFinished {
+            return
+        }
+        for await _ in NotificationCenter.default.notifications(
+            named: .initialWindowStateRestorationDidFinish
+        ) {
+            if WindowPersistenceCoordinator.shared.isInitialRestorationFinished {
+                return
+            }
+        }
+    }
+
+    /// 若持久化已写入 scope 但本视图 projectVM 未同步，补一次切换（避免恢复竞态）
+    private func syncProjectFromScopeIfNeeded() {
+        guard let scope = windowScope,
+              let path = scope.projectPath,
+              !path.isEmpty,
+              !projectVM.isProjectSelected else { return }
+
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        projectVM.switchProject(to: Project(name: name, path: path, lastUsed: Date()))
+    }
+
+    private func logOverlayDecisionIfNeeded() {
+        let scopePath = windowScope?.projectPath ?? ""
+        let scopeSelected = windowScope?.projectVM.isProjectSelected ?? false
+        let willShow = shouldShowNoProjectOverlay
+        let restorationFinished = WindowPersistenceCoordinator.shared.isInitialRestorationFinished
+        RecentProjectsPlugin.logger.info(
+            """
+            \(Self.t) overlay decision willShow=\(willShow, privacy: .public) \
+            restored=\(restored, privacy: .public) \
+            restorationFinished=\(restorationFinished, privacy: .public) \
+            projectVM.selected=\(projectVM.isProjectSelected, privacy: .public) \
+            scope.selected=\(scopeSelected, privacy: .public) \
+            projectVM.path=\(projectVM.currentProjectPath, privacy: .public) \
+            scope.path=\(scopePath, privacy: .public) \
+            scopeCount=\(windowManagerVM.windowScopes.count, privacy: .public)
+            """
+        )
     }
 }
 
@@ -102,24 +166,20 @@ extension RecentProjectsOverlay {
     }
 
     private func handleProjectPathChange(oldPath: String, newPath: String) {
-        // 保存新项目到最近列表
         guard !newPath.isEmpty else { return }
         let name = projectVM.currentProjectName
         store.addProject(name: name, path: newPath)
+        NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
 
-        // 项目切换 → 联动切换对话
-        // 仅在真正切换时触发（oldPath != newPath），跳过首次恢复
         guard !oldPath.isEmpty, oldPath != newPath else { return }
         switchConversationForProject(newPath)
     }
 
     /// 处理 SetCurrentProjectTool 发出的事件，同步到 WindowProjectVM
     private func handleCurrentProjectDidChange(name: String, path: String) {
-        // 如果路径与当前项目相同，无需切换
         guard projectVM.currentProjectPath != path else { return }
 
         Task { @MainActor [store, path] in
-            // 同步到 WindowProjectVM：优先从最近项目列表中找到匹配 Project
             let projects = await Task.detached(priority: .utility) {
                 store.loadProjects()
             }.value
@@ -127,7 +187,6 @@ extension RecentProjectsOverlay {
                 projectVM.switchProject(to: matched)
             }
 
-            // Agent 工具触发项目切换 → 同样联动对话
             switchConversationForProject(path)
         }
     }
@@ -160,16 +219,15 @@ extension RecentProjectsOverlay {
         if switched {
             if Self.verbose {
                 if RecentProjectsPlugin.verbose {
-                                    RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
+                    RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
                 }
             }
             return
         }
 
-        // 该项目没有关联对话 → 新建一个
         if Self.verbose {
             if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
+                RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
             }
         }
 

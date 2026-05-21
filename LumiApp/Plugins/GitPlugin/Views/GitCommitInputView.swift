@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import LLMKit
 import LumiUI
 

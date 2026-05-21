@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import MagicKit
 
 /// 编辑器标签页持久化协调器
 ///

@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 import os
 
 /// 图片显示插件的 RootView 覆盖层

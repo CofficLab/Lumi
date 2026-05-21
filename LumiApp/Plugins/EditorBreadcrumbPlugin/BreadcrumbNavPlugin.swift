@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 面包屑导航插件：在编辑器面板头部显示当前文件路径的面包屑导航
 ///

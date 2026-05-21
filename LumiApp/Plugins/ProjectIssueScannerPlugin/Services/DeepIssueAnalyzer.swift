@@ -1,6 +1,5 @@
 import Foundation
 import LLMKit
-import MagicKit
 
 /// LLM 深度问题分析器
 ///

@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// 防休眠插件的菜单栏弹窗视图

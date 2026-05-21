@@ -1,4 +1,3 @@
-import MagicKit
 
 typealias LLMAvailabilityStatus = LLMModelAvailabilityStatus
 typealias LLMModelAvailability = LLMModelAvailabilityEntry

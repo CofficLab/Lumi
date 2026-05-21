@@ -4,7 +4,6 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
 import os
-import MagicKit
 
 /// LSP 悬停协调器
 /// 监听鼠标位置，通过 `TextLayoutManager.textOffsetAtPoint` 获取鼠标下的文字偏移，

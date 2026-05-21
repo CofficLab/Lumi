@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 头部左侧视图：应用图标、当前项目名（支持下拉选择）

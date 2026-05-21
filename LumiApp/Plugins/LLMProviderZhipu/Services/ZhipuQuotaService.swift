@@ -1,7 +1,6 @@
 import Foundation
 import HttpKit
 import os
-import MagicKit
 
 /// 智谱配额查询辅助工具
 enum ZhipuQuotaService: SuperLog {

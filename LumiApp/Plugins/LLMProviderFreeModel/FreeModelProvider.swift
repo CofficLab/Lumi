@@ -1,6 +1,5 @@
 import Foundation
 import LLMProviderKit
-import MagicKit
 
 /// FreeModel API 供应商实现
 ///

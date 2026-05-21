@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// GitHub 插件设置视图 - 配置 GitHub Token 和 API 选项
 struct GitHubPluginSettingsView: View, SuperLog {

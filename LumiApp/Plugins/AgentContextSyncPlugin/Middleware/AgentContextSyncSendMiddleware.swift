@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// Agent 上下文同步中间件

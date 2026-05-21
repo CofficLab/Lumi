@@ -1,8 +1,7 @@
 import Foundation
 
 /// 最近项目存储
-/// 仅负责全局最近项目列表的持久化（不分窗口）。
-/// 窗口级当前项目由 `WindowPersistencePlugin` 负责。
+/// 负责全局最近项目列表的持久化。
 final class RecentProjectsStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "RecentProjectsStore.queue", qos: .userInitiated)
 

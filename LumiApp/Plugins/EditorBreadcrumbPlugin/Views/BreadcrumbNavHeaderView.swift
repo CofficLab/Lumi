@@ -1,6 +1,5 @@
 import CodeEditLanguages
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// 面包屑导航头部视图

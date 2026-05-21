@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import DiskManagerKit
 
 final class DiskManagerScanTaskHolder: @unchecked Sendable {

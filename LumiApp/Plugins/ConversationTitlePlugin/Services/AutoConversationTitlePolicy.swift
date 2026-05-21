@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 无状态的自动会话命名策略。
 ///

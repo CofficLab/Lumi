@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import DockerKit
 
 @MainActor

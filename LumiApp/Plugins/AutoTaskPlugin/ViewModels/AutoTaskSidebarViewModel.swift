@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 
 private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {

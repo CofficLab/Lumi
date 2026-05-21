@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import ShellKit
 
 /// 项目命令加载服务 - 负责从 .agent/commands 目录加载命令

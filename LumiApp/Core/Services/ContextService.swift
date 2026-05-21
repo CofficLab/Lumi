@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 上下文服务，管理 Agent 模式的上下文信息
 actor ContextService: Sendable, SuperLog {

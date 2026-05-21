@@ -1,6 +1,5 @@
 import LumiUI
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 在 Finder 中打开项目插件

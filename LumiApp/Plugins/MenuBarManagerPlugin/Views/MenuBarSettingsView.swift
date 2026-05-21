@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 
 struct MenuBarSettingsView: View {
     @StateObject private var service = MenuBarManagerService.shared

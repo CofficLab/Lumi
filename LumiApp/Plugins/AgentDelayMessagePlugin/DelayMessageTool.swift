@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 延时消息工具
 ///

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeAuroraPlugin: SuperPlugin {
     static let shared = ThemeAuroraPlugin()

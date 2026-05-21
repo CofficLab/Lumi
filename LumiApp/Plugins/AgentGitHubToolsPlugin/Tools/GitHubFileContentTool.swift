@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: SuperAgentTool, SuperLog {

@@ -1,6 +1,5 @@
 import SwiftUI
 import GoEditorCore
-import MagicKit
 
 /// Go 构建输出面板视图
 ///

@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// App 插件详情弹窗视图

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 用于搜索本地 GitHub 生态知识库的 Agent 工具。
 ///

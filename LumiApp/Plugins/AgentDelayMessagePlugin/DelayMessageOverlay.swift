@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 延时消息插件的 RootView 覆盖层

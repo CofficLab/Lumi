@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// Git Commit 根视图覆盖层

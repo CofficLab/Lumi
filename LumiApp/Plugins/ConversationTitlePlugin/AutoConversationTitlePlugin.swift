@@ -1,4 +1,3 @@
-import MagicKit
 import os
 
 /// 在用户首条消息发送时，根据内容自动生成会话标题（发送管线中间件）。

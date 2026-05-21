@@ -1,6 +1,5 @@
 import LumiUI
 import Foundation
-import MagicKit
 import SwiftUI
 
 struct ToolExecutionStatusCardView: View {

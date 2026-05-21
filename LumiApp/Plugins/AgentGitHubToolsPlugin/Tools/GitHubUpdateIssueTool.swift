@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 更新 Issue 工具
 struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {

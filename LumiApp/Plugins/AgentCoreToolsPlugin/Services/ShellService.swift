@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import ShellKit
 
 /// Shell 服务：负责执行 Shell 命令

@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import MagicKit
 import WebKit
 
 /// 网页截图工具

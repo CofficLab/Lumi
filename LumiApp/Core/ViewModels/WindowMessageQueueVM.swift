@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 ///
 /// ## 初始化规则

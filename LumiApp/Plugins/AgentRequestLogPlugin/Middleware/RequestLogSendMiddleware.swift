@@ -1,6 +1,5 @@
 import Foundation
 import HttpKit
-import MagicKit
 
 /// 请求日志发送中间件
 ///

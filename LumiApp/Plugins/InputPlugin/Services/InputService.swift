@@ -2,7 +2,6 @@ import Foundation
 import AppKit
 import Combine
 import Carbon
-import MagicKit
 
 @MainActor
 class InputService: ObservableObject, SuperLog {

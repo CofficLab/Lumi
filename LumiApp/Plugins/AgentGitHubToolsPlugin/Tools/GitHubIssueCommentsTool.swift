@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub Issue 评论列表工具
 struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {

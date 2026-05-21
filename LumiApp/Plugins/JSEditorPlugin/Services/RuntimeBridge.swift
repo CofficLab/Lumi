@@ -1,6 +1,5 @@
 import Foundation
 import os
-import MagicKit
 
 /// 脚本执行结果
 struct JSScriptResult: Sendable {

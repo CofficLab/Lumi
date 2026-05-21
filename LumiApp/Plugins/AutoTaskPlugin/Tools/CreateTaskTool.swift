@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 创建任务工具
 ///
@@ -61,15 +60,15 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let conversationId = arguments["conversation_id"]?.value as? String else {
-            return "Error: conversation_id is required"
+            return String(localized: "Error: conversation_id is required", table: "AutoTask")
         }
 
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
-            return "Error: tasks array is required"
+            return String(localized: "Error: tasks array is required", table: "AutoTask")
         }
 
         guard !tasksArray.isEmpty else {
-            return "Error: tasks array must not be empty"
+            return String(localized: "Error: tasks array must not be empty", table: "AutoTask")
         }
 
         let items: [(title: String, detail: String?)] = tasksArray.compactMap { item in
@@ -79,7 +78,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         }
 
         guard !items.isEmpty else {
-            return "Error: no valid tasks found (each task needs a non-empty title)"
+            return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", table: "AutoTask")
         }
 
         let manager = TaskStateManager.shared
@@ -98,7 +97,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
 
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
-        var result = "✅ Created \(items.count) tasks:\n\n"
+        var result = "✅ \(String(localized: "Created", table: "AutoTask")) \(items.count) \(String(localized: "tasks:", table: "AutoTask"))\n\n"
         for (index, item) in items.enumerated() {
             result += "\(index + 1). **\(item.title)**"
             if let detail = item.detail {
@@ -106,7 +105,8 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
             }
             result += "\n"
         }
-        result += "\nNow start working on task #1: **\(items[0].title)**"
+        let startLabel = String(localized: "Now start working on task #1", table: "AutoTask")
+        result += "\n\(startLabel): \(items[0].title)"
 
         if Self.verbose {
             if AutoTaskPlugin.verbose {

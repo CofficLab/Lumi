@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 对话时间线标题栏

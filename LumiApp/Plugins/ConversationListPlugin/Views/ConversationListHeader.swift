@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 会话列表头部视图
 /// 显示在会话列表顶部，包含折叠按钮、图标和标题文字

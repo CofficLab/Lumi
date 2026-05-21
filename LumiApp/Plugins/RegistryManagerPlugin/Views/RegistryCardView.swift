@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 
 struct RegistryCard: View {
     let type: RegistryType

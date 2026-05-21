@@ -2,7 +2,6 @@ import Combine
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 布局持久化插件
 ///

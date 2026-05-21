@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 
 struct EditorPackageDependencyRow: View {

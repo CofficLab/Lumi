@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器引用 Rail 插件：提供 References 标签页
 actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {

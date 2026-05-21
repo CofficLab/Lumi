@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeWinterPlugin: SuperPlugin {
     static let shared = ThemeWinterPlugin()

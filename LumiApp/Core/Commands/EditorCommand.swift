@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 编辑器命令：提供 LSP 快捷动作入口
 struct EditorCommand: Commands, SuperLog {

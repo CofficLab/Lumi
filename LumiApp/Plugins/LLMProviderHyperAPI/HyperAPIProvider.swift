@@ -1,6 +1,5 @@
 import Foundation
 import LLMProviderKit
-import MagicKit
 
 /// HyperAPI 供应商实现
 ///

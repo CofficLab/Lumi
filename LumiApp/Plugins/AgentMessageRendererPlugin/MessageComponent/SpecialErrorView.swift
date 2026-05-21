@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// 原始 HTTP 错误详情折叠视图

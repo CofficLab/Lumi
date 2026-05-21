@@ -1,7 +1,6 @@
 import AppKit
 import LumiPreviewKit
 import MagicAlert
-import MagicKit
 import MarkdownKit
 import os
 import SwiftUI

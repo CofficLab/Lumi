@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// App 插件状态栏悬浮按钮视图

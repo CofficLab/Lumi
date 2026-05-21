@@ -1,6 +1,5 @@
 import LibGit2Swift
 import SwiftUI
-import MagicKit
 
 /// Git 提交历史侧边栏视图
 ///

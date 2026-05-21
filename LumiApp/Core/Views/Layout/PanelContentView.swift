@@ -34,7 +34,7 @@ struct PanelContentView: View {
 
                     // ── 下半部分：全局底部面板 ──
                     if hasBottomTabs {
-                        BottomPanelBarView()
+                        PanelBottomView()
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Split.PanelContent.BottomPanel",
                                 columnIndex: 1

@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 struct EditorOutlinePanelView: View {
     @ObservedObject var service: EditorService

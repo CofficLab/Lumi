@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 编辑器符号面包屑插件

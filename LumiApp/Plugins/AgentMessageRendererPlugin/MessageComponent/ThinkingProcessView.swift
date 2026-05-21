@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// 思考过程展示视图（可展开/折叠）

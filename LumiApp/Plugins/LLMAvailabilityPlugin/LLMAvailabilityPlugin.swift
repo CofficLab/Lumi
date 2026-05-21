@@ -1,4 +1,3 @@
-import MagicKit
 import os
 
 /// LLM 可用性检测插件

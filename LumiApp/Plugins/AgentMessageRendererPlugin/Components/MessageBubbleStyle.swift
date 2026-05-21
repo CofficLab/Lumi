@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 // MARK: - Message Bubble Style Extensions

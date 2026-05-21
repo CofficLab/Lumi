@@ -1,6 +1,5 @@
 import CodeEditSourceEditor
 import Foundation
-import MagicKit
 import os
 
 /// 编辑器面板业务逻辑服务

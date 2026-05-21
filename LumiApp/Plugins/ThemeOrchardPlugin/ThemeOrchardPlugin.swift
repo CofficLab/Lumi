@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeOrchardPlugin: SuperPlugin {
     static let shared = ThemeOrchardPlugin()

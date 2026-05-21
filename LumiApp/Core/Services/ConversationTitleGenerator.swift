@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import LLMKit
 
 /// 无状态的会话标题生成器。

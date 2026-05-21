@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import ShellKit
 
 /// 探测 Node.js / Bun 运行时路径

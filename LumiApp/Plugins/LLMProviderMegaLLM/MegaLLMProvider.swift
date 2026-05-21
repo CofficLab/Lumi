@@ -1,6 +1,5 @@
 import Foundation
 import LLMProviderKit
-import MagicKit
 
 /// MegaLLM API 供应商实现
 ///

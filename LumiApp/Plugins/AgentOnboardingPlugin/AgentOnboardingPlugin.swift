@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 首次运行引导插件

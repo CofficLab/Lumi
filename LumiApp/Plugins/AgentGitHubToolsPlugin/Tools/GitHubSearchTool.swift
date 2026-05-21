@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 搜索工具
 struct GitHubSearchTool: SuperAgentTool, SuperLog {

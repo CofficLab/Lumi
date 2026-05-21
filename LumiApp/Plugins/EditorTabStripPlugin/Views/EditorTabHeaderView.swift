@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 编辑器 Tab Header 视图
