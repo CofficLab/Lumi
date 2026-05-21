@@ -35,6 +35,14 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
 
+    // MARK: - Toolbar Views
+
+    /// 工具栏右侧：布局菜单
+    @MainActor
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(LayoutMenuButton())
+    }
+
     // MARK: - Root View（布局持久化锚点）
 
     @MainActor
@@ -159,6 +167,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(ratios: savedRatios)
         }
+
+        // 恢复底部面板可见性
+        if let savedBottomPanelVisible = store.loadBottomPanelVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复底部面板可见性: \(savedBottomPanelVisible)")
+            }
+            layoutVM.restoreFromPlugin(bottomPanelVisible: savedBottomPanelVisible)
+        }
     }
 
     // MARK: - Observe
@@ -189,5 +205,36 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 LayoutPluginLocalStore.shared.saveLayoutRatios(newRatios)
             }
             .store(in: &cancellables)
+
+        // 观察 bottomPanelVisible
+        layoutVM.$bottomPanelVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveBottomPanelVisible(newValue)
+            }
+            .store(in: &cancellables)
+    }
+}
+
+// MARK: - Layout Menu Button
+
+/// 工具栏右侧的布局菜单按钮
+///
+/// 提供下拉菜单，控制各面板区域的显示/隐藏。
+private struct LayoutMenuButton: View {
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+
+    var body: some View {
+        Menu {
+            Toggle(isOn: $layoutVM.bottomPanelVisible) {
+                Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
+            }
+        } label: {
+            Image(systemName: "sidebar.left.right")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
     }
 }

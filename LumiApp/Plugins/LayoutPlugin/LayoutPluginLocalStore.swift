@@ -137,6 +137,19 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         }
     }
 
+    // MARK: - Bottom Panel Visibility
+
+    /// 加载已保存的底部面板可见性（同步，需要返回值）
+    /// - Returns: 可见性，默认返回 nil 表示未保存过
+    func loadBottomPanelVisible() -> Bool? {
+        object(forKey: Keys.bottomPanelVisible) as? Bool
+    }
+
+    /// 保存底部面板可见性（异步，不阻塞调用线程）
+    func saveBottomPanelVisible(_ visible: Bool) {
+        set(visible, forKey: Keys.bottomPanelVisible)
+    }
+
     // MARK: - Keys
 
     private enum Keys {
@@ -145,6 +158,7 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         static let selectedAgentDetailId = "selectedAgentDetailId"
         static let layoutRatios = "layoutRatios"
         static let editorBottomPanelHeight = "editorBottomPanelHeight"
+        static let bottomPanelVisible = "bottomPanelVisible"
     }
 
     // MARK: - Private Helpers

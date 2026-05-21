@@ -135,6 +135,11 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
         layoutRatios = ratios
     }
 
+    /// 由 LayoutPlugin 调用，从本地存储恢复底部面板可见性
+    func restoreFromPlugin(bottomPanelVisible: Bool) {
+        self.bottomPanelVisible = bottomPanelVisible
+    }
+
     /// 更新指定分栏的宽度比例。
     ///
     /// 不直接修改 `layoutRatios[key]`，避免对字典的原地变更绕过 `@Published`
