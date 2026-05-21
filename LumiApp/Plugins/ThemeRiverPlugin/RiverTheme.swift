@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct RiverTheme: SuperTheme {
+struct RiverTheme: LumiAppChromeTheme {
     let identifier = "river"
     let displayName = "河流青"
     let compactName = "河"

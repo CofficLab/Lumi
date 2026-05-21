@@ -9,7 +9,7 @@ struct NewChatButton: View {
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         Button {
             Task {

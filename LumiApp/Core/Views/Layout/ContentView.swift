@@ -229,10 +229,10 @@ struct ContentViewBody<Content: View>: View {
     }
 
     private var preferredColorScheme: ColorScheme? {
-        if themeVM.activeAppTheme.followsSystemAppearance {
+        if themeVM.activeChromeTheme.followsSystemAppearance {
             return nil
         }
-        return themeVM.activeAppTheme.isDarkTheme ? .dark : .light
+        return themeVM.activeChromeTheme.isDarkTheme ? .dark : .light
     }
 
     var body: some View {
@@ -242,7 +242,7 @@ struct ContentViewBody<Content: View>: View {
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
                 GeometryReader { proxy in
-                    themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
+                    themeVM.activeChromeTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
             .animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference), value: themeVM.currentThemeId)

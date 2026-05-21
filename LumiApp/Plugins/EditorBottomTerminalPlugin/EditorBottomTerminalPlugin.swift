@@ -75,7 +75,7 @@ struct EditorBottomTerminalContentView: View {
                 terminalContent
             }
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: workingDirectory)
         }
@@ -105,7 +105,7 @@ struct EditorBottomTerminalContentView: View {
                 // 标签之间的分隔线
                 if index < viewModel.sessions.count - 1 {
                     Rectangle()
-                        .fill(themeVM.activeAppTheme.workspaceSecondaryTextColor().opacity(0.3))
+                        .fill(themeVM.activeChromeTheme.workspaceSecondaryTextColor().opacity(0.3))
                         .frame(width: 1, height: 14)
                         .padding(.horizontal, 2)
                 }
@@ -117,7 +117,7 @@ struct EditorBottomTerminalContentView: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -127,7 +127,7 @@ struct EditorBottomTerminalContentView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
     // MARK: - Terminal Content
@@ -148,10 +148,10 @@ struct EditorBottomTerminalContentView: View {
         VStack(spacing: 10) {
             Image(systemName: "terminal")
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
             Text(String(localized: "No open terminals", table: "EditorBottomTerminal"))
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             Button(String(localized: "New Terminal", table: "EditorBottomTerminal")) {
                 viewModel.createSession(workingDirectory: workingDirectory)
             }
@@ -197,14 +197,14 @@ struct BottomTerminalTabItem: View {
                         .truncationMode(.tail)
                 }
                 .foregroundColor(isSelected
-                    ? themeVM.activeAppTheme.workspaceTextColor()
-                    : themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    ? themeVM.activeChromeTheme.workspaceTextColor()
+                    : themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(isSelected
-                            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.08)
+                            ? themeVM.activeChromeTheme.workspaceTextColor().opacity(0.08)
                             : Color.clear)
                 )
             }
@@ -214,7 +214,7 @@ struct BottomTerminalTabItem: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                        .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                         .frame(width: 16, height: 16)
                 }
                 .buttonStyle(.plain)

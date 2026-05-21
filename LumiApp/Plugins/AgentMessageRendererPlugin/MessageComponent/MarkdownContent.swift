@@ -19,7 +19,7 @@ struct MarkdownContent: View {
 
     /// 聊天消息主题
     private var messageTheme: MarkdownTheme {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         return MarkdownTheme(
             headingFont: { level in
                 switch level {
@@ -44,7 +44,7 @@ struct MarkdownContent: View {
 
     /// 当前主题对应的语法高亮提供者
     private var currentHighlightProvider: TreeSitterCodeHighlightProvider? {
-        guard let contributor = themeVM.currentTheme?.editorThemeContributor
+        guard let contributor = themeVM.currentTheme?.attachments.editorThemeContributor
                 as? any SuperEditorThemeContributor else {
             return nil
         }

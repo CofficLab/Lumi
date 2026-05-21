@@ -13,9 +13,9 @@ actor ThemeVscodeLightPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light",
                 editorThemeContributor: VscodeLightSuperEditorThemeContributor(),

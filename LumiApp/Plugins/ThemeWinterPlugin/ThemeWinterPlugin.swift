@@ -13,9 +13,9 @@ actor ThemeWinterPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: WinterTheme(),
                 editorThemeId: "winter",
                 editorThemeContributor: WinterSuperEditorThemeContributor(),

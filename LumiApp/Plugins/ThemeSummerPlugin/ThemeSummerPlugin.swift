@@ -13,9 +13,9 @@ actor ThemeSummerPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: SummerTheme(),
                 editorThemeId: "summer",
                 editorThemeContributor: SummerSuperEditorThemeContributor(),

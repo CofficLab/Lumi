@@ -41,4 +41,29 @@ extension Color {
             }
         })
     }
+
+    /// 基于字符串（如人名）生成固定的自适应颜色，同一输入始终映射到同一色板项。
+    public static func adaptive(from source: String) -> Color {
+        let palette: [Color] = [
+            Color(hex: "7C6FFF"),
+            Color(hex: "FF6B6B"),
+            Color(hex: "4ECDC4"),
+            Color(hex: "FFB347"),
+            Color(hex: "45B7D1"),
+            Color(hex: "96CEB4"),
+            Color(hex: "DDA0DD"),
+            Color(hex: "F7DC6F"),
+            Color(hex: "BB8FCE"),
+            Color(hex: "85C1E9"),
+            Color(hex: "F1948A"),
+            Color(hex: "82E0AA"),
+        ]
+
+        var hash: UInt64 = 5381
+        for byte in source.utf8 {
+            hash = ((hash << 5) &+ hash) &+ UInt64(byte)
+        }
+        let index = Int(hash % UInt64(palette.count))
+        return palette[max(0, index)]
+    }
 }

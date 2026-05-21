@@ -18,7 +18,7 @@ struct EditorEmptyStateView: View {
                 .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 }
 

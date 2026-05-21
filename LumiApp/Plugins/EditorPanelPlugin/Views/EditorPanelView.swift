@@ -41,7 +41,7 @@ struct EditorPanelView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
@@ -190,7 +190,7 @@ struct EditorPanelView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
 }

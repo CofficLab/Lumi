@@ -25,7 +25,7 @@ struct DebugToolbarView: View {
             if let sourceMap = fileURL.flatMap(SourceMapResolver.sourceMapURL) {
                 Text(sourceMap.lastPathComponent)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .lineLimit(1)
             }
 
@@ -33,7 +33,7 @@ struct DebugToolbarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
     private var launchConfiguration: NodeDAPAdapter.LaunchConfiguration? {

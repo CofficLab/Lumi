@@ -31,7 +31,7 @@ struct GoTestResultView: View {
             Image(systemName: "testtube.2")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
 
             if testManager.state == .testing {
@@ -67,14 +67,14 @@ struct GoTestResultView: View {
                 Text(String(format: "%.1fs", testManager.lastTestDuration))
                     .font(.system(size: 10))
                     .foregroundColor(
-                        themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                        themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                     )
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
-            themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05)
+            themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05)
         )
     }
 
@@ -102,14 +102,14 @@ struct GoTestResultView: View {
                         ? Color(hex: "30D158")
                         : event.status == .fail
                             ? Color(hex: "FF453A")
-                            : themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                            : themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                 )
                 .frame(width: 14)
 
             Text(event.test)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceTextColor()
+                    themeVM.activeChromeTheme.workspaceTextColor()
                 )
 
             Spacer()
@@ -118,7 +118,7 @@ struct GoTestResultView: View {
                 Text(String(format: "%.2fs", elapsed))
                     .font(.system(size: 10))
                     .foregroundColor(
-                        themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                        themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                     )
             }
         }
@@ -135,7 +135,7 @@ struct GoTestResultView: View {
             Text(String(localized: "Running tests...", table: "GoEditor"))
                 .font(.system(size: 11))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -148,12 +148,12 @@ struct GoTestResultView: View {
             Image(systemName: "testtube.2")
                 .font(.system(size: 20, weight: .thin))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                    themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                 )
             Text(String(localized: "Run go test to see results", table: "GoEditor"))
                 .font(.system(size: 11))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

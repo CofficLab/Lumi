@@ -149,11 +149,11 @@ struct BreadcrumbNavPathView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(
-            themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035)
+            themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.035)
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .fill(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.08))
                 .frame(height: 1)
         }
     }
@@ -328,7 +328,7 @@ struct BreadcrumbNavComponent: View {
 
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         return theme.workspaceTextColor().opacity(0.06)
     }
 

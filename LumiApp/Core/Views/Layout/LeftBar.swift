@@ -18,7 +18,7 @@ struct ActivityBar: View {
     var body: some View {
         let iconItems = pluginProvider.getPanelIconItems()
         let activeIcon = pluginProvider.activePanelIcon
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: false) {
@@ -80,7 +80,7 @@ struct ActivityBarButton: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         AppActivityIconButton(
             systemImage: icon,

@@ -19,7 +19,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         HStack(alignment: .center, spacing: 8) {
             leading
@@ -43,7 +43,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     private var headerBackground: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         return RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(
                 isHovered

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SpringTheme: SuperTheme {
+struct SpringTheme: LumiAppChromeTheme {
     let identifier = "spring"
     let displayName = "春芽绿"
     let compactName = "春"

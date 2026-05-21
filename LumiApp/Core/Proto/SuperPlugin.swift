@@ -333,7 +333,7 @@ protocol SuperPlugin: Actor {
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
 
     /// 提供主题贡献（App + Editor 一体化主题）。
-    @MainActor func addThemeContributions() -> [LumiThemeContribution]
+    @MainActor func addThemeContributions() -> [LumiUIThemeContribution]
 
     // MARK: - Agent Tools Hooks
 

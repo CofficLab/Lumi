@@ -74,7 +74,7 @@ private struct SidebarToolbarBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
     // MARK: - Button Rendering
@@ -91,9 +91,9 @@ private struct SidebarToolbarBar: View {
             Button(action: {}) {
                 Image(systemName: item.systemImage)
                     .font(.system(size: 13))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .frame(width: 28, height: 28)
-                    .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
+                    .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)

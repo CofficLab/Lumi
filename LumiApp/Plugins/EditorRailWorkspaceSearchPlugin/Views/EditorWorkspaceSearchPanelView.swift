@@ -56,7 +56,7 @@ struct EditorWorkspaceSearchPanelView: View {
                 ProgressView()
                 Text(String(localized: "Searching workspace…", table: "EditorRailWorkspaceSearch"))
                     .font(.system(size: 12))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = service.panelState.workspaceSearchErrorMessage {
@@ -71,7 +71,7 @@ struct EditorWorkspaceSearchPanelView: View {
                     if let summary = service.panelState.workspaceSearchSummary {
                         Text(String(localized: "\(summary.totalMatches) matches in \(summary.totalFiles) files", table: "EditorRailWorkspaceSearch"))
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     }
 
                     ForEach(service.panelState.workspaceSearchResults) { file in
@@ -82,17 +82,17 @@ struct EditorWorkspaceSearchPanelView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: isCollapsed(file) ? "chevron.right" : "chevron.down")
                                         .font(.system(size: 9, weight: .semibold))
-                                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                                        .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
                                     Text(file.path)
                                         .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                                        .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
 
                                     Spacer()
 
                                     Text(fileMatchSummary(file))
                                         .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                                        .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                                 }
                             }
                             .buttonStyle(.plain)
@@ -105,12 +105,12 @@ struct EditorWorkspaceSearchPanelView: View {
                                         HStack(alignment: .top, spacing: 10) {
                                             Text("L\(match.line):C\(match.column)")
                                                 .font(.system(size: 10, design: .monospaced))
-                                                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                                                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                                                 .frame(width: 62, alignment: .leading)
 
                                             Text(match.preview)
                                                 .font(.system(size: 12, design: .monospaced))
-                                                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                                                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                         }
                                         .padding(.horizontal, 10)
@@ -131,7 +131,7 @@ struct EditorWorkspaceSearchPanelView: View {
                         .padding(10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.035))
+                                .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.035))
                         )
                     }
                 }
@@ -153,13 +153,13 @@ struct EditorWorkspaceSearchPanelView: View {
 
     private func rowBackground(for match: EditorWorkspaceSearchMatch) -> Color {
         service.panelState.selectedWorkspaceSearchMatchID == match.id
-            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.1)
-            : themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
+            ? themeVM.activeChromeTheme.workspaceTextColor().opacity(0.1)
+            : themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05)
     }
 
     private func rowBorder(for match: EditorWorkspaceSearchMatch) -> Color {
         service.panelState.selectedWorkspaceSearchMatchID == match.id
-            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.18)
+            ? themeVM.activeChromeTheme.workspaceTextColor().opacity(0.18)
             : .clear
     }
 
@@ -167,10 +167,10 @@ struct EditorWorkspaceSearchPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             Text(title)
                 .font(.system(size: 12))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

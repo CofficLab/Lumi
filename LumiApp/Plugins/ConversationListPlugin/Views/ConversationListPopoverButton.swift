@@ -21,7 +21,7 @@ struct ConversationListPopoverButton: View {
     }
 
     private var conversationListButton: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         return Button {
             isPresented.toggle()

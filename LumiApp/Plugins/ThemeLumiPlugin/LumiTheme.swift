@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// 中性、低饱和的 IDE 配色，浅色/深色均参考系统风格，适合作为默认主题。
 ///
-struct LumiTheme: SuperTheme {
+struct LumiTheme: LumiAppChromeTheme {
     let identifier = "lumi"
     let displayName = "Lumi"
     let compactName = "Lumi"

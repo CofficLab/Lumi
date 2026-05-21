@@ -57,7 +57,7 @@ struct FileInfoBannerView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(Color(hex: "FF9F0A").opacity(0.06))
-            .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+            .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
             .zIndex(1)
         }
     }

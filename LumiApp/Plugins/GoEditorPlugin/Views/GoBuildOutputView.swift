@@ -36,7 +36,7 @@ struct GoBuildOutputView: View {
                                 Text(line)
                                     .font(.system(size: 11, design: .monospaced))
                                     .foregroundColor(
-                                        themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                                        themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                                     )
                                     .textSelection(.enabled)
                                     .padding(.horizontal, 12)
@@ -57,7 +57,7 @@ struct GoBuildOutputView: View {
             Image(systemName: "hammer")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
 
             if buildManager.state == .building || buildManager.state == .formatting || buildManager.state == .tidying {
@@ -101,14 +101,14 @@ struct GoBuildOutputView: View {
                 Text(String(format: "%.1fs", buildManager.lastBuildDuration))
                     .font(.system(size: 10))
                     .foregroundColor(
-                        themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                        themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                     )
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
-            themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05)
+            themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05)
         )
     }
 
@@ -144,13 +144,13 @@ struct GoBuildOutputView: View {
                 Text("\(issue.file):\(issue.line):\(issue.column)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundColor(
-                        themeVM.activeAppTheme.workspaceTextColor()
+                        themeVM.activeChromeTheme.workspaceTextColor()
                     )
 
                 Text(issue.message)
                     .font(.system(size: 11))
                     .foregroundColor(
-                        themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                        themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                     )
                     .lineLimit(1)
 
@@ -170,12 +170,12 @@ struct GoBuildOutputView: View {
             Image(systemName: "hammer")
                 .font(.system(size: 20, weight: .thin))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceTertiaryTextColor()
+                    themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                 )
             Text(String(localized: "Run go build to see output", table: "GoEditor"))
                 .font(.system(size: 11))
                 .foregroundColor(
-                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

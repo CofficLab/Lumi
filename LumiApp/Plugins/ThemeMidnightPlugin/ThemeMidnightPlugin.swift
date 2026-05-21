@@ -13,9 +13,9 @@ actor ThemeMidnightPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: MidnightTheme(),
                 editorThemeId: "midnight",
                 editorThemeContributor: MidnightSuperEditorThemeContributor(),

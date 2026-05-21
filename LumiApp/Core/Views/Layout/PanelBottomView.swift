@@ -34,10 +34,10 @@ struct PanelBottomView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.08))
+                .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.08))
                 .frame(height: 1)
         }
         .onAppear {
@@ -80,7 +80,7 @@ struct PanelBottomView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
     private func tabBarRow(

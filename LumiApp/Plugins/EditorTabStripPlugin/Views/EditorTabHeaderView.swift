@@ -75,8 +75,8 @@ struct EditorTabHeaderView: View {
 
     // MARK: - 计算属性
 
-    private var theme: any SuperTheme {
-        themeVM.activeAppTheme
+    private var theme: any LumiAppChromeTheme {
+        themeVM.activeChromeTheme
     }
 
     private var visibleTabs: [EditorTab] {

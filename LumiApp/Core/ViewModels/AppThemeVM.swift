@@ -1,58 +1,46 @@
+import Combine
+import LumiUI
 import SwiftUI
 
-/// 主题 ViewModel
-///
-/// ## 初始化规则
-///
-/// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
-/// View 通过 `@EnvironmentObject var themeVM: AppThemeVM` 访问。
-/// 主题列表仅来自插件；无贡献时启动失败。默认主题为排序后列表的第一项。
+/// 主题 ViewModel：委托 ``LumiUIThemeRegistry``，由 ``ThemeService`` 从插件同步贡献。
 @MainActor
 final class AppThemeVM: ObservableObject {
 
-    // MARK: - 属性
+    private let registry: LumiUIThemeRegistry
+    private var cancellables = Set<AnyCancellable>()
 
-    /// 全部主题（由插件注入）
-    @Published private(set) var themes: [LumiThemeContribution] = []
+    @Published private(set) var themes: [LumiUIThemeContribution] = []
 
-    /// 当前选中的主题 ID
     @Published var currentThemeId: String {
         didSet {
             guard oldValue != currentThemeId else { return }
-            applyCurrentTheme()
+            applySelection(themeId: currentThemeId)
         }
     }
 
-    // MARK: - 计算属性
-
-    /// 当前选中的主题
-    var currentTheme: LumiThemeContribution? {
+    var currentTheme: LumiUIThemeContribution? {
         themes.first(where: { $0.id == currentThemeId })
     }
 
-    /// 当前 App 主题对象
-    var activeAppTheme: any SuperTheme {
-        requireSelectedContribution().appTheme
+    var activeChromeTheme: any LumiAppChromeTheme {
+        requireSelectedContribution().chromeTheme
     }
 
-    /// 当前 Editor 主题 ID（贡献中的默认值，明暗适配见 `resolvedEditorThemeId`）
     var activeEditorThemeId: String {
         requireSelectedContribution().editorThemeId
     }
 
-    /// 当前文件树图标主题
     var activeFileIconTheme: (any LumiFileIconThemeContributor)? {
-        currentTheme?.fileIconThemeContributor as? any LumiFileIconThemeContributor
+        currentTheme?.attachments.fileIconThemeContributor as? any LumiFileIconThemeContributor
     }
 
-    // MARK: - 初始化
-
-    /// 初始化主题 ViewModel，加载保存的主题
-    init() {
-        let initialThemes = Self.requireThemesFromPlugins()
-        self.themes = initialThemes
-        self.currentThemeId = Self.requireDefaultThemeId(from: initialThemes)
-        applyCurrentTheme()
+    init(registry: LumiUIThemeRegistry = .shared) {
+        self.registry = registry
+        ThemeService.shared.syncFromPlugins(registry: registry)
+        let initialId = Self.requireSelectedId(registry: registry)
+        self.themes = registry.themes
+        self.currentThemeId = initialId
+        bindRegistry()
 
         NotificationCenter.default.addObserver(
             forName: .pluginsDidLoad,
@@ -65,88 +53,91 @@ final class AppThemeVM: ObservableObject {
         }
     }
 
-    // MARK: - 公开方法
-
-    /// 重新加载所有主题（插件加载完成后调用）
     func reloadThemes() {
-        let loaded = Self.requireThemesFromPlugins()
-        themes = loaded
-        if !themes.contains(where: { $0.id == currentThemeId }) {
-            currentThemeId = Self.requireDefaultThemeId(from: loaded)
-            return
-        }
-        applyCurrentTheme()
+        ThemeService.shared.syncFromPlugins(registry: registry)
+        syncPublishedStateFromRegistry(preserveSelection: true)
     }
 
-    /// 选择指定主题
-    ///
-    /// - Parameter themeId: 要切换到的主题 ID
     func selectTheme(_ themeId: String) {
         guard themes.contains(where: { $0.id == themeId }) else { return }
-        currentThemeId = themeId
+        if currentThemeId != themeId {
+            currentThemeId = themeId
+        }
     }
 
-    /// 根据主题 ID 获取对应的编辑器主题 ID
-    ///
-    /// - Parameter themeId: App 主题 ID
-    /// - Returns: 编辑器主题 ID
     static func editorThemeID(for themeId: String) -> String {
-        let themes = requireThemesFromPlugins()
+        let registry = LumiUIThemeRegistry.shared
+        let themes = registry.themes
         if let match = themes.first(where: { $0.id == themeId }) {
             return match.editorThemeId
         }
-        return requireDefaultThemeId(from: themes)
+        return (try? registry.defaultThemeId()) ?? themeId
     }
 
-    /// 获取当前编辑器主题 ID（用于终端颜色同步）
-    ///
-    /// 从本地存储读取选中的主题 ID，转换为编辑器主题 ID。
     static func currentEditorThemeId() -> String {
-        let themes = requireThemesFromPlugins()
+        let registry = LumiUIThemeRegistry.shared
+        let themes = registry.themes
         if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID(),
            let match = themes.first(where: { $0.id == savedThemeId }) {
             return match.editorThemeId
         }
-        return requireDefaultThemeId(from: themes)
+        return (try? registry.defaultThemeId()) ?? ""
     }
 
-    // MARK: - 私有方法
+    // MARK: - Private
 
-    private func requireSelectedContribution() -> LumiThemeContribution {
-        guard let contribution = currentTheme ?? themes.first else {
-            Self.fatalNoThemePlugins()
+    private func bindRegistry() {
+        registry.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncPublishedStateFromRegistry(preserveSelection: true)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func syncPublishedStateFromRegistry(preserveSelection: Bool) {
+        themes = registry.themes
+        guard let selectedId = registry.selectedThemeId else { return }
+        if preserveSelection, themes.contains(where: { $0.id == currentThemeId }) {
+            postThemeDidChange()
+            return
         }
-        return contribution
-    }
-
-    /// 从插件加载主题贡献列表；无贡献时终止启动
-    private static func requireThemesFromPlugins() -> [LumiThemeContribution] {
-        let pluginThemes = AppPluginVM.shared.getThemeContributions()
-        guard !pluginThemes.isEmpty else {
-            fatalNoThemePlugins()
+        if currentThemeId != selectedId {
+            currentThemeId = selectedId
+        } else {
+            postThemeDidChange()
         }
-        return pluginThemes
     }
 
-    /// 默认主题 ID = 插件主题列表的第一项
-    private static func requireDefaultThemeId(from themes: [LumiThemeContribution]) -> String {
-        guard let id = themes.first?.id else {
-            fatalNoThemePlugins()
+    private func applySelection(themeId: String) {
+        do {
+            try registry.select(themeId: themeId)
+        } catch {
+            return
         }
-        return id
+        postThemeDidChange()
     }
 
-    private static func fatalNoThemePlugins() -> Never {
+    private func requireSelectedContribution() -> LumiUIThemeContribution {
+        if let contribution = currentTheme ?? themes.first {
+            return contribution
+        }
         fatalError(
             "No theme contributions from any plugin. Enable at least one theme plugin (e.g. ThemeLumiPlugin)."
         )
     }
 
-    /// 应用当前主题到全局状态
-    private func applyCurrentTheme() {
-        let selected = requireSelectedContribution()
-        Themes.currentTheme = selected.appTheme
+    private static func requireSelectedId(registry: LumiUIThemeRegistry) -> String {
+        guard let id = registry.selectedThemeId else {
+            fatalError(
+                "No theme contributions from any plugin. Enable at least one theme plugin (e.g. ThemeLumiPlugin)."
+            )
+        }
+        return id
+    }
 
+    private func postThemeDidChange() {
+        guard let selected = currentTheme ?? themes.first else { return }
         NotificationCenter.default.post(
             name: .lumiThemeDidChange,
             object: nil,

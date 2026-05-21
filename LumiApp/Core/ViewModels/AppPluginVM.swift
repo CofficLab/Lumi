@@ -785,16 +785,25 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 获取所有启用插件提供的主题贡献（按插件 `order` 稳定排序）
+    /// 获取所有启用插件提供的主题贡献（按插件 `order` 稳定排序，并写入 ``ThemeSortKey``）
     @MainActor
-    func getThemeContributions() -> [LumiThemeContribution] {
+    func getThemeContributions() -> [LumiUIThemeContribution] {
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var merged: [(pluginOrder: Int, item: LumiThemeContribution)] = []
+        var merged: [(pluginOrder: Int, item: LumiUIThemeContribution)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
             for item in plugin.addThemeContributions() {
-                merged.append((pluginOrder, item))
+                merged.append((
+                    pluginOrder,
+                    LumiUIThemeContribution(
+                        sortKey: ThemeSortKey(pluginOrder: pluginOrder, themeId: item.id),
+                        chromeTheme: item.chromeTheme,
+                        editorThemeId: item.editorThemeId,
+                        uiTheme: item.uiTheme,
+                        attachments: item.attachments
+                    )
+                ))
             }
         }
 
@@ -804,7 +813,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }.map(\.item)
 
         var seen = Set<String>()
-        var result: [LumiThemeContribution] = []
+        var result: [LumiUIThemeContribution] = []
         for item in sorted {
             if seen.contains(item.id) { continue }
             seen.insert(item.id)

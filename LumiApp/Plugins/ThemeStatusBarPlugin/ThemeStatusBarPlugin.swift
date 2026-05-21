@@ -80,7 +80,7 @@ private struct ThemePersistenceAnchor<Content: View>: View {
 
     private func syncEditorThemeToWindow() {
         guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
-        let editorThemeId = contribution.appTheme.resolvedEditorThemeId(
+        let editorThemeId = contribution.chromeTheme.resolvedEditorThemeId(
             defaultEditorThemeId: contribution.editorThemeId,
             colorScheme: colorScheme
         )

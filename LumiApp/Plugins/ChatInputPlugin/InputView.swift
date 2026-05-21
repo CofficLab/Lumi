@@ -71,10 +71,10 @@ struct InputView: View, SuperLog {
                 .accessibilityLabel(String(localized: "Message Input", table: "ChatInputPlugin"))
                 .accessibilityHint(String(localized: "Message Input Hint", table: "ChatInputPlugin"))
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
-            .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
-        .shadow(color: themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
+            .stroke(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
+        .shadow(color: themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
             commandSuggestionOverlay
         }
@@ -111,7 +111,7 @@ extension InputView {
         ChatInputEditorView(
             text: $chatDraftVM.text,
             height: $editorHeight,
-            textColor: NSColor(themeVM.activeAppTheme.workspaceTextColor()),
+            textColor: NSColor(themeVM.activeChromeTheme.workspaceTextColor()),
             isVerbose: Self.verbose,
             log: { message in
                 ChatInputPlugin.logger.info("\(Self.t)\(message)")

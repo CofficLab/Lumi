@@ -28,7 +28,7 @@ struct ThemeSelectorView: View {
 
 // MARK: - 主题选项卡片
 struct ThemeOptionCard: View {
-    let theme: LumiThemeContribution
+    let theme: LumiUIThemeContribution
     let isSelected: Bool
     let action: () -> Void
 

@@ -857,7 +857,7 @@ private struct EditorPreviewMarkdownView: View {
                 }
             }
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
     private var emptyMarkdownView: some View {
@@ -900,7 +900,7 @@ private struct EditorPreviewMarkdownView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("TOC")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 12)
                     .padding(.bottom, 6)
 
@@ -910,7 +910,7 @@ private struct EditorPreviewMarkdownView: View {
                     } label: {
                         Text(heading.title)
                             .font(.system(size: 12, weight: heading.level <= 2 ? .semibold : .regular))
-                            .foregroundStyle(themeVM.activeAppTheme.workspaceTextColor())
+                            .foregroundStyle(themeVM.activeChromeTheme.workspaceTextColor())
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -934,7 +934,7 @@ private struct EditorPreviewMarkdownView: View {
             .padding(.vertical, 14)
         }
         .frame(width: 220)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.72))
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor().opacity(0.72))
     }
 
     private func makeDragContent(for heading: MarkdownTOCHeading) -> String {
@@ -952,7 +952,7 @@ private struct EditorPreviewMarkdownView: View {
     }
 
     private var previewTheme: MarkdownTheme {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         return MarkdownTheme(
             headingFont: { level in
                 switch level {
@@ -976,7 +976,7 @@ private struct EditorPreviewMarkdownView: View {
     }
 
     private var currentHighlightProvider: TreeSitterCodeHighlightProvider? {
-        guard let contributor = themeVM.currentTheme?.editorThemeContributor
+        guard let contributor = themeVM.currentTheme?.attachments.editorThemeContributor
                 as? any SuperEditorThemeContributor else {
             return nil
         }
@@ -1065,7 +1065,7 @@ private struct EditorPreviewStringCatalogContainer: View {
                 }
             }
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
     private var parseResult: Result<StringCatalog, Error> {
@@ -1126,7 +1126,7 @@ private struct EditorPreviewStringCatalogView: View {
             catalogTable
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .onAppear {
             if selectedLanguageID == nil {
                 selectedLanguageID = selectedLanguage.id
@@ -1155,14 +1155,14 @@ private struct EditorPreviewStringCatalogView: View {
             }
             .padding(10)
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func languageRow(_ language: StringCatalog.Language) -> some View {
         let isSelected = selectedLanguage.id == language.id
-        let textColor = isSelected ? Color.white : themeVM.activeAppTheme.workspaceTextColor()
-        let secondaryColor = isSelected ? Color.white.opacity(0.86) : themeVM.activeAppTheme.workspaceSecondaryTextColor()
+        let textColor = isSelected ? Color.white : themeVM.activeChromeTheme.workspaceTextColor()
+        let secondaryColor = isSelected ? Color.white.opacity(0.86) : themeVM.activeChromeTheme.workspaceSecondaryTextColor()
 
         return HStack(spacing: 8) {
             Text(languageBadge(for: language.id))
@@ -1219,7 +1219,7 @@ private struct EditorPreviewStringCatalogView: View {
                 Spacer()
             }
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
     private var tableHeader: some View {
@@ -1230,7 +1230,7 @@ private struct EditorPreviewStringCatalogView: View {
                 headerCell(selectedLanguageColumnTitle, width: 360)
             }
         }
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
         .overlay(alignment: .bottom) {
             Divider()
         }
@@ -1261,7 +1261,7 @@ private struct EditorPreviewStringCatalogView: View {
     private func headerCell(_ title: String, width: CGFloat) -> some View {
         Text(title)
             .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+            .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
             .lineLimit(1)
             .frame(width: width, alignment: .leading)
             .padding(.horizontal, 12)
@@ -1273,7 +1273,7 @@ private struct EditorPreviewStringCatalogView: View {
 
     private func valueCell(text: String, width: CGFloat, isMissing: Bool) -> some View {
         EditorInlineHighlightedStringCatalogText(text: text, isMissing: isMissing)
-            .foregroundColor(isMissing ? themeVM.activeAppTheme.workspaceSecondaryTextColor().opacity(0.58) : themeVM.activeAppTheme.workspaceTextColor())
+            .foregroundColor(isMissing ? themeVM.activeChromeTheme.workspaceSecondaryTextColor().opacity(0.58) : themeVM.activeChromeTheme.workspaceTextColor())
             .frame(width: width, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)

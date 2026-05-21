@@ -22,7 +22,7 @@ struct TestResultView: View {
         HStack(spacing: 8) {
             Image(systemName: "testtube.2")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
             if taskManager.state == .testing {
                 ProgressView()
@@ -40,7 +40,7 @@ struct TestResultView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
     private var testList: some View {
@@ -63,14 +63,14 @@ struct TestResultView: View {
 
             Text(event.name)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
 
             Spacer()
 
             if let duration = event.duration {
                 Text(String(format: "%.2fs", duration))
                     .font(.system(size: 10))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
             }
         }
         .padding(.horizontal, 12)
@@ -82,7 +82,7 @@ struct TestResultView: View {
             ProgressView().scaleEffect(0.8)
             Text(String(localized: "Running tests...", table: "JSEditor"))
                 .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -91,10 +91,10 @@ struct TestResultView: View {
         VStack(spacing: 8) {
             Image(systemName: "testtube.2")
                 .font(.system(size: 20, weight: .thin))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
             Text(String(localized: "Run JS tests to see results", table: "JSEditor"))
                 .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -120,7 +120,7 @@ struct TestResultView: View {
         switch status {
         case .passed: return Color(hex: "30D158")
         case .failed: return Color(hex: "FF453A")
-        case .skipped, .running: return themeVM.activeAppTheme.workspaceTertiaryTextColor()
+        case .skipped, .running: return themeVM.activeChromeTheme.workspaceTertiaryTextColor()
         }
     }
 }

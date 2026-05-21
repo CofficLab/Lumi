@@ -13,7 +13,7 @@ struct EditorPackageDependencySection: View {
     @State private var isExpanded: Bool = true
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         VStack(alignment: .leading, spacing: 0) {
             Button {
