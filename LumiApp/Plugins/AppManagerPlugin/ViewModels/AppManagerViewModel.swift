@@ -38,7 +38,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                     (app.bundleIdentifier?.localizedCaseInsensitiveContains(text) ?? false)
                 }
             }
-            .assign(to: \.filteredApps, on: self)
+            .sink { [weak self] apps in
+                self?.filteredApps = apps
+            }
             .store(in: &cancellables)
     }
     var totalSelectedSize: Int64 {
