@@ -118,10 +118,6 @@ final class SendController: ObservableObject, SuperLog {
             AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(200))")
         }
 
-        if scope.conversationVM.selectedConversationId == conversationId {
-            scope.messagePendingVM.appendMessage(message)
-        }
-
         scope.conversationVM.saveMessage(message, to: conversationId)
 
         let ctx = SendMessageContext(

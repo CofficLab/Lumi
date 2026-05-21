@@ -67,7 +67,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(scope.conversationVM)
             .environmentObject(scope.projectVM)
             .environmentObject(scope.layoutVM)
-            .environmentObject(scope.messagePendingVM)
             .environmentObject(scope.messageQueueVM)
             .environmentObject(scope.agentAttachmentsVM)
             .environmentObject(scope.inputQueueVM)

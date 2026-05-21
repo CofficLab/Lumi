@@ -17,7 +17,7 @@ import os
 /// AppPluginVM, AppThemeVM, AppLLMVM, AppChatHistoryVM, AppGitVM, AppIdleTimeVM, AppMessageRendererVM
 ///
 /// **窗口作用域（在 WindowScope 中）：**
-/// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessagePendingVM, WindowMessageQueueVM,
+/// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessageQueueVM,
 /// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
 /// WindowConversationStatusVM, WindowConversationCreationVM, WindowTaskCancellationVM,
 /// WindowCommandSuggestionVM, WindowProjectContextRequestVM, WindowChatTimelineViewModel

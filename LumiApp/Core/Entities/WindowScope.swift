@@ -43,9 +43,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 布局管理（每窗口独立的侧边栏/布局状态）
     let layoutVM: WindowLayoutVM
 
-    /// 消息列表（每窗口显示不同会话的消息）
-    let messagePendingVM: WindowMessagePendingVM
-
     /// 消息发送队列（每窗口独立的消息发送队列）
     let messageQueueVM: WindowMessageQueueVM
 
@@ -177,7 +174,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
             llmService: container.llmService
         )
         self.layoutVM = WindowLayoutVM()
-        self.messagePendingVM = WindowMessagePendingVM()
         self.messageQueueVM = WindowMessageQueueVM()
         self.inputQueueVM = WindowInputQueueVM()
         self.chatDraftVM = WindowChatDraftVM()
@@ -359,7 +355,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         inputQueueVM.clearForTeardown()
         sendController.cancelAllSendsForTeardown()
         messageQueueVM.clearAll()
-        messagePendingVM.clearAll()
         chatDraftVM.clear()
         agentAttachmentsVM.clearPendingAttachments()
         permissionRequestVM.clearPending()

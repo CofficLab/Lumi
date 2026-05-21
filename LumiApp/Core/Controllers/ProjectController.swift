@@ -29,14 +29,6 @@ final class ProjectController: ObservableObject, SuperLog {
 
     // MARK: - Private
 
-    private func applyConversationProjectContext(path: String?) async {
-        let fullSystemPrompt = await global.promptService.buildSystemPrompt(
-            includeContext: true
-        )
-        upsertRootSystemMessage(fullSystemPrompt)
-        await global.slashCommandService.setCurrentProjectPath(path)
-    }
-
     private func handleProjectSwitch(path: String) async {
 
     }
@@ -47,38 +39,10 @@ final class ProjectController: ObservableObject, SuperLog {
         scope.conversationVM.setSelectedConversation(nil)
         scope.projectVM.clearProject()
 
-        let languagePreference = scope.projectVM.languagePreference
         await applyProjectContext(path: nil)
-
-        let clearMessage: String
-        switch languagePreference {
-        case .chinese:
-            clearMessage = "✅ 已取消选择项目，当前未关联任何项目。"
-        case .english:
-            clearMessage = "✅ Project cleared. No project is currently selected."
-        }
-
-        let conversationId = scope.conversationVM.selectedConversationId ?? UUID()
-        scope.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
     }
 
     private func applyProjectContext(path: String?) async {
-        let fullSystemPrompt = await global.promptService.buildSystemPrompt(
-            includeContext: true
-        )
-        upsertRootSystemMessage(fullSystemPrompt)
         await global.slashCommandService.setCurrentProjectPath(path)
-    }
-
-    private func upsertRootSystemMessage(_ content: String) {
-        let currentMessages = scope.messagePendingVM.messages
-        let conversationId = scope.conversationVM.selectedConversationId ?? UUID()
-        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: content)
-
-        if !currentMessages.isEmpty, currentMessages[0].role == .system {
-            scope.messagePendingVM.updateMessage(systemMessage, at: 0)
-        } else {
-            scope.messagePendingVM.insertMessage(systemMessage, at: 0)
-        }
     }
 }
