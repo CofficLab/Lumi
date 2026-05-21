@@ -923,6 +923,9 @@
         }
       }
     },
+    "Bottom Panel" : {
+
+    },
     "Branch name" : {
 
     },
@@ -1150,6 +1153,9 @@
           }
         }
       }
+    },
+    "Content Panel" : {
+
     },
     "CPU" : {
       "extractionState" : "manual",
@@ -2845,6 +2851,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展示系統狀態，如 CPU、内存、磁盤、电池等"
+          }
+        }
+      }
+    },
+    "Showing top %lld of %lld issues, sorted by severity." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Showing top %1$lld of %2$lld issues, sorted by severity."
           }
         }
       }
