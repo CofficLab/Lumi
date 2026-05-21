@@ -111,6 +111,30 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         return (providerId, model)
     }
 
+    /// 保存当前对话的聊天模式偏好
+    /// - Parameter chatMode: 聊天模式，传入 nil 表示清除对话级偏好
+    func saveChatModePreference(_ chatMode: ChatMode?) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存聊天模式")
+            }
+            return
+        }
+        chatHistoryService.updateChatMode(conversation, chatMode: chatMode?.rawValue)
+    }
+
+    /// 获取当前对话的聊天模式偏好
+    /// - Returns: 聊天模式，如果对话未指定则返回 nil
+    func getChatModePreference() -> ChatMode? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let rawValue = conversation.chatMode else {
+            return nil
+        }
+        return ChatMode(rawValue: rawValue)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列

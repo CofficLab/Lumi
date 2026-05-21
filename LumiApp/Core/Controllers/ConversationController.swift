@@ -30,7 +30,8 @@ final class ConversationController: ObservableObject, SuperLog {
 
         let conversation = global.chatHistoryService.createConversation(
             projectId: projectId,
-            title: "新会话 " + formatter.string(from: Date())
+            title: "新会话 " + formatter.string(from: Date()),
+            chatMode: global.agentSessionConfig.chatMode.rawValue
         )
 
         scope.conversationVM.setSelectedConversation(conversation.id)

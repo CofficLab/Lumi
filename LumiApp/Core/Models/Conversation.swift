@@ -14,15 +14,18 @@ final class Conversation {
     var providerId: String?
     /// 对话级模型名称，nil 表示未指定（回退到项目偏好）
     var model: String?
+    /// 对话级聊天模式，nil 表示未指定（回退到全局偏好）
+    var chatMode: String?
 
     @Relationship(deleteRule: .cascade) var messages: [ChatMessageEntity]
 
-    init(id: UUID = UUID(), projectId: String? = nil, title: String = "新对话", createdAt: Date = Date(), updatedAt: Date = Date(), messages: [ChatMessageEntity] = []) {
+    init(id: UUID = UUID(), projectId: String? = nil, title: String = "新对话", createdAt: Date = Date(), updatedAt: Date = Date(), chatMode: String? = nil, messages: [ChatMessageEntity] = []) {
         self.id = id
         self.projectId = projectId
         self.title = title
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.chatMode = chatMode
         self.messages = messages
     }
 }

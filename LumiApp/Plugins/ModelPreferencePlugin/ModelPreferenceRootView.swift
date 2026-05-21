@@ -60,18 +60,25 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     private func restoreConfigOnStartup() {
         isLoadingConfig = true
 
+        // 恢复模型偏好
         if let conversationPref = conversationVM.getModelPreference() {
             applyConfig(provider: conversationPref.providerId, model: conversationPref.model, source: "对话")
-            isLoadingConfig = false
-            return
-        }
-
-        // 无对话偏好，保持 AppLLMVM 默认值
-        if Self.verbose {
+        } else {
+            // 无对话偏好，保持 AppLLMVM 默认值
             if Self.verbose {
-                Self.logger.info("\(self.t)🔄 启动时无对话偏好，保持 AppLLMVM 默认值")
+                Self.logger.info("\(self.t)🔄 启动时无对话模型偏好，保持 AppLLMVM 默认值")
             }
         }
+
+        // 恢复聊天模式偏好
+        if let chatModePref = conversationVM.getChatModePreference() {
+            applyChatModeConfig(chatMode: chatModePref, source: "对话")
+        } else {
+            if Self.verbose {
+                Self.logger.info("\(self.t)🔄 启动时无对话聊天模式偏好，保持 AppLLMVM 默认值")
+            }
+        }
+
         isLoadingConfig = false
     }
 
@@ -128,32 +135,34 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         // 清除上次保存的记录，确保新对话可以正常保存
         lastSavedConversationId = nil
 
-        // 优先级 1：新对话自身的偏好
+        // 恢复模型偏好
         if let newId,
            let conversation = conversationVM.fetchConversation(id: newId),
            let providerId = conversation.providerId,
            let model = conversation.model {
             applyConfig(provider: providerId, model: model, source: "对话[\(conversation.title)]")
-            isLoadingConfig = false
-            return
-        }
-
-        // 优先级 2：保持 AppLLMVM 当前值（默认配置）
-        if Self.verbose {
+        } else {
+            // 保持 AppLLMVM 当前值（默认配置）
             if Self.verbose {
-                Self.logger.info("\(self.t)🔄 切换对话时无对话偏好，保持 AppLLMVM 当前值")
+                Self.logger.info("\(self.t)🔄 切换对话时无对话模型偏好，保持 AppLLMVM 当前值")
             }
+            lastSavedProvider = llmVM.selectedProviderId
+            lastSavedModel = llmVM.currentModel
         }
 
-        // 更新 lastSaved 状态，避免触发不必要的保存
-        lastSavedProvider = llmVM.selectedProviderId
-        lastSavedModel = llmVM.currentModel
+        // 恢复聊天模式偏好
+        if let chatModePref = conversationVM.getChatModePreference() {
+            applyChatModeConfig(chatMode: chatModePref, source: "对话")
+        } else if Self.verbose {
+            Self.logger.info("\(self.t)🔄 切换对话时无对话聊天模式偏好，保持 AppLLMVM 当前值")
+        }
+
         isLoadingConfig = false
     }
 
     // MARK: - 辅助方法
 
-    /// 将配置应用到 AppLLMVM，并更新去重状态
+    /// 将模型配置应用到 AppLLMVM，并更新去重状态
     private func applyConfig(provider: String, model: String, source: String) {
         llmVM.selectedProviderId = provider
         llmVM.currentModel = model
@@ -164,9 +173,16 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         lastSavedConversationId = conversationVM.selectedConversationId
 
         if Self.verbose {
-            if Self.verbose {
-                Self.logger.info("\(self.t)📂 已加载 \(source) 的模型偏好：\(provider) - \(model)")
-            }
+            Self.logger.info("\(self.t)📂 已加载 \(source) 的模型偏好：\(provider) - \(model)")
+        }
+    }
+
+    /// 将聊天模式配置应用到 AppLLMVM
+    private func applyChatModeConfig(chatMode: ChatMode, source: String) {
+        llmVM.setChatMode(chatMode)
+
+        if Self.verbose {
+            Self.logger.info("\(self.t)📂 已加载 \(source) 的聊天模式偏好：\(chatMode.rawValue)")
         }
     }
 }
