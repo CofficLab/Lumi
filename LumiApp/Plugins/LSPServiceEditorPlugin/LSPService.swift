@@ -271,6 +271,12 @@ final class LSPService: ObservableObject, SuperLog {
             }
         }
 
+        let previousURI = currentURI
+        let canClosePreviousOnCurrentServer = previousURI != nil
+            && previousURI != uri
+            && server != nil
+            && activeLanguageId == languageId
+
         if server == nil || activeLanguageId != languageId {
             if let root = projectRootPath {
                 _ = await ensureServer(for: languageId, projectPath: root)
@@ -283,6 +289,13 @@ final class LSPService: ObservableObject, SuperLog {
         }
         
         guard let server else { return }
+
+        if let previousURI, previousURI != uri {
+            if canClosePreviousOnCurrentServer {
+                await closeDocumentOnServer(uri: previousURI, server: server)
+            }
+            clearLocalDocumentState(matching: previousURI)
+        }
         
         currentURI = uri
         currentVersion = version
@@ -310,6 +323,16 @@ final class LSPService: ObservableObject, SuperLog {
                 if Self.verbose {
                                     Self.logger.error("\(Self.t)关闭文档失败: \(error)")
                 }
+            }
+        }
+    }
+
+    private func closeDocumentOnServer(uri: String, server: LanguageServer) async {
+        do {
+            try await server.closeDocument(uri: uri)
+        } catch {
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)关闭旧文档失败: \(error)")
             }
         }
     }
