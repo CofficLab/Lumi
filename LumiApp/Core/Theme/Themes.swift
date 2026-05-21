@@ -7,63 +7,8 @@ import LumiUI
 /// 现在可以轻松添加新主题，只需实现 SuperTheme 并注册到主题注册表。
 ///
 enum Themes {
-    // MARK: - 主题变体
-    enum Variant: String, CaseIterable {
-        case midnight   // 午夜幽蓝
-        case aurora     // 极光紫
-        case nebula     // 星云粉
-        case void       // 虚空深黑
-        case spring     // 春芽绿
-        case summer     // 盛夏蓝
-        case autumn     // 秋枫橙
-        case winter     // 霜冬白
-        case orchard    // 果园红
-        case mountain   // 山岚灰
-        case river      // 河流青
-        case github     // GitHub
-        case vscodeDark  // VS Code 深色
-        case vscodeLight // VS Code 亮色
-        case oneDark     // One Dark
-        case dracula     // Dracula
-
-        /// 获取主题实例
-        var theme: SuperTheme {
-            switch self {
-            case .midnight: return MidnightTheme()
-            case .aurora: return AuroraTheme()
-            case .nebula: return NebulaTheme()
-            case .void: return VoidTheme()
-            case .spring: return SpringTheme()
-            case .summer: return SummerTheme()
-            case .autumn: return AutumnTheme()
-            case .winter: return WinterTheme()
-            case .orchard: return OrchardTheme()
-            case .mountain: return MountainTheme()
-            case .river: return RiverTheme()
-            case .github: return GitHubTheme()
-            case .vscodeDark: return VscodeDarkTheme()
-            case .vscodeLight: return VscodeLightTheme()
-            case .oneDark: return OneDarkTheme()
-            case .dracula: return DraculaTheme()
-            }
-        }
-
-        /// 主题的字符串标识
-        var identifier: String {
-            rawValue
-        }
-    }
-
-    // MARK: - 主题配置
-    nonisolated(unsafe) static var currentVariant: Variant = .midnight {
-        didSet {
-            currentTheme = currentVariant.theme
-            updateTheme()
-        }
-    }
-
-    /// 统一主题对象（由 AppThemeVM 驱动）
-    nonisolated(unsafe) static var currentTheme: any SuperTheme = LumiTheme()
+    /// 统一主题对象（由 `AppThemeVM` 在启动时从插件主题写入）
+    nonisolated(unsafe) static var currentTheme: any SuperTheme = UnconfiguredAppTheme()
 
     // MARK: - 颜色配置（动态加载）
 
@@ -149,11 +94,29 @@ enum Themes {
         static let animationDuration: Double = 0.3
     }
 
-    // MARK: - 主题更新
+}
 
-    /// 更新主题时调用
-    private static func updateTheme() {
-        // 主题更新时会自动刷新 UI
+// MARK: - 启动占位主题
+
+/// `AppThemeVM` 应用插件主题前的占位，内核不引用任何插件主题类型。
+private struct UnconfiguredAppTheme: SuperTheme {
+    let identifier = "__unconfigured__"
+    let displayName = ""
+    let compactName = ""
+    let description = ""
+    let iconName = "circle.dashed"
+    let iconColor = SwiftUI.Color.clear
+
+    func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
+        (.clear, .clear, .clear)
+    }
+
+    func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
+        (.clear, .clear, .clear)
+    }
+
+    func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
+        (.clear, .clear, .clear)
     }
 }
 
@@ -202,11 +165,11 @@ extension View {
             .font(.system(size: 34, weight: .bold))
             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-        Text("午夜幽蓝氛围")
+        Text("由 AppThemeVM 驱动当前主题")
             .font(.system(size: 15, weight: .regular))
             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
     }
-    .mystiqueBackground(theme: MidnightTheme())
+    .mystiqueBackground()
 }
 
 #Preview("微光效果") {
@@ -226,79 +189,3 @@ extension View {
     .mystiqueGlow(intensity: 0.2)
 }
 
-#Preview("主题变体") {
-    ScrollView(.vertical) {
-        VStack(spacing: 24) {
-            ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                AppCard {
-                    HStack {
-                        // 使用每个主题的特定颜色
-                        ZStack {
-                            Circle()
-                                .fill(variant.theme.iconColor)
-                                .opacity(0.2)
-                                .frame(width: 48, height: 48)
-
-                            Image(systemName: variant.theme.iconName)
-                                .font(.system(size: 20))
-                                .foregroundColor(variant.theme.iconColor)
-                        }
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(variant.theme.displayName)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                            Text(variant.theme.description)
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(Color(hex: "98989E"))
-                        }
-
-                        Spacer()
-
-                        // 色彩示例点
-                        Circle()
-                            .fill(variant.theme.iconColor)
-                            .frame(width: 12, height: 12)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(variant.theme.iconColor, lineWidth: 1)
-                        .opacity(0.5)
-                )
-                .mystiqueGlow(intensity: 0.2)
-                .frame(width: 280)
-            }
-        }
-        .padding(24)
-    }
-    .mystiqueBackground()
-    .frame(height: 600)
-    .frame(width: 500)
-}
-
-private func variantName(for variant: Themes.Variant) -> String {
-    switch variant {
-    case .midnight: return "午夜幽蓝"
-    case .aurora: return "极光紫"
-    case .nebula: return "星云粉"
-    case .void: return "虚空深黑"
-    case .spring: return "春芽绿"
-    case .summer: return "盛夏蓝"
-    case .autumn: return "秋枫橙"
-    case .winter: return "霜冬白"
-    case .orchard: return "果园红"
-    case .mountain: return "山岚灰"
-    case .river: return "河流青"
-    case .github: return "GitHub"
-    case .vscodeDark: return "VS Code 深色"
-    case .vscodeLight: return "VS Code 亮色"
-    case .oneDark: return "One Dark"
-    case .dracula: return "Dracula"
-    }
-}

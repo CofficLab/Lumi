@@ -30,6 +30,9 @@ protocol SuperTheme {
     /// 为 `true` 时界面深浅色跟随系统，不强制 `preferredColorScheme`（需配合 adaptive 配色）
     var followsSystemAppearance: Bool { get }
 
+    /// 根据当前界面深浅色解析实际使用的编辑器主题 ID（默认返回 `defaultEditorThemeId`）
+    func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String
+
     // MARK: - 颜色配置
 
     /// 主色调
@@ -95,6 +98,10 @@ extension SuperTheme {
 
     /// 默认由 `isDarkTheme` 决定界面深浅色
     var followsSystemAppearance: Bool { false }
+
+    func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String {
+        defaultEditorThemeId
+    }
 
     // MARK: - 工作区颜色默认实现
 

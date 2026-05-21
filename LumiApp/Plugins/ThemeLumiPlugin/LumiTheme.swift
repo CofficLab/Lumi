@@ -12,6 +12,10 @@ struct LumiTheme: SuperTheme {
     let iconName = "circle.hexagonpath.fill"
     let followsSystemAppearance = true
 
+    func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String {
+        colorScheme == .dark ? "lumi-dark" : "lumi-light"
+    }
+
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "007AFF", dark: "0A84FF")
     }

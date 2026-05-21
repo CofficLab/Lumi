@@ -79,9 +79,9 @@ private struct ThemePersistenceAnchor<Content: View>: View {
     }
 
     private func syncEditorThemeToWindow() {
-        let editorThemeId = LumiThemeEditor.resolvedEditorThemeId(
-            appThemeId: themeVM.currentThemeId,
-            fallbackEditorThemeId: themeVM.activeEditorThemeId,
+        guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
+        let editorThemeId = contribution.appTheme.resolvedEditorThemeId(
+            defaultEditorThemeId: contribution.editorThemeId,
             colorScheme: colorScheme
         )
         if ThemeStatusBarPlugin.verbose {

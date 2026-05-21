@@ -6,6 +6,7 @@ import SwiftUI
 ///
 /// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var themeVM: AppThemeVM` 访问。
+/// 主题列表仅来自插件；无贡献时启动失败。默认主题为排序后列表的第一项。
 @MainActor
 final class AppThemeVM: ObservableObject {
 
@@ -31,12 +32,12 @@ final class AppThemeVM: ObservableObject {
 
     /// 当前 App 主题对象
     var activeAppTheme: any SuperTheme {
-        currentTheme?.appTheme ?? LumiTheme()
+        requireSelectedContribution().appTheme
     }
 
-    /// 当前 Editor 主题 ID
+    /// 当前 Editor 主题 ID（贡献中的默认值，明暗适配见 `resolvedEditorThemeId`）
     var activeEditorThemeId: String {
-        currentTheme?.editorThemeId ?? "xcode-dark"
+        requireSelectedContribution().editorThemeId
     }
 
     /// 当前文件树图标主题
@@ -48,9 +49,9 @@ final class AppThemeVM: ObservableObject {
 
     /// 初始化主题 ViewModel，加载保存的主题
     init() {
-        let initialThemes = Self.loadThemesFromPlugins()
+        let initialThemes = Self.requireThemesFromPlugins()
         self.themes = initialThemes
-        self.currentThemeId = Self.resolveInitialThemeID(from: initialThemes)
+        self.currentThemeId = Self.requireDefaultThemeId(from: initialThemes)
         applyCurrentTheme()
 
         NotificationCenter.default.addObserver(
@@ -68,10 +69,10 @@ final class AppThemeVM: ObservableObject {
 
     /// 重新加载所有主题（插件加载完成后调用）
     func reloadThemes() {
-        let loaded = Self.loadThemesFromPlugins()
+        let loaded = Self.requireThemesFromPlugins()
         themes = loaded
         if !themes.contains(where: { $0.id == currentThemeId }) {
-            currentThemeId = themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
+            currentThemeId = Self.requireDefaultThemeId(from: loaded)
             return
         }
         applyCurrentTheme()
@@ -90,49 +91,68 @@ final class AppThemeVM: ObservableObject {
     /// - Parameter themeId: App 主题 ID
     /// - Returns: 编辑器主题 ID
     static func editorThemeID(for themeId: String) -> String {
-        let themes = loadThemesFromPlugins()
-        return themes.first(where: { $0.id == themeId })?.editorThemeId ?? "xcode-dark"
+        let themes = requireThemesFromPlugins()
+        if let match = themes.first(where: { $0.id == themeId }) {
+            return match.editorThemeId
+        }
+        return requireDefaultThemeId(from: themes)
     }
 
     /// 获取当前编辑器主题 ID（用于终端颜色同步）
     ///
     /// 从本地存储读取选中的主题 ID，转换为编辑器主题 ID。
-    /// 如果未找到，返回默认值 "xcode-dark"。
     static func currentEditorThemeId() -> String {
-        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
-            return editorThemeID(for: savedThemeId)
+        let themes = requireThemesFromPlugins()
+        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID(),
+           let match = themes.first(where: { $0.id == savedThemeId }) {
+            return match.editorThemeId
         }
-        return "xcode-dark"
+        return requireDefaultThemeId(from: themes)
     }
 
     // MARK: - 私有方法
 
-    /// 从插件加载主题贡献列表
-    private static func loadThemesFromPlugins() -> [LumiThemeContribution] {
-        let pluginThemes = AppPluginVM.shared.getThemeContributions()
-        if !pluginThemes.isEmpty {
-            return pluginThemes
+    private func requireSelectedContribution() -> LumiThemeContribution {
+        guard let contribution = currentTheme ?? themes.first else {
+            Self.fatalNoThemePlugins()
         }
-        return LumiBuiltinThemeCatalog.themes()
+        return contribution
     }
 
-    /// 解析初始主题 ID
-    private static func resolveInitialThemeID(from themes: [LumiThemeContribution]) -> String {
-        themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
+    /// 从插件加载主题贡献列表；无贡献时终止启动
+    private static func requireThemesFromPlugins() -> [LumiThemeContribution] {
+        let pluginThemes = AppPluginVM.shared.getThemeContributions()
+        guard !pluginThemes.isEmpty else {
+            fatalNoThemePlugins()
+        }
+        return pluginThemes
+    }
+
+    /// 默认主题 ID = 插件主题列表的第一项
+    private static func requireDefaultThemeId(from themes: [LumiThemeContribution]) -> String {
+        guard let id = themes.first?.id else {
+            fatalNoThemePlugins()
+        }
+        return id
+    }
+
+    private static func fatalNoThemePlugins() -> Never {
+        fatalError(
+            "No theme contributions from any plugin. Enable at least one theme plugin (e.g. ThemeLumiPlugin)."
+        )
     }
 
     /// 应用当前主题到全局状态
     private func applyCurrentTheme() {
-        let selected = currentTheme ?? themes.first
-        Themes.currentTheme = selected?.appTheme ?? LumiTheme()
+        let selected = requireSelectedContribution()
+        Themes.currentTheme = selected.appTheme
 
-        let editorThemeId = selected?.editorThemeId ?? "xcode-dark"
         NotificationCenter.default.post(
             name: .lumiThemeDidChange,
             object: nil,
             userInfo: [
-                "themeId": selected?.id ?? currentThemeId,
-                "editorThemeId": editorThemeId,
+                "themeId": selected.id,
+                "editorThemeId": selected.editorThemeId,
             ]
         )
     }

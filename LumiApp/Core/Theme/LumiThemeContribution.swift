@@ -45,14 +45,3 @@ struct LumiThemeContribution: Identifiable {
     }
 }
 
-/// 内置主题清单（用于兜底和内置主题插件复用）。
-enum LumiBuiltinThemeCatalog {
-    static let defaultThemeId = "lumi"
-
-    @MainActor
-    static func themes() -> [LumiThemeContribution] {
-        [
-            LumiThemeContribution(appTheme: LumiTheme(), editorThemeId: "lumi-dark"),
-        ]
-    }
-}
