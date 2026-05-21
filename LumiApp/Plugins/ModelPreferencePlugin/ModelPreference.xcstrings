@@ -1,5 +1,12 @@
 {
   "sourceLanguage" : "en",
-  "strings" : { },
+  "strings" : {
+    "Model Preference" : {
+
+    },
+    "Remember provider and model per conversation" : {
+
+    }
+  },
   "version" : "1.0"
 }

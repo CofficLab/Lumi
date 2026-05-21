@@ -5,9 +5,9 @@ import os
 /// 模型偏好根视图包裹器
 ///
 /// 功能：
-/// 1. 启动时恢复当前对话的模型配置
-/// 2. 对话切换时加载新对话的模型配置
-/// 3. 监听模型变化作为兜底保存（应对 SwitchModelTool 等非 UI 入口）
+/// 1. 启动时恢复当前对话的模型配置和聊天模式
+/// 2. 对话切换时恢复新对话的模型配置和聊天模式
+/// 3. 监听模型变化作为兜底保存（应对 ensureProviderAndModelSelection 等自动修正场景）
 @MainActor
 struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 日志标识 emoji
@@ -86,8 +86,8 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
 
     /// 处理模型变化：作为兜底保存到当前对话
     ///
-    /// ModelSelectorView.selectModel() 已直接保存，此处应对
-    /// SwitchModelTool、ensureProviderAndModelSelection 等非 UI 入口
+    /// ModelSelectorView.selectModel() 和 SwitchModelTool 已直接保存，
+    /// 此处应对 ensureProviderAndModelSelection 等自动修正场景。
     private func handleModelChange() {
         let currentProvider = llmVM.selectedProviderId
         let currentModel = llmVM.currentModel

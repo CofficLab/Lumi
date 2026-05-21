@@ -2160,6 +2160,18 @@
         }
       }
     },
+    "No Fast Models" : {
+
+    },
+    "No Fast Models Description" : {
+
+    },
+    "No Frequent Models" : {
+
+    },
+    "No Frequent Models Description" : {
+
+    },
     "No Listening Ports" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2176,6 +2188,12 @@
           }
         }
       }
+    },
+    "No Matching Models" : {
+
+    },
+    "No Provider Selected" : {
+
     },
     "Not Connected" : {
       "localizations" : {
@@ -2692,6 +2710,12 @@
           }
         }
       }
+    },
+    "Search Models" : {
+
+    },
+    "Search providers or models…" : {
+
     },
     "Search..." : {
       "localizations" : {
