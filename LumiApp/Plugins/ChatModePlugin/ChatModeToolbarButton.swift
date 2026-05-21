@@ -32,8 +32,8 @@ struct ChatModeToolbarButton: View {
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .accessibilityLabel(String(localized: "Chat Mode", table: "AgentChat"))
-        .accessibilityHint(String(localized: "Chat Mode Hint", table: "AgentChat"))
+        .accessibilityLabel(String(localized: "Chat Mode", table: "ChatMode"))
+        .accessibilityHint(String(localized: "Chat Mode Hint", table: "ChatMode"))
     }
 
     // MARK: - 计算属性
@@ -59,9 +59,9 @@ struct ChatModeToolbarButton: View {
     private var helpText: String {
         switch llmVM.chatMode {
         case .chat:
-            return String(localized: "Chat Mode Description", table: "AgentChat")
+            return String(localized: "Chat Mode Description", table: "ChatMode")
         case .build:
-            return String(localized: "Build Mode Description", table: "AgentChat")
+            return String(localized: "Build Mode Description", table: "ChatMode")
         }
     }
 }

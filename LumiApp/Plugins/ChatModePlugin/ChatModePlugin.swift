@@ -12,8 +12,8 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose: Bool = false
     static let id = "ChatMode"
-    static let displayName = String(localized: "Chat Mode", table: "AgentChat")
-    static let description = String(localized: "Switch between Chat and Build modes", table: "AgentChat")
+    static let displayName = String(localized: "Chat Mode", table: "ChatMode")
+    static let description = String(localized: "Switch between Chat and Build modes", table: "ChatMode")
     static let iconName = "arrow.triangle.2.circlepath"
     static var order: Int { 83 }
     nonisolated static let enable: Bool = true
@@ -32,7 +32,7 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "chat-mode-toggle",
-                title: String(localized: "Chat Mode", table: "AgentChat"),
+                title: String(localized: "Chat Mode", table: "ChatMode"),
                 systemImage: "arrow.triangle.2.circlepath",
                 priority: 10
             )
