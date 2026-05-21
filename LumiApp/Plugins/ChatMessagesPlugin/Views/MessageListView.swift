@@ -54,7 +54,7 @@ struct MessageListView: View {
                 if displayRows.isEmpty {
                     if timelineViewModel.isLoadingMore, timelineViewModel.selectedConversationId != nil {
                         loadingOverlay
-                    } else if (self.projectVM.isProjectSelected) {
+                    } else {
                         EmptyMessagesView()
                     }
                 } else {

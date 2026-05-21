@@ -7,7 +7,8 @@ import SwiftUI
 struct ChatMessagesView: View {
     /// 会话管理 ViewModel（窗口级）
     @EnvironmentObject var conversationVM: WindowConversationVM
-    
+    @EnvironmentObject var projectVM: WindowProjectVM
+
     /// 主题管理器
     @EnvironmentObject private var themeVM: AppThemeVM
 
@@ -18,10 +19,15 @@ struct ChatMessagesView: View {
 
     var body: some View {
         Group {
-            if currentConversationId != nil {
-                MessageListView()
+            if !projectVM.isProjectSelected {
+                VStack {}
+                    .frame(maxHeight: .infinity)
             } else {
-                EmptyStateView()
+                if currentConversationId != nil {
+                    MessageListView()
+                } else {
+                    EmptyStateView()
+                }
             }
         }
         .frame(maxHeight: .infinity)

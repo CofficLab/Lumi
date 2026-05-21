@@ -1,66 +1,70 @@
+import LumiUI
 import SwiftUI
 
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
     @EnvironmentObject private var WindowConversationVM: WindowConversationVM
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
-
         VStack(spacing: 20) {
             Spacer()
 
-            // 图标
-            Image(systemName: "text.bubble.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(theme.workspaceTertiaryTextColor())
+            AppCard(style: .elevated, padding: EdgeInsets(top: 24, leading: 28, bottom: 24, trailing: 28)) {
+                VStack(spacing: 14) {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.secondary)
 
-            // 标题
-            Text(String(localized: "No Messages", table: "AgentChat"))
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(theme.workspaceTextColor())
+                    Text(String(localized: "No Messages", table: "AgentChat"))
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
 
-            // 描述
-            Text(String(localized: "No Messages Description", table: "AgentChat"))
-                .font(.body)
-                .foregroundStyle(theme.workspaceSecondaryTextColor())
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                    Text(String(localized: "No Messages Description", table: "AgentChat"))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
 
-            // 示例引导
-            VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "For Example", table: "AgentChat"))
-                    .font(.caption)
-                    .foregroundStyle(theme.workspaceTertiaryTextColor())
+                    examplesSection
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Example Error Log", table: "AgentChat"))
-                        .font(.caption)
-                        .foregroundStyle(theme.workspaceSecondaryTextColor())
-                    Text(String(localized: "Example Test Plan", table: "AgentChat"))
-                        .font(.caption)
-                        .foregroundStyle(theme.workspaceSecondaryTextColor())
+                    QuickStartActionsView(sendStrategy: .sendInCurrentConversation)
+                        .padding(.top, 4)
+
+                    if let id = WindowConversationVM.selectedConversationId {
+                        Text(id.uuidString)
+                            .font(.caption)
+                            .fontDesign(.monospaced)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
-            .padding(.horizontal, 40)
-
-            QuickStartActionsView(sendStrategy: .sendInCurrentConversation)
-            .padding(.horizontal, 40)
-
-            // 当前对话 ID
-            if let id = WindowConversationVM.selectedConversationId {
-                Text(id.uuidString)
-                    .font(.caption)
-                    .fontDesign(.monospaced)
-                    .foregroundStyle(theme.workspaceTertiaryTextColor())
-            }
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 28)
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "No Messages", table: "AgentChat"))
+    }
+
+    private var examplesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AppLabeledDivider(title: String(localized: "For Example", table: "AgentChat"))
+
+            VStack(alignment: .leading, spacing: 6) {
+                AppTag(
+                    String(localized: "Example Error Log", table: "AgentChat"),
+                    systemImage: "text.quote"
+                )
+                AppTag(
+                    String(localized: "Example Test Plan", table: "AgentChat"),
+                    systemImage: "checklist"
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
