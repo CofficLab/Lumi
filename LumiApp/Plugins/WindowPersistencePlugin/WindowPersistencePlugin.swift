@@ -21,11 +21,7 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = WindowPersistencePlugin()
 
-    nonisolated func onRegister() {
-        Task { @MainActor in
-            WindowPersistenceCoordinator.warmUp()
-        }
-    }
+    nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 

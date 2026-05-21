@@ -18,7 +18,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @State private var restored = false
     @State private var isFileImporterPresented = false
     @State private var restoreTask: Task<Void, Never>?
 
@@ -28,9 +27,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         ZStack {
             content
 
-            // 恢复完成且未选择项目时，显示引导遮罩
-            // 等待 WindowPersistencePlugin 完成窗口恢复后再显示，避免闪烁
-            if shouldShowNoProjectOverlay {
+            if projectVM.isProjectSelected == false {
                 NoProjectOverlay(
                     recentProjects: recentProjectsVM.recentProjects,
                     isFileImporterPresented: $isFileImporterPresented,
@@ -53,7 +50,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         .onChange(of: windowManagerVM.hasCompletedInitialStateRestoration) { _, completed in
             guard completed else { return }
             syncProjectFromScopeIfNeeded()
-            logOverlayDecisionIfNeeded()
         }
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
@@ -71,17 +67,8 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 // MARK: - Action
 
 extension RecentProjectsOverlay {
-    /// 仅在全局恢复结束且窗口 scope / projectVM 均无项目时展示选项目界面
-    private var shouldShowNoProjectOverlay: Bool {
-        guard restored else { return false }
-        guard windowManagerVM.hasCompletedInitialStateRestoration else { return false }
-        if projectVM.isProjectSelected { return false }
-        if let path = windowScope?.projectPath, !path.isEmpty { return false }
-        return true
-    }
-
     private func restoreIfNeeded() {
-        guard !restored, restoreTask == nil else { return }
+        guard restoreTask == nil else { return }
 
         restoreTask = Task { @MainActor [store] in
             let projects = await Task.detached(priority: .utility) {
@@ -90,34 +77,13 @@ extension RecentProjectsOverlay {
             guard !Task.isCancelled else { return }
             recentProjectsVM.setRecentProjects(projects)
 
-            await waitForWindowRestoration()
             guard !Task.isCancelled else { return }
 
             syncProjectFromScopeIfNeeded()
-            logOverlayDecisionIfNeeded()
-            setRestored(true)
             restoreTask = nil
         }
     }
 
-    /// 等待 WindowPersistencePlugin 完成初始窗口状态恢复（含各窗口当前项目）
-    ///
-    /// 不能仅用 `hasCompletedInitialStateRestoration`：该标志可能在「等待首个 scope」之前就为 true（无磁盘记录），
-    /// 或在 scope 注册与 `applyFirstRecord` 之间存在间隙，导致过早展示选项目界面。
-    private func waitForWindowRestoration() async {
-        if WindowPersistenceCoordinator.shared.isInitialRestorationFinished {
-            return
-        }
-        for await _ in NotificationCenter.default.notifications(
-            named: .initialWindowStateRestorationDidFinish
-        ) {
-            if WindowPersistenceCoordinator.shared.isInitialRestorationFinished {
-                return
-            }
-        }
-    }
-
-    /// 若持久化已写入 scope 但本视图 projectVM 未同步，补一次切换（避免恢复竞态）
     private func syncProjectFromScopeIfNeeded() {
         guard let scope = windowScope,
               let path = scope.projectPath,
@@ -126,34 +92,6 @@ extension RecentProjectsOverlay {
 
         let name = URL(fileURLWithPath: path).lastPathComponent
         projectVM.switchProject(to: Project(name: name, path: path, lastUsed: Date()))
-    }
-
-    private func logOverlayDecisionIfNeeded() {
-        let scopePath = windowScope?.projectPath ?? ""
-        let scopeSelected = windowScope?.projectVM.isProjectSelected ?? false
-        let willShow = shouldShowNoProjectOverlay
-        let restorationFinished = WindowPersistenceCoordinator.shared.isInitialRestorationFinished
-        RecentProjectsPlugin.logger.info(
-            """
-            \(Self.t) overlay decision willShow=\(willShow, privacy: .public) \
-            restored=\(restored, privacy: .public) \
-            restorationFinished=\(restorationFinished, privacy: .public) \
-            projectVM.selected=\(projectVM.isProjectSelected, privacy: .public) \
-            scope.selected=\(scopeSelected, privacy: .public) \
-            projectVM.path=\(projectVM.currentProjectPath, privacy: .public) \
-            scope.path=\(scopePath, privacy: .public) \
-            scopeCount=\(windowManagerVM.windowScopes.count, privacy: .public)
-            """
-        )
-    }
-}
-
-// MARK: - Setter
-
-extension RecentProjectsOverlay {
-    @MainActor
-    private func setRestored(_ value: Bool) {
-        restored = value
     }
 }
 
