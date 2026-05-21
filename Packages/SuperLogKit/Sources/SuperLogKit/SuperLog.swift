@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import OSLog
+import SwiftData
 
 /// 提供统一的日志记录和调试信息格式化功能的协议
 ///
@@ -10,14 +12,14 @@ import SwiftUI
 /// ```swift
 /// class UserManager: SuperLog {
 ///     static var emoji: String { "👤" }  // 自定义 emoji
-///
+///     
 ///     func login() {
 ///         print("\(t)开始登录处理") // 输出带有线程信息和标识的日志
-///
+///         
 ///         if isMain {
 ///             print("\(t)在主线程执行")
 ///         }
-///
+///         
 ///         // 使用原因标记
 ///         print("\(t)登录失败\(r("密码错误"))")
 ///     }
@@ -31,10 +33,10 @@ import SwiftUI
 public protocol SuperLog {
     /// 获取实现者的标识 emoji
     static var emoji: String { get }
-
+    
     /// 获取带有线程信息的完整前缀
     static var t: String { get }
-
+    
     /// 获取实现者的类型名称
     static var author: String { get }
 }
@@ -135,257 +137,3 @@ public extension Thread {
     }
 }
 
-/// QualityOfService 的扩展，提供描述字符串生成功能
-public extension QualityOfService {
-    /// 获取服务质量级别的描述字符串
-    ///
-    /// - Parameters:
-    ///   - withName: 是否包含名称部分，默认为 true
-    /// - Returns: 服务质量级别的描述字符串
-    ///
-    /// ## 描述格式:
-    /// - withName = true: "[UI] userInteractive"
-    /// - withName = false: "[UI]"
-    func description(withName: Bool = true) -> String {
-        switch self {
-        case .userInteractive:
-            return withName ? "[UI] userInteractive" : "[UI]"
-        case .userInitiated:
-            return withName ? "[IN] userInitiated" : "[IN]"
-        case .default:
-            return withName ? "[DF] default" : "[DF]"
-        case .utility:
-            return withName ? "[UT] utility" : "[UT]"
-        case .background:
-            return withName ? "[BG] background" : "[BG]"
-        @unknown default:
-            return withName ? "[UN] unspecified" : "[UN]"
-        }
-    }
-}
-
-/// String 类型的扩展，提供上下文 emoji 生成功能
-public extension String {
-    /// 为字符串生成上下文相关的 emoji
-    ///
-    /// 根据字符串中的关键词自动生成对应的 emoji 表情符号
-    ///
-    /// ## 使用示例:
-    /// ```swift
-    /// print("UserManager".generateContextEmoji())  // "👤"
-    /// print("DatabaseService".generateContextEmoji()) // "🗄️"
-    /// print("NetworkManager".generateContextEmoji()) // "🌐"
-    /// ```
-    var withContextEmoji: String {
-        let lowercased = self.lowercased()
-
-        // User & Authentication
-        if lowercased.contains("user") || lowercased.contains("account") {
-            return "👤 \(self)"
-        }
-        if lowercased.contains("login") || lowercased.contains("auth") {
-            return "🔐 \(self)"
-        }
-
-        // Data & Storage (specific before general)
-        if lowercased.contains("database") || lowercased.contains("db") || lowercased.contains("storage") {
-            return "🗄️ \(self)"
-        }
-        if lowercased.contains("cache") {
-            return "💾 \(self)"
-        }
-        if lowercased.contains("data") || lowercased.contains("model") || lowercased.contains("entity") {
-            return "📦 \(self)"
-        }
-
-        // Network
-        if lowercased.contains("network") || lowercased.contains("network") || lowercased.contains("api") {
-            return "🌐 \(self)"
-        }
-        if lowercased.contains("download") {
-            return "⬇️ \(self)"
-        }
-        if lowercased.contains("upload") {
-            return "⬆️ \(self)"
-        }
-
-        // UI & View
-        if lowercased.contains("view") || lowercased.contains("component") {
-            return "🎨 \(self)"
-        }
-        if lowercased.contains("window") {
-            return "🪟 \(self)"
-        }
-        if lowercased.contains("button") {
-            return "🔘 \(self)"
-        }
-
-        // Files & Documents
-        if lowercased.contains("file") {
-            return "📄 \(self)"
-        }
-        if lowercased.contains("document") || lowercased.contains("doc") {
-            return "📝 \(self)"
-        }
-        if lowercased.contains("image") || lowercased.contains("photo") || lowercased.contains("picture") {
-            return "🖼️ \(self)"
-        }
-
-        // Editor & Code
-        if lowercased.contains("editor") || lowercased.contains("edit") {
-            return "✏️ \(self)"
-        }
-        if lowercased.contains("code") || lowercased.contains("syntax") {
-            return "💻 \(self)"
-        }
-        if lowercased.contains("project") {
-            return "📁 \(self)"
-        }
-
-        // Settings & Configuration
-        if lowercased.contains("setting") || lowercased.contains("config") || lowercased.contains("preference") {
-            return "⚙️ \(self)"
-        }
-        if lowercased.contains("theme") {
-            return "🎭 \(self)"
-        }
-
-        // Actions & Events (checked before manager/service/handler)
-        if lowercased.contains("action") || lowercased.contains("command") {
-            return "⚡ \(self)"
-        }
-        if lowercased.contains("event") || lowercased.contains("observer") {
-            return "📡 \(self)"
-        }
-
-        // Errors & Warnings (checked before manager/service/handler)
-        if lowercased.contains("error") {
-            return "❌ \(self)"
-        }
-        if lowercased.contains("warning") {
-            return "⚠️ \(self)"
-        }
-
-        // Search & Navigation
-        if lowercased.contains("search") || lowercased.contains("find") {
-            return "🔍 \(self)"
-        }
-        if lowercased.contains("navigation") || lowercased.contains("nav") {
-            return "🧭 \(self)"
-        }
-
-        // Time & Date
-        if lowercased.contains("time") || lowercased.contains("date") || lowercased.contains("calendar") {
-            return "🕐 \(self)"
-        }
-
-        // Communication (checked before manager/service/handler)
-        if lowercased.contains("chat") || lowercased.contains("message") {
-            return "💬 \(self)"
-        }
-        if lowercased.contains("notification") || lowercased.contains("notify") {
-            return "🔔 \(self)"
-        }
-
-        // System & Hardware
-        if lowercased.contains("system") || lowercased.contains("os") {
-            return "⚙️ \(self)"
-        }
-        if lowercased.contains("device") || lowercased.contains("hardware") {
-            return "📱 \(self)"
-        }
-
-        // Development & Debug (checked before manager/service/handler)
-        if lowercased.contains("debug") || lowercased.contains("log") {
-            return "🐛 \(self)"
-        }
-        if lowercased.contains("test") {
-            return "🧪 \(self)"
-        }
-
-        // Tools & Utilities (general - checked last)
-        if lowercased.contains("manager") || lowercased.contains("service") || lowercased.contains("handler") {
-            return "🛠️ \(self)"
-        }
-        if lowercased.contains("helper") || lowercased.contains("util") {
-            return "🧰 \(self)"
-        }
-
-        // Default
-        return "📌 \(self)"
-    }
-
-    /// 为字符串生成上下文相关的 emoji（简化版）
-    ///
-    /// - Returns: 生成的 emoji
-    func generateContextEmoji() -> String {
-        let lowercased = self.lowercased()
-
-        // User & Authentication
-        if lowercased.contains("user") || lowercased.contains("account") { return "👤" }
-        if lowercased.contains("login") || lowercased.contains("auth") { return "🔐" }
-
-        // Data & Storage (specific before general)
-        if lowercased.contains("database") || lowercased.contains("db") || lowercased.contains("storage") { return "🗄️" }
-        if lowercased.contains("cache") { return "💾" }
-        if lowercased.contains("data") || lowercased.contains("model") || lowercased.contains("entity") { return "📦" }
-
-        // Network
-        if lowercased.contains("network") || lowercased.contains("network") || lowercased.contains("api") { return "🌐" }
-        if lowercased.contains("download") { return "⬇️" }
-        if lowercased.contains("upload") { return "⬆️" }
-
-        // UI & View
-        if lowercased.contains("view") || lowercased.contains("component") { return "🎨" }
-        if lowercased.contains("window") { return "🪟" }
-        if lowercased.contains("button") { return "🔘" }
-
-        // Files & Documents
-        if lowercased.contains("file") { return "📄" }
-        if lowercased.contains("document") || lowercased.contains("doc") { return "📝" }
-        if lowercased.contains("image") || lowercased.contains("photo") || lowercased.contains("picture") { return "🖼️" }
-
-        // Editor & Code
-        if lowercased.contains("editor") || lowercased.contains("edit") { return "✏️" }
-        if lowercased.contains("code") || lowercased.contains("syntax") { return "💻" }
-        if lowercased.contains("project") { return "📁" }
-
-        // Settings & Configuration
-        if lowercased.contains("setting") || lowercased.contains("config") || lowercased.contains("preference") { return "⚙️" }
-        if lowercased.contains("theme") { return "🎭" }
-
-        // Actions & Events (checked before manager/service/handler)
-        if lowercased.contains("action") || lowercased.contains("command") { return "⚡" }
-        if lowercased.contains("event") || lowercased.contains("observer") { return "📡" }
-
-        // Errors & Warnings (checked before manager/service/handler)
-        if lowercased.contains("error") { return "❌" }
-        if lowercased.contains("warning") { return "⚠️" }
-
-        // Search & Navigation
-        if lowercased.contains("search") || lowercased.contains("find") { return "🔍" }
-        if lowercased.contains("navigation") || lowercased.contains("nav") { return "🧭" }
-
-        // Time & Date
-        if lowercased.contains("time") || lowercased.contains("date") || lowercased.contains("calendar") { return "🕐" }
-
-        // Communication (checked before manager/service/handler)
-        if lowercased.contains("chat") || lowercased.contains("message") { return "💬" }
-        if lowercased.contains("notification") || lowercased.contains("notify") { return "🔔" }
-
-        // System & Hardware
-        if lowercased.contains("system") || lowercased.contains("os") { return "⚙️" }
-        if lowercased.contains("device") || lowercased.contains("hardware") { return "📱" }
-
-        // Development & Debug (checked before manager/service/handler)
-        if lowercased.contains("debug") || lowercased.contains("log") { return "🐛" }
-        if lowercased.contains("test") { return "🧪" }
-
-        // Tools & Utilities (general - checked last)
-        if lowercased.contains("manager") || lowercased.contains("service") || lowercased.contains("handler") { return "🛠️" }
-        if lowercased.contains("helper") || lowercased.contains("util") { return "🧰" }
-
-        // Default
-        return "📌"
-    }
-}

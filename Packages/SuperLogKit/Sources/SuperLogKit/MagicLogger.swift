@@ -8,7 +8,7 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
     public static let shared = MagicLogger()
 
     /// 存储的日志条目
-    @Published public private(set) var logs: [MagicLogEntry] = []
+    @Published private(set) var logs: [MagicLogEntry] = []
 
     /// 应用名称
     @Published public var app: String
@@ -36,6 +36,17 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
 
     private static func fileName(from file: String) -> String {
         file.components(separatedBy: "/").last?.components(separatedBy: ".").first ?? file
+    }
+
+    // MARK: - Public Methods
+
+    /// 记录一条日志
+    /// - Parameters:
+    ///   - message: 日志消息
+    ///   - level: 日志级别
+    ///   - caller: 日志发生的位置
+    public func log(_ message: String, level: MagicLogEntry.Level, caller: String = #fileID, line: Int = #line) {
+        addLog(.init(message: message, level: level, caller: Self.fileName(from: caller), line: line))
     }
 
     /// 添加一条信息日志
@@ -77,15 +88,6 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
 
     // MARK: - Public Methods
 
-    /// 记录一条日志
-    /// - Parameters:
-    ///   - message: 日志消息
-    ///   - level: 日志级别
-    ///   - caller: 日志发生的位置
-    public func log(_ message: String, level: MagicLogEntry.Level, caller: String = #fileID, line: Int = #line) {
-        addLog(.init(message: message, level: level, caller: Self.fileName(from: caller), line: line))
-    }
-
     /// 添加一条信息日志
     /// - Parameters:
     ///   - message: 日志消息
@@ -120,12 +122,7 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
 
     /// 清空所有日志
     public func clearLogs() {
-        lock.lock()
-        defer { lock.unlock() }
-
-        DispatchQueue.main.async {
-            self.logs.removeAll()
-        }
+        logs.removeAll()
     }
 
     // MARK: - Private Methods

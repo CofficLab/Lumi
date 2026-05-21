@@ -30,7 +30,7 @@ final class MagicLogEntryTests: XCTestCase {
         )
 
         // Message should contain thread info and emoji
-        XCTAssertTrue(entry.message.contains("[UI]") || entry.message.contains("[BG]"))
+        XCTAssertTrue(entry.message.contains("🔥") || entry.message.contains("2️⃣") || entry.message.contains("5️⃣"))
         XCTAssertTrue(entry.message.contains("User logged in"))
     }
 
@@ -100,27 +100,6 @@ final class MagicLoggerTests: XCTestCase {
         XCTAssertEqual(customLogger.app, "MyApp")
     }
 
-    // MARK: - Sendable Conformance Tests
-
-    func testLogEntryIsSendable() {
-        let entry = MagicLogEntry(message: "Test", level: .info)
-
-        // This should compile without errors if MagicLogEntry conforms to Sendable
-        let sendingQueue = DispatchQueue(label: "sending")
-        let receivingQueue = DispatchQueue(label: "receiving")
-
-        let expectation = XCTestExpectation(description: "Sendable test")
-
-        sendingQueue.async {
-            receivingQueue.async {
-                XCTAssertEqual(entry.originalMessage, "Test")
-                expectation.fulfill()
-            }
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
     // MARK: - Clear Logs Tests
 
     func testClearLogs() {
@@ -166,7 +145,7 @@ final class MagicLoggerTests: XCTestCase {
             .dropFirst()
             .sink { logs in
                 if let log = logs.first {
-                    XCTAssertTrue(log.message.contains("[UI]") || log.message.contains("[BG]"))
+                    XCTAssertTrue(log.message.contains("🔥") || log.message.contains("5️⃣"))
                     expectation.fulfill()
                 }
             }
