@@ -26,6 +26,7 @@ fi
 swift build \
   --package-path "$PACKAGE_DIR" \
   --scratch-path "$SCRATCH_DIR" \
+  --skip-update \
   --configuration "$SWIFT_CONFIGURATION"
 
 HELPER_BINARY="$SCRATCH_DIR/$SWIFT_CONFIGURATION/LumiSwiftUIPreviewHost"
