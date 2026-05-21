@@ -2,8 +2,7 @@ import Foundation
 import os
 
 /// 窗口状态持久化存储（`window_states.json` 读写）
-@MainActor
-final class WindowStateStore: SuperLog {
+final class WindowStateStore: @unchecked Sendable, SuperLog {
     nonisolated static var emoji: String { WindowPersistencePlugin.emoji }
     nonisolated static var verbose: Bool { WindowPersistencePlugin.verbose }
     nonisolated static var logger: Logger { WindowPersistencePlugin.logger }
@@ -11,7 +10,6 @@ final class WindowStateStore: SuperLog {
     static let shared = WindowStateStore()
 
     private let queue = DispatchQueue(label: "WindowStateStore.queue", qos: .userInitiated)
-    private var pendingRecords: [UUID: WindowPersistenceRecord] = [:]
 
     private static let pluginDirName = "WindowPersistence"
     private static let settingsDirName = "settings"
@@ -104,21 +102,15 @@ final class WindowStateStore: SuperLog {
         }
     }
 
-    // MARK: - Load / pending（启动恢复由 `WindowPersistenceRestore` 编排）
+    // MARK: - Load
 
     func loadAll() -> [WindowPersistenceRecord] {
         Array(loadWindowStates().prefix(Self.maxPersistedWindowCount))
     }
 
-    func setPendingRecords(_ records: [WindowPersistenceRecord]) {
-        pendingRecords = Dictionary(uniqueKeysWithValues: records.map { ($0.windowId, $0) })
+    func record(for windowId: UUID) -> WindowPersistenceRecord? {
+        loadWindowStates().first { $0.windowId == windowId }
     }
-
-    func popPendingRecord(for windowId: UUID) -> WindowPersistenceRecord? {
-        pendingRecords.removeValue(forKey: windowId)
-    }
-
-    var hasPendingRecords: Bool { !pendingRecords.isEmpty }
 
     // MARK: - Internal
 

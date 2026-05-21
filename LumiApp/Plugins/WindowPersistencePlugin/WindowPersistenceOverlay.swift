@@ -1,7 +1,7 @@
 import os
 import SwiftUI
 
-/// 窗口持久化覆盖层：从 `WindowContainer` 取值写盘；启动恢复由 `WindowPersistenceRestore` 编排。
+/// 窗口持久化覆盖层：按窗口 ID 恢复并从 `WindowContainer` 取值写盘。
 struct WindowPersistenceOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { WindowPersistencePlugin.emoji }
     nonisolated static var verbose: Bool { WindowPersistencePlugin.verbose }
@@ -21,7 +21,7 @@ struct WindowPersistenceOverlay<Content: View>: View, SuperLog {
     var body: some View {
         content
             .onAppear {
-                print(windowId)
+                restoreCurrentWindowIfNeeded()
             }
             .onChange(of: projectVM.currentProjectPath) {
                 store.saveProject(
@@ -70,6 +70,11 @@ struct WindowPersistenceOverlay<Content: View>: View, SuperLog {
     private var editorOpenPaths: [String]? {
         let paths = windowContainer.editorOpenFileURLs.map(\.path)
         return paths.isEmpty ? nil : paths
+    }
+
+    private func restoreCurrentWindowIfNeeded() {
+        guard let record = store.record(for: windowId) else { return }
+        windowContainer.applyPersistenceRecord(record)
     }
 
     private func snapshotRecords(from containers: [WindowContainer]) -> [WindowPersistenceRecord] {
