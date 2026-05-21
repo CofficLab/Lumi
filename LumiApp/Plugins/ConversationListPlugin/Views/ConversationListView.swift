@@ -394,10 +394,10 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowScope?.switchToConversation(newId)
+            windowScope?.switchToConversation(newId, reason: "conversationListSelect")
             
             // 同步到全局 VM（向后兼容）
-            self.conversationVM.setSelectedConversation(newId)
+            self.conversationVM.setSelectedConversation(newId, reason: "conversationListSelect")
             
             // 选择会话时，切换到关联的项目
             if let conversation = conversations.first(where: { $0.id == newId }) {
@@ -411,10 +411,10 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowScope?.switchToConversation(nil)
+            windowScope?.switchToConversation(nil, reason: "conversationListClear")
             
             // 同步到全局 VM（向后兼容）
-            self.conversationVM.setSelectedConversation(nil)
+            self.conversationVM.setSelectedConversation(nil, reason: "conversationListClear")
         }
     }
 
