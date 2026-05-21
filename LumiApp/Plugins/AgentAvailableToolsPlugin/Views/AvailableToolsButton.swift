@@ -3,7 +3,7 @@ import LumiUI
 
 /// 状态栏上的可用工具按钮
 struct AvailableToolsButton: View {
-    @EnvironmentObject var conversationTurnServices: AppConversationTurnServicesVM
+    @EnvironmentObject var conversationTurnServices: AppConversationTurnVM
 
     var body: some View {
         StatusBarHoverContainer(
