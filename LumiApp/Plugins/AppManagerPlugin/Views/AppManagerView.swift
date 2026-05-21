@@ -25,7 +25,6 @@ struct AppManagerView: View {
             }
             .frame(minWidth: 400, maxWidth: .infinity)
             .infiniteHeight()
-            .ignoresSafeArea()
             
             // Right: Details
             detailView
@@ -33,7 +32,6 @@ struct AppManagerView: View {
                 .infiniteHeight()
         }
         .infinite()
-        .ignoresSafeArea()
         .navigationTitle(String(localized: "App Manager", table: "AppManager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
