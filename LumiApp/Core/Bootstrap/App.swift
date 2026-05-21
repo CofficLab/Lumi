@@ -1,5 +1,4 @@
 import AppKit
-import EditorService
 import MagicKit
 import Sparkle
 import SwiftUI
@@ -28,20 +27,6 @@ import SwiftUI
 /// - ConfigCommand: 配置命令
 @main
 struct CoreApp: App {
-    init() {
-        EditorSettingsLifecycle.hostPersistenceRootURL = { AppConfig.getDBFolderURL() }
-        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { AppThemeVM.editorThemeID(for: $0) }
-        EditorSettingsLifecycle.loadEditorRecentCommandIDs = { AppSettingStore.loadEditorRecentCommandIDs() }
-        EditorSettingsLifecycle.saveEditorRecentCommandIDs = { AppSettingStore.saveEditorRecentCommandIDs($0) }
-        EditorSettingsLifecycle.loadEditorCommandUsageCounts = { AppSettingStore.loadEditorCommandUsageCounts() }
-        EditorSettingsLifecycle.saveEditorCommandUsageCounts = { AppSettingStore.saveEditorCommandUsageCounts($0) }
-        EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
-        EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
-        EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
-            AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
-        }
-    }
-
     /// macOS 应用代理，处理应用级别的生命周期事件
     ///
     /// MacAgent 负责：
@@ -56,17 +41,8 @@ struct CoreApp: App {
 
     var body: some Scene {
         // 主窗口（可多开）
-        WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
-            let initial = route.wrappedValue ?? LumiWindowRoute()
-            let windowContainer = WindowContainer(
-                id: initial.id,
-                container: RootContainer.shared,
-                projectPath: initial.projectPath
-            )
-            ContentLayout(
-                projectPath: initial.projectPath
-            )
-            .inRootView(container: windowContainer)
+        WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
+            MainWindowSceneContent(route: route)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -88,7 +64,7 @@ struct CoreApp: App {
         //
         // 单独的设置窗口，大小固定为 780x600。
         // 使用紧凑型工具栏样式，节省空间。
-        Window("设置", id: SettingsWindowID.settings) {
+        Window("设置", id: AppConfig.settingsWindowID) {
             SettingView()
                 .inRootView(container: WindowContainer(container: RootContainer.shared))
         }

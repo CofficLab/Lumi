@@ -298,11 +298,11 @@ extension ContentView {
     }
 
     func openSettings() {
-        openWindow(id: SettingsWindowID.settings)
+        openWindow(id: AppConfig.settingsWindowID)
     }
 
     func openPluginSettings() {
-        openWindow(id: SettingsWindowID.settings)
+        openWindow(id: AppConfig.settingsWindowID)
     }
 }
 

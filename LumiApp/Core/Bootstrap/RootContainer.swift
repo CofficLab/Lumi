@@ -43,7 +43,7 @@ final class RootContainer: ObservableObject, SuperLog {
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
     
-    let windowManagerVM: WindowManagerVM
+    let windowManagerVM: AppWindowManagerVM
     let pluginVM: AppPluginVM
     let messageRendererVM: AppMessageRendererVM
     let themeVM: AppThemeVM
@@ -104,7 +104,7 @@ final class RootContainer: ObservableObject, SuperLog {
         // 全局 ViewModel
         // ========================================
         
-        self.windowManagerVM = WindowManagerVM()
+        self.windowManagerVM = AppWindowManagerVM()
         self.messageRendererVM = AppMessageRendererVM.shared
         self.themeVM = AppThemeVM()
         
@@ -164,6 +164,18 @@ final class RootContainer: ObservableObject, SuperLog {
                 )
             )
         )
+        
+        EditorSettingsLifecycle.hostPersistenceRootURL = { AppConfig.getDBFolderURL() }
+        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { AppThemeVM.editorThemeID(for: $0) }
+        EditorSettingsLifecycle.loadEditorRecentCommandIDs = { AppSettingStore.loadEditorRecentCommandIDs() }
+        EditorSettingsLifecycle.saveEditorRecentCommandIDs = { AppSettingStore.saveEditorRecentCommandIDs($0) }
+        EditorSettingsLifecycle.loadEditorCommandUsageCounts = { AppSettingStore.loadEditorCommandUsageCounts() }
+        EditorSettingsLifecycle.saveEditorCommandUsageCounts = { AppSettingStore.saveEditorCommandUsageCounts($0) }
+        EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
+        EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
+        EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
+            AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
+        }
         
         EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
             for contribution in AppPluginVM.shared.getThemeContributions() {

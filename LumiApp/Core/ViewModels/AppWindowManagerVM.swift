@@ -37,6 +37,8 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
     /// 窗口作用域快速查找映射（窗口 ID -> WindowContainer）
     private var containerMap: [UUID: WindowContainer] = [:]
 
+    private var isTerminating = false
+
     // MARK: - Initialization
 
     init() {
@@ -60,6 +62,7 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
         windowContainers.append(container)
         containerMap[container.id] = container
         setActiveWindow(container.id)
+        persistWindowIds()
 
         if Self.verbose {
             let count = self.windowContainers.count
@@ -75,6 +78,9 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
 
         if activeWindowId == windowId {
             activeWindowId = windowContainers.first?.id
+        }
+        if !isTerminating {
+            persistWindowIds()
         }
 
         NotificationCenter.postWindowClosed(windowId)
@@ -191,6 +197,21 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
             name: NSApplication.didBecomeActiveNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationWillTerminate),
+            name: NSApplication.willTerminateNotification,
+            object: nil
+        )
+    }
+
+    private func persistWindowIds() {
+        CoreWindowIDStore.saveWindowIds(windowContainers.map(\.id))
+    }
+
+    @objc private func applicationWillTerminate() {
+        isTerminating = true
+        persistWindowIds()
     }
 
     @objc private func applicationDidBecomeActive() {

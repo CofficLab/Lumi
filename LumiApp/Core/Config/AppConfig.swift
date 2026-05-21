@@ -4,14 +4,19 @@ import SwiftUI
 
 /// 应用配置管理器，负责应用级设置和通用配置
 enum AppConfig {
-    
+    /// 主内容窗口标识（单窗口模式）
+    static let mainWindowID = "main"
+
+    /// 默认设置窗口 ID
+    static let settingsWindowID = "settings"
+
     // MARK: - Layout Constants
-    
+
     /// 统一的头部高度（侧边栏顶部和详情栏头部）
     static let headerHeight: CGFloat = 44
-    
+
     // MARK: - Database Container (通过 DBConfig)
-    
+
     /// 获取配置好的 SwiftData 模型容器
     ///
     /// 此方法为 `DBConfig.getContainer()` 的便捷访问点。
@@ -31,7 +36,7 @@ enum AppConfig {
     static func getDBFolderURL() -> URL {
         DBConfig.getDBFolderURL()
     }
-    
+
     /// 获取指定插件的数据库/存储目录
     ///
     /// 此方法为 `DBConfig.getPluginDBFolderURL(pluginName:)` 的便捷访问点。
@@ -41,7 +46,7 @@ enum AppConfig {
     static func getPluginDBFolderURL(pluginName: String) -> URL {
         DBConfig.getPluginDBFolderURL(pluginName: pluginName)
     }
-    
+
     /// Core 数据目录
     ///
     /// 此方法为 `DBConfig.getCoreDBFolderURL()` 的便捷访问点。

@@ -51,6 +51,7 @@ struct RootView<Content>: View where Content: View {
                 .environmentObject(container.gitVM)
                 .environmentObject(container.idleTimeVM)
                 // 窗口级 VM（每窗口独立）
+                .environmentObject(windowContainer)
                 .environmentObject(windowContainer.editorVM)
                 .environmentObject(windowContainer.conversationVM)
                 .environmentObject(windowContainer.projectVM)
