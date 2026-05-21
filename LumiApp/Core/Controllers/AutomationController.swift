@@ -168,7 +168,10 @@ final class AutomationController: SuperLog {
         }
 
         let name = URL(fileURLWithPath: path).lastPathComponent
-        scope.projectVM.switchProject(to: Project(name: name, path: path, lastUsed: Date()))
+        scope.projectVM.switchProject(
+            to: Project(name: name, path: path, lastUsed: Date()),
+            reason: "automationSelectProject"
+        )
         NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
         NotificationCenter.postCurrentProjectDidChange(name: name, path: path)
 

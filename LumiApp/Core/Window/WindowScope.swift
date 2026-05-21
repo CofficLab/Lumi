@@ -206,7 +206,10 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
 
         if let projectPath {
             let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-            projectVM.switchProject(to: Project(name: projectName, path: projectPath, lastUsed: Date()))
+            projectVM.switchProject(
+                to: Project(name: projectName, path: projectPath, lastUsed: Date()),
+                reason: "windowScopeInit"
+            )
             activePanel = .fileTree
         }
 
@@ -264,10 +267,13 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     // MARK: - Project Management
 
     /// 切换到指定项目
-    func switchToProject(_ path: String?) {
+    func switchToProject(_ path: String?, reason: String) {
         if let path {
             let projectName = URL(fileURLWithPath: path).lastPathComponent
-            projectVM.switchProject(to: Project(name: projectName, path: path, lastUsed: Date()))
+            projectVM.switchProject(
+                to: Project(name: projectName, path: path, lastUsed: Date()),
+                reason: reason
+            )
             if activePanel == .welcome {
                 activePanel = .fileTree
             }

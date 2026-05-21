@@ -349,7 +349,7 @@ extension ConversationListView {
         let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
         let project = Project(name: projectName, path: projectPath, lastUsed: Date())
         
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "conversationListSelect")
         
         if Self.verbose {
             if ConversationListPlugin.verbose {

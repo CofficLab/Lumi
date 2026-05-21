@@ -264,7 +264,8 @@ extension ContentView {
         if let path = initialProjectPath, !path.isEmpty, !scope.projectVM.isProjectSelected {
             let name = URL(fileURLWithPath: path).lastPathComponent
             scope.projectVM.switchProject(
-                to: Project(name: name, path: path, lastUsed: Date())
+                to: Project(name: name, path: path, lastUsed: Date()),
+                reason: "contentViewInitialProjectPath"
             )
         }
 

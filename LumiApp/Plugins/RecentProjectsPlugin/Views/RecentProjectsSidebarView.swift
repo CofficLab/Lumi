@@ -185,7 +185,7 @@ struct RecentProjectsSidebarView: View {
     // MARK: - Actions
 
     private func switchToProject(_ project: Project) {
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "recentProjectsSidebarSelect")
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
@@ -209,7 +209,7 @@ struct RecentProjectsSidebarView: View {
 
         store.addProject(name: project.name, path: project.path)
         recentProjectsVM.addProject(project)
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "recentProjectsSidebarAddProject")
     }
 
     // MARK: - Branch Refresh

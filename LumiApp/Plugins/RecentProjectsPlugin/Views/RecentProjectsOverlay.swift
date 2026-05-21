@@ -75,7 +75,10 @@ extension RecentProjectsOverlay {
               !projectVM.isProjectSelected else { return }
 
         let name = URL(fileURLWithPath: path).lastPathComponent
-        projectVM.switchProject(to: Project(name: name, path: path, lastUsed: Date()))
+        projectVM.switchProject(
+            to: Project(name: name, path: path, lastUsed: Date()),
+            reason: "syncProjectFromScope"
+        )
     }
 }
 
@@ -106,7 +109,7 @@ extension RecentProjectsOverlay {
                 store.loadProjects()
             }.value
             if let matched = projects.first(where: { $0.path == path }) {
-                projectVM.switchProject(to: matched)
+                projectVM.switchProject(to: matched, reason: "currentProjectDidChange")
             }
 
             switchConversationForProject(path)

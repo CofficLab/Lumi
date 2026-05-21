@@ -216,7 +216,7 @@ struct NoProjectOverlay: View {
 
     private func selectProject(_ project: Project) {
         recentProjectsVM.addProject(project)
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "noProjectOverlaySelect")
     }
 
     private func addProjectAndSwitch(to url: URL) {
@@ -228,7 +228,7 @@ struct NoProjectOverlay: View {
         )
         store.addProject(name: project.name, path: project.path)
         recentProjectsVM.addProject(project)
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "noProjectOverlayAddProject")
     }
 
     // MARK: - File Import

@@ -90,7 +90,7 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
                 let path = url.path
                 let project = Project(name: url.lastPathComponent, path: path)
                 Task { @MainActor in
-                    projectVM.switchProject(to: project)
+                    projectVM.switchProject(to: project, reason: "projectDropdownSelect")
                     isPresented = false
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

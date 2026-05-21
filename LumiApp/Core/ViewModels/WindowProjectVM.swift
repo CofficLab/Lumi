@@ -71,9 +71,20 @@ final class WindowProjectVM: ObservableObject, SuperLog {
     }
 
     /// 切换到指定项目
-    func switchProject(to project: Project) {
-        self.currentProject = project
+    /// - Parameters:
+    ///   - project: 目标项目
+    ///   - reason: 触发本次切换的原因（用于日志追踪）
+    func switchProject(to project: Project, reason: String) {
+        if currentProject?.path == project.path {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 项目已是当前项目，跳过: \(project.path), reason: \(reason)")
+            }
+            return
+        }
+
+        currentProject = project
         codeSelectionRange = nil
+        AppLogger.core.info("\(Self.t)切换项目: \(project.name) (\(project.path)), reason: \(reason)")
     }
 
     /// 将指定文件或目录移到废纸篓
