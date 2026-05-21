@@ -17,6 +17,8 @@
 		0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8C2F662D8500F15618 /* MLXLLM */; };
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
+		0B289C882FBF4E4D009F89A9 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiPreviewKit */; };
 		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
@@ -307,6 +309,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
 				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
 				0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
@@ -355,7 +358,7 @@
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
-				A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */,
+				0B289C882FBF4E4D009F89A9 /* (null) in Frameworks */,
 				A1B2C4652F70000100AAA108 /* OpenInKit in Frameworks */,
 				B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */,
 				F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */,

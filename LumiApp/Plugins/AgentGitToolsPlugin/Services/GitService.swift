@@ -225,6 +225,32 @@ final class GitService: @unchecked Sendable, SuperLog {
         }
     }
 
+    // MARK: - Git Commit
+
+    func commit(path: String?, message: String, files: [String], amend: Bool) async throws -> GitCommitResult {
+        let repoPath = resolvePath(path)
+        
+        let commitHash: String
+        if amend {
+            commitHash = try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
+        } else if files.isEmpty {
+            commitHash = try LibGit2.createCommit(message: message, at: repoPath, verbose: Self.verbose)
+        } else {
+            commitHash = try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
+        }
+        
+        // 获取提交详情
+        let detail = try await getCommitDetail(path: path, hash: commitHash)
+        return GitCommitResult(
+            hash: commitHash,
+            message: detail.message,
+            author: detail.author,
+            email: detail.email,
+            date: detail.date,
+            changedFiles: detail.changedFiles
+        )
+    }
+
     // MARK: - Helper
 
     private func resolvePath(_ path: String?) -> String {
@@ -254,4 +280,15 @@ extension Array {
     func filtering(_ predicate: (Element) -> Bool) -> [Element] {
         filter(predicate)
     }
+}
+
+// MARK: - Git Commit Result
+
+struct GitCommitResult: Codable {
+    let hash: String
+    let message: String
+    let author: String
+    let email: String
+    let date: String
+    let changedFiles: [String]
 }

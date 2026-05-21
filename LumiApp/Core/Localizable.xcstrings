@@ -2205,6 +2205,9 @@
     "No Provider Selected" : {
 
     },
+    "No tools found" : {
+
+    },
     "Not Connected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3098,6 +3101,9 @@
           }
         }
       }
+    },
+    "Try a different search keyword." : {
+
     },
     "Uninstall Selected" : {
       "extractionState" : "stale",
