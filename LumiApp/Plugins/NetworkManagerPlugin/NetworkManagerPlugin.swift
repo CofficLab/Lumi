@@ -26,6 +26,20 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // 不在 init 中创建 Task，避免时序与竞态。NetworkHistoryService.shared 在首次被
     // 访问时（如状态栏/仪表盘）会自行初始化。
 
+    nonisolated func onEnable() {
+        Task { @MainActor in
+            NetworkManagerViewModel.shared.startMonitoring()
+            NetworkHistoryService.shared.startRecording()
+        }
+    }
+
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            NetworkHistoryService.shared.stopRecording()
+            NetworkManagerViewModel.shared.stopMonitoring()
+        }
+    }
+
     // MARK: - UI Contributions
 
     
