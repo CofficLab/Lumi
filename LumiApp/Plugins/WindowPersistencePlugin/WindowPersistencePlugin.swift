@@ -10,7 +10,7 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.window-persistence")
 
     nonisolated static let emoji = "🪟"
-    nonisolated static let enable: Bool = true
+    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = false
     static let id: String = "WindowPersistence"
     static let displayName: String = String(localized: "Window Persistence", table: "WindowPersistence")
