@@ -31,9 +31,9 @@ struct ThemePickerDetailView: View {
     @ViewBuilder
     private func themeRow(_ theme: LumiUIThemeContribution) -> some View {
         let isSelected = theme.id == themeVM.currentThemeId
-        AppListRow(isSelected: isSelected) {
+        AppListRow(isSelected: isSelected, action: {
             themeVM.selectTheme(theme.id)
-        } label: {
+        }) {
             HStack(spacing: 10) {
                 Image(systemName: theme.iconName)
                     .font(.system(size: 12))
