@@ -228,8 +228,11 @@ struct ContentViewBody<Content: View>: View {
         self.onChangeColumnVisibility = onChangeColumnVisibility
     }
 
-    private var preferredColorScheme: ColorScheme {
-        themeVM.activeAppTheme.isDarkTheme ? .dark : .light
+    private var preferredColorScheme: ColorScheme? {
+        if themeVM.activeAppTheme.followsSystemAppearance {
+            return nil
+        }
+        return themeVM.activeAppTheme.isDarkTheme ? .dark : .light
     }
 
     var body: some View {

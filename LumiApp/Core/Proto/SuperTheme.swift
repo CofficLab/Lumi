@@ -27,6 +27,9 @@ protocol SuperTheme {
     /// 是否为深色主题（影响工作区文本色等默认值）
     var isDarkTheme: Bool { get }
 
+    /// 为 `true` 时界面深浅色跟随系统，不强制 `preferredColorScheme`（需配合 adaptive 配色）
+    var followsSystemAppearance: Bool { get }
+
     // MARK: - 颜色配置
 
     /// 主色调
@@ -89,6 +92,9 @@ extension SuperTheme {
 
     /// 默认为深色主题
     var isDarkTheme: Bool { true }
+
+    /// 默认由 `isDarkTheme` 决定界面深浅色
+    var followsSystemAppearance: Bool { false }
 
     // MARK: - 工作区颜色默认实现
 

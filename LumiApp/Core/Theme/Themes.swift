@@ -63,7 +63,7 @@ enum Themes {
     }
 
     /// 统一主题对象（由 AppThemeVM 驱动）
-    nonisolated(unsafe) static var currentTheme: any SuperTheme = MidnightTheme()
+    nonisolated(unsafe) static var currentTheme: any SuperTheme = LumiTheme()
 
     // MARK: - 颜色配置（动态加载）
 

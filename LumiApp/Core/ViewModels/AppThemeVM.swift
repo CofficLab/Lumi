@@ -31,7 +31,7 @@ final class AppThemeVM: ObservableObject {
 
     /// 当前 App 主题对象
     var activeAppTheme: any SuperTheme {
-        currentTheme?.appTheme ?? MidnightTheme()
+        currentTheme?.appTheme ?? LumiTheme()
     }
 
     /// 当前 Editor 主题 ID
@@ -124,7 +124,7 @@ final class AppThemeVM: ObservableObject {
     /// 应用当前主题到全局状态
     private func applyCurrentTheme() {
         let selected = currentTheme ?? themes.first
-        Themes.currentTheme = selected?.appTheme ?? MidnightTheme()
+        Themes.currentTheme = selected?.appTheme ?? LumiTheme()
 
         let editorThemeId = selected?.editorThemeId ?? "xcode-dark"
         NotificationCenter.default.post(

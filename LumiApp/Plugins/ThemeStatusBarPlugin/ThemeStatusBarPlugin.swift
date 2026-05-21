@@ -50,6 +50,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
 ///
 /// 此视图不渲染任何可见内容，仅作为生命周期锚点。
 private struct ThemePersistenceAnchor<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var editorVM: WindowEditorVM
     let content: Content
@@ -61,15 +62,10 @@ private struct ThemePersistenceAnchor<Content: View>: View {
         content
             .onAppear {
                 restoreSavedTheme()
-                // 主动将 AppThemeVM 当前主题同步到 EditorState。
-                // AppThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
-                // 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
-                // 此处由插件（外层）主动向 EditorState（内层）推送，而非 EditorState 反向读取 AppThemeVM。
-                let editorThemeId = themeVM.activeEditorThemeId
-                if ThemeStatusBarPlugin.verbose {
-                    ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)onAppear: 同步初始编辑器主题 → \(editorThemeId, privacy: .public)")
-                }
-                editorVM.syncInitialEditorTheme(editorThemeId)
+                syncEditorThemeToWindow()
+            }
+            .onChange(of: colorScheme) { _, _ in
+                syncEditorThemeToWindow()
             }
             .onChange(of: themeVM.currentThemeId) { oldValue, newValue in
                 guard hasRestored else { return }
@@ -78,7 +74,20 @@ private struct ThemePersistenceAnchor<Content: View>: View {
                     ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)主题变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
                 }
                 ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID(newValue)
+                syncEditorThemeToWindow()
             }
+    }
+
+    private func syncEditorThemeToWindow() {
+        let editorThemeId = LumiThemeEditor.resolvedEditorThemeId(
+            appThemeId: themeVM.currentThemeId,
+            fallbackEditorThemeId: themeVM.activeEditorThemeId,
+            colorScheme: colorScheme
+        )
+        if ThemeStatusBarPlugin.verbose {
+            ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)同步编辑器主题 → \(editorThemeId, privacy: .public)")
+        }
+        editorVM.syncInitialEditorTheme(editorThemeId)
     }
 
     /// 从本地存储恢复上次保存的主题
