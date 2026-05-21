@@ -38,6 +38,9 @@ playground.xcworkspace
 
 .build/
 
+# Local `swift build` output inside package directories
+Packages/SuperLogKit/build/
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However
