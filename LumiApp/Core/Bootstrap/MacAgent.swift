@@ -130,7 +130,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 提供 Dock 右键菜单
     ///
     /// 当用户右键点击 Dock 图标时显示的菜单。
-    /// 添加"新建窗口"选项，类似 VS Code 的行为。
+    /// 添加"新建窗口"选项。
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
         let newItem = NSMenuItem(
@@ -145,11 +145,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
     /// 从 Dock 菜单打开新窗口
     @objc private func openNewWindowFromDock() {
-        NotificationCenter.default.post(
-            name: .openWindowWithRoute,
-            object: nil,
-            userInfo: ["route": LumiWindowRoute()]
-        )
+        NotificationCenter.postOpenWindowWithRoute(route: LumiWindowRoute())
     }
 
     // MARK: - Open Files/Folders
@@ -195,11 +191,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
         // 创建新窗口打开项目
         let route = LumiWindowRoute(projectPath: path)
-        NotificationCenter.default.post(
-            name: .openWindowWithRoute,
-            object: nil,
-            userInfo: ["route": route]
-        )
+        NotificationCenter.postOpenWindowWithRoute(route: route)
 
         if Self.verbose {
             AppLogger.core.info("\(self.t)📂 在新窗口中打开项目: \(path)")
@@ -211,11 +203,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// - Parameter url: 文件 URL
     private func openFileInActiveWindow(url: URL) {
         // 通知活跃窗口打开文件
-        NotificationCenter.default.post(
-            name: .openFileInEditor,
-            object: nil,
-            userInfo: ["url": url]
-        )
+        NotificationCenter.postOpenFileInEditor(url: url)
 
         if Self.verbose {
             AppLogger.core.info("\(self.t)📄 在编辑器中打开文件: \(url.lastPathComponent)")

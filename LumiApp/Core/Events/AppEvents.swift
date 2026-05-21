@@ -131,6 +131,31 @@ extension NotificationCenter {
             userInfo: ["fileURL": fileURL]
         )
     }
+
+    /// 发送使用指定路由打开新窗口的通知
+    /// - Parameter route: 窗口路由
+    static func postOpenWindowWithRoute(route: LumiWindowRoute) {
+        NotificationCenter.default.post(
+            name: .openWindowWithRoute,
+            object: nil,
+            userInfo: ["route": route]
+        )
+    }
+
+    /// 发送请求在当前活跃窗口编辑器中打开文件的通知
+    /// - Parameter url: 文件 URL
+    static func postOpenFileInEditor(url: URL) {
+        NotificationCenter.default.post(
+            name: .openFileInEditor,
+            object: nil,
+            userInfo: ["url": url]
+        )
+    }
+
+    /// 发送请求将当前窗口状态写入磁盘的通知
+    static func postWindowStateShouldPersist() {
+        NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
+    }
 }
 
 // MARK: - View Extensions for Application Events
@@ -205,6 +230,41 @@ extension View {
                 return
             }
             action(fileURL)
+        }
+    }
+
+    /// 监听使用指定路由打开新窗口的事件
+    /// - Parameter action: 事件处理闭包，参数为窗口路由
+    /// - Returns: 修改后的视图
+    func onOpenWindowWithRoute(perform action: @escaping (LumiWindowRoute) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .openWindowWithRoute)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let route = userInfo["route"] as? LumiWindowRoute else {
+                return
+            }
+            action(route)
+        }
+    }
+
+    /// 监听在当前活跃窗口编辑器中打开文件的事件
+    /// - Parameter action: 事件处理闭包，参数为文件 URL
+    /// - Returns: 修改后的视图
+    func onOpenFileInEditor(perform action: @escaping (URL) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .openFileInEditor)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let url = userInfo["url"] as? URL else {
+                return
+            }
+            action(url)
+        }
+    }
+
+    /// 监听将当前窗口状态写入磁盘的事件
+    /// - Parameter action: 事件处理闭包
+    /// - Returns: 修改后的视图
+    func onWindowStateShouldPersist(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .windowStateShouldPersist)) { _ in
+            action()
         }
     }
 }
