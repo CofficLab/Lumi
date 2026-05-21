@@ -19,8 +19,7 @@ actor ThemeGithubPlugin: SuperPlugin {
                 appTheme: GitHubTheme(),
                 editorThemeId: "github",
                 editorThemeContributor: GithubSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.github(),
-                order: 85
+                fileIconThemeContributor: LumiFileIconThemeCatalog.github()
             )
         ]
     }

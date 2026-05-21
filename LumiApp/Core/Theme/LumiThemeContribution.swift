@@ -16,22 +16,21 @@ struct LumiThemeContribution: Identifiable {
     let editorThemeId: String
     let editorThemeContributor: AnyObject?
     let fileIconThemeContributor: AnyObject?
-    let order: Int
 
     /// 创建主题贡献。
+    ///
+    /// 列表顺序由所属插件的 `SuperPlugin.order` 决定（见 `AppPluginVM.getThemeContributions()`）。
     ///
     /// - Parameters:
     ///   - appTheme: App 全局主题（实现 `SuperTheme`）
     ///   - editorThemeId: 编辑器主题唯一标识
     ///   - editorThemeContributor: 编辑器主题贡献者（遵循 `SuperEditorThemeContributor`，类型擦除为 `AnyObject` 避免内核依赖编辑器库）
     ///   - fileIconThemeContributor: 文件树图标主题贡献者（遵循 `LumiFileIconThemeContributor`，类型擦除为 `AnyObject` 保持插件侧简单）
-    ///   - order: 排序权重
     init(
         appTheme: any SuperTheme,
         editorThemeId: String,
         editorThemeContributor: AnyObject? = nil,
-        fileIconThemeContributor: AnyObject? = nil,
-        order: Int = 0
+        fileIconThemeContributor: AnyObject? = nil
     ) {
         self.id = appTheme.identifier
         self.displayName = appTheme.displayName
@@ -43,18 +42,17 @@ struct LumiThemeContribution: Identifiable {
         self.editorThemeId = editorThemeId
         self.editorThemeContributor = editorThemeContributor
         self.fileIconThemeContributor = fileIconThemeContributor
-        self.order = order
     }
 }
 
 /// 内置主题清单（用于兜底和内置主题插件复用）。
 enum LumiBuiltinThemeCatalog {
-    static let defaultThemeId = "midnight"
+    static let defaultThemeId = "lumi"
 
     @MainActor
     static func themes() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: MidnightTheme(), editorThemeId: "midnight", order: 10),
+            LumiThemeContribution(appTheme: LumiTheme(), editorThemeId: "lumi-dark"),
         ]
     }
 }

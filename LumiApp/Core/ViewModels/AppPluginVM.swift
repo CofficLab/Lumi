@@ -785,7 +785,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）
+    /// 获取所有启用插件提供的主题贡献（按插件 `order` 稳定排序）
     @MainActor
     func getThemeContributions() -> [LumiThemeContribution] {
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
@@ -800,7 +800,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
         let sorted = merged.sorted { lhs, rhs in
             if lhs.pluginOrder != rhs.pluginOrder { return lhs.pluginOrder < rhs.pluginOrder }
-            if lhs.item.order != rhs.item.order { return lhs.item.order < rhs.item.order }
             return lhs.item.id.localizedCaseInsensitiveCompare(rhs.item.id) == .orderedAscending
         }.map(\.item)
 

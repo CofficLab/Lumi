@@ -19,8 +19,7 @@ actor ThemeWinterPlugin: SuperPlugin {
                 appTheme: WinterTheme(),
                 editorThemeId: "winter",
                 editorThemeContributor: WinterSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.winter(),
-                order: 80
+                fileIconThemeContributor: LumiFileIconThemeCatalog.winter()
             )
         ]
     }

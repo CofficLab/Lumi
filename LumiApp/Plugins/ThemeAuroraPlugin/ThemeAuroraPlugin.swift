@@ -19,8 +19,7 @@ actor ThemeAuroraPlugin: SuperPlugin {
                 appTheme: AuroraTheme(),
                 editorThemeId: "aurora",
                 editorThemeContributor: AuroraSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.aurora(),
-                order: 20
+                fileIconThemeContributor: LumiFileIconThemeCatalog.aurora()
             )
         ]
     }

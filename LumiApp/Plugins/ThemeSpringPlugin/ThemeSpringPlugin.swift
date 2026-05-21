@@ -19,8 +19,7 @@ actor ThemeSpringPlugin: SuperPlugin {
                 appTheme: SpringTheme(),
                 editorThemeId: "spring",
                 editorThemeContributor: SpringSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.spring(),
-                order: 50
+                fileIconThemeContributor: LumiFileIconThemeCatalog.spring()
             )
         ]
     }

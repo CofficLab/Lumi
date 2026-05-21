@@ -19,8 +19,7 @@ actor ThemeVscodeLightPlugin: SuperPlugin {
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light",
                 editorThemeContributor: VscodeLightSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeLight(),
-                order: 95
+                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeLight()
             )
         ]
     }
