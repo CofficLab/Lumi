@@ -3,6 +3,22 @@ import Combine
 import MagicKit
 import DiskManagerKit
 
+final class DiskManagerScanTaskHolder: @unchecked Sendable {
+    var scanTask: Task<Void, Never>?
+    var progressTask: Task<Void, Never>?
+
+    func cancel() {
+        scanTask?.cancel()
+        scanTask = nil
+        cancelProgress()
+    }
+
+    func cancelProgress() {
+        progressTask?.cancel()
+        progressTask = nil
+    }
+}
+
 @MainActor
 class DiskManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💿"
@@ -15,8 +31,13 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: ScanProgress?
     @Published var errorMessage: String?
 
-    private var scanTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private let service = DiskService.shared
+
+    deinit {
+        scanTasks.cancel()
+        Task { await DiskService.shared.cancelScan() }
+    }
 
     func refreshDiskUsage() {
         if Self.verbose {
@@ -53,7 +74,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         rootEntries = []
         errorMessage = nil
 
-        scanTask = Task {
+        scanTasks.scanTask = Task {
             try? await TaskService.shared.run(title: String(localized: "Disk Scan: \(url.lastPathComponent)"), priority: .userInitiated) { progressCallback in
                 // Execute scan directly - progress is managed by ViewModel
                 do {
@@ -91,9 +112,14 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                             DiskManagerPlugin.logger.info("\(self.t)停止扫描")
             }
         }
-        scanTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func deleteFile(_ item: LargeFileEntry) {

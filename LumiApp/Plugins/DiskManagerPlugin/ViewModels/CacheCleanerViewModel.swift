@@ -17,8 +17,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     @Published var lastFreedSpace: Int64 = 0
 
     private let service = CacheCleanerService.shared
-    private var scanTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var hasCompletedInitialScan = false
 
     var totalSelectedSize: Int64 {
@@ -37,14 +36,19 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
         // Service 不再发布状态，所有状态由 ViewModel 管理
     }
 
+    deinit {
+        scanTasks.cancel()
+        Task { await CacheCleanerService.shared.cancelScan() }
+    }
+
     func scan() {
         guard !isScanning else { return }
         isScanning = true
         scanProgress = ""
         categories = []
 
-        progressTask?.cancel()
-        progressTask = Task {
+        scanTasks.cancelProgress()
+        scanTasks.progressTask = Task {
             let stream = await service.progressStream()
             for await progress in stream {
                 if Task.isCancelled { break }
@@ -52,8 +56,8 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
             }
         }
 
-        scanTask?.cancel()
-        scanTask = Task {
+        scanTasks.scanTask?.cancel()
+        scanTasks.scanTask = Task {
             let results = await service.scanCaches()
             if !Task.isCancelled {
                 await MainActor.run {
@@ -61,7 +65,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                     self.isScanning = false
                     self.hasCompletedInitialScan = true
                     self.scanProgress = ""
-                    self.progressTask?.cancel()
+                    self.scanTasks.cancelProgress()
                 }
                 self.selectAllSafe()
             }
@@ -74,11 +78,15 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     }
 
     func stopScan() {
-        scanTask?.cancel()
-        progressTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
         scanProgress = ""
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func cleanSelected() {

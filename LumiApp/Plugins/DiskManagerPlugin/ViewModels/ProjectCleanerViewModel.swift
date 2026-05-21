@@ -27,12 +27,16 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = ProjectCleanerService.shared
-    private var scanTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var hasCompletedInitialScan = false
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
+    }
+
+    deinit {
+        scanTasks.cancel()
+        Task { await ProjectCleanerService.shared.cancelScan() }
     }
 
     func scanProjects() async {
@@ -48,8 +52,8 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
         projects = []
         scanProgress = ""
 
-        progressTask?.cancel()
-        progressTask = Task {
+        scanTasks.cancelProgress()
+        scanTasks.progressTask = Task {
             let stream = await service.progressStream()
             for await progress in stream {
                 if Task.isCancelled { break }
@@ -57,8 +61,8 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
             }
         }
 
-        scanTask?.cancel()
-        scanTask = Task {
+        scanTasks.scanTask?.cancel()
+        scanTasks.scanTask = Task {
             let result = await service.scanProjects()
             if !Task.isCancelled {
                 await MainActor.run {
@@ -66,7 +70,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                     self.isScanning = false
                     self.hasCompletedInitialScan = true
                     self.scanProgress = ""
-                    self.progressTask?.cancel()
+                    self.scanTasks.cancelProgress()
 
                     if Self.verbose {
                         if DiskManagerPlugin.verbose {
@@ -96,11 +100,15 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                             DiskManagerPlugin.logger.info("\(self.t)停止扫描项目")
             }
         }
-        scanTask?.cancel()
-        progressTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
         scanProgress = ""
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func toggleSelection(_ id: UUID) {
