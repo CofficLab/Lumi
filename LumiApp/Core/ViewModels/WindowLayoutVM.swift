@@ -23,6 +23,9 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     
     // MARK: - Published Properties
     
+    /// 底部面板是否可见
+    @Published var bottomPanelVisible: Bool = true
+    
     /// 当前选中的 Agent 模式侧边栏 Tab ID
     @Published var selectedAgentSidebarTabId: String = ""
     

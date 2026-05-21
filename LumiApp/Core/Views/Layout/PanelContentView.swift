@@ -9,11 +9,13 @@ import SwiftUI
 struct PanelContentView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject var layoutVM: WindowLayoutVM
 
     var body: some View {
         let activeItem = pluginProvider.getActivePanelItem()
         let headerViews = pluginProvider.getActivePanelHeaderViews()
         let hasBottomTabs = pluginProvider.hasBottomPanelTabs()
+        let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
 
         Group {
             if let activeItem {
@@ -33,7 +35,7 @@ struct PanelContentView: View {
                     }
 
                     // ── 下半部分：全局底部面板 ──
-                    if hasBottomTabs {
+                    if showBottomPanel {
                         PanelBottomView()
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Split.PanelContent.BottomPanel",
