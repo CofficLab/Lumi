@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct HistoryDBDetailView: View {
     @StateObject private var viewModel: HistoryDBBrowserViewModel
@@ -71,7 +72,7 @@ struct HistoryDBDetailView: View {
                 .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
             }
 
-            Divider()
+            GlassDivider()
                 .padding(.vertical, 6)
 
             // Tab 切换
@@ -240,16 +241,10 @@ struct HistoryDBDetailView: View {
     // MARK: - Empty
 
     private var emptyView: some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Image(systemName: "tray")
-                .font(.system(size: 24))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            Text(String(localized: "No data", table: "HistoryDBStatusBar"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            Spacer()
-        }
+        AppEmptyState(
+            icon: "tray",
+            title: LocalizedStringKey(String(localized: "No data", table: "HistoryDBStatusBar"))
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

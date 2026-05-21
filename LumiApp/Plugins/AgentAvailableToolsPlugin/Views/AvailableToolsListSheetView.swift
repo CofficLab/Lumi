@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 可用工具列表详情视图（在 popover 中展示）
 struct AvailableToolsListDetailView: View {
@@ -13,7 +14,7 @@ struct AvailableToolsListDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
+            GlassDivider()
             content
         }
         .onAppear {
@@ -61,9 +62,11 @@ extension AvailableToolsListDetailView {
     }
 
     private var searchField: some View {
-        TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
-            .textFieldStyle(.roundedBorder)
-            .frame(width: 280)
+        AppSearchBar(
+            text: $query,
+            placeholder: LocalizedStringKey(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"))
+        )
+        .frame(width: 280)
     }
 
     private var languagePicker: some View {
@@ -93,24 +96,18 @@ extension AvailableToolsListDetailView {
     }
 
     private var emptyStateView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "No tools found", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 15, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-            Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 18)
+        AppEmptyState(
+            icon: "wrench.and.screwdriver",
+            title: "No tools found",
+            description: "Try a different search keyword."
+        )
     }
 
     private var toolRows: some View {
         ForEach(Array(filteredTools.enumerated()), id: \.offset) { _, tool in
             VStack(spacing: 0) {
                 toolRow(tool)
-                Divider()
+                GlassDivider()
                     .padding(.leading, 18)
             }
         }

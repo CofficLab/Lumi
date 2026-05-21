@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 请求日志详情视图 - 展示数据库原始数据
 struct RequestLogDetailView: View {
@@ -78,7 +79,7 @@ struct RequestLogDetailView: View {
                 }
                 .fixedSize(horizontal: true, vertical: false)
 
-                Divider()
+                GlassDivider()
                     .frame(height: 16)
 
                 // Reload button
@@ -334,16 +335,10 @@ struct RequestLogDetailView: View {
     // MARK: - Empty
 
     private var emptyView: some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Image(systemName: "tray")
-                .font(.system(size: 24))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            Text(String(localized: "No request logs", table: "RequestLog"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            Spacer()
-        }
+        AppEmptyState(
+            icon: "tray",
+            title: LocalizedStringKey(String(localized: "No request logs", table: "RequestLog"))
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

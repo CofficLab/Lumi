@@ -18,8 +18,8 @@ struct FontConfigDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 标题栏
+        VStack(alignment: .leading, spacing: 8) {
+            // MARK: - 标题栏
             HStack {
                 Image(systemName: "textformat")
                     .font(.system(size: 14))
@@ -31,16 +31,15 @@ struct FontConfigDetailView: View {
                 currentFontBadge
             }
 
-            // 预览区
+            // MARK: - 预览区
             previewSection
 
-            Divider()
-                .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
+            GlassDivider()
 
-            // 搜索框
+            // MARK: - 搜索框
             searchField
 
-            // 字体列表
+            // MARK: - 字体列表
             fontList
         }
     }
@@ -56,9 +55,9 @@ struct FontConfigDetailView: View {
             .font(.custom(viewModel.selectedPostScriptName ?? "SF Mono", size: 12))
             .foregroundColor(Color(hex: "1C1C1E"))
             .lineSpacing(2)
-            .padding(10)
+            .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .appSurface(style: .subtle, cornerRadius: 6)
+            .appSurface(style: .subtle, cornerRadius: 8)
     }
 
     private var searchField: some View {
@@ -71,7 +70,7 @@ struct FontConfigDetailView: View {
     private var fontList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                // 系统默认选项
+                // MARK: 系统默认选项
                 FontRow(
                     title: String(localized: "System Monospaced", table: "FontConfig"),
                     subtitle: "SF Mono",
@@ -81,8 +80,8 @@ struct FontConfigDetailView: View {
                     viewModel.selectFont(nil)
                 }
 
-                Divider()
-                    .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
+                GlassDivider()
+                    .padding(.horizontal, 16)
 
                 ForEach(filteredFonts) { font in
                     FontRow(
@@ -95,9 +94,8 @@ struct FontConfigDetailView: View {
                     }
 
                     if font.id != filteredFonts.last?.id {
-                        Divider()
-                            .padding(.leading, 12)
-                            .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
+                        GlassDivider()
+                            .padding(.leading, 8)
                     }
                 }
             }
@@ -121,7 +119,11 @@ private struct FontRow: View {
                 // 选中指示
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? Color(hex: "0A84FF") : Color(hex: "98989E").opacity(0.4))
+                    .foregroundColor(
+                        isSelected
+                            ? Color(hex: "0A84FF")
+                            : Color(hex: "98989E").opacity(0.4)
+                    )
 
                 // 字体信息
                 VStack(alignment: .leading, spacing: 2) {

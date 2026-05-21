@@ -124,7 +124,7 @@ struct SkillListPopover: View {
                     .foregroundColor(Color(hex: "98989E"))
             }
 
-            Divider()
+            GlassDivider()
 
             // Skill 列表
             ForEach(skills) { skill in

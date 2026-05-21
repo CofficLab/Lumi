@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct ThemePickerDetailView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
@@ -10,10 +11,10 @@ struct ThemePickerDetailView: View {
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             if themeVM.themes.isEmpty {
-                Text(String(localized: "No themes available", table: "ThemeStatusBar"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "98989E"))
-                    .padding(.vertical, 8)
+                AppEmptyState(
+                    icon: "paintbrush",
+                    title: LocalizedStringKey(String(localized: "No themes available", table: "ThemeStatusBar"))
+                )
             } else {
                 ScrollView {
                     LazyVStack(spacing: 6) {
@@ -30,7 +31,7 @@ struct ThemePickerDetailView: View {
     @ViewBuilder
     private func themeRow(_ theme: LumiUIThemeContribution) -> some View {
         let isSelected = theme.id == themeVM.currentThemeId
-        Button {
+        AppListRow(isSelected: isSelected) {
             themeVM.selectTheme(theme.id)
         } label: {
             HStack(spacing: 10) {
@@ -65,14 +66,6 @@ struct ThemePickerDetailView: View {
                         .foregroundColor(theme.iconColor)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? theme.iconColor.opacity(0.12) : Color.clear)
-            )
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 }
