@@ -24,13 +24,6 @@ struct EmptyStateView: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
 
-                    if hasAnyConversation {
-                        Text(String(localized: "Select or Create Conversation", table: "AgentChat"))
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-
                     if !hasAnyConversation {
                         AppButton(String(localized: "New Conversation", table: "AgentChat"), systemImage: "plus.circle.fill", style: .primary) {
                             Task {
@@ -40,15 +33,6 @@ struct EmptyStateView: View {
                         .accessibilityLabel(String(localized: "New Conversation", table: "AgentChat"))
                         .accessibilityHint(String(localized: "New Conversation Hint", table: "AgentChat"))
                     }
-
-                    AppButton(String(localized: "Onboarding Guide", table: "AgentChat"), style: .ghost, size: .small) {
-                        NotificationCenter.default.post(
-                            name: Notification.Name("AgentOnboarding.Show"),
-                            object: nil
-                        )
-                    }
-                    .accessibilityLabel(String(localized: "Onboarding Guide", table: "AgentChat"))
-                    .accessibilityHint(String(localized: "Onboarding Guide Hint", table: "AgentChat"))
 
                     QuickStartActionsView(sendStrategy: .createConversationAndSend)
                         .padding(.top, 4)

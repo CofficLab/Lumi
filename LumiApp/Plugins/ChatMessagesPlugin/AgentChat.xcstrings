@@ -1985,19 +1985,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select a conversation to start chatting"
+            "value": "Type text to start chatting"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择一个会话开始聊天"
+            "value": "输入文字开始聊天"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇一個會話開始聊天"
+            "value": "輸入文字開始聊天"
           }
         }
       }
