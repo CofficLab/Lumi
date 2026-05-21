@@ -11,6 +11,7 @@ struct MessageListView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
     @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
@@ -53,7 +54,7 @@ struct MessageListView: View {
                 if displayRows.isEmpty {
                     if timelineViewModel.isLoadingMore, timelineViewModel.selectedConversationId != nil {
                         loadingOverlay
-                    } else {
+                    } else if (self.projectVM.isProjectSelected) {
                         EmptyMessagesView()
                     }
                 } else {
