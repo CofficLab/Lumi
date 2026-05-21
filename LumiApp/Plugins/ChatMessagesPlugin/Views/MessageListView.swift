@@ -21,6 +21,7 @@ struct MessageListView: View {
     @State private var followNewMessages = true
     @State private var isProgrammaticScrolling = false
     @State private var forceScrollToBottomOnNextChange = false
+    @State private var lastRowChangeScheduler = LastRowChangeScheduler()
     private struct DisplayRow: Identifiable {
         let id: UUID
         let message: ChatMessage
@@ -77,17 +78,23 @@ struct MessageListView: View {
                 }
             }
             .onChange(of: timelineViewModel.selectedConversationId) { _, _ in
+                lastRowChangeScheduler.cancel()
                 historyWindowLimit = Self.defaultHistoryWindowLimit
                 shouldPinLatestUserMessageToTop = false
                 keepLatestUserMessageAtTop = false
                 forceScrollToBottomOnNextChange = false
                 setFollowNewMessages(true)
             }
+            .onDisappear {
+                lastRowChangeScheduler.cancel()
+            }
             .onChange(of: lastRowChangeToken) { oldToken, newToken in
-                handleLastMessageChanged(
-                    proxy: proxy,
-                    isStreamingContentUpdate: newToken.isStreamingContentUpdate(from: oldToken)
-                )
+                lastRowChangeScheduler.schedule {
+                    handleLastMessageChanged(
+                        proxy: proxy,
+                        isStreamingContentUpdate: newToken.isStreamingContentUpdate(from: oldToken)
+                    )
+                }
             }
             .onMessageSaved { message, conversationId in
                 timelineViewModel.handleMessageSaved(message, conversationId: conversationId)
@@ -107,6 +114,26 @@ struct MessageListView: View {
                 handleUserDidSendMessageEvent(proxy: proxy)
             }
         }
+    }
+}
+
+@MainActor
+private final class LastRowChangeScheduler: @unchecked Sendable {
+    private var generation = 0
+
+    func schedule(_ action: @escaping @MainActor @Sendable () -> Void) {
+        generation += 1
+        let scheduledGeneration = generation
+        RunLoop.main.perform { [weak self] in
+            Task { @MainActor in
+                guard self?.generation == scheduledGeneration else { return }
+                action()
+            }
+        }
+    }
+
+    func cancel() {
+        generation += 1
     }
 }
 
