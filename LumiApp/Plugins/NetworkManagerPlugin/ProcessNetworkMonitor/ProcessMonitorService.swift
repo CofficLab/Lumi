@@ -24,6 +24,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
     private var refCount = 0
     private var task: Process?
     private var outputPipe: Pipe?
+    private var dataAvailableObserver: NSObjectProtocol?
     
     // Data publishing
     @Published var processes: [NetworkProcess] = []
@@ -41,10 +42,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
     func stopMonitoring() {
         refCount = max(0, refCount - 1)
         if refCount == 0 {
-            isRunning = false
-            task?.terminate()
-            task = nil
-            historyBuffer.removeAll()
+            cleanupMonitoringResources()
         }
     }
     
@@ -67,17 +65,17 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
 
         // Listen for data output
-        NotificationCenter.default.addObserver(forName: NSNotification.Name.NSFileHandleDataAvailable, object: pipe.fileHandleForReading, queue: nil) { [weak self] notification in
-            guard let self = self else { return }
+        dataAvailableObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name.NSFileHandleDataAvailable, object: pipe.fileHandleForReading, queue: nil) { [weak self, weak pipe] _ in
+            guard let pipe else { return }
             let output = pipe.fileHandleForReading.availableData
-            if !output.isEmpty {
-                // Hop to main actor to process output
-                Task { @MainActor in
-                    guard self.isRunning else { return }
+            // Hop to main actor to process output
+            Task { @MainActor [weak self, weak pipe] in
+                guard let self, let pipe, self.isRunning, self.outputPipe === pipe else { return }
+                if !output.isEmpty {
                     self.processOutput(output)
                 }
+                pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
             }
-            pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
         }
         
         do {
@@ -91,7 +89,8 @@ class ProcessMonitorService: ObservableObject, SuperLog {
             if NetworkManagerPlugin.verbose {
                             NetworkManagerPlugin.logger.error("\(self.t)Failed to start nettop: \(error.localizedDescription)")
             }
-            self.isRunning = false
+            refCount = 0
+            cleanupMonitoringResources()
         }
         #else
         // Linux implementation would go here (using /proc/net/tcp, etc.)
@@ -99,6 +98,30 @@ class ProcessMonitorService: ObservableObject, SuperLog {
                     NetworkManagerPlugin.logger.error("\(self.t)Process monitoring not supported on this OS")
         }
         #endif
+    }
+
+    private func cleanupMonitoringResources() {
+        isRunning = false
+
+        if let dataAvailableObserver {
+            NotificationCenter.default.removeObserver(dataAvailableObserver)
+            self.dataAvailableObserver = nil
+        }
+
+        bufferTimer?.invalidate()
+        bufferTimer = nil
+
+        task?.terminate()
+        task = nil
+
+        outputPipe?.fileHandleForReading.closeFile()
+        outputPipe = nil
+
+        rawDataBuffer.removeAll()
+        partialLine = ""
+        historyBuffer.removeAll()
+        processDetails.removeAll()
+        processes.removeAll()
     }
     
     // Buffering related
