@@ -96,10 +96,10 @@ struct AvailabilityDetailView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             AppSearchBar(
                 text: $searchText,
-                placeholder: String(localized: "Search providers or models…", table: "LLMAvailability")
+                placeholder: "Search providers or models…"
             )
 
             AppIconButton(
@@ -110,8 +110,8 @@ struct AvailabilityDetailView: View {
             .help(String(localized: "Refresh", table: "LLMAvailability"))
             .disabled(isRefreshing || isChecking)
         }
-        .padding(.horizontal, AppUI.Spacing.lg)
-        .padding(.vertical, AppUI.Spacing.sm)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Content Section

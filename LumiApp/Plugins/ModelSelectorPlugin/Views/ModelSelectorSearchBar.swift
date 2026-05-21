@@ -11,20 +11,20 @@ struct ModelSelectorSearchBar: View {
     let onCancel: () -> Void
 
     var body: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             AppSearchBar(
                 text: $searchText,
-                placeholder: String(localized: "Search Models", table: "AgentChat")
+                placeholder: "Search Models"
             )
 
             Button(action: onCancel) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppUI.Colors.textSecondary)
+                    .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, AppUI.Spacing.md)
-        .padding(.vertical, AppUI.Spacing.sm)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 }

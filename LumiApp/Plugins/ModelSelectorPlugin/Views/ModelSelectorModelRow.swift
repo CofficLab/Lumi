@@ -89,8 +89,8 @@ struct ModelSelectorModelRow: View {
                     }
                 }
             }
-            .padding(.vertical, AppUI.Spacing.xs)
-            .padding(.horizontal, AppUI.Spacing.sm)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
         }
         .onHover { hovering in
             onHoverChange(hovering)
