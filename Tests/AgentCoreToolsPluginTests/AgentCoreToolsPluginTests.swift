@@ -30,7 +30,7 @@ final class AgentCoreToolsPluginTests: XCTestCase {
 
     @MainActor
     func testPluginExposesCoreAgentTools() async {
-        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let context = ToolContext(toolService: ToolService(), llmService: nil, llmVM: nil, conversationVM: nil)
         let tools = await AgentCoreToolsPlugin.shared.agentTools(context: context)
 
         XCTAssertEqual(tools.count, 5)

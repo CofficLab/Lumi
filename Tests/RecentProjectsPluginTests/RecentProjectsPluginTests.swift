@@ -28,7 +28,7 @@ final class RecentProjectsPluginTests: XCTestCase {
         let rootView = await RecentProjectsPlugin.shared.addRootView {
             EmptyView()
         }
-        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let context = ToolContext(toolService: ToolService(), llmService: nil, llmVM: nil, conversationVM: nil)
         let tools = await RecentProjectsPlugin.shared.agentTools(context: context)
 
         XCTAssertNotNil(rootView)

@@ -200,6 +200,9 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         )
         self._container = container
 
+        // 将窗口级 conversationVM 注入全局 toolService，供插件工具构建时使用
+        container.toolService.conversationVM = conversationVM
+
         self.inputQueueVM.onEnqueueRequest = { [weak self] request in
             self?.handleInputEnqueueRequest(request)
         }

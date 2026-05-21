@@ -90,6 +90,9 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
     weak var llmVM: AppLLMVM?
 
+    /// 对话管理 ViewModel（可选，由 WindowScope 注入）
+    weak var conversationVM: WindowConversationVM?
+
     /// Combine 订阅集合
     ///
     /// 存储所有 Combine 订阅，用于清理。
@@ -153,7 +156,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
-        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM)
+        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
         allTools = builtInTools + pluginTools
     }

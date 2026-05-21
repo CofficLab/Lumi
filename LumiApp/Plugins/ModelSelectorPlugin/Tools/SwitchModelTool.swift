@@ -58,9 +58,11 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
     // MARK: - Dependencies
 
     private let llmVM: AppLLMVM
+    private let conversationVM: WindowConversationVM
 
-    init(llmVM: AppLLMVM) {
+    init(llmVM: AppLLMVM, conversationVM: WindowConversationVM) {
         self.llmVM = llmVM
+        self.conversationVM = conversationVM
     }
 
     // MARK: - Execute
@@ -109,6 +111,9 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
         llmVM.isAutoMode = false
         llmVM.selectedProviderId = providerId
         llmVM.currentModel = modelId
+
+        // 保存到当前对话的模型偏好
+        conversationVM.saveModelPreference(providerId: providerId, model: modelId)
 
         if Self.verbose {
             ModelSelectorPlugin.logger.info("\(self.t)切换模型：\(previousProvider)/\(previousModel) → \(providerId)/\(modelId)")

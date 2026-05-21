@@ -9,5 +9,6 @@ struct ToolContext {
     let toolService: ToolService
     let llmService: LLMService?
     let llmVM: AppLLMVM?
+    let conversationVM: WindowConversationVM?
 }
 
