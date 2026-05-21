@@ -393,6 +393,12 @@ protocol SuperPlugin: Actor {
     /// 插件被禁用时的回调
     nonisolated func onDisable()
 
+    /// 插件分类
+    ///
+    /// 用于在插件设置等 UI 中按分类分组展示。
+    /// 如果插件不重写此属性，默认返回 ``PluginCategory/general``（通用）。
+    static var category: PluginCategory { get }
+
     /// 插件注册顺序（数字越小越先加载）
     static var order: Int { get }
 }
@@ -413,6 +419,8 @@ extension SuperPlugin {
     static var description: String { "" }
 
     static var iconName: String { "puzzlepiece" }
+
+    static var category: PluginCategory { .general }
 
     static var isConfigurable: Bool { false }
 

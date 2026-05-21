@@ -21,13 +21,13 @@ struct PluginSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // 插件列表卡片
-                    if !configurablePlugins.isEmpty {
-                        pluginListCard
+                    // 按分类分组展示插件列表
+                    ForEach(groupedPlugins, id: \.category) { group in
+                        categoryCard(for: group)
                     }
 
                     // 空状态卡片
-                    if configurablePlugins.isEmpty {
+                    if groupedPlugins.isEmpty {
                         emptyStateCard
                     }
 
@@ -54,25 +54,40 @@ struct PluginSettingsView: View {
         }
     }
 
-    // MARK: - Plugin List Card
+    // MARK: - Category Card
 
-    private var pluginListCard: some View {
+    private func categoryCard(for group: (category: PluginCategory, plugins: [any SuperPlugin])) -> some View {
         AppCard {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(configurablePlugins) { plugin in
+                // 分类标题
+                GlassSectionHeader(
+                    icon: group.category.systemImage,
+                    title: group.category.displayName,
+                    iconColor: Color(hex: "7C6FFF"),
+                    spacing: 8
+                )
+                .padding(.bottom, 12)
+
+                // 插件列表
+                ForEach(Array(group.plugins.enumerated()), id: \.element.instanceLabel) { index, plugin in
+                    let pluginType = type(of: plugin)
+                    let pluginId = plugin.instanceLabel
+
                     PluginToggleRow(
-                        plugin: plugin,
+                        name: pluginType.displayName,
+                        description: pluginType.description,
+                        icon: pluginType.iconName,
                         isEnabled: Binding(
-                            get: { pluginStates[plugin.id, default: true] },
+                            get: { pluginStates[pluginId, default: true] },
                             set: { newValue in
-                                pluginStates[plugin.id] = newValue
-                                settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
-                                AppLogger.core.info("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
+                                pluginStates[pluginId] = newValue
+                                settingsStore.setPluginEnabled(pluginId, enabled: newValue)
+                                AppLogger.core.info("Plugin '\(pluginId)' is now \(newValue ? "enabled" : "disabled")")
                             }
                         )
                     )
 
-                    if plugin.id != configurablePlugins.last?.id {
+                    if index < group.plugins.count - 1 {
                         GlassDivider()
                     }
                 }
@@ -106,20 +121,11 @@ struct PluginSettingsView: View {
         }
     }
 
-    /// 获取可配置的插件列表（从自动发现的插件中提取）
-    private var configurablePlugins: [PluginInfo] {
-        pluginProvider.plugins
-            .filter { type(of: $0).isConfigurable }
-            .map { plugin in
-                let pluginType = type(of: plugin)
-                return PluginInfo(
-                    id: pluginType.id,
-                    name: pluginType.displayName,
-                    description: pluginType.description,
-                    icon: pluginType.iconName,
-                    isDeveloperEnabled: { true }
-                )
-            }
+    // MARK: - Data
+
+    /// 获取按分类分组的可配置插件
+    private var groupedPlugins: [(category: PluginCategory, plugins: [any SuperPlugin])] {
+        pluginProvider.getConfigurablePluginsGroupedByCategory()
     }
 
     /// 加载插件状态
@@ -136,14 +142,16 @@ struct PluginSettingsView: View {
 
 /// 插件开关行视图
 struct PluginToggleRow: View {
-    let plugin: PluginInfo
+    let name: String
+    let description: String
+    let icon: String
     @Binding var isEnabled: Bool
 
     var body: some View {
         GlassRow {
             HStack(spacing: 16) {
                 // 图标
-                Image(systemName: plugin.icon)
+                Image(systemName: icon)
                     .font(.system(size: 20))
                     .foregroundColor(Color(hex: "7C6FFF"))
                     .frame(width: 32, height: 32)
@@ -154,11 +162,11 @@ struct PluginToggleRow: View {
 
                 // 信息
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(plugin.name)
+                    Text(name)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(plugin.description)
+                    Text(description)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(Color(hex: "98989E"))
                 }

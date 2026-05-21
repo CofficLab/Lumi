@@ -785,6 +785,21 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - Category Aggregation
+
+    /// 获取按分类分组的可配置插件列表
+    ///
+    /// 将所有可配置插件按 ``PluginCategory`` 分组，
+    /// 分类按 ``PluginCategory/sortOrder`` 升序排列，
+    /// 分类内插件按 ``SuperPlugin/order`` 升序排列。
+    func getConfigurablePluginsGroupedByCategory() -> [(category: PluginCategory, plugins: [any SuperPlugin])] {
+        let configurable = plugins.filter { type(of: $0).isConfigurable }
+        let grouped = Dictionary(grouping: configurable) { type(of: $0).category }
+        return grouped
+            .map { (category: $0.key, plugins: $0.value.sorted { type(of: $0).order < type(of: $1).order }) }
+            .sorted { $0.category.sortOrder < $1.category.sortOrder }
+    }
+
     /// 获取所有启用插件提供的主题贡献（按插件 `order` 稳定排序，并写入 ``ThemeSortKey``）
     @MainActor
     func getThemeContributions() -> [LumiUIThemeContribution] {
