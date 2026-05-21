@@ -74,12 +74,25 @@ actor RequestLogHistoryManager: SuperLog {
         ModelContext(container)
     }
 
-    func getLatest(limit: Int = 100) async -> [RequestLogItemDTO] {
+    func getLatest(limit: Int = 100, offset: Int = 0) async -> [RequestLogItemDTO] {
         let context = ModelContext(container)
         var descriptor = FetchDescriptor<RequestLogItem>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = limit
+        descriptor.fetchOffset = offset
+        let items = (try? context.fetch(descriptor)) ?? []
+        return items.map { RequestLogItemDTO(from: $0) }
+    }
+
+    func query(isSuccess: Bool, limit: Int, offset: Int = 0) async -> [RequestLogItemDTO] {
+        let context = ModelContext(container)
+        var descriptor = FetchDescriptor<RequestLogItem>(
+            predicate: RequestLogItem.predicate(isSuccess: isSuccess),
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        descriptor.fetchOffset = offset
         let items = (try? context.fetch(descriptor)) ?? []
         return items.map { RequestLogItemDTO(from: $0) }
     }
@@ -91,9 +104,8 @@ actor RequestLogHistoryManager: SuperLog {
         let success = (try? context.fetchCount(FetchDescriptor<RequestLogItem>(
             predicate: RequestLogItem.predicate(isSuccess: true)
         ))) ?? 0
-        let all = (try? context.fetch(FetchDescriptor<RequestLogItem>())) ?? []
-        let durations = all.compactMap(\.duration)
-        let avgDuration = durations.isEmpty ? 0 : durations.reduce(0, +) / Double(durations.count)
+        let durationSummary = fetchDurationSummary(context: context)
+        let avgDuration = durationSummary.count == 0 ? 0 : durationSummary.sum / Double(durationSummary.count)
 
         return RequestLogStats(
             totalRequests: total,
@@ -130,6 +142,38 @@ actor RequestLogHistoryManager: SuperLog {
             context.delete(item)
         }
         try? context.save()
+    }
+
+    private func fetchDurationSummary(context: ModelContext) -> (sum: Double, count: Int) {
+        let batchSize = 250
+        var offset = 0
+        var sum: Double = 0
+        var count = 0
+
+        while true {
+            var descriptor = FetchDescriptor<RequestLogItem>(
+                predicate: #Predicate<RequestLogItem> { item in
+                    item.duration != nil
+                }
+            )
+            descriptor.fetchLimit = batchSize
+            descriptor.fetchOffset = offset
+
+            let items = (try? context.fetch(descriptor)) ?? []
+            guard !items.isEmpty else { break }
+
+            for item in items {
+                if let duration = item.duration {
+                    sum += duration
+                    count += 1
+                }
+            }
+
+            guard items.count == batchSize else { break }
+            offset += batchSize
+        }
+
+        return (sum, count)
     }
 
     private func toJSONString(_ dict: [String: String]?) -> String? {
