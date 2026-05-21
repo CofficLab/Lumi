@@ -6,25 +6,28 @@ import XCTest
 ///
 /// 验证 `ChatMode` 枚举的各项属性，该枚举决定了用户在对话中的意图和权限：
 /// - **chat（对话模式）**：只聊天，不允许执行任何工具或修改代码
-/// - **build（构建模式）**：可以执行工具、修改代码等完整能力
+/// - **build（构建模式）**：可以执行工具、修改代码，高风险需要用户确认
+/// - **autonomous（自主模式）**：可以执行工具、修改代码，高风险自动批准
 ///
 /// 测试覆盖：
 /// - 枚举完备性（CaseIterable）
 /// - rawValue 持久化值
 /// - 工具权限控制（allowsTools）
+/// - 高风险自动批准（autoApproveRisk）
 /// - UI 展示属性（displayName、iconName 等）
 /// - Codable 编解码往返
 final class ChatModeTests: XCTestCase {
 
     // MARK: - RawValue & CaseIterable
 
-    /// 验证 ChatMode 包含且仅包含 chat 和 build 两个成员。
+    /// 验证 ChatMode 包含且仅包含 chat、build 和 autonomous 三个成员。
     ///
-    /// 如果新增模式（如 "agent"），此测试会失败，提醒开发者同步更新相关逻辑。
+    /// 如果新增模式，此测试会失败，提醒开发者同步更新相关逻辑。
     func testAllCases() {
-        XCTAssertEqual(ChatMode.allCases.count, 2)
+        XCTAssertEqual(ChatMode.allCases.count, 3)
         XCTAssertTrue(ChatMode.allCases.contains(.chat))
         XCTAssertTrue(ChatMode.allCases.contains(.build))
+        XCTAssertTrue(ChatMode.allCases.contains(.autonomous))
     }
 
     /// 验证 rawValue 与字符串标识一致。
@@ -33,6 +36,7 @@ final class ChatModeTests: XCTestCase {
     func testRawValues() {
         XCTAssertEqual(ChatMode.chat.rawValue, "chat")
         XCTAssertEqual(ChatMode.build.rawValue, "build")
+        XCTAssertEqual(ChatMode.autonomous.rawValue, "autonomous")
     }
 
     // MARK: - allowsTools
@@ -47,24 +51,49 @@ final class ChatModeTests: XCTestCase {
         XCTAssertTrue(ChatMode.build.allowsTools)
     }
 
+    /// autonomous 模式下允许使用工具，用于代码读写、命令执行等操作。
+    func testAutonomousModeAllowsTools() {
+        XCTAssertTrue(ChatMode.autonomous.allowsTools)
+    }
+
+    // MARK: - autoApproveRisk
+
+    /// chat 模式下不自动批准高风险操作。
+    func testChatModeDoesNotAutoApproveRisk() {
+        XCTAssertFalse(ChatMode.chat.autoApproveRisk)
+    }
+
+    /// build 模式下不自动批准高风险操作，需要用户确认。
+    func testBuildModeDoesNotAutoApproveRisk() {
+        XCTAssertFalse(ChatMode.build.autoApproveRisk)
+    }
+
+    /// autonomous 模式下自动批准高风险操作。
+    func testAutonomousModeAutoApprovesRisk() {
+        XCTAssertTrue(ChatMode.autonomous.autoApproveRisk)
+    }
+
     // MARK: - Display Properties
 
     /// 验证中文显示名称，用于 UI 模式切换器。
     func testDisplayNames() {
         XCTAssertEqual(ChatMode.chat.displayName, "对话")
         XCTAssertEqual(ChatMode.build.displayName, "构建")
+        XCTAssertEqual(ChatMode.autonomous.displayName, "自主")
     }
 
     /// 验证英文显示名称，用于国际化场景。
     func testDisplayNamesEn() {
         XCTAssertEqual(ChatMode.chat.displayNameEn, "Chat")
         XCTAssertEqual(ChatMode.build.displayNameEn, "Build")
+        XCTAssertEqual(ChatMode.autonomous.displayNameEn, "Autonomous")
     }
 
     /// 验证 SF Symbols 图标名称，用于 UI 模式切换器图标。
     func testIconNames() {
         XCTAssertEqual(ChatMode.chat.iconName, "bubble.left.and.bubble.right")
         XCTAssertEqual(ChatMode.build.iconName, "hammer.fill")
+        XCTAssertEqual(ChatMode.autonomous.iconName, "bolt.shield.fill")
     }
 
     // MARK: - Codable
@@ -79,6 +108,16 @@ final class ChatModeTests: XCTestCase {
             let decoded = try JSONDecoder().decode(ChatMode.self, from: encoded)
             XCTAssertEqual(decoded, mode)
         }
+    }
+
+    // MARK: - ChatMode from RawValue
+
+    /// 验证从 rawValue 创建 ChatMode 的正确性。
+    func testInitFromRawValue() {
+        XCTAssertEqual(ChatMode(rawValue: "chat"), .chat)
+        XCTAssertEqual(ChatMode(rawValue: "build"), .build)
+        XCTAssertEqual(ChatMode(rawValue: "autonomous"), .autonomous)
+        XCTAssertNil(ChatMode(rawValue: "invalid"))
     }
 }
 #endif

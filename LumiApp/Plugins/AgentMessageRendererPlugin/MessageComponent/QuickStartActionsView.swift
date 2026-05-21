@@ -66,6 +66,22 @@ struct QuickStartActionsView: View {
                 "帮我梳理当前项目的重构优先级",
                 "请给我一个可执行的排障清单"
             ]
+
+        case .autonomous:
+            if projectVM.isProjectSelected {
+                let projectName = normalizedProjectName
+                return [
+                    "为\(projectName)执行完整的代码审查并自动修复所有问题",
+                    "自动优化\(projectName)的性能瓶颈",
+                    "自动为\(projectName)生成完整的测试覆盖"
+                ]
+            }
+
+            return [
+                "自动执行完整的代码审查并修复问题",
+                "自动优化项目性能",
+                "自动生成完整的测试覆盖"
+            ]
         }
     }
 

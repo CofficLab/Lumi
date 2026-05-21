@@ -2,15 +2,20 @@ import SwiftUI
 
 /// 模式切换工具栏按钮
 ///
-/// 显示当前模式图标和名称，点击切换 Chat / Build。
+/// 显示当前模式图标和名称，点击循环切换 Chat / Build / Autonomous。
 struct ChatModeToolbarButton: View {
     @EnvironmentObject private var llmVM: AppLLMVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
+    /// 模式循环顺序
+    private static let modeOrder: [ChatMode] = [.chat, .build, .autonomous]
+
     var body: some View {
         Button(action: {
-            let newMode: ChatMode = llmVM.chatMode == .chat ? .build : .chat
+            let currentIndex = Self.modeOrder.firstIndex(of: llmVM.chatMode) ?? 0
+            let nextIndex = (currentIndex + 1) % Self.modeOrder.count
+            let newMode = Self.modeOrder[nextIndex]
             withAnimation {
                 llmVM.setChatMode(newMode)
             }
@@ -44,6 +49,8 @@ struct ChatModeToolbarButton: View {
             return Color.orange
         case .build:
             return themeVM.activeChromeTheme.workspaceSecondaryTextColor()
+        case .autonomous:
+            return Color.red
         }
     }
 
@@ -53,6 +60,8 @@ struct ChatModeToolbarButton: View {
             return Color.orange.opacity(0.1)
         case .build:
             return themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06)
+        case .autonomous:
+            return Color.red.opacity(0.1)
         }
     }
 
@@ -62,6 +71,8 @@ struct ChatModeToolbarButton: View {
             return String(localized: "Chat Mode Description", table: "ChatMode")
         case .build:
             return String(localized: "Build Mode Description", table: "ChatMode")
+        case .autonomous:
+            return String(localized: "Autonomous Mode Description", table: "ChatMode")
         }
     }
 }
