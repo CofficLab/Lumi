@@ -252,7 +252,7 @@ private struct LayoutMenuButton: View {
                 Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
             }
         } label: {
-            Image(systemName: "sidebar.left.right")
+            Image(systemName: "sidebar.leading")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()

@@ -56,7 +56,7 @@ struct StatusBar: View {
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 32)
-                .foregroundColor(.white)
+                .foregroundColor(statusBarForegroundColor)
                 .appSurface(style: .custom(statusBarBackground), cornerRadius: 0)
                 .overlay(alignment: .top) {
                     Rectangle()
@@ -73,5 +73,10 @@ struct StatusBar: View {
         return theme.isDarkTheme
             ? theme.atmosphereColors().deep
             : theme.accentColors().primary
+    }
+
+    /// 状态栏前景色：根据背景色亮度自动适配
+    private var statusBarForegroundColor: Color {
+        statusBarBackground.isLightColor ? themeVM.activeChromeTheme.workspaceTextColor() : .white
     }
 }

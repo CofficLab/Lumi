@@ -66,4 +66,18 @@ extension Color {
         let index = Int(hash % UInt64(palette.count))
         return palette[max(0, index)]
     }
+
+    /// 判断当前颜色在当前外观下是否为浅色（感知亮度 > 0.5）
+    ///
+    /// 使用 NSColor 解析后计算相对亮度，支持自适应颜色（adaptive color）。
+    public var isLightColor: Bool {
+        let nsColor = NSColor(self)
+        guard let rgbColor = nsColor.usingColorSpace(.sRGB) else { return false }
+        let r = Double(rgbColor.redComponent)
+        let g = Double(rgbColor.greenComponent)
+        let b = Double(rgbColor.blueComponent)
+        // ITU-R BT.601 感知亮度公式
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.5
+    }
 }
