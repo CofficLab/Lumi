@@ -66,6 +66,14 @@ public final class TerminalTabsViewModel: ObservableObject {
         }
     }
 
+    public func closeAllSessions() {
+        for session in sessions {
+            session.terminate()
+        }
+        sessions.removeAll()
+        selectedSessionId = nil
+    }
+
     /// 更新所有会话的主题
     public func updateThemeForAllSessions(_ themeId: String) {
         for session in sessions {
