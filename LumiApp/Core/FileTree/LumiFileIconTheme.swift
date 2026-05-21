@@ -159,6 +159,20 @@ final class LumiDefaultFileIconThemeContributor: LumiFileIconThemeContributor {
 }
 
 enum LumiFileIconThemeCatalog {
+    static func lumi() -> any LumiFileIconThemeContributor {
+        make(
+            id: "lumi-file-icons",
+            displayName: "Lumi File Icons",
+            defaultFile: .systemImage("doc.text"),
+            defaultFolder: folder("folder", "folder.fill"),
+            extraExtensions: [
+                "swift": .systemImage("swift"),
+                "md": .systemImage("text.alignleft"),
+                "json": .systemImage("curlybraces"),
+            ]
+        )
+    }
+
     static func midnight() -> any LumiFileIconThemeContributor {
         make(
             id: "midnight-file-icons",

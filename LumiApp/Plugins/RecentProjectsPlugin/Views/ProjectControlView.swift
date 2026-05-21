@@ -19,7 +19,7 @@ struct ProjectControlView: View {
     }
 
     private var projectControlContent: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         let projectName = projectVM.currentProjectName
 
         return HStack(spacing: 6) {

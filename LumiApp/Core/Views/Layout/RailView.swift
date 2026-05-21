@@ -38,7 +38,7 @@ struct RailView: View {
                 EmptyView()
             }
         }
-        .background(themeVM.activeAppTheme.sidebarBackgroundColor())
+        .background(themeVM.activeChromeTheme.sidebarBackgroundColor())
         .onAppear {
             if selectedTabId == nil {
                 restoreSelection(from: tabs)

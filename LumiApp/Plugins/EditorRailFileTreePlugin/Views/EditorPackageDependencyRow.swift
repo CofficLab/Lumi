@@ -10,7 +10,7 @@ struct EditorPackageDependencyRow: View {
     @State private var isHovering = false
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         HStack(spacing: 4) {
             Color.clear.frame(width: 12)

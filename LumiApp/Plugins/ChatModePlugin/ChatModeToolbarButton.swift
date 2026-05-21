@@ -43,7 +43,7 @@ struct ChatModeToolbarButton: View {
         case .chat:
             return Color.orange
         case .build:
-            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
+            return themeVM.activeChromeTheme.workspaceSecondaryTextColor()
         }
     }
 
@@ -52,7 +52,7 @@ struct ChatModeToolbarButton: View {
         case .chat:
             return Color.orange.opacity(0.1)
         case .build:
-            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.06)
+            return themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06)
         }
     }
 

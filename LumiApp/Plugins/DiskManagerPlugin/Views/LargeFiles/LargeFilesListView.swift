@@ -8,7 +8,7 @@ struct LargeFilesListView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            if viewModel.largeFiles.isNotEmpty {
+            if viewModel.largeFiles.isEmpty == false {
                 LargeFilesScanControlBar(viewModel: viewModel)
             }
 

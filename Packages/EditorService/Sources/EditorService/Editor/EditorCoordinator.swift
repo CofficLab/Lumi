@@ -1,5 +1,5 @@
 import Foundation
-import MagicKit
+import SuperLogKit
 import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView

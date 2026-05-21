@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import MagicKit
+import SuperLogKit
 import os
 
 /// CPU history service with high-resolution (1s) and long-term (1m) storage.

@@ -8,7 +8,7 @@ struct LanguageSelector: View {
     private let iconSize: CGFloat = 14
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         Menu {
             ForEach(LanguagePreference.allCases) { lang in

@@ -179,7 +179,7 @@ final class RootContainer: ObservableObject, SuperLog {
         
         EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
             for contribution in AppPluginVM.shared.getThemeContributions() {
-                if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
+                if let c = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
                     registry.registerThemeContributor(c)
                 }
             }

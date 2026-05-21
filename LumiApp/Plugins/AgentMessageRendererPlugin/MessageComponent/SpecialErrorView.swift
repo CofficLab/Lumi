@@ -49,7 +49,7 @@ struct RawErrorDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(themeVM.activeAppTheme.workspaceSecondaryTextColor().opacity(0.05))
+                                .fill(themeVM.activeChromeTheme.workspaceSecondaryTextColor().opacity(0.05))
                         )
                 }
                 .frame(maxHeight: 150)
@@ -120,7 +120,7 @@ struct SpecialErrorView: View {
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.15))
                     .padding(.top, 2)
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
@@ -153,7 +153,7 @@ struct DefaultErrorView: View {
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.15))
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
             }

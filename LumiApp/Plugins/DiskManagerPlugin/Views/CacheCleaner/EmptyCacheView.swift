@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 空缓存列表视图
@@ -29,14 +30,13 @@ struct EmptyCacheView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                Button(action: { viewModel.scan() }, label: {
-                    Label(title: { Text(String(localized: "开始扫描", table: "DiskManager")) }, icon: { Image(systemName: "doc.badge.gearshape") })
-                        .font(.system(size: 15, weight: .medium))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                })
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "FF9F0A"))
+                AppButton(
+                    localized: "开始扫描",
+                    table: "DiskManager",
+                    systemImage: "doc.badge.gearshape",
+                    style: .primary,
+                    action: { viewModel.scan() }
+                )
             }
         }
         .padding(24)

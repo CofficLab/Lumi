@@ -7,7 +7,7 @@ struct StatusBar: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
@@ -68,7 +68,7 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         // 状态栏使用主题的深色氛围色，确保与整体主题协调
         return theme.isDarkTheme
             ? theme.atmosphereColors().deep

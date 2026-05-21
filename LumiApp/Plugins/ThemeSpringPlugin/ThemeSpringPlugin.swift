@@ -13,14 +13,13 @@ actor ThemeSpringPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: SpringTheme(),
                 editorThemeId: "spring",
                 editorThemeContributor: SpringSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.spring(),
-                order: 50
+                fileIconThemeContributor: LumiFileIconThemeCatalog.spring()
             )
         ]
     }

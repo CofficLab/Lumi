@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 目录树空状态视图（风格与大文件一致）
@@ -29,14 +30,13 @@ struct EmptyDirectoryTreeView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                Button(action: { viewModel.startScan() }, label: {
-                    Label(title: { Text(String(localized: "开始分析", table: "DiskManager")) }, icon: { Image(systemName: "folder.badge.gear") })
-                        .font(.system(size: 15, weight: .medium))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                })
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "7C6FFF"))
+                AppButton(
+                    localized: "开始分析",
+                    table: "DiskManager",
+                    systemImage: "folder.badge.gear",
+                    style: .primary,
+                    action: { viewModel.startScan() }
+                )
             }
         }
         .padding(24)

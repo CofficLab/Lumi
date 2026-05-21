@@ -112,7 +112,7 @@ struct EditorFileTreeNodeView: View {
 
     var body: some View {
         let isSelected = selectedURL == url
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
@@ -322,7 +322,7 @@ struct EditorFileTreeNodeView: View {
     private func gitStatusColor(
         _ status: EditorFileTreeGitStatus,
         isSelected: Bool,
-        theme: any SuperTheme
+        theme: any LumiAppChromeTheme
     ) -> Color {
         // 选中行时使用更亮的颜色保持对比度
         let baseColor: Color
@@ -382,7 +382,7 @@ struct EditorFileTreeNodeView: View {
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
         if isSelected {
             return isHovering ? theme.sidebarSelectionColor().opacity(1.2) : theme.sidebarSelectionColor()
         } else {

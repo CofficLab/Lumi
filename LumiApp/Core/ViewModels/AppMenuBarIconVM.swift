@@ -16,5 +16,4 @@ class AppMenuBarIconVM: ObservableObject {
 
 #Preview("LogoView - Snapshot") {
     LogoView(scene: .appIcon)
-        .inMagicContainer(.init(width: 500, height: 500), scale: 1)
 }

@@ -13,14 +13,13 @@ actor ThemeDraculaPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: DraculaTheme(),
                 editorThemeId: "dracula",
                 editorThemeContributor: DraculaSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.dracula(),
-                order: 105
+                fileIconThemeContributor: LumiFileIconThemeCatalog.dracula()
             )
         ]
     }

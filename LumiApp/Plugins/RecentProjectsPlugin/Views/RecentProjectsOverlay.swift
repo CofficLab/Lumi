@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 最近项目覆盖层
@@ -50,7 +49,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
     private var shouldShowNoProjectOverlay: Bool {
         !projectVM.isProjectSelected
-            && pluginVM.hasOnlyPanelIcons([EditorPlugin.iconName, GitPlugin.iconName])
+            && pluginVM.isActivePanelIcon(in: [EditorPlugin.iconName, GitPlugin.iconName])
     }
 }
 

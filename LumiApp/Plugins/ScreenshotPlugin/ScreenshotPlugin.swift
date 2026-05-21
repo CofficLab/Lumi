@@ -68,9 +68,9 @@ private struct ScreenshotToolbarButton: View {
                         .font(.system(size: 13))
                 }
             }
-            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             .frame(width: 28, height: 28)
-            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
+            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
             .clipShape(Circle())
         }
         .buttonStyle(.plain)

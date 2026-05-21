@@ -11,7 +11,7 @@ struct EditorTabItemView: View {
     @State private var isHovered = false
 
     let tab: EditorTab
-    let theme: any SuperTheme
+    let theme: any LumiAppChromeTheme
     let onStartDrag: (EditorTab) -> Void
     let onDropBefore: (EditorTab?) -> Void
 

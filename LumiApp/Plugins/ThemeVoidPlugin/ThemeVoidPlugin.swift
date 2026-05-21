@@ -13,14 +13,13 @@ actor ThemeVoidPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: VoidTheme(),
                 editorThemeId: "void",
                 editorThemeContributor: VoidSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.void(),
-                order: 40
+                fileIconThemeContributor: LumiFileIconThemeCatalog.void()
             )
         ]
     }

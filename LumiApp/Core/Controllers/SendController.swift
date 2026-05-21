@@ -114,7 +114,7 @@ final class SendController: ObservableObject, SuperLog {
 
     private func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(200))")
+            AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(count: 200))")
         }
 
         windowContainer.conversationVM.saveMessage(message, to: conversationId)

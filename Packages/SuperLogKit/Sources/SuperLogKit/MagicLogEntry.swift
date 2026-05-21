@@ -1,5 +1,4 @@
 import SwiftUI
-import OSLog
 
 /// 通用日志条目模型
 public struct MagicLogEntry: Identifiable, Sendable {

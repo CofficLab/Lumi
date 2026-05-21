@@ -13,14 +13,13 @@ actor ThemeOrchardPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: OrchardTheme(),
                 editorThemeId: "orchard",
                 editorThemeContributor: OrchardSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.orchard(),
-                order: 90
+                fileIconThemeContributor: LumiFileIconThemeCatalog.orchard()
             )
         ]
     }

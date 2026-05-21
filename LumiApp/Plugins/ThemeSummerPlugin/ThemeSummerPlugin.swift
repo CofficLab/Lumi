@@ -13,14 +13,13 @@ actor ThemeSummerPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: SummerTheme(),
                 editorThemeId: "summer",
                 editorThemeContributor: SummerSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.summer(),
-                order: 60
+                fileIconThemeContributor: LumiFileIconThemeCatalog.summer()
             )
         ]
     }

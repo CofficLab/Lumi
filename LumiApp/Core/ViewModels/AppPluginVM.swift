@@ -475,9 +475,10 @@ final class AppPluginVM: ObservableObject, SuperLog {
         return items
     }
 
-    func hasOnlyPanelIcons(_ expectedIcons: [String]) -> Bool {
-        let icons = getPanelIconItems().map(\.icon)
-        return icons.count == expectedIcons.count && Set(icons) == Set(expectedIcons)
+    /// 当前激活的活动栏图标是否在 `allowedIcons` 中。
+    func isActivePanelIcon(in allowedIcons: [String]) -> Bool {
+        guard let activePanelIcon else { return false }
+        return allowedIcons.contains(activePanelIcon)
     }
 
     /// 获取当前激活插件的 PanelItem
@@ -784,27 +785,35 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）
+    /// 获取所有启用插件提供的主题贡献（按插件 `order` 稳定排序，并写入 ``ThemeSortKey``）
     @MainActor
-    func getThemeContributions() -> [LumiThemeContribution] {
+    func getThemeContributions() -> [LumiUIThemeContribution] {
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var merged: [(pluginOrder: Int, item: LumiThemeContribution)] = []
+        var merged: [(pluginOrder: Int, item: LumiUIThemeContribution)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
             for item in plugin.addThemeContributions() {
-                merged.append((pluginOrder, item))
+                merged.append((
+                    pluginOrder,
+                    LumiUIThemeContribution(
+                        sortKey: ThemeSortKey(pluginOrder: pluginOrder, themeId: item.id),
+                        chromeTheme: item.chromeTheme,
+                        editorThemeId: item.editorThemeId,
+                        uiTheme: item.uiTheme,
+                        attachments: item.attachments
+                    )
+                ))
             }
         }
 
         let sorted = merged.sorted { lhs, rhs in
             if lhs.pluginOrder != rhs.pluginOrder { return lhs.pluginOrder < rhs.pluginOrder }
-            if lhs.item.order != rhs.item.order { return lhs.item.order < rhs.item.order }
             return lhs.item.id.localizedCaseInsensitiveCompare(rhs.item.id) == .orderedAscending
         }.map(\.item)
 
         var seen = Set<String>()
-        var result: [LumiThemeContribution] = []
+        var result: [LumiUIThemeContribution] = []
         for item in sorted {
             if seen.contains(item.id) { continue }
             seen.insert(item.id)

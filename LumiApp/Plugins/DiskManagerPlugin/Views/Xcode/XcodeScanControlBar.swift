@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Xcode 清理扫描控制栏
@@ -6,23 +7,20 @@ struct XcodeScanControlBar: View {
 
     var body: some View {
         HStack {
-            Button(action: {
-                if viewModel.isScanning {
-                    viewModel.stopScan()
-                } else {
-                    Task { await viewModel.scanAll() }
+            AppButton(
+                viewModel.isScanning
+                    ? String(localized: "停止扫描", table: "DiskManager")
+                    : String(localized: "扫描 Xcode", table: "DiskManager"),
+                systemImage: viewModel.isScanning ? "stop.circle" : "hammer",
+                style: viewModel.isScanning ? .destructive : .primary,
+                action: {
+                    if viewModel.isScanning {
+                        viewModel.stopScan()
+                    } else {
+                        Task { await viewModel.scanAll() }
+                    }
                 }
-            }, label: {
-                Label(
-                    title: { Text(viewModel.isScanning ? String(localized: "停止扫描", table: "DiskManager") : String(localized: "扫描 Xcode", table: "DiskManager")) },
-                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "hammer") }
-                )
-                .font(.system(size: 15, weight: .medium))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            })
-            .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "0A84FF"))
+            )
 
             Spacer()
 

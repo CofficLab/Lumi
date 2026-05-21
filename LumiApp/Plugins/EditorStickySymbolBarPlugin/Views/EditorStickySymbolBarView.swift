@@ -42,7 +42,7 @@ struct EditorStickySymbolBarView: View {
         HStack(spacing: 10) {
             Label(String(localized: "Current Symbol", table: "LumiEditor"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -52,7 +52,7 @@ struct EditorStickySymbolBarView: View {
                         if index < symbols.count - 1 {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .semibold))
-                                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
                         }
                     }
                 }
@@ -62,18 +62,18 @@ struct EditorStickySymbolBarView: View {
 
             Text(String(localized: "Ln \(service.cursorLine)", table: "LumiEditor"))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
+                .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
                 .clipShape(Capsule())
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.035))
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .fill(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.08))
                 .frame(height: 1)
         }
     }
@@ -90,10 +90,10 @@ struct EditorStickySymbolBarView: View {
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(1)
             }
-            .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+            .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
+            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

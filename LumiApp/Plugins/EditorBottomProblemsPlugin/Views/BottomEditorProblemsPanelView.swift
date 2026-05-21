@@ -20,7 +20,7 @@ struct BottomEditorProblemsPanelView: View {
         HStack(spacing: 8) {
             Text(panelTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
 
             Spacer(minLength: 0)
 
@@ -29,7 +29,7 @@ struct BottomEditorProblemsPanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -82,7 +82,7 @@ struct BottomEditorProblemsPanelView: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .semibold))
-            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
     }
 
     private func panelCard(title: String, subtitle: String, badge: String) -> some View {
@@ -90,29 +90,29 @@ struct BottomEditorProblemsPanelView: View {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(badge)
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.08))
+                            .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.08))
                     )
             }
 
             Text(subtitle)
                 .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.035))
+                .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.035))
         )
     }
 
@@ -120,10 +120,10 @@ struct BottomEditorProblemsPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             Text(title)
                 .font(.system(size: 12))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

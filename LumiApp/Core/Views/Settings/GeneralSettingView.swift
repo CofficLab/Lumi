@@ -128,13 +128,13 @@ struct GeneralSettingView: View {
 
                 GlassDivider()
 
-                GlassButton(title: "重新查看新手引导", style: .secondary) {
+                AppButton("重新查看新手引导", style: .secondary, fillsWidth: true, action: {
                     NotificationCenter.default.post(
                         name: Notification.Name("AgentOnboarding.Show"),
                         object: nil,
                         userInfo: ["reset": true]
                     )
-                }
+                })
             }
         }
     }
@@ -153,15 +153,11 @@ struct GeneralSettingView: View {
                 GlassDivider()
 
                 HStack(spacing: 8) {
-                    GlassButton(title: "报告问题", style: .primary) {
-                        openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
-                    }
+                    AppButton("报告问题", style: .primary, fillsWidth: true, action: { openURL("https://github.com/CofficLab/Lumi/issues/new/choose") })
                     .accessibilityLabel("报告问题")
                     .accessibilityHint("在 GitHub 打开问题反馈页面")
 
-                    GlassButton(title: "查看 Issue 列表", style: .secondary) {
-                        openURL("https://github.com/CofficLab/Lumi/issues")
-                    }
+                    AppButton("查看 Issue 列表", style: .secondary, fillsWidth: true, action: { openURL("https://github.com/CofficLab/Lumi/issues") })
                     .accessibilityLabel("查看 Issue 列表")
                     .accessibilityHint("在浏览器打开公开问题列表")
                 }

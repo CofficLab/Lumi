@@ -5,7 +5,7 @@ struct AgentModeUnavailableGuideView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         VStack(spacing: 12) {
             Spacer()

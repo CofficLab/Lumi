@@ -342,7 +342,7 @@ struct MarketingCodeEditor: View {
         ("            PanelContentView()", Color(red: 0.68, green: 0.91, blue: 0.74)),
         ("            RightSidebarContainerView()", Color(red: 0.68, green: 0.91, blue: 0.74)),
         ("        }", Color(red: 0.86, green: 0.72, blue: 1.00)),
-        ("        .background(themeVM.activeAppTheme.makeGlobalBackground())", Color(red: 1.00, green: 0.78, blue: 0.55)),
+        ("        .background(themeVM.activeChromeTheme.makeGlobalBackground())", Color(red: 1.00, green: 0.78, blue: 0.55)),
         ("    }", MarketingPalette.text),
         ("}", MarketingPalette.text),
         ("", MarketingPalette.text),

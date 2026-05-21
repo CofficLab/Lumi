@@ -144,7 +144,7 @@ struct AutoTaskSidebarView: View {
     }
 
     private var taskPanelBackground: Color {
-        themeVM.activeAppTheme.workspaceBackgroundColor()
+        themeVM.activeChromeTheme.workspaceBackgroundColor()
             .mix(with: .orange, by: 0.06)
             .opacity(0.82)
     }

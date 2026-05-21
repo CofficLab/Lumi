@@ -28,7 +28,7 @@ struct ThemePickerDetailView: View {
     }
 
     @ViewBuilder
-    private func themeRow(_ theme: LumiThemeContribution) -> some View {
+    private func themeRow(_ theme: LumiUIThemeContribution) -> some View {
         let isSelected = theme.id == themeVM.currentThemeId
         Button {
             themeVM.selectTheme(theme.id)

@@ -23,12 +23,12 @@ struct ModelSelectorToolbarButton: View {
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 9))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             }
-            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
+            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
             .cornerRadius(6)
         }
         .buttonStyle(.plain)

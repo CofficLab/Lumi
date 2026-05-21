@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct OrchardTheme: SuperTheme {
+struct OrchardTheme: LumiAppChromeTheme {
     let identifier = "orchard"
     let displayName = "果园红"
     let compactName = "果"

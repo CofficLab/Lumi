@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MountainTheme: SuperTheme {
+struct MountainTheme: LumiAppChromeTheme {
     let identifier = "mountain"
     let displayName = "山岚灰"
     let compactName = "山"

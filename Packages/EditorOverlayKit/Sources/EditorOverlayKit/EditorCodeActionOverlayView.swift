@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import EditorService
 import LumiUI
 

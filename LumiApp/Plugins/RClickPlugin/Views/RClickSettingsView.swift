@@ -46,9 +46,7 @@ struct RClickSettingsView: View {
                             }
 
                             HStack(spacing: 8) {
-                                GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .primary) {
-                                    openFinderExtensionSettings()
-                                }
+                                AppButton(localized: "Open System Settings", table: "Localizable", style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
                                 .frame(width: 180)
 
                                 Spacer()
@@ -97,9 +95,7 @@ struct RClickSettingsView: View {
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 Spacer()
-                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
-                                    showingAddTemplateSheet = true
-                                }
+                                AppButton(localized: "Add Template", table: "Localizable", style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
                                 .frame(width: 120)
                             }
 
@@ -155,9 +151,7 @@ struct RClickSettingsView: View {
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(Color.adaptive(light: "FF3B30", dark: "FF453A"))
                             Spacer()
-                            GlassButton(title: LocalizedStringKey(String(localized: "Reset")), style: .danger) {
-                                configManager.resetToDefaults()
-                            }
+                            AppButton(localized: "Reset", table: "Localizable", style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
                             .frame(width: 100)
                         }
                     }

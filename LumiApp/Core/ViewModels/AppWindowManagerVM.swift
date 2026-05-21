@@ -1,6 +1,5 @@
 import AppKit
 import Combine
-import MagicKit
 import SwiftUI
 
 /// 窗口管理器 VM

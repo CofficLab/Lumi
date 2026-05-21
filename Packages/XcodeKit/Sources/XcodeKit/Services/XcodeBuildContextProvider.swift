@@ -1,6 +1,6 @@
 import Foundation
 import os
-import MagicKit
+import SuperLogKit
 
 /// Xcode Build Context Provider
 /// 职责：

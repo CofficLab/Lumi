@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import LanguageServerProtocol
-import MagicKit
+import SuperLogKit
 import UniformTypeIdentifiers
 import os
 

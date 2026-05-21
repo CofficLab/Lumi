@@ -29,17 +29,20 @@ public struct AppTabBar: View {
     }
 
     public var body: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
-            ForEach(tabs) { tab in
-                AppTabButton(
-                    title: tab.title,
-                    icon: tab.icon,
-                    isSelected: selectedTab == tab.id,
-                    showText: showText
-                ) {
-                    selectedTab = tab.id
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppUI.Spacing.sm) {
+                ForEach(tabs) { tab in
+                    AppTabButton(
+                        title: tab.title,
+                        icon: tab.icon,
+                        isSelected: selectedTab == tab.id,
+                        showText: showText
+                    ) {
+                        selectedTab = tab.id
+                    }
                 }
             }
+            .padding(.horizontal, 1)
         }
     }
 }

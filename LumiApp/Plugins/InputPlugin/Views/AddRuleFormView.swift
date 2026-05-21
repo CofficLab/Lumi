@@ -61,9 +61,9 @@ struct AddRuleFormView: View {
                 .frame(width: 200)
 
                 // 添加按钮
-                GlassButton(title: "添加", style: .secondary, action: onAddRule)
+                AppButton("添加", style: .secondary, action: onAddRule)
+                    .disabled(!canAddRule)
                     .frame(width: 80)
-                .disabled(!canAddRule)
             }
         }
     }

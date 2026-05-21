@@ -13,14 +13,13 @@ actor ThemeNebulaPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: NebulaTheme(),
                 editorThemeId: "nebula",
                 editorThemeContributor: NebulaSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.nebula(),
-                order: 30
+                fileIconThemeContributor: LumiFileIconThemeCatalog.nebula()
             )
         ]
     }

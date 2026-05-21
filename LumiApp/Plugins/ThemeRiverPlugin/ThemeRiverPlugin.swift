@@ -13,14 +13,13 @@ actor ThemeRiverPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: RiverTheme(),
                 editorThemeId: "river",
                 editorThemeContributor: RiverSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.river(),
-                order: 110
+                fileIconThemeContributor: LumiFileIconThemeCatalog.river()
             )
         ]
     }

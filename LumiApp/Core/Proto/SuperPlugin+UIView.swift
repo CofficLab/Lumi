@@ -96,5 +96,5 @@ extension SuperPlugin {
     @MainActor func addMenuBarContentView() -> AnyView? { nil }
 
     /// 默认实现：不提供主题贡献
-    @MainActor func addThemeContributions() -> [LumiThemeContribution] { [] }
+    @MainActor func addThemeContributions() -> [LumiUIThemeContribution] { [] }
 }

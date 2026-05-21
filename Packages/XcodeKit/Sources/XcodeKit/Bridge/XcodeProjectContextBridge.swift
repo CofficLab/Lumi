@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 import os
-import MagicKit
+import SuperLogKit
 
 /// Xcode Project Context Bridge
 /// 职责：在 XcodeProjectEditorPlugin 和 LSPService 之间建立连接

@@ -9,6 +9,7 @@ struct NoProjectOverlay: View {
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
 
     @State private var isFileImporterPresented = false
+    @State private var isFolderDropTargeted = false
 
     private let store = RecentProjectsStore()
 
@@ -19,8 +20,21 @@ struct NoProjectOverlay: View {
 
             // 居中内容卡片
             cardContent
+
+            if isFolderDropTargeted {
+                folderDropHintOverlay
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .animation(.easeInOut(duration: 0.12), value: isFolderDropTargeted)
+        .onDrop(
+            of: [UTType.fileURL],
+            delegate: NoProjectFolderDropDelegate(
+                isDropTargeted: $isFolderDropTargeted,
+                onPerform: acceptFolderDrop
+            )
+        )
         .fileImporter(
             isPresented: $isFileImporterPresented,
             allowedContentTypes: [.folder],
@@ -28,6 +42,37 @@ struct NoProjectOverlay: View {
         ) { result in
             handleFileImport(result)
         }
+    }
+
+    // MARK: - Drop Hint
+
+    private var folderDropHintOverlay: some View {
+        ZStack {
+            (colorScheme == .dark ? Color.black.opacity(0.35) : Color.white.opacity(0.45))
+
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(
+                    style: StrokeStyle(lineWidth: 2, dash: [8, 6]),
+                    antialiased: true
+                )
+                .foregroundStyle(Color(hex: "7C6FFF").opacity(0.85))
+                .padding(20)
+
+            VStack(spacing: 10) {
+                Image(systemName: "folder.badge.plus")
+                    .font(.system(size: 28, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color(hex: "7C6FFF"))
+
+                Text(String(localized: "Release to add project", table: "RecentProjects"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+        }
+        .allowsHitTesting(false)
+        .transition(.opacity)
     }
 
     // MARK: - Background Overlay
@@ -206,7 +251,7 @@ struct NoProjectOverlay: View {
             .buttonStyle(.plain)
 
             // 提示文字
-            Text(String(localized: "Or drag a folder into the window", table: "RecentProjects"))
+            Text(String(localized: "Or drag a folder here", table: "RecentProjects"))
                 .font(.system(size: 11))
                 .foregroundStyle(.quaternary)
         }
@@ -231,6 +276,37 @@ struct NoProjectOverlay: View {
         projectVM.switchProject(to: project, reason: "noProjectOverlayAddProject")
     }
 
+    // MARK: - Folder Drop
+
+    private func acceptFolderDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first else { return false }
+        if provider.canLoadObject(ofClass: URL.self) {
+            provider.loadObject(ofClass: URL.self) { item, _ in
+                guard let url = item as? URL else { return }
+                Task { @MainActor in
+                    importDroppedFolder(url)
+                }
+            }
+            return true
+        }
+        return false
+    }
+
+    private func importDroppedFolder(_ url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              isDirectory.boolValue
+        else { return }
+
+        let needsScope = url.startAccessingSecurityScopedResource()
+        addProjectAndSwitch(to: url)
+        if needsScope {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+    }
+
     // MARK: - File Import
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
@@ -247,6 +323,37 @@ struct NoProjectOverlay: View {
                 RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
             }
         }
+    }
+}
+
+// MARK: - Drop Delegate
+
+private struct NoProjectFolderDropDelegate: DropDelegate {
+    @Binding var isDropTargeted: Bool
+    var onPerform: ([NSItemProvider]) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        !info.itemProviders(for: [UTType.fileURL]).isEmpty
+    }
+
+    func dropEntered(info: DropInfo) {
+        isDropTargeted = validateDrop(info: info)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        isDropTargeted = validateDrop(info: info)
+        return validateDrop(info: info) ? DropProposal(operation: .copy) : DropProposal(operation: .forbidden)
+    }
+
+    func dropExited(info: DropInfo) {
+        isDropTargeted = false
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        isDropTargeted = false
+        let providers = info.itemProviders(for: [UTType.fileURL])
+        guard !providers.isEmpty else { return false }
+        return onPerform(providers)
     }
 }
 

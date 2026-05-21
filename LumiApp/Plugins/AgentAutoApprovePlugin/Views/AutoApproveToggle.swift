@@ -9,7 +9,7 @@ struct AutoApproveToggle: View {
     private let store = AgentAutoApprovePluginLocalStore.shared
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
+        let theme = themeVM.activeChromeTheme
 
         Toggle(String(localized: "Auto", table: "AgentAutoApprovePlugin"), isOn: Binding(
             get: { projectVM.autoApproveRisk },

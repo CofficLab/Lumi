@@ -226,24 +226,46 @@
         }
       }
     },
-    "Or drag a folder into the window" : {
+    "Or drag a folder here" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Or drag a folder into the window"
+            "value" : "Or drag a folder here"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "或将文件夹拖入窗口"
+            "value" : "或将文件夹拖到此处"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "或將文件夾拖入窗口"
+            "value" : "或將文件夾拖到此處"
+          }
+        }
+      }
+    },
+    "Release to add project" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to add project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "松开以添加项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鬆開以添加項目"
           }
         }
       }

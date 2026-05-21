@@ -2,7 +2,7 @@ import Foundation
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
-import MagicKit
+import SuperLogKit
 import os
 
 /// 编辑器支持的语言 ID（内核定义，不依赖具体 LSP 实现）

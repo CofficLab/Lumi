@@ -228,8 +228,11 @@ struct ContentViewBody<Content: View>: View {
         self.onChangeColumnVisibility = onChangeColumnVisibility
     }
 
-    private var preferredColorScheme: ColorScheme {
-        themeVM.activeAppTheme.isDarkTheme ? .dark : .light
+    private var preferredColorScheme: ColorScheme? {
+        if themeVM.activeChromeTheme.followsSystemAppearance {
+            return nil
+        }
+        return themeVM.activeChromeTheme.isDarkTheme ? .dark : .light
     }
 
     var body: some View {
@@ -239,7 +242,7 @@ struct ContentViewBody<Content: View>: View {
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
                 GeometryReader { proxy in
-                    themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
+                    themeVM.activeChromeTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
             .animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference), value: themeVM.currentThemeId)

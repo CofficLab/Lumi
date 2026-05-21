@@ -9,7 +9,7 @@ struct DirectoryTreeView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            if viewModel.isScanning == false && viewModel.rootEntries.isNotEmpty {
+            if viewModel.isScanning == false && viewModel.rootEntries.isEmpty == false {
                 DirectoryTreeScanControlBar(viewModel: viewModel)
             }
 

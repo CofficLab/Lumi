@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 项目清理扫描控制栏
@@ -6,23 +7,20 @@ struct ProjectScanControlBar: View {
 
     var body: some View {
         HStack {
-            Button(action: {
-                if viewModel.isScanning {
-                    viewModel.stopScan()
-                } else {
-                    Task { await viewModel.scanProjects() }
+            AppButton(
+                viewModel.isScanning
+                    ? String(localized: "停止扫描", table: "DiskManager")
+                    : String(localized: "扫描项目", table: "DiskManager"),
+                systemImage: viewModel.isScanning ? "stop.circle" : "folder.badge.gearshape",
+                style: viewModel.isScanning ? .destructive : .primary,
+                action: {
+                    if viewModel.isScanning {
+                        viewModel.stopScan()
+                    } else {
+                        Task { await viewModel.scanProjects() }
+                    }
                 }
-            }, label: {
-                Label(
-                    title: { Text(viewModel.isScanning ? String(localized: "停止扫描", table: "DiskManager") : String(localized: "扫描项目", table: "DiskManager")) },
-                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gearshape") }
-                )
-                .font(.system(size: 15, weight: .medium))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            })
-            .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "FF9F0A"))
+            )
 
             Spacer()
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "f48255acf209215ee4c1ad065af90c07211fdac4677297bf3eacc4c55db5378c",
+  "originHash" : "db6856d93d9e72cff62ac3a91be90ba474a4f6b823c915ddfb06c752906218ef",
   "pins" : [
     {
       "identity" : "codeeditlanguages",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "d7ac3f11f22ec2e820187acce8f3a3fb7aa8ddec",
         "version" : "0.12.1"
-      }
-    },
-    {
-      "identity" : "id3tageditor",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/chicio/ID3TagEditor",
-      "state" : {
-        "revision" : "3ccc31eafae0ded1fea8c9acd5e7ef7dfdbf1e8e",
-        "version" : "4.6.0"
       }
     },
     {
@@ -53,15 +44,6 @@
       "state" : {
         "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
         "version" : "1.0.1"
-      }
-    },
-    {
-      "identity" : "magickit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CofficLab/MagicKit",
-      "state" : {
-        "revision" : "ad6bc183adde0cbf22cdfe805deb5efd45f9a371",
-        "version" : "1.5.23"
       }
     },
     {
@@ -125,15 +107,6 @@
       "state" : {
         "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
         "version" : "0.25.10"
-      }
-    },
-    {
-      "identity" : "zipfoundation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/weichsel/ZIPFoundation.git",
-      "state" : {
-        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
-        "version" : "0.9.20"
       }
     }
   ],

@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../EditorService"),
         .package(path: "../MarkdownKit"),
         .package(path: "../LumiUI"),
-        .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "MagicKit", package: "MagicKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/EditorOverlayKit"
         ),

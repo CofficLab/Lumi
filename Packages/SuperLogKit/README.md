@@ -1,24 +1,28 @@
 # SuperLogKit
 
-A powerful and flexible logging library for Swift applications, providing structured logging with thread information, emoji context, and unified formatting.
+与 [MagicKit](https://github.com/CofficLab/MagicKit) 中 `SuperLog` 行为一致的日志库：结构化输出、线程 QoS emoji、类名上下文 emoji，以及 `MagicLogger` 可观测日志。
 
 ## Features
 
-- **Structured Logging**: Unified log format with thread information and emoji context
-- **Thread Awareness**: Automatic thread quality of service (QoS) detection and labeling
-- **Multiple Log Levels**: Support for info, warning, error, and debug levels
-- **Emoji Context**: Automatic emoji generation based on class names
-- **SwiftUI Integration**: Built-in SwiftUI components for log viewing
-- **Type-Safe**: Protocol-based design with compile-time safety
-- **Observable**: Combine support for reactive UI updates
+- **Structured Logging**: 统一格式 `QoS | Emoji ClassName | Message`
+- **Thread Awareness**: 通过 `Thread.currentQosDescription` 自动标注 QoS（emoji）
+- **Multiple Log Levels**: `MagicLogger` 支持 info / warning / error / debug
+- **Emoji Context**: 按类名或消息关键词（中英）自动匹配 emoji
+- **SwiftUI Integration**: `MagicLogEntry` 提供 `color`、`icon`，便于列表展示
+- **Type-Safe**: 基于 `SuperLog` 协议
+- **Observable**: `MagicLogger` 支持 Combine
 
 ## Installation
-
-Add `SuperLogKit` to your `Package.swift` dependencies:
 
 ```swift
 dependencies: [
     .package(path: "../SuperLogKit")
+],
+targets: [
+    .target(
+        name: "YourTarget",
+        dependencies: ["SuperLogKit"]
+    )
 ]
 ```
 
@@ -33,30 +37,30 @@ class UserManager: SuperLog {
     static var emoji: String { "👤" }
 
     func login() {
-        print("\(Self.t)Starting login process")
+        print("\(Self.t)开始登录处理")
 
         if isMain {
-            print("\(t)Running on main thread")
+            print("\(t)在主线程执行")
         }
 
-        print("\(t)Login failed\(r("invalid password"))")
+        print("\(t)登录失败\(r("密码错误"))")
     }
 }
 ```
+
+未自定义 `emoji` 时，会根据类型名关键词生成（如含 `data` → `💾`，含 `manager` → `👔`）。
 
 ### Using MagicLogger
 
 ```swift
 import SuperLogKit
 
-// Static methods
 MagicLogger.info("User logged in")
 MagicLogger.warning("Low disk space")
 MagicLogger.error("Failed to save data")
 MagicLogger.debug("Debugging information")
 
-// Instance methods
-let logger = MagicLogger()
+let logger = MagicLogger(app: "MyApp")
 logger.info("Instance log message")
 ```
 
@@ -80,26 +84,47 @@ struct LogView: View {
 
 ## Log Format
 
-Logs are formatted with the following structure:
+### `SuperLog` 前缀（`t`）
 
 ```
-[Thread QoS] | Emoji ClassName | Message
+{QoS emoji} | {emoji} {ClassName (27 chars)} | {message}
 ```
 
-Example output:
+示例（主线程 / User Interactive）：
+
 ```
-[UI] | 👤 UserManager           | Starting login process
-[BG] | 🗄️ DatabaseManager      | Query executed
+🔥 | 👤 UserManager           | 开始登录处理
+🔥 | 👤 UserManager           | 登录失败 ➡️ 密码错误
 ```
+
+### `MagicLogger` / `MagicLogEntry`
+
+`message` 字段为：
+
+```
+{QoS emoji} | {emoji} {original message}
+```
+
+`os_log` 行 additionally 包含 caller 与行号。
 
 ## Thread QoS Labels
 
-- `[UI]` - User Interactive / Main Thread
-- `[IN]` - User Initiated
-- `[DF]` - Default
-- `[UT]` - Utility
-- `[BG]` - Background
-- `[UN]` - Unspecified
+与 MagicKit `ExtQos` 一致，`description(withName: false)` 返回值：
+
+| QoS | 标识 |
+|-----|------|
+| userInteractive | `🔥` |
+| userInitiated | `2️⃣` |
+| default | `3️⃣` |
+| utility | `4️⃣` |
+| background | `5️⃣` |
+| unknown | `6️⃣` |
+
+带名称时例如：`🔥 UserInteractive`、`5️⃣ Background`。
+
+## Context Emoji
+
+`String.generateContextEmoji()` / `withContextEmoji` 使用与 MagicKit 相同的关键词表（含中文，如 `网络` → `🌐`、`错误` → `❌`）。无匹配时默认为 `📝`。
 
 ## Requirements
 

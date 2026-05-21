@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SummerTheme: SuperTheme {
+struct SummerTheme: LumiAppChromeTheme {
     let identifier = "summer"
     let displayName = "盛夏蓝"
     let compactName = "夏"

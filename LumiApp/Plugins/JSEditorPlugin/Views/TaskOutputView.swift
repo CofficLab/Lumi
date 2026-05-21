@@ -24,7 +24,7 @@ struct TaskOutputView: View {
                             ForEach(Array(taskManager.outputLines.enumerated()), id: \.offset) { _, line in
                                 Text(line)
                                     .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                                     .textSelection(.enabled)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 1)
@@ -41,7 +41,7 @@ struct TaskOutputView: View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
             if taskManager.state == .running || taskManager.state == .building || taskManager.state == .linting || taskManager.state == .formatting {
                 ProgressView()
@@ -72,12 +72,12 @@ struct TaskOutputView: View {
             if taskManager.lastDuration > 0 {
                 Text(String(format: "%.1fs", taskManager.lastDuration))
                     .font(.system(size: 10))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
     private func issueRow(_ issue: JSBuildIssue) -> some View {
@@ -92,11 +92,11 @@ struct TaskOutputView: View {
 
                 Text("\(issue.file):\(issue.line):\(issue.column)")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
 
                 Text(issue.message)
                     .font(.system(size: 11))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .lineLimit(1)
 
                 Spacer()
@@ -112,10 +112,10 @@ struct TaskOutputView: View {
         VStack(spacing: 8) {
             Image(systemName: "terminal")
                 .font(.system(size: 20, weight: .thin))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
             Text(String(localized: "Run a JS task to see output", table: "JSEditor"))
                 .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

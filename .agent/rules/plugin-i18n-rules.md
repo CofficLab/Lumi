@@ -124,7 +124,7 @@ let message = String(localized: "Hello, %@", table: "PluginName", arguments: use
 
 ### 完整示例
 
-`SuperPlugin` 由 `Global.swift` 的 `@_exported import MagicKit` 提供，LumiApp 内无需 `import MagicKit`。
+`SuperPlugin` 定义在 LumiApp；`SuperLog` 由 `Global.swift` 的 `@_exported import SuperLogKit` 提供，LumiApp 内无需单独 import。
 
 ```swift
 import SwiftUI

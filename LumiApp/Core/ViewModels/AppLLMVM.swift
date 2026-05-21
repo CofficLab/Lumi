@@ -67,7 +67,7 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     // MARK: - 配置管理
 
     func getCurrentConfig() -> LLMConfig {
-        guard selectedProviderId.isNotEmpty,
+        guard selectedProviderId.isEmpty == false,
               let providerType = llmService.providerType(forId: selectedProviderId),
               llmService.createProvider(id: selectedProviderId) != nil else {
             return LLMConfig.default

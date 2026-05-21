@@ -13,14 +13,13 @@ actor ThemeMountainPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addThemeContributions() -> [LumiThemeContribution] {
+    func addThemeContributions() -> [LumiUIThemeContribution] {
         [
-            LumiThemeContribution(
+            LumiUIThemeContribution(
                 appTheme: MountainTheme(),
                 editorThemeId: "mountain",
                 editorThemeContributor: MountainSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.mountain(),
-                order: 100
+                fileIconThemeContributor: LumiFileIconThemeCatalog.mountain()
             )
         ]
     }

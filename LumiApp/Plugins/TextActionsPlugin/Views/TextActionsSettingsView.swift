@@ -62,9 +62,7 @@ extension TextActionsSettingsView {
             )
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .secondary) {
-                openAccessibilitySettings()
-            }
+            AppButton(localized: "Open System Settings", table: "Localizable", style: .secondary, fillsWidth: true, action: { openAccessibilitySettings() })
             .frame(maxWidth: 180)
         }
         .padding(.top, 4)

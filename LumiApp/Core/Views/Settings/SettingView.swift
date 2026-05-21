@@ -166,7 +166,7 @@ struct SettingView: View {
         }
         .background {
             GeometryReader { proxy in
-                themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
+                themeVM.activeChromeTheme.makeGlobalBackground(proxy: proxy)
             }
             .ignoresSafeArea()
         }
