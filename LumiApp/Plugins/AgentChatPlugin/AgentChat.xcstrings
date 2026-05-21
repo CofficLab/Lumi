@@ -48,6 +48,7 @@
       }
     },
     "Agent chat messages timeline": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -162,18 +163,44 @@
       }
     },
     "Capture screen region as chat attachment": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture screen region as chat attachment"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "截取屏幕区域作为聊天附件"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "擷取螢幕區域作為聊天附件"
+          }
         }
       }
     },
     "Chat Attachment": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Attachment"
+          }
+        },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天附件"
+          }
+        },
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天附件"
@@ -320,21 +347,47 @@
       }
     },
     "Chat Pending Messages": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Pending Messages"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天待发送消息"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天待傳送訊息"
+          }
         }
       }
     },
     "Chat Submit": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Submit"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天发送"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天傳送"
           }
         }
       }
@@ -1030,11 +1083,24 @@
       }
     },
     "Model Selector": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Selector"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "模型选择器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型選擇器"
           }
         }
       }
@@ -1477,11 +1543,24 @@
       }
     },
     "Pending chat attachments and sidebar drop handling": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending chat attachments and sidebar drop handling"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "待发送聊天附件和侧栏拖放处理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待傳送聊天附件和側欄拖放處理"
           }
         }
       }
@@ -1717,11 +1796,24 @@
       }
     },
     "Screenshot": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "截图"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截圖"
           }
         }
       }
@@ -1911,11 +2003,24 @@
       }
     },
     "Select LLM provider and model": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select LLM provider and model"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "选择 LLM 供应商和模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇 LLM 供應商和模型"
           }
         }
       }
@@ -2036,21 +2141,47 @@
       }
     },
     "Send or stop chat messages": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send or stop chat messages"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "发送或停止聊天消息"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送或停止聊天訊息"
+          }
         }
       }
     },
     "Show queued chat messages above the input area": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show queued chat messages above the input area"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "在输入区上方显示排队中的聊天消息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在輸入區上方顯示排隊中的聊天訊息"
           }
         }
       }
@@ -2079,11 +2210,24 @@
       }
     },
     "Switch between Chat and Build modes": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch between Chat and Build modes"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "在聊天和构建模式之间切换"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在聊天和構建模式之間切換"
           }
         }
       }

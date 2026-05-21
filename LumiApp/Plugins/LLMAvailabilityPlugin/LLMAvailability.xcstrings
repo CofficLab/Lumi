@@ -465,6 +465,7 @@
       }
     },
     "Search providers or models…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
