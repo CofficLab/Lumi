@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// ## 多窗口架构
 ///
-/// ContentView 从 `WindowScope` 获取窗口级 VM，每个窗口拥有独立的 VM 实例。
+/// ContentView 从 `WindowContainer` 获取窗口级 VM，每个窗口拥有独立的 VM 实例。
 /// 不再需要双向同步，窗口状态天然隔离。
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
@@ -25,7 +25,7 @@ struct ContentView: View, SuperLog {
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.windowScope) private var windowScope
+    @Environment(\.windowContainer) private var windowContainer
 
     /// 默认侧边栏可见性
     var defaultSidebarVisibility: Bool?
@@ -43,25 +43,25 @@ struct ContentView: View, SuperLog {
 
     var body: some View {
         Group {
-            if let scope = windowScope {
-                contentViewBody(scope: scope)
+            if let container = windowContainer {
+                contentViewBody(container: container)
             } else {
-                // 无 WindowScope 时显示空白（不应该发生）
+                // 无 WindowContainer 时显示空白（不应该发生）
                 Color.clear
             }
         }
     }
 
     @ViewBuilder
-    private func contentViewBody(scope: WindowScope) -> some View {
+    private func contentViewBody(container: WindowContainer) -> some View {
         ContentViewBody(
             sidebarVisibility: Binding(
-                get: { scope.sidebarVisibility },
-                set: { scope.sidebarVisibility = $0 }
+                get: { container.sidebarVisibility },
+                set: { container.sidebarVisibility = $0 }
             ),
             columnVisibility: Binding(
-                get: { scope.columnVisibility },
-                set: { scope.columnVisibility = $0 }
+                get: { container.columnVisibility },
+                set: { container.columnVisibility = $0 }
             ),
             pluginProvider: pluginProvider,
             themeVM: themeVM,
@@ -73,8 +73,8 @@ struct ContentView: View, SuperLog {
             },
             openSettings: openSettings,
             openPluginSettings: openPluginSettings,
-            onAppear: { onAppear(scope: scope) },
-            onChangeColumnVisibility: { onChangeColumnVisibility(scope: scope) }
+            onAppear: { onAppear(container: container) },
+            onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
         .toolbar {
             let leadingViews = pluginProvider.getToolbarLeadingViews()
@@ -104,11 +104,11 @@ struct ContentView: View, SuperLog {
                 }
             }
         }
-        .environment(\.windowScope, scope)
+        .environment(\.windowContainer, container)
         .background {
             WindowAccessor { window in
-                RootContainer.shared.windowManagerVM.associateWindow(window, with: scope.id)
-                window.title = scope.title
+                RootContainer.shared.windowManagerVM.associateWindow(window, with: container.id)
+                window.title = container.title
             }
         }
     }
@@ -257,13 +257,13 @@ struct ContentViewBody<Content: View>: View {
 // MARK: - Event Handler
 
 extension ContentView {
-    func onAppear(scope: WindowScope) {
+    func onAppear(container: WindowContainer) {
         // 注册窗口到 WindowManager
-        RootContainer.shared.windowManagerVM.registerScope(scope)
+        RootContainer.shared.windowManagerVM.registerContainer(container)
 
-        if let path = initialProjectPath, !path.isEmpty, !scope.projectVM.isProjectSelected {
+        if let path = initialProjectPath, !path.isEmpty, !container.projectVM.isProjectSelected {
             let name = URL(fileURLWithPath: path).lastPathComponent
-            scope.projectVM.switchProject(
+            container.projectVM.switchProject(
                 to: Project(name: name, path: path, lastUsed: Date()),
                 reason: "contentViewInitialProjectPath"
             )
@@ -271,29 +271,29 @@ extension ContentView {
 
         // 应用默认配置
         if let defaultSidebarVisibility = defaultSidebarVisibility {
-            scope.sidebarVisibility = defaultSidebarVisibility
+            container.sidebarVisibility = defaultSidebarVisibility
         }
 
         // 设置标题同步
-        setupWindowTitleObserver(scope: scope)
+        setupWindowTitleObserver(container: container)
     }
 
-    private func setupWindowTitleObserver(scope: WindowScope) {
-        scope.$title
+    private func setupWindowTitleObserver(container: WindowContainer) {
+        container.$title
             .receive(on: DispatchQueue.main)
             .sink { newTitle in
-                if let window = RootContainer.shared.windowManagerVM.window(for: scope.id) {
+                if let window = RootContainer.shared.windowManagerVM.window(for: container.id) {
                     window.title = newTitle
                 }
             }
-            .store(in: &scope.cancellables)
+            .store(in: &container.cancellables)
     }
 
-    func onChangeColumnVisibility(scope: WindowScope) {
-        if scope.columnVisibility == .detailOnly {
-            scope.sidebarVisibility = false
+    func onChangeColumnVisibility(container: WindowContainer) {
+        if container.columnVisibility == .detailOnly {
+            container.sidebarVisibility = false
         } else {
-            scope.sidebarVisibility = true
+            container.sidebarVisibility = true
         }
     }
 
@@ -310,6 +310,6 @@ extension ContentView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView(scope: WindowScope(container: RootContainer.shared))
+        .inRootView(container: WindowContainer(container: RootContainer.shared))
         .withDebugBar()
 }

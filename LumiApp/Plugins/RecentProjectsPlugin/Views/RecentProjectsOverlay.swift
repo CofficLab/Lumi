@@ -13,7 +13,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
-    @Environment(\.windowScope) private var windowScope
+    @Environment(\.windowContainer) private var windowContainer
 
     let content: Content
 
@@ -69,8 +69,8 @@ extension RecentProjectsOverlay {
     }
 
     private func syncProjectFromScopeIfNeeded() {
-        guard let scope = windowScope,
-              let path = scope.projectPath,
+        guard let container = windowContainer,
+              let path = container.projectPath,
               !path.isEmpty,
               !projectVM.isProjectSelected else { return }
 

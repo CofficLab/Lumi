@@ -4,21 +4,21 @@ import Foundation
 ///
 /// **职责**：队列调度 + 任务生命周期管理。
 ///
-/// 每个窗口拥有独立的 SendController 实例，通过 WindowScope 直接访问窗口级 VM。
-/// 不再通过 RootContainer 的 activeWindowScope 代理，避免多窗口状态竞争。
+/// 每个窗口拥有独立的 SendController 实例，通过 WindowContainer 直接访问窗口级 VM。
+/// 不再通过 RootContainer 的 activeWindowContainer 代理，避免多窗口状态竞争。
 @MainActor
 final class SendController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = 0
 
-    private let scope: WindowScope
+    private let windowContainer: WindowContainer
     private let global: RootContainer
     private let agentTurnService: AgentTurnService
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
     private var pendingTransientSystemPromptsByConversation: [UUID: [String]] = [:]
 
-    init(scope: WindowScope, global: RootContainer) {
-        self.scope = scope
+    init(container: WindowContainer, global: RootContainer) {
+        self.windowContainer = container
         self.global = global
 
         // 组装 AgentTurnService 的依赖（使用窗口级 VM）
@@ -27,29 +27,29 @@ final class SendController: ObservableObject, SuperLog {
             agentSessionConfig: global.agentSessionConfig,
             toolService: global.toolService,
             pluginVM: global.pluginVM,
-            statusVM: scope.conversationSendStatusVM,
-            projectVM: scope.projectVM
+            statusVM: windowContainer.conversationSendStatusVM,
+            projectVM: windowContainer.projectVM
         )
         let toolCallExecutor = ToolCallExecutor(
             toolExecutionService: global.toolExecutionService,
             toolService: global.toolService,
-            projectVM: scope.projectVM,
-            permissionRequestVM: scope.permissionRequestVM,
-            conversationSendStatusVM: scope.conversationSendStatusVM,
-            conversationVM: scope.conversationVM
+            projectVM: windowContainer.projectVM,
+            permissionRequestVM: windowContainer.permissionRequestVM,
+            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
+            conversationVM: windowContainer.conversationVM
         )
         let turnFinalizer = TurnFinalizer(
-            conversationVM: scope.conversationVM,
-            conversationSendStatusVM: scope.conversationSendStatusVM,
-            messageQueueVM: scope.messageQueueVM
+            conversationVM: windowContainer.conversationVM,
+            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
+            messageQueueVM: windowContainer.messageQueueVM
         )
         self.agentTurnService = AgentTurnService(
             llmRequester: llmRequester,
             toolCallExecutor: toolCallExecutor,
             turnFinalizer: turnFinalizer,
             chatHistoryService: global.chatHistoryService,
-            conversationVM: scope.conversationVM,
-            messageQueueVM: scope.messageQueueVM
+            conversationVM: windowContainer.conversationVM,
+            messageQueueVM: windowContainer.messageQueueVM
         )
     }
 
@@ -57,14 +57,14 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 尝试从队列中出队一条"可处理"的消息并开始发送。
     func attemptBeginNextQueuedSend() async {
-        guard let message = scope.messageQueueVM.dequeueNextEligibleMessage() else {
+        guard let message = windowContainer.messageQueueVM.dequeueNextEligibleMessage() else {
             return
         }
         let conversationId = message.conversationId
 
         // 如果该会话已有活跃任务，将消息状态改回 pending，避免卡住
         guard activeSendTasksByConversation[conversationId] == nil else {
-            scope.messageQueueVM.requeueMessage(message)
+            windowContainer.messageQueueVM.requeueMessage(message)
             return
         }
 
@@ -83,18 +83,18 @@ final class SendController: ObservableObject, SuperLog {
         activeSendTasksByConversation[conversationId]?.cancel()
         activeSendTasksByConversation[conversationId] = nil
 
-        if scope.permissionRequestVM.pendingToolPermissionSession?.conversationId == conversationId {
-            scope.permissionRequestVM.setPendingPermissionRequest(nil)
-            scope.permissionRequestVM.setPendingToolPermissionSession(nil)
+        if windowContainer.permissionRequestVM.pendingToolPermissionSession?.conversationId == conversationId {
+            windowContainer.permissionRequestVM.setPendingPermissionRequest(nil)
+            windowContainer.permissionRequestVM.setPendingToolPermissionSession(nil)
         }
 
-        scope.conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
-        scope.messageQueueVM.finishProcessing(for: conversationId)
-        scope.conversationSendStatusVM.clearStatus(conversationId: conversationId)
+        windowContainer.conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+        windowContainer.messageQueueVM.finishProcessing(for: conversationId)
+        windowContainer.conversationSendStatusVM.clearStatus(conversationId: conversationId)
 
         guard shouldPersistCancelMessage else { return }
         let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: "用户主动取消了对话")
-        scope.conversationVM.saveMessage(systemMessage, to: conversationId)
+        windowContainer.conversationVM.saveMessage(systemMessage, to: conversationId)
     }
 
     /// 取消当前窗口内所有发送任务。窗口关闭时调用，不落库“用户取消”消息。
@@ -105,9 +105,9 @@ final class SendController: ObservableObject, SuperLog {
         activeSendTasksByConversation.removeAll()
         pendingTransientSystemPromptsByConversation.removeAll()
 
-        scope.permissionRequestVM.clearPending()
-        scope.messageQueueVM.clearAll()
-        scope.conversationSendStatusVM.clearAll()
+        windowContainer.permissionRequestVM.clearPending()
+        windowContainer.messageQueueVM.clearAll()
+        windowContainer.conversationSendStatusVM.clearAll()
     }
 
     // MARK: - 发送入口
@@ -117,24 +117,24 @@ final class SendController: ObservableObject, SuperLog {
             AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(200))")
         }
 
-        scope.conversationVM.saveMessage(message, to: conversationId)
+        windowContainer.conversationVM.saveMessage(message, to: conversationId)
 
         let ctx = SendMessageContext(
             conversationId: conversationId,
             message: message,
             chatHistoryService: global.chatHistoryService,
             agentSessionConfig: global.agentSessionConfig,
-            projectVM: scope.projectVM,
+            projectVM: windowContainer.projectVM,
             recentProjectsVM: global.recentProjectsVM,
-            currentFileURL: scope.editorVM.service.currentFileURL
+            currentFileURL: windowContainer.editorVM.service.currentFileURL
         )
         ctx.abortTurn = { [weak self] in
-            self?.scope.conversationSendStatusVM.setStatus(
+            self?.windowContainer.conversationSendStatusVM.setStatus(
                 conversationId: conversationId,
                 content: "检测到异常，已终止"
             )
-            self?.scope.messageQueueVM.finishProcessing(for: conversationId)
-            self?.scope.conversationSendStatusVM.clearStatus(conversationId: conversationId)
+            self?.windowContainer.messageQueueVM.finishProcessing(for: conversationId)
+            self?.windowContainer.conversationSendStatusVM.clearStatus(conversationId: conversationId)
         }
 
         let pipeline = SendPipeline(middlewares: global.pluginVM.getSuperSendMiddlewares())

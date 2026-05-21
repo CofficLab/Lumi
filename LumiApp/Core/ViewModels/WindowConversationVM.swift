@@ -6,12 +6,12 @@ import SwiftUI
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
 /// 会话管理 ViewModel
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
 @MainActor
 final class WindowConversationVM: ObservableObject, SuperLog {

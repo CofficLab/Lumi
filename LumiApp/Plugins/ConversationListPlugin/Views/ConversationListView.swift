@@ -12,7 +12,7 @@ struct ConversationListView: View, SuperLog {
     nonisolated static let verbose: Bool = false
     
     /// 窗口作用域（多窗口支持）
-    @Environment(\.windowScope) private var windowScope
+    @Environment(\.windowContainer) private var windowContainer
     
     /// 会话管理 ViewModel（全局）
     @EnvironmentObject var conversationVM: WindowConversationVM
@@ -132,8 +132,8 @@ extension ConversationListView {
     /// 获取当前选中的会话 ID（优先从 WindowState 获取）
     private var currentSelectedConversationId: UUID? {
         // 优先使用窗口级状态
-        if let windowScope = windowScope,
-           let conversationId = windowScope.selectedConversationId {
+        if let windowContainer = windowContainer,
+           let conversationId = windowContainer.selectedConversationId {
             return conversationId
         }
         // 回退到全局 VM
@@ -393,7 +393,7 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowScope?.switchToConversation(newId, reason: "conversationListSelect")
+            windowContainer?.switchToConversation(newId, reason: "conversationListSelect")
             
             // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(newId, reason: "conversationListSelect")
@@ -410,7 +410,7 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowScope?.switchToConversation(nil, reason: "conversationListClear")
+            windowContainer?.switchToConversation(nil, reason: "conversationListClear")
             
             // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(nil, reason: "conversationListClear")

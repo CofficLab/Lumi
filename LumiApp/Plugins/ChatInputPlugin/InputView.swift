@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 import ChatInputEditorKit
-import MagicAlert
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态
 ///
@@ -17,7 +16,7 @@ struct InputView: View, SuperLog {
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
     /// 当前窗口作用域。发送输入时优先使用 scope 持有的队列，避免多窗口环境对象错位。
-    @Environment(\.windowScope) private var windowScope
+    @Environment(\.windowContainer) private var windowContainer
 
     /// 主题管理器
     @EnvironmentObject private var themeVM: AppThemeVM
@@ -37,15 +36,29 @@ struct InputView: View, SuperLog {
     /// 图片文件正拖过输入框（显示「松开可添加」提示，由 `NSTextView` 更新）
     @State private var isImageDragHovering = false
 
-    /// 是否允许输入/发送（必须先选中会话）
+    /// 会话管理
     @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var attachmentsVM: WindowAttachmentsVM
 
     private var canChat: Bool {
-        conversationVM.selectedConversationId != nil
+        activeConversationVM.selectedConversationId != nil
+    }
+
+    private var activeConversationVM: WindowConversationVM {
+        windowContainer?.conversationVM ?? conversationVM
+    }
+
+    private var activeProjectVM: WindowProjectVM {
+        windowContainer?.projectVM ?? projectVM
+    }
+
+    private var activeAttachmentsVM: WindowAttachmentsVM {
+        windowContainer?.agentAttachmentsVM ?? attachmentsVM
     }
 
     private var activeInputQueueVM: WindowInputQueueVM {
-        windowScope?.inputQueueVM ?? inputQueueVM
+        windowContainer?.inputQueueVM ?? inputQueueVM
     }
 
     var body: some View {
@@ -55,8 +68,6 @@ struct InputView: View, SuperLog {
                 .padding(.horizontal, 4)
                 .padding(.top, 8)
                 .padding(.bottom, 8)
-                .allowsHitTesting(canChat)
-                .opacity(canChat ? 1 : 0.6)
                 .accessibilityLabel(String(localized: "Message Input", table: "ChatInputPlugin"))
                 .accessibilityHint(String(localized: "Message Input Hint", table: "ChatInputPlugin"))
         }
@@ -163,11 +174,7 @@ extension InputView {
 extension InputView {
     /// 提交输入
     private func handleSubmit() {
-        guard canChat else { return }
-        let text = chatDraftVM.text
-        chatDraftVM.clear()
-        activeInputQueueVM.enqueueText(text)
-        editorHeight = ChatInputEditorView.minHeight
+        submitDraft()
     }
 
     /// 处理上箭头键
@@ -186,17 +193,6 @@ extension InputView {
 
     /// 处理回车键
     private func handleEnter() {
-        guard canChat else {
-            if Self.verbose {
-                ChatInputPlugin.logger.info("\(Self.t)回车提交被拦截：当前没有选中的会话")
-            }
-            alert_info(
-                String(localized: "Please create or select a conversation first", table: "ChatInputPlugin"),
-                subtitle: String(localized: "No active conversation", table: "ChatInputPlugin")
-            )
-            return
-        }
-
         if commandSuggestionViewModel.isVisible,
            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
             if Self.verbose {
@@ -209,10 +205,38 @@ extension InputView {
             if Self.verbose {
                 ChatInputPlugin.logger.info("\(Self.t)回车发送输入：\(text.count) 字符")
             }
-            chatDraftVM.clear()
-            activeInputQueueVM.enqueueText(text)
-            editorHeight = ChatInputEditorView.minHeight
+            submitDraft(text)
         }
+    }
+
+    private func submitDraft(_ text: String? = nil) {
+        let text = text ?? chatDraftVM.text
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !activeAttachmentsVM.pendingAttachments.isEmpty else {
+            return
+        }
+
+        chatDraftVM.clear()
+        editorHeight = ChatInputEditorView.minHeight
+
+        Task { @MainActor in
+            await ensureConversationSelected()
+            activeInputQueueVM.enqueueText(text)
+        }
+    }
+
+    private func ensureConversationSelected() async {
+        guard activeConversationVM.selectedConversationId == nil else { return }
+
+        if Self.verbose {
+            ChatInputPlugin.logger.info("\(Self.t)发送前自动创建新会话")
+        }
+
+        await activeConversationVM.createNewConversation(
+            projectName: activeProjectVM.isProjectSelected ? activeProjectVM.currentProjectName : nil,
+            projectPath: activeProjectVM.isProjectSelected ? activeProjectVM.currentProjectPath : nil,
+            languagePreference: activeProjectVM.languagePreference
+        )
     }
 }
 

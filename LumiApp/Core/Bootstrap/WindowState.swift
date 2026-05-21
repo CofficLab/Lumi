@@ -64,8 +64,8 @@ extension Notification.Name {
     static let windowActivated = Notification.Name("windowActivated")
     /// 窗口关闭通知
     static let windowClosed = Notification.Name("windowClosed")
-    /// 窗口作用域已注册（`WindowManagerVM.registerScope`）
-    static let windowScopeDidRegister = Notification.Name("windowScopeDidRegister")
+    /// 窗口作用域已注册（`WindowManagerVM.registerContainer`）
+    static let windowContainerDidRegister = Notification.Name("windowContainerDidRegister")
 }
 
 extension NotificationCenter {
@@ -95,10 +95,10 @@ extension NotificationCenter {
     }
 
     /// 发送窗口作用域已注册通知
-    static func postWindowScopeDidRegister(_ scope: WindowScope) {
+    static func postWindowContainerDidRegister(_ container: WindowContainer) {
         NotificationCenter.default.post(
-            name: .windowScopeDidRegister,
-            object: scope
+            name: .windowContainerDidRegister,
+            object: container
         )
     }
 }

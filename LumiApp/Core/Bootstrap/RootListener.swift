@@ -14,15 +14,12 @@ import SwiftUI
 /// - 项目上下文请求 (`projectContextRequestVM.$request`)
 /// - Tool 权限恢复发送 (`onResumeSendAfterToolPermission`)
 /// - Agent 回合完成 (`onAgentConversationSendTurnFinished`)
-struct RootListener<Content>: View, SuperLog where Content: View {
+struct RootListener: View, SuperLog {
     nonisolated static var emoji: String { "📡" }
     nonisolated static var verbose: Bool { false }
 
     /// 窗口作用域（每窗口独立）
     @ObservedObject var scope: WindowContainer
-
-    /// 视图内容
-    var content: Content
 
     /// 发送与回合管线（每窗口独立，直接访问窗口级 VM）。
     private var sendController: SendController { scope.sendController }
@@ -30,13 +27,13 @@ struct RootListener<Content>: View, SuperLog where Content: View {
     /// 项目上下文与系统提示词（每窗口独立）。
     private var projectController: ProjectController { scope.projectController }
 
-    init(scope: WindowContainer, @ViewBuilder content: () -> Content) {
+    init(scope: WindowContainer) {
         self._scope = ObservedObject(wrappedValue: scope)
-        self.content = content()
     }
 
     var body: some View {
-        content
+        Color.clear
+            .allowsHitTesting(false)
             .onReceive(scope.messageQueueVM.$queueVersion.dropFirst()) { _ in
                 onMessageQueueChanged()
             }

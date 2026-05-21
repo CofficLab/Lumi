@@ -162,7 +162,7 @@ final class AutomationController: SuperLog {
             return
         }
 
-        guard let scope = RootContainer.shared.windowManagerVM.activeWindowScope else {
+        guard let scope = RootContainer.shared.windowManagerVM.activeWindowContainer else {
             Self.logger.warning("🤖 project.select: no active window scope")
             return
         }

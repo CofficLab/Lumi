@@ -47,13 +47,13 @@ This report tracks modules that may cause memory or resource usage to keep risin
 - Module: Window lifecycle
 - Paths:
   - `LumiApp/Core/ViewModels/WindowManagerVM.swift`
-  - `LumiApp/Core/Entities/WindowScope.swift`
+  - `LumiApp/Core/Entities/WindowContainer.swift`
   - `LumiApp/Core/Controllers/SendController.swift`
   - `LumiApp/Core/ViewModels/WindowEditorVM.swift`
 - Risk: High
 - Evidence:
-  - `WindowManagerVM.unregisterScope` only removes the scope from arrays/maps and posts notification at `WindowManagerVM.swift:71-80`.
-  - `WindowScope` owns many VMs and controllers but has no `deinit` or `cleanup` (`WindowScope.swift:157-230`, file ends at line 367).
+  - `WindowManagerVM.unregisterContainer` only removes the scope from arrays/maps and posts notification at `WindowManagerVM.swift:71-80`.
+  - `WindowContainer` owns many VMs and controllers but has no `deinit` or `cleanup` (`WindowContainer.swift:157-230`, file ends at line 367).
   - `SendController` stores active send tasks in `activeSendTasksByConversation` at `SendController.swift:18`, starts tasks at lines 72-78, and only cancels individual conversations through `cancelSend` at lines 81-99.
   - `WindowEditorVM` owns `EditorService` and subscriptions but has no explicit teardown at `WindowEditorVM.swift:37-65`.
 - Why this can grow memory:
@@ -62,7 +62,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 - Trigger:
   - Open a project, start a send or editor/LSP operation, close the window, repeat.
 - Suggested fix:
-  - Add `WindowScope.cleanup()` and call it from `WindowManagerVM.unregisterScope` before removing the scope.
+  - Add `WindowContainer.cleanup()` and call it from `WindowManagerVM.unregisterContainer` before removing the scope.
   - Cleanup should cancel all send tasks, clear queues, close all editor sessions, close current LSP document, cleanup file watchers, clear Combine subscriptions, and notify plugins that care about window scope teardown.
 
 ### 4. `WindowMessagePendingVM` grows without a clear path
@@ -226,8 +226,8 @@ This report tracks modules that may cause memory or resource usage to keep risin
 
 ## Verification Scenarios
 
-1. Open and close 20 windows with projects and editor tabs; watch object graph for retained `WindowScope`, `WindowEditorVM`, `EditorService`, and LSP objects.
-2. Start a send, close the window mid-turn, repeat 20 times; verify `activeSendTasksByConversation` and `WindowScope` release.
+1. Open and close 20 windows with projects and editor tabs; watch object graph for retained `WindowContainer`, `WindowEditorVM`, `EditorService`, and LSP objects.
+2. Start a send, close the window mid-turn, repeat 20 times; verify `activeSendTasksByConversation` and `WindowContainer` release.
 3. Send 200 messages in one conversation and switch conversations repeatedly; inspect `WindowMessagePendingVM.messages`.
 4. Toggle configurable plugins, especially Clipboard, AppUpdateStatusBar, CodeServer, Database, Terminal; verify `onDisable()` is called after core fix.
 5. Open LSP-backed files across two windows/projects, close one window, and inspect `LSPService.latestDocumentSnapshot`, server process count, and progress tokens.
@@ -238,7 +238,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 ## Priority Fix Order
 
 1. Implement real plugin enable/disable transitions in `AppPluginVM`.
-2. Add `WindowScope.cleanup()` and call it from `WindowManagerVM.unregisterScope`.
+2. Add `WindowContainer.cleanup()` and call it from `WindowManagerVM.unregisterContainer`.
 3. Remove or cap `WindowMessagePendingVM.messages`.
 4. Add explicit teardown for editor/LSP on window close.
 5. Add terminal/database/code-server cleanup hooks.

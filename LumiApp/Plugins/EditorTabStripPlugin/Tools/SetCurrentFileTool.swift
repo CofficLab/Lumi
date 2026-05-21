@@ -52,7 +52,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
 
         // 获取当前活跃窗口的项目路径
         let projectPath = await MainActor.run {
-            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
+            RootContainer.shared.windowManagerVM.activeWindowContainer?.projectPath
         }
 
         guard let projectPath else {

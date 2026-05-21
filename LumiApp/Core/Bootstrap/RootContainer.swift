@@ -8,14 +8,14 @@ import os
 ///
 /// ## 架构原则
 /// - **全局共享层**：Service 和应用级 VM 留在此容器（如 AppPluginVM、AppThemeVM）
-/// - **窗口作用域层**：窗口级 VM 由 `WindowScope` 持有（如 WindowConversationVM、WindowProjectVM）
+/// - **窗口作用域层**：窗口级 VM 由 `WindowContainer` 持有（如 WindowConversationVM、WindowProjectVM）
 ///
 /// ## VM 分类
 ///
 /// **全局共享（留在 RootContainer）：**
 /// AppPluginVM, AppThemeVM, AppLLMVM, AppChatHistoryVM, AppGitVM, AppIdleTimeVM, AppMessageRendererVM
 ///
-/// **窗口作用域（在 WindowScope 中）：**
+/// **窗口作用域（在 WindowContainer 中）：**
 /// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessageQueueVM,
 /// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
 /// WindowConversationStatusVM, WindowTaskCancellationVM, WindowCommandSuggestionVM,
@@ -56,16 +56,16 @@ final class RootContainer: ObservableObject, SuperLog {
     
     // MARK: - 窗口级 ViewModel 兼容属性（仅保留仍在使用的项目）
     //
-    // ⚠️ 新代码请勿使用这些属性，应通过 WindowScope 直接访问。
+    // ⚠️ 新代码请勿使用这些属性，应通过 WindowContainer 直接访问。
     
-    /// 活跃窗口的 WindowConversationVM（过渡兼容，新代码用 WindowScope）
+    /// 活跃窗口的 WindowConversationVM（过渡兼容，新代码用 WindowContainer）
     var conversationVM: WindowConversationVM {
-        windowManagerVM.activeWindowScope?.conversationVM ?? _fallbackWindowConversationVM
+        windowManagerVM.activeWindowContainer?.conversationVM ?? _fallbackWindowConversationVM
     }
     
-    /// 活跃窗口的 WindowLayoutVM（过渡兼容，新代码用 WindowScope）
+    /// 活跃窗口的 WindowLayoutVM（过渡兼容，新代码用 WindowContainer）
     var layoutVM: WindowLayoutVM {
-        windowManagerVM.activeWindowScope?.layoutVM ?? _fallbackWindowLayoutVM
+        windowManagerVM.activeWindowContainer?.layoutVM ?? _fallbackWindowLayoutVM
     }
     
     // Fallback 实例（仅 conversationVM 需要兜底；layoutVM 和 editorVM 使用动态创建）
@@ -242,6 +242,6 @@ final class RootContainer: ObservableObject, SuperLog {
     
     /// 活跃窗口的 EditorVM（过渡兼容）
     var editorVM: WindowEditorVM {
-        windowManagerVM.activeWindowScope?.editorVM ?? WindowEditorVM(service: EditorService(editorExtensionRegistry: createEditorExtensionRegistry()))
+        windowManagerVM.activeWindowContainer?.editorVM ?? WindowEditorVM(service: EditorService(editorExtensionRegistry: createEditorExtensionRegistry()))
     }
 }

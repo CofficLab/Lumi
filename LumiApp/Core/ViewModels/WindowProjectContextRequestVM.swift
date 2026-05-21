@@ -6,12 +6,12 @@ import SwiftUI
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `request` 变化处理项目上下文请求。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `request` 变化处理项目上下文请求。
 /// - RootView 监听并触发 handler
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// RootView 监听其 `request` 变化处理项目上下文请求。
 @MainActor
 final class WindowProjectContextRequestVM: ObservableObject {

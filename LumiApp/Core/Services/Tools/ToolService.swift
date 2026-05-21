@@ -89,7 +89,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
     weak var llmVM: AppLLMVM?
 
-    /// 对话管理 ViewModel（可选，由 WindowScope 注入）
+    /// 对话管理 ViewModel（可选，由 WindowContainer 注入）
     weak var conversationVM: WindowConversationVM?
 
     /// Combine 订阅集合

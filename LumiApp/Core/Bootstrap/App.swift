@@ -58,7 +58,7 @@ struct CoreApp: App {
         // 主窗口（可多开）
         WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
             let initial = route.wrappedValue ?? LumiWindowRoute()
-            let scope = WindowScope(
+            let windowContainer = WindowContainer(
                 id: initial.id,
                 container: RootContainer.shared,
                 projectPath: initial.projectPath
@@ -66,7 +66,7 @@ struct CoreApp: App {
             ContentLayout(
                 projectPath: initial.projectPath
             )
-            .inRootView(scope: scope)
+            .inRootView(container: windowContainer)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -90,7 +90,7 @@ struct CoreApp: App {
         // 使用紧凑型工具栏样式，节省空间。
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
-                .inRootView(scope: WindowScope(container: RootContainer.shared))
+                .inRootView(container: WindowContainer(container: RootContainer.shared))
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -150,6 +150,6 @@ final class CheckForUpdatesViewModel: ObservableObject {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView(scope: WindowScope(container: RootContainer.shared))
+        .inRootView(container: WindowContainer(container: RootContainer.shared))
         .withDebugBar()
 }

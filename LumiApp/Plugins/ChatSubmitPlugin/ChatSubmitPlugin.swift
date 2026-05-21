@@ -55,10 +55,10 @@ private struct ChatSubmitToolbarButton: View {
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
     @EnvironmentObject private var messageQueueVM: WindowMessageQueueVM
     @EnvironmentObject private var chatDraftVM: WindowChatDraftVM
-    @Environment(\.windowScope) private var windowScope
+    @Environment(\.windowContainer) private var windowContainer
 
     private var activeInputQueueVM: WindowInputQueueVM {
-        windowScope?.inputQueueVM ?? inputQueueVM
+        windowContainer?.inputQueueVM ?? inputQueueVM
     }
 
     var body: some View {

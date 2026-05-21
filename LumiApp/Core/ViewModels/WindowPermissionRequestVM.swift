@@ -10,12 +10,12 @@ struct PendingToolPermissionSession: Equatable, Sendable {
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。n管理工具执行权限请求弹窗。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。n管理工具执行权限请求弹窗。
 /// 权限请求 ViewModel
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// 管理工具执行权限请求弹窗。
 @MainActor
 final class WindowPermissionRequestVM: ObservableObject, SuperLog {
