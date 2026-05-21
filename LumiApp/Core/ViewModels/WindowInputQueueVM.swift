@@ -61,4 +61,9 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
         pendingRequest = nil
         return request
     }
+
+    func clearForTeardown() {
+        pendingRequest = nil
+        onEnqueueRequest = nil
+    }
 }

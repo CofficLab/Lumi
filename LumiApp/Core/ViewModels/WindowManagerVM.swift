@@ -70,6 +70,7 @@ final class WindowManagerVM: ObservableObject, SuperLog {
 
     /// 窗口关闭时注销，仅发出通知（存储由插件负责）
     func unregisterScope(_ windowId: UUID) {
+        scopeMap[windowId]?.cleanup()
         windowScopes.removeAll { $0.id == windowId }
         scopeMap.removeValue(forKey: windowId)
 

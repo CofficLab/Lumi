@@ -72,4 +72,9 @@ final class WindowEditorVM: ObservableObject {
     func syncInitialEditorTheme(_ editorThemeId: String) {
         service.syncInitialThemeFromExternal(editorThemeId)
     }
+
+    func cleanupForTeardown() {
+        cancellables.removeAll()
+        service.cleanupForTeardown()
+    }
 }

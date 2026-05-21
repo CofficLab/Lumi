@@ -77,6 +77,12 @@ final class WindowMessageQueueVM: ObservableObject, SuperLog {
         queueVersion += 1
     }
 
+    func clearAll() {
+        guard !messages.isEmpty else { return }
+        messages.removeAll()
+        queueVersion += 1
+    }
+
     /// 获取指定会话的待发送消息
     func pendingMessages(for conversationId: UUID) -> [ChatMessage] {
         messages.filter { $0.conversationId == conversationId && $0.queueStatus == .pending }

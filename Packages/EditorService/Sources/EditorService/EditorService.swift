@@ -257,6 +257,14 @@ public final class EditorService: ObservableObject {
         sessionStore.closeAll()
     }
 
+    /// 清理编辑器窗口级资源，用于宿主窗口关闭。
+    public func cleanupForTeardown() {
+        state.cleanupForTeardown()
+        sessionStore.closeAll()
+        activeSessionChangedObserver = nil
+        state.onActiveSessionChanged = nil
+    }
+
     /// 激活指定会话
     @discardableResult
     public func activateSession(id: EditorSession.ID) -> EditorSession? {

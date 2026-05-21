@@ -56,6 +56,10 @@ final class WindowAttachmentsVM: ObservableObject, SuperLog {
         }
     }
 
+    func clearPendingAttachments() {
+        pendingAttachments.removeAll()
+    }
+
     // MARK: - Private
 
     private func add(_ attachment: AgentPendingImageAttachment) {

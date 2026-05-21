@@ -51,4 +51,9 @@ final class WindowPermissionRequestVM: ObservableObject, SuperLog {
     func setPendingToolPermissionSession(_ session: PendingToolPermissionSession?) {
         pendingToolPermissionSession = session
     }
+
+    func clearPending() {
+        setPendingPermissionRequest(nil)
+        setPendingToolPermissionSession(nil)
+    }
 }

@@ -76,6 +76,13 @@ final class WindowConversationStatusVM: ObservableObject {
         streamingTextBufferByConversationId[conversationId] = nil
     }
 
+    func clearAll() {
+        statusMessageByConversationId.removeAll()
+        stableStatusRowIdByConversationId.removeAll()
+        thinkingTextBufferByConversationId.removeAll()
+        streamingTextBufferByConversationId.removeAll()
+    }
+
     private static let statusTailBufferMax = 20
     private static let shellStatusPreviewMax = 50
 

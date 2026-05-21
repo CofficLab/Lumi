@@ -98,6 +98,19 @@ final class SendController: ObservableObject, SuperLog {
         scope.conversationVM.saveMessage(systemMessage, to: conversationId)
     }
 
+    /// 取消当前窗口内所有发送任务。窗口关闭时调用，不落库“用户取消”消息。
+    func cancelAllSendsForTeardown() {
+        for task in activeSendTasksByConversation.values {
+            task.cancel()
+        }
+        activeSendTasksByConversation.removeAll()
+        pendingTransientSystemPromptsByConversation.removeAll()
+
+        scope.permissionRequestVM.clearPending()
+        scope.messageQueueVM.clearAll()
+        scope.conversationSendStatusVM.clearAll()
+    }
+
     // MARK: - 发送入口
 
     private func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {

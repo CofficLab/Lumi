@@ -119,6 +119,8 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 窗口是否活跃
     @Published var isActive: Bool = false
 
+    private var hasCleanedUp = false
+
     // MARK: - Convenience Computed Properties
 
     /// 当前选中的会话 ID
@@ -269,6 +271,7 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 输入框位于插件侧栏里，SwiftUI 的 `.onReceive` 在多窗口和缓存 AnyView 组合下可能失效；
     /// 因此发送入口绑定在 WindowScope 上，确保输入请求直接进入当前窗口的消息队列。
     func handleInputEnqueueRequest(_ request: WindowInputQueueVM.InputEnqueueRequest) {
+        guard !hasCleanedUp else { return }
 
         _ = inputQueueVM.consumePendingRequest(id: request.id)
         guard let conversationId = conversationVM.selectedConversationId else {
@@ -290,7 +293,8 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         messageQueueVM.enqueueMessage(message)
         chatTimelineViewModel.handleMessageQueued(message)
 
-        Task {
+        Task { [weak self] in
+            guard let self, !self.hasCleanedUp else { return }
             await self.sendController.attemptBeginNextQueuedSend()
         }
     }
@@ -342,6 +346,28 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         if !editorState.hasOpenFiles {
             activePanel = projectPath != nil ? .fileTree : .chat
         }
+    }
+
+    // MARK: - Teardown
+
+    /// 释放窗口级资源。窗口关闭时由 `WindowManagerVM` 在移除 scope 前调用。
+    func cleanup() {
+        guard !hasCleanedUp else { return }
+        hasCleanedUp = true
+
+        cancellables.removeAll()
+        inputQueueVM.clearForTeardown()
+        sendController.cancelAllSendsForTeardown()
+        messageQueueVM.clearAll()
+        messagePendingVM.clearAll()
+        chatDraftVM.clear()
+        agentAttachmentsVM.clearPendingAttachments()
+        permissionRequestVM.clearPending()
+        conversationSendStatusVM.clearAll()
+        editorVM.cleanupForTeardown()
+        editorState.openFileURLs.removeAll()
+        editorState.activeFileURL = nil
+        isActive = false
     }
 
     // MARK: - Title Management

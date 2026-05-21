@@ -70,4 +70,8 @@ final class WindowMessagePendingVM: ObservableObject, SuperLog {
             AppLogger.core.info("\(Self.t)🍋 更新消息: \(parts.joined(separator: ", "))")
         }
     }
+
+    func clearAll() {
+        messages.removeAll()
+    }
 }
