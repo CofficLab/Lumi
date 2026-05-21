@@ -6,9 +6,6 @@ import SwiftUI
 /// 支持多窗口模式，优先从 WindowScope 获取当前窗口的会话选择，
 /// 如果 WindowScope 不可用，则回退到全局 WindowConversationVM。
 struct ChatMessagesView: View {
-    /// 窗口作用域（多窗口支持）
-    @Environment(\.windowScope) private var windowScope
-    
     /// 会话管理 ViewModel（窗口级）
     @EnvironmentObject var conversationVM: WindowConversationVM
     
@@ -17,12 +14,6 @@ struct ChatMessagesView: View {
 
     /// 当前会话 ID（优先从 WindowScope 获取）
     private var currentConversationId: UUID? {
-        // 优先使用窗口级状态
-        if let windowScope = windowScope,
-           let conversationId = windowScope.selectedConversationId {
-            return conversationId
-        }
-        // 回退到窗口级 VM
         return conversationVM.selectedConversationId
     }
 

@@ -3,11 +3,10 @@ import SwiftUI
 
 /// 空状态视图 - 未选择会话时显示
 struct EmptyStateView: View {
-    @EnvironmentObject private var WindowConversationVM: WindowConversationVM
-    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     private var hasAnyConversation: Bool {
-        !WindowConversationVM.fetchAllConversations().isEmpty
+        !conversationVM.fetchAllConversations().isEmpty
     }
 
     var body: some View {
@@ -35,7 +34,7 @@ struct EmptyStateView: View {
                     if !hasAnyConversation {
                         AppButton(String(localized: "New Conversation", table: "AgentChat"), systemImage: "plus.circle.fill", style: .primary) {
                             Task {
-                                await conversationCreationVM.createNewConversation()
+                                await conversationVM.createNewConversation()
                             }
                         }
                         .accessibilityLabel(String(localized: "New Conversation", table: "AgentChat"))
