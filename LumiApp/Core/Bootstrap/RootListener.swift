@@ -14,12 +14,12 @@ import SwiftUI
 /// - 项目上下文请求 (`projectContextRequestVM.$request`)
 /// - Tool 权限恢复发送 (`onResumeSendAfterToolPermission`)
 /// - Agent 回合完成 (`onAgentConversationSendTurnFinished`)
-struct RootEventMonitorView<Content>: View, SuperLog where Content: View {
+struct RootListener<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📡" }
     nonisolated static var verbose: Bool { false }
 
     /// 窗口作用域（每窗口独立）
-    @ObservedObject var scope: WindowScope
+    @ObservedObject var scope: WindowContainer
 
     /// 视图内容
     var content: Content
@@ -30,7 +30,7 @@ struct RootEventMonitorView<Content>: View, SuperLog where Content: View {
     /// 项目上下文与系统提示词（每窗口独立）。
     private var projectController: ProjectController { scope.projectController }
 
-    init(scope: WindowScope, @ViewBuilder content: () -> Content) {
+    init(scope: WindowContainer, @ViewBuilder content: () -> Content) {
         self._scope = ObservedObject(wrappedValue: scope)
         self.content = content()
     }
@@ -56,7 +56,7 @@ struct RootEventMonitorView<Content>: View, SuperLog where Content: View {
 
 // MARK: - Event Handlers
 
-extension RootEventMonitorView {
+extension RootListener {
     func onAgentConversationSendTurnFinished(_: UUID) {
         Task {
             await sendController.attemptBeginNextQueuedSend()
