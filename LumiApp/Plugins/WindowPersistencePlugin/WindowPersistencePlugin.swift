@@ -25,9 +25,13 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 根视图包裹：监听 VM 变化并保存窗口状态
+    /// 根视图包裹：启动恢复 + 监听 VM 变化并保存窗口状态
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(WindowPersistenceOverlay(content: content()))
+        AnyView(
+            WindowRestoreOverlay(
+                content: WindowPersistenceOverlay(content: content())
+            )
+        )
     }
 }
