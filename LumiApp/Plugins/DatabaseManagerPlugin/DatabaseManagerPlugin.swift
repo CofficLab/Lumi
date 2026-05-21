@@ -33,6 +33,12 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated func addPanelIcon() -> String? { Self.iconName }
 
+    nonisolated func onDisable() {
+        Task {
+            await DatabaseManager.shared.shutdown()
+        }
+    }
+
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
