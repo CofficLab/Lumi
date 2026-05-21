@@ -6,8 +6,11 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
     /// 对话模式 - 只聊天，不执行任何工具或修改
     case chat = "chat"
 
-    /// 构建模式 - 可以执行工具、修改代码等
+    /// 构建模式 - 可以执行工具、修改代码，高风险需要用户确认
     case build = "build"
+
+    /// 自主模式 - 可以执行工具、修改代码，高风险自动批准
+    case autonomous = "autonomous"
 
     public var id: String { rawValue }
 
@@ -18,6 +21,8 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
             return "对话"
         case .build:
             return "构建"
+        case .autonomous:
+            return "自主"
         }
     }
 
@@ -28,6 +33,8 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
             return "Chat"
         case .build:
             return "Build"
+        case .autonomous:
+            return "Autonomous"
         }
     }
 
@@ -38,6 +45,8 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
             return "bubble.left.and.bubble.right"
         case .build:
             return "hammer.fill"
+        case .autonomous:
+            return "bolt.shield.fill"
         }
     }
 
@@ -47,7 +56,9 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
         case .chat:
             return "只进行对话，不执行任何操作"
         case .build:
-            return "可以执行工具、修改代码"
+            return "可以执行工具、修改代码，高风险需要确认"
+        case .autonomous:
+            return "可以执行工具、修改代码，高风险自动批准"
         }
     }
 
@@ -57,7 +68,9 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
         case .chat:
             return "Chat only, no tool execution"
         case .build:
-            return "Can execute tools and modify code"
+            return "Can execute tools, high-risk requires confirmation"
+        case .autonomous:
+            return "Can execute tools, high-risk auto-approved"
         }
     }
 
@@ -66,7 +79,17 @@ public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .chat:
             return false
-        case .build:
+        case .build, .autonomous:
+            return true
+        }
+    }
+
+    /// 高风险是否自动批准
+    public var autoApproveRisk: Bool {
+        switch self {
+        case .chat, .build:
+            return false
+        case .autonomous:
             return true
         }
     }

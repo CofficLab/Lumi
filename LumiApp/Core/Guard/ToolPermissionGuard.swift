@@ -11,11 +11,11 @@ struct ToolPermissionGuard {
 
     func evaluate(
         toolCall: ToolCall,
-        autoApproveRisk: Bool,
+        chatMode: ChatMode,
         requiresPermission: Bool,
         riskLevel: CommandRiskLevel
     ) -> Result {
-        guard requiresPermission && !autoApproveRisk else {
+        guard requiresPermission && !chatMode.autoApproveRisk else {
             return .proceed
         }
 

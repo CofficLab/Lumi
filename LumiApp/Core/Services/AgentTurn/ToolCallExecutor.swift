@@ -11,7 +11,7 @@ final class ToolCallExecutor: SuperLog {
 
     private let toolExecutionService: ToolExecutionService
     private let toolService: ToolService
-    private let projectVM: WindowProjectVM
+    private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
     private let conversationSendStatusVM: WindowConversationStatusVM
     private let conversationVM: WindowConversationVM
@@ -19,14 +19,14 @@ final class ToolCallExecutor: SuperLog {
     init(
         toolExecutionService: ToolExecutionService,
         toolService: ToolService,
-        projectVM: WindowProjectVM,
+        agentSessionConfig: AppLLMVM,
         permissionRequestVM: WindowPermissionRequestVM,
         conversationSendStatusVM: WindowConversationStatusVM,
         conversationVM: WindowConversationVM
     ) {
         self.toolExecutionService = toolExecutionService
         self.toolService = toolService
-        self.projectVM = projectVM
+        self.agentSessionConfig = agentSessionConfig
         self.permissionRequestVM = permissionRequestVM
         self.conversationSendStatusVM = conversationSendStatusVM
         self.conversationVM = conversationVM
@@ -42,6 +42,8 @@ final class ToolCallExecutor: SuperLog {
         var message = message
         guard var calls = message.toolCalls else { return message }
 
+        let autoApproveRisk = agentSessionConfig.chatMode.autoApproveRisk
+
         for i in calls.indices {
             let risk = evaluateRiskSync(toolName: calls[i].name, arguments: calls[i].arguments)
 
@@ -51,7 +53,7 @@ final class ToolCallExecutor: SuperLog {
 
             if !risk.requiresPermission {
                 calls[i].authorizationState = .noRisk
-            } else if projectVM.autoApproveRisk {
+            } else if autoApproveRisk {
                 calls[i].authorizationState = .autoApproved
             } else {
                 calls[i].authorizationState = .pendingAuthorization

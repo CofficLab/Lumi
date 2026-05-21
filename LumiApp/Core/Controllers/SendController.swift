@@ -33,7 +33,7 @@ final class SendController: ObservableObject, SuperLog {
         let toolCallExecutor = ToolCallExecutor(
             toolExecutionService: global.toolExecutionService,
             toolService: global.toolService,
-            projectVM: windowContainer.projectVM,
+            agentSessionConfig: global.agentSessionConfig,
             permissionRequestVM: windowContainer.permissionRequestVM,
             conversationSendStatusVM: windowContainer.conversationSendStatusVM,
             conversationVM: windowContainer.conversationVM
