@@ -90,6 +90,10 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
     }
 
+    deinit {
+        shutdown()
+    }
+
     private func ensureServices() async {
         await MainActor.run {
             if self.inferenceService == nil {
@@ -334,6 +338,22 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     /// 停止生成
     public func stopGeneration() {
         Task { @MainActor in self.inferenceService?.stopGeneration() }
+    }
+
+    public func shutdown() {
+        downloadCancellables.removeAll()
+        downloadManager?.shutdown()
+        modelManager?.stopMonitoring()
+
+        let inferenceService = inferenceService
+        Task { @MainActor in
+            inferenceService?.unloadModel()
+        }
+
+        self.inferenceService = nil
+        self.modelManager = nil
+        self.downloadManager = nil
+        self.currentModelId = nil
     }
 
     /// 获取生成速度

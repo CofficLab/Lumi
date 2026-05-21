@@ -14,7 +14,7 @@ final class AgentGitToolsPluginTests: XCTestCase {
 
     @MainActor
     func testPluginExposesGitAgentTools() async {
-        let context = ToolContext(toolService: ToolService(), llmService: nil)
+        let context = ToolContext(toolService: ToolService(), llmService: nil, llmVM: nil, conversationVM: nil)
         let tools = await GitToolsPlugin.shared.agentTools(context: context)
 
         XCTAssertEqual(tools.count, 3)

@@ -16,6 +16,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     @Published var sqliteTables: [String] = []
 
     private let manager = DatabaseManager.shared
+    nonisolated(unsafe) private var connectedConfigId: UUID?
 
     init() {
         Task {
@@ -31,6 +32,14 @@ class DatabaseViewModel: ObservableObject, SuperLog {
         configs.append(demoConfig) // In-memory DB
         Task {
             await DatabaseAgentConnectionRegistry.shared.upsert(demoConfig)
+        }
+    }
+
+    deinit {
+        let configId = connectedConfigId
+        Task { [manager, configId] in
+            guard let configId else { return }
+            await manager.disconnect(configId: configId)
         }
     }
 
@@ -52,8 +61,12 @@ class DatabaseViewModel: ObservableObject, SuperLog {
         isLoading = true
         errorMessage = nil
         do {
+            if let previousConfig = selectedConfig, previousConfig.id != config.id {
+                await manager.disconnect(configId: previousConfig.id)
+            }
             _ = try await manager.connect(config: config)
             selectedConfig = config
+            connectedConfigId = config.id
             isConnected = true
             
             // 根据类型设置默认查询/命令
@@ -98,6 +111,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
         await manager.disconnect(configId: config.id)
         isConnected = false
         selectedConfig = nil
+        connectedConfigId = nil
         queryResult = nil
     }
 

@@ -11,10 +11,18 @@ struct ProjectControlView: View {
     @State private var branch: String?
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
-        let projectName = projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName
+        if !projectVM.isProjectSelected {
+            EmptyView()
+        } else {
+            projectControlContent
+        }
+    }
 
-        HStack(spacing: 6) {
+    private var projectControlContent: some View {
+        let theme = themeVM.activeAppTheme
+        let projectName = projectVM.currentProjectName
+
+        return HStack(spacing: 6) {
             Text(projectName)
                 .fontWeight(.medium)
                 .lineLimit(1)

@@ -1,0 +1,227 @@
+import Foundation
+import os
+
+/// 窗口状态持久化存储（`window_states.json` 读写）
+final class WindowStateStore: @unchecked Sendable, SuperLog {
+    nonisolated static var emoji: String { WindowPersistencePlugin.emoji }
+    nonisolated static var verbose: Bool { WindowPersistencePlugin.verbose }
+    nonisolated static var logger: Logger { WindowPersistencePlugin.logger }
+
+    static let shared = WindowStateStore()
+
+    private let queue = DispatchQueue(label: "WindowStateStore.queue", qos: .userInitiated)
+
+    private static let pluginDirName = "WindowPersistence"
+    private static let settingsDirName = "settings"
+    private static let statesFileName = "window_states.json"
+    static let maxPersistedWindowCount = 20
+
+    private init() {}
+
+    // MARK: - Save
+
+    func saveProject(
+        windowId: UUID,
+        projectPath: String?,
+        createdAt: Date? = nil
+    ) {
+        merge(windowId: windowId) { existing in
+            WindowPersistenceRecord(
+                windowId: windowId,
+                conversationId: existing?.conversationId,
+                projectPath: projectPath,
+                editorOpenFilePaths: existing?.editorOpenFilePaths,
+                editorActiveFilePath: existing?.editorActiveFilePath,
+                sidebarVisibility: existing?.sidebarVisibility,
+                createdAt: existing?.createdAt ?? createdAt
+            )
+        }
+        logSave(field: "project", windowId: windowId, detail: projectPath)
+    }
+
+    func saveConversation(windowId: UUID, conversationId: UUID?) {
+        merge(windowId: windowId) { existing in
+            WindowPersistenceRecord(
+                windowId: windowId,
+                conversationId: conversationId,
+                projectPath: existing?.projectPath,
+                editorOpenFilePaths: existing?.editorOpenFilePaths,
+                editorActiveFilePath: existing?.editorActiveFilePath,
+                sidebarVisibility: existing?.sidebarVisibility,
+                createdAt: existing?.createdAt
+            )
+        }
+        logSave(field: "conversation", windowId: windowId, detail: conversationId?.uuidString)
+    }
+
+    func saveSidebar(windowId: UUID, sidebarVisibility: Bool) {
+        merge(windowId: windowId) { existing in
+            WindowPersistenceRecord(
+                windowId: windowId,
+                conversationId: existing?.conversationId,
+                projectPath: existing?.projectPath,
+                editorOpenFilePaths: existing?.editorOpenFilePaths,
+                editorActiveFilePath: existing?.editorActiveFilePath,
+                sidebarVisibility: sidebarVisibility,
+                createdAt: existing?.createdAt
+            )
+        }
+        logSave(field: "sidebar", windowId: windowId, detail: String(sidebarVisibility))
+    }
+
+    func saveEditor(
+        windowId: UUID,
+        editorOpenFilePaths: [String]?,
+        editorActiveFilePath: String?
+    ) {
+        merge(windowId: windowId) { existing in
+            WindowPersistenceRecord(
+                windowId: windowId,
+                conversationId: existing?.conversationId,
+                projectPath: existing?.projectPath,
+                editorOpenFilePaths: editorOpenFilePaths,
+                editorActiveFilePath: editorActiveFilePath,
+                sidebarVisibility: existing?.sidebarVisibility,
+                createdAt: existing?.createdAt
+            )
+        }
+        logSave(field: "editor", windowId: windowId, detail: editorActiveFilePath)
+    }
+
+    func saveAll(_ records: [WindowPersistenceRecord]) {
+        let capped = Array(records.prefix(Self.maxPersistedWindowCount))
+        queue.async { [self] in
+            persist(capped)
+        }
+    }
+
+    func saveAllSynchronously(_ records: [WindowPersistenceRecord]) {
+        let capped = Array(records.prefix(Self.maxPersistedWindowCount))
+        queue.sync { [self] in
+            persist(capped)
+        }
+    }
+
+    // MARK: - Load
+
+    func loadAll() -> [WindowPersistenceRecord] {
+        Array(loadWindowStates().prefix(Self.maxPersistedWindowCount))
+    }
+
+    func record(for windowId: UUID) -> WindowPersistenceRecord? {
+        loadWindowStates().first { $0.windowId == windowId }
+    }
+
+    // MARK: - Internal
+
+    private func merge(
+        windowId: UUID,
+        build: (WindowPersistenceRecord?) -> WindowPersistenceRecord
+    ) {
+        let existing = loadWindowStates().first { $0.windowId == windowId }
+        let updated = build(existing)
+        queue.async { [self] in
+            var records = loadRecords()
+            if let index = records.firstIndex(where: { $0.windowId == windowId }) {
+                records[index] = updated
+            } else {
+                records.append(updated)
+            }
+            persist(records)
+        }
+    }
+
+    private func loadWindowStates() -> [WindowPersistenceRecord] {
+        queue.sync { loadRecords() }
+    }
+
+    private func loadRecords() -> [WindowPersistenceRecord] {
+        let fileURL = statesFileURL()
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)window_states.json missing at \(fileURL.path, privacy: .public)")
+            }
+            return []
+        }
+        guard let data = try? Data(contentsOf: fileURL) else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)failed to read window_states.json")
+            }
+            return []
+        }
+        do {
+            let records = try JSONDecoder().decode([WindowPersistenceRecord].self, from: data)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)decoded \(records.count, privacy: .public) window state record(s)")
+            }
+            return records
+        } catch {
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)decode window_states.json failed: \(String(describing: error), privacy: .public)"
+                )
+            }
+            return []
+        }
+    }
+
+    private func persist(_ records: [WindowPersistenceRecord]) {
+        guard let data = try? JSONEncoder().encode(records) else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)failed to encode window state records")
+            }
+            return
+        }
+
+        let fileManager = FileManager.default
+        let settingsDir = settingsDirURL()
+        do {
+            try fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)failed to create settings dir: \(String(describing: error), privacy: .public)"
+                )
+            }
+            return
+        }
+
+        let fileURL = statesFileURL()
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            if Self.verbose {
+                let projectSummary = records
+                    .map { $0.projectPath ?? "nil" }
+                    .joined(separator: ", ")
+                Self.logger.info(
+                    "\(Self.t)persisted \(records.count, privacy: .public) record(s) at \(fileURL.path, privacy: .public); projects=[\(projectSummary, privacy: .public)]"
+                )
+            }
+        } catch {
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)failed to write \(fileURL.path, privacy: .public): \(String(describing: error), privacy: .public)"
+                )
+            }
+        }
+    }
+
+    private func settingsDirURL() -> URL {
+        AppConfig.getDBFolderURL()
+            .appendingPathComponent(Self.pluginDirName, isDirectory: true)
+            .appendingPathComponent(Self.settingsDirName, isDirectory: true)
+    }
+
+    private func statesFileURL() -> URL {
+        settingsDirURL()
+            .appendingPathComponent(Self.statesFileName, isDirectory: false)
+    }
+
+    private func logSave(field: String, windowId: UUID, detail: String?) {
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)save \(field, privacy: .public) window=\(windowId.uuidString.prefix(8), privacy: .public) value=\(detail ?? "nil", privacy: .public)"
+            )
+        }
+    }
+}

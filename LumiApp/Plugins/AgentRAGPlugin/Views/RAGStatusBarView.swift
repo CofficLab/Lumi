@@ -79,6 +79,7 @@ struct RAGStatusBarView: View, SuperLog {
                 loadingText
             }
         }
+        .foregroundColor(.white)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
@@ -87,34 +88,28 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private var statusIcon: some View {
-        // 状态图标保留颜色以区分状态
+        // 状态图标使用统一白色，与其他插件保持一致
         if isIndexing {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.system(size: 10))
-                .foregroundColor(.blue)
                 .symbolEffect(.rotate, options: .repeating)
         } else if let status = indexStatus {
             if status.isStale {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.orange)
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.green)
             }
         } else if isNotInitialized {
             Image(systemName: "poweroff")
                 .font(.system(size: 10))
-                .foregroundColor(.gray)
         } else if hasError {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 10))
-                .foregroundColor(.red)
         } else {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 10))
-                .foregroundColor(.gray)
         }
     }
 

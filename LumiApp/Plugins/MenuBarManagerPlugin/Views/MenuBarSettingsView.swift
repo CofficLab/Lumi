@@ -71,6 +71,7 @@ struct MenuBarSettingsView: View {
         }
         .padding()
         .onAppear {
+            service.startMonitoring()
             service.checkPermission()
         }
     }

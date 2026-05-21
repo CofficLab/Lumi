@@ -25,10 +25,17 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DeviceInfoPlugin()
 
-    init() {
+    nonisolated func onEnable() {
         Task { @MainActor in
             CPUHistoryService.shared.startRecording()
-            _ = MemoryHistoryService.shared
+            MemoryHistoryService.shared.startRecording()
+        }
+    }
+
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            CPUHistoryService.shared.stopRecording()
+            MemoryHistoryService.shared.stopRecording()
         }
     }
 

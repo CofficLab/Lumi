@@ -2261,6 +2261,10 @@ public final class EditorState: ObservableObject, SuperLog {
         resetUndoHistory()
         syncActiveSessionState()
     }
+
+    func cleanupForTeardown() {
+        resetState()
+    }
     
     /// 加载二进制/非文本文件进行预览
     /// 不尝试解析内容，只设置文件元数据，供 QuickLook 预览使用

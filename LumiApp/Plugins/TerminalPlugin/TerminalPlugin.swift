@@ -1,4 +1,5 @@
 import SwiftUI
+import TerminalCoreKit
 
 actor TerminalPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
@@ -24,7 +25,11 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onEnable() {}
 
-    nonisolated func onDisable() {}
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            TerminalTabsViewModel.shared.closeAllSessions()
+        }
+    }
 
     // MARK: - UI (Sidebar Panel)
 

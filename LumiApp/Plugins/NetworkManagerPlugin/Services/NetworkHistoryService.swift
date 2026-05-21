@@ -47,7 +47,9 @@ class NetworkHistoryService: ObservableObject, SuperLog {
     // Long term history (low resolution: 1 point per minute for last 30 days)
     @Published var longTermHistory: [NetworkDataPoint] = []
     
-    private var cancellables = Set<AnyCancellable>()
+    private var recordingCancellables = Set<AnyCancellable>()
+    private var autosaveCancellable: AnyCancellable?
+    private var isRecording = false
     private var lastMinuteSampleTime: TimeInterval = 0
     private var minuteAccumulator: (down: Double, up: Double, count: Int) = (0, 0, 0)
     
@@ -66,17 +68,12 @@ class NetworkHistoryService: ObservableObject, SuperLog {
     private init() {
         loadHistory()
         startRecording()
-        
-        // Auto save every 5 minutes
-        Timer.publish(every: 300, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.saveHistory()
-            }
-            .store(in: &cancellables)
     }
     
     func startRecording() {
+        guard !isRecording else { return }
+        isRecording = true
+
         NetworkService.shared.startMonitoring()
         NetworkService.shared.$downloadSpeed
             .combineLatest(NetworkService.shared.$uploadSpeed)
@@ -84,7 +81,30 @@ class NetworkHistoryService: ObservableObject, SuperLog {
             .sink { [weak self] (down, up) in
                 self?.recordDataPoint(down: down, up: up)
             }
-            .store(in: &cancellables)
+            .store(in: &recordingCancellables)
+
+        startAutosave()
+    }
+
+    func stopRecording() {
+        guard isRecording else { return }
+
+        saveHistory()
+        isRecording = false
+        recordingCancellables.removeAll()
+        autosaveCancellable?.cancel()
+        autosaveCancellable = nil
+        NetworkService.shared.stopMonitoring()
+    }
+
+    private func startAutosave() {
+        guard autosaveCancellable == nil else { return }
+
+        autosaveCancellable = Timer.publish(every: 300, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.saveHistory()
+            }
     }
     
     private func recordDataPoint(down: Double, up: Double) {

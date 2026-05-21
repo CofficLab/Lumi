@@ -12,14 +12,14 @@ struct WindowCommand: Commands {
         CommandGroup(after: .newItem) {
             Button("新建窗口") {
                 openWindow(
-                    id: MainWindowID.main,
+                    id: AppConfig.mainWindowID,
                     value: LumiWindowRoute()
                 )
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
             .onReceive(NotificationCenter.default.publisher(for: .openWindowWithRoute)) { notification in
                 if let route = notification.userInfo?["route"] as? LumiWindowRoute {
-                    openWindow(id: MainWindowID.main, value: route)
+                    openWindow(id: AppConfig.mainWindowID, value: route)
                 }
             }
         }

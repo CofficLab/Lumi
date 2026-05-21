@@ -1,6 +1,30 @@
 import Foundation
 import SwiftUI
 
+private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
+    private var observer: NSObjectProtocol?
+
+    var hasObserver: Bool {
+        observer != nil
+    }
+
+    deinit {
+        remove()
+    }
+
+    func set(_ observer: NSObjectProtocol) {
+        remove()
+        self.observer = observer
+    }
+
+    func remove() {
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+            self.observer = nil
+        }
+    }
+}
+
 /// AutoTask 右侧栏视图模型
 ///
 /// 负责获取并展示当前会话的任务列表。
@@ -16,15 +40,14 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     @Published var isLoading: Bool = false
 
     private var currentConversationId: String?
-    private var notificationObserver: NSObjectProtocol?
+    private nonisolated let notificationObserverHolder = AutoTaskNotificationObserverHolder()
 
-    // nonisolated deinit 无法访问 @MainActor 属性，
-    // 在 view 消失时通过 onDisappear 移除观察者
+    deinit {
+        notificationObserverHolder.remove()
+    }
+
     func removeObserver() {
-        if let observer = notificationObserver {
-            NotificationCenter.default.removeObserver(observer)
-            notificationObserver = nil
-        }
+        notificationObserverHolder.remove()
     }
 
     /// 刷新当前会话的任务列表
@@ -41,11 +64,11 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
         currentConversationId = cid
 
         // 首次绑定通知（仅一次）
-        if notificationObserver == nil {
+        if !notificationObserverHolder.hasObserver {
             if AutoTaskPlugin.verbose {
                             AutoTaskPlugin.logger.info("\(Self.t)Registering autoTaskDidChange observer")
             }
-            notificationObserver = NotificationCenter.default.addObserver(
+            let observer = NotificationCenter.default.addObserver(
                 forName: .autoTaskDidChange,
                 object: nil,
                 queue: .main
@@ -64,6 +87,7 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
                     }
                 }
             }
+            notificationObserverHolder.set(observer)
         }
 
         // 会话切换或任务变更时都刷新

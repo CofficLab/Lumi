@@ -25,12 +25,12 @@ import SwiftUI
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。n每个窗口有独立的 `EditorService` 实例。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。n每个窗口有独立的 `EditorService` 实例。
 /// ```
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。
 /// 每个窗口有独立的 `EditorService` 实例。
 @MainActor
@@ -71,5 +71,10 @@ final class WindowEditorVM: ObservableObject {
     /// 解决 AppThemeVM 初始化时发出的通知在 EditorState 注册监听之前已发出的时序问题。
     func syncInitialEditorTheme(_ editorThemeId: String) {
         service.syncInitialThemeFromExternal(editorThemeId)
+    }
+
+    func cleanupForTeardown() {
+        cancellables.removeAll()
+        service.cleanupForTeardown()
     }
 }

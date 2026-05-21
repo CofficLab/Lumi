@@ -175,6 +175,8 @@ final class CodeServerManager: ObservableObject, SuperLog {
     // MARK: - Private
 
     private var process: Process?
+    private var outputHandle: FileHandle?
+    private var errorHandle: FileHandle?
 
     /// 默认写入 settings.json 的配置项
     private static let defaultSettings: [String: Any] = CodeServerDefaultSettings.values
@@ -274,7 +276,8 @@ final class CodeServerManager: ObservableObject, SuperLog {
         task.standardError = errPipe
 
         let outHandle = outPipe.fileHandleForReading
-        outHandle.readabilityHandler = { [weak self] handle in
+        outputHandle = outHandle
+        outHandle.readabilityHandler = { handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
                 if CodeServerPlugin.verbose {
@@ -284,7 +287,8 @@ final class CodeServerManager: ObservableObject, SuperLog {
         }
 
         let errHandle = errPipe.fileHandleForReading
-        errHandle.readabilityHandler = { [weak self] handle in
+        errorHandle = errHandle
+        errHandle.readabilityHandler = { handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
                 if CodeServerPlugin.verbose {
@@ -295,6 +299,7 @@ final class CodeServerManager: ObservableObject, SuperLog {
 
         task.terminationHandler = { [weak self] _ in
             Task { @MainActor [weak self] in
+                self?.clearProcessHandlers()
                 self?.isRunning = false
                 self?.process = nil
             }
@@ -309,6 +314,7 @@ final class CodeServerManager: ObservableObject, SuperLog {
                             CodeServerPlugin.logger.info("\(self.t)已启动，端口：\(port)，数据目录：\(self.dataDirectory.path)")
             }
         } catch {
+            clearProcessHandlers()
             errorMessage = "启动 code-server 失败: \(error.localizedDescription)"
             if CodeServerPlugin.verbose {
                             CodeServerPlugin.logger.error("\(self.t)启动失败：\(error.localizedDescription)")
@@ -320,6 +326,7 @@ final class CodeServerManager: ObservableObject, SuperLog {
     func stop() {
         guard isRunning else { return }
 
+        clearProcessHandlers()
         process?.terminate()
         process?.waitUntilExit()
         process = nil
@@ -327,6 +334,14 @@ final class CodeServerManager: ObservableObject, SuperLog {
         if CodeServerPlugin.verbose {
                     CodeServerPlugin.logger.info("\(self.t)已停止")
         }
+    }
+
+    private func clearProcessHandlers() {
+        outputHandle?.readabilityHandler = nil
+        errorHandle?.readabilityHandler = nil
+        process?.terminationHandler = nil
+        outputHandle = nil
+        errorHandle = nil
     }
 
     /// 检查 code-server 是否可访问

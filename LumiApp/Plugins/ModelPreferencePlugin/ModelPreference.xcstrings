@@ -1,96 +1,12 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Model Monitor": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Model Monitor"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模型偏好"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "needsReview",
-            "value": "模型偏好"
-          }
-        }
-      }
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Model Preference" : {
+
     },
-    "Model Preference": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Model Preference"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模型偏好"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模型偏好"
-          }
-        }
-      }
-    },
-    "Remember current project's provider and model": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remember current project's provider and model"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "记录当前项目使用的供应商和模型"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "needsReview",
-            "value": "记录当前项目使用的供应商和模型"
-          }
-        }
-      }
-    },
-    "Remember provider and model per conversation and project": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remember provider and model per conversation and project"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为每个对话和项目记住供应商和模型"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為每個對話和專案記住供應商和模型"
-          }
-        }
-      }
+    "Remember provider and model per conversation" : {
+
     }
   },
-  "version": "1.1"
+  "version" : "1.0"
 }

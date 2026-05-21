@@ -11,10 +11,14 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     @Published var errorMessage: String?
 
     private let service = DirectoryTreeService.shared
-    private var scanTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
 
     private let scanPath: String = FileManager.default.homeDirectoryForCurrentUser.path
+
+    deinit {
+        scanTasks.cancel()
+        Task { await DirectoryTreeService.shared.cancelScan() }
+    }
 
     func startScan() {
         guard !isScanning else { return }
@@ -30,8 +34,8 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
         scanProgress = nil
         errorMessage = nil
 
-        progressTask?.cancel()
-        progressTask = Task {
+        scanTasks.cancelProgress()
+        scanTasks.progressTask = Task {
             let stream = await service.progressStream()
             for await progress in stream {
                 if Task.isCancelled { break }
@@ -39,8 +43,8 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
             }
         }
 
-        scanTask?.cancel()
-        scanTask = Task {
+        scanTasks.scanTask?.cancel()
+        scanTasks.scanTask = Task {
             do {
                 let entries = try await self.service.scanDirectoryTree(atPath: self.scanPath)
                 if !Task.isCancelled {
@@ -48,7 +52,7 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
                         self.rootEntries = entries
                         self.isScanning = false
                         self.scanProgress = nil
-                        self.progressTask?.cancel()
+                        self.scanTasks.cancelProgress()
                     }
                 }
             } catch {
@@ -57,7 +61,7 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
                         self.errorMessage = error.localizedDescription
                         self.isScanning = false
                         self.scanProgress = nil
-                        self.progressTask?.cancel()
+                        self.scanTasks.cancelProgress()
                     }
                 }
             }
@@ -70,11 +74,15 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
                             DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
             }
         }
-        scanTask?.cancel()
-        progressTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
         scanProgress = nil
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func revealInFinder(_ entry: DirectoryEntry) {
@@ -92,4 +100,3 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
         Self.byteFormatter.string(fromByteCount: bytes)
     }
 }
-

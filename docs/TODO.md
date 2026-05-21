@@ -511,12 +511,12 @@
 
 ## 18. 多窗口作用域重构 — 收尾
 
-> WindowScope 架构已全部落地。剩余少量代码清理和集成验证。
+> WindowContainer 架构已全部落地。剩余少量代码清理和集成验证。
 
 ### 代码清理
 
-- [ ] 清理 `AgentTurnNotificationOverlay.swift` 中 `RootContainer.shared.conversationVM` 直接访问，改为通过 environment 或 WindowScope 获取
-- [ ] 清理 `SplitViewPersistence.swift` 中 `RootContainer.shared.layoutVM` 直接访问（2处），改为通过 environment 或 WindowScope 获取
+- [ ] 清理 `AgentTurnNotificationOverlay.swift` 中 `RootContainer.shared.conversationVM` 直接访问，改为通过 environment 或 WindowContainer 获取
+- [ ] 清理 `SplitViewPersistence.swift` 中 `RootContainer.shared.layoutVM` 直接访问（2处），改为通过 environment 或 WindowContainer 获取
 
 ### 集成验证
 

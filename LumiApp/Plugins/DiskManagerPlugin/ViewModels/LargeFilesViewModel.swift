@@ -11,12 +11,16 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
     @Published var errorMessage: String?
 
     private let service = LargeFilesService.shared
-    private var scanTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var progressReceivedCount: Int = 0
     private var lastProgressLogAt: Date = .distantPast
 
     private let scanPath: String = FileManager.default.homeDirectoryForCurrentUser.path
+
+    deinit {
+        scanTasks.cancel()
+        Task { await LargeFilesService.shared.cancelScan() }
+    }
 
     func startScan() {
         guard !isScanning else { return }
@@ -34,8 +38,8 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
         progressReceivedCount = 0
         lastProgressLogAt = .distantPast
 
-        progressTask?.cancel()
-        progressTask = Task {
+        scanTasks.cancelProgress()
+        scanTasks.progressTask = Task {
             let stream = await service.progressStream()
             for await progress in stream {
                 if Task.isCancelled { break }
@@ -55,8 +59,8 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
             }
         }
 
-        scanTask?.cancel()
-        scanTask = Task {
+        scanTasks.scanTask?.cancel()
+        scanTasks.scanTask = Task {
             try? await TaskService.shared.run(
                 title: String(localized: "Disk Scan: \(URL(fileURLWithPath: scanPath).lastPathComponent)"),
                 priority: .userInitiated
@@ -70,7 +74,7 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                             self.largeFiles = files
                             self.isScanning = false
                             self.scanProgress = nil
-                            self.progressTask?.cancel()
+                            self.scanTasks.cancelProgress()
                             if Self.verbose {
                                 if DiskManagerPlugin.verbose {
                                                                     DiskManagerPlugin.logger.info("\(self.t)大文件扫描完成，发现 \(files.count) 个大文件")
@@ -84,7 +88,7 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                             self.errorMessage = error.localizedDescription
                             self.isScanning = false
                             self.scanProgress = nil
-                            self.progressTask?.cancel()
+                            self.scanTasks.cancelProgress()
                         }
                         throw error
                     }
@@ -99,11 +103,15 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                             DiskManagerPlugin.logger.info("\(self.t)停止扫描大文件")
             }
         }
-        scanTask?.cancel()
-        progressTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
         scanProgress = nil
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func deleteFile(_ item: LargeFileEntry) {

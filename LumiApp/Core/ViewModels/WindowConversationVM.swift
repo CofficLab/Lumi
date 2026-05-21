@@ -6,12 +6,12 @@ import SwiftUI
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
 /// 会话管理 ViewModel
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var conversationVM: WindowConversationVM` 访问。
 @MainActor
 final class WindowConversationVM: ObservableObject, SuperLog {
@@ -19,13 +19,24 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
+    
     // MARK: - 服务依赖
 
     /// 聊天历史服务
     ///
     /// 负责会话和消息的持久化操作。
     private let chatHistoryService: ChatHistoryService
+
+    /// 提示词服务
+    ///
+    /// 用于生成系统上下文消息和欢迎消息。
+    private let promptService: PromptService
+
+    /// Agent 会话配置
+    ///
+    /// 用于获取当前聊天模式。
+    private let agentSessionConfig: AppLLMVM
 
     // MARK: - 会话状态
 
@@ -46,13 +57,16 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///
     /// - Parameters:
     ///   - chatHistoryService: 聊天历史服务
+    ///   - promptService: 提示词服务
+    ///   - agentSessionConfig: Agent 会话配置
     init(
-        chatHistoryService: ChatHistoryService
+        chatHistoryService: ChatHistoryService,
+        promptService: PromptService,
+        agentSessionConfig: AppLLMVM
     ) {
         self.chatHistoryService = chatHistoryService
-
-        // 启动时如果没有任何插件恢复会话选择，这里会自动选择一个有效会话
-        selfHealSelectedConversationIfNeeded()
+        self.promptService = promptService
+        self.agentSessionConfig = agentSessionConfig
     }
 
     // MARK: - 会话管理
@@ -109,6 +123,30 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         return (providerId, model)
     }
 
+    /// 保存当前对话的聊天模式偏好
+    /// - Parameter chatMode: 聊天模式，传入 nil 表示清除对话级偏好
+    func saveChatModePreference(_ chatMode: ChatMode?) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存聊天模式")
+            }
+            return
+        }
+        chatHistoryService.updateChatMode(conversation, chatMode: chatMode?.rawValue)
+    }
+
+    /// 获取当前对话的聊天模式偏好
+    /// - Returns: 聊天模式，如果对话未指定则返回 nil
+    func getChatModePreference() -> ChatMode? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let rawValue = conversation.chatMode else {
+            return nil
+        }
+        return ChatMode(rawValue: rawValue)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
@@ -157,58 +195,22 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     // MARK: - 会话选择
 
     /// 设置当前选中的会话
-    /// - Parameter id: 会话 ID，传入 nil 表示清除选择
-    func setSelectedConversation(_ id: UUID?) {
+    /// - Parameters:
+    ///   - id: 会话 ID，传入 nil 表示清除选择
+    ///   - reason: 触发本次选择变更的原因（用于日志追踪）
+    func setSelectedConversation(_ id: UUID?, reason: String) {
         // 避免重复设置相同的 ID
         guard selectedConversationId != id else {
-            if let existingId = id, Self.verbose {
-                AppLogger.core.info("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(existingId)")
+            if Self.verbose {
+                let idLabel = id?.uuidString ?? "nil"
+                AppLogger.core.info("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(idLabel), reason: \(reason)")
             }
             return
         }
 
         selectedConversationId = id
-    }
-
-    /// 启动时自愈当前选中会话
-    ///
-    /// - 如果 `selectedConversationId` 指向的会话在数据库中已不存在：
-    ///   - 若还有其他会话：自动切换到最新的一个
-    ///   - 若一个会话都没有：清空选中状态
-    /// - 如果本地没有记录任何选中 ID，但数据库中存在会话：
-    ///   - 自动选中最新的一个，避免用户打开时看到完全空白状态
-    private func selfHealSelectedConversationIfNeeded() {
-        // 情况 1：有记录的 ID，但数据库中不存在对应会话
-        if let id = selectedConversationId,
-           fetchConversation(id: id) == nil {
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)⚠️ [\(id)] 恢复的会话在数据库中不存在，尝试自动修正")
-            }
-
-            let all = fetchAllConversations()
-            if let first = all.first {
-                // 切换到最新的一个有效会话
-                selectedConversationId = first.id
-                if Self.verbose {
-                    AppLogger.core.info("\(Self.t)✅ 已自动切换到最新对话：\(first.id)")
-                }
-            } else {
-                // 没有任何会话，清空状态
-                selectedConversationId = nil
-            }
-            return
-        }
-
-        // 情况 2：没有记录选中 ID，但数据库中已经有对话
-        if selectedConversationId == nil {
-            let all = fetchAllConversations()
-            if let first = all.first {
-                selectedConversationId = first.id
-                if Self.verbose {
-                    AppLogger.core.info("\(Self.t)✅ 未记录选中会话，已自动选中最新对话：\(first.id)")
-                }
-            }
-        }
+        let idLabel = id?.uuidString ?? "nil"
+        AppLogger.core.info("\(Self.t)选中会话: \(idLabel), reason: \(reason)")
     }
 
     // MARK: - 获取会话列表
@@ -250,12 +252,64 @@ final class WindowConversationVM: ObservableObject, SuperLog {
             return false
         }
 
-        setSelectedConversation(conversation.id)
+        setSelectedConversation(conversation.id, reason: "switchToLatestForProject")
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📁 已切换到项目 [\(projectId)] 的最近对话：\(conversation.title)")
         }
 
         return true
+    }
+
+    // MARK: - 会话创建
+
+    /// 创建新会话
+    ///
+    /// 执行创建新会话的完整流程：创建会话记录、选中、注入系统上下文消息和欢迎消息。
+    ///
+    /// - Parameters:
+    ///   - projectName: 当前项目名称，为 nil 表示未选择项目
+    ///   - projectPath: 当前项目路径，为 nil 表示未选择项目
+    ///   - languagePreference: 语言偏好
+    func createNewConversation(
+        projectName: String? = nil,
+        projectPath: String? = nil,
+        languagePreference: LanguagePreference = .chinese
+    ) async {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+
+        let conversation = chatHistoryService.createConversation(
+            projectId: projectPath,
+            title: "新会话 " + formatter.string(from: Date()),
+            chatMode: agentSessionConfig.chatMode.rawValue
+        )
+
+        setSelectedConversation(conversation.id, reason: "createNewConversation")
+        NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
+
+        let systemMessage = await promptService.getSystemContextMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !systemMessage.isEmpty {
+            saveMessage(
+                ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage),
+                to: conversation.id
+            )
+        }
+
+        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !welcomeMessage.isEmpty {
+            saveMessage(
+                ChatMessage(role: .assistant, conversationId: conversation.id, content: welcomeMessage),
+                to: conversation.id
+            )
+        }
     }
 }

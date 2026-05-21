@@ -33,6 +33,7 @@ final class LSPService: ObservableObject, SuperLog {
     private var projectRootPath: String?
     private var serverStartTask: Task<LanguageServer?, Never>?
     private var serverStartSignature: String?
+    private var lifecycleGeneration: UInt64 = 0
     
     private var changeDebounceTimer: Timer?
     private var pendingChanges: [LanguageServer.DocumentChange] = []
@@ -109,21 +110,30 @@ final class LSPService: ObservableObject, SuperLog {
             _ = await serverStartTask.value
         }
 
+        let generation = lifecycleGeneration
         let task = Task<LanguageServer?, Never> { @MainActor [weak self] in
             guard let self else { return nil }
-            return await self.startServerInternal(for: languageId, projectPath: projectPath)
+            return await self.startServerInternal(
+                for: languageId,
+                projectPath: projectPath,
+                generation: generation
+            )
         }
         serverStartTask = task
         serverStartSignature = signature
         let startedServer = await task.value
-        if serverStartSignature == signature {
+        if lifecycleGeneration == generation, serverStartSignature == signature {
             serverStartTask = nil
             serverStartSignature = nil
         }
         return startedServer
     }
 
-    private func startServerInternal(for languageId: String, projectPath: String) async -> LanguageServer? {
+    private func startServerInternal(
+        for languageId: String,
+        projectPath: String,
+        generation: UInt64
+    ) async -> LanguageServer? {
         // 不在此处调用 projectOpened — 由 EditorPanelService.refreshProjectContext() 统一负责。
         // 这里只检查 build context 是否已就绪（纯 O(1) 读取），避免重复触发 scheme 解析
         // 和 buildServer.json 生成。
@@ -177,6 +187,11 @@ final class LSPService: ObservableObject, SuperLog {
                 }
             }
             
+            guard lifecycleGeneration == generation, !Task.isCancelled else {
+                try? await newServer.shutdown()
+                return nil
+            }
+
             server = newServer
             isInitializing = false
             if Self.verbose {
@@ -256,6 +271,12 @@ final class LSPService: ObservableObject, SuperLog {
             }
         }
 
+        let previousURI = currentURI
+        let canClosePreviousOnCurrentServer = previousURI != nil
+            && previousURI != uri
+            && server != nil
+            && activeLanguageId == languageId
+
         if server == nil || activeLanguageId != languageId {
             if let root = projectRootPath {
                 _ = await ensureServer(for: languageId, projectPath: root)
@@ -268,6 +289,13 @@ final class LSPService: ObservableObject, SuperLog {
         }
         
         guard let server else { return }
+
+        if let previousURI, previousURI != uri {
+            if canClosePreviousOnCurrentServer {
+                await closeDocumentOnServer(uri: previousURI, server: server)
+            }
+            clearLocalDocumentState(matching: previousURI)
+        }
         
         currentURI = uri
         currentVersion = version
@@ -285,21 +313,26 @@ final class LSPService: ObservableObject, SuperLog {
     }
     
     func closeDocument(uri: String) {
+        let server = server
+        clearLocalDocumentState(matching: uri)
         guard let server else { return }
         Task {
             do {
                 try await server.closeDocument(uri: uri)
-                if currentURI == uri {
-                    currentURI = nil
-                    currentVersion = 0
-                    currentDiagnostics = []
-                    latestDocumentSnapshot = nil
-                    pendingChanges.removeAll()
-                }
             } catch {
                 if Self.verbose {
                                     Self.logger.error("\(Self.t)关闭文档失败: \(error)")
                 }
+            }
+        }
+    }
+
+    private func closeDocumentOnServer(uri: String, server: LanguageServer) async {
+        do {
+            try await server.closeDocument(uri: uri)
+        } catch {
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)关闭旧文档失败: \(error)")
             }
         }
     }
@@ -996,6 +1029,13 @@ final class LSPService: ObservableObject, SuperLog {
     // MARK: - Cleanup
     
     func stopAll() {
+        lifecycleGeneration &+= 1
+        changeDebounceTimer?.invalidate()
+        changeDebounceTimer = nil
+        serverStartTask?.cancel()
+        serverStartTask = nil
+        serverStartSignature = nil
+
         if let server {
             Task { try? await server.shutdown() }
         }
@@ -1004,8 +1044,25 @@ final class LSPService: ObservableObject, SuperLog {
         currentVersion = 0
         currentDiagnostics = []
         activeLanguageId = nil
+        isAvailable = false
+        isInitializing = false
+        projectRootPath = nil
         latestDocumentSnapshot = nil
         pendingChanges.removeAll()
+        diagnosticsStabilizationDeadline = nil
+        progressProvider.clear()
+    }
+
+    private func clearLocalDocumentState(matching uri: String) {
+        guard currentURI == uri else { return }
+        changeDebounceTimer?.invalidate()
+        changeDebounceTimer = nil
+        currentURI = nil
+        currentVersion = 0
+        currentDiagnostics = []
+        latestDocumentSnapshot = nil
+        pendingChanges.removeAll()
+        diagnosticsStabilizationDeadline = nil
         progressProvider.clear()
     }
     

@@ -9,12 +9,13 @@ extension ChatHistoryService {
     // MARK: - 创建对话
 
     /// 创建新对话
-    func createConversation(projectId: String? = nil, title: String = "新对话") -> Conversation {
+    func createConversation(projectId: String? = nil, title: String = "新对话", chatMode: String? = nil) -> Conversation {
         let conversation = Conversation(
             projectId: projectId,
             title: title,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            chatMode: chatMode
         )
 
         saveConversation(conversation)
@@ -76,6 +77,27 @@ extension ChatHistoryService {
                 AppLogger.core.info("\(Self.t)🎯 已保存对话 '\(conversation.title)' 的模型偏好：\(providerId) - \(model)")
             } else {
                 AppLogger.core.info("\(Self.t)🎯 已清除对话 '\(conversation.title)' 的模型偏好")
+            }
+        }
+    }
+
+    // MARK: - 更新对话聊天模式
+
+    /// 更新对话的聊天模式偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - chatMode: 聊天模式 rawValue，nil 表示清除对话级偏好（回退到全局偏好）
+    func updateChatMode(_ conversation: Conversation, chatMode: String?) {
+        conversation.chatMode = chatMode
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let chatMode {
+                AppLogger.core.info("\(Self.t)🔄 已保存对话 '\(conversation.title)' 的聊天模式：\(chatMode)")
+            } else {
+                AppLogger.core.info("\(Self.t)🔄 已清除对话 '\(conversation.title)' 的聊天模式")
             }
         }
     }

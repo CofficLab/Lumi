@@ -1,12 +1,11 @@
 import SwiftUI
 import LumiUI
 
-// MARK: - 项目下拉菜单
+/// 项目下拉菜单
 
 struct ProjectDropdownMenu: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var recentProjectsVM: AppProjectsVM
-    @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 
     let onSelect: (Project) -> Void
@@ -51,17 +50,6 @@ struct ProjectDropdownMenu: View {
                         onSelect(project)
                     }
                 )
-                .contextMenu {
-                    Button {
-                        openWindow(
-                            id: MainWindowID.main,
-                            value: LumiWindowRoute(projectPath: project.path)
-                        )
-                        isPresented = false
-                    } label: {
-                        Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
-                    }
-                }
             }
 
             // 浏览按钮
@@ -102,7 +90,7 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
                 let path = url.path
                 let project = Project(name: url.lastPathComponent, path: path)
                 Task { @MainActor in
-                    projectVM.switchProject(to: project)
+                    projectVM.switchProject(to: project, reason: "projectDropdownSelect")
                     isPresented = false
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

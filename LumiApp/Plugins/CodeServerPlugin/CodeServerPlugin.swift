@@ -27,7 +27,11 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
-    nonisolated func onDisable() {}
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            CodeServerManager.shared.stop()
+        }
+    }
 
     // MARK: - UI
 

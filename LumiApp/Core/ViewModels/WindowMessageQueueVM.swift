@@ -3,12 +3,12 @@ import Foundation
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `queueVersion` 变化触发消息发送。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `queueVersion` 变化触发消息发送。
 /// 消息发送队列 ViewModel
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// RootView 监听其 `queueVersion` 变化触发消息发送。
 @MainActor
 final class WindowMessageQueueVM: ObservableObject, SuperLog {
@@ -73,6 +73,12 @@ final class WindowMessageQueueVM: ObservableObject, SuperLog {
     /// 清除某个会话的 processing 状态消息（处理完成后调用）
     func finishProcessing(for conversationId: UUID) {
         messages.removeAll { $0.conversationId == conversationId && $0.queueStatus == .processing }
+        queueVersion += 1
+    }
+
+    func clearAll() {
+        guard !messages.isEmpty else { return }
+        messages.removeAll()
         queueVersion += 1
     }
 

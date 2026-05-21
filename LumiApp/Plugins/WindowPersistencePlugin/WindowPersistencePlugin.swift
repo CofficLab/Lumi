@@ -2,9 +2,7 @@ import Foundation
 import SwiftUI
 import os
 
-/// 窗口持久化插件：负责保存和恢复窗口状态（当前项目、会话、面板、编辑器、侧边栏）
-/// 监听窗口关闭事件，自动保存窗口快照到磁盘。
-/// 启动时从磁盘恢复窗口状态。
+/// 窗口持久化插件：监听各窗口 VM 状态变化，防抖保存到磁盘（项目、会话、面板、编辑器等）。
 actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.window-persistence")
 
@@ -13,7 +11,7 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = false
     static let id: String = "WindowPersistence"
     static let displayName: String = String(localized: "Window Persistence", table: "WindowPersistence")
-    static let description: String = String(localized: "Save and restore window states across app launches", table: "WindowPersistence")
+    static let description: String = String(localized: "Save window states when they change", table: "WindowPersistence")
     static let iconName: String = "macwindow"
     static var isConfigurable: Bool { false }
     static var order: Int { 999 }
@@ -21,19 +19,15 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = WindowPersistencePlugin()
 
-    nonisolated func onRegister() {
-        Task { @MainActor in
-            WindowPersistenceCoordinator.warmUp()
-        }
-    }
+    nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
     // MARK: - UI Contributions
 
-    /// 根视图包裹：用于窗口状态的恢复和保存
+    /// 根视图包裹：监听 VM 变化并保存窗口状态；启动恢复在 `onRegister` 注册
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(WindowRestoreOverlay(content: content()))
+        AnyView(WindowPersistenceOverlay(content: content()))
     }
 }

@@ -6,9 +6,6 @@ extension Notification.Name {
     /// 应用启动完成的通知
     static let applicationDidFinishLaunching = Notification.Name("applicationDidFinishLaunching")
 
-    /// 启动时保存的窗口状态已恢复完成
-    static let initialWindowStateRestorationDidFinish = Notification.Name("initialWindowStateRestorationDidFinish")
-
     /// 应用即将终止的通知
     static let applicationWillTerminate = Notification.Name("applicationWillTerminate")
 
@@ -50,6 +47,9 @@ extension Notification.Name {
 
     /// 请求将当前窗口状态写入磁盘（如项目切换后）
     static let windowStateShouldPersist = Notification.Name("windowStateShouldPersist")
+
+    /// 窗口关闭通知（`WindowPersistencePlugin` 等用于刷盘）
+    static let windowClosed = Notification.Name("windowClosed")
 }
 
 // MARK: - NotificationCenter Extension
@@ -59,12 +59,6 @@ extension NotificationCenter {
     /// - Parameter object: 可选的对象参数
     static func postApplicationDidFinishLaunching(object: Any? = nil) {
         NotificationCenter.default.post(name: .applicationDidFinishLaunching, object: object)
-    }
-
-    /// 发送启动窗口状态恢复完成的通知
-    /// - Parameter object: 可选的对象参数
-    static func postInitialWindowStateRestorationDidFinish(object: Any? = nil) {
-        NotificationCenter.default.post(name: .initialWindowStateRestorationDidFinish, object: object)
     }
 
     /// 发送应用即将终止的通知
@@ -138,6 +132,40 @@ extension NotificationCenter {
             name: .fileDroppedToChat,
             object: nil,
             userInfo: ["fileURL": fileURL]
+        )
+    }
+
+    /// 发送使用指定路由打开新窗口的通知
+    /// - Parameter route: 窗口路由
+    static func postOpenWindowWithRoute(route: LumiWindowRoute) {
+        NotificationCenter.default.post(
+            name: .openWindowWithRoute,
+            object: nil,
+            userInfo: ["route": route]
+        )
+    }
+
+    /// 发送请求在当前活跃窗口编辑器中打开文件的通知
+    /// - Parameter url: 文件 URL
+    static func postOpenFileInEditor(url: URL) {
+        NotificationCenter.default.post(
+            name: .openFileInEditor,
+            object: nil,
+            userInfo: ["url": url]
+        )
+    }
+
+    /// 发送请求将当前窗口状态写入磁盘的通知
+    static func postWindowStateShouldPersist() {
+        NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
+    }
+
+    /// 发送窗口关闭通知
+    /// - Parameter windowId: 已关闭窗口的 ID
+    static func postWindowClosed(_ windowId: UUID) {
+        NotificationCenter.default.post(
+            name: .windowClosed,
+            object: windowId
         )
     }
 }
@@ -214,6 +242,41 @@ extension View {
                 return
             }
             action(fileURL)
+        }
+    }
+
+    /// 监听使用指定路由打开新窗口的事件
+    /// - Parameter action: 事件处理闭包，参数为窗口路由
+    /// - Returns: 修改后的视图
+    func onOpenWindowWithRoute(perform action: @escaping (LumiWindowRoute) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .openWindowWithRoute)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let route = userInfo["route"] as? LumiWindowRoute else {
+                return
+            }
+            action(route)
+        }
+    }
+
+    /// 监听在当前活跃窗口编辑器中打开文件的事件
+    /// - Parameter action: 事件处理闭包，参数为文件 URL
+    /// - Returns: 修改后的视图
+    func onOpenFileInEditor(perform action: @escaping (URL) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .openFileInEditor)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let url = userInfo["url"] as? URL else {
+                return
+            }
+            action(url)
+        }
+    }
+
+    /// 监听将当前窗口状态写入磁盘的事件
+    /// - Parameter action: 事件处理闭包
+    /// - Returns: 修改后的视图
+    func onWindowStateShouldPersist(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .windowStateShouldPersist)) { _ in
+            action()
         }
     }
 }

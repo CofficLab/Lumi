@@ -5,7 +5,6 @@ import SwiftUI
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var recentProjectsVM: AppProjectsVM
-    @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
@@ -109,16 +108,6 @@ struct RecentProjectsSidebarView: View {
         } preview: {
             RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
-        .contextMenu {
-            Button {
-                openWindow(
-                    id: MainWindowID.main,
-                    value: LumiWindowRoute(projectPath: project.path)
-                )
-            } label: {
-                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
-            }
-        }
     }
 
     // MARK: - Git Branch Badge
@@ -196,7 +185,7 @@ struct RecentProjectsSidebarView: View {
     // MARK: - Actions
 
     private func switchToProject(_ project: Project) {
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "recentProjectsSidebarSelect")
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
@@ -220,7 +209,7 @@ struct RecentProjectsSidebarView: View {
 
         store.addProject(name: project.name, path: project.path)
         recentProjectsVM.addProject(project)
-        projectVM.switchProject(to: project)
+        projectVM.switchProject(to: project, reason: "recentProjectsSidebarAddProject")
     }
 
     // MARK: - Branch Refresh

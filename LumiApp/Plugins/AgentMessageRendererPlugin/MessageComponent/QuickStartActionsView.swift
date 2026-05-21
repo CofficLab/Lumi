@@ -8,7 +8,7 @@ struct QuickStartActionsView: View {
     }
 
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
-    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var llmVM: AppLLMVM
 
@@ -78,7 +78,11 @@ struct QuickStartActionsView: View {
         switch sendStrategy {
         case .createConversationAndSend:
             Task {
-                await conversationCreationVM.createNewConversation()
+                await conversationVM.createNewConversation(
+                    projectName: projectVM.isProjectSelected ? projectVM.currentProjectName : nil,
+                    projectPath: projectVM.isProjectSelected ? projectVM.currentProjectPath : nil,
+                    languagePreference: projectVM.languagePreference
+                )
                 await MainActor.run {
                     inputQueueVM.enqueueText(prompt)
                 }

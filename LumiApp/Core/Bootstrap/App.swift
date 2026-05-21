@@ -1,5 +1,5 @@
 import AppKit
-import EditorService
+import MagicKit
 import Sparkle
 import SwiftUI
 
@@ -27,20 +27,6 @@ import SwiftUI
 /// - ConfigCommand: 配置命令
 @main
 struct CoreApp: App {
-    init() {
-        EditorSettingsLifecycle.hostPersistenceRootURL = { AppConfig.getDBFolderURL() }
-        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { AppThemeVM.editorThemeID(for: $0) }
-        EditorSettingsLifecycle.loadEditorRecentCommandIDs = { AppSettingStore.loadEditorRecentCommandIDs() }
-        EditorSettingsLifecycle.saveEditorRecentCommandIDs = { AppSettingStore.saveEditorRecentCommandIDs($0) }
-        EditorSettingsLifecycle.loadEditorCommandUsageCounts = { AppSettingStore.loadEditorCommandUsageCounts() }
-        EditorSettingsLifecycle.saveEditorCommandUsageCounts = { AppSettingStore.saveEditorCommandUsageCounts($0) }
-        EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
-        EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
-        EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
-            AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
-        }
-    }
-
     /// macOS 应用代理，处理应用级别的生命周期事件
     ///
     /// MacAgent 负责：
@@ -55,15 +41,12 @@ struct CoreApp: App {
 
     var body: some Scene {
         // 主窗口（可多开）
-        //
-        // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
-        // 工具栏使用统一样式，不显示传统标题。
-        // 每个窗口创建独立的 WindowScope，实现窗口级状态隔离。
-        WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
-            MainWindowRootView(route: route.wrappedValue ?? LumiWindowRoute())
+        WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
+            MainWindowSceneContent(route: route)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
+        .defaultSize(width: 1000, height: 800)
         .commands {
             DebugCommand()
             SettingsCommand()
@@ -82,15 +65,14 @@ struct CoreApp: App {
         //
         // 单独的设置窗口，大小固定为 780x600。
         // 使用紧凑型工具栏样式，节省空间。
-        Window("设置", id: SettingsWindowID.settings) {
+        Window("设置", id: AppConfig.settingsWindowID) {
             SettingView()
-                .inRootView(scope: WindowScope(container: RootContainer.shared))
+                .inRootView(container: WindowContainer(container: RootContainer.shared))
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
     }
-
 }
 
 /// 检查更新视图
@@ -100,7 +82,7 @@ struct CoreApp: App {
 struct CheckForUpdatesView: View {
     /// 更新检查视图模型
     @ObservedObject private var viewModel: CheckForUpdatesViewModel
-    
+
     /// Sparkle 更新器实例
     private let updater: SPUUpdater
 
@@ -145,6 +127,6 @@ final class CheckForUpdatesViewModel: ObservableObject {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView(scope: WindowScope(container: RootContainer.shared))
+        .inRootView(container: WindowContainer(container: RootContainer.shared))
         .withDebugBar()
 }

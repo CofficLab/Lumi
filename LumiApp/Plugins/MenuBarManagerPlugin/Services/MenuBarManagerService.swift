@@ -34,7 +34,6 @@ class MenuBarManagerService: ObservableObject, SuperLog {
         checkPermission()
         // 恢复保存的设置
         loadSettings()
-        startMonitoring()
     }
     
     // MARK: - Public Methods
@@ -81,14 +80,16 @@ class MenuBarManagerService: ObservableObject, SuperLog {
     
     // MARK: - Private Methods
     
-    private func startMonitoring() {
+    func startMonitoring() {
+        guard monitor == nil else { return }
+
         // 监听鼠标移动，用于实现"鼠标悬停显示隐藏项"的功能
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
             self?.handleMouseMove(event)
         }
     }
     
-    private func stopMonitoring() {
+    func stopMonitoring() {
         if let monitor = monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil

@@ -59,7 +59,8 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     private var timer: Timer?
     private var isMonitoring = false
-    private var cancellables = Set<AnyCancellable>()
+    private var networkCancellables = Set<AnyCancellable>()
+    private var processCancellables = Set<AnyCancellable>()
 
     init() {
         if Self.verbose {
@@ -80,15 +81,12 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
                 }
                 self?.processes = processes
             }
-            .store(in: &cancellables)
+            .store(in: &processCancellables)
     }
     
     deinit {
         Task { @MainActor [weak self] in
-            self?.timer?.invalidate()
-            if self?.isMonitoring == true {
-                NetworkService.shared.stopMonitoring()
-            }
+            self?.stopMonitoring()
         }
     }
     
@@ -126,7 +124,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
                 self?.networkState.totalDownload = totalDown
                 self?.networkState.totalUpload = totalUp
             }
-            .store(in: &cancellables)
+            .store(in: &networkCancellables)
 
         // Initial slow fetch
         Task {
@@ -139,6 +137,16 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
                 await self?.updateSlowStats()
             }
         }
+    }
+
+    func stopMonitoring() {
+        guard isMonitoring else { return }
+        isMonitoring = false
+
+        timer?.invalidate()
+        timer = nil
+        networkCancellables.removeAll()
+        NetworkService.shared.stopMonitoring()
     }
     
     // Removed updateStats() as it is replaced by Combine subscription

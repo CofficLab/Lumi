@@ -10,202 +10,83 @@ import SwiftUI
 /// ## 架构说明
 ///
 /// 全局共享 VM 通过 `RootContainer.shared` 注入。
-/// 窗口级 VM 通过 `WindowScope` 注入，每个窗口拥有独立的 VM 实例。
+/// 窗口级 VM 通过 `WindowContainer` 注入，每个窗口拥有独立的 VM 实例。
 ///
 /// ## 使用方式
 ///
 /// ```swift
 /// ContentLayout()
-///     .inRootView(scope: windowScope)
+///     .inRootView(container: windowContainer)
 /// ```
-struct RootView<Content>: View, SuperLog where Content: View {
-    nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { false }
-
+struct RootView<Content>: View where Content: View {
     /// 视图内容
     var content: Content
 
-    /// 窗口作用域（每窗口独立）
-    @ObservedObject var scope: WindowScope
+    /// 窗口容器（每窗口独立）
+    @ObservedObject var windowContainer: WindowContainer
 
     /// 全局服务容器（单例）。
     @StateObject var container = RootContainer.shared
 
-    /// 发送与回合管线（每窗口独立，直接访问窗口级 VM）。
-    /// 从 WindowScope 获取，不自行创建。
-    private var sendController: SendController { scope.sendController }
-
-    /// 项目上下文与系统提示词（每窗口独立）。
-    private var projectController: ProjectController { scope.projectController }
-
-    /// 会话控制器（每窗口独立）。
-    private var conversationController: ConversationController { scope.conversationController }
-
-    init(scope: WindowScope, @ViewBuilder content: () -> Content) {
-        self._scope = ObservedObject(wrappedValue: scope)
+    init(container: WindowContainer, @ViewBuilder content: () -> Content) {
+        self._windowContainer = ObservedObject(wrappedValue: container)
         self.content = content()
     }
 
     var body: some View {
-        content
-            .withMagicToast()
-            // 全局 VM（所有窗口共享）
-            .environmentObject(container.windowManagerVM)
-            .environmentObject(container.themeVM)
-            .environmentObject(container.providerRegistry)
-            .environmentObject(container.pluginVM)
-            .environmentObject(container.messageRendererVM)
-            .environmentObject(container.conversationTurnServices)
-            .environmentObject(container.agentSessionConfig)
-            .environmentObject(container.chatHistoryVM)
-            .environmentObject(container.recentProjectsVM)
-            .environmentObject(container.gitVM)
-            .environmentObject(container.idleTimeVM)
-            // 窗口级 VM（每窗口独立）
-            .environmentObject(scope.editorVM)
-            .environmentObject(scope.conversationVM)
-            .environmentObject(scope.projectVM)
-            .environmentObject(scope.layoutVM)
-            .environmentObject(scope.messagePendingVM)
-            .environmentObject(scope.messageQueueVM)
-            .environmentObject(scope.agentAttachmentsVM)
-            .environmentObject(scope.inputQueueVM)
-            .environmentObject(scope.chatDraftVM)
-            .environmentObject(scope.permissionHandlingVM)
-            .environmentObject(scope.conversationCreationVM)
-            .environmentObject(scope.commandSuggestionVM)
-            .environmentObject(scope.permissionRequestVM)
-            .environmentObject(scope.taskCancellationVM)
-            .environmentObject(scope.chatTimelineViewModel)
-            .environmentObject(scope.conversationSendStatusVM)
-            .environmentObject(scope.projectContextRequestVM)
-            .environment(\.windowScope, scope)
-            .modelContainer(container.modelContainer)
-            .onReceive(scope.messageQueueVM.$queueVersion.dropFirst()) { _ in
-                onMessageQueueChanged()
-            }
-            .onReceive(scope.inputQueueVM.enqueueRequests) { request in
-                onInputQueueRequested(request)
-            }
-            .onReceive(scope.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
-                onConversationCreationRequested()
-            }
-            .onReceive(scope.taskCancellationVM.$conversationIdToCancel.compactMap { $0 }) { _ in
-                onTaskCancellationRequested()
-            }
-            .onReceive(scope.projectContextRequestVM.$request.compactMap { $0 }) { _ in
-                onProjectContextRequestChanged()
-            }
-            .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
-            .onAgentConversationSendTurnFinished(perform: onAgentConversationSendTurnFinished)
+        ZStack {
+            RootListener(scope: windowContainer)
+            content
+                .withMagicToast()
+                // 全局 VM（所有窗口共享）
+                .environmentObject(container.windowManagerVM)
+                .environmentObject(container.themeVM)
+                .environmentObject(container.providerRegistry)
+                .environmentObject(container.pluginVM)
+                .environmentObject(container.messageRendererVM)
+                .environmentObject(container.conversationTurnServices)
+                .environmentObject(container.agentSessionConfig)
+                .environmentObject(container.chatHistoryVM)
+                .environmentObject(container.recentProjectsVM)
+                .environmentObject(container.gitVM)
+                .environmentObject(container.idleTimeVM)
+                // 窗口级 VM（每窗口独立）
+                .environmentObject(windowContainer)
+                .environmentObject(windowContainer.editorVM)
+                .environmentObject(windowContainer.conversationVM)
+                .environmentObject(windowContainer.projectVM)
+                .environmentObject(windowContainer.layoutVM)
+                .environmentObject(windowContainer.messageQueueVM)
+                .environmentObject(windowContainer.agentAttachmentsVM)
+                .environmentObject(windowContainer.inputQueueVM)
+                .environmentObject(windowContainer.chatDraftVM)
+                .environmentObject(windowContainer.permissionHandlingVM)
+                .environmentObject(windowContainer.commandSuggestionVM)
+                .environmentObject(windowContainer.permissionRequestVM)
+                .environmentObject(windowContainer.taskCancellationVM)
+                .environmentObject(windowContainer.chatTimelineViewModel)
+                .environmentObject(windowContainer.conversationSendStatusVM)
+                .environmentObject(windowContainer.projectContextRequestVM)
+                .environment(\.windowContainer, windowContainer)
+                .modelContainer(container.modelContainer)
+        }
     }
 }
 
 extension View {
     /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
-    /// - Parameter scope: 窗口作用域
+    /// - Parameter container: 窗口容器
     /// - Returns: 包装在 RootView 中的视图
-    func inRootView(scope: WindowScope) -> some View {
-        RootView(scope: scope, content: { self })
+    func inRootView(container: WindowContainer) -> some View {
+        RootView(container: container, content: { self })
     }
 
-    /// Preview 专用：使用 fallback WindowScope 注入环境对象
+    /// Preview 专用：使用 fallback WindowContainer 注入环境对象
     ///
-    /// 生产代码请使用 `inRootView(scope:)` 传入窗口作用域。
+    /// 生产代码请使用 `inRootView(container:)` 传入窗口容器。
     /// 此方法仅用于 #Preview 和设置窗口等无窗口上下文的场景。
     func inRootView() -> some View {
-        inRootView(scope: WindowScope(container: RootContainer.shared))
-    }
-}
-
-// MARK: - Event Handlers
-
-extension RootView {
-    func onAgentConversationSendTurnFinished(_: UUID) {
-        Task {
-            await sendController.attemptBeginNextQueuedSend()
-        }
-    }
-
-    func onResumeSendAfterToolPermission(_ conversationId: UUID) {
-        Task {
-            await sendController.resumeAfterPermissionGranted(conversationId: conversationId)
-        }
-    }
-
-    /// 待发送的Message队列版本发生变化
-    func onMessageQueueChanged() {
-        if scope.messageQueueVM.messages.isEmpty {
-            return
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) 队列发生变化，尝试开始发送")
-        }
-
-        Task {
-            await sendController.attemptBeginNextQueuedSend()
-        }
-    }
-
-    @MainActor
-    func onInputQueueRequested(_ request: WindowInputQueueVM.InputEnqueueRequest) {
-        guard scope.inputQueueVM.consumePendingRequest(id: request.id) != nil else {
-            return
-        }
-        guard let conversationId = scope.conversationVM.selectedConversationId else {
-            return
-        }
-
-        let pendingImages = scope.agentAttachmentsVM.drainPendingImageAttachments()
-        let allImages = request.images + pendingImages
-        guard !request.text.isEmpty || !allImages.isEmpty else {
-            return
-        }
-        
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)将用户的输入加入消息队列")
-        }
-
-        let message = ChatMessage(
-            role: .user,
-            conversationId: conversationId,
-            content: request.text,
-            images: allImages
-        )
-        scope.messageQueueVM.enqueueMessage(message)
-        scope.chatTimelineViewModel.handleMessageQueued(message)
-        Task {
-            await sendController.attemptBeginNextQueuedSend()
-        }
-    }
-
-    func onConversationCreationRequested() {
-        guard let requestId = scope.conversationCreationVM.pendingRequest else { return }
-        guard scope.conversationCreationVM.consumePendingRequest(id: requestId) != nil else { return }
-
-        Task { await conversationController.handleCreationRequest(requestId: requestId) }
-    }
-
-    func onTaskCancellationRequested() {
-        guard let conversationId = scope.taskCancellationVM.conversationIdToCancel else { return }
-
-        scope.taskCancellationVM.consumeRequest()
-        sendController.cancelSend(conversationId: conversationId)
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
-        }
-    }
-
-    @MainActor
-    func onProjectContextRequestChanged() {
-        guard let request = scope.projectContextRequestVM.request else { return }
-
-        Task {
-            await projectController.handleProjectContextRequest(request)
-            scope.projectContextRequestVM.request = nil
-        }
+        inRootView(container: WindowContainer(container: RootContainer.shared))
     }
 }
 
@@ -213,6 +94,6 @@ extension RootView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView(scope: WindowScope(container: RootContainer.shared))
+        .inRootView(container: WindowContainer(container: RootContainer.shared))
         .withDebugBar()
 }

@@ -2,6 +2,15 @@ import Combine
 import Foundation
 import SwiftUI
 
+private final class AppIdleTimeTimerHolder: @unchecked Sendable {
+    var timer: Timer?
+
+    func invalidate() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
 /// 空闲时间 ViewModel
 ///
 /// 数据来源：`IdleTimePlugin` 内部的 `IdleTimeService` 通过
@@ -36,13 +45,19 @@ final class AppIdleTimeVM: ObservableObject {
     // MARK: - Private
 
     private var cancellables = Set<AnyCancellable>()
-    private var refreshTimer: Timer?
+    private nonisolated let refreshTimerHolder = AppIdleTimeTimerHolder()
+    private var refreshTask: Task<Void, Never>?
 
     // MARK: - Init
 
     init() {
         subscribeToSnapshotChanges()
         schedulePeriodicRefresh()
+    }
+
+    deinit {
+        refreshTimerHolder.invalidate()
+        refreshTask?.cancel()
     }
 
     // MARK: - Subscription
@@ -57,9 +72,11 @@ final class AppIdleTimeVM: ObservableObject {
     }
 
     private func schedulePeriodicRefresh() {
+        guard refreshTimerHolder.timer == nil else { return }
+
         refreshFromService()
 
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 10 * 60, repeats: true) { [weak self] _ in
+        refreshTimerHolder.timer = Timer.scheduledTimer(withTimeInterval: 10 * 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshFromService()
             }
@@ -67,7 +84,12 @@ final class AppIdleTimeVM: ObservableObject {
     }
 
     private func refreshFromService() {
-        Task {
+        guard refreshTask == nil else { return }
+
+        refreshTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.refreshTask = nil }
+
             let snapshot = await IdleTimeService.shared.currentSnapshot()
 
             self.snapshot = snapshot

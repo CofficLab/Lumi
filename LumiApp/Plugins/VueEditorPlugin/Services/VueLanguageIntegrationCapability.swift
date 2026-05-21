@@ -26,24 +26,29 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
     /// 支持的语言 ID
     private let supportedLanguageIds: Set<String> = ["vue"]
 
+    private static let maxHealthCacheEntries = 32
+
     /// 缓存 Volar 健康检查结果
     private var healthCache: [String: VolarServiceManager.ServiceHealth] = [:]
+    private var healthCacheOrder: [String] = []
 
     func supports(languageId: String, projectPath: String?) -> Bool {
         guard supportedLanguageIds.contains(languageId) else { return false }
         guard let projectPath else { return false }
+        let cacheKey = normalizedProjectPath(projectPath)
 
         // 基础检查：package.json 是否存在
-        let packageJSONPath = (projectPath as NSString).appendingPathComponent("package.json")
+        let packageJSONPath = (cacheKey as NSString).appendingPathComponent("package.json")
         guard FileManager.default.fileExists(atPath: packageJSONPath) else { return false }
 
         // Volar 健康检查（带缓存，避免每次打开文件都检查）
         let health: VolarServiceManager.ServiceHealth
-        if let cached = healthCache[projectPath] {
+        if let cached = healthCache[cacheKey] {
+            touchHealthCacheEntry(cacheKey)
             health = cached
         } else {
-            health = VolarServiceManager.checkHealth(projectPath: projectPath)
-            healthCache[projectPath] = health
+            health = VolarServiceManager.checkHealth(projectPath: cacheKey)
+            setHealthCache(health, for: cacheKey)
         }
 
         switch health {
@@ -102,11 +107,33 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
 
     /// 清除指定项目的健康检查缓存
     func invalidateCache(projectPath: String) {
-        healthCache.removeValue(forKey: projectPath)
+        let cacheKey = normalizedProjectPath(projectPath)
+        healthCache.removeValue(forKey: cacheKey)
+        healthCacheOrder.removeAll { $0 == cacheKey }
     }
 
     /// 清除所有缓存
     func invalidateAllCache() {
         healthCache.removeAll()
+        healthCacheOrder.removeAll()
+    }
+
+    private func normalizedProjectPath(_ projectPath: String) -> String {
+        URL(fileURLWithPath: projectPath).standardizedFileURL.path
+    }
+
+    private func setHealthCache(_ health: VolarServiceManager.ServiceHealth, for projectPath: String) {
+        healthCache[projectPath] = health
+        touchHealthCacheEntry(projectPath)
+
+        while healthCacheOrder.count > Self.maxHealthCacheEntries {
+            let removedProjectPath = healthCacheOrder.removeFirst()
+            healthCache.removeValue(forKey: removedProjectPath)
+        }
+    }
+
+    private func touchHealthCacheEntry(_ projectPath: String) {
+        healthCacheOrder.removeAll { $0 == projectPath }
+        healthCacheOrder.append(projectPath)
     }
 }

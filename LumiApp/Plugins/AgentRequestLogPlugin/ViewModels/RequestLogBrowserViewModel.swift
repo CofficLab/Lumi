@@ -48,25 +48,18 @@ final class RequestLogBrowserViewModel: ObservableObject {
     }
 
     private func fetchItems() async {
+        let offset = (currentPage - 1) * pageSize
         if let filter = filterSuccess {
-            let context = await RequestLogHistoryManager.shared.getContext()
-            var descriptor = FetchDescriptor<RequestLogItem>(
-                predicate: RequestLogItem.predicate(isSuccess: filter),
-                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            items = await RequestLogHistoryManager.shared.query(
+                isSuccess: filter,
+                limit: pageSize,
+                offset: offset
             )
-            descriptor.fetchLimit = pageSize
-            descriptor.fetchOffset = (currentPage - 1) * pageSize
-            let items = (try? context.fetch(descriptor)) ?? []
-            self.items = items.map { RequestLogItemDTO(from: $0) }
         } else {
-            let allItems = await RequestLogHistoryManager.shared.getLatest(limit: 1000)
-            let startIndex = (currentPage - 1) * pageSize
-            let endIndex = min(startIndex + pageSize, allItems.count)
-            if startIndex < allItems.count {
-                self.items = Array(allItems[startIndex..<endIndex])
-            } else {
-                self.items = []
-            }
+            items = await RequestLogHistoryManager.shared.getLatest(
+                limit: pageSize,
+                offset: offset
+            )
         }
     }
 }

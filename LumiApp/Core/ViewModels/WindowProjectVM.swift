@@ -6,12 +6,12 @@ import SwiftUI
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var projectVM: WindowProjectVM` 访问。n每个窗口有独立的当前项目状态。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var projectVM: WindowProjectVM` 访问。n每个窗口有独立的当前项目状态。
 /// 负责管理项目状态、文件选择和项目配置
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var projectVM: WindowProjectVM` 访问。
 /// 每个窗口有独立的当前项目状态。
 @MainActor
@@ -71,9 +71,20 @@ final class WindowProjectVM: ObservableObject, SuperLog {
     }
 
     /// 切换到指定项目
-    func switchProject(to project: Project) {
-        self.currentProject = project
+    /// - Parameters:
+    ///   - project: 目标项目
+    ///   - reason: 触发本次切换的原因（用于日志追踪）
+    func switchProject(to project: Project, reason: String) {
+        if currentProject?.path == project.path {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 项目已是当前项目，跳过: \(project.path), reason: \(reason)")
+            }
+            return
+        }
+
+        currentProject = project
         codeSelectionRange = nil
+        AppLogger.core.info("\(Self.t)切换项目: \(project.name) (\(project.path)), reason: \(reason)")
     }
 
     /// 将指定文件或目录移到废纸篓

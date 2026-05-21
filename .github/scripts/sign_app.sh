@@ -5,6 +5,10 @@ APP_PATH="$1"
 IDENTITY="$2"
 ENTITLEMENTS="$3"
 
+# Max retry attempts for codesign
+MAX_RETRIES=3
+RETRY_DELAY=5
+
 echo "📦 Signing App: $APP_PATH"
 echo "🆔 Identity: $IDENTITY"
 echo "📄 Entitlements: $ENTITLEMENTS"
@@ -54,14 +58,28 @@ find "$APP_PATH" -depth \
         fi
     fi
     
-    # Note: Sparkle.framework requires deep signing if we want to be safe, 
+    # Note: Sparkle.framework requires deep signing if we want to be safe,
     # but strictly speaking we should sign inside-out.
     # Since we are using find -depth, we are signing inside-out.
     # We REMOVE --deep to avoid double-signing or overwriting inner signatures with wrong flags.
-    
-    # Execute signing
+
+    # Execute signing with retry logic
     # We use eval to handle the quoted Identity string correctly
-    eval codesign $OPTS "\"$item\""
+    retry_count=0
+    while [ $retry_count -lt $MAX_RETRIES ]; do
+        if eval codesign $OPTS "\"$item\"" 2>&1; then
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $MAX_RETRIES ]; then
+                echo "   ⚠️  Signing failed (attempt $retry_count/$MAX_RETRIES), retrying in ${RETRY_DELAY}s..."
+                sleep $RETRY_DELAY
+            else
+                echo "   ❌  Signing failed after $MAX_RETRIES attempts"
+                exit 1
+            fi
+        fi
+    done
     
     # Clean up
     rm -f "$ENTITLEMENTS_FILE"
@@ -76,7 +94,21 @@ if [ -d "$HELPERS_DIR" ]; then
     find "$HELPERS_DIR" -type f ! -type l 2>/dev/null | while read -r helper; do
         if [ -x "$helper" ]; then
             echo "✍️  Signing helper: $helper"
-            codesign --force --verbose --timestamp --sign "$IDENTITY" --options runtime "$helper"
+            retry_count=0
+            while [ $retry_count -lt $MAX_RETRIES ]; do
+                if codesign --force --verbose --timestamp --sign "$IDENTITY" --options runtime "$helper" 2>&1; then
+                    break
+                else
+                    retry_count=$((retry_count + 1))
+                    if [ $retry_count -lt $MAX_RETRIES ]; then
+                        echo "   ⚠️  Signing helper failed (attempt $retry_count/$MAX_RETRIES), retrying in ${RETRY_DELAY}s..."
+                        sleep $RETRY_DELAY
+                    else
+                        echo "   ❌  Signing helper failed after $MAX_RETRIES attempts"
+                        exit 1
+                    fi
+                fi
+            done
         fi
     done
 fi
@@ -87,7 +119,21 @@ OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
 if [ -n "$ENTITLEMENTS" ]; then
     OPTS="$OPTS --entitlements \"$ENTITLEMENTS\""
 fi
-eval codesign $OPTS "\"$APP_PATH\""
+retry_count=0
+while [ $retry_count -lt $MAX_RETRIES ]; do
+    if eval codesign $OPTS "\"$APP_PATH\"" 2>&1; then
+        break
+    else
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $MAX_RETRIES ]; then
+            echo "   ⚠️  Main app signing failed (attempt $retry_count/$MAX_RETRIES), retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+        else
+            echo "   ❌  Main app signing failed after $MAX_RETRIES attempts"
+            exit 1
+        fi
+    fi
+done
 
 # 5. Verify Signature
 echo "✅ Verifying signature..."

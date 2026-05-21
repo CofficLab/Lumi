@@ -19,8 +19,11 @@ class ClipboardMonitor: ObservableObject, SuperLog {
     private init() {
         self.lastChangeCount = pasteboard.changeCount
     }
-    
+
     func startMonitoring() {
+        guard timer == nil else { return }
+
+        lastChangeCount = pasteboard.changeCount
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkForChanges()

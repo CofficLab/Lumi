@@ -38,7 +38,6 @@ actor GitHubInsightSyncService: SuperLog {
         let needsRefresh = await knowledgeBase.shouldRefresh(projectPath: normalizedPath)
         if !force, !needsRefresh {
             let count = await knowledgeBase.loadEntries(projectPath: normalizedPath).count
-            GitHubInsightPlugin.logger.info("\(Self.t)缓存未过期，跳过 GitHub 发现：\(normalizedPath)，现有条目：\(count)")
             return .ready(count: count)
         }
 

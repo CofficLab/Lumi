@@ -129,6 +129,13 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
             object: nil
         )
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePluginSettingsChanged),
+            name: .pluginSettingsChanged,
+            object: nil
+        )
+
         // 监听状态栏外观更新请求
         NotificationCenter.default.addObserver(
             self,
@@ -188,6 +195,8 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 3. 移除状态栏图标
     func cleanup() {
         closePopover()
+        iconViewModel.contentViews = []
+        activeSources.removeAll()
 
         // 移除通知观察者
         NotificationCenter.default.removeObserver(self)
@@ -211,6 +220,13 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     @objc private func handlePluginsDidLoad() {
         if Self.verbose {
             AppLogger.core.info("\(self.t)收到插件加载完成通知")
+        }
+        refreshMenuBar()
+    }
+
+    @objc private func handlePluginSettingsChanged() {
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)收到插件设置变更通知")
         }
         refreshMenuBar()
     }

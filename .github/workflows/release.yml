@@ -118,6 +118,22 @@ jobs:
           echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
 
+      - name: Check Timestamp Service Availability
+        run: |
+          echo "🔍 Checking Apple timestamp service availability..."
+          # Check if we can reach Apple's timestamp server
+          for i in {1..3}; do
+            if nc -z -w 5 timestamp.apple.com 80 2>/dev/null || \
+               nc -z -w 5 ts.apple.com 80 2>/dev/null; then
+              echo "✅ Timestamp service is reachable"
+              exit 0
+            fi
+            echo "⚠️  Attempt $i: Timestamp service not reachable, retrying..."
+            sleep 2
+          done
+          echo "❌ Timestamp service is not reachable after 3 attempts"
+          exit 1
+
       - name: Install xcpretty
         run: gem install xcpretty
 

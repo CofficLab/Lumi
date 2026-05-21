@@ -1,17 +1,16 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - No Project Overlay
-
 /// 未选择项目时的全屏引导遮罩
 /// 提供最近项目快速选择和添加新项目入口
 struct NoProjectOverlay: View {
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var recentProjectsVM: AppProjectsVM
 
-    let recentProjects: [Project]
-    @Binding var isFileImporterPresented: Bool
-    let onSelectProject: (Project) -> Void
-    let onAddProject: (URL) -> Void
+    @State private var isFileImporterPresented = false
+
+    private let store = RecentProjectsStore()
 
     var body: some View {
         ZStack {
@@ -47,7 +46,7 @@ struct NoProjectOverlay: View {
             headerSection
 
             // 最近项目列表（如果有）
-            if !recentProjects.isEmpty {
+            if !recentProjectsVM.recentProjects.isEmpty {
                 recentProjectsSection
             }
 
@@ -87,7 +86,7 @@ struct NoProjectOverlay: View {
                         LinearGradient(
                             colors: [
                                 Color(hex: "7C6FFF").opacity(0.15),
-                                Color(hex: "7C6FFF").opacity(0.05)
+                                Color(hex: "7C6FFF").opacity(0.05),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -127,7 +126,7 @@ struct NoProjectOverlay: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // 最近项目列表（最多显示 5 个）
-            let displayProjects = Array(recentProjects.prefix(5))
+            let displayProjects = Array(recentProjectsVM.recentProjects.prefix(5))
 
             ForEach(displayProjects) { project in
                 recentProjectRow(project)
@@ -137,7 +136,7 @@ struct NoProjectOverlay: View {
 
     private func recentProjectRow(_ project: Project) -> some View {
         Button {
-            onSelectProject(project)
+            selectProject(project)
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "folder")
@@ -213,20 +212,39 @@ struct NoProjectOverlay: View {
         }
     }
 
+    // MARK: - Actions
+
+    private func selectProject(_ project: Project) {
+        recentProjectsVM.addProject(project)
+        projectVM.switchProject(to: project, reason: "noProjectOverlaySelect")
+    }
+
+    private func addProjectAndSwitch(to url: URL) {
+        let standardizedURL = url.standardizedFileURL
+        let project = Project(
+            name: standardizedURL.lastPathComponent,
+            path: standardizedURL.path,
+            lastUsed: Date()
+        )
+        store.addProject(name: project.name, path: project.path)
+        recentProjectsVM.addProject(project)
+        projectVM.switchProject(to: project, reason: "noProjectOverlayAddProject")
+    }
+
     // MARK: - File Import
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
         switch result {
-        case .success(let urls):
+        case let .success(urls):
             guard let folderURL = urls.first else { return }
             guard folderURL.startAccessingSecurityScopedResource() else { return }
-            onAddProject(folderURL.standardizedFileURL)
+            addProjectAndSwitch(to: folderURL)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 folderURL.stopAccessingSecurityScopedResource()
             }
-        case .failure(let error):
+        case let .failure(error):
             if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+                RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
             }
         }
     }
@@ -234,32 +252,10 @@ struct NoProjectOverlay: View {
 
 // MARK: - Preview
 
-#Preview("No Project Overlay - Empty") {
+#Preview("No Project Overlay") {
     ZStack {
         Color.gray.opacity(0.3)
-        NoProjectOverlay(
-            recentProjects: [],
-            isFileImporterPresented: .constant(false),
-            onSelectProject: { _ in },
-            onAddProject: { _ in }
-        )
-    }
-    .frame(width: 800, height: 600)
-    .inRootView()
-}
-
-#Preview("No Project Overlay - With Recent") {
-    ZStack {
-        Color.gray.opacity(0.3)
-        NoProjectOverlay(
-            recentProjects: [
-                Project(name: "Lumi", path: "/Users/dev/Projects/Lumi", lastUsed: Date()),
-                Project(name: "MagicKit", path: "/Users/dev/Projects/MagicKit", lastUsed: Date().addingTimeInterval(-3600)),
-            ],
-            isFileImporterPresented: .constant(false),
-            onSelectProject: { _ in },
-            onAddProject: { _ in }
-        )
+        NoProjectOverlay()
     }
     .frame(width: 800, height: 600)
     .inRootView()

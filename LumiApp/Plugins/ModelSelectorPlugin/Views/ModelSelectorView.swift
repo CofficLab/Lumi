@@ -1,6 +1,7 @@
 import AppKit
 import LLMKit
 import SwiftUI
+import LumiUI
 
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
@@ -14,6 +15,7 @@ struct ModelSelectorView: View, SuperLog {
 
     @EnvironmentObject var llmVM: AppLLMVM
     @EnvironmentObject var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     /// 模型性能统计
@@ -55,7 +57,7 @@ struct ModelSelectorView: View, SuperLog {
                 selectedProviderId: llmVM.selectedProviderId,
                 selectedTab: $selectedTab
             )
-            .frame(width: 300)
+            .frame(width: 380)
             .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()
@@ -96,7 +98,7 @@ struct ModelSelectorView: View, SuperLog {
                 .listStyle(.sidebar)
             }
         }
-        .frame(width: 600, height: 800)
+        .frame(width: 780, height: 800)
         .background(Material.regularMaterial)
         .task {
             await loadAllStats()
@@ -137,10 +139,11 @@ struct ModelSelectorView: View, SuperLog {
                 }
             }
         } else {
-            ContentUnavailableView {
-                Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "magnifyingglass",
+                title: "No Matching Models",
+                description: nil
+            )
         }
     }
 
@@ -161,16 +164,18 @@ struct ModelSelectorView: View, SuperLog {
                     }
                 }
             } else {
-                ContentUnavailableView {
-                    Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AppEmptyState(
+                    icon: "magnifyingglass",
+                    title: "No Matching Models",
+                    description: nil
+                )
             }
         } else {
-            ContentUnavailableView {
-                Label(String(localized: "No Provider Selected", table: "AgentChat"), systemImage: "tray")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "tray",
+                title: "No Provider Selected",
+                description: nil
+            )
         }
     }
 
@@ -181,12 +186,11 @@ struct ModelSelectorView: View, SuperLog {
     private var frequentModelsList: some View {
         let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(frequentModels, searchText: searchText)
         if filteredEntries.isEmpty {
-            ContentUnavailableView {
-                Label(String(localized: "No Frequent Models", table: "AgentChat"), systemImage: "clock.arrow.circlepath")
-            } description: {
-                Text(String(localized: "No Frequent Models Description", table: "AgentChat"))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "clock.arrow.circlepath",
+                title: "No Frequent Models",
+                description: "No Frequent Models Description"
+            )
         } else {
             List {
                 ForEach(filteredEntries) { entry in
@@ -217,12 +221,11 @@ struct ModelSelectorView: View, SuperLog {
     private var fastModelsList: some View {
         let filteredEntries = ModelSelectorFilteringService.filteredFastModels(fastModels, searchText: searchText)
         if filteredEntries.isEmpty {
-            ContentUnavailableView {
-                Label(String(localized: "No Fast Models", table: "AgentChat"), systemImage: "bolt.fill")
-            } description: {
-                Text(String(localized: "No Fast Models Description", table: "AgentChat"))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "bolt.fill",
+                title: "No Fast Models",
+                description: "No Fast Models Description"
+            )
         } else {
             List {
                 ForEach(filteredEntries) { entry in
@@ -250,10 +253,11 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private func providerList(providers: [LLMProviderInfo], emptyMessage: String) -> some View {
         if providers.isEmpty {
-            ContentUnavailableView {
-                Label(emptyMessage, systemImage: "tray")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "tray",
+                title: LocalizedStringKey(emptyMessage),
+                description: nil
+            )
         } else {
             List {
                 ForEach(providers) { provider in
@@ -367,7 +371,7 @@ extension ModelSelectorView {
 // MARK: - Action
 
 extension ModelSelectorView {
-    /// 选择模型并保存到项目配置
+    /// 选择模型并保存到当前对话
     /// - Parameters:
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
@@ -375,6 +379,9 @@ extension ModelSelectorView {
         llmVM.isAutoMode = false
         llmVM.selectedProviderId = providerId
         llmVM.currentModel = model
+
+        // 直接保存到当前对话的模型偏好
+        conversationVM.saveModelPreference(providerId: providerId, model: model)
 
         dismiss()
     }

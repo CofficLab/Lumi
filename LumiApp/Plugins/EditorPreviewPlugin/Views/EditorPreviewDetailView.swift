@@ -1119,12 +1119,13 @@ private struct EditorPreviewStringCatalogView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             languageSidebar
                 .frame(width: 240)
             Divider()
             catalogTable
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onAppear {
             if selectedLanguageID == nil {
@@ -1155,6 +1156,7 @@ private struct EditorPreviewStringCatalogView: View {
             .padding(10)
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func languageRow(_ language: StringCatalog.Language) -> some View {

@@ -24,12 +24,16 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = XcodeCleanService.shared
-    private var scanTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
+    private nonisolated let scanTasks = DiskManagerScanTaskHolder()
     private var hasCompletedInitialScan = false
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
+    }
+
+    deinit {
+        scanTasks.cancel()
+        Task { await XcodeCleanService.shared.cancelScan() }
     }
 
     func scanAll() async {
@@ -46,8 +50,8 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
         scanProgress = ""
         scanStats = XcodeCleanService.ScanStats()
 
-        progressTask?.cancel()
-        progressTask = Task {
+        scanTasks.cancelProgress()
+        scanTasks.progressTask = Task {
             let stream = await service.progressStream()
             for await stats in stream {
                 if Task.isCancelled { break }
@@ -58,8 +62,8 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             }
         }
 
-        scanTask?.cancel()
-        scanTask = Task {
+        scanTasks.scanTask?.cancel()
+        scanTasks.scanTask = Task {
             let (stats, results) = await service.scanAllCategories()
 
             // Apply auto selection for each category
@@ -85,7 +89,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                     self.isScanning = false
                     self.hasCompletedInitialScan = true
                     self.scanProgress = ""
-                    self.progressTask?.cancel()
+                    self.scanTasks.cancelProgress()
                 }
             }
 
@@ -108,11 +112,15 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                             DiskManagerPlugin.logger.info("\(self.t)停止扫描 Xcode 缓存")
             }
         }
-        scanTask?.cancel()
-        progressTask?.cancel()
-        Task { await service.cancelScan() }
+        cancelScanResources()
         isScanning = false
         scanProgress = ""
+    }
+
+    private func cancelScanResources() {
+        scanTasks.cancel()
+        let service = service
+        Task { await service.cancelScan() }
     }
 
     func toggleSelection(for item: XcodeCleanItem) {

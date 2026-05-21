@@ -14,25 +14,41 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
     /// 当前项目的缓存项目画像。
     @Published var profile: GitHubInsightProjectProfile?
 
+    private var loadTask: Task<Void, Never>?
+
+    deinit {
+        loadTask?.cancel()
+    }
+
     /// 加载缓存数据，并在需要时同步项目缓存。
     func load(projectPath: String, force: Bool = false) {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        loadTask?.cancel()
+
         guard !path.isEmpty else {
             state = .idle
             entries = []
             profile = nil
+            loadTask = nil
             return
         }
 
-        Task {
+        loadTask = Task { [weak self] in
             if !force {
-                await loadCache(projectPath: path)
+                await self?.loadCache(projectPath: path)
+                guard !Task.isCancelled else { return }
             }
 
-            state = .syncing
+            await MainActor.run { [weak self] in
+                self?.state = .syncing
+            }
             let newState = await GitHubInsightSyncService.shared.syncIfNeeded(projectPath: path, force: force)
-            state = newState
-            await loadCache(projectPath: path)
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run { [weak self] in
+                self?.state = newState
+            }
+            await self?.loadCache(projectPath: path)
         }
     }
 

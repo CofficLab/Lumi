@@ -34,7 +34,7 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
         // 获取当前活跃窗口的项目
         let projectPath = await MainActor.run {
-            RootContainer.shared.windowManagerVM.activeWindowScope?.projectPath
+            RootContainer.shared.windowManagerVM.activeWindowContainer?.projectPath
         }
 
         guard let projectPath else {
@@ -56,12 +56,5 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
         **Project Path**: \(projectPath)
         """
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }

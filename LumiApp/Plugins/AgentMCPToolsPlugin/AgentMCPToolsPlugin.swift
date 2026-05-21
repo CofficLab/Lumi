@@ -30,7 +30,11 @@ actor AgentMCPToolsPlugin: SuperPlugin {
         // 暂时禁用自动连接 MCP 服务器，以避免运行时崩溃
     }
 
-    nonisolated func onDisable() {}
+    nonisolated func onDisable() {
+        Task {
+            await mcpService.disconnectAll()
+        }
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

@@ -23,6 +23,12 @@ actor LSPServiceEditorPlugin: SuperPlugin {
 
     nonisolated var providesEditorExtensions: Bool { true }
 
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            LSPService.shared.stopAll()
+        }
+    }
+
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 创建 LSP 协调器并注册到 Registry — 内核通过协议接口使用，不直接引用插件类型
         let coordinator = LSPCoordinator(lspService: .shared)

@@ -8,12 +8,12 @@ import os
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
+/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
 /// 持久化由 LayoutPlugin 插件负责，WindowLayoutVM 不直接读写磁盘。
 ///
 /// ## 初始化规则
 ///
-/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
 /// View 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
 @MainActor
 final class WindowLayoutVM: ObservableObject, SuperLog {

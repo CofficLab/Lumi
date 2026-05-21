@@ -38,6 +38,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private var downloadSession: URLSession!
     private var currentFileProgress: Int64 = 0
     private var currentFileTotal: Int64 = 0
+    private var isShutdown = false
 
     private let fileManager = FileManager.default
     private var tempDirectory: URL
@@ -60,10 +61,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
     }
 
+    deinit {
+        shutdown()
+    }
+
     // MARK: - Public Methods
 
     /// 下载模型
     public func download(modelId: String) async {
+        guard !isShutdown else { return }
+
         if self.downloadingModelId == modelId && status == .downloading {
             return
         }
@@ -123,6 +130,21 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)下载已取消")
         }
+    }
+
+    public func shutdown() {
+        guard !isShutdown else { return }
+        isShutdown = true
+
+        activeDownloadTask?.cancel()
+        activeDownloadTask = nil
+        downloadTask?.cancel()
+        downloadTask = nil
+        downloadSession.invalidateAndCancel()
+
+        status = .idle
+        downloadingModelId = nil
+        progress = DownloadProgress()
     }
 
     /// 重置状态
