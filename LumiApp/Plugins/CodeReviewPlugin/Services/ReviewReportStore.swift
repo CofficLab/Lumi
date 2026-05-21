@@ -3,7 +3,9 @@ import Foundation
 actor ReviewReportStore {
     static let shared = ReviewReportStore()
 
+    private let maxInMemoryReports = 20
     private var latestReports: [String: ReviewReport] = [:]
+    private var reportKeysByRecency: [String] = []
     private var state: ReviewState = .idle
 
     func setState(_ state: ReviewState) {
@@ -15,13 +17,19 @@ actor ReviewReportStore {
     }
 
     func save(_ report: ReviewReport) throws {
-        latestReports[key(repositoryPath: report.repositoryPath, scope: report.scope)] = report
+        let key = key(repositoryPath: report.repositoryPath, scope: report.scope)
+        latestReports[key] = report
+        markRecentlyUsed(key)
+        trimInMemoryReportsIfNeeded()
         try persist(report)
         state = .completed(reportId: report.id)
     }
 
     func latest(repositoryPath: String, scope: ReviewScope) -> ReviewReport? {
-        latestReports[key(repositoryPath: repositoryPath, scope: scope)]
+        let key = key(repositoryPath: repositoryPath, scope: scope)
+        guard let report = latestReports[key] else { return nil }
+        markRecentlyUsed(key)
+        return report
     }
 
     func issueCounts(for report: ReviewReport) -> [ReviewSeverity: Int] {
@@ -47,6 +55,18 @@ actor ReviewReportStore {
 
     private func key(repositoryPath: String, scope: ReviewScope) -> String {
         "\(repositoryPath)#\(scope.rawValue)"
+    }
+
+    private func markRecentlyUsed(_ key: String) {
+        reportKeysByRecency.removeAll { $0 == key }
+        reportKeysByRecency.append(key)
+    }
+
+    private func trimInMemoryReportsIfNeeded() {
+        while reportKeysByRecency.count > maxInMemoryReports {
+            let oldestKey = reportKeysByRecency.removeFirst()
+            latestReports.removeValue(forKey: oldestKey)
+        }
     }
 }
 
