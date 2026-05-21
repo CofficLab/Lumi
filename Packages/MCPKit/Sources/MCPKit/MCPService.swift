@@ -70,6 +70,19 @@ public final class MCPService: @unchecked Sendable {
         }
     }
 
+    public func disconnectAll() async {
+        let clients = connectedClients.values
+
+        connectedClients.removeAll()
+        cachedTools.removeAll()
+        tools.removeAll()
+        toolsPublisher.send([])
+
+        for client in clients {
+            await client.disconnect()
+        }
+    }
+
     public func updateToolsFromCache() async {
         var newTools: [MCPDiscoveredTool] = []
 
