@@ -47,6 +47,9 @@ extension Notification.Name {
 
     /// 请求将当前窗口状态写入磁盘（如项目切换后）
     static let windowStateShouldPersist = Notification.Name("windowStateShouldPersist")
+
+    /// 窗口关闭通知（`WindowPersistencePlugin` 等用于刷盘）
+    static let windowClosed = Notification.Name("windowClosed")
 }
 
 // MARK: - NotificationCenter Extension
@@ -155,6 +158,15 @@ extension NotificationCenter {
     /// 发送请求将当前窗口状态写入磁盘的通知
     static func postWindowStateShouldPersist() {
         NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
+    }
+
+    /// 发送窗口关闭通知
+    /// - Parameter windowId: 已关闭窗口的 ID
+    static func postWindowClosed(_ windowId: UUID) {
+        NotificationCenter.default.post(
+            name: .windowClosed,
+            object: windowId
+        )
     }
 }
 

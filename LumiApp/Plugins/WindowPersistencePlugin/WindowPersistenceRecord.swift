@@ -5,8 +5,10 @@ struct WindowPersistenceRecord: Codable {
     let windowId: UUID
     let conversationId: UUID?
     let projectPath: String?
-    let activePanel: String?
-    let editorState: WindowEditorState?
+    /// 编辑器已打开文件路径
+    let editorOpenFilePaths: [String]?
+    /// 编辑器当前活跃文件路径
+    let editorActiveFilePath: String?
     let sidebarVisibility: Bool?
     let createdAt: Date?
 }

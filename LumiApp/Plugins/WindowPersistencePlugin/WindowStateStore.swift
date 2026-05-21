@@ -97,8 +97,10 @@ final class WindowStateStore: @unchecked Sendable {
                 windowId: container.id,
                 conversationId: container.selectedConversationId,
                 projectPath: container.projectPath,
-                activePanel: container.activePanel.rawValue,
-                editorState: container.editorState,
+                editorOpenFilePaths: container.editorOpenFileURLs.isEmpty
+                    ? nil
+                    : container.editorOpenFileURLs.map(\.path),
+                editorActiveFilePath: container.editorActiveFileURL?.path,
                 sidebarVisibility: container.sidebarVisibility,
                 createdAt: container.createdAt
             )

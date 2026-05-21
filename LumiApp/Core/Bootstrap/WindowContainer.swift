@@ -90,13 +90,10 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 全局容器引用（供 lazy Controller 使用）
     private let _container: RootContainer
 
-    // MARK: - Window-Level State (from WindowState)
+    // MARK: - Window-Level State
 
     /// 窗口标题
     @Published var title: String = "Lumi"
-
-    /// 当前活跃的面板类型
-    @Published var activePanel: WindowActivePanel = .chat
 
     /// 侧边栏可见性
     @Published var sidebarVisibility: Bool = true
@@ -104,8 +101,10 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 导航分栏视图的列可见性状态
     @Published var columnVisibility: NavigationSplitViewVisibility = .automatic
 
-    /// 窗口级编辑器状态
-    @Published var editorState: WindowEditorState = WindowEditorState()
+    /// 编辑器已打开的文件
+    @Published var editorOpenFileURLs: [URL] = []
+    /// 编辑器当前活跃文件
+    @Published var editorActiveFileURL: URL?
 
     /// 窗口是否活跃
     @Published var isActive: Bool = false
@@ -132,6 +131,11 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 是否已选择项目
     var isProjectSelected: Bool {
         projectVM.isProjectSelected
+    }
+
+    /// 编辑器是否有打开的文件
+    var hasOpenEditorFiles: Bool {
+        !editorOpenFileURLs.isEmpty
     }
 
     // MARK: - Combine Subscriptions
@@ -210,7 +214,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
                 to: Project(name: projectName, path: projectPath, lastUsed: Date()),
                 reason: "windowContainerInit"
             )
-            activePanel = .fileTree
         }
 
         updateTitle()
@@ -258,15 +261,12 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 切换到指定会话
     func switchToConversation(_ conversationId: UUID?, reason: String) {
         conversationVM.setSelectedConversation(conversationId, reason: reason)
-        if conversationId != nil {
-            activePanel = .chat
-        }
         updateTitle()
     }
 
     // MARK: - Persistence Restore
 
-    /// 从磁盘快照恢复窗口状态（项目、会话、面板、编辑器、侧栏）。
+    /// 从磁盘快照恢复窗口状态（项目、会话、编辑器、侧栏）。
     func applyPersistenceRecord(_ record: WindowPersistenceRecord) {
         if let conversationId = record.conversationId {
             conversationVM.setSelectedConversation(conversationId, reason: "windowPersistenceRestore")
@@ -279,16 +279,11 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             )
         }
 
-        if let panel = record.activePanel.flatMap(WindowActivePanel.init(rawValue:)) {
-            activePanel = panel
-        } else if record.conversationId != nil {
-            activePanel = .chat
-        } else if record.projectPath != nil {
-            activePanel = .fileTree
+        if let paths = record.editorOpenFilePaths {
+            editorOpenFileURLs = paths.map { URL(fileURLWithPath: $0) }
         }
-
-        if let editorState = record.editorState {
-            self.editorState = editorState
+        if let activePath = record.editorActiveFilePath {
+            editorActiveFileURL = URL(fileURLWithPath: activePath)
         }
 
         if let sidebarVisibility = record.sidebarVisibility {
@@ -308,9 +303,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
                 to: Project(name: projectName, path: path, lastUsed: Date()),
                 reason: reason
             )
-            if activePanel == .welcome {
-                activePanel = .fileTree
-            }
         } else {
             projectVM.clearProject()
         }
@@ -321,21 +313,17 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
     /// 打开文件到编辑器
     func openFile(_ url: URL) {
-        if !editorState.openFileURLs.contains(url) {
-            editorState.openFileURLs.append(url)
+        if !editorOpenFileURLs.contains(url) {
+            editorOpenFileURLs.append(url)
         }
-        editorState.activeFileURL = url
-        activePanel = .editor
+        editorActiveFileURL = url
     }
 
     /// 关闭文件
     func closeFile(_ url: URL) {
-        editorState.openFileURLs.removeAll { $0 == url }
-        if editorState.activeFileURL == url {
-            editorState.activeFileURL = editorState.openFileURLs.last
-        }
-        if !editorState.hasOpenFiles {
-            activePanel = projectPath != nil ? .fileTree : .chat
+        editorOpenFileURLs.removeAll { $0 == url }
+        if editorActiveFileURL == url {
+            editorActiveFileURL = editorOpenFileURLs.last
         }
     }
 
@@ -355,8 +343,8 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         permissionRequestVM.clearPending()
         conversationSendStatusVM.clearAll()
         editorVM.cleanupForTeardown()
-        editorState.openFileURLs.removeAll()
-        editorState.activeFileURL = nil
+        editorOpenFileURLs.removeAll()
+        editorActiveFileURL = nil
         isActive = false
     }
 

@@ -36,10 +36,9 @@ struct WindowPersistenceOverlay<Content: View>: View, SuperLog {
                 container.id.uuidString,
                 container.projectPath ?? "",
                 container.selectedConversationId?.uuidString ?? "",
-                container.activePanel.rawValue,
                 String(container.sidebarVisibility),
-                container.editorState.openFileURLs.map(\.path).joined(separator: ","),
-                container.editorState.activeFileURL?.path ?? "",
+                container.editorOpenFileURLs.map(\.path).joined(separator: ","),
+                container.editorActiveFileURL?.path ?? "",
             ].joined(separator: "|")
         }.joined(separator: ";")
     }

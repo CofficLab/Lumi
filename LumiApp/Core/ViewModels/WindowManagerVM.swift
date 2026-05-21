@@ -62,8 +62,6 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         containerMap[container.id] = container
         setActiveWindow(container.id)
 
-        NotificationCenter.postWindowContainerDidRegister(container)
-
         if Self.verbose {
             let count = self.windowContainers.count
             AppLogger.core.info("\(Self.t) 注册窗口: \(container.id.uuidString.prefix(8)), 总窗口数: \(count)")
@@ -96,8 +94,6 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         if let scope = containerMap[windowId] {
             scope.setActive(true)
         }
-
-        NotificationCenter.postWindowActivated(windowId)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 设置活跃窗口: \(windowId.uuidString.prefix(8))")
@@ -149,27 +145,6 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         for scope in windowsToClose {
             closeWindow(scope.id)
         }
-    }
-
-    // MARK: - Window Synchronization
-
-    /// 广播事件到所有窗口
-    func broadcast(_ event: WindowEvent) {
-        NotificationCenter.postWindowEvent(event, from: activeWindowId)
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) 广播事件: \(String(describing: event))")
-        }
-    }
-
-    /// 同步会话列表变更
-    func syncConversationList() {
-        broadcast(.conversationListChanged)
-    }
-
-    /// 同步会话内容更新
-    func syncConversationUpdate(_ conversationId: UUID) {
-        broadcast(.conversationUpdated(conversationId))
     }
 
     // MARK: - NSWindow Tracking
