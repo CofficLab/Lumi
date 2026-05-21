@@ -1,0 +1,9 @@
+# Swift Package Manager
+.build/
+build/
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+
+.DS_Store
