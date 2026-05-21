@@ -36,18 +36,27 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
     package init() {
         createStorageDirectoryIfNeeded()
         loadHistory()
-        startRecording()
     }
 
     // MARK: - Public Methods
 
     public func startRecording() {
+        guard cancellables.isEmpty else { return }
+
         CPUService.shared.startMonitoring()
         CPUService.shared.$cpuUsage
             .sink { [weak self] usage in
                 self?.recordDataPoint(usage: usage)
             }
             .store(in: &cancellables)
+    }
+
+    public func stopRecording() {
+        guard !cancellables.isEmpty else { return }
+
+        cancellables.removeAll()
+        CPUService.shared.stopMonitoring()
+        saveHistory()
     }
 
     public func getData(for range: CPUTimeRange) -> [CPUDataPoint] {

@@ -33,12 +33,13 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     package init() {
         createStorageDirectoryIfNeeded()
         loadHistory()
-        startRecording()
     }
 
     // MARK: - Public Methods
 
     public func startRecording() {
+        guard cancellables.isEmpty else { return }
+
         MemoryService.shared.startMonitoring()
         MemoryService.shared.$memoryUsagePercentage
             .combineLatest(MemoryService.shared.$usedMemory)
@@ -46,6 +47,14 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
                 self?.recordDataPoint(pct: pct, bytes: bytes)
             }
             .store(in: &cancellables)
+    }
+
+    public func stopRecording() {
+        guard !cancellables.isEmpty else { return }
+
+        cancellables.removeAll()
+        MemoryService.shared.stopMonitoring()
+        saveHistory()
     }
 
     public func getData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
