@@ -64,11 +64,11 @@ struct KeyboardShortcutsSettingsView: View {
                 Spacer()
 
                 if !keybindingStore.customBindings.isEmpty {
-                    GlassButton(title: "恢复全部默认", style: .danger) {
+                    AppButton("恢复全部默认", style: .destructive, fillsWidth: true, action: {
                         keybindingStore.resetAll()
                         validationMessage = nil
                         recordingCommandID = nil
-                    }
+                    })
                     .frame(width: 160)
                 }
             }
@@ -192,21 +192,24 @@ struct KeyboardShortcutsSettingsView: View {
                     }
                     .frame(width: 90, alignment: .trailing)
 
-                    Button(isRecording ? "停止录制" : "录制快捷键") {
-                        validationMessage = nil
-                        recordingCommandID = isRecording ? nil : command.id
-                    }
-                    .buttonStyle(.bordered)
+                    AppButton(
+                        isRecording ? "停止录制" : "录制快捷键",
+                        style: .secondary,
+                        size: .small,
+                        action: {
+                            validationMessage = nil
+                            recordingCommandID = isRecording ? nil : command.id
+                        }
+                    )
 
                     if isCustomized {
-                        Button("恢复默认") {
+                        AppButton("恢复默认", style: .ghost, size: .small, action: {
                             keybindingStore.removeBinding(commandID: command.id)
                             validationMessage = nil
                             if recordingCommandID == command.id {
                                 recordingCommandID = nil
                             }
-                        }
-                        .buttonStyle(.borderless)
+                        })
                     }
                 }
 
@@ -261,26 +264,7 @@ struct KeyboardShortcutsSettingsView: View {
     }
 
     private func categoryChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(
-                            isSelected
-                                ? AnyShapeStyle(Color(hex: "7C6FFF").opacity(0.18))
-                                : AnyShapeStyle(Material.regularMaterial)
-                        )
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color(hex: "7C6FFF").opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
+        AppButton(title, style: isSelected ? .tonal : .ghost, size: .small, action: action)
     }
 
     private var summaryText: String {

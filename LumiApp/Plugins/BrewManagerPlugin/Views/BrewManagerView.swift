@@ -63,9 +63,7 @@ struct BrewManagerView: View {
                         if !viewModel.outdatedPackages.isEmpty {
                             HStack {
                                 Spacer()
-                                GlassButton(title: LocalizedStringKey("Update All"), style: .primary) {
-                                    Task { await viewModel.upgradeAll() }
-                                }
+                                AppButton(LocalizedStringKey("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
                                 .padding()
                             }
                         }
@@ -135,9 +133,7 @@ struct BrewManagerView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
-                    Task { await viewModel.refresh() }
-                }
+                AppButton(LocalizedStringKey("Refresh"), style: .secondary, fillsWidth: true, action: { Task { await viewModel.refresh() } })
             }
         }
     }

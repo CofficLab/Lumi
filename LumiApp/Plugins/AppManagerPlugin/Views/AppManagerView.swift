@@ -101,9 +101,7 @@ struct AppManagerView: View {
 
                 Spacer()
 
-                GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
-                    viewModel.refresh()
-                }
+                AppButton(LocalizedStringKey("Refresh"), style: .secondary, fillsWidth: true, action: { viewModel.refresh() })
                 .disabled(viewModel.isLoading)
             }
         }

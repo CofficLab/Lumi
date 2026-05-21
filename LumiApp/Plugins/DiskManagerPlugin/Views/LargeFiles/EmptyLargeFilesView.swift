@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 空大文件列表视图
@@ -33,14 +34,13 @@ struct EmptyLargeFilesView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                Button(action: { viewModel.startScan() }, label: {
-                    Label(title: { Text(String(localized: "开始扫描", table: "DiskManager")) }, icon: { Image(systemName: "magnifyingglass.circle") })
-                        .font(.system(size: 15, weight: .medium))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                })
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "0A84FF"))
+                AppButton(
+                    localized: "开始扫描",
+                    table: "DiskManager",
+                    systemImage: "magnifyingglass.circle",
+                    style: .primary,
+                    action: { viewModel.startScan() }
+                )
             }
         }
         .padding(24)

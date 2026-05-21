@@ -87,9 +87,7 @@ struct AppManagerDetailView: View {
 
                         Spacer()
 
-                        GlassButton(title: "Uninstall Selected", tableName: "AppManager", style: .danger) {
-                            viewModel.showUninstallConfirmation = true
-                        }
+                        AppButton(localized: "Uninstall Selected", table: "AppManager", style: .destructive, fillsWidth: true, action: { viewModel.showUninstallConfirmation = true })
                         .controlSize(.mini)
                         .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }

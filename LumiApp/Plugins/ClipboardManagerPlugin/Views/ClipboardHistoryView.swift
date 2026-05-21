@@ -19,9 +19,7 @@ struct ClipboardHistoryView: View {
                 }
                 
                 if !viewModel.searchText.isEmpty {
-                    GlassButton(title: "Clear", style: .ghost) {
-                        viewModel.searchText = ""
-                    }
+                    AppButton("Clear", style: .ghost, fillsWidth: true, action: { viewModel.searchText = "" })
                 }
             }
             .padding(10)
@@ -70,9 +68,7 @@ struct ClipboardHistoryView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
-                GlassButton(title: "Clear All", style: .danger) {
-                    viewModel.clearAll()
-                }
+                AppButton("Clear All", style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
                 .help(String(localized: "Clear History", table: "ClipboardManager"))
             }
             .padding(8)

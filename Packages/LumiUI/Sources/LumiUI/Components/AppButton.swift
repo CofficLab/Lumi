@@ -10,6 +10,7 @@ public struct AppButton: View {
         case secondary
         case ghost
         case tonal
+        case destructive
     }
 
     public enum Size {
@@ -24,6 +25,7 @@ public struct AppButton: View {
 
     let title: Text
     let systemImage: String?
+    let showsTitle: Bool
     let style: Style
     let size: Size
     let fillsWidth: Bool
@@ -42,6 +44,7 @@ public struct AppButton: View {
         self.systemImage = systemImage
         self.style = style
         self.size = size
+        self.showsTitle = true
         self.fillsWidth = fillsWidth
         self.isDisabled = false
         self.action = action
@@ -59,7 +62,45 @@ public struct AppButton: View {
         self.systemImage = systemImage
         self.style = style
         self.size = size
+        self.showsTitle = true
         self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    /// 本地化标题（String Catalog table）。
+    public init(
+        localized title: String,
+        table: String,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(String(localized: String.LocalizationValue(title), table: table))
+        self.systemImage = systemImage
+        self.showsTitle = true
+        self.style = style
+        self.size = size
+        self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    /// 仅图标按钮。
+    public init(
+        systemImage: String,
+        style: Style = .ghost,
+        size: Size = .small,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(verbatim: "")
+        self.systemImage = systemImage
+        self.showsTitle = false
+        self.style = style
+        self.size = size
+        self.fillsWidth = false
         self.isDisabled = false
         self.action = action
     }
@@ -67,6 +108,7 @@ public struct AppButton: View {
     private init(
         title: Text,
         systemImage: String?,
+        showsTitle: Bool,
         style: Style,
         size: Size,
         fillsWidth: Bool,
@@ -75,6 +117,7 @@ public struct AppButton: View {
     ) {
         self.title = title
         self.systemImage = systemImage
+        self.showsTitle = showsTitle
         self.style = style
         self.size = size
         self.fillsWidth = fillsWidth
@@ -88,7 +131,9 @@ public struct AppButton: View {
                 if let systemImage {
                     Image(systemName: systemImage)
                 }
-                title
+                if showsTitle {
+                    title
+                }
             }
             .font(font)
             .foregroundStyle(foregroundColor)
@@ -115,6 +160,7 @@ public struct AppButton: View {
         AppButton(
             title: title,
             systemImage: systemImage,
+            showsTitle: showsTitle,
             style: style,
             size: size,
             fillsWidth: fillsWidth,
@@ -151,6 +197,8 @@ public struct AppButton: View {
             theme.primary
         case .tonal:
             theme.textSecondary
+        case .destructive:
+            theme.error
         }
     }
 
@@ -169,6 +217,9 @@ public struct AppButton: View {
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+            case .destructive:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? theme.error.opacity(0.35) : theme.error.opacity(0.22))
             }
         }
     }
@@ -192,6 +243,12 @@ public struct AppButton: View {
                         isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
                         lineWidth: 1
                     )
+            case .destructive:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? theme.error.opacity(0.55) : theme.error.opacity(0.35),
+                        lineWidth: 1
+                    )
             default:
                 EmptyView()
             }
@@ -210,6 +267,7 @@ public struct AppButton: View {
             HStack(spacing: 8) {
                 AppButton("Ghost", style: .ghost) {}
                 AppButton("Tonal", style: .tonal) {}
+                AppButton("Destructive", style: .destructive) {}
             }
             HStack(spacing: 8) {
                 AppButton("Small", systemImage: "star", style: .primary, size: .small) {}

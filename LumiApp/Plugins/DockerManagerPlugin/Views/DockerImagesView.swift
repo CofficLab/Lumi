@@ -285,13 +285,9 @@ struct DockerImageDetailView: View {
                     }
                     Spacer()
 
-                    GlassButton(title: "Scan", style: .secondary) {
-                        Task { await viewModel.scanImage(image) }
-                    }
+                    AppButton("Scan", style: .secondary, fillsWidth: true, action: { Task { await viewModel.scanImage(image) } })
 
-                    GlassButton(title: "Delete", style: .danger) {
-                        showDeleteAlert = true
-                    }
+                    AppButton("Delete", style: .destructive, fillsWidth: true, action: { showDeleteAlert = true })
                 }
                 }
 

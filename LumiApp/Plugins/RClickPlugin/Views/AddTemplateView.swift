@@ -29,14 +29,12 @@ struct AddTemplateView: View {
             .formStyle(.grouped)
 
             HStack {
-                GlassButton(title: LocalizedStringKey(String(localized: "Cancel")), style: .ghost) {
-                    isPresented = false
-                }
+                AppButton(localized: "Cancel", table: "Localizable", style: .ghost, fillsWidth: true, action: { isPresented = false })
                 Spacer()
-                GlassButton(title: LocalizedStringKey(String(localized: "Add")), style: .primary) {
+                AppButton(localized: "Add", table: "Localizable", style: .primary, fillsWidth: true, action: {
                     onAdd(name, ext, content)
                     isPresented = false
-                }
+                })
                 .disabled(name.isEmpty || ext.isEmpty)
             }
             .padding()

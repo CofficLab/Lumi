@@ -35,9 +35,7 @@ struct DatabaseMainView: View {
                 }
                 .listStyle(.sidebar)
                 
-                GlassButton(title: "Add Connection", style: .primary) {
-                    showAddConfigSheet = true
-                }
+                AppButton("Add Connection", style: .primary, fillsWidth: true, action: { showAddConfigSheet = true })
                 .padding()
             }
             .frame(minWidth: 200, maxWidth: 300)
@@ -54,18 +52,14 @@ struct DatabaseMainView: View {
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
-                                        GlassButton(title: "Load", style: .secondary) {
-                                            Task { await viewModel.loadRedisKeys() }
-                                        }
+                                        AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadRedisKeys() } })
                                     }
                                     List(viewModel.redisKeys, id: \.self) { key in
                                         HStack {
                                             Image(systemName: "key")
                                             Text(key)
                                             Spacer()
-                                            GlassButton(title: "Open", style: .ghost) {
-                                                Task { await viewModel.openRedisKey(key) }
-                                            }
+                                            AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openRedisKey(key) } })
                                         }
                                     }
                                     .frame(minHeight: 120, maxHeight: 200)
@@ -81,18 +75,14 @@ struct DatabaseMainView: View {
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
-                                        GlassButton(title: "Load", style: .secondary) {
-                                            Task { await viewModel.loadSQLiteTables() }
-                                        }
+                                        AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadSQLiteTables() } })
                                     }
                                     List(viewModel.sqliteTables, id: \.self) { table in
                                         HStack {
                                             Image(systemName: "tablecells")
                                             Text(table)
                                             Spacer()
-                                            GlassButton(title: "Open", style: .ghost) {
-                                                Task { await viewModel.openSQLiteTable(table) }
-                                            }
+                                            AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openSQLiteTable(table) } })
                                         }
                                     }
                                     .frame(minHeight: 120, maxHeight: 200)
@@ -111,17 +101,13 @@ struct DatabaseMainView: View {
                         HStack {
                             Spacer()
                             if viewModel.isConnected {
-                                GlassButton(title: "Disconnect", style: .secondary) {
-                                    Task { await viewModel.disconnect() }
-                                }
+                                AppButton("Disconnect", style: .secondary, fillsWidth: true, action: { Task { await viewModel.disconnect() } })
                             }
                             if viewModel.isLoading {
                                 ProgressView()
                                     .scaleEffect(0.5)
                             }
-                            GlassButton(title: "Run", style: .primary) {
-                                Task { await viewModel.executeQuery() }
-                            }
+                            AppButton("Run", style: .primary, fillsWidth: true, action: { Task { await viewModel.executeQuery() } })
                             .keyboardShortcut(.return, modifiers: .command)
                         }
                         .padding(8)
@@ -274,8 +260,8 @@ struct AddConnectionView: View {
             }
             
             HStack {
-                GlassButton(title: "Cancel", style: .ghost) { isPresented = false }
-                GlassButton(title: "Test Connection", style: .secondary) {
+                AppButton("Cancel", style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton("Test Connection", style: .secondary, fillsWidth: true, action: {
                     isTesting = true
                     testMessage = nil
                     testSuccess = false
@@ -302,8 +288,8 @@ struct AddConnectionView: View {
                         }
                         isTesting = false
                     }
-                }
-                GlassButton(title: "Add", style: .primary) {
+                })
+                AppButton("Add", style: .primary, fillsWidth: true, action: {
                     let port = Int(portText)
                     let config = DatabaseConfig(
                         name: name,
@@ -317,7 +303,7 @@ struct AddConnectionView: View {
                     )
                     viewModel.addConfig(config)
                     isPresented = false
-                }
+                })
                 .disabled(!isValid())
             }
             
