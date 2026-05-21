@@ -3,23 +3,35 @@ import Darwin
 import Foundation
 import SQLite3
 
-/// 运行时动态加载 sqlite3 extension 相关函数（系统 libsqlite3 可能不导出这些符号）
-private enum SQLiteExtLoader: Sendable {
+/// vec0.dylib 随 ThirdParty/sqlite 3.51.3 构建；更低版本 API 表不完整，加载会在扩展 init 内 SIGSEGV。
+private let ragVec0MinimumSQLiteVersionNumber = 3_051_003
+
+/// 与 `import SQLite3` 使用同一 libsqlite3；通过 dlsym 解析，避免 RAGKit 测试目标链接未导出的符号。
+private enum SQLiteExtensionAPI: Sendable {
+    typealias EnableLoadExtensionFn = @convention(c) (OpaquePointer?, Int32) -> Int32
+    typealias LoadExtensionFn = @convention(c) (
+        OpaquePointer?,
+        UnsafePointer<CChar>?,
+        UnsafePointer<CChar>?,
+        UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+    ) -> Int32
+
     private nonisolated(unsafe) static let handle: UnsafeMutableRawPointer? = {
         dlopen("/usr/lib/libsqlite3.dylib", RTLD_NOW)
     }()
 
-    typealias EnableLoadExtensionFn = @convention(c) (OpaquePointer?, Int32) -> Int32
-    typealias LoadExtensionFn = @convention(c) (OpaquePointer?, UnsafePointer<CChar>?, UnsafePointer<CChar>?, UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?) -> Int32
+    private static func symbol<T>(_ name: String, as type: T.Type) -> T? {
+        guard let handle else { return nil }
+        guard let ptr = dlsym(handle, name) else { return nil }
+        return unsafeBitCast(ptr, to: type)
+    }
 
     static var enableLoadExtension: EnableLoadExtensionFn? {
-        guard let handle else { return nil }
-        return unsafeBitCast(dlsym(handle, "sqlite3_enable_load_extension"), to: EnableLoadExtensionFn.self)
+        symbol("sqlite3_enable_load_extension", as: EnableLoadExtensionFn.self)
     }
 
     static var loadExtension: LoadExtensionFn? {
-        guard let handle else { return nil }
-        return unsafeBitCast(dlsym(handle, "sqlite3_load_extension"), to: LoadExtensionFn.self)
+        symbol("sqlite3_load_extension", as: LoadExtensionFn.self)
     }
 }
 
@@ -648,6 +660,15 @@ final class RAGSQLiteStore: @unchecked Sendable {
             )
         }
 
+        let runtimeVersion = sqlite3_libversion_number()
+        guard runtimeVersion >= ragVec0MinimumSQLiteVersionNumber else {
+            return RAGRuntimeInfo(
+                vectorBackend: .swiftCosine,
+                sqliteVecPath: path,
+                note: "系统 SQLite \(String(cString: sqlite3_libversion())) 低于 vec0 所需 3.51.3，已回退 Swift 余弦"
+            )
+        }
+
         do {
             try loadSQLiteExtension(at: path)
             try ensureVectorTable(dimension: embeddingDimension)
@@ -796,8 +817,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     private func loadSQLiteExtension(at path: String) throws {
         guard let db else { throw RAGError.dbError("数据库未打开") }
 
-        guard let enableFn = SQLiteExtLoader.enableLoadExtension,
-              let loadFn = SQLiteExtLoader.loadExtension else {
+        guard let enableFn = SQLiteExtensionAPI.enableLoadExtension,
+              let loadFn = SQLiteExtensionAPI.loadExtension else {
             throw RAGError.dbError("系统 sqlite3 不支持扩展加载")
         }
 
