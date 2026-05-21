@@ -6,7 +6,6 @@ import MagicKit
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var recentProjectsVM: AppProjectsVM
-    @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
@@ -109,16 +108,6 @@ struct RecentProjectsSidebarView: View {
             NSItemProvider(object: project.path as NSString)
         } preview: {
             RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
-        }
-        .contextMenu {
-            Button {
-                openWindow(
-                    id: MainWindowID.main,
-                    value: LumiWindowRoute(projectPath: project.path)
-                )
-            } label: {
-                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
-            }
         }
     }
 

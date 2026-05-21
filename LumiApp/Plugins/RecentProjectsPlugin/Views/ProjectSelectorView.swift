@@ -7,7 +7,6 @@ struct ProjectSelectorView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject private var projectContextRequestVM: WindowProjectContextRequestVM
     @EnvironmentObject var recentProjectsVM: AppProjectsVM
-    @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool
 
@@ -198,17 +197,6 @@ struct ProjectSelectorView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.trailing, 8)
-            }
-        }
-        .contextMenu {
-            Button {
-                openWindow(
-                    id: MainWindowID.main,
-                    value: LumiWindowRoute(projectPath: project.path)
-                )
-                isPresented = false
-            } label: {
-                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
             }
         }
         .padding(.horizontal)
