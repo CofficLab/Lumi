@@ -9,7 +9,7 @@ struct XcodeCleanerView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            if viewModel.itemsByCategory.isNotEmpty && viewModel.isScanning == false {
+            if viewModel.itemsByCategory.isEmpty == false && viewModel.isScanning == false {
                 XcodeScanControlBar(viewModel: viewModel)
             }
 

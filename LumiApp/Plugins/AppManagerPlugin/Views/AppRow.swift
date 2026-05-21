@@ -21,10 +21,6 @@ struct AppRow: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(hex: "98989E").opacity(0.3))
                     .frame(width: 48, height: 48)
-                    .overlay {
-                        Image.appleTerminal
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    }
             }
 
             VStack(alignment: .leading, spacing: 4) {

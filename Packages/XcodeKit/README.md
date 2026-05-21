@@ -21,7 +21,7 @@
 ## 依赖
 
 - [XcodeProj](https://github.com/tuist/XcodeProj) — 解析 `.pbxproj` 文件结构
-- [MagicKit](https://github.com/CofficLab/MagicKit) — 日志格式化（SuperLog）
+- [SuperLogKit](../SuperLogKit) — 日志格式化（SuperLog）
 
 ## 基本用法
 

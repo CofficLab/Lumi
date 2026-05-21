@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import MagicKit
+import SuperLogKit
 import os
 import AppKit
 

@@ -13,13 +13,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "DeviceMonitorKit",
             dependencies: [
-                .product(name: "MagicKit", package: "MagicKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/DeviceMonitorKit"
         ),

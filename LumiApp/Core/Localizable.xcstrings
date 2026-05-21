@@ -625,6 +625,7 @@
       }
     },
     "Add" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -673,6 +674,7 @@
       }
     },
     "Add Template" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -711,6 +713,7 @@
       }
     },
     "Allow" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -940,6 +943,7 @@
       }
     },
     "Cancel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1010,6 +1014,7 @@
       }
     },
     "Clear" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1026,6 +1031,7 @@
       }
     },
     "Clear All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1231,6 +1237,7 @@
       }
     },
     "Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1263,6 +1270,7 @@
       }
     },
     "Deny" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1345,6 +1353,7 @@
       }
     },
     "Disconnect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1918,6 +1927,7 @@
 
     },
     "Load" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2212,6 +2222,7 @@
       }
     },
     "Open" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2231,6 +2242,7 @@
 
     },
     "Open System Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2538,6 +2550,7 @@
 
     },
     "Reset" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2624,6 +2637,7 @@
       }
     },
     "Scan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2968,6 +2982,7 @@
       }
     },
     "Test Connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3085,6 +3100,7 @@
       }
     },
     "Uninstall Selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3384,9 +3400,6 @@
           }
         }
       }
-    },
-    "停止录制" : {
-
     },
     "全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。" : {
 
@@ -3734,19 +3747,10 @@
         }
       }
     },
-    "录制快捷键" : {
-
-    },
     "快捷键" : {
 
     },
     "快速修复" : {
-
-    },
-    "恢复全部默认" : {
-
-    },
-    "恢复默认" : {
 
     },
     "打开App Support目录" : {
@@ -4085,6 +4089,7 @@
 
     },
     "添加" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4330,6 +4335,7 @@
 
     },
     "重新查看新手引导" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

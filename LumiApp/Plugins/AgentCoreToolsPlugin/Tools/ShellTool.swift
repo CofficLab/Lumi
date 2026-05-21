@@ -70,7 +70,7 @@ struct ShellTool: SuperAgentTool, SuperLog {
 
         let riskLevel = CommandRiskEvaluator.evaluate(command: command)
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(command.max(40))")
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(command.max(count: 40))")
         }
 
         let shellService = ShellService.shared

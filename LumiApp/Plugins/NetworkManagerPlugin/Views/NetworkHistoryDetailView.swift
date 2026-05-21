@@ -35,9 +35,6 @@ struct NetworkHistoryDetailView: View {
             )
             .frame(height: 140)
             .background(Color.white.opacity(0.08))
-            .roundedMedium()
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
 
             GlassDivider()
 

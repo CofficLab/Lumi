@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import LumiUI
 
 enum AvailabilityDetailMode: Equatable {

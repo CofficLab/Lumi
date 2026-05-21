@@ -114,7 +114,7 @@ struct ToolCallLoopDetectionSuperSendMiddleware: SuperSendMiddleware {
         - 工具：\(pattern.toolName)
         - 调用次数：\(pattern.count)
         - 阈值：\(pattern.threshold)
-        - 参数：\(pattern.toolArguments.max(100))
+        - 参数：\(pattern.toolArguments.max(count: 100))
         """)
 
         // 从上下文获取语言偏好

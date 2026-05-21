@@ -249,7 +249,7 @@ extension RemoteProviderSettingsView {
 
     /// 保存选中的模型到持久化存储
     private func saveModel() {
-        guard selectedProviderId.isNotEmpty else { return }
+        guard selectedProviderId.isEmpty == false else { return }
         if Self.verbose {
             AppLogger.core.info("\(Self.t)保存模型 \(r("provider=\(selectedProviderId), model=\(selectedModel)"))")
         }
@@ -283,7 +283,7 @@ extension RemoteProviderSettingsView {
     /// 加载当前选中的模型
     /// 优先级：用户配置 > 供应商默认 > 第一个可用模型
     private func loadSelectedModel() {
-        guard selectedProviderId.isNotEmpty else { return }
+        guard selectedProviderId.isEmpty == false else { return }
 
         // 1. 优先使用用户配置的模型
         if let savedModel = AppSettingStore.loadRemoteProviderModel(providerId: selectedProviderId),

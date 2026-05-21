@@ -1,7 +1,7 @@
 import AppKit
 import CoreImage
 import IOSurface
-import MagicKit
+import SuperLogKit
 import os
 
 public extension LumiPreviewFacade {

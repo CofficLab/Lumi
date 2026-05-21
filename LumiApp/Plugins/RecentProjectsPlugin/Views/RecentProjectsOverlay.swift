@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 最近项目覆盖层

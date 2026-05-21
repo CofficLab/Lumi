@@ -8,7 +8,7 @@ import SwiftUI
 /// 
 /// ## 实现方式
 ///
-/// 使用 MagicKit 提供的 `URL.openInGitHubDesktop()` 方法：
+/// 使用 OpenInKit 提供的 `URL.openInGitHubDesktop()` 方法：
 /// - 首选 URL Scheme: `github-desktop://openLocalRepo?path=...`
 /// - 回退方案: 通过 Bundle ID `com.github.GitHubClient` 打开应用
 ///

@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import MagicAlert
-import MagicKit
 import SwiftUI
 
 /// 根事件监听视图

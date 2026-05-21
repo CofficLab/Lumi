@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../LumiCodeEditSourceEditor"),
         .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.1"),
         .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20"),
-        .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
+        .package(path: "../SuperLogKit"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
     ],
@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
-                .product(name: "MagicKit", package: "MagicKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ]

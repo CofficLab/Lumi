@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import MagicKit
+import SuperLogKit
 import CodeEditSourceEditor
 
 /// 编辑器 UI 状态

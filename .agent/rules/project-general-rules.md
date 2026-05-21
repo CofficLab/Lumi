@@ -7,13 +7,13 @@
 ## 项目信息
 
 - **平台**: macOS APP
-- **技术栈**: SwiftUI, Swift, MagicKit
+- **技术栈**: SwiftUI, Swift, SuperLogKit, OpenInKit
 
 ### 模块导入（LumiApp）
 
-`LumiApp/Core/Bootstrap/Global.swift` 通过 `@_exported import` 向整个 **LumiApp** 模块透出 `MagicKit`（`SuperLog`、`SuperPlugin`、`SuperAgentTool` 等）与 `EditorService`。因此 **LumiApp 内**（含 `Core/`、`Plugins/`）一般**不必**再写 `import MagicKit` 或 `import EditorService`。
+`LumiApp/Core/Bootstrap/Global.swift` 通过 `@_exported import` 向整个 **LumiApp** 模块透出 `SuperLogKit`（`SuperLog`）、`OpenInKit`（`URL.openIn*`）与 `EditorService`。`SuperPlugin`、`SuperAgentTool` 等定义在 `LumiApp/Core/Proto/`。因此 **LumiApp 内**一般**不必**再写 `import SuperLogKit`、`import OpenInKit` 或 `import EditorService`。
 
-独立 **SPM Package**（如 `Packages/RAGKit`）仍是独立模块，须按需自行 `import MagicKit`，并尽量少依赖。
+独立 **SPM Package** 仍是独立模块，须按需自行 `import SuperLogKit` 等，并尽量少依赖。
 
 ---
 

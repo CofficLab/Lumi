@@ -17,13 +17,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/MagicKit", branch: "main")
+        .package(path: "../SuperLogKit")
     ],
     targets: [
         .target(
             name: "LumiPreviewKit",
             dependencies: [
-                .product(name: "MagicKit", package: "MagicKit")
+                .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
             path: "Sources/LumiPreviewKit"
         ),

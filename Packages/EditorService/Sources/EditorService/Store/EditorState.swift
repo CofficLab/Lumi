@@ -8,7 +8,7 @@ import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
 import UniformTypeIdentifiers
-import MagicKit
+import SuperLogKit
 import os
 
 /// 编辑器状态管理器

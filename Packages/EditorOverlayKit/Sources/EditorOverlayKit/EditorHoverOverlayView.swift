@@ -1,5 +1,5 @@
 import SwiftUI
-import MagicKit
+import SuperLogKit
 import EditorService
 
 /// 编辑器悬停提示悬浮层。

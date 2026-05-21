@@ -1,6 +1,6 @@
 import Foundation
 import os
-import MagicKit
+import SuperLogKit
 
 /// Xcode 项目解析器：发现并解析 .xcodeproj / .xcworkspace
 final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {

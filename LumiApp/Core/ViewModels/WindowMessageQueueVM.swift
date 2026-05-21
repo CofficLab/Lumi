@@ -60,7 +60,7 @@ final class WindowMessageQueueVM: ObservableObject, SuperLog {
         queueVersion += 1
         
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)🔄 消息重新入队：\(message.content.max(50))")
+            AppLogger.core.info("\(Self.t)🔄 消息重新入队：\(message.content.max(count: 50))")
         }
     }
 

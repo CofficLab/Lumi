@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import MagicKit
+import SuperLogKit
 import os
 
 /// Memory monitoring service providing real-time memory usage data.

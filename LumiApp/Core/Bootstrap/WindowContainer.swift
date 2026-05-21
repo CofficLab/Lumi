@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 窗口作用域容器

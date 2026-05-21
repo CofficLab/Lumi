@@ -1,7 +1,7 @@
 import Cocoa
 import FinderSync
-import MagicKit
 import os
+import SuperLogKit
 
 extension FinderSync {
     

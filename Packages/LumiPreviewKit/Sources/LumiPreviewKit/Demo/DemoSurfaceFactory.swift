@@ -1,6 +1,6 @@
 import Foundation
 import IOSurface
-import MagicKit
+import SuperLogKit
 import os
 
 public extension LumiPreviewFacade {

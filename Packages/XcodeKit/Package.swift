@@ -14,14 +14,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/tuist/XcodeProj", from: "9.11.0"),
-        .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "XcodeKit",
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
-                .product(name: "MagicKit", package: "MagicKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ]
         ),
         .testTarget(

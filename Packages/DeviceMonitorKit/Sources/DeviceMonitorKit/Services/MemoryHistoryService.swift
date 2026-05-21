@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import MagicKit
+import SuperLogKit
 import os
 
 /// Memory history service with high-resolution (1s) and long-term (1m) storage.

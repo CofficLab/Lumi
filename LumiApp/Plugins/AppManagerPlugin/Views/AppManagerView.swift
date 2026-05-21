@@ -24,14 +24,15 @@ struct AppManagerView: View {
                 }
             }
             .frame(minWidth: 400, maxWidth: .infinity)
-            .infiniteHeight()
+            .frame(maxHeight: .infinity)
             
             // Right: Details
             detailView
                 .frame(minWidth: 400, maxWidth: .infinity)
-                .infiniteHeight()
+                .frame(maxHeight: .infinity)
         }
-        .infinite()
+        .frame(maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .navigationTitle(String(localized: "App Manager", table: "AppManager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {

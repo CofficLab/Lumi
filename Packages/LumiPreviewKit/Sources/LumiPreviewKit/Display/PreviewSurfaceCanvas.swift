@@ -1,5 +1,5 @@
 import AppKit
-import MagicKit
+import SuperLogKit
 import os
 import SwiftUI
 

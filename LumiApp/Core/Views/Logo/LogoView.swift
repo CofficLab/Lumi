@@ -76,7 +76,3 @@ struct LogoView: View {
     .frame(height: 600)
 }
 
-#Preview("LogoView - Snapshot") {
-    LogoView(scene: .appIcon)
-        .inMagicContainer(.init(width: 1024, height: 1024), scale: 0.5)
-}
