@@ -30,6 +30,18 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = MenuBarManagerPlugin()
 
+    nonisolated func onEnable() {
+        Task { @MainActor in
+            MenuBarManagerService.shared.startMonitoring()
+        }
+    }
+
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            MenuBarManagerService.shared.stopMonitoring()
+        }
+    }
+
     // MARK: - UI Contributions
 
     
