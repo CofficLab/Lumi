@@ -25,13 +25,13 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     static let defaultModel = "glm-4.7"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "glm-5.1", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-5-turbo", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-5", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.7", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.6", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.5-air", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5.1", description: "GLM 5.1，智谱最新旗舰模型，推理和代码能力全面升级", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5-turbo", description: "GLM 5 Turbo，高速推理版本，兼顾性能与速度", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5", description: "GLM 5，智谱通用大模型，综合能力出色", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.7", description: "GLM 4.7，成熟稳定的通用语言模型", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.6", description: "GLM 4.6，性价比优秀的通用模型", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.5", description: "GLM 4.5，基础通用模型，适合日常对话", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.5-air", description: "GLM 4.5 Air，轻量快速版本，响应速度更快", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider

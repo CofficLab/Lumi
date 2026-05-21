@@ -44,10 +44,12 @@ struct LLMModelSpec: Sendable, Equatable {
 /// 并保持模型展示顺序稳定。
 struct LLMModelCatalogItem: Sendable, Equatable {
     let id: String
+    let description: String
     let spec: LLMModelSpec
 
-    init(id: String, spec: LLMModelSpec) {
+    init(id: String, description: String, spec: LLMModelSpec) {
         self.id = id
+        self.description = description
         self.spec = spec
     }
 }
@@ -148,6 +150,11 @@ protocol SuperLLMProvider: Sendable {
     /// 远程供应商必须为每个 `availableModels` 项提供能力声明，
     /// 用于 UI 显示能力徽章（Image / Text / Tools）。
     static var modelCapabilities: [String: LLMModelCapabilities] { get }
+
+    /// 模型描述映射（模型名 → 描述）
+    ///
+    /// 用于在 UI 中展示模型的简要介绍。
+    static var modelDescriptions: [String: String] { get }
 
     // MARK: - API
 
@@ -278,6 +285,11 @@ extension SuperLLMProvider {
     /// 要求 `availableModels` 中每个模型都必须有能力声明。
     static var modelCapabilities: [String: LLMModelCapabilities] {
         Dictionary(uniqueKeysWithValues: modelSpecs.map { ($0.key, $0.value.capabilities) })
+    }
+
+    /// 默认实现：由 modelCatalog 派生模型描述映射
+    static var modelDescriptions: [String: String] {
+        Dictionary(uniqueKeysWithValues: modelCatalog.map { ($0.id, $0.description) })
     }
 
     func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {

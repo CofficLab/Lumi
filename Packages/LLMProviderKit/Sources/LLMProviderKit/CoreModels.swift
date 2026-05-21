@@ -29,10 +29,12 @@ public struct LLMModelSpec: Sendable, Equatable {
 
 public struct LLMModelCatalogItem: Sendable, Equatable {
     public let id: String
+    public let description: String
     public let spec: LLMModelSpec
 
-    public init(id: String, spec: LLMModelSpec) {
+    public init(id: String, description: String, spec: LLMModelSpec) {
         self.id = id
+        self.description = description
         self.spec = spec
     }
 }

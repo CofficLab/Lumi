@@ -23,10 +23,10 @@ final class FreeModelProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let defaultModel = "gpt-5.4"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.5", description: "GPT-5.5，OpenAI 最新旗舰模型，综合能力最强", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4", description: "GPT-5.4，OpenAI 高性能通用模型", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", description: "GPT-5.4 Mini，轻量高效版本，适合快速响应场景", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3-codex", description: "GPT-5.3 Codex，编程专用模型，擅长代码任务", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
