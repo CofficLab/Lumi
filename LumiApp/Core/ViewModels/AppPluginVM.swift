@@ -475,6 +475,11 @@ final class AppPluginVM: ObservableObject, SuperLog {
         return items
     }
 
+    func hasOnlyPanelIcons(_ expectedIcons: [String]) -> Bool {
+        let icons = getPanelIconItems().map(\.icon)
+        return icons.count == expectedIcons.count && Set(icons) == Set(expectedIcons)
+    }
+
     /// 获取当前激活插件的 PanelItem
     ///
     /// 根据 `activePanelIcon` 查找匹配的插件，调用其 `addPanelView(activeIcon:)` 获取视图。

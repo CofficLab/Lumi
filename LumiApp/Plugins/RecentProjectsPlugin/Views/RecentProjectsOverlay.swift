@@ -13,6 +13,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
+    @EnvironmentObject private var pluginVM: AppPluginVM
     @Environment(\.windowContainer) private var windowContainer
 
     let content: Content
@@ -25,13 +26,13 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         ZStack {
             content
 
-            if projectVM.isProjectSelected == false {
+            if shouldShowNoProjectOverlay {
                 NoProjectOverlay()
                     .transition(.opacity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: projectVM.isProjectSelected)
+        .animation(.easeInOut(duration: 0.25), value: shouldShowNoProjectOverlay)
         .onAppear {
             handleOnAppear()
         }
@@ -45,6 +46,11 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
             restoreTask?.cancel()
             restoreTask = nil
         }
+    }
+
+    private var shouldShowNoProjectOverlay: Bool {
+        !projectVM.isProjectSelected
+            && pluginVM.hasOnlyPanelIcons([EditorPlugin.iconName, GitPlugin.iconName])
     }
 }
 
