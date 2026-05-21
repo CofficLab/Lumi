@@ -456,17 +456,37 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
 
 @MainActor
 private enum XcodeProjectCapabilityCache {
+    private static let maxEntries = 100
     private static var values: [String: Bool] = [:]
+    private static var keysByRecency: [String] = []
 
     static func value(for path: String) -> Bool? {
-        values[standardizedPath(path)]
+        let key = standardizedPath(path)
+        guard let value = values[key] else { return nil }
+        markRecentlyUsed(key)
+        return value
     }
 
     static func set(_ value: Bool, for path: String) {
-        values[standardizedPath(path)] = value
+        let key = standardizedPath(path)
+        values[key] = value
+        markRecentlyUsed(key)
+        trimIfNeeded()
     }
 
     private static func standardizedPath(_ path: String) -> String {
         URL(filePath: path).standardizedFileURL.path
+    }
+
+    private static func markRecentlyUsed(_ key: String) {
+        keysByRecency.removeAll { $0 == key }
+        keysByRecency.append(key)
+    }
+
+    private static func trimIfNeeded() {
+        while keysByRecency.count > maxEntries {
+            let oldestKey = keysByRecency.removeFirst()
+            values.removeValue(forKey: oldestKey)
+        }
     }
 }
