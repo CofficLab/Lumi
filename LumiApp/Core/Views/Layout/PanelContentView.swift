@@ -16,22 +16,28 @@ struct PanelContentView: View {
         let headerViews = pluginProvider.getActivePanelHeaderViews()
         let hasBottomTabs = pluginProvider.hasBottomPanelTabs()
         let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
+        let showContentPanel = layoutVM.contentPanelVisible
 
         Group {
             if let activeItem {
                 VSplitView {
                     // ── 上半部分：Header + 主内容 ──
-                    VStack(spacing: 0) {
-                        ForEach(headerViews.indices, id: \.self) { index in
-                            headerViews[index]
-                                // 确保 header 视图在 activeItem 切换时能正确触发 onAppear
-                                .id("header-\(activeItem.id)-\(index)")
-                        }
+                    if showContentPanel {
+                        VStack(spacing: 0) {
+                            ForEach(headerViews.indices, id: \.self) { index in
+                                headerViews[index]
+                                    // 确保 header 视图在 activeItem 切换时能正确触发 onAppear
+                                    .id("header-\(activeItem.id)-\(index)")
+                            }
 
-                        activeItem.view
-                            // Panel 内容切换时平滑过渡
-                            .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
-                            .id(activeItem.id)
+                            activeItem.view
+                                // Panel 内容切换时平滑过渡
+                                .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
+                                .id(activeItem.id)
+                        }
+                    } else {
+                        Color.clear
+                            .frame(maxHeight: 0)
                     }
 
                     // ── 下半部分：全局底部面板 ──

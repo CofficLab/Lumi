@@ -175,6 +175,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(bottomPanelVisible: savedBottomPanelVisible)
         }
+
+        // 恢复内容面板可见性
+        if let savedContentPanelVisible = store.loadContentPanelVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复内容面板可见性: \(savedContentPanelVisible)")
+            }
+            layoutVM.restoreFromPlugin(contentPanelVisible: savedContentPanelVisible)
+        }
     }
 
     // MARK: - Observe
@@ -214,6 +222,15 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 LayoutPluginLocalStore.shared.saveBottomPanelVisible(newValue)
             }
             .store(in: &cancellables)
+
+        // 观察 contentPanelVisible
+        layoutVM.$contentPanelVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveContentPanelVisible(newValue)
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -228,6 +245,9 @@ private struct LayoutMenuButton: View {
 
     var body: some View {
         Menu {
+            Toggle(isOn: $layoutVM.contentPanelVisible) {
+                Label("Content Panel", systemImage: "rectangle.topthird.inset.filled")
+            }
             Toggle(isOn: $layoutVM.bottomPanelVisible) {
                 Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
             }
