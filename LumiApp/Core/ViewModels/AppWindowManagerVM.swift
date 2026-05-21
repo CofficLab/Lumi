@@ -6,17 +6,16 @@ import SwiftUI
 /// 窗口管理器 VM
 ///
 /// 负责管理所有窗口的生命周期和状态同步。
-/// 直接管理 WindowContainer 实例，不再使用 WindowState。
 ///
 /// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
 @MainActor
-final class WindowManagerVM: ObservableObject, SuperLog {
+final class AppWindowManagerVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🪟"
     nonisolated static let verbose: Bool = false
 
     // MARK: - Published Properties
 
-    /// 所有窗口作用域
+    /// 所有 WindowContainer
     @Published private(set) var windowContainers: [WindowContainer] = []
 
     /// 当前活跃窗口 ID
