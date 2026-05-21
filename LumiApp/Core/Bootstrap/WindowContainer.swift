@@ -264,6 +264,40 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         updateTitle()
     }
 
+    // MARK: - Persistence Restore
+
+    /// 从磁盘快照恢复窗口状态（项目、会话、面板、编辑器、侧栏）。
+    func applyPersistenceRecord(_ record: WindowPersistenceRecord) {
+        if let conversationId = record.conversationId {
+            conversationVM.setSelectedConversation(conversationId, reason: "windowPersistenceRestore")
+        }
+        if let projectPath = record.projectPath, !projectPath.isEmpty {
+            let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+            projectVM.switchProject(
+                to: Project(name: projectName, path: projectPath, lastUsed: Date()),
+                reason: "windowPersistenceRestore"
+            )
+        }
+
+        if let panel = record.activePanel.flatMap(WindowActivePanel.init(rawValue:)) {
+            activePanel = panel
+        } else if record.conversationId != nil {
+            activePanel = .chat
+        } else if record.projectPath != nil {
+            activePanel = .fileTree
+        }
+
+        if let editorState = record.editorState {
+            self.editorState = editorState
+        }
+
+        if let sidebarVisibility = record.sidebarVisibility {
+            self.sidebarVisibility = sidebarVisibility
+        }
+
+        updateTitle()
+    }
+
     // MARK: - Project Management
 
     /// 切换到指定项目
