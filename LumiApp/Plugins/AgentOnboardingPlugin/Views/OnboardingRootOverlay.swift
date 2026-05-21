@@ -189,7 +189,7 @@ struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
-    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var pluginVM: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @Environment(\.colorScheme) private var colorScheme
@@ -785,7 +785,7 @@ private struct OnboardingSheetView: View {
                     // 新建会话按钮
                     Button {
                         Task {
-                            await conversationCreationVM.createNewConversation()
+                            await conversationVM.createNewConversation()
                             completeOnboarding()
                         }
                     } label: {

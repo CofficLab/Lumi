@@ -13,7 +13,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
-    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
 
     let content: Content
@@ -175,7 +174,11 @@ extension RecentProjectsOverlay {
         }
 
         Task {
-            await conversationCreationVM.createNewConversation()
+            await conversationVM.createNewConversation(
+                projectName: projectVM.currentProjectName,
+                projectPath: projectPath,
+                languagePreference: projectVM.languagePreference
+            )
         }
     }
 }
