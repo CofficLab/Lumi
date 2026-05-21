@@ -2,6 +2,7 @@ import AppKit
 import MagicKit
 import LLMKit
 import SwiftUI
+import LumiUI
 
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
@@ -138,10 +139,11 @@ struct ModelSelectorView: View, SuperLog {
                 }
             }
         } else {
-            ContentUnavailableView {
-                Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "magnifyingglass",
+                title: "No Matching Models",
+                description: nil
+            )
         }
     }
 
@@ -162,16 +164,18 @@ struct ModelSelectorView: View, SuperLog {
                     }
                 }
             } else {
-                ContentUnavailableView {
-                    Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AppEmptyState(
+                    icon: "magnifyingglass",
+                    title: "No Matching Models",
+                    description: nil
+                )
             }
         } else {
-            ContentUnavailableView {
-                Label(String(localized: "No Provider Selected", table: "AgentChat"), systemImage: "tray")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "tray",
+                title: "No Provider Selected",
+                description: nil
+            )
         }
     }
 
@@ -182,12 +186,11 @@ struct ModelSelectorView: View, SuperLog {
     private var frequentModelsList: some View {
         let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(frequentModels, searchText: searchText)
         if filteredEntries.isEmpty {
-            ContentUnavailableView {
-                Label(String(localized: "No Frequent Models", table: "AgentChat"), systemImage: "clock.arrow.circlepath")
-            } description: {
-                Text(String(localized: "No Frequent Models Description", table: "AgentChat"))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "clock.arrow.circlepath",
+                title: "No Frequent Models",
+                description: "No Frequent Models Description"
+            )
         } else {
             List {
                 ForEach(filteredEntries) { entry in
@@ -218,12 +221,11 @@ struct ModelSelectorView: View, SuperLog {
     private var fastModelsList: some View {
         let filteredEntries = ModelSelectorFilteringService.filteredFastModels(fastModels, searchText: searchText)
         if filteredEntries.isEmpty {
-            ContentUnavailableView {
-                Label(String(localized: "No Fast Models", table: "AgentChat"), systemImage: "bolt.fill")
-            } description: {
-                Text(String(localized: "No Fast Models Description", table: "AgentChat"))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "bolt.fill",
+                title: "No Fast Models",
+                description: "No Fast Models Description"
+            )
         } else {
             List {
                 ForEach(filteredEntries) { entry in
@@ -251,10 +253,11 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private func providerList(providers: [LLMProviderInfo], emptyMessage: String) -> some View {
         if providers.isEmpty {
-            ContentUnavailableView {
-                Label(emptyMessage, systemImage: "tray")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: "tray",
+                title: LocalizedStringKey(emptyMessage),
+                description: nil
+            )
         } else {
             List {
                 ForEach(providers) { provider in

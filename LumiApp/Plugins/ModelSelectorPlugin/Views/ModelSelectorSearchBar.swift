@@ -1,6 +1,8 @@
 import SwiftUI
+import LumiUI
 
 /// 模型选择器搜索栏
+/// 使用 LumiUI 的 AppSearchBar 组件
 struct ModelSelectorSearchBar: View {
     /// 搜索关键词
     @Binding var searchText: String
@@ -9,22 +11,20 @@ struct ModelSelectorSearchBar: View {
     let onCancel: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            TextField(String(localized: "Search Models", table: "AgentChat"), text: $searchText)
-                .textFieldStyle(.plain)
-
-            Spacer()
+        HStack(spacing: AppUI.Spacing.sm) {
+            AppSearchBar(
+                text: $searchText,
+                placeholder: String(localized: "Search Models", table: "AgentChat")
+            )
 
             Button(action: onCancel) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppUI.Colors.textSecondary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .padding(.horizontal, AppUI.Spacing.md)
+        .padding(.vertical, AppUI.Spacing.sm)
     }
 }

@@ -2,6 +2,7 @@ import AppKit
 import MagicKit
 import LLMKit
 import SwiftUI
+import LumiUI
 
 /// 模型选择器中的单行模型视图
 /// 显示模型名称、供应商标签（可选）、上下文大小、能力 badge 和性能指标
@@ -33,7 +34,7 @@ struct ModelSelectorModelRow: View {
     let onHoverChange: (Bool) -> Void
 
     var body: some View {
-        Button(action: onSelect) {
+        AppListRow(isSelected: isSelected, action: onSelect) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .top) {
@@ -88,19 +89,9 @@ struct ModelSelectorModelRow: View {
                     }
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(rowBackgroundColor)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
+            .padding(.vertical, AppUI.Spacing.xs)
+            .padding(.horizontal, AppUI.Spacing.sm)
         }
-        .buttonStyle(.plain)
         .onHover { hovering in
             onHoverChange(hovering)
             if hovering {
@@ -115,59 +106,20 @@ struct ModelSelectorModelRow: View {
 
     // MARK: - Helper
 
-    /// 行背景色
-    private var rowBackgroundColor: Color {
-        if isSelected {
-            return Color.accentColor.opacity(0.15)
-        }
-        if isHovering {
-            return Color.accentColor.opacity(0.08)
-        }
-        return Color.clear
-    }
-
     /// 上下文窗口大小标签
     private func contextSizeBadge(_ tokens: Int) -> some View {
-        Text(ModelSelectorFormatService.contextSize(tokens))
-            .font(.caption2)
-            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
-            )
+        AppTag(ModelSelectorFormatService.contextSize(tokens))
     }
 
     /// 能力 badge
     private func capabilityBadge(title: String, systemImage: String) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .medium))
-            Text(title)
-                .font(.caption2)
-        }
-        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
-        )
-        .help(title)
+        AppTag(title, systemImage: systemImage)
+            .help(title)
     }
 
     /// 供应商标签
     private func providerBadge(_ name: String) -> some View {
-        Text(name)
-            .font(.caption2)
-            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
-            )
+        AppTag(name)
     }
 
     /// 可用性状态图标。
@@ -224,36 +176,12 @@ struct ModelSelectorModelRow: View {
 
     /// TPS badge
     private func tpsBadge(_ tps: Double) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: "speedometer")
-                .font(.system(size: 8, weight: .medium))
-            Text(ModelSelectorFormatService.tps(tps))
-                .font(.caption2)
-        }
-        .foregroundColor(.green)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.green.opacity(0.12))
-        )
+        AppTag(ModelSelectorFormatService.tps(tps), systemImage: "speedometer")
     }
 
     /// 消息数量 badge
     private func sampleCountBadge(_ count: Int) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 8, weight: .medium))
-            Text("\(count)")
-                .font(.caption2)
-        }
-        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
-        )
+        AppTag("\(count)", systemImage: "bubble.left.and.bubble.right")
     }
 
 }

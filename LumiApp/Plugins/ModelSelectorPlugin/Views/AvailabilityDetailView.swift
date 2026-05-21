@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import LumiUI
 
 enum AvailabilityDetailMode: Equatable {
     case popover
@@ -95,39 +96,22 @@ struct AvailabilityDetailView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+        HStack(spacing: AppUI.Spacing.sm) {
+            AppSearchBar(
+                text: $searchText,
+                placeholder: String(localized: "Search providers or models…", table: "LLMAvailability")
+            )
 
-            TextField(String(localized: "Search providers or models…", table: "LLMAvailability"), text: $searchText)
-                .font(.system(size: 12))
-                .textFieldStyle(.plain)
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Divider()
-                .frame(height: 14)
-
-            Button(action: { refreshAvailability() }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            }
-            .buttonStyle(.plain)
+            AppIconButton(
+                systemImage: "arrow.clockwise",
+                size: .compact,
+                action: refreshAvailability
+            )
             .help(String(localized: "Refresh", table: "LLMAvailability"))
             .disabled(isRefreshing || isChecking)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, AppUI.Spacing.lg)
+        .padding(.vertical, AppUI.Spacing.sm)
     }
 
     // MARK: - Content Section
