@@ -21,6 +21,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 是否启用详细日志
     nonisolated static let verbose: Bool = false
+    
     // MARK: - 服务依赖
 
     /// 聊天历史服务
