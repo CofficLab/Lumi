@@ -118,11 +118,6 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         windowScopes.first { $0.projectPath == projectPath }?.id
     }
 
-    /// 查找已打开指定会话的窗口
-    func findWindow(withConversation conversationId: UUID) -> UUID? {
-        windowScopes.first { $0.selectedConversationId == conversationId }?.id
-    }
-
     // MARK: - Window Operations
 
     /// 根据 ID 查找关联的 NSWindow
@@ -229,40 +224,6 @@ final class WindowManagerVM: ObservableObject, SuperLog {
     }
 
     // MARK: - Window State Restoration
-
-    /// 从路由列表恢复窗口状态（纯内存操作，不涉及磁盘）。
-    ///
-    /// 启动时插件读取磁盘并调用此方法。
-    /// SwiftUI 已创建了一个默认窗口，因此第一条路由应用到现有窗口；
-    /// 只有多余的路由才需要再打开新窗口。
-    func restoreSavedWindowStates(
-        routes: [LumiWindowRoute],
-        openAdditionalWindow: (LumiWindowRoute) -> Void
-    ) {
-        guard !hasCompletedInitialStateRestoration else { return }
-        hasStartedInitialStateRestoration = true
-
-        guard !routes.isEmpty else {
-            markInitialStateRestorationComplete()
-            return
-        }
-
-        var remainingRoutes = routes
-        if let firstScope = windowScopes.first {
-            let firstRoute = remainingRoutes.removeFirst()
-            firstScope.applyRoute(firstRoute)
-        }
-
-        for route in remainingRoutes {
-            openAdditionalWindow(route)
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📂 已恢复 \(routes.count) 个窗口状态，额外打开 \(remainingRoutes.count) 个窗口")
-        }
-
-        markInitialStateRestorationComplete()
-    }
 
     func beginInitialStateRestorationIfNeeded() -> Bool {
         guard !hasStartedInitialStateRestoration,

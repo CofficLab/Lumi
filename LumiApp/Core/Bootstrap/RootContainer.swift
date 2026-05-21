@@ -19,8 +19,8 @@ import os
 /// **窗口作用域（在 WindowScope 中）：**
 /// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessageQueueVM,
 /// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
-/// WindowConversationStatusVM, WindowConversationCreationVM, WindowTaskCancellationVM,
-/// WindowCommandSuggestionVM, WindowProjectContextRequestVM, WindowChatTimelineViewModel
+/// WindowConversationStatusVM, WindowTaskCancellationVM, WindowCommandSuggestionVM,
+/// WindowProjectContextRequestVM, WindowChatTimelineViewModel
 @MainActor
 final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
@@ -136,7 +136,11 @@ final class RootContainer: ObservableObject, SuperLog {
         // Fallback 窗口级 VM（仅 conversationVM 需要兜底）
         // ========================================
         
-        _fallbackWindowConversationVM = WindowConversationVM(chatHistoryService: chatHistoryService)
+        _fallbackWindowConversationVM = WindowConversationVM(
+            chatHistoryService: chatHistoryService,
+            promptService: promptService,
+            agentSessionConfig: agentSessionConfig
+        )
         _fallbackWindowLayoutVM = WindowLayoutVM()
         
         // ========================================

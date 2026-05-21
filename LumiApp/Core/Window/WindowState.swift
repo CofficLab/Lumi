@@ -3,8 +3,6 @@ import Foundation
 import MagicKit
 import SwiftUI
 
-// MARK: - Window Active Panel
-
 /// 窗口活动面板类型
 ///
 /// 标识当前窗口正在显示的主要内容类型

@@ -64,9 +64,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 会话状态（按 conversationId 隔离，跟随窗口更自然）
     let conversationSendStatusVM: WindowConversationStatusVM
 
-    /// 会话创建（跟随当前窗口）
-    lazy var conversationCreationVM: WindowConversationCreationVM = WindowConversationCreationVM(scope: self, global: self._container)
-
     /// 任务取消（跟随当前窗口）
     let taskCancellationVM: WindowTaskCancellationVM
 
@@ -143,17 +140,15 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
 
     // MARK: - Initialization
 
-    /// 使用全局容器和可选的初始路由参数创建窗口作用域
+    /// 使用全局容器和可选的初始项目路径创建窗口作用域
     ///
     /// - Parameters:
     ///   - id: 窗口唯一标识，默认自动生成
     ///   - container: 全局服务容器，提供 Service 注入
-    ///   - conversationId: 初始选中的会话 ID
-    ///   - projectPath: 初始关联的项目路径
+    ///   - projectPath: 初始关联的项目路径（用于 Dock 拖拽打开等场景）
     init(
         id: UUID = UUID(),
         container: RootContainer,
-        conversationId: UUID? = nil,
         projectPath: String? = nil
     ) {
         self.id = id
@@ -164,7 +159,9 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         // ========================================
 
         self.conversationVM = WindowConversationVM(
-            chatHistoryService: container.chatHistoryService
+            chatHistoryService: container.chatHistoryService,
+            promptService: container.promptService,
+            agentSessionConfig: container.agentSessionConfig
         )
         self.projectVM = WindowProjectVM(
             contextService: container.contextService,
@@ -204,19 +201,13 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         }
 
         // ========================================
-        // 初始化会话和项目
+        // 初始化项目（新窗口不预设会话）
         // ========================================
 
-        if let conversationId {
-            conversationVM.setSelectedConversation(conversationId)
-            activePanel = .chat
-        }
         if let projectPath {
             let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
             projectVM.switchProject(to: Project(name: projectName, path: projectPath, lastUsed: Date()))
-            if conversationId == nil {
-                activePanel = .fileTree
-            }
+            activePanel = .fileTree
         }
 
         updateTitle()
@@ -226,36 +217,23 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         }
     }
 
-    /// 从窗口路由创建
-    convenience init(route: LumiWindowRoute, container: RootContainer) {
-        self.init(
-            id: route.id,
-            container: container,
-            conversationId: route.conversationId,
-            projectPath: route.projectPath
-        )
-    }
-
-    /// 将保存的窗口路由应用到已存在的窗口作用域。
+    /// 将持久化记录中的会话和项目状态应用到当前窗口。
     ///
-    /// SwiftUI 的 `WindowGroup` 会在启动时先创建一个默认窗口；恢复窗口状态时复用
-    /// 这个窗口承载第一条保存状态，避免“默认窗口 + 恢复窗口”重复出现。
-    func applyRoute(_ route: LumiWindowRoute) {
-        conversationVM.setSelectedConversation(route.conversationId)
-
-        if let projectPath = route.projectPath {
+    /// 由 WindowPersistencePlugin 在窗口恢复阶段调用，用于恢复完整的窗口上下文
+    /// （包括 conversationId，这不在 LumiWindowRoute 中）。
+    func applyPersistenceRecord(conversationId: UUID?, projectPath: String?) {
+        if let conversationId {
+            conversationVM.setSelectedConversation(conversationId, reason: "windowPersistenceRestore")
+        }
+        if let projectPath {
             let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
             projectVM.switchProject(to: Project(name: projectName, path: projectPath, lastUsed: Date()))
-        } else {
-            projectVM.clearProject()
         }
 
-        if route.conversationId != nil {
+        if conversationId != nil {
             activePanel = .chat
-        } else if route.projectPath != nil {
+        } else if projectPath != nil {
             activePanel = .fileTree
-        } else {
-            activePanel = .chat
         }
 
         updateTitle()
@@ -297,8 +275,8 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     // MARK: - Conversation Management
 
     /// 切换到指定会话
-    func switchToConversation(_ conversationId: UUID?) {
-        conversationVM.setSelectedConversation(conversationId)
+    func switchToConversation(_ conversationId: UUID?, reason: String) {
+        conversationVM.setSelectedConversation(conversationId, reason: reason)
         if conversationId != nil {
             activePanel = .chat
         }

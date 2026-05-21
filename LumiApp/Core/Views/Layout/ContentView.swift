@@ -31,19 +31,14 @@ struct ContentView: View, SuperLog {
     /// 默认侧边栏可见性
     var defaultSidebarVisibility: Bool?
 
-    /// 初始选中的会话 ID
-    var initialConversationId: UUID?
-
     /// 初始项目路径
     var initialProjectPath: String?
 
     init(
         defaultSidebarVisibility: Bool? = nil,
-        initialConversationId: UUID? = nil,
         initialProjectPath: String? = nil
     ) {
         self.defaultSidebarVisibility = defaultSidebarVisibility
-        self.initialConversationId = initialConversationId
         self.initialProjectPath = initialProjectPath
     }
 

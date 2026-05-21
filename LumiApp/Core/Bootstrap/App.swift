@@ -56,20 +56,17 @@ struct CoreApp: App {
 
     var body: some Scene {
         // 主窗口（可多开）
-        //
-        // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
-        // 工具栏使用统一样式，不显示传统标题。
-        // 每个窗口创建独立的 WindowScope，实现窗口级状态隔离。
         WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
+            let initial = route.wrappedValue ?? LumiWindowRoute()
             let scope = WindowScope(
-                route: route.wrappedValue ?? LumiWindowRoute(),
-                container: RootContainer.shared
+                id: initial.id,
+                container: RootContainer.shared,
+                projectPath: initial.projectPath
             )
             ContentLayout(
-                conversationId: route.wrappedValue?.conversationId,
-                projectPath: route.wrappedValue?.projectPath
+                projectPath: initial.projectPath
             )
-                .inRootView(scope: scope)
+            .inRootView(scope: scope)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -99,7 +96,6 @@ struct CoreApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
     }
-
 }
 
 /// 检查更新视图
@@ -109,7 +105,7 @@ struct CoreApp: App {
 struct CheckForUpdatesView: View {
     /// 更新检查视图模型
     @ObservedObject private var viewModel: CheckForUpdatesViewModel
-    
+
     /// Sparkle 更新器实例
     private let updater: SPUUpdater
 

@@ -60,7 +60,6 @@ struct RootView<Content>: View where Content: View {
                 .environmentObject(scope.inputQueueVM)
                 .environmentObject(scope.chatDraftVM)
                 .environmentObject(scope.permissionHandlingVM)
-                .environmentObject(scope.conversationCreationVM)
                 .environmentObject(scope.commandSuggestionVM)
                 .environmentObject(scope.permissionRequestVM)
                 .environmentObject(scope.taskCancellationVM)

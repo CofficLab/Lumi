@@ -104,6 +104,16 @@ private final class WindowPersistenceCoordinator {
             openAdditionalWindow(route(for: record))
         }
 
+        // 新窗口创建是异步的，延迟检查 pendingRecords 以恢复额外窗口的 conversationId
+        if !pendingRecords.isEmpty {
+            Task { @MainActor [weak self, weak windowManagerVM] in
+                guard let windowManagerVM, let self else { return }
+                // 等待 SwiftUI 创建新窗口并注册 scope
+                try? await Task.sleep(for: .milliseconds(500))
+                self.applyPendingRecords(to: windowManagerVM.windowScopes)
+            }
+        }
+
         windowManagerVM.markInitialStateRestorationComplete()
     }
 
@@ -115,7 +125,11 @@ private final class WindowPersistenceCoordinator {
     }
 
     private func apply(_ record: WindowPersistenceRecord, to scope: WindowScope) {
-        scope.applyRoute(route(for: record))
+        // 使用 applyPersistenceRecord 恢复完整状态（包括 conversationId）
+        scope.applyPersistenceRecord(
+            conversationId: record.conversationId,
+            projectPath: record.projectPath
+        )
 
         if let activePanel = record.activePanel.flatMap(WindowActivePanel.init(rawValue:)) {
             scope.activePanel = activePanel
@@ -135,7 +149,6 @@ private final class WindowPersistenceCoordinator {
     private func route(for record: WindowPersistenceRecord) -> LumiWindowRoute {
         LumiWindowRoute(
             id: record.windowId,
-            conversationId: record.conversationId,
             projectPath: record.projectPath
         )
     }

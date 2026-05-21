@@ -10,6 +10,7 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @StateObject private var handler = AgentTurnNotificationHandler()
 
     var body: some View {
@@ -18,7 +19,7 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
                 handler.postTurnFinishedNotification(conversationId: conversationId)
             }
             .onAppear {
-                handler.setupNotificationDelegate()
+                handler.bind(conversationVM: conversationVM)
             }
     }
 }
@@ -30,17 +31,16 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
     nonisolated static var verbose: Bool { false }
 
     private let center = UNUserNotificationCenter.current()
+    private weak var conversationVM: WindowConversationVM?
 
     // MARK: - Setup
 
-    /// 设置通知中心代理，处理用户点击通知的事件
-    func setupNotificationDelegate() {
-        // 只在首次设置，避免重复设置代理
-        if !(center.delegate is AgentTurnNotificationHandler) {
-            center.delegate = self
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)✅ 已设置通知中心代理")
-            }
+    /// 绑定当前窗口的会话 VM，并注册为通知中心代理
+    func bind(conversationVM: WindowConversationVM) {
+        self.conversationVM = conversationVM
+        center.delegate = self
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)✅ 已绑定 conversationVM 并设置通知中心代理")
         }
     }
 
@@ -133,8 +133,15 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
                 window.makeKeyAndOrderFront(nil)
             }
 
-            // 3. 选中对应的对话
-            RootContainer.shared.conversationVM.setSelectedConversation(conversationId)
+            // 3. 选中对应的对话（使用当前窗口 Environment 注入的 VM）
+            guard let conversationVM else {
+                AppLogger.core.info("\(Self.t)⚠️ conversationVM 未绑定，无法选中对话: \(conversationId)")
+                return
+            }
+            conversationVM.setSelectedConversation(
+                conversationId,
+                reason: "agentTurnNotificationTap"
+            )
 
             AppLogger.core.info("\(Self.t)✅ 已选中对话: \(conversationId)")
         }

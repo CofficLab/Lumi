@@ -36,7 +36,7 @@ final class ProjectController: ObservableObject, SuperLog {
     private func handleProjectClear() async {
         guard scope.projectVM.isProjectSelected else { return }
 
-        scope.conversationVM.setSelectedConversation(nil)
+        scope.conversationVM.setSelectedConversation(nil, reason: "projectClear")
         scope.projectVM.clearProject()
 
         await applyProjectContext(path: nil)
