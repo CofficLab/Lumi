@@ -217,7 +217,7 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         monitoringTimer?.tolerance = 1.0
     }
 
-    private func stopMonitoring() {
+    public func stopMonitoring() {
         monitoringTimer?.invalidate()
         monitoringTimer = nil
     }
