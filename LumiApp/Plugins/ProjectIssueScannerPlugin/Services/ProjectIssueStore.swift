@@ -54,9 +54,40 @@ actor ProjectIssueStore {
 
     /// 获取指定项目所有未解决的问题
     func fetchOpen(projectPath: String) -> [ProjectIssue] {
+        fetchOpen(projectPath: projectPath, limit: nil)
+    }
+
+    /// 获取指定项目未解决的问题，按严重程度排序，可限制数量。
+    ///
+    /// 排序规则：critical → warning → info，同级别按更新时间倒序。
+    /// - Parameters:
+    ///   - projectPath: 项目根路径
+    ///   - limit: 最大返回数量，nil 表示不限
+    func fetchOpen(projectPath: String, limit: Int?) -> [ProjectIssue] {
         let normalizedPath = normalizeProjectPath(projectPath)
-        return issues.filter { issue in
+        let filtered = issues.filter { issue in
             issue.isOpen && (issue.projectPath.isEmpty || normalizeProjectPath(issue.projectPath) == normalizedPath)
+        }
+
+        let sorted = filtered.sorted { lhs, rhs in
+            let leftOrder = severityOrder(lhs.severity)
+            let rightOrder = severityOrder(rhs.severity)
+            if leftOrder != rightOrder { return leftOrder < rightOrder }
+            return lhs.updatedAt > rhs.updatedAt
+        }
+
+        if let limit {
+            return Array(sorted.prefix(limit))
+        }
+        return sorted
+    }
+
+    /// 严重程度排序权重（值越小越靠前）
+    private func severityOrder(_ severity: ProjectIssueSeverity) -> Int {
+        switch severity {
+        case .critical: return 0
+        case .warning:  return 1
+        case .info:     return 2
         }
     }
 
