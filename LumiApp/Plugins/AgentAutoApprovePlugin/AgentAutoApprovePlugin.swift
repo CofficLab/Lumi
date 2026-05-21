@@ -24,12 +24,22 @@ actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
-    // MARK: - Toolbar Views
+    // MARK: - Sidebar Toolbar
 
-    /// 工具栏：自动批准开关
-    @MainActor
-    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [
+            SidebarToolbarItem(
+                id: "auto-approve-toggle",
+                title: String(localized: "Auto-Approve Toggle", table: "AgentAutoApprovePlugin"),
+                systemImage: "checkmark.circle",
+                priority: 20
+            )
+        ]
+    }
+
+    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+        guard itemId == "auto-approve-toggle" else { return nil }
         return AnyView(AutoApproveToggle())
     }
 }
