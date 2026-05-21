@@ -475,9 +475,10 @@ final class AppPluginVM: ObservableObject, SuperLog {
         return items
     }
 
-    func hasOnlyPanelIcons(_ expectedIcons: [String]) -> Bool {
-        let icons = getPanelIconItems().map(\.icon)
-        return icons.count == expectedIcons.count && Set(icons) == Set(expectedIcons)
+    /// 当前激活的活动栏图标是否在 `allowedIcons` 中。
+    func isActivePanelIcon(in allowedIcons: [String]) -> Bool {
+        guard let activePanelIcon else { return false }
+        return allowedIcons.contains(activePanelIcon)
     }
 
     /// 获取当前激活插件的 PanelItem
