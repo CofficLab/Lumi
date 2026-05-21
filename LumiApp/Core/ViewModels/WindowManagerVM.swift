@@ -25,6 +25,12 @@ final class WindowManagerVM: ObservableObject, SuperLog {
     /// 窗口计数（用于菜单显示）
     var windowCount: Int { windowContainers.count }
 
+    /// 启动时窗口状态恢复是否已完成
+    @Published private(set) var hasCompletedInitialStateRestoration: Bool = false
+
+    /// 启动时窗口状态恢复是否已开始
+    @Published private(set) var hasStartedInitialStateRestoration: Bool = false
+
     // MARK: - Private Properties
 
     private var windowIdMap: [NSWindow: UUID] = [:]
@@ -55,6 +61,8 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         windowContainers.append(container)
         containerMap[container.id] = container
         setActiveWindow(container.id)
+
+        NotificationCenter.postWindowContainerDidRegister(container)
 
         if Self.verbose {
             let count = self.windowContainers.count
@@ -215,6 +223,22 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         if activeWindowId == nil, let firstScope = windowContainers.first {
             setActiveWindow(firstScope.id)
         }
+    }
+
+    /// 尝试开始启动时的窗口状态恢复（全局仅一次）
+    func beginInitialStateRestorationIfNeeded() -> Bool {
+        guard !hasStartedInitialStateRestoration,
+              !hasCompletedInitialStateRestoration else {
+            return false
+        }
+        hasStartedInitialStateRestoration = true
+        return true
+    }
+
+    func markInitialStateRestorationComplete() {
+        guard !hasCompletedInitialStateRestoration else { return }
+        hasStartedInitialStateRestoration = true
+        hasCompletedInitialStateRestoration = true
     }
 
     deinit {

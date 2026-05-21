@@ -98,7 +98,8 @@ extension NotificationCenter {
     static func postWindowContainerDidRegister(_ container: WindowContainer) {
         NotificationCenter.default.post(
             name: .windowContainerDidRegister,
-            object: container
+            object: nil,
+            userInfo: ["windowId": container.id]
         )
     }
 }
