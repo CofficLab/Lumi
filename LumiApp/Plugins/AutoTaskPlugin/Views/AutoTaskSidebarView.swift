@@ -61,6 +61,9 @@ struct AutoTaskSidebarView: View {
         .task(id: conversationVM.selectedConversationId) {
             await viewModel.refresh(conversationId: conversationVM.selectedConversationId)
         }
+        .onDisappear {
+            viewModel.removeObserver()
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Task List", table: "AutoTask"))
     }
