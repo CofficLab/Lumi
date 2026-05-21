@@ -117,6 +117,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var statusBarLeadingViewsCache: (key: String, views: [AnyView])?
     private var statusBarCenterViewsCache: (key: String, views: [AnyView])?
     private var statusBarTrailingViewsCache: (key: String, views: [AnyView])?
+    private var enabledPluginIDs = Set<String>()
 
     // MARK: - Tools Cache
 
@@ -147,9 +148,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         // 订阅设置变化，当设置改变时触发 UI 更新
         settingsStore.$settings
             .sink { [weak self] _ in
-                self?.clearUICaches()
-                self?.cachedSuperSendMiddlewares = nil
-                self?.objectWillChange.send()
+                self?.reconcilePluginEnabledStates()
             }
             .store(in: &cancellables)
 
@@ -178,6 +177,38 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
     private func activeIconCacheKey(_ suffix: String = "") -> String {
         "\(activePanelIcon ?? "<nil>")|\(plugins.count)|\(suffix)"
+    }
+
+    private func invalidatePluginAggregates() {
+        clearUICaches()
+        cachedSuperSendMiddlewares = nil
+    }
+
+    private func reconcilePluginEnabledStates() {
+        let nextEnabledPluginIDs = Set(
+            plugins
+                .filter { isPluginEnabled($0) }
+                .map { $0.instanceLabel }
+        )
+
+        for plugin in plugins {
+            let pluginID = plugin.instanceLabel
+            let wasEnabled = enabledPluginIDs.contains(pluginID)
+            let isEnabled = nextEnabledPluginIDs.contains(pluginID)
+
+            guard wasEnabled != isEnabled else { continue }
+
+            if isEnabled {
+                plugin.onEnable()
+            } else {
+                plugin.onDisable()
+            }
+        }
+
+        enabledPluginIDs = nextEnabledPluginIDs
+        invalidatePluginAggregates()
+        objectWillChange.send()
+        NotificationCenter.default.post(name: Notification.Name("toolSourcesDidChange"), object: nil)
     }
 
     // MARK: - Agent Tools Aggregation
@@ -242,8 +273,8 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
-        clearUICaches()
-        cachedSuperSendMiddlewares = nil
+        invalidatePluginAggregates()
+        enabledPluginIDs.removeAll()
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -293,8 +324,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         self.isLoaded = true
 
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
-        clearUICaches()
-        cachedSuperSendMiddlewares = nil
+        invalidatePluginAggregates()
 
         // 从插件中收集 LLM 供应商类型
         var providerTypes: [any SuperLLMProvider.Type] = []
@@ -318,6 +348,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
             // 如果插件被启用，调用 onEnable
             if self.isPluginEnabled(plugin) {
                 plugin.onEnable()
+                enabledPluginIDs.insert(plugin.instanceLabel)
             }
         }
 
