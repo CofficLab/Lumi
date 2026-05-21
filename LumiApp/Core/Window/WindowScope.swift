@@ -217,28 +217,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         }
     }
 
-    /// 将持久化记录中的会话和项目状态应用到当前窗口。
-    ///
-    /// 由 WindowPersistencePlugin 在窗口恢复阶段调用，用于恢复完整的窗口上下文
-    /// （包括 conversationId，这不在 LumiWindowRoute 中）。
-    func applyPersistenceRecord(conversationId: UUID?, projectPath: String?) {
-        if let conversationId {
-            conversationVM.setSelectedConversation(conversationId, reason: "windowPersistenceRestore")
-        }
-        if let projectPath {
-            let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-            projectVM.switchProject(to: Project(name: projectName, path: projectPath, lastUsed: Date()))
-        }
-
-        if conversationId != nil {
-            activePanel = .chat
-        } else if projectPath != nil {
-            activePanel = .fileTree
-        }
-
-        updateTitle()
-    }
-
     /// 处理当前窗口的用户输入请求。
     ///
     /// 输入框位于插件侧栏里，SwiftUI 的 `.onReceive` 在多窗口和缓存 AnyView 组合下可能失效；

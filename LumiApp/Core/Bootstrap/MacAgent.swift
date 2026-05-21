@@ -69,9 +69,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 启动自动化控制器（用于路由和处理自动化动作）
         AutomationController.shared.start()
 
-        // 窗口状态恢复由 WindowPersistencePlugin 负责，内核不再处理。
-        // 插件会在 RootView appear 时自动触发恢复流程。
-
         // 发送应用启动完成的通知
         // 让其他组件知道应用已准备好接受交互
         NotificationCenter.postApplicationDidFinishLaunching()
@@ -88,8 +85,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         if Self.verbose {
             AppLogger.core.info("\(self.t)应用即将终止")
         }
-
-        // 窗口状态保存由 WindowPersistencePlugin 负责，内核不再处理。
 
         // 停止磁盘日志收集，flush 剩余条目
         FileLogCoordinator.shared.stop()

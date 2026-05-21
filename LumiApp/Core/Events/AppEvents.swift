@@ -6,9 +6,6 @@ extension Notification.Name {
     /// 应用启动完成的通知
     static let applicationDidFinishLaunching = Notification.Name("applicationDidFinishLaunching")
 
-    /// 启动时保存的窗口状态已恢复完成
-    static let initialWindowStateRestorationDidFinish = Notification.Name("initialWindowStateRestorationDidFinish")
-
     /// 应用即将终止的通知
     static let applicationWillTerminate = Notification.Name("applicationWillTerminate")
 
@@ -59,12 +56,6 @@ extension NotificationCenter {
     /// - Parameter object: 可选的对象参数
     static func postApplicationDidFinishLaunching(object: Any? = nil) {
         NotificationCenter.default.post(name: .applicationDidFinishLaunching, object: object)
-    }
-
-    /// 发送启动窗口状态恢复完成的通知
-    /// - Parameter object: 可选的对象参数
-    static func postInitialWindowStateRestorationDidFinish(object: Any? = nil) {
-        NotificationCenter.default.post(name: .initialWindowStateRestorationDidFinish, object: object)
     }
 
     /// 发送应用即将终止的通知

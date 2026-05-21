@@ -36,36 +36,6 @@ final class WindowStateStore: @unchecked Sendable {
         }
     }
 
-    /// 加载所有窗口的状态快照（同步）
-    func loadWindowStates() -> [WindowPersistenceRecord] {
-        queue.sync { [self] in
-            let fileURL = statesFileURL()
-            guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                Self.logger.info("🪟 window_states.json missing at \(fileURL.path, privacy: .public)")
-                return []
-            }
-            guard let data = try? Data(contentsOf: fileURL) else {
-                Self.logger.error("🪟 failed to read window_states.json")
-                return []
-            }
-            do {
-                let records = try JSONDecoder().decode([WindowPersistenceRecord].self, from: data)
-                Self.logger.info("🪟 decoded \(records.count, privacy: .public) window state record(s)")
-                return records
-            } catch {
-                Self.logger.error("🪟 decode window_states.json failed: \(String(describing: error), privacy: .public)")
-                return []
-            }
-        }
-    }
-
-    /// 清除所有窗口状态
-    func clearWindowStates() {
-        queue.async { [self] in
-            try? FileManager.default.removeItem(at: statesFileURL())
-        }
-    }
-
     // MARK: - Internal
 
     private func persist(_ records: [WindowPersistenceRecord]) {

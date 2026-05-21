@@ -5,7 +5,7 @@ import os
 /// 最近项目管理插件：在工具栏显示当前项目名称并支持切换
 ///
 /// 管理全局最近项目列表，以及项目管理相关的 Agent 工具。
-/// 各窗口的当前项目由 `WindowPersistencePlugin` 负责持久化与恢复。
+/// 各窗口的当前项目快照由 `WindowPersistencePlugin` 负责保存。
 actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")

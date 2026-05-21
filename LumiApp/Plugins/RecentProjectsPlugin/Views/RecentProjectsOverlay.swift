@@ -5,7 +5,7 @@ import SwiftUI
 /// 在 RootView 出现时恢复全局最近项目列表，并在未选项目时显示引导遮罩。
 /// 项目切换时自动联动切换到关联的对话。
 ///
-/// 各窗口当前项目的持久化与恢复由 `WindowPersistencePlugin` 负责。
+/// 各窗口当前项目的磁盘快照由 `WindowPersistencePlugin` 负责保存。
 struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
@@ -13,7 +13,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
-    @EnvironmentObject private var windowManagerVM: WindowManagerVM
     @Environment(\.windowScope) private var windowScope
 
     let content: Content
@@ -35,10 +34,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         .animation(.easeInOut(duration: 0.25), value: projectVM.isProjectSelected)
         .onAppear {
             handleOnAppear()
-        }
-        .onChange(of: windowManagerVM.hasCompletedInitialStateRestoration) { _, completed in
-            guard completed else { return }
-            syncProjectFromScopeIfNeeded()
         }
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
