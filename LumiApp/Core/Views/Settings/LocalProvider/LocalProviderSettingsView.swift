@@ -96,16 +96,8 @@ extension LocalProviderSettingsView {
     /// 本地供应商选择器卡片（固定）
     private var providerSelectorCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "cpu.fill",
-                    title: "本地 LLM 供应商",
-                    subtitle: "在本地设备上运行 AI 模型"
-                )
-
+            AppSettingsSection(title: "本地 LLM 供应商", subtitle: "在本地设备上运行 AI 模型", spacing: 12) {
                 if localProviders.count > 1 {
-                    GlassDivider()
-
                     HStack(spacing: 8) {
                         ForEach(localProviders) { provider in
                             ProviderButton(

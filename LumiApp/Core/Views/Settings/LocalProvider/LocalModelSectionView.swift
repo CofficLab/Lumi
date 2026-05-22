@@ -1,9 +1,12 @@
 import SwiftUI
 import AppKit
 import Darwin
+import LumiUI
 
 /// 本地供应商模型区块：已加载模型、本机信息、系列 Tab、模型列表（下载/加载/卸载）
 struct LocalModelSectionView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let localProvider: (any SuperLocalLLMProvider)?
     @Binding var selectedModel: String
     @Binding var selectedSeriesName: String
@@ -50,8 +53,8 @@ struct LocalModelSectionView: View {
                     let downloadedModels = localAvailableModels.filter { localCachedIds.contains($0.id) }
                     if !downloadedModels.isEmpty {
                         Label("已下载", systemImage: "arrow.down.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appSectionTitle)
+                            .foregroundColor(theme.textSecondary)
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(downloadedModels) { model in
                                 LocalModelRow(
@@ -75,11 +78,11 @@ struct LocalModelSectionView: View {
                     } else {
                         HStack(spacing: 8) {
                             Image(systemName: "tray")
-                                .font(.system(size: 16))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.6))
+                                .font(.appCallout)
+                                .foregroundColor(theme.textSecondary.opacity(0.6))
                             Text("暂无已下载的模型")
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
                         }
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,7 +107,7 @@ struct LocalModelSectionView: View {
             Spacer()
             Button(action: onOpenCacheDirectory) {
                 Label("打开下载目录", systemImage: "folder")
-                    .font(.system(size: 12, weight: .regular))
+                    .font(.appCaption)
             }
             .buttonStyle(.bordered)
             .accessibilityLabel("打开下载目录")
@@ -117,21 +120,21 @@ struct LocalModelSectionView: View {
         if let errorMessage = localActionError {
             HStack(alignment: .top, spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "FF453A"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.error)
                 Text(errorMessage)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "FF453A"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.error)
             }
         }
         if showUnloadSuccess {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.primary)
                 Text("已卸载")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.primary)
             }
         }
     }
@@ -141,8 +144,8 @@ struct LocalModelSectionView: View {
             ProgressView()
                 .scaleEffect(0.8)
             Label("正在加载模型列表…", systemImage: "list.bullet")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 8)
