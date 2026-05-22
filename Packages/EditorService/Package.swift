@@ -13,6 +13,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../LumiUI"),
         .package(path: "../EditorKernel"),
         .package(path: "../LumiCodeEditSourceEditor"),
         .package(path: "../CodeEditTextView"),
@@ -25,6 +26,7 @@ let package = Package(
         .target(
             name: "EditorService",
             dependencies: [
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),

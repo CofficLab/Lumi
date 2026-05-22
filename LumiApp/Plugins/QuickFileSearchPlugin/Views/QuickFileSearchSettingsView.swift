@@ -1,130 +1,107 @@
+import LumiUI
 import SwiftUI
 
 /// 快速文件搜索设置视图
 struct QuickFileSearchSettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @StateObject private var searchService = FileSearchService.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // 插件说明
-            headerSection
-
-            Divider()
-
-            // 当前状态
-            statusSection
-
-            Divider()
-
-            // 操作说明
-            instructionsSection
-
-            Spacer()
-        }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(String(localized: "Quick File Search", table: "QuickFileSearch"), systemImage: "magnifyingglass")
-                .font(.title2.bold())
-
-            Text(String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch"))
-                .font(.body)
-                .foregroundColor(.secondary)
+        PluginSettingsScaffold(
+            String(localized: "Quick File Search", table: "QuickFileSearch"),
+            subtitle: String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch")
+        ) {
+            statusCard
+            instructionsCard
         }
     }
 
-    private var statusSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Current Status", table: "QuickFileSearch"))
-                .font(.headline)
+    private var statusCard: some View {
+        AppCard {
+            AppSettingsSection(
+                title: String(localized: "Current Status", table: "QuickFileSearch"),
+                spacing: 12
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: projectVM.currentProjectPath.isEmpty ? "circle" : "checkmark.circle.fill")
+                            .font(.appTitle)
+                            .foregroundColor(projectVM.currentProjectPath.isEmpty ? theme.warning : theme.success)
 
-            HStack {
-                Image(systemName: projectVM.currentProjectPath.isEmpty ? "circle" : "checkmark.circle.fill")
-                    .foregroundColor(projectVM.currentProjectPath.isEmpty ? .orange : .green)
+                        VStack(alignment: .leading, spacing: 4) {
+                            if projectVM.currentProjectPath.isEmpty {
+                                Text(String(localized: "No project selected", table: "QuickFileSearch"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(String(localized: "Please select a project to enable file search", table: "QuickFileSearch"))
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            } else {
+                                Text(String(localized: "Project indexed", table: "QuickFileSearch"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(projectVM.currentProjectName)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+                        }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    if projectVM.currentProjectPath.isEmpty {
-                        Text(String(localized: "No project selected", table: "QuickFileSearch"))
-                            .font(.body)
-                        Text(String(localized: "Please select a project to enable file search", table: "QuickFileSearch"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text(String(localized: "Project indexed", table: "QuickFileSearch"))
-                            .font(.body)
-                        Text("\(projectVM.currentProjectName)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Spacer()
                     }
                 }
 
-                Spacer()
-            }
-            .padding(12)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            // 索引信息
-            if !projectVM.currentProjectPath.isEmpty {
-                HStack {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(.blue)
-                    Text(String(localized: "File indexing is automatic when switching projects", table: "QuickFileSearch"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                if !projectVM.currentProjectPath.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(theme.info)
+                        Text(String(localized: "File indexing is automatic when switching projects", table: "QuickFileSearch"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    .padding(.horizontal, 8)
                 }
             }
         }
     }
 
-    private var instructionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "How to Use", table: "QuickFileSearch"))
-                .font(.headline)
-
-            VStack(alignment: .leading, spacing: 8) {
-                instructionRow(
-                    key: "Cmd+P",
-                    description: "Open file search"
-                )
-                instructionRow(
-                    key: "↑ ↓",
-                    description: "Navigate results"
-                )
-                instructionRow(
-                    key: "Enter",
-                    description: "Select file"
-                )
-                instructionRow(
-                    key: "Esc",
-                    description: "Close search"
-                )
+    private var instructionsCard: some View {
+        AppCard {
+            AppSettingsSection(
+                title: String(localized: "How to Use", table: "QuickFileSearch"),
+                spacing: 8
+            ) {
+                instructionRow(key: "Cmd+P", description: String(localized: "Open file search", table: "QuickFileSearch"))
+                instructionRow(key: "↑ ↓", description: String(localized: "Navigate results", table: "QuickFileSearch"))
+                instructionRow(key: "Enter", description: String(localized: "Select file", table: "QuickFileSearch"))
+                instructionRow(key: "Esc", description: String(localized: "Close search", table: "QuickFileSearch"))
             }
         }
     }
 
     private func instructionRow(key: String, description: String) -> some View {
-        HStack(spacing: 12) {
-            Text(key)
-                .font(.system(.body, design: .monospaced))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+        AppSettingsRow(verticalPadding: 6) {
+            HStack(spacing: 12) {
+                Text(key)
+                    .font(.appBody)
+                    .fontDesign(.monospaced)
+                    .foregroundColor(theme.textPrimary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(theme.appAccentSoftFill)
+                    )
 
-            Text(description)
-                .font(.body)
+                Text(description)
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
 
-            Spacer()
+                Spacer()
+            }
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview("Quick File Search Settings") {
     QuickFileSearchSettingsView()

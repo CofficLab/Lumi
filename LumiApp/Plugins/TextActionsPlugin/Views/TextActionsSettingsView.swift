@@ -3,6 +3,8 @@ import SwiftUI
 import LumiUI
 
 struct TextActionsSettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var manager = TextSelectionManager.shared
     @State private var isEnabled: Bool = false
 
@@ -27,21 +29,18 @@ struct TextActionsSettingsView: View {
         .onAppear(perform: handleOnAppear)
         .onChange(of: isEnabled, handleEnabledChanged)
     }
-}
 
-// MARK: - View
-
-extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "General Settings", table: "TextActions"))
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                Toggle(isOn: $isEnabled) {
-                    Text(String(localized: "Enable Text Selection Menu", table: "TextActions"))
-                }
+            AppSettingsSection(
+                title: String(localized: "General Settings", table: "TextActions"),
+                spacing: 12
+            ) {
+                AppSettingsToggleRow(
+                    String(localized: "Enable Text Selection Menu", table: "TextActions"),
+                    systemImage: "text.cursor",
+                    isOn: $isEnabled
+                )
 
                 if !manager.isPermissionGranted {
                     permissionWarningView
@@ -51,51 +50,56 @@ extension TextActionsSettingsView {
     }
 
     private var permissionWarningView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(Color(hex: "FF9F0A"))
-            Text(
-                String(
-                    localized: "Accessibility permission is required to detect text selection",
-                    table: "TextActions"
+        AppSettingsRow {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(theme.warning)
+                    Text(
+                        String(
+                            localized: "Accessibility permission is required to detect text selection",
+                            table: "TextActions"
+                        )
+                    )
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+                }
+
+                AppButton(
+                    String(localized: "Open System Settings", table: "TextActions"),
+                    style: .secondary,
+                    fillsWidth: true,
+                    action: openAccessibilitySettings
                 )
-            )
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            AppButton(localized: "Open System Settings", table: "Localizable", style: .secondary, fillsWidth: true, action: { openAccessibilitySettings() })
-            .frame(maxWidth: 180)
+            }
         }
-        .padding(.top, 4)
     }
 
     private var supportedActionsCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "Supported Actions", table: "TextActions"))
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                VStack(spacing: 4) {
-                    ForEach(TextActionType.allCases) { action in
-                        actionRow(for: action)
-                    }
+            AppSettingsSection(
+                title: String(localized: "Supported Actions", table: "TextActions"),
+                spacing: 6
+            ) {
+                ForEach(TextActionType.allCases) { action in
+                    actionRow(for: action)
                 }
             }
         }
     }
 
     private func actionRow(for action: TextActionType) -> some View {
-        GlassRow {
-            HStack {
+        AppSettingsRow(verticalPadding: 6) {
+            HStack(spacing: 12) {
                 Image(systemName: action.icon)
                     .frame(width: 20)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
                 Text(action.title)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
                 Spacer()
                 Image(systemName: "checkmark")
-                    .foregroundColor(Color(hex: "30D158"))
+                    .foregroundColor(theme.success)
             }
         }
     }
@@ -107,15 +111,6 @@ extension TextActionsSettingsView {
     func openAccessibilitySettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
-    }
-}
-
-// MARK: - Setter
-
-extension TextActionsSettingsView {
-    @MainActor
-    func setIsEnabled(_ value: Bool) {
-        isEnabled = value
     }
 }
 
@@ -137,9 +132,8 @@ extension TextActionsSettingsView {
     }
 }
 
-// MARK: - Preview
-
 #Preview {
     TextActionsSettingsView()
+        .inRootView()
         .frame(width: 400, height: 600)
 }
