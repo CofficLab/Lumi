@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// LSP 进度指示视图。
@@ -6,6 +7,8 @@ import SwiftUI
 /// 视图直接观察 `LSPProgressProvider` 的活动任务列表，只负责展示任务标题、消息和进度百分比；
 /// 进度数据解析和生命周期维护由 `LSPProgressProvider` 负责。
 struct LSPProgressIndicatorView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var provider: LSPProgressProvider
 
     var body: some View {
@@ -14,17 +17,25 @@ struct LSPProgressIndicatorView: View {
                 if task.state == .inProgress {
                     ProgressView().scaleEffect(0.6)
                 } else {
-                    Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(theme.success)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(task.title).font(.system(size: 12))
+                    Text(task.title)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textPrimary)
                     if let message = task.message {
-                        Text(message).font(.system(size: 10)).foregroundColor(.secondary)
+                        Text(message)
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                     }
                 }
                 Spacer()
                 if let percentage = task.percentage {
-                    Text("\(Int(percentage))%").font(.system(size: 11)).monospacedDigit()
+                    Text("\(Int(percentage))%")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .monospacedDigit()
                 }
             }
             .padding(.horizontal, 8).padding(.vertical, 4)
