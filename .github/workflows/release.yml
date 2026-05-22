@@ -137,6 +137,24 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
+      - name: Restore CodeEditLanguages Framework
+        id: codeedit-languages-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
+            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework.zip
+          key: ${{ runner.os }}-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
+
+      - name: Build CodeEditLanguages Framework
+        if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
+        run: |
+          cd Packages/CodeEditLanguages
+          ./build_framework.sh
+
+      - name: Check CodeEditLanguages Framework
+        run: scripts/check-codeedit-languages-framework.sh
+
       - name: Build App (Archive)
         run: |
           set -o pipefail
