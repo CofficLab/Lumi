@@ -59,7 +59,6 @@
 		F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2A3022FC2000100000001 /* FileTreeKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
-		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
 		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
 		F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A6407F2F3ED7060039A761 /* PostgresNIO */; };
@@ -333,7 +332,6 @@
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
-				F5485E322F7A077B00566188 /* CodeEditor in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
@@ -893,7 +891,6 @@
 				0B1A4F882F662D8500F15618 /* MLXOptimizers */,
 				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
 				F5BE65D02F6BB1130091C1FD /* Markdown */,
-				F5485E312F7A077B00566188 /* CodeEditor */,
 				0BBB11DF2F85467D00F53902 /* SwiftTerm */,
 				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
 				0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */,
@@ -1001,7 +998,6 @@
 				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */,
-				F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */,
 				0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
 				0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */,
@@ -2093,14 +2089,6 @@
 				minimumVersion = 2.8.1;
 			};
 		};
-		F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ZeeZide/CodeEditor.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.6;
-			};
-		};
 		F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/vapor/postgres-nio";
@@ -2374,11 +2362,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
-		};
-		F5485E312F7A077B00566188 /* CodeEditor */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */;
-			productName = CodeEditor;
 		};
 		F5A6407F2F3ED7060039A761 /* PostgresNIO */ = {
 			isa = XCSwiftPackageProductDependency;

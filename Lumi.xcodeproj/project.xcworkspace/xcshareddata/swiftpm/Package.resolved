@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "CodeEditor",
-        "repositoryURL": "https://github.com/ZeeZide/CodeEditor.git",
-        "state": {
-          "branch": null,
-          "revision": "f5c076b94f4ceb05abff88ba91d75a8d57143f0c",
-          "version": "1.2.6"
-        }
-      },
-      {
         "package": "ElkSwift",
         "repositoryURL": "https://github.com/lukilabs/elk-swift",
         "state": {
@@ -62,15 +53,6 @@
           "branch": null,
           "revision": "70bbea4b108221fcabfce8dbced8502831c0ae04",
           "version": "2.1.0"
-        }
-      },
-      {
-        "package": "Highlightr",
-        "repositoryURL": "https://github.com/helje5/Highlightr",
-        "state": {
-          "branch": null,
-          "revision": "bd0358056ff1f12ea83833a9fc1b3b5a396a9da0",
-          "version": "3.0.2"
         }
       },
       {
