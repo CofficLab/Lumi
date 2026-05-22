@@ -57,6 +57,7 @@ extension ChatHistoryService {
 
             existingEntity.apply(from: message, in: context)
             existingEntity.conversation = fetchedConversation
+            syncToolCallRelations(for: existingEntity, with: message, in: context)
             syncImageRelations(for: existingEntity, with: message, in: context)
             fetchedConversation.updatedAt = Date()
 
@@ -78,6 +79,7 @@ extension ChatHistoryService {
         let messageEntity = ChatMessageEntity.fromChatMessage(message, in: context)
         messageEntity.timestamp = Date()
         messageEntity.conversation = fetchedConversation
+        syncToolCallRelations(for: messageEntity, with: message, in: context)
         syncImageRelations(for: messageEntity, with: message, in: context)
         fetchedConversation.updatedAt = Date()
         context.insert(messageEntity)
@@ -115,6 +117,7 @@ extension ChatHistoryService {
         }
 
         entity.apply(from: message, in: context)
+        syncToolCallRelations(for: entity, with: message, in: context)
         syncImageRelations(for: entity, with: message, in: context)
 
         do {
@@ -509,5 +512,60 @@ extension ChatHistoryService {
                 context.delete(image)
             }
         }
+    }
+
+    // MARK: - 工具调用关系管理
+
+    /// 同步消息实体与工具调用的关系
+    ///
+    /// 将 ChatMessage 中的 ToolCall 列表转换为 ToolCallEntity，
+    /// 并建立与 ChatMessageEntity 的关系。支持按 id 去重和增量更新。
+    private func syncToolCallRelations(
+        for entity: ChatMessageEntity,
+        with message: ChatMessage,
+        in context: ModelContext
+    ) {
+        guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else {
+            // 消息没有工具调用，清空已有关系
+            if !entity.toolCalls.isEmpty {
+                for existing in entity.toolCalls {
+                    context.delete(existing)
+                }
+                entity.toolCalls = []
+            }
+            return
+        }
+
+        // 构建"已有实体"的 id → entity 映射，方便按 id 增量更新
+        var existingByID: [String: ToolCallEntity] = [:]
+        for existing in entity.toolCalls {
+            existingByID[existing.id] = existing
+        }
+
+        var syncedEntities: [ToolCallEntity] = []
+
+        for toolCall in toolCalls {
+            if let existing = existingByID[toolCall.id] {
+                // 已存在：就地更新字段
+                existing.name = toolCall.name
+                existing.arguments = toolCall.arguments
+                existing.authorizationState = toolCall.authorizationState.rawValue
+                syncedEntities.append(existing)
+            } else {
+                // 新建
+                let newEntity = ToolCallEntity.from(toolCall)
+                newEntity.message = entity
+                context.insert(newEntity)
+                syncedEntities.append(newEntity)
+            }
+        }
+
+        // 删除不再需要的旧实体
+        let newIDs = Set(toolCalls.map { $0.id })
+        for existing in entity.toolCalls where !newIDs.contains(existing.id) {
+            context.delete(existing)
+        }
+
+        entity.toolCalls = syncedEntities
     }
 }

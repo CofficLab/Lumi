@@ -15,6 +15,7 @@ enum DBConfig {
     /// - `ChatMessageEntity`: 聊天消息
     /// - `MessageMetricsEntity`: 消息性能指标
     /// - `ImageAttachmentEntity`: 图片附件
+    /// - `ToolCallEntity`: 工具调用
     ///
     /// - Returns: 配置好的 Schema 对象
     static func getSchema() -> Schema {
@@ -22,7 +23,8 @@ enum DBConfig {
             Conversation.self,
             ChatMessageEntity.self,
             MessageMetricsEntity.self,
-            ImageAttachmentEntity.self
+            ImageAttachmentEntity.self,
+            ToolCallEntity.self
         ])
     }
     
