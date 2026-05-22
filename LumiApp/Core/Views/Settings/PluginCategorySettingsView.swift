@@ -3,6 +3,8 @@ import LumiUI
 
 /// 插件分类设置视图：展示指定分类下所有可配置插件的开关列表
 struct PluginCategorySettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 目标分类
     let category: PluginCategory
 
@@ -45,12 +47,7 @@ struct PluginCategorySettingsView: View {
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: category.systemImage,
-                title: category.displayName,
-                subtitle: "管理「\(category.displayName)」分类下的插件",
-                iconColor: Color(hex: "7C6FFF")
-            )
+            AppSettingsSection(title: category.displayName, subtitle: "管理「\(category.displayName)」分类下的插件") {}
         }
     }
 
@@ -78,7 +75,7 @@ struct PluginCategorySettingsView: View {
                     )
 
                     if index < plugins.count - 1 {
-                        GlassDivider()
+                        settingsDivider
                     }
                 }
 
@@ -94,8 +91,8 @@ struct PluginCategorySettingsView: View {
     private var emptyStateContent: some View {
         VStack(spacing: 16) {
             Text("该分类下暂无可配置的插件")
-                .font(.system(size: 13))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appCaption)
+                .foregroundColor(theme.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -108,14 +105,20 @@ struct PluginCategorySettingsView: View {
             Spacer()
 
             Text("共 \(plugins.count) 个插件 · \(enabledCount) 个已启用")
-                .font(.system(size: 11))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
 
             Spacer()
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 24)
         .background(.bar)
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     // MARK: - Data
