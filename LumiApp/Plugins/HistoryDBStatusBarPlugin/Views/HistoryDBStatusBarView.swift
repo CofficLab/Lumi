@@ -15,7 +15,7 @@ struct HistoryDBStatusBarView: View {
             id: "history-db-status"
         ) {
             Image(systemName: "tablecells")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
         }

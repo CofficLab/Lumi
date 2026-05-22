@@ -14,10 +14,10 @@ struct ThemeStatusBarView: View {
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "paintbrush")
-                    .font(.system(size: 11))
+                    .font(.appMicroEmphasized)
                 if let current = themeVM.currentTheme {
                     Text(current.displayName)
-                        .font(.system(size: 11))
+                        .font(.appMicro)
                         .lineLimit(1)
                 }
             }
@@ -26,4 +26,3 @@ struct ThemeStatusBarView: View {
         }
     }
 }
-

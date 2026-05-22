@@ -79,7 +79,6 @@ struct RAGStatusBarView: View, SuperLog {
                 loadingText
             }
         }
-        .foregroundColor(.white)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
@@ -88,59 +87,57 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private var statusIcon: some View {
-        // 状态图标使用统一白色，与其他插件保持一致
         if isIndexing {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
                 .symbolEffect(.rotate, options: .repeating)
         } else if let status = indexStatus {
             if status.isStale {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10))
+                    .font(.appMicroEmphasized)
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.appMicroEmphasized)
             }
         } else if isNotInitialized {
             Image(systemName: "poweroff")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
         } else if hasError {
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
         } else {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
         }
     }
 
     @ViewBuilder
     private func statusText(for status: RAGIndexStatus) -> some View {
-        // 状态栏文本不设置颜色，由 StatusBar 统一控制为白色
         HStack(spacing: 4) {
             Text(String(localized: "RAG", table: "RAG"))
-                .font(.system(size: 11, weight: .medium))
+                .font(.appMicroEmphasized)
 
             Text("·")
-                .font(.system(size: 9))
+                .font(.appMicro)
                 .opacity(0.7)
 
             Text(formatIndexTime(status.lastIndexedAt))
-                .font(.system(size: 10))
+                .font(.appMicro)
                 .opacity(0.7)
 
             Text("·")
-                .font(.system(size: 9))
+                .font(.appMicro)
                 .opacity(0.7)
 
             Text("^[\(status.fileCount) File](inflect: true)")
-                .font(.system(size: 10))
+                .font(.appMicro)
 
             Text("·")
-                .font(.system(size: 9))
+                .font(.appMicro)
                 .opacity(0.7)
 
             Text("^[\(status.chunkCount) Chunk](inflect: true)")
-                .font(.system(size: 10))
+                .font(.appMicro)
         }
     }
 
@@ -149,46 +146,46 @@ struct RAGStatusBarView: View, SuperLog {
         if let event = progressEvent {
             HStack(spacing: 4) {
                 Text(String(localized: "Indexing...", table: "RAG"))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.appMicroEmphasized)
 
                 Text("·")
-                    .font(.system(size: 9))
+                    .font(.appMicro)
                     .opacity(0.7)
 
                 Text("\(event.scannedFiles)/\(event.totalFiles)")
-                    .font(.system(size: 10))
+                    .font(.appMicro)
                     .opacity(0.7)
             }
         } else {
             Text(String(localized: "Indexing...", table: "RAG"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
     }
 
     @ViewBuilder
     private var notInitializedText: some View {
         Text(String(localized: "Not initialized", table: "RAG"))
-            .font(.system(size: 10))
+            .font(.appMicro)
     }
 
     @ViewBuilder
     private var errorText: some View {
         if let error = errorMessage {
             Text(error)
-                .font(.system(size: 10))
+                .font(.appMicro)
         }
     }
 
     @ViewBuilder
     private var noProjectText: some View {
         Text(String(localized: "No project selected", table: "RAG"))
-            .font(.system(size: 10))
+            .font(.appMicro)
     }
 
     @ViewBuilder
     private var loadingText: some View {
         Text(String(localized: "Checking index status...", table: "RAG"))
-            .font(.system(size: 10))
+            .font(.appMicro)
     }
 
     // MARK: - 通知处理

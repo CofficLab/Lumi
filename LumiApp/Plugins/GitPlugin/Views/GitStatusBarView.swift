@@ -21,13 +21,12 @@ struct GitPluginStatusBarView: View {
                 ) {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.triangle.branch")
-                            .font(.system(size: 10))
+                            .font(.appMicroEmphasized)
 
                         Text(branch)
-                            .font(.system(size: 11))
+                            .font(.appMicro)
                             .lineLimit(1)
                     }
-                    .foregroundColor(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                 }

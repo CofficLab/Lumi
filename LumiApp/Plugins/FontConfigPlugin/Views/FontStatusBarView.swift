@@ -18,10 +18,9 @@ struct FontStatusBarView: View {
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "textformat")
-                    .font(.system(size: 11))
+                    .font(.appMicroEmphasized)
                 Text(viewModel.displayName)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(.appMicro)
                     .lineLimit(1)
             }
             .padding(.horizontal, 8)

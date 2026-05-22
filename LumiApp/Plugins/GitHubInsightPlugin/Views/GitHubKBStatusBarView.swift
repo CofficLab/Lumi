@@ -85,14 +85,13 @@ struct GitHubKBStatusBarView: View {
                 ) {
                     HStack(spacing: 4) {
                         Image(systemName: iconName)
-                            .font(.system(size: 10))
+                            .font(.appMicroEmphasized)
                         if let count = displayCount {
                             Text("\(count)")
-                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .font(.appMonoMicro)
                                 .monospacedDigit()
                         }
                     }
-                    .foregroundColor(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                 }
