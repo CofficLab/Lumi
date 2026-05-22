@@ -1,15 +1,13 @@
+import LumiUI
 import SwiftUI
 
 /// 语言选择器：下拉菜单选择 AI 响应语言
 struct LanguageSelector: View {
-    @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private let iconSize: CGFloat = 14
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     var body: some View {
-        let theme = themeVM.activeChromeTheme
-
         Menu {
             ForEach(LanguagePreference.allCases) { lang in
                 Button(action: {
@@ -28,10 +26,11 @@ struct LanguageSelector: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
-                    .font(.system(size: iconSize))
+                    .font(.appCaptionEmphasized)
                 Text(projectVM.languagePreference.displayName)
+                    .font(.appCaption)
             }
-            .foregroundColor(theme.workspaceTextColor())
+            .foregroundColor(theme.textPrimary)
         }
         .menuStyle(.borderlessButton)
         .frame(width: 70)

@@ -42,7 +42,7 @@ struct RegistryCard: View {
                             Image(systemName: "arrow.clockwise")
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(theme.textSecondary)
                         .help("Refresh")
                     }
                 }
