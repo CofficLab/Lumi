@@ -188,8 +188,6 @@ extension ChatHistoryService {
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil
     func loadMessages(forConversationId conversationId: UUID) -> [ChatMessage]? {
-        migrateEmbeddedToolResultsIfNeeded()
-
         let context = self.getContext()
 
         // 先验证会话是否存在
@@ -391,38 +389,6 @@ extension ChatHistoryService {
         }
 
         return (messages, hasMore)
-    }
-
-    /// 按工具调用 ID 查询工具输出消息。
-    /// 仅用于消息详情按需展开，不参与主时间线分页。
-    func loadToolOutputMessages(
-        forConversationId conversationId: UUID,
-        toolCallIDs: [String]
-    ) async -> [ChatMessage] {
-        let signpostID = UIPerformanceSignpost.begin("ChatHistory.loadToolOutputMessages")
-        defer { UIPerformanceSignpost.end("ChatHistory.loadToolOutputMessages", signpostID) }
-
-        let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
-        guard !normalizedIDs.isEmpty else { return [] }
-
-        let context = self.getContext()
-        var messages: [ChatMessage] = []
-
-        for toolCallID in normalizedIDs {
-            let descriptor = FetchDescriptor<ChatMessageEntity>(
-                predicate: #Predicate<ChatMessageEntity> { msg in
-                    msg.conversation?.id == conversationId && msg.toolCallID == toolCallID
-                },
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-
-            guard let fetched = try? context.fetch(descriptor) else {
-                continue
-            }
-            messages.append(contentsOf: fetched.compactMap { $0.toChatMessage() })
-        }
-
-        return messages.sorted { $0.timestamp < $1.timestamp }
     }
 
     /// 获取会话消息总数

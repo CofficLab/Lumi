@@ -12,15 +12,6 @@ extension ChatMessage {
 
     // MARK: 工厂
 
-    static func makeAbortMessage(toolCallID: String?, conversationId: UUID) -> ChatMessage {
-        ChatMessage(
-            role: .tool,
-            conversationId: conversationId,
-            content: "[Tool execution aborted by safety guard]",
-            toolCallID: toolCallID
-        )
-    }
-
     /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。
     static func maxDepthFinalStepReminderMessage(conversationId: UUID) -> ChatMessage {
         ChatMessage(

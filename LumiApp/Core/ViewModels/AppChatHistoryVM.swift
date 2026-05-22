@@ -46,17 +46,6 @@ final class AppChatHistoryVM: ObservableObject {
         )
     }
 
-    /// 加载工具输出消息
-    func loadToolOutputMessages(
-        forConversationId conversationId: UUID,
-        toolCallIDs: [String]
-    ) async -> [ChatMessage] {
-        await chatHistoryService.loadToolOutputMessages(
-            forConversationId: conversationId,
-            toolCallIDs: toolCallIDs
-        )
-    }
-
     /// 获取消息总数
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
         await chatHistoryService.getMessageCount(forConversationId: conversationId)

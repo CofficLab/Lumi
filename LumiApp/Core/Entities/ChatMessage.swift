@@ -25,7 +25,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 工具调用列表
     var toolCalls: [ToolCall]?
 
-    /// 工具调用 ID
+    /// 工具调用 ID（仅用于内存中的工具结果消息，不持久化到数据库）
     var toolCallID: String?
 
     /// 图片附件列表
@@ -155,7 +155,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - content: 消息内容
     ///   - isError: 是否为错误消息
     ///   - toolCalls: 工具调用列表
-    ///   - toolCallID: 工具调用 ID
+    ///   - toolCallID: 工具调用 ID（仅用于内存中的工具结果消息）
     ///   - images: 图片附件列表
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
@@ -223,7 +223,6 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - timestamp: 消息时间戳
     ///   - isError: 是否为错误消息
     ///   - toolCalls: 工具调用列表
-    ///   - toolCallID: 工具调用 ID
     ///   - images: 图片附件列表
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
@@ -241,7 +240,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - thinkingContent: 思考过程文本
     init(id: UUID, role: MessageRole, conversationId: UUID, content: String, timestamp: Date,
          isError: Bool = false, toolCalls: [ToolCall]? = nil,
-         toolCallID: String? = nil, images: [ImageAttachment] = [],
+         images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
          latency: Double? = nil, inputTokens: Int? = nil,
          outputTokens: Int? = nil, totalTokens: Int? = nil,
@@ -259,7 +258,6 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.timestamp = timestamp
         self.isError = isError
         self.toolCalls = toolCalls
-        self.toolCallID = toolCallID
         self.images = images
         self.providerId = providerId
         self.modelName = modelName

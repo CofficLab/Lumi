@@ -10,7 +10,6 @@ final class ChatMessageEntity {
     var content: String
     var timestamp: Date
     var isError: Bool
-    var toolCallID: String?
 
     /// 工具调用列表（一对多关系，独立存储在 ToolCallEntity 表中）
     @Relationship(deleteRule: .cascade, inverse: \ToolCallEntity.message)
@@ -56,14 +55,12 @@ final class ChatMessageEntity {
     
     init(id: UUID = UUID(), role: MessageRole, content: String, timestamp: Date = Date(),
          isError: Bool = false,
-         toolCallID: String? = nil,
          providerId: String? = nil, modelName: String? = nil) {
         self.id = id
         self._role = role.rawValue
         self.content = content
         self.timestamp = timestamp
         self.isError = isError
-        self.toolCallID = toolCallID
         self.providerId = providerId
         self.modelName = modelName
     }
@@ -158,7 +155,6 @@ final class ChatMessageEntity {
             timestamp: timestamp,
             isError: isError,
             toolCalls: toolCallList,
-            toolCallID: toolCallID,
             images: imageAttachments,
             providerId: providerId,
             modelName: modelName,
@@ -189,7 +185,6 @@ final class ChatMessageEntity {
         content = message.content
         timestamp = message.timestamp
         isError = message.isError
-        toolCallID = message.toolCallID
         providerId = message.providerId
         modelName = message.modelName
         rawErrorDetail = message.rawErrorDetail
@@ -234,7 +229,6 @@ final class ChatMessageEntity {
             content: message.content,
             timestamp: message.timestamp,
             isError: message.isError,
-            toolCallID: message.toolCallID,
             providerId: message.providerId,
             modelName: message.modelName
         )
