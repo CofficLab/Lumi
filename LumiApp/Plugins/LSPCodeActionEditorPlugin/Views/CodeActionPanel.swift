@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 代码动作弹窗。
@@ -9,6 +10,7 @@ import SwiftUI
 /// 该视图只负责展示和选择动作，不负责请求、解析或执行动作；真正的业务逻辑由
 /// `CodeActionProvider` 和消费该 Provider 的编辑器 Overlay/面板负责。
 struct CodeActionPanel: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     let actions: [CodeActionItem]
     @Binding var selectedIndex: Int
@@ -18,29 +20,27 @@ struct CodeActionPanel: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundColor(Color(hex: "FF9F0A"))
+                    .foregroundColor(theme.warning)
                 Text(String(localized: "Code Actions", table: "LSPCodeActionEditor"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textPrimary)
                 Spacer()
                 if actions.indices.contains(selectedIndex),
                    actions[selectedIndex].isPreferred {
                     Text(String(localized: "Preferred", table: "LSPCodeActionEditor"))
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(Color(hex: "FF9F0A"))
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.warning)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(Color(hex: "FF9F0A").opacity(0.14))
-                        )
+                        .background(Capsule().fill(theme.warning.opacity(0.14)))
                 }
                 Text("\(actions.count) available")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color(hex: "98989E").opacity(0.08))
+            .background(theme.appToolbarBackground)
 
             Divider().opacity(0.3)
 
@@ -64,24 +64,8 @@ struct CodeActionPanel: View {
             }
         }
         .frame(width: 380, height: min(CGFloat(actions.count) * 36 + 60, 300))
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.06),
-                            Color(hex: "98989E").opacity(0.08)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.75)
-                )
-                .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
-        )
+        .appSurface(style: .popover, cornerRadius: 10, borderColor: theme.appSubtleBorder, lineWidth: 0.75)
+        .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
     }
 }
 
@@ -90,6 +74,7 @@ struct CodeActionPanel: View {
 /// 展示一个 `CodeActionItem` 的图标、标题和 preferred 标记。
 /// 点击该行后会把选择事件回传给上层，由上层决定是否立即执行动作。
 struct CodeActionRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     let action: CodeActionItem
     let isSelected: Bool
@@ -99,30 +84,26 @@ struct CodeActionRow: View {
         Button(action: onTap) {
             HStack(spacing: 8) {
                 Image(systemName: action.icon)
-                    .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(isSelected ? .white : theme.textSecondary)
                     .frame(width: 16)
 
                 Text(action.title)
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .foregroundColor(isSelected ? .white : theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if action.isPreferred {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 8))
-                        .foregroundColor(isSelected ? .yellow : Color(hex: "FF9F0A").opacity(0.8))
+                        .font(.appMicro)
+                        .foregroundColor(isSelected ? .yellow : theme.warning.opacity(0.8))
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(
-                isSelected
-                    ? RoundedRectangle(cornerRadius: 6).fill(Color(hex: "7C6FFF").opacity(0.9))
-                    : RoundedRectangle(cornerRadius: 4).fill(Color.clear)
-            )
+            .appSurface(style: .custom(isSelected ? theme.primary.opacity(0.9) : Color.clear), cornerRadius: isSelected ? 6 : 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
