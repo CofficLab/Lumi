@@ -2,26 +2,29 @@ import SwiftUI
 import LumiUI
 
 struct AppUpdateStatusBarContentView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var store: AppUpdateStatusBarStore
 
     var body: some View {
         if store.hasPendingUpdate {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.appMicroEmphasized)
                 Text(String(localized: "Update", table: "AppUpdateStatusBar"))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.appMicroEmphasized)
             }
-            .foregroundColor(Color(hex: "0A84FF"))
+            .foregroundColor(theme.info)
             .padding(.horizontal, 5)
             .frame(height: 16)
-            .background(Color(hex: "0A84FF").opacity(0.14))
-            .cornerRadius(4)
+            .appSurface(style: .custom(theme.info.opacity(0.14)), cornerRadius: 4)
         }
     }
 }
 
 struct AppUpdateStatusBarPopupView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var store: AppUpdateStatusBarStore
 
     var body: some View {
@@ -29,30 +32,29 @@ struct AppUpdateStatusBarPopupView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 10) {
                     Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(hex: "0A84FF"))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.info)
                         .frame(width: 22)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(String(localized: "New version is ready", table: "AppUpdateStatusBar"))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appCallout)
+                            .foregroundColor(theme.textPrimary)
 
                         Text(String(format: String(localized: "Lumi %@ downloaded", table: "AppUpdateStatusBar"), version))
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textTertiary)
                     }
 
                     Spacer(minLength: 8)
 
                     Button(action: store.installPreparedUpdate) {
                         Text(String(localized: "Restart to Update", table: "AppUpdateStatusBar"))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appCaptionEmphasized)
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)
                             .frame(height: 24)
-                            .background(Color(hex: "0A84FF"))
-                            .cornerRadius(5)
+                            .appSurface(style: .custom(theme.info), cornerRadius: 5)
                     }
                     .buttonStyle(.plain)
                 }
