@@ -1,15 +1,11 @@
+import LumiUI
 import SwiftUI
 
 /// App 插件详情弹窗视图
 struct AppLoadedPluginsDetailView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var viewModel = AppLoadedPluginsViewModel()
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private var rowBackground: Color {
-        colorScheme == .light
-            ? Color(hex: "7C6FFF").opacity(0.06)
-            : Color(hex: "7C6FFF").opacity(0.14)
-    }
+    @StateObject private var viewModel = AppLoadedPluginsViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -32,8 +28,8 @@ struct AppLoadedPluginsDetailView: View {
     private var headerView: some View {
         HStack {
             Text(String(localized: "App Plugins", table: "AppLoadedPlugins"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appCallout)
+                .foregroundColor(theme.textPrimary)
 
             Spacer()
 
@@ -41,8 +37,8 @@ struct AppLoadedPluginsDetailView: View {
                 viewModel.refresh()
             } label: {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
@@ -56,14 +52,14 @@ struct AppLoadedPluginsDetailView: View {
                 Int64(viewModel.enabledPlugins.count)
             )
         )
-        .font(.system(size: 11))
-        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+        .font(.appMicro)
+        .foregroundColor(theme.textSecondary)
     }
 
     private var emptyView: some View {
         Text(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
-            .font(.system(size: 12))
-            .foregroundColor(Color(hex: "98989E"))
+            .font(.appCaption)
+            .foregroundColor(theme.textTertiary)
             .padding(.vertical, 8)
     }
 
@@ -71,7 +67,7 @@ struct AppLoadedPluginsDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(viewModel.enabledPlugins) { plugin in
-                    AppLoadedPluginRowView(plugin: plugin, rowBackground: rowBackground)
+                    AppLoadedPluginRowView(plugin: plugin)
                 }
             }
         }
@@ -81,34 +77,34 @@ struct AppLoadedPluginsDetailView: View {
 
 /// 单个已加载插件的行视图
 private struct AppLoadedPluginRowView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let plugin: AppLoadedPluginsViewModel.PluginInfo
-    let rowBackground: Color
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 11))
-                .foregroundColor(Color(hex: "7C6FFF"))
+                .font(.appMicro)
+                .foregroundColor(theme.primary)
                 .padding(.top, 2)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(plugin.displayName)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textPrimary)
                 Text(plugin.description)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
                     .lineLimit(2)
                 Text(plugin.id)
-                    .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .appSurface(style: .custom(theme.appAccentSoftFill), cornerRadius: 8)
     }
 }

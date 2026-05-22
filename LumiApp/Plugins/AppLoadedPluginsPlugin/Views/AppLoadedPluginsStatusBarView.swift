@@ -13,7 +13,7 @@ struct AppLoadedPluginsStatusBarView: View {
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "puzzlepiece.extension")
-                    .font(.system(size: 11))
+                    .font(.appMicro)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
