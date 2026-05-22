@@ -358,6 +358,35 @@ jobs:
           # 仅提交项目文件和appcast
           file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
 
+      - name: Prepare Release Assets
+        if: success()
+        run: |
+          rm -rf release-assets
+          mkdir -p release-assets
+
+          if ! compgen -G "./updates/*.dmg" > /dev/null; then
+            echo "❌ No DMG found in updates directory"
+            exit 1
+          fi
+          cp ./updates/*.dmg release-assets/
+
+          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+            if [ ! -f ./appcast.xml ]; then
+              echo "❌ appcast.xml is required for stable releases"
+              exit 1
+            fi
+            cp ./appcast.xml release-assets/
+          fi
+
+          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+          if [ -f "$DSYM_ZIP" ]; then
+            cp "$DSYM_ZIP" release-assets/
+          else
+            echo "⚠️ dSYM zip not found, continuing without it"
+          fi
+
+          ls -alh release-assets
+
       # =================================================================================================
       # 5. 发布 Release
       # =================================================================================================
@@ -386,9 +415,7 @@ jobs:
           prerelease: ${{ env.IS_PRERELEASE }}
           body_path: changelog.md
           files: |
-            ./updates/*.dmg
-            ./appcast.xml
-            ./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip
+            ./release-assets/*
 
   rebase:
     if: github.ref == 'refs/heads/main'
