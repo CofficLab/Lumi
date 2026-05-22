@@ -163,7 +163,9 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild archive \
+            -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
+            -destination "${{ env.DESTINATION }}" \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
             -skipPackagePluginValidation \
@@ -304,7 +306,7 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         run: |
           # 解决依赖以获取 Sparkle 工具
-          xcodebuild -resolvePackageDependencies
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj -resolvePackageDependencies
           SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/SourcePackages/artifacts/sparkle/Sparkle/bin | head -n 1)
 
           if [ -d "$SPARKLE_BIN" ]; then
