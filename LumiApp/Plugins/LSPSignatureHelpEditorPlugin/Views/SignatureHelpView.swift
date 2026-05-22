@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 签名帮助浮层视图。
 ///
@@ -6,6 +7,7 @@ import SwiftUI
 /// 并突出当前正在输入的参数。该视图只负责渲染 `SignatureHelpItem`，
 /// 请求和状态维护由 `SignatureHelpProvider` 负责，显示时机和位置由编辑器 Overlay 决定。
 struct SignatureHelpView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     
     let item: SignatureHelpItem
     
@@ -13,11 +15,12 @@ struct SignatureHelpView: View {
         VStack(alignment: .leading, spacing: 4) {
             // 函数签名
             Text(item.label)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.appMonoCaption)
+                .foregroundColor(theme.textPrimary)
                 .lineLimit(2)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(nsColor: .textBackgroundColor).opacity(0.95))
+                .appSurface(style: .subtle, cornerRadius: 6)
             
             // 参数列表
             if !item.parameters.isEmpty {
@@ -28,24 +31,24 @@ struct SignatureHelpView: View {
                         ForEach(Array(item.parameters.enumerated()), id: \.element.id) { index, param in
                             HStack(alignment: .top, spacing: 6) {
                                 Text("\(index)")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .font(.appMicroEmphasized)
+                                    .foregroundColor(theme.textSecondary)
                                     .frame(width: 20, alignment: .trailing)
                                 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(param.label)
-                                        .font(.system(size: 11, design: .monospaced))
+                                        .font(.appMonoMicro)
                                         .fontWeight(index == item.activeParameterIndex ? .bold : .regular)
                                         .foregroundColor(
                                             index == item.activeParameterIndex
-                                                ? .accentColor
-                                                : .primary
+                                                ? theme.primary
+                                                : theme.textPrimary
                                         )
                                     
                                     if let doc = param.documentation, !doc.isEmpty {
                                         Text(doc)
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.secondary)
+                                            .font(.appMicro)
+                                            .foregroundColor(theme.textSecondary)
                                             .lineLimit(2)
                                     }
                                 }
@@ -59,11 +62,12 @@ struct SignatureHelpView: View {
             }
         }
         .padding(6)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+        .appSurface(
+            style: .popover,
+            cornerRadius: 8,
+            borderColor: theme.divider
         )
+        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
         .frame(maxWidth: 450)
     }
 }
