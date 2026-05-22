@@ -38,6 +38,7 @@ final class RootContainer: ObservableObject, SuperLog {
     let toolService: ToolService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
+    let conversationService: ConversationService
     let conversationTurnServices: AppConversationTurnVM
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
@@ -117,7 +118,16 @@ final class RootContainer: ObservableObject, SuperLog {
             reason: "RootViewContainer"
         )
         
-        self.chatHistoryVM = AppChatHistoryVM(chatHistoryService: chatHistoryService)
+        self.conversationService = ConversationService(
+            llmService: llmService,
+            modelContainer: modelContainer,
+            reason: "RootViewContainer"
+        )
+        
+        self.chatHistoryVM = AppChatHistoryVM(
+            chatHistoryService: chatHistoryService,
+            conversationService: conversationService
+        )
         self.recentProjectsVM = AppProjectsVM()
         
         // ========================================
