@@ -524,15 +524,6 @@
         }
       },
       {
-        "package": "SwiftLintPlugin",
-        "repositoryURL": "https://github.com/lukepistrol/SwiftLintPlugin",
-        "state": {
-          "branch": null,
-          "revision": "a3877065a7d72ee40e1fa64e13b9e33e846c667c",
-          "version": "0.63.1"
-        }
-      },
-      {
         "package": "SwiftTerm",
         "repositoryURL": "https://github.com/migueldeicaza/SwiftTerm",
         "state": {
