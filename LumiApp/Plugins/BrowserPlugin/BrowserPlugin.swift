@@ -20,6 +20,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     static let description: String = "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。"
     static let iconName: String = "safari"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .general }
     static let enable: Bool = true
     static var order: Int { 102 }
 

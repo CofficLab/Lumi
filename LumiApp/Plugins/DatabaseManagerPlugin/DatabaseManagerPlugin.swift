@@ -8,6 +8,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🗄️"
+    static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = false
 

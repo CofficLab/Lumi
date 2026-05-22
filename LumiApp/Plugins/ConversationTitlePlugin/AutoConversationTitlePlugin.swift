@@ -11,6 +11,7 @@ actor AutoConversationTitlePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "After the first user message is sent, generate a short title by calling the model according to the default title rule.", table: "AutoConversationTitlePlugin")
     static let iconName: String = "textformat.size"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static let enable: Bool = true
     static var order: Int { 8 }
 

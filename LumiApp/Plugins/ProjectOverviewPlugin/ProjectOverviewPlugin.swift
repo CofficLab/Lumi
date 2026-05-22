@@ -12,6 +12,7 @@ actor ProjectOverviewPlugin: SuperPlugin {
     static let description: String = String(localized: "提供项目总览工具，返回项目类型、顶层结构、Git 信息与关键文件。", table: "ProjectOverview")
     static let iconName: String = "doc.text.magnifyingglass"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .general }
     static let enable: Bool = true
     static var order: Int { 14 }
 

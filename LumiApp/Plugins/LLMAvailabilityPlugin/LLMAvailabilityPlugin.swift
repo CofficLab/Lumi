@@ -14,6 +14,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     static let displayName = String(localized: "LLM Availability", table: "LLMAvailability")
     static let description = String(localized: "Detect available LLM providers and models via health checks", table: "LLMAvailability")
     static let iconName = "network"
+    static var category: PluginCategory { .general }
     static var order: Int { 15 }
     static let enable: Bool = true
 

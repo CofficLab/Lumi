@@ -3,6 +3,7 @@ import SwiftUI
 /// 字体配置插件：在状态栏提供编辑器字体快速切换入口
 actor FontConfigPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔤"
+    static var category: PluginCategory { .theme }
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 
