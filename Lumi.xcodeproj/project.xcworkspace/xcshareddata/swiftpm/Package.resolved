@@ -29,30 +29,12 @@
         }
       },
       {
-        "package": "CodeEditLanguages",
-        "repositoryURL": "https://github.com/CodeEditApp/CodeEditLanguages",
-        "state": {
-          "branch": null,
-          "revision": "331d5dbc5fc8513be5848fce8a2a312908f36a11",
-          "version": "0.1.20"
-        }
-      },
-      {
         "package": "CodeEditor",
         "repositoryURL": "https://github.com/ZeeZide/CodeEditor.git",
         "state": {
           "branch": null,
           "revision": "f5c076b94f4ceb05abff88ba91d75a8d57143f0c",
           "version": "1.2.6"
-        }
-      },
-      {
-        "package": "CodeEditTextView",
-        "repositoryURL": "https://github.com/CodeEditApp/CodeEditTextView.git",
-        "state": {
-          "branch": null,
-          "revision": "d7ac3f11f22ec2e820187acce8f3a3fb7aa8ddec",
-          "version": "0.12.1"
         }
       },
       {

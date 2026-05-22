@@ -16,13 +16,11 @@ let package = Package(
     dependencies: [
         // A fast, efficient, text view for code.
         .package(
-            url: "https://github.com/CodeEditApp/CodeEditTextView.git",
-            from: "0.12.1"
+            path: "../CodeEditTextView"
         ),
         // tree-sitter languages
         .package(
-            url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.20"
+            path: "../CodeEditLanguages"
         ),
         // CodeEditSymbols
         .package(
