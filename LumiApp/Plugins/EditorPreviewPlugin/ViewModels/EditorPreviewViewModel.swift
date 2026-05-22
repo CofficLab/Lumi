@@ -111,6 +111,11 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         case image(URL)
         case markdown(URL)
         case stringCatalog(URL)
+        case json(URL)
+        case plist(URL)
+        case csv(URL)
+        case html(URL)
+        case pdf(URL)
         case unsupported(URL?)
     }
 
@@ -651,6 +656,16 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
             previewMode = .markdown(url)
         } else if Self.stringCatalogExtensions.contains(ext) {
             previewMode = .stringCatalog(url)
+        } else if Self.jsonExtensions.contains(ext) {
+            previewMode = .json(url)
+        } else if Self.plistExtensions.contains(ext) {
+            previewMode = .plist(url)
+        } else if Self.csvExtensions.contains(ext) {
+            previewMode = .csv(url)
+        } else if Self.htmlExtensions.contains(ext) {
+            previewMode = .html(url)
+        } else if Self.pdfExtensions.contains(ext) {
+            previewMode = .pdf(url)
         } else {
             previewMode = .unsupported(url)
         }
@@ -1083,4 +1098,9 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     ]
     private static let markdownExtensions: Set<String> = ["md", "markdown"]
     private static let stringCatalogExtensions: Set<String> = ["xcstrings"]
+    private static let jsonExtensions: Set<String> = ["json", "jsonl"]
+    private static let plistExtensions: Set<String> = ["plist"]
+    private static let csvExtensions: Set<String> = ["csv", "tsv"]
+    private static let htmlExtensions: Set<String> = ["html", "htm"]
+    private static let pdfExtensions: Set<String> = ["pdf"]
 }
