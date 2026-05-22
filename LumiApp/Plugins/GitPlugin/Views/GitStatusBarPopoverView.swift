@@ -1,8 +1,11 @@
 import LibGit2Swift
 import SwiftUI
+import LumiUI
 
 /// Git 状态栏弹出面板
 struct GitPluginPopoverView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var branches: [GitBranch] = []
     @State private var commits: [GitCommitLog] = []
@@ -33,8 +36,8 @@ struct GitPluginPopoverView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
+                    .font(.appCaption)
+                    .foregroundColor(theme.warning)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Divider()
@@ -49,8 +52,8 @@ struct GitPluginPopoverView: View {
             if let actionMessage {
                 Divider()
                 Text(actionMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,26 +91,18 @@ struct GitPluginPopoverView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
             TextField("Search branches...", text: $branchSearch)
-                .font(.system(size: 12))
+                .font(.appCaption)
                 .textFieldStyle(.plain)
             Spacer()
-            Button {
+            AppIconButton(systemImage: "arrow.clockwise") {
                 Task { await refreshAll() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
             }
-            .buttonStyle(.plain)
-            Button {
+            AppIconButton(systemImage: "plus") {
                 showCreateBranchAlert = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 12))
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -123,13 +118,13 @@ struct GitPluginPopoverView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 Text(String(localized: "Branches", table: "GitPlugin"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textSecondary)
                 branchList
-                Divider().padding(.vertical, 4)
+                GlassDivider().padding(.vertical, 4)
                 Text(String(localized: "Commit History", table: "GitPlugin"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textSecondary)
                 commitList
             }
             .padding(10)
@@ -157,17 +152,17 @@ struct GitPluginPopoverView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: branch.isCurrent ? "checkmark" : "arrow.triangle.branch")
-                            .font(.system(size: 11))
-                            .foregroundColor(branch.isCurrent ? Color(hex: "7C6FFF") : .secondary)
+                            .font(.appCaption)
+                            .foregroundColor(branch.isCurrent ? theme.primary : theme.textTertiary)
                             .frame(width: 14)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(branch.name)
-                                .font(.system(size: 12, weight: branch.isCurrent ? .semibold : .regular))
-                                .foregroundColor(.primary)
+                                .font(branch.isCurrent ? .appCaptionEmphasized : .appCaption)
+                                .foregroundColor(theme.textPrimary)
                             if !branch.latestCommitMessage.isEmpty {
                                 Text(branch.latestCommitMessage)
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.textTertiary)
                                     .lineLimit(1)
                             }
                         }
@@ -175,7 +170,7 @@ struct GitPluginPopoverView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(branch.isCurrent ? Color(hex: "7C6FFF").opacity(0.12) : Color.clear)
+                    .background(branch.isCurrent ? theme.primary.opacity(0.12) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
@@ -192,17 +187,17 @@ struct GitPluginPopoverView: View {
             } label: {
                 HStack {
                     Image(systemName: uncommittedFiles.isEmpty ? "checkmark.circle" : "clock.arrow.circlepath")
-                        .foregroundColor(uncommittedFiles.isEmpty ? .green : .orange)
+                        .foregroundColor(uncommittedFiles.isEmpty ? theme.success : theme.warning)
                     Text(uncommittedFiles.isEmpty ? "Clean working tree" : "Working state (\(uncommittedFiles.count))")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.primary)
+                        .font(.appCaptionEmphasized)
+                        .foregroundColor(theme.textPrimary)
                     Spacer()
                 }
                 .padding(.vertical, 7)
             }
             .buttonStyle(.plain)
 
-            Divider()
+            GlassDivider()
             ForEach(commits, id: \.hash) { commit in
                 GitCommitListRow(
                     commit: commit,
@@ -212,7 +207,7 @@ struct GitPluginPopoverView: View {
                         selectedCommitHash = commit.hash
                     }
                 )
-                Divider()
+                GlassDivider()
             }
         }
     }
@@ -233,20 +228,20 @@ struct GitPluginPopoverView: View {
             if let detail = commitDetail {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(detail.message)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
                     HStack(spacing: 10) {
                         Text(detail.author)
                         Text(shortDate(detail.date))
                         Text(String(detail.hash.prefix(7)))
-                            .font(.system(.body, design: .monospaced))
+                            .font(.appMonoMicro)
                     }
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
-                Divider()
+                GlassDivider()
             }
 
             HSplitView {
