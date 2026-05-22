@@ -1,7 +1,10 @@
+import LumiUI
 import SwiftUI
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 消息对象
     let message: ChatMessage
     /// 是否是最后一条消息
@@ -42,12 +45,11 @@ struct ChatBubble: View {
                 // 兜底：如果没有匹配的渲染器，显示原始内容
                 VStack(alignment: .leading, spacing: 4) {
                     Text(message.content)
-                        .font(.body)
-                        .foregroundColor(.primary)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
+                .appSurface(style: .subtle, cornerRadius: 8)
             }
         }
         .contextMenu {

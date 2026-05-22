@@ -6,13 +6,15 @@ import SwiftUI
 /// 原始消息切换按钮
 /// 用于在原始 Markdown 源码和渲染视图之间切换
 struct RawMessageToggleButton: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 原始消息显示状态绑定
     @Binding var showRawMessage: Bool
 
     var body: some View {
         AppIconButton(
             systemImage: showRawMessage ? "text.bubble.fill" : "curlybraces",
-            tint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.6),
+            tint: theme.textSecondary.opacity(0.6),
             size: .compact
         ) {
             showRawMessage.toggle()

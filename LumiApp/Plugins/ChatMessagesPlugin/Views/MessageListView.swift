@@ -8,6 +8,7 @@ struct MessageListView: View {
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
     @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
@@ -237,8 +238,8 @@ extension MessageListView {
         VStack(spacing: 12) {
             ProgressView()
             Text(String(localized: "Loading History", table: "AgentChat"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -250,15 +251,12 @@ extension MessageListView {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text(loadMoreButtonText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08))
-                )
+                .appSurface(style: .subtle, cornerRadius: 8)
                 .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentChat"))
                 .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentChat"))
             } else {

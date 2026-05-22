@@ -3,6 +3,7 @@ import SwiftUI
 
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @EnvironmentObject private var WindowConversationVM: WindowConversationVM
 
     var body: some View {
@@ -12,17 +13,16 @@ struct EmptyMessagesView: View {
             AppCard(style: .elevated, padding: EdgeInsets(top: 24, leading: 28, bottom: 24, trailing: 28)) {
                 VStack(spacing: 14) {
                     Image(systemName: "text.bubble.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
+                        .font(.appLargeTitle)
+                        .foregroundColor(theme.textSecondary)
 
                     Text(String(localized: "No Messages", table: "AgentChat"))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                        .font(.appTitle)
+                        .foregroundColor(theme.textPrimary)
 
                     Text(String(localized: "No Messages Description", table: "AgentChat"))
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .font(.appBody)
+                        .foregroundColor(theme.textSecondary)
                         .multilineTextAlignment(.center)
 
                     examplesSection
@@ -32,9 +32,8 @@ struct EmptyMessagesView: View {
 
                     if let id = WindowConversationVM.selectedConversationId {
                         Text(id.uuidString)
-                            .font(.caption)
-                            .fontDesign(.monospaced)
-                            .foregroundStyle(.tertiary)
+                            .font(.appMonoCaption)
+                            .foregroundColor(theme.textTertiary)
                     }
                 }
             }
