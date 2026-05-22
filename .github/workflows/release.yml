@@ -19,6 +19,7 @@ env:
   REPO_LINK: "https://github.com/CofficLab/Lumi"
   DESTINATION: "generic/platform=macOS"
   ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
+  DERIVED_DATA_PATH: "./DerivedData"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
 
@@ -165,6 +166,7 @@ jobs:
             -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
             -destination "${{ env.DESTINATION }}" \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
             -skipPackagePluginValidation \
@@ -305,8 +307,8 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         run: |
           # 解决依赖以获取 Sparkle 工具
-          xcodebuild -project ${{ env.SCHEME }}.xcodeproj -resolvePackageDependencies
-          SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/SourcePackages/artifacts/sparkle/Sparkle/bin | head -n 1)
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" -resolvePackageDependencies
+          SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
           if [ -d "$SPARKLE_BIN" ]; then
             cd "$SPARKLE_BIN"
