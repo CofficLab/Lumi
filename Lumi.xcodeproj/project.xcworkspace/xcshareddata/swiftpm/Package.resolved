@@ -308,15 +308,6 @@
         }
       },
       {
-        "package": "swift-custom-dump",
-        "repositoryURL": "https://github.com/pointfreeco/swift-custom-dump",
-        "state": {
-          "branch": null,
-          "revision": "06c57924455064182d6b217f06ebc05d00cb2990",
-          "version": "1.5.0"
-        }
-      },
-      {
         "package": "swift-distributed-tracing",
         "repositoryURL": "https://github.com/apple/swift-distributed-tracing.git",
         "state": {
@@ -557,15 +548,6 @@
           "branch": null,
           "revision": "7dbe497dd963b6b29622b13711aa9a156e362ba5",
           "version": "9.11.0"
-        }
-      },
-      {
-        "package": "xctest-dynamic-overlay",
-        "repositoryURL": "https://github.com/pointfreeco/xctest-dynamic-overlay",
-        "state": {
-          "branch": null,
-          "revision": "dfd70507def84cb5fb821278448a262c6ff2bbad",
-          "version": "1.9.0"
         }
       },
       {

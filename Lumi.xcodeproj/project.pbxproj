@@ -159,7 +159,6 @@
 		F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
 		F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "CodeLanguages-Container.xcodeproj"; sourceTree = "<group>"; };
-		F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditTextViewExample.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
@@ -196,8 +195,6 @@
 		F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
-		F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = iOSTerminal.xcodeproj; sourceTree = "<group>"; };
 		F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MacTerminal.xcodeproj; sourceTree = "<group>"; };
@@ -510,13 +507,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		F53716D12FB1E53600AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
@@ -752,20 +742,6 @@
 			sourceTree = "<group>";
 		};
 		F5AE9B772FAD6E0900F014F8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5AE9D6D2FAD6F1E00F014F8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5CA2E0E2FADB71500F67747 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -1072,18 +1048,6 @@
 				{
 					ProductGroup = F5679F832FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */;
-				},
-				{
-					ProductGroup = F5AE9D6D2FAD6F1E00F014F8 /* Products */;
-					ProjectRef = F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */;
-				},
-				{
-					ProductGroup = F5CA2E0E2FADB71500F67747 /* Products */;
-					ProjectRef = F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */;
-				},
-				{
-					ProductGroup = F53716D12FB1E53600AF4705 /* Products */;
-					ProjectRef = F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */;
 				},
 				{
 					ProductGroup = F53714692FB1E52900AF4705 /* Products */;
