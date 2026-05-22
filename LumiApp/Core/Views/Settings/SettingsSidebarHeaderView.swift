@@ -1,7 +1,10 @@
 import SwiftUI
+import LumiUI
 
 /// 设置侧边栏头部 - 应用信息
 struct SettingsSidebarHeaderView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     var body: some View {
         let appInfo = AppInfo()
 
@@ -14,17 +17,18 @@ struct SettingsSidebarHeaderView: View {
 
             // App 名称
             Text(appInfo.name)
-                .font(.system(size: 15, weight: .medium))
+                .font(.appBodyEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             // 版本和 Build 信息
             VStack(alignment: .center, spacing: 2) {
                 Text("v\(appInfo.version ?? "Unknown")")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
 
                 Text("Build \(appInfo.build ?? "Unknown")")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             Spacer().frame(height: 16)
