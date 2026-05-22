@@ -1,8 +1,11 @@
+import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
 
 /// 包裹右侧栏，提供文件拖放入口。
 struct ChatAttachmentDropRootView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var attachmentsVM: WindowAttachmentsVM
     @EnvironmentObject private var chatDraftVM: WindowChatDraftVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
@@ -44,24 +47,24 @@ struct ChatAttachmentDropRootView: View {
 
     private var imageDropHoverOverlay: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
+            Rectangle()
                 .fill(.ultraThinMaterial)
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(
-                    style: StrokeStyle(lineWidth: 2, dash: [7, 5]),
-                    antialiased: true
+                .appSurface(
+                    style: .glass,
+                    cornerRadius: 8,
+                    borderColor: theme.textSecondary.opacity(0.65),
+                    lineWidth: 2
                 )
-                .foregroundStyle(.secondary.opacity(0.65))
 
             VStack(spacing: 8) {
                 Image(systemName: "photo.badge.plus")
-                    .font(.title2)
+                    .font(.appTitle)
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
 
                 Text(String(localized: "Release to add image to chat", table: "AgentChat"))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .font(.appBodyEmphasized)
+                    .foregroundStyle(theme.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
             }

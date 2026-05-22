@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 附件预览视图 - 显示待发送的图片缩略图
 struct AttachmentPreviewView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let attachments: [AgentPendingImageAttachment]
     let onRemove: (UUID) -> Void
 
@@ -27,7 +29,7 @@ struct AttachmentPreviewView: View {
 
                             AppIconButton(
                                 systemImage: "xmark",
-                                tint: Color.adaptive(light: "1C1C1E", dark: "FFFFFF"),
+                                tint: theme.textPrimary,
                                 size: .compact
                             ) {
                                 onRemove(attachment.id)

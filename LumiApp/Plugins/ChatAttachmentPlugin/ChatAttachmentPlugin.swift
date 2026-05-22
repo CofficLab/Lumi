@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import os
 
@@ -54,19 +55,19 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
 ///
 /// 弹出 NSOpenPanel 选择本地图片，添加到聊天附件。
 private struct ImageUploadToolbarButton: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var attachmentsVM: WindowAttachmentsVM
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         Button(action: {
             selectImage()
         }) {
             Image(systemName: "photo")
-                .font(.system(size: 13))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appCallout)
+                .foregroundColor(theme.textSecondary)
                 .frame(width: 28, height: 28)
-                .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
-                .clipShape(Circle())
+                .background(Circle().fill(theme.textPrimary.opacity(0.06)))
         }
         .buttonStyle(.plain)
         .help(String(localized: "Upload Image", table: "AgentChat"))
