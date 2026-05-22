@@ -111,12 +111,25 @@ setup_appstore_connect() {
 get_certificate_info() {
     echo "正在获取证书信息..."
     local cert_info
+    local identity
     cert_info=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep '^[[:space:]]*1)' | head -n 1)
+    identity=$(echo "$cert_info" | awk -F'"' '{print $2}')
     
     # 导出环境变量
-    export CERT_ID=$(echo "$cert_info" | awk -F'"' '{print $2}')
-    export TEAM_ID=$(echo "$cert_info" | grep -o '[A-Z0-9]\{10\}' | tail -n 1)
-    export SIGNING_IDENTITY=$(echo "$cert_info" | awk -F'[(|)]' '{print $3}')
+    export CERT_ID="$identity"
+    export TEAM_ID=$(echo "$identity" | sed -n 's/.*(\([A-Z0-9]\{10\}\)).*/\1/p')
+    export SIGNING_IDENTITY="$identity"
+
+    if [ -z "$SIGNING_IDENTITY" ]; then
+        echo "错误: 未找到可用的 codesigning 身份"
+        security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+        exit 1
+    fi
+
+    if [ -z "$TEAM_ID" ]; then
+        echo "错误: 无法从签名身份中解析 Team ID: $SIGNING_IDENTITY"
+        exit 1
+    fi
 
     echo "证书信息："
     echo "CERT_ID: $CERT_ID"
