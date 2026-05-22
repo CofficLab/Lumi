@@ -46,11 +46,7 @@ struct AboutView: View {
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "info.circle.fill",
-                title: "关于 Lumi",
-                subtitle: "了解应用的版本和系统信息"
-            )
+            AppSettingsSection(title: "关于 Lumi", subtitle: "了解应用的版本和系统信息") {}
         }
     }
 
