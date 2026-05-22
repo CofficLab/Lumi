@@ -3,6 +3,8 @@ import LumiUI
 
 /// 权限请求视图，用于显示工具执行请求并获取用户批准
 struct PermissionRequestView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var permissionHandlingVM: WindowPermissionHandlingVM
     @EnvironmentObject private var permissionRequestViewModel: WindowPermissionRequestVM
@@ -51,7 +53,8 @@ extension PermissionRequestView {
                 .font(.title2)
                 .foregroundColor(request.riskLevel.iconColor)
             Text(String(localized: "Permission Request", table: "AgentToolPermission"))
-                .font(.system(size: 15, weight: .medium))
+                .font(.appBodyEmphasized)
+                .foregroundColor(theme.textPrimary)
             Spacer()
         }
     }
@@ -59,12 +62,13 @@ extension PermissionRequestView {
     private func contentView(for request: PermissionRequest) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(request.summary)
-                .font(.body)
+                .font(.appBody)
                 .fontWeight(.medium)
+                .foregroundColor(theme.textPrimary)
 
             Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "AgentToolPermission"))
-                .font(.caption)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
 
             detailsDisclosure(for: request)
 
@@ -78,24 +82,24 @@ extension PermissionRequestView {
         DisclosureGroup(String(localized: "Details", table: "AgentToolPermission")) {
             ScrollView {
                 Text(request.details)
-                    .font(.system(.caption, design: .monospaced))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
             }
             .frame(height: 100)
-            .background(Color.black.opacity(0.1))
-            .cornerRadius(8)
+            .appSurface(style: .subtle, cornerRadius: 8)
         }
     }
 
     private func riskHint(reason: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "info.circle.fill")
-                .font(.caption)
-                .foregroundColor(.blue)
+                .font(.appCaption)
+                .foregroundColor(theme.info)
             Text(reason)
-                .font(.caption)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .padding(.top, 4)
     }
