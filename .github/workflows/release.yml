@@ -135,8 +135,7 @@ jobs:
             echo "⚠️  Attempt $i: Timestamp service not reachable, retrying..."
             sleep 2
           done
-          echo "❌ Timestamp service is not reachable after 3 attempts"
-          exit 1
+          echo "⚠️ Timestamp service is not reachable after 3 attempts; continuing and letting codesign validate timestamping"
 
       - name: Install xcpretty
         run: gem install xcpretty
