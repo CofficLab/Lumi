@@ -56,11 +56,7 @@ struct PluginSettingsView: View {
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "puzzlepiece.extension.fill",
-                title: "插件管理",
-                subtitle: "启用或禁用应用的插件功能。在左侧选择分类查看详情。"
-            )
+            AppSettingsSection(title: "插件管理", subtitle: "启用或禁用应用的插件功能。在左侧选择分类查看详情。") {}
         }
     }
 
@@ -75,7 +71,7 @@ struct PluginSettingsView: View {
                     .foregroundColor(theme.primary)
                     .frame(width: 36, height: 36)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        Circle()
                             .fill(theme.appAccentSoftFill)
                     )
 
@@ -107,7 +103,7 @@ struct PluginSettingsView: View {
         AppCard {
             VStack(spacing: 24) {
                 Image(systemName: "puzzlepiece.extension")
-                    .font(.system(size: 48))
+                    .font(.appLargeTitle)
                     .foregroundColor(theme.textSecondary)
 
                 VStack(spacing: 4) {
@@ -230,7 +226,7 @@ struct PluginToggleRow: View {
     }
 
     var body: some View {
-        GlassRow {
+        AppSettingsRow {
             HStack(spacing: 16) {
                 // 图标
                 Image(systemName: icon)
