@@ -42,6 +42,13 @@ Usage:
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let displayDesc: String
+        switch language {
+        case .chinese:
+            displayDesc = "向用户展示当前操作描述，如：正在编辑 xxx.swift"
+        case .english:
+            displayDesc = "A short description shown to the user, e.g. \"Editing xxx.swift\""
+        }
         return [
             "type": "object",
             "properties": [
@@ -60,6 +67,10 @@ Usage:
                 "replace_all": [
                     "type": "boolean",
                     "description": "Replace all occurrences of old_string (default false)"
+                ],
+                "display_name": [
+                    "type": "string",
+                    "description": displayDesc
                 ]
             ],
             "required": ["file_path", "old_string", "new_string"]

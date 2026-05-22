@@ -17,6 +17,13 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let displayDesc: String
+        switch language {
+        case .chinese:
+            displayDesc = "向用户展示当前操作描述，如：正在列出 LumiApp 目录"
+        case .english:
+            displayDesc = "A short description shown to the user, e.g. \"Listing LumiApp directory\""
+        }
         return [
             "type": "object",
             "properties": [
@@ -27,6 +34,10 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
                 "recursive": [
                     "type": "boolean",
                     "description": "Whether to list subdirectories recursively (default: false)"
+                ],
+                "display_name": [
+                    "type": "string",
+                    "description": displayDesc
                 ]
             ],
             "required": ["path"]

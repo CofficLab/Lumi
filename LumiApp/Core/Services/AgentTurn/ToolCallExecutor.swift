@@ -143,6 +143,16 @@ final class ToolCallExecutor: SuperLog {
 
     // MARK: - 私有
 
+    /// 从工具参数 JSON 中提取 LLM 传入的 display_name 字段
+    private func extractDisplayName(from argumentsJSON: String) -> String? {
+        guard let dict = Self.parseArgsDict(from: argumentsJSON),
+              let name = dict["display_name"] as? String,
+              !name.isEmpty else {
+            return nil
+        }
+        return name
+    }
+
     private func executeOne(
         toolCall: ToolCall,
         step: Int,
@@ -151,6 +161,7 @@ final class ToolCallExecutor: SuperLog {
     ) async -> ChatMessage {
         let startedAt = Date()
         let initialShellStats = await Self.shellStats(for: toolCall.name)
+        let displayName = extractDisplayName(from: toolCall.arguments)
 
         conversationSendStatusVM.applyToolProgressEvent(
             conversationId: conversationId,
@@ -159,12 +170,14 @@ final class ToolCallExecutor: SuperLog {
                 current: step,
                 total: total,
                 elapsedSeconds: 0,
-                shellStats: initialShellStats
+                shellStats: initialShellStats,
+                displayName: displayName
             )
         )
 
         let progressTask = launchProgressReporter(
             toolCall: toolCall,
+            displayName: displayName,
             step: step,
             total: total,
             startedAt: startedAt,
@@ -205,13 +218,13 @@ final class ToolCallExecutor: SuperLog {
             }
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
-                event: .completed(toolName: toolCall.name, current: step, total: total)
+                event: .completed(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
         } catch is CancellationError {
             progressTask.cancel()
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
-                event: .cancelled(toolName: toolCall.name, current: step, total: total)
+                event: .cancelled(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
             return ChatMessage(
                 role: .tool,
@@ -228,7 +241,8 @@ final class ToolCallExecutor: SuperLog {
                     toolName: toolCall.name,
                     current: step,
                     total: total,
-                    errorSummary: Self.errorSummary(from: error)
+                    errorSummary: Self.errorSummary(from: error),
+                    displayName: displayName
                 )
             )
         }
@@ -238,6 +252,7 @@ final class ToolCallExecutor: SuperLog {
 
     private func launchProgressReporter(
         toolCall: ToolCall,
+        displayName: String?,
         step: Int,
         total: Int,
         startedAt: Date,
@@ -256,7 +271,8 @@ final class ToolCallExecutor: SuperLog {
                             current: step,
                             total: total,
                             elapsedSeconds: elapsed,
-                            shellStats: shellStats
+                            shellStats: shellStats,
+                            displayName: displayName
                         )
                     )
                 }

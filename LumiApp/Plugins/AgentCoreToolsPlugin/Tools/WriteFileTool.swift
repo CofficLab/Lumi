@@ -20,6 +20,13 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let displayDesc: String
+        switch language {
+        case .chinese:
+            displayDesc = "向用户展示当前操作描述，如：正在写入 xxx.swift"
+        case .english:
+            displayDesc = "A short description shown to the user, e.g. \"Writing xxx.swift\""
+        }
         return [
             "type": "object",
             "properties": [
@@ -30,6 +37,10 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
                 "content": [
                     "type": "string",
                     "description": "The full content to write to the file"
+                ],
+                "display_name": [
+                    "type": "string",
+                    "description": displayDesc
                 ]
             ],
             "required": ["path", "content"]
