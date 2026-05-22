@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct TerminalTabItem: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let isSelected: Bool
     let onSelect: () -> Void
@@ -9,8 +11,8 @@ struct TerminalTabItem: View {
 
     var body: some View {
         Text(title)
-            .font(.caption)
-            .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .font(.appCaption)
+            .foregroundColor(isSelected ? theme.textPrimary : theme.textSecondary)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)

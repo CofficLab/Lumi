@@ -4,6 +4,8 @@ import LumiUI
 import TerminalCoreKit
 
 struct TerminalMainView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     /// 使用全局单例，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
     @ObservedObject private var viewModel = TerminalTabsViewModel.shared
@@ -23,7 +25,7 @@ struct TerminalMainView: View {
                     // 标签之间的分隔线（最后一个标签后不加）
                     if index < viewModel.sessions.count - 1 {
                         Rectangle()
-                            .fill(Color(hex: "98989E").opacity(0.3))
+                            .fill(theme.divider)
                             .frame(width: 1, height: 14)
                             .padding(.horizontal, 2)
                     }
@@ -46,7 +48,8 @@ struct TerminalMainView: View {
             // 这样可以避免 Tab 切换时视图被销毁重建导致的状态丢失
             if viewModel.sessions.isEmpty {
                 Text(String(localized: "No open terminals", table: "Terminal"))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ZStack {
