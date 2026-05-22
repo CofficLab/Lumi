@@ -148,7 +148,7 @@ jobs:
           path: |
             Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
             Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework.zip
-          key: ${{ runner.os }}-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
+          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
 
       - name: Build CodeEditLanguages Framework
         if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
