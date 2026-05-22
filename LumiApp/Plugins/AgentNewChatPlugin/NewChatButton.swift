@@ -1,24 +1,23 @@
 import SwiftUI
+import LumiUI
 
 /// 新会话按钮视图组件
 struct NewChatButton: View {
-    @EnvironmentObject var conversationVM: WindowConversationVM
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private let iconSize: CGFloat = 14
+    @EnvironmentObject var conversationVM: WindowConversationVM
+
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
-        let theme = themeVM.activeChromeTheme
-
         Button {
             Task {
                 await conversationVM.createNewConversation()
             }
         } label: {
             Image(systemName: "plus.circle")
-                .font(.system(size: iconSize))
-                .foregroundColor(theme.workspaceSecondaryTextColor())
+                .font(.appCallout)
+                .foregroundColor(theme.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .clipShape(Circle())
         }
@@ -33,4 +32,3 @@ struct NewChatButton: View {
         .inRootView()
         .frame(width: 800, height: 600)
 }
-
