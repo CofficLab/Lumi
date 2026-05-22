@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 工具栏上的会话列表入口按钮
@@ -5,12 +6,10 @@ import SwiftUI
 /// 在窗口工具栏右上角显示一个聊天气泡图标，点击后弹出 Popover
 /// 展示完整的会话列表，支持选择、删除、分页加载等操作。
 struct ConversationListPopoverButton: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var themeVM: AppThemeVM
-    @State private var isPresented = false
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private let iconSize: CGFloat = 14
-    private let iconButtonSize: CGFloat = 28
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @State private var isPresented = false
 
     var body: some View {
         if !projectVM.isProjectSelected {
@@ -21,16 +20,12 @@ struct ConversationListPopoverButton: View {
     }
 
     private var conversationListButton: some View {
-        let theme = themeVM.activeChromeTheme
-
-        return Button {
+        AppIconButton(
+            systemImage: "message.fill",
+            tint: theme.textSecondary,
+            size: .regular
+        ) {
             isPresented.toggle()
-        } label: {
-            Image(systemName: "message.fill")
-                .font(.system(size: iconSize))
-                .foregroundColor(theme.workspaceSecondaryTextColor())
-                .frame(width: iconButtonSize, height: iconButtonSize)
-                .clipShape(Circle())
         }
         .help(String(localized: "会话列表", table: "ConversationList"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {

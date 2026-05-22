@@ -1,4 +1,5 @@
 import Combine
+import LumiUI
 import SwiftUI
 
 /// 对话列表视图
@@ -10,6 +11,8 @@ struct ConversationListView: View, SuperLog {
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
+
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     
     /// 窗口作用域（多窗口支持）
     @Environment(\.windowContainer) private var windowContainer
@@ -80,7 +83,8 @@ struct ConversationListView: View, SuperLog {
 extension ConversationListView {
     private var loadingView: some View {
         ProgressView(String(localized: "Loading...", table: "ConversationList"))
-            .font(.system(size: 11))
+            .font(.appMicro)
+            .foregroundColor(theme.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding(.vertical, 12)
     }
