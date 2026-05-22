@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 设置界面视图，使用 HStack 实现左右并排布局
 struct SettingView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 插件 VM
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var themeVM: AppThemeVM
@@ -87,7 +89,7 @@ struct SettingView: View {
             // 应用信息头部
             SettingsSidebarHeaderView()
 
-            GlassDivider()
+            settingsDivider
 
             // 设置列表
             ScrollView {
@@ -157,11 +159,11 @@ struct SettingView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.appMicroEmphasized)
                         .rotationEffect(.degrees(isPluginCategoryExpanded ? 90 : 0))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .foregroundColor(theme.textTertiary)
                 }
-                .font(.system(size: 13))
+                .font(.appCaption)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
@@ -186,6 +188,12 @@ struct SettingView: View {
                 }
             }
         }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     /// 详情区域视图
