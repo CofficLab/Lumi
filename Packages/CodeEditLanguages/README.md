@@ -29,6 +29,19 @@ This package includes a binary framework `CodeLanguagesContainer.xcframework` wh
 
 The languages are then served as a `CodeLanguage`.
 
+## Lumi Maintenance Notes
+
+`CodeLanguagesContainer.xcframework` is generated locally and intentionally ignored by Git. The framework binary is larger than GitHub's 100 MB file limit, so it must not be committed as a normal Git object.
+
+After a fresh clone, or whenever the language container needs to be regenerated, run:
+
+```bash
+cd Packages/CodeEditLanguages
+./build_framework.sh
+```
+
+The script builds `CodeLanguages-Container/CodeLanguages-Container.xcodeproj`, creates `CodeLanguagesContainer.xcframework`, and keeps the generated framework in this package directory for SwiftPM to consume.
+
 ## SwiftTreeSitter
 
 This package heavily depends on [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter) by [Matt Massicotte](https://twitter.com/mattie).

@@ -822,6 +822,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */;
 			buildPhases = (
+				A1B2D00230B2000100AAA202 /* Check CodeEdit Languages Framework */,
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
@@ -1261,6 +1262,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A1B2D00230B2000100AAA202 /* Check CodeEdit Languages Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/CodeEditLanguages/Package.swift",
+				"$(SRCROOT)/scripts/check-codeedit-languages-framework.sh",
+			);
+			name = "Check CodeEdit Languages Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/check-codeedit-languages-framework.sh\"\n";
+		};
 		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
