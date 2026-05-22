@@ -3,9 +3,9 @@ import SwiftUI
 public struct GlassTextField: View {
     @LumiTheme private var theme
 
-    let title: LocalizedStringKey
+    let title: Text
     @Binding var text: String
-    var placeholder: LocalizedStringKey = ""
+    let placeholder: Text
     var isSecure: Bool = false
 
     @FocusState private var isFocused: Bool
@@ -16,6 +16,25 @@ public struct GlassTextField: View {
         placeholder: LocalizedStringKey = "",
         isSecure: Bool = false
     ) {
+        self.title = Text(title)
+        self._text = text
+        self.placeholder = Text(placeholder)
+        self.isSecure = isSecure
+    }
+
+    public init(
+        title: String,
+        text: Binding<String>,
+        placeholder: String = "",
+        isSecure: Bool = false
+    ) {
+        self.title = Text(title)
+        self._text = text
+        self.placeholder = Text(placeholder)
+        self.isSecure = isSecure
+    }
+
+    init(title: Text, text: Binding<String>, placeholder: Text, isSecure: Bool = false) {
         self.title = title
         self._text = text
         self.placeholder = placeholder
@@ -24,7 +43,7 @@ public struct GlassTextField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            Text(title)
+            title
                 .font(DesignTokens.Typography.caption1)
                 .foregroundColor(theme.textTertiary)
 
@@ -37,7 +56,7 @@ public struct GlassTextField: View {
     }
 
     private var textFieldView: some View {
-        TextField(placeholder, text: $text)
+        TextField("", text: $text, prompt: placeholder)
             .font(DesignTokens.Typography.body)
             .foregroundColor(theme.textPrimary)
             .padding(DesignTokens.Spacing.sm)
@@ -47,7 +66,7 @@ public struct GlassTextField: View {
     }
 
     private var secureFieldView: some View {
-        SecureField("", text: $text)
+        SecureField("", text: $text, prompt: placeholder)
             .font(DesignTokens.Typography.body)
             .foregroundColor(theme.textPrimary)
             .padding(DesignTokens.Spacing.sm)

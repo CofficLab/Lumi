@@ -68,6 +68,24 @@ public struct AppButton: View {
         self.action = action
     }
 
+    init(
+        _ title: Text,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.showsTitle = true
+        self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
     /// 本地化标题（String Catalog table）。
     public init(
         localized title: String,

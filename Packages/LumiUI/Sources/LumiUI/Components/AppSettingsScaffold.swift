@@ -458,8 +458,8 @@ public struct AppSettingsReadOnlyRow: View {
 }
 
 public struct AppSettingsSecureFieldRow: View {
-    let title: LocalizedStringKey
-    let placeholder: LocalizedStringKey
+    let title: Text
+    let placeholder: Text
     @Binding var text: String
 
     public init(
@@ -467,8 +467,18 @@ public struct AppSettingsSecureFieldRow: View {
         placeholder: LocalizedStringKey = "",
         text: Binding<String>
     ) {
-        self.title = title
-        self.placeholder = placeholder
+        self.title = Text(title)
+        self.placeholder = Text(placeholder)
+        self._text = text
+    }
+
+    public init(
+        _ title: String,
+        placeholder: String = "",
+        text: Binding<String>
+    ) {
+        self.title = Text(title)
+        self.placeholder = Text(placeholder)
         self._text = text
     }
 
