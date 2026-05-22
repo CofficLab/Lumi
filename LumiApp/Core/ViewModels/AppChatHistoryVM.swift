@@ -19,24 +19,18 @@ final class AppChatHistoryVM: ObservableObject {
     /// 对话服务（对话表 CRUD）
     let conversationService: ConversationService
 
+    /// 性能统计服务
+    let performanceService: PerformanceService
+
     // MARK: - Initialization
 
-    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService) {
+    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService, performanceService: PerformanceService) {
         self.chatHistoryService = chatHistoryService
         self.conversationService = conversationService
+        self.performanceService = performanceService
     }
 
     // MARK: - 消息操作（委托给 ChatHistoryService）
-
-    /// 获取模型详细性能统计
-    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
-        chatHistoryService.getModelDetailedStats()
-    }
-
-    /// 获取模型延迟统计
-    func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
-        chatHistoryService.getModelLatencyStats()
-    }
 
     /// 分页加载消息
     func loadMessagesPage(
@@ -155,5 +149,17 @@ final class AppChatHistoryVM: ObservableObject {
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
         conversationService.deleteConversation(conversation)
+    }
+
+    // MARK: - 性能统计（委托给 PerformanceService）
+
+    /// 获取每个供应商和模型的平均耗时
+    func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
+        performanceService.getModelLatencyStats()
+    }
+
+    /// 获取每个供应商和模型的详细性能统计
+    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
+        performanceService.getModelDetailedStats()
     }
 }
