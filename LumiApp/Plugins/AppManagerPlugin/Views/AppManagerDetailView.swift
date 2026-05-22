@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 应用详情与相关文件列表
 struct AppManagerDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var viewModel: AppManagerViewModel
 
     var body: some View {
@@ -21,19 +23,19 @@ struct AppManagerDetailView: View {
                             Image(systemName: "app.fill")
                                 .resizable()
                                 .frame(width: 64, height: 64)
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
                         }
 
                         VStack(alignment: .leading) {
                             Text(app.displayName)
-                                .font(.title)
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .font(.appTitle)
+                                .foregroundColor(theme.textPrimary)
                             Text(app.bundleIdentifier ?? String(localized: "Unknown Bundle ID", table: "AppManager"))
-                                .font(.caption)
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
                             Text(app.bundleURL.path)
-                                .font(.caption2)
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
@@ -58,11 +60,11 @@ struct AppManagerDetailView: View {
 
                                     VStack(alignment: .leading) {
                                         Text(file.type.displayName)
-                                            .font(.caption)
-                                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                            .font(.appCaption)
+                                            .foregroundColor(theme.textSecondary)
                                         Text(file.path)
-                                            .font(.caption2)
-                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                            .font(.appMicro)
+                                            .foregroundColor(theme.textPrimary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
                                     }
@@ -70,8 +72,8 @@ struct AppManagerDetailView: View {
                                     Spacer()
 
                                     Text(formatBytes(file.size))
-                                        .font(.monospacedDigit(.caption)())
-                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                        .font(.appMonoCaption)
+                                        .foregroundColor(theme.textSecondary)
                                 }
                             }
                         }
@@ -82,8 +84,8 @@ struct AppManagerDetailView: View {
                     // Footer Action
                     HStack {
                         Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
 
                         Spacer()
 
