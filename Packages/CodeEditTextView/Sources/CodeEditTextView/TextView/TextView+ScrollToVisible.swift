@@ -87,16 +87,7 @@ extension TextView {
 
         // Scroll to make the range appear at the desired position
         if lastFrame != .zero {
-            let animated = false // feature flag
-            if animated {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.15 // Adjust duration as needed
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    scrollView.contentView.animator().setBoundsOrigin(targetOffset)
-                }
-            } else {
-                scrollView.contentView.scroll(to: targetOffset)
-            }
+            scrollView.contentView.scroll(to: targetOffset)
         }
     }
 

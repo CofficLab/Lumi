@@ -55,7 +55,7 @@ public final class TextLine: Identifiable, Equatable {
         attachments: [AnyTextAttachment]
     ) {
         let string = stringRef.attributedSubstring(from: range)
-        let maxWidth = typesetter.typeset(
+        typesetter.typeset(
             string,
             documentRange: range,
             displayData: displayData,
