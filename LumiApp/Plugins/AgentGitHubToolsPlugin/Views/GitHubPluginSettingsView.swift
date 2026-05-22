@@ -17,7 +17,7 @@ struct GitHubPluginSettingsView: View, SuperLog {
 
     var body: some View {
         PluginSettingsScaffold(
-            String(localized: "GitHub Tools", table: "GitHubTools"),
+            title: String(localized: "GitHub Tools", table: "GitHubTools"),
             subtitle: String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）", table: "GitHubTools")
         ) {
             tokenCard

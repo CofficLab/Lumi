@@ -8,7 +8,7 @@ struct MenuBarSettingsView: View {
 
     var body: some View {
         PluginSettingsScaffold(
-            String(localized: "Menu Bar Manager", table: "MenuBarManager"),
+            title: String(localized: "Menu Bar Manager", table: "MenuBarManager"),
             subtitle: String(localized: "Manage your menu bar items", table: "MenuBarManager")
         ) {
             if !service.isPermissionGranted {
