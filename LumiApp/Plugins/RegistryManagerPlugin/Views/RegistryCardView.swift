@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct RegistryCard: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let type: RegistryType
     @ObservedObject var viewModel: RegistryManagerViewModel
 
@@ -18,14 +20,15 @@ struct RegistryCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Image(systemName: type.icon)
-                        .font(.title2)
-                        .foregroundStyle(.primary)
+                        .font(.appTitle)
+                        .foregroundStyle(theme.textPrimary)
                         .frame(width: 32, height: 32)
-                        .background(Color.accentColor.opacity(0.1))
+                        .background(theme.appAccentSoftFill)
                         .clipShape(Circle())
 
                     Text(type.name)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
                     Spacer()
 
@@ -46,24 +49,18 @@ struct RegistryCard: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Current Registry")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
 
                     Text(currentUrl)
-                        .font(.system(.caption, design: .monospaced))
+                        .font(.appMonoCaption)
+                        .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 10)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.primary.opacity(0.04))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
-                        )
+                        .appSurface(style: .listRow, cornerRadius: 6, borderColor: theme.appSubtleBorder.opacity(0.7))
                         .help(currentUrl)
                         .onTapGesture {
                             NSPasteboard.general.clearContents()
@@ -100,4 +97,3 @@ struct RegistryCard: View {
         }
     }
 }
-

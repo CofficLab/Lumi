@@ -1,6 +1,9 @@
+import LumiUI
 import SwiftUI
 
 struct RegistryManagerView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel = RegistryManagerViewModel()
     
     var body: some View {
@@ -8,11 +11,12 @@ struct RegistryManagerView: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(String(localized: "Registry Manager", table: "RegistryManager"))
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.appLargeTitle)
+                        .foregroundColor(theme.textPrimary)
                     
                     Text(String(localized: "Manage all your package registries in one place", table: "RegistryManager"))
-                        .font(.subheadline)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appBody)
+                        .foregroundColor(theme.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)
@@ -30,12 +34,13 @@ struct RegistryManagerView: View {
             if viewModel.showToast {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                     Text(viewModel.toastMessage)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textPrimary)
                 }
                 .padding()
-                .background(.regularMaterial)
-                .cornerRadius(12)
+                .appSurface(style: .panel, cornerRadius: 12)
                 .shadow(radius: 5)
                 .padding(.bottom, 20)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
