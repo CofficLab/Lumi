@@ -43,7 +43,7 @@ find "$APP_PATH" -depth \
     # Determine options based on file type
     # Add --timestamp for Notarization requirement
     # Add --preserve-metadata=identifier,entitlements,flags to keep original attributes (vital for Sparkle/Extensions)
-    OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime --preserve-metadata=identifier,entitlements,flags"
+    OPTS=(--force --verbose --timestamp --sign "$IDENTITY" --options runtime --preserve-metadata=identifier,entitlements,flags)
     
     # Attempt to extract existing entitlements
     ENTITLEMENTS_FILE="temp_entitlements.plist"
@@ -54,7 +54,7 @@ find "$APP_PATH" -depth \
         # Check if file is not empty (it might be empty if no entitlements)
         if [ -s "$ENTITLEMENTS_FILE" ]; then
              echo "   Reuse existing entitlements for $(basename "$item")"
-             OPTS="$OPTS --entitlements \"$ENTITLEMENTS_FILE\""
+             OPTS+=(--entitlements "$ENTITLEMENTS_FILE")
         fi
     fi
     
@@ -64,10 +64,9 @@ find "$APP_PATH" -depth \
     # We REMOVE --deep to avoid double-signing or overwriting inner signatures with wrong flags.
 
     # Execute signing with retry logic
-    # We use eval to handle the quoted Identity string correctly
     retry_count=0
     while [ $retry_count -lt $MAX_RETRIES ]; do
-        if eval codesign $OPTS "\"$item\"" 2>&1; then
+        if codesign "${OPTS[@]}" "$item" 2>&1; then
             break
         else
             retry_count=$((retry_count + 1))
@@ -115,13 +114,13 @@ fi
 
 # 4. Sign the Main App
 echo "✍️  Signing Main App..."
-OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
+OPTS=(--force --verbose --timestamp --sign "$IDENTITY" --options runtime)
 if [ -n "$ENTITLEMENTS" ]; then
-    OPTS="$OPTS --entitlements \"$ENTITLEMENTS\""
+    OPTS+=(--entitlements "$ENTITLEMENTS")
 fi
 retry_count=0
 while [ $retry_count -lt $MAX_RETRIES ]; do
-    if eval codesign $OPTS "\"$APP_PATH\"" 2>&1; then
+    if codesign "${OPTS[@]}" "$APP_PATH" 2>&1; then
         break
     else
         retry_count=$((retry_count + 1))
