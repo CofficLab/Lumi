@@ -41,6 +41,8 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
 /// 远程仓库状态栏视图
 struct OpenRemoteStatusBarView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var remoteURL: URL?
     @State private var isLoading = false
@@ -78,10 +80,11 @@ struct OpenRemoteStatusBarView: View {
                     .frame(width: 10, height: 10)
 
                 Text(String(localized: "加载中...", table: "OpenRemotePlugin"))
-                    .font(.system(size: 11))
+                    .font(.appMicro)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
+            .foregroundColor(theme.textSecondary)
         }
     }
 
@@ -96,7 +99,7 @@ struct OpenRemoteStatusBarView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "safari")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -110,14 +113,14 @@ struct OpenRemoteStatusBarView: View {
     private var noRemoteView: some View {
         HStack(spacing: 6) {
             Image(systemName: "safari")
-                .font(.system(size: 10))
+                .font(.appMicro)
 
             Text(String(localized: "无远程仓库", table: "OpenRemotePlugin"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(.secondary.opacity(0.5))
+        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(String(localized: "无远程仓库", table: "AgentOpenRemote"))
     }
 
@@ -196,6 +199,8 @@ struct OpenRemoteStatusBarView: View {
 
 /// 远程仓库详情视图（在 popover 中显示）
 struct OpenRemoteDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let url: URL?
 
     var body: some View {
@@ -203,12 +208,12 @@ struct OpenRemoteDetailView: View {
             // 标题
             HStack(spacing: 8) {
                 Image(systemName: "safari")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.primary)
 
                 Text(String(localized: "远程仓库", table: "OpenRemotePlugin"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
@@ -220,7 +225,7 @@ struct OpenRemoteDetailView: View {
                             Image(systemName: "arrow.up.right.square")
                             Text(String(localized: "打开", table: "OpenRemotePlugin"))
                         }
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -232,13 +237,13 @@ struct OpenRemoteDetailView: View {
                 // URL 显示
                 HStack(spacing: 8) {
                     Text(String(localized: "URL", table: "OpenRemotePlugin"))
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                         .frame(width: 60, alignment: .leading)
 
                     Text(url.absoluteString)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appMonoCaption)
+                        .foregroundColor(theme.textPrimary)
                         .lineLimit(2)
                         .textSelection(.enabled)
 
@@ -249,7 +254,7 @@ struct OpenRemoteDetailView: View {
                         NSPasteboard.general.setString(url.absoluteString, forType: .string)
                     }) {
                         Image(systemName: "doc.on.doc")
-                            .font(.system(size: 12))
+                            .font(.appCaption)
                     }
                     .buttonStyle(.plain)
                     .help(String(localized: "复制 URL", table: "OpenRemotePlugin"))
@@ -260,12 +265,12 @@ struct OpenRemoteDetailView: View {
                     Spacer()
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 24))
-                            .foregroundColor(Color(hex: "FF9F0A"))
+                            .font(.appTitle)
+                            .foregroundColor(theme.warning)
 
                         Text(String(localized: "当前项目没有远程仓库", table: "OpenRemotePlugin"))
-                            .font(.system(size: 13))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appCallout)
+                            .foregroundColor(theme.textSecondary)
                     }
                     .padding(.vertical, 16)
                     Spacer()
