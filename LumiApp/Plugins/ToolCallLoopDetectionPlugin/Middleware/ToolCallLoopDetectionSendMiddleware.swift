@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 工具调用循环检测发送中间件
 ///

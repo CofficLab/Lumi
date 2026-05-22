@@ -1,5 +1,5 @@
 import LumiUI
-import ToolKit
+import AgentToolKit
 import SwiftUI
 
 /// 语言选择器：下拉菜单选择 AI 响应语言

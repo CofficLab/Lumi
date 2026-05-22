@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import os
 
 /// 检测指定供应商+模型可用性的工具

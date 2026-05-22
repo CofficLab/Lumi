@@ -1,5 +1,5 @@
 import SwiftUI
-import ToolKit
+import AgentToolKit
 import LumiUI
 
 /// 可用工具列表详情视图（在 popover 中展示）

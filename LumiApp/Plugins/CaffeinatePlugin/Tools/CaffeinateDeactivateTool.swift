@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 关闭防休眠工具
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// Git 状态工具
 struct GitStatusTool: SuperAgentTool, SuperLog {

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import HttpKit
 
 /// 聊天消息模型

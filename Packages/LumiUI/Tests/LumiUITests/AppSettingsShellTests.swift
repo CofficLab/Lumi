@@ -1,5 +1,5 @@
 import Testing
-import ToolKit
+import AgentToolKit
 @testable import LumiUI
 
 struct AppBundleInfoTests {

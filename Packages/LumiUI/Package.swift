@@ -13,12 +13,12 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../ToolKit")
+        .package(path: "../AgentToolKit")
     ],
     targets: [
         .target(
             name: "LumiUI",
-            dependencies: ["ToolKit"],
+            dependencies: ["AgentToolKit"],
             path: "Sources/LumiUI"
         ),
         .testTarget(

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import SwiftData
 
 /// 工具调用实体

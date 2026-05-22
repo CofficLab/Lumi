@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import SwiftData
 
 /// 数据库配置管理器

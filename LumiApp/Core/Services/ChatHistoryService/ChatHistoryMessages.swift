@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import SwiftData
 
 // MARK: - 消息操作扩展

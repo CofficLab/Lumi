@@ -1,5 +1,5 @@
 import LumiUI
-import ToolKit
+import AgentToolKit
 import SwiftUI
 
 /// 附件预览视图 - 显示待发送的图片缩略图

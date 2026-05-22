@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import os
 
 // MARK: - Zhipu AI 供应商
@@ -87,7 +87,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(ZhipuResponse.self, from: data)
 
         var textContent = ""

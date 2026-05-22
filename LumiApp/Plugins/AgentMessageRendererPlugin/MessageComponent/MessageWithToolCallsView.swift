@@ -1,5 +1,5 @@
 import LumiUI
-import ToolKit
+import AgentToolKit
 import SwiftUI
 
 /// 助手消息与工具调用视图

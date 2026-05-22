@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// Git 提交工具
 struct GitCommitTool: SuperAgentTool, SuperLog {

@@ -1,5 +1,5 @@
 import AppKit
-import ToolKit
+import AgentToolKit
 import EditorService
 import Foundation
 import SwiftUI

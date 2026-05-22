@@ -1,6 +1,6 @@
 import Foundation
 import LLMProviderKit
-import ToolKit
+import AgentToolKit
 
 // MARK: - SuperAgentTool 桥接到 LLMToolSchemaProviding
 //
@@ -48,7 +48,7 @@ extension MessageRole {
 // MARK: - ToolCall 转换
 
 extension LLMProviderKit.ToolCall {
-    init(app toolCall: ToolKit.ToolCall) {
+    init(app toolCall: AgentToolKit.ToolCall) {
         self.init(
             id: toolCall.id,
             name: toolCall.name,
@@ -57,7 +57,7 @@ extension LLMProviderKit.ToolCall {
     }
 }
 
-extension ToolKit.ToolCall {
+extension AgentToolKit.ToolCall {
     init(kit toolCall: LLMProviderKit.ToolCall) {
         self.init(id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments)
     }
@@ -85,7 +85,7 @@ extension StreamChunk {
         self.init(
             content: chunk.content,
             isDone: chunk.isDone,
-            toolCalls: chunk.toolCalls?.map { ToolKit.ToolCall(kit: $0) },
+            toolCalls: chunk.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) },
             error: chunk.error,
             partialJson: chunk.partialJson,
             eventType: chunk.eventType.map { StreamEventType(kit: $0) },

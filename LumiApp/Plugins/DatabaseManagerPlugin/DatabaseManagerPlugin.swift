@@ -1,5 +1,5 @@
 import SwiftUI
-import ToolKit
+import AgentToolKit
 import os
 
 actor DatabaseManagerPlugin: SuperPlugin, SuperLog {

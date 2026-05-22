@@ -1,5 +1,5 @@
 import AppKit
-import ToolKit
+import AgentToolKit
 import Foundation
 import SwiftUI
 import ObjectiveC.runtime

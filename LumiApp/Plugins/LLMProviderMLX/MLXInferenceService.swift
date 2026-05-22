@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import Combine
 import MLXLLM
 @preconcurrency import MLXLMCommon

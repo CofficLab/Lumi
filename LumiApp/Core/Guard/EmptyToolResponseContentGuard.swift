@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 空 content + toolCalls 的展示增强纯策略 guard。
 ///

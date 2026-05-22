@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import LLMProviderKit
 
 // MARK: - OpenRouter Provider
@@ -93,9 +93,9 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolKit.ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

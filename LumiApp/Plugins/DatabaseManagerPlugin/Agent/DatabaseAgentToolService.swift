@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 struct DatabaseConnectionSummary: Encodable {
     let id: String

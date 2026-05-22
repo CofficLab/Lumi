@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 列出最近项目工具
 struct ListRecentProjectsTool: SuperAgentTool, SuperLog {

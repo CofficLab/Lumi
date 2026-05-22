@@ -1,5 +1,5 @@
 import MCPKit
-import ToolKit
+import AgentToolKit
 import SwiftUI
 import os
 

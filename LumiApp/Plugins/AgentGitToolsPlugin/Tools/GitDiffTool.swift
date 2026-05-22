@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import SwiftUI
 
 /// Git 差异工具

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import os
 
 /// GitHub CLI 检测插件

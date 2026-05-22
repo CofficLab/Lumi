@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 防休眠并立即关闭屏幕工具
 ///

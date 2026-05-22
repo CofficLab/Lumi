@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import WorkspaceFileKit
 
 /// 文件编辑工具

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import os
 
 // MARK: - 阿里云供应商
@@ -86,7 +86,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(AliyunResponse.self, from: data)
 
         var textContent = ""

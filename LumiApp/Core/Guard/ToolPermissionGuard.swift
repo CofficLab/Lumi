@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 工具权限守卫：
 /// - 需要权限且未开启 auto-approve 时，返回权限请求

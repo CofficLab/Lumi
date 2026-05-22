@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "ToolKit",
+    name: "AgentToolKit",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ToolKit",
-            targets: ["ToolKit"]
+            name: "AgentToolKit",
+            targets: ["AgentToolKit"]
         )
     ],
     dependencies: [
@@ -17,14 +17,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ToolKit",
+            name: "AgentToolKit",
             dependencies: ["SuperLogKit"],
-            path: "Sources/ToolKit"
+            path: "Sources/AgentToolKit"
         ),
         .testTarget(
-            name: "ToolKitTests",
-            dependencies: ["ToolKit"],
-            path: "Tests/ToolKitTests"
+            name: "AgentToolKitTests",
+            dependencies: ["AgentToolKit"],
+            path: "Tests/AgentToolKitTests"
         )
     ]
 )

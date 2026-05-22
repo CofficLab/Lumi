@@ -1,5 +1,5 @@
 import SwiftUI
-import ToolKit
+import AgentToolKit
 
 public extension CommandRiskLevel {
     var iconName: String {

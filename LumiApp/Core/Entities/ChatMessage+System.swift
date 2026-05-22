@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 // MARK: - 内置系统消息占位键与工厂
 

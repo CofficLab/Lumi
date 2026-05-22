@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import os
 
 /// Agent 上下文同步中间件

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import GitHubKit
 
 /// GitHub 仓库信息工具

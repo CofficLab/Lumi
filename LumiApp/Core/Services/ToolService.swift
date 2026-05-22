@@ -1,11 +1,11 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import Combine
 
 /// 工具服务：负责管理所有可用工具
 ///
 /// ToolService 是 Lumi 系统的工具管理中心，协调和管理所有 AI 可用的工具。
-/// 作为 App 与 ToolKit 包之间的桥梁层。
+/// 作为 App 与 AgentToolKit 包之间的桥梁层。
 ///
 /// ## 线程安全
 ///
@@ -25,9 +25,6 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// 当前语言偏好（由 LLMRequester 在每次请求前设置）
     var languagePreference: LanguagePreference = .english
-
-    /// 内置工具列表（当前为空，全部由插件提供）
-    private var builtInTools: [SuperAgentTool] = []
 
     /// 插件提供的工具列表
     private var pluginTools: [SuperAgentTool] = []
@@ -60,7 +57,7 @@ class ToolService: SuperLog, @unchecked Sendable {
         refreshAllTools()
 
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个, 插件工具：\(self.pluginTools.count) 个")
+            AppLogger.core.info("\(Self.t)✅ 工具服务已初始化，插件工具：\(self.pluginTools.count) 个")
         }
     }
 
@@ -94,7 +91,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     private func refreshAllTools() {
         let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
-        allTools = builtInTools + pluginTools
+        allTools = pluginTools
     }
 
     // MARK: - Public API

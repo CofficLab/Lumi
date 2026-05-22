@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 import SwiftData
 
 /// 图片附件实体（独立存储表）

@@ -1,5 +1,5 @@
 import Foundation
-import ToolKit
+import AgentToolKit
 
 /// 命令风险评估工具
 enum CommandRiskEvaluator {

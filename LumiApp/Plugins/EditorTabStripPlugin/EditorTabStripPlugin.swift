@@ -1,5 +1,5 @@
 import SwiftUI
-import ToolKit
+import AgentToolKit
 
 /// 编辑器 Tab 栏插件
 ///
