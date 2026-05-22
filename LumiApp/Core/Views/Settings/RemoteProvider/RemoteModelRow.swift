@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 远程模型选择行组件 - 支持点击选中、默认状态标记和能力徽章展示
 struct RemoteModelRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let model: String
     let isDefault: Bool
     let supportsVision: Bool?
@@ -10,13 +12,13 @@ struct RemoteModelRow: View {
     let onTap: () -> Void
 
     var body: some View {
-        GlassRow {
+        AppSettingsRow {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 16) {
                     // 模型名称
                     Text(model)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
 
                     Spacer()
 
@@ -55,19 +57,7 @@ struct RemoteModelRow: View {
 
     @ViewBuilder
     private func capabilityBadge(title: String, systemImage: String) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .medium))
-            Text(title)
-                .font(.caption2)
-        }
-        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
-        )
-        .help(title)
+        AppTag(title, systemImage: systemImage, style: .subtle)
+            .help(title)
     }
 }
