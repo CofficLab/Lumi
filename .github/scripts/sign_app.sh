@@ -46,8 +46,7 @@ find "$APP_PATH" -depth \
     OPTS=(--force --verbose --timestamp --sign "$IDENTITY" --options runtime --preserve-metadata=identifier,entitlements,flags)
     
     # Attempt to extract existing entitlements
-    ENTITLEMENTS_FILE="temp_entitlements.plist"
-    rm -f "$ENTITLEMENTS_FILE"
+    ENTITLEMENTS_FILE=$(mktemp "${TMPDIR:-/tmp}/lumi-entitlements.XXXXXX.plist")
     
     # Try to dump entitlements to a file
     if codesign -d --entitlements - --xml "$item" > "$ENTITLEMENTS_FILE" 2>/dev/null; then

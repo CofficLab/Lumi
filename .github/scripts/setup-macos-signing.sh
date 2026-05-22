@@ -156,7 +156,6 @@ main() {
     echo "TEAM_ID: $TEAM_ID"
     echo "SIGNING_IDENTITY: $SIGNING_IDENTITY"
     echo "KEYCHAIN_PATH: $KEYCHAIN_PATH"
-    echo "PP_PATH: $PP_PATH"
     echo "API_KEY_PATH: $API_KEY_PATH"
 }
 
