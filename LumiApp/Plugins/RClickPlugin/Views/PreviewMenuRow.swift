@@ -1,25 +1,28 @@
+import LumiUI
 import SwiftUI
 
 struct PreviewMenuRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let item: RClickMenuItem
 
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: item.type.iconName)
-                .font(.system(size: 14))
+                .font(.appCallout)
                 .frame(width: 16)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(theme.textSecondary)
 
             Text(item.title)
-                .font(.system(size: 13))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appCallout)
+                .foregroundColor(theme.textPrimary)
 
             Spacer()
 
             if item.type == .newFile {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textTertiary)
             }
         }
         .padding(.vertical, 4)
