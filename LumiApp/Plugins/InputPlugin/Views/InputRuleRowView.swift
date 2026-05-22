@@ -1,7 +1,10 @@
+import LumiUI
 import SwiftUI
 
 /// 输入源切换规则行视图
 struct InputRuleRowView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     // MARK: - Properties
 
     /// 规则模型
@@ -17,24 +20,24 @@ struct InputRuleRowView: View {
             // 应用名称
             Text(rule.appName)
                 .fontWeight(.medium)
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .foregroundColor(theme.textPrimary)
 
             Spacer()
 
             // 分隔箭头
             Image(systemName: "arrow.right")
-                .foregroundColor(Color(hex: "98989E"))
+                .foregroundColor(theme.textTertiary)
 
             Spacer()
 
             // 输入源名称
             if let source = availableSources.first(where: { $0.id == rule.inputSourceID }) {
                 Text(source.name)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
             } else {
                 // 输入源不存在时显示 ID（红色警告）
                 Text(rule.inputSourceID)
-                    .foregroundColor(Color(hex: "FF453A"))
+                    .foregroundColor(theme.error)
             }
         }
     }

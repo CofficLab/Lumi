@@ -4,6 +4,8 @@ import LumiUI
 
 /// 添加新规则表单视图
 struct AddRuleFormView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     // MARK: - Properties
 
     /// 选中的应用
@@ -35,8 +37,8 @@ struct AddRuleFormView: View {
             // 标题
             HStack {
                 Text("Add New Rule")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.textPrimary)
                 Spacer()
             }
 
