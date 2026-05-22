@@ -158,7 +158,6 @@
 		F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
 		F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
-		F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "CodeLanguages-Container.xcodeproj"; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
@@ -494,13 +493,6 @@
 			sourceTree = "<group>";
 		};
 		F53711392FB1E52800AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53714692FB1E52900AF4705 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -1048,10 +1040,6 @@
 				{
 					ProductGroup = F5679F832FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */;
-				},
-				{
-					ProductGroup = F53714692FB1E52900AF4705 /* Products */;
-					ProjectRef = F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;

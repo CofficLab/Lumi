@@ -49,7 +49,7 @@ OUTPUT_PATH="CodeLanguagesContainer.xcframework"
 
 # remove previous generated files
 rm -rf "$OUTPUT_PATH"
-rm "$OUTPUT_PATH".zip
+rm -f "$OUTPUT_PATH".zip
 status "Removed previous generated files!"
 
 # build the binary framework
