@@ -28,9 +28,9 @@ struct SkillStatusBarView: View, SuperLog {
                 ) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 10))
+                            .font(.appMicro)
                         Text("\(skills.count)")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.appMicroEmphasized)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -103,6 +103,8 @@ struct SkillStatusBarView: View, SuperLog {
 ///
 /// 点击状态栏 Skill 图标后弹出，展示当前项目所有可用 Skill 的详情。
 struct SkillListPopover: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let skills: [SkillMetadata]
 
     var body: some View {
@@ -110,21 +112,21 @@ struct SkillListPopover: View {
             // 标题
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appCallout)
+                    .foregroundColor(theme.primary)
 
                 Text(String(localized: "^[\(skills.count) Available Skill](inflect: true)", table: "Skill"))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
                 Text(String(localized: "Skills are loaded from .agent/skills/", table: "Skill"))
-                    .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
-            GlassDivider()
+            settingsDivider
 
             // Skill 列表
             ForEach(skills) { skill in
@@ -132,36 +134,44 @@ struct SkillListPopover: View {
             }
         }
     }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
+    }
 }
 
 // MARK: - Skill 行视图
 
 /// 单个 Skill 的展示行
 struct SkillRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let skill: SkillMetadata
 
     var body: some View {
         AppListRow {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "sparkle")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.primary)
                     .padding(.top, 2)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(skill.title)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appCallout)
+                            .foregroundColor(theme.textPrimary)
 
                         Text("v\(skill.version)")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textTertiary)
                     }
 
                     Text(skill.description)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                         .lineLimit(2)
                 }
             }
