@@ -3,6 +3,8 @@ import LumiUI
 
 /// 负责完整渲染一条助手消息（包含头部、思考过程、工具调用与正文）
 struct AssistantMessage: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
     let isLastMessage: Bool
     let relatedToolOutputs: [ChatMessage]
@@ -83,8 +85,8 @@ struct AssistantMessage: View {
 
                 // 时间戳
                 Text(formatTimestamp(message.timestamp))
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
 
                 // 切换原始消息按钮
                 // RawMessageToggleButton(showRawMessage: $showRawMessage)

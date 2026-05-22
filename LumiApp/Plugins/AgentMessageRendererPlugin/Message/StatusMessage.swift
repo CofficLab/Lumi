@@ -5,6 +5,8 @@ import LumiUI
 //
 /// 负责渲染状态类消息（如"等待响应…"、"生成中…"），统一样式
 struct StatusMessage: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
 
     var body: some View {
@@ -25,7 +27,7 @@ struct StatusMessage: View {
                     content: message.content,
                     monospaced: false
                 )
-                .font(.system(size: 12, weight: .regular))
+                .font(.appCaption)
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }
         }
@@ -42,7 +44,7 @@ struct StatusMessage: View {
         } trailing: {
             AppIdentityRow(
                 title: formatTimestamp(message.timestamp),
-                titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                titleColor: theme.textSecondary
             )
         }
     }

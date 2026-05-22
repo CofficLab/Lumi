@@ -7,6 +7,7 @@ struct QuickStartActionsView: View {
         case sendInCurrentConversation
     }
 
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var projectVM: WindowProjectVM
@@ -17,8 +18,8 @@ struct QuickStartActionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "下一步操作", table: "CoreMessageRenderer"))
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.appCaption)
+                .foregroundColor(theme.textTertiary)
 
             ForEach(recommendedPrompts, id: \.self) { prompt in
                 AppButton(

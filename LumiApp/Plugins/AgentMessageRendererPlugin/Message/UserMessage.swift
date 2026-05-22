@@ -3,6 +3,8 @@ import LumiUI
 
 /// 负责完整渲染一条用户消息（包含头部与正文）
 struct UserMessage: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
@@ -53,7 +55,7 @@ struct UserMessage: View {
 
                 AppIdentityRow(
                     title: formatTimestamp(message.timestamp),
-                    titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                    titleColor: theme.textSecondary
                 )
 
                 // RawMessageToggleButton(showRawMessage: $showRawMessage)

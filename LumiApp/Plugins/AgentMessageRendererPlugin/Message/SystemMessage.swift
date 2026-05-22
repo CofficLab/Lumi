@@ -6,6 +6,8 @@ import LumiUI
 //
 /// 负责完整渲染一条系统消息（包含头部与正文）
 struct SystemMessage: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
@@ -47,14 +49,14 @@ struct SystemMessage: View {
                 AvatarView.system
                 AppIdentityRow(
                     title: "System",
-                    titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                    titleColor: theme.textSecondary
                 )
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
@@ -72,6 +74,8 @@ struct SystemMessage: View {
 
 /// 本地模型正在加载或已就绪时，在系统消息中渲染的专用视图，展示状态与 LocalModelInfo 字段。
 struct LoadingLocalModelSystemMessageView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
@@ -106,9 +110,8 @@ struct LoadingLocalModelSystemMessageView: View {
             HStack(spacing: 10) {
                 statusIcon
                 Text(statusText)
-                    .font(.system(size: 16, weight: .medium))
-                    .fontWeight(.medium)
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
                 Spacer(minLength: 0)
             }
 
@@ -150,9 +153,8 @@ struct LoadingLocalModelSystemMessageView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(info.displayName)
-                    .font(.system(size: 16, weight: .medium))
-                    .fontWeight(.medium)
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
                 if let series = info.series, !series.isEmpty {
                     AppTag(series)
                 }
@@ -160,8 +162,8 @@ struct LoadingLocalModelSystemMessageView: View {
 
             if !info.description.isEmpty {
                 Text(info.description)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -190,8 +192,8 @@ struct LoadingLocalModelSystemMessageView: View {
     private func fallbackModelLine(_ line: String) -> some View {
         HStack(spacing: 6) {
             Text(line)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -206,8 +208,8 @@ struct LoadingLocalModelSystemMessageView: View {
                 .controlSize(.small)
         } else {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14))
-                .foregroundColor(Color(hex: "30D158"))
+                .font(.appCallout)
+                .foregroundColor(theme.success)
         }
     }
 }

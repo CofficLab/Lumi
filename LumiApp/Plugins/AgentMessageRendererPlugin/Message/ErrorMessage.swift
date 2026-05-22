@@ -5,6 +5,8 @@ import LumiUI
 //
 /// 负责渲染错误类消息（如 API 调用失败、网络错误等），统一样式
 struct ErrorMessage: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
@@ -181,8 +183,8 @@ struct ErrorMessage: View {
                 )
 
                 Text(formatTimestamp(message.timestamp))
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
