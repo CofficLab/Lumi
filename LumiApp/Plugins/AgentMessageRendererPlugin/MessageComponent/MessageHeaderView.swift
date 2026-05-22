@@ -3,11 +3,12 @@ import SwiftUI
 
 /// 消息头部通用容器，统一悬浮态、边距和背景样式。
 struct MessageHeaderView<Leading: View, Trailing: View>: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let leading: Leading
     let trailing: Trailing
 
     @LumiMotionPreferenceReader private var motionPreference
-    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
     init(
@@ -19,8 +20,6 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     var body: some View {
-        let theme = themeVM.activeChromeTheme
-
         HStack(alignment: .center, spacing: 8) {
             leading
             Spacer()
@@ -28,12 +27,11 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(headerBackground)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.workspaceTertiaryTextColor().opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
+        .appSurface(
+            style: .custom(headerBackgroundColor),
+            cornerRadius: 8,
+            borderColor: theme.divider.opacity(isHovered ? 1.0 : 0.65)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
             LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
@@ -42,13 +40,9 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         }
     }
 
-    private var headerBackground: some View {
-        let theme = themeVM.activeChromeTheme
-        return RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(
-                isHovered
-                    ? theme.workspaceSecondaryTextColor().opacity(0.14)
-                    : theme.workspaceSecondaryTextColor().opacity(0.08)
-            )
+    private var headerBackgroundColor: Color {
+        isHovered
+            ? theme.textSecondary.opacity(0.14)
+            : theme.textSecondary.opacity(0.08)
     }
 }
