@@ -120,7 +120,9 @@ struct ContentView: View, SuperLog {
             if providerRegistry.providerTypes.isEmpty {
                 HSplitView {
                     ActivityBar()
+                        .frame(maxHeight: .infinity)
                     AgentModeUnavailableGuideView()
+                        .frame(maxHeight: .infinity)
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
@@ -133,13 +135,17 @@ struct ContentView: View, SuperLog {
                 if !sidebarSections.isEmpty && hasRail {
                     HSplitView {
                         ActivityBar()
+                            .frame(maxHeight: .infinity)
                         RailView()
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView().frame(maxWidth: .infinity)
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         RightSidebarContainerView(sections: sidebarSections)
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 3
@@ -149,8 +155,11 @@ struct ContentView: View, SuperLog {
                 } else if !sidebarSections.isEmpty {
                     HSplitView {
                         ActivityBar()
-                        PanelContentView().frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         RightSidebarContainerView(sections: sidebarSections)
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 2
@@ -160,18 +169,23 @@ struct ContentView: View, SuperLog {
                 } else if hasRail {
                     HSplitView {
                         ActivityBar()
+                            .frame(maxHeight: .infinity)
                         RailView()
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView().frame(maxWidth: .infinity)
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else {
                     HSplitView {
                         ActivityBar()
-                        PanelContentView().frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 }
