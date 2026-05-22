@@ -24,6 +24,7 @@ actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
     static let order = 15
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

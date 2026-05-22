@@ -22,6 +22,7 @@ actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
     static let description = String(localized: "Open current project in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
     static let iconName = "desktopcomputer"
+    static var category: PluginCategory { .integration }
     static var order: Int { 97 }
 
     /// 用户可在设置中启用/禁用此插件

@@ -47,14 +47,22 @@ struct ModelSelectorView: View, SuperLog {
 
     /// 当前供应商信息
     private var currentProvider: LLMProviderInfo? {
-        llmVM.allProviders.first(where: { $0.id == llmVM.selectedProviderId })
+        llmVM.allProviders.first(where: { $0.id == currentProviderId })
+    }
+
+    private var currentProviderId: String {
+        conversationVM.getModelPreference()?.providerId ?? llmVM.selectedProviderId
+    }
+
+    private var currentModel: String {
+        conversationVM.getModelPreference()?.model ?? llmVM.currentModel
     }
 
     var body: some View {
         HStack(spacing: 0) {
             ModelSelectorTabSidebar(
                 providers: llmVM.allProviders,
-                selectedProviderId: llmVM.selectedProviderId,
+                selectedProviderId: currentProviderId,
                 selectedTab: $selectedTab
             )
             .frame(width: 380)
@@ -107,7 +115,7 @@ struct ModelSelectorView: View, SuperLog {
             switch selectedTab {
             case .current:
                 if currentProvider?.isLocal == true {
-                    await loadLocalModelInfos(providerIds: [llmVM.selectedProviderId])
+                    await loadLocalModelInfos(providerIds: [currentProviderId])
                 }
             case .provider(let providerId):
                 if let provider = llmVM.allProviders.first(where: { $0.id == providerId }), provider.isLocal {
@@ -377,8 +385,6 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
         llmVM.isAutoMode = false
-        llmVM.selectedProviderId = providerId
-        llmVM.currentModel = model
 
         // 直接保存到当前对话的模型偏好
         conversationVM.saveModelPreference(providerId: providerId, model: model)
@@ -392,7 +398,7 @@ extension ModelSelectorView {
 extension ModelSelectorView {
     /// 检查模型是否为当前选中状态
     private func isSelected(providerId: String, model: String) -> Bool {
-        llmVM.selectedProviderId == providerId && llmVM.currentModel == model
+        currentProviderId == providerId && currentModel == model
     }
 
     /// 在后台线程加载所有统计数据，避免阻塞 UI

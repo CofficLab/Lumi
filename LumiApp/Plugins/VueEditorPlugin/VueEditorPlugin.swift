@@ -31,6 +31,7 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
     static let order = 35
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

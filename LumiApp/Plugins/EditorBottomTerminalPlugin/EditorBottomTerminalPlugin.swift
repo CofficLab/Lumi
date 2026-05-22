@@ -24,6 +24,7 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
         localized: "Terminal panel in the editor bottom area", table: "EditorBottomTerminal")
     static let iconName: String = "terminal"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 100 }
 
     nonisolated var instanceLabel: String { Self.id }

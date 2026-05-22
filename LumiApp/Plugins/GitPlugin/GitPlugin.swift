@@ -15,6 +15,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     static let description: String = "Git branch, commit history, status and quick commit"
     static let iconName: String = "arrow.triangle.branch"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 11 }
 
     nonisolated var instanceLabel: String { Self.id }

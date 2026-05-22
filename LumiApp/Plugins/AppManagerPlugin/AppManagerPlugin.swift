@@ -18,6 +18,7 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "App Manager", table: "AppManager")
     static let description = String(localized: "Manage installed applications", table: "AppManager")
     static let iconName = "apps.ipad"
+    static var category: PluginCategory { .system }
     static var order: Int { 40 }
     
     nonisolated var instanceLabel: String { Self.id }

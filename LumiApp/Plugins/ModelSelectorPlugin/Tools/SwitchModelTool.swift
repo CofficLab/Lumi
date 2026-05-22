@@ -4,8 +4,8 @@ import os
 /// 切换当前 LLM 供应商和模型的工具
 ///
 /// 允许 LLM 在对话过程中主动切换到更合适的供应商和模型。
-/// 通过 `ToolContext.llmVM` 获取 `AppLLMVM` 引用，
-/// 修改其 `selectedProviderId`、`currentModel` 和 `isAutoMode` 属性。
+/// 通过 `ToolContext.llmVM` 校验供应商和模型，
+/// 并将选择保存为当前对话的模型偏好。
 struct SwitchModelTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose: Bool = false
@@ -68,6 +68,16 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
 
     @MainActor
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationId: conversationVM.selectedConversationId)
+    }
+
+    @MainActor
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try await execute(arguments: arguments, conversationId: context.conversationId)
+    }
+
+    @MainActor
+    private func execute(arguments: [String: ToolArgument], conversationId: UUID?) async throws -> String {
         guard let providerId = arguments["providerId"]?.value as? String, !providerId.isEmpty else {
             return "## ❌ 参数错误\n\n缺少必填参数 `providerId`，请提供供应商 ID。"
         }
@@ -103,16 +113,19 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
         }
 
         // 记录切换前的状态
-        let previousProvider = llmVM.selectedProviderId
-        let previousModel = llmVM.currentModel
+        let previousPreference = conversationId.flatMap { conversationVM.getModelPreference(for: $0) } ?? conversationVM.getModelPreference()
+        let previousProvider = previousPreference?.providerId ?? llmVM.selectedProviderId
+        let previousModel = previousPreference?.model ?? llmVM.currentModel
 
-        // 执行切换
+        // 执行切换：模型选择是对话级状态，不修改全局 AppLLMVM 的 provider/model。
         llmVM.isAutoMode = false
-        llmVM.selectedProviderId = providerId
-        llmVM.currentModel = modelId
 
         // 保存到当前对话的模型偏好
-        conversationVM.saveModelPreference(providerId: providerId, model: modelId)
+        if let conversationId {
+            conversationVM.saveModelPreference(for: conversationId, providerId: providerId, model: modelId)
+        } else {
+            conversationVM.saveModelPreference(providerId: providerId, model: modelId)
+        }
 
         if Self.verbose {
             ModelSelectorPlugin.logger.info("\(self.t)切换模型：\(previousProvider)/\(previousModel) → \(providerId)/\(modelId)")

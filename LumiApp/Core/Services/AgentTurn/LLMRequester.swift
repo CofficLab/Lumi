@@ -52,6 +52,7 @@ final class LLMRequester: SuperLog {
     private let statusVM: WindowConversationStatusVM
     private let retryPolicy: StreamRetryPolicy
     private let projectVM: WindowProjectVM
+    let conversationVM: WindowConversationVM
 
     init(
         llmService: LLMService,
@@ -60,6 +61,7 @@ final class LLMRequester: SuperLog {
         pluginVM: AppPluginVM,
         statusVM: WindowConversationStatusVM,
         projectVM: WindowProjectVM,
+        conversationVM: WindowConversationVM,
         retryPolicy: StreamRetryPolicy = .default
     ) {
         self.llmService = llmService
@@ -68,6 +70,7 @@ final class LLMRequester: SuperLog {
         self.pluginVM = pluginVM
         self.statusVM = statusVM
         self.projectVM = projectVM
+        self.conversationVM = conversationVM
         self.retryPolicy = retryPolicy
     }
 
@@ -100,7 +103,11 @@ final class LLMRequester: SuperLog {
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools
-        let config = resolveRequestConfig(messages: messagesForLLM, allowsTools: toolsArg != nil)
+        let config = resolveRequestConfig(
+            conversationId: conversationId,
+            messages: messagesForLLM,
+            allowsTools: toolsArg != nil
+        )
 
         let onStreamChunk = makeStreamChunkHandler(conversationId: conversationId)
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -212,8 +219,11 @@ final class LLMRequester: SuperLog {
         }
     }
 
-    private func resolveRequestConfig(messages: [ChatMessage], allowsTools: Bool) -> LLMConfig {
-        let fallback = agentSessionConfig.getCurrentConfig()
+    private func resolveRequestConfig(conversationId: UUID, messages: [ChatMessage], allowsTools: Bool) -> LLMConfig {
+        let fallback = conversationVM.resolveModelConfig(
+            for: conversationId,
+            fallbackConfigProvider: agentSessionConfig
+        )
         guard agentSessionConfig.isAutoMode else {
             agentSessionConfig.lastAutoRouteSummary = nil
             return fallback

@@ -7,6 +7,7 @@ actor ChatIntegrationEditorPlugin: SuperPlugin {
     static let displayName = String(localized: "Chat Integration", table: "ChatIntegrationEditor")
     static let description = String(localized: "Adds context menu actions to send code and locations to the AI chat.", table: "ChatIntegrationEditor")
     static let iconName = "bubble.left"
+    static var category: PluginCategory { .editor }
     static let order = 12
     static let enable = true
     static var isConfigurable: Bool { false }

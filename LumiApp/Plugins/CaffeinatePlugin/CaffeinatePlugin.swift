@@ -22,6 +22,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Prevent system sleep with timer and manual control", table: "Caffeinate")
     static let iconName: String = "bolt"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .system }
     static var order: Int { 7 }
 
     // MARK: - Instance

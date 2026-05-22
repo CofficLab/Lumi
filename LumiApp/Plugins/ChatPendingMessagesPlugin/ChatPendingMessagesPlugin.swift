@@ -13,6 +13,7 @@ actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Pending Messages", table: "AgentChat")
     static let description = String(localized: "Show queued chat messages above the input area", table: "AgentChat")
     static let iconName = "clock"
+    static var category: PluginCategory { .agent }
     static var order: Int { 95 }
     nonisolated static let enable: Bool = true
     static let shared = ChatPendingMessagesPlugin()

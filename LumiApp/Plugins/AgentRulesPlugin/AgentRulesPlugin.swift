@@ -16,6 +16,7 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Agent Rules", table: "AgentRules")
     static let description = String(localized: "Manage rule documents in .agent/rules directory", table: "AgentRules")
     static let iconName = "doc.text"
+    static var category: PluginCategory { .agent }
     static var order: Int { 50 }
     static let enable: Bool = true
     static let isConfigurable: Bool = false

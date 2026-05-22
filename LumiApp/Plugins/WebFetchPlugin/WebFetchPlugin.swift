@@ -20,6 +20,7 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "globe"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .network }
     static var order: Int { 100 }
 
     static let shared = WebFetchPlugin()

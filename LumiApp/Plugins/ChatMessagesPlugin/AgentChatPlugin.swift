@@ -14,6 +14,7 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Agent Chat", table: "AgentChat")
     static let description = String(localized: "Agent chat messages timeline", table: "AgentChat")
     static let iconName = "text.bubble.fill"
+    static var category: PluginCategory { .agent }
     static var order: Int { 82 }
     nonisolated static let enable: Bool = true
     static let shared = AgentChatPlugin()

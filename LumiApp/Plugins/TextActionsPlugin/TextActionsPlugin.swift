@@ -12,6 +12,7 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "text.cursor"
     nonisolated static let enable: Bool = true
+    static var category: PluginCategory { .editor }
     static var order: Int { 60 }
     
     nonisolated var instanceLabel: String { Self.id }

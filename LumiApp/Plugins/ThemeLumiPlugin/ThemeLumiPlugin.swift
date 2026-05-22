@@ -8,6 +8,7 @@ actor ThemeLumiPlugin: SuperPlugin {
     static let iconName: String = "circle.hexagonpath.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 119 }
 
     nonisolated var instanceLabel: String { Self.id }

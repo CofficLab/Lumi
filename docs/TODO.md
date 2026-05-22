@@ -6,6 +6,42 @@
 
 ---
 
+## 0. App UI LumiUI 化迁移
+
+> 目标：让整个 app 的通用 UI 尽可能由 `Packages/LumiUI` 承担，app 和插件只表达业务结构、状态和少量领域特定布局。首轮审计见 `docs/lumiui-migration-audit.md`，可重复运行 `scripts/audit-lumiui-styles.sh LumiApp` 更新基线。
+
+### Phase 1: 审计和边界定义
+
+- [x] 增加可重复运行的 UI 样式审计脚本，统计 `Color.adaptive`、`Color(hex:)`、`.font(.system...)`、`RoundedRectangle`、`.cornerRadius(...)`、`activeChromeTheme.*Color()` 等逃逸点。
+- [x] 生成首轮审计文档，按 Core Settings、Chat、Status/Menu Bar、Editor Plugins、Other Plugins 汇总迁移热点。
+- [ ] 标记可直接替换为现有 LumiUI 组件的调用点，例如 `Button` -> `AppButton/AppIconButton`、自定义 row -> `AppListRow/GlassRow`、空态 -> `AppEmptyState`、错误态 -> `AppErrorBanner`、搜索框 -> `AppSearchBar`。
+- [ ] 标记不能直接替换的重复模式，沉淀为 LumiUI 新组件或组件参数，而不是在 app 层复制 modifier。
+- [ ] 明确例外清单：编辑器语法高亮、terminal、QuickLook/PDF/image preview、营销截图、第三方嵌入控件。
+
+### Phase 2: 补齐 LumiUI 缺口
+
+- [x] 增加公开 typography API：title、section、body、caption、mono caption、status text。
+- [x] 增加公开 semantic surface API：panel、popover、toolbar strip、list row hover/selected、divider、focus ring。
+- [ ] 完善 settings/form/list scaffold：settings section、row、picker row、text field row、toggle row、footer actions。
+- [ ] 完善状态组件：metric card、status pill、inline progress、inline loading、empty/loading/error state。
+
+### Phase 3: 第一批迁移
+
+- [ ] 迁移 Core Settings 中重复 row/page：`PluginSettingsView`、`LocalModelRow`、provider/model row 系列。
+- [x] 用 `PluginSettingsView` 做小范围试迁移，验证 app 侧可以直接使用 `Font.app*` 和 `LumiUITheme` 语义色。
+- [ ] 迁移状态栏和菜单栏详情：DeviceInfo、NetworkManager、HistoryDB、AgentRequestLog、RAG status detail。
+- [ ] 迁移管理类插件详情页：Git commit detail、Docker images、Model availability、GitHub plugin settings。
+- [ ] 每批迁移后重新运行审计脚本，记录数量下降和剩余例外。
+
+### 成功标准
+
+- [ ] Core Views 和主要插件视图不再直接写通用颜色、字号、圆角、阴影和动效。
+- [ ] 主题切换能覆盖主要 app chrome、设置页、聊天页、状态栏弹层和插件管理页。
+- [ ] 新 UI 能从 LumiUI 组合出来，缺组件时优先补 LumiUI，而不是在业务层临时写样式。
+- [ ] 👤 需要用户参与：深色/浅色主题各完成一轮视觉验收。
+
+---
+
 ## 1. App UI 平滑度
 
 > 目标：让 Lumi 在输入、聊天流式、面板切换、主题/布局刷新等高频 UI 路径中更流畅。

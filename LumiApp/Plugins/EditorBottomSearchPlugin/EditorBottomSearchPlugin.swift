@@ -21,6 +21,7 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
         table: "EditorBottomSearch")
     static let iconName: String = "magnifyingglass"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 
     nonisolated var instanceLabel: String { Self.id }

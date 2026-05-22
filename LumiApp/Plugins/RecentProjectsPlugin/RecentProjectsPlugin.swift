@@ -18,6 +18,7 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Manage the global recent projects list", table: "RecentProjects")
     static let iconName: String = "folder"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .general }
     static var order: Int { 10 }
 
     nonisolated var instanceLabel: String { Self.id }

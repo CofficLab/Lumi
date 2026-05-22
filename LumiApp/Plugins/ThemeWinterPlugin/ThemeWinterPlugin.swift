@@ -8,6 +8,7 @@ actor ThemeWinterPlugin: SuperPlugin {
     static let iconName: String = "snowflake"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 127 }
 
     nonisolated var instanceLabel: String { Self.id }

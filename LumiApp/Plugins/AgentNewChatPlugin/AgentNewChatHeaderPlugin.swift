@@ -10,6 +10,7 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     static let displayName = String(localized: "New Chat Button", table: "AgentNewChat")
     static let description = String(localized: "Create new chat from header", table: "AgentNewChat")
     static let iconName = "bubble.left.and.bubble.right"
+    static var category: PluginCategory { .agent }
     static var order: Int { 60 }
     
     /// 核心功能按钮，禁止用户配置

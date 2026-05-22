@@ -34,6 +34,7 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Display images in the UI with support for local paths and remote URLs.", table: "ShowImage")
     static let iconName: String = "photo.on.rectangle"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .integration }
     static var order: Int { 97 }
 
     nonisolated var instanceLabel: String { Self.id }

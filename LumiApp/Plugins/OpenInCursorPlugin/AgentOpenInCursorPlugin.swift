@@ -12,6 +12,7 @@ actor AgentOpenInCursorPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in Cursor", table: "AgentOpenInCursor")
     static let description = String(localized: "Open current project in Cursor editor", table: "AgentOpenInCursor")
     static let iconName = "chevron.left.forwardslash.chevron.right"
+    static var category: PluginCategory { .integration }
     static var order: Int { 82 }
 
     /// 用户可在设置中启用/禁用此插件

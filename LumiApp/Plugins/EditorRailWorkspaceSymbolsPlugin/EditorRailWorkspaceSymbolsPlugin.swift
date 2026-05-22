@@ -18,6 +18,7 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
         table: "EditorRailWorkspaceSymbols")
     static let iconName: String = "text.magnifyingglass"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }

@@ -13,6 +13,7 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Attachment", table: "AgentChat")
     static let description = String(localized: "Pending chat attachments and sidebar drop handling", table: "AgentChat")
     static let iconName = "paperclip"
+    static var category: PluginCategory { .agent }
     static var order: Int { 94 }
     nonisolated static let enable: Bool = true
     static let shared = ChatAttachmentPlugin()

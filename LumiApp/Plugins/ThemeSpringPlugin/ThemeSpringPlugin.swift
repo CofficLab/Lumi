@@ -8,6 +8,7 @@ actor ThemeSpringPlugin: SuperPlugin {
     static let iconName: String = "leaf.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 124 }
 
     nonisolated var instanceLabel: String { Self.id }

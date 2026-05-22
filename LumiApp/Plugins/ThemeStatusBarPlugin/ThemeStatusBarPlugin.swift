@@ -19,6 +19,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     static let description: String = "Persist and switch editor theme in the status bar"
     static let iconName: String = "paintbrush"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .theme }
     static var order: Int { 76 }
 
     nonisolated var instanceLabel: String { Self.id }

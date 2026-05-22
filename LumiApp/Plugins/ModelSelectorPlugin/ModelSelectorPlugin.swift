@@ -15,6 +15,7 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Model Selector", table: "AgentChat")
     static let description = String(localized: "Select LLM provider and model", table: "AgentChat")
     static let iconName = "globe"
+    static var category: PluginCategory { .agent }
     static var order: Int { 84 }
     nonisolated static let enable: Bool = true
     static let shared = ModelSelectorPlugin()

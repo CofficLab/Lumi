@@ -8,6 +8,7 @@ actor ThemeOneDarkPlugin: SuperPlugin {
     static let iconName: String = "circle.hexagongrid"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 131 }
 
     nonisolated var instanceLabel: String { Self.id }

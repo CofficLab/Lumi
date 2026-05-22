@@ -16,6 +16,7 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Docker", table: "DockerManager")
     static let description = String(localized: "Local Docker image management and monitoring", table: "DockerManager")
     static let iconName = "shippingbox"
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 50 }
 
     nonisolated var instanceLabel: String { Self.id }

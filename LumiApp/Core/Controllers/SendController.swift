@@ -28,7 +28,8 @@ final class SendController: ObservableObject, SuperLog {
             toolService: global.toolService,
             pluginVM: global.pluginVM,
             statusVM: windowContainer.conversationSendStatusVM,
-            projectVM: windowContainer.projectVM
+            projectVM: windowContainer.projectVM,
+            conversationVM: windowContainer.conversationVM
         )
         let toolCallExecutor = ToolCallExecutor(
             toolExecutionService: global.toolExecutionService,

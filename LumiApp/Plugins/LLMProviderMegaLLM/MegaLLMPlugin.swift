@@ -7,6 +7,7 @@ actor MegaLLMPlugin: SuperPlugin {
     static let displayName = "MegaLLM"
     static let description = "MegaLLM Multi-Provider"
     static let iconName = "server.rack"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

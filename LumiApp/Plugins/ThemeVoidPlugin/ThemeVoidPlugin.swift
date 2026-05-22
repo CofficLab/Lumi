@@ -8,6 +8,7 @@ actor ThemeVoidPlugin: SuperPlugin {
     static let iconName: String = "circle.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 123 }
 
     nonisolated var instanceLabel: String { Self.id }

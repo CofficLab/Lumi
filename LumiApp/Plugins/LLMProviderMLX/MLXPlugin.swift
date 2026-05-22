@@ -9,6 +9,7 @@ actor MLXPlugin: SuperPlugin {
     static let iconName = "desktopcomputer"
     static var order: Int { 10 }
     static let enable: Bool = true
+    static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         MLXProvider.self

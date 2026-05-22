@@ -16,6 +16,7 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Package Management", table: "BrewManager")
     static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
     static let iconName = "mug.fill"
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 60 }
     nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()

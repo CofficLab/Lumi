@@ -22,6 +22,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
     static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
     static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
+    static var category: PluginCategory { .integration }
     static var order: Int { 98 }
 
     /// 用户可在设置中启用/禁用此插件

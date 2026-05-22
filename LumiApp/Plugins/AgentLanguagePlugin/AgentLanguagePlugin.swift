@@ -11,6 +11,7 @@ actor AgentLanguagePlugin: SuperPlugin {
     static let displayName = String(localized: "Language Selector", table: "AgentLanguageHeader")
     static let description = String(localized: "AI response language in header", table: "AgentLanguageHeader")
     static let iconName = "globe"
+    static var category: PluginCategory { .agent }
     static var order: Int { 83 }
     
     /// 核心功能，禁止用户配置

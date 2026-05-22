@@ -357,6 +357,16 @@
         }
       }
     },
+    "%lld 个插件 · %lld 个已启用" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld 个插件 · %2$lld 个已启用"
+          }
+        }
+      }
+    },
     "%lld/%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -750,6 +760,7 @@
 
     },
     "API 密钥" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3426,6 +3437,26 @@
     "全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。" : {
 
     },
+    "共 %lld 个插件 · %lld 个已启用" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "共 %1$lld 个插件 · %2$lld 个已启用"
+          }
+        }
+      }
+    },
+    "共 %lld 个插件 · %lld 个已启用 · %lld 个分类" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "共 %1$lld 个插件 · %2$lld 个已启用 · %3$lld 个分类"
+          }
+        }
+      }
+    },
     "关于" : {
 
     },
@@ -3446,6 +3477,12 @@
       }
     },
     "最近一次路由" : {
+
+    },
+    "切换 LLM 供应商" : {
+
+    },
+    "切换模型系列" : {
 
     },
     "功能特性：" : {
@@ -3513,6 +3550,7 @@
       }
     },
     "双击切换 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3529,6 +3567,7 @@
       }
     },
     "双击切换模型系列" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3561,6 +3600,7 @@
       }
     },
     "可用模型" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4144,6 +4184,7 @@
       }
     },
     "登录时启动" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4217,6 +4258,9 @@
       }
     },
     "试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。" : {
+
+    },
+    "该分类下暂无可配置的插件" : {
 
     },
     "请从侧边栏选择一个导航入口" : {

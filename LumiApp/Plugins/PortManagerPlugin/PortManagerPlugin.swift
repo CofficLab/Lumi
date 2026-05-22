@@ -14,6 +14,7 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Port Manager", table: "PortManager")
     static let description = String(localized: "View and manage port usage", table: "PortManager")
     static let iconName = "arrow.up.arrow.down.circle"
+    static var category: PluginCategory { .system }
     static var order: Int { 20 }
 
     nonisolated var instanceLabel: String { Self.id }

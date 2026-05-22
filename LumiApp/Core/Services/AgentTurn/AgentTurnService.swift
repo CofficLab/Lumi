@@ -144,6 +144,9 @@ final class AgentTurnService: SuperLog {
 extension LLMRequester {
     /// 获取当前会话的 providerId（供 TurnFinalizer 使用）
     func currentProviderId(for conversationId: UUID) -> String? {
-        agentSessionConfig.getCurrentConfig().providerId
+        conversationVM.resolveModelConfig(
+            for: conversationId,
+            fallbackConfigProvider: agentSessionConfig
+        ).providerId
     }
 }

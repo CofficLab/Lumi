@@ -107,6 +107,21 @@ final class WindowConversationVM: ObservableObject, SuperLog {
             return
         }
         chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+        objectWillChange.send()
+    }
+
+    /// 保存指定对话的供应商/模型偏好。
+    func saveModelPreference(for conversationId: UUID, providerId: String, model: String) {
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 找不到会话，跳过保存模型偏好")
+            }
+            return
+        }
+        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+        if conversationId == selectedConversationId {
+            objectWillChange.send()
+        }
     }
 
     /// 获取当前对话的供应商/模型偏好
@@ -121,6 +136,28 @@ final class WindowConversationVM: ObservableObject, SuperLog {
             return nil
         }
         return (providerId, model)
+    }
+
+    /// 获取指定对话的供应商/模型偏好。
+    func getModelPreference(for conversationId: UUID) -> (providerId: String, model: String)? {
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let providerId = conversation.providerId,
+              let model = conversation.model else {
+            return nil
+        }
+        return (providerId, model)
+    }
+
+    /// 根据对话级模型偏好解析请求配置；未配置或配置失效时回退到应用默认配置。
+    func resolveModelConfig(for conversationId: UUID, fallbackConfigProvider: AppLLMVM) -> LLMConfig {
+        if let preference = getModelPreference(for: conversationId),
+           let config = fallbackConfigProvider.makeConfig(
+               providerId: preference.providerId,
+               model: preference.model
+           ) {
+            return config
+        }
+        return fallbackConfigProvider.getCurrentConfig()
     }
 
     /// 保存当前对话的聊天模式偏好

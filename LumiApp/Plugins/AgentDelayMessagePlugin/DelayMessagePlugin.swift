@@ -37,6 +37,7 @@ actor DelayMessagePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Schedule delayed messages to resume conversations automatically.", table: "DelayMessage")
     static let iconName: String = "clock.badge"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static var order: Int { 98 }
 
     nonisolated var instanceLabel: String { Self.id }

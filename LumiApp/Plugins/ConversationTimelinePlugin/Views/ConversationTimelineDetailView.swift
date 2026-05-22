@@ -11,6 +11,7 @@ struct ConversationTimelineDetailView: View, SuperLog {
     let conversationId: UUID
     @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
     @EnvironmentObject private var llmVM: AppLLMVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @State private var timelineItems: [MessageTimelineItem] = []
     private let timelineService = ConversationTimelineService()
 
@@ -55,9 +56,10 @@ struct ConversationTimelineDetailView: View, SuperLog {
 
     /// 获取当前模型的上下文窗口大小
     private var currentModelContextLimit: Int {
-        timelineService.contextLimit(
-            providerId: llmVM.selectedProviderId,
-            model: llmVM.currentModel,
+        let preference = conversationVM.getModelPreference(for: conversationId)
+        return timelineService.contextLimit(
+            providerId: preference?.providerId ?? llmVM.selectedProviderId,
+            model: preference?.model ?? llmVM.currentModel,
             providers: llmVM.availableProviders
         )
     }

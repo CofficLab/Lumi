@@ -19,6 +19,7 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
         localized: "Send a system notification when an Agent turn finishes.", table: "AgentTurnNotification")
     static let iconName: String = "bell.badge"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static var order: Int { 99 }
 
     nonisolated var instanceLabel: String { Self.id }

@@ -3,6 +3,8 @@ import SwiftUI
 import LumiUI
 
 struct EditorSettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject private var settingsState = EditorSettingsState.shared
     @State private var searchText = ""
 
@@ -118,24 +120,16 @@ struct EditorSettingsView: View {
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "chevron.left.forwardslash.chevron.right",
-                title: "编辑器设置",
-                subtitle: "集中管理字体、缩进、显示和扩展贡献的 editor 偏好项。"
-            )
+            AppSettingsSection(title: "编辑器设置", subtitle: "集中管理字体、缩进、显示和扩展贡献的 editor 偏好项。") {}
         }
     }
 
     private var searchCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "magnifyingglass",
-                    title: "快速筛选",
-                    subtitle: "按设置名、关键词或功能名过滤当前 editor settings。"
-                )
+                AppSettingsSection(title: "快速筛选", subtitle: "按设置名、关键词或功能名过滤当前 editor settings。") {}
 
-                GlassDivider()
+                settingsDivider
 
                 TextField("搜索 editor settings", text: $searchText)
                     .textFieldStyle(.roundedBorder)
@@ -146,13 +140,9 @@ struct EditorSettingsView: View {
     private var scopedOverridesCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "slider.horizontal.below.rectangle",
-                    title: "作用域覆盖",
-                    subtitle: "为当前 workspace 或语言单独覆盖一小组高频编辑行为，解析顺序为 global → workspace → language。"
-                )
+                AppSettingsSection(title: "作用域覆盖", subtitle: "为当前 workspace 或语言单独覆盖一小组高频编辑行为，解析顺序为 global → workspace → language。") {}
 
-                GlassDivider()
+                settingsDivider
 
                 Picker("Scope", selection: $settingsState.selectedScope) {
                     ForEach(EditorSettingsScopeSelection.allCases) { scope in
@@ -172,19 +162,19 @@ struct EditorSettingsView: View {
 
                 HStack(spacing: 8) {
                     Text("当前目标")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                     GlassBadge(text: LocalizedStringKey(settingsState.selectedScope.title), style: .neutral)
                     Text(settingsState.activeOverrideScopeLabel)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                         .lineLimit(2)
                 }
 
                 if settingsState.selectedScope == .global {
                     Text("全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                 } else if settingsState.canEditScopedOverrides {
                     VStack(spacing: 0) {
                         EditorScopedStepperSettingRow(
@@ -194,21 +184,21 @@ struct EditorSettingsView: View {
                             value: $settingsState.scopedTabWidth,
                             range: 2...8
                         )
-                        GlassDivider()
+                        settingsDivider
                         EditorScopedToggleSettingRow(
                             title: "Insert Spaces Override",
                             subtitle: "只覆盖当前作用域的空格 / Tab 策略。",
                             isEnabled: $settingsState.scopedUseSpacesEnabled,
                             isOn: $settingsState.scopedUseSpaces
                         )
-                        GlassDivider()
+                        settingsDivider
                         EditorScopedToggleSettingRow(
                             title: "Word Wrap Override",
                             subtitle: "只覆盖当前作用域的自动换行策略。",
                             isEnabled: $settingsState.scopedWrapLinesEnabled,
                             isOn: $settingsState.scopedWrapLines
                         )
-                        GlassDivider()
+                        settingsDivider
                         EditorScopedToggleSettingRow(
                             title: "Format On Save Override",
                             subtitle: "只覆盖当前作用域的保存时格式化策略。",
@@ -218,8 +208,8 @@ struct EditorSettingsView: View {
                     }
                 } else {
                     Text("当前还没有可用的 workspace 上下文。先打开一个项目，再回到这里设置 workspace override。")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                 }
             }
         }
@@ -228,15 +218,11 @@ struct EditorSettingsView: View {
     private var extensionEmptyStateCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: 8) {
-                GlassSectionHeader(
-                    icon: "slider.horizontal.3",
-                    title: "扩展设置",
-                    subtitle: "当前没有 editor 扩展向此页贡献设置项。"
-                )
+                AppSettingsSection(title: "扩展设置", subtitle: "当前没有 editor 扩展向此页贡献设置项。") {}
 
                 Text("后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textTertiary)
             }
         }
     }
@@ -245,10 +231,11 @@ struct EditorSettingsView: View {
         AppCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("没有匹配的设置项")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
                 Text("换一个关键词，或清空搜索查看全部 editor settings。")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textTertiary)
             }
         }
     }
@@ -256,20 +243,16 @@ struct EditorSettingsView: View {
     private func sectionCard(_ section: EditorSettingsSectionModel) -> some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: icon(for: section.id),
-                    title: section.title,
-                    subtitle: section.subtitle ?? ""
-                )
+                AppSettingsSection(title: section.title, subtitle: section.subtitle ?? "") {}
 
-                GlassDivider()
+                settingsDivider
 
                 VStack(spacing: 0) {
                     ForEach(section.entries) { entry in
                         entry.content(settingsState)
 
                         if entry.id != section.entries.last?.id {
-                            GlassDivider()
+                            settingsDivider
                         }
                     }
                 }
@@ -283,6 +266,12 @@ struct EditorSettingsView: View {
 
     private func searchableText(for entry: EditorSettingsEntryModel) -> String {
         ([entry.title, entry.subtitle ?? ""] + entry.keywords).joined(separator: " ")
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     private func icon(for sectionID: String) -> String {
@@ -320,21 +309,24 @@ private struct EditorSettingsEntryModel: Identifiable {
 }
 
 struct EditorScopedToggleSettingRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let subtitle: String
     @Binding var isEnabled: Bool
     @Binding var isOn: Bool
 
     var body: some View {
-        GlassRow {
+        AppSettingsRow {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
                         Text(subtitle)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textTertiary)
                     }
 
                     Spacer()
@@ -353,6 +345,8 @@ struct EditorScopedToggleSettingRow: View {
 }
 
 struct EditorScopedStepperSettingRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let subtitle: String
     @Binding var isEnabled: Bool
@@ -360,15 +354,16 @@ struct EditorScopedStepperSettingRow: View {
     let range: ClosedRange<Int>
 
     var body: some View {
-        GlassRow {
+        AppSettingsRow {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
                         Text(subtitle)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textTertiary)
                     }
 
                     Spacer()
@@ -379,7 +374,8 @@ struct EditorScopedStepperSettingRow: View {
 
                 Stepper(value: $value, in: range) {
                     Text("\(value) spaces")
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
                 .disabled(!isEnabled)
                 .opacity(isEnabled ? 1 : 0.45)

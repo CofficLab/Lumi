@@ -5,6 +5,7 @@ import SwiftUI
 /// 显示当前供应商 + 模型名称，点击弹出 ModelSelectorView 的 Popover。
 struct ModelSelectorToolbarButton: View {
     @EnvironmentObject private var llmVM: AppLLMVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
     /// Popover 显示状态
@@ -41,7 +42,9 @@ struct ModelSelectorToolbarButton: View {
 
     /// 当前显示的「供应商 + 模型」文案
     private var currentModelDisplayText: String {
-        let model = llmVM.currentModel
+        let preference = conversationVM.getModelPreference()
+        let providerId = preference?.providerId ?? llmVM.selectedProviderId
+        let model = preference?.model ?? llmVM.currentModel
         guard !model.isEmpty else {
             if llmVM.isAutoMode {
                 return "Auto"
@@ -50,7 +53,7 @@ struct ModelSelectorToolbarButton: View {
         }
 
         let displayModel: String
-        if let localProvider = llmVM.createProvider(id: llmVM.selectedProviderId) as? any SuperLocalLLMProvider,
+        if let localProvider = llmVM.createProvider(id: providerId) as? any SuperLocalLLMProvider,
            let name = localProvider.displayName(forModelId: model) {
             displayModel = name
         } else {
@@ -61,7 +64,7 @@ struct ModelSelectorToolbarButton: View {
             return "Auto · \(displayModel)"
         }
 
-        guard let providerType = llmVM.providerType(forId: llmVM.selectedProviderId) else {
+        guard let providerType = llmVM.providerType(forId: providerId) else {
             return displayModel
         }
         return "\(providerType.displayName) · \(displayModel)"

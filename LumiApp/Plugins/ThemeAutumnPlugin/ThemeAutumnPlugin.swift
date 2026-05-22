@@ -8,6 +8,7 @@ actor ThemeAutumnPlugin: SuperPlugin {
     static let iconName: String = "leaf"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 126 }
 
     nonisolated var instanceLabel: String { Self.id }

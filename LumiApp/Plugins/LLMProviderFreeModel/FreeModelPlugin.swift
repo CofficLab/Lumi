@@ -7,6 +7,7 @@ actor FreeModelPlugin: SuperPlugin {
     static let displayName = "FreeModel"
     static let description = "FreeModel LLM Gateway"
     static let iconName = "bolt.horizontal"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 11 }
     static let enable: Bool = true
 

@@ -22,6 +22,7 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "git"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 16 }
 
     static let shared = GitToolsPlugin()

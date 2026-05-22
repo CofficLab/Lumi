@@ -51,12 +51,6 @@ struct ConversationTimelineView: View, SuperLog {
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
             refreshMessageCount()
         }
-        .onChange(of: llmVM.currentModel) { _, _ in
-            refreshMessageCount()
-        }
-        .onChange(of: llmVM.selectedProviderId) { _, _ in
-            refreshMessageCount()
-        }
         .onMessageSaved { message, conversationId in
             // 只刷新当前选中对话的消息
             guard conversationId == conversationVM.selectedConversationId else { return }
@@ -75,9 +69,10 @@ struct ConversationTimelineView: View, SuperLog {
 
     /// 获取当前模型的上下文窗口大小
     private var currentModelContextLimit: Int {
-        timelineService.contextLimit(
-            providerId: llmVM.selectedProviderId,
-            model: llmVM.currentModel,
+        let preference = conversationVM.getModelPreference()
+        return timelineService.contextLimit(
+            providerId: preference?.providerId ?? llmVM.selectedProviderId,
+            model: preference?.model ?? llmVM.currentModel,
             providers: llmVM.availableProviders
         )
     }

@@ -7,6 +7,7 @@ actor OpenAIPlugin: SuperPlugin {
     static let displayName = "OpenAI"
     static let description = "OpenAI GPT Models"
     static let iconName = "star.circle"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

@@ -14,6 +14,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Submit", table: "AgentChat")
     static let description = String(localized: "Send or stop chat messages", table: "AgentChat")
     static let iconName = "paperplane"
+    static var category: PluginCategory { .agent }
     static var order: Int { 86 }
     nonisolated static let enable: Bool = true
     static let shared = ChatSubmitPlugin()

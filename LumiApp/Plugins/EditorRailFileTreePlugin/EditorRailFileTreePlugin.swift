@@ -18,6 +18,7 @@ actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
         table: "EditorRailFileTree")
     static let iconName: String = "folder"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }

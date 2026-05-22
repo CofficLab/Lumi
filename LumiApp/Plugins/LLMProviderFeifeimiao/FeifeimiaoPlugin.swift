@@ -7,6 +7,7 @@ actor FeifeimiaoPlugin: SuperPlugin {
     static let displayName = "Feifeimiao"
     static let description = "Feifeimiao LLM API"
     static let iconName = "wind"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

@@ -18,6 +18,7 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
         table: "EditorOutlineRail")
     static let iconName: String = "list.bullet.indent"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }

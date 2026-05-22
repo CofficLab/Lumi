@@ -13,6 +13,7 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     static let displayName = String(localized: "MCP Tools", table: "AgentMCPTools")
     static let description = String(localized: "MCP-backed tools (hidden)", table: "AgentMCPTools")
     static let iconName = "server.rack"
+    static var category: PluginCategory { .agent }
     static var order: Int { 60 }
     static let enable: Bool = true
 

@@ -16,6 +16,7 @@ actor ScreenshotPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Screenshot", table: "AgentChat")
     static let description = String(localized: "Capture screen region as chat attachment", table: "AgentChat")
     static let iconName = "crop"
+    static var category: PluginCategory { .integration }
     static var order: Int { 85 }
     nonisolated static let enable: Bool = true
     static let shared = ScreenshotPlugin()

@@ -14,6 +14,7 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Mode", table: "ChatMode")
     static let description = String(localized: "Switch between Chat and Build modes", table: "ChatMode")
     static let iconName = "arrow.triangle.2.circlepath"
+    static var category: PluginCategory { .agent }
     static var order: Int { 83 }
     nonisolated static let enable: Bool = true
     static let shared = ChatModePlugin()

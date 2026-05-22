@@ -19,6 +19,7 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Skills", table: "Skill")
     static let description = String(localized: "Load domain skills from .agent/skills/ directory", table: "Skill")
     static let iconName = "sparkles"
+    static var category: PluginCategory { .agent }
     static var order: Int { 51 }
     static let enable: Bool = true
     static let isConfigurable: Bool = false

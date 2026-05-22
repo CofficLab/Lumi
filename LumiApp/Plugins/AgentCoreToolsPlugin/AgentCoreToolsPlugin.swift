@@ -13,6 +13,7 @@ actor AgentCoreToolsPlugin: SuperPlugin {
     static let iconName: String = "wrench.and.screwdriver"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .agent }
     static var order: Int { 0 }
 
     static let shared = AgentCoreToolsPlugin()
