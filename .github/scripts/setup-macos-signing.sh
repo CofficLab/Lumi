@@ -86,6 +86,7 @@ setup_certificates() {
 
     # 导入证书到钥匙串
     security import "$CERTIFICATE_PATH" -P "$BUILD_CERTIFICATE_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+    security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
     security list-keychain -d user -s "$KEYCHAIN_PATH"
 
     # 导出环境变量

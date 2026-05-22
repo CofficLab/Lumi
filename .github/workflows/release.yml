@@ -275,6 +275,7 @@ jobs:
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
+          spctl --assess --type open --context context:primary-signature -vv "$file"
 
       - name: Prepare Updates Directory
         run: |
@@ -450,5 +451,17 @@ jobs:
           git config --global user.email "action@github.com"
           git fetch origin pre
           git checkout pre
-          git rebase origin/main
-          git push origin pre --force-with-lease
+          if ! git rebase origin/main; then
+            echo "## Rebase pre on main failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The release completed, but the pre branch could not be rebased automatically." >> "$GITHUB_STEP_SUMMARY"
+            echo "Resolve the conflict locally and push pre manually." >> "$GITHUB_STEP_SUMMARY"
+            git rebase --abort || true
+            exit 1
+          fi
+          if ! git push origin pre --force-with-lease; then
+            echo "## Push pre after rebase failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The release completed, but the rebased pre branch could not be pushed." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
