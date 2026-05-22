@@ -16,6 +16,9 @@ struct SettingView: View {
     /// 侧边栏宽度
     private let sidebarWidth: CGFloat = 220
 
+    /// 插件分类是否展开
+    @State private var isPluginCategoryExpanded: Bool = true
+
     /// 从 AppSettingStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
         guard let saved = AppSettingStore.loadSettingsSelection() else {
@@ -29,6 +32,10 @@ struct SettingView: View {
             }
         case "plugin":
             return .plugin(saved.value)
+        case "pluginCategory":
+            if let category = PluginCategory(rawValue: saved.value) {
+                return .pluginCategory(category)
+            }
         default:
             break
         }
@@ -47,6 +54,8 @@ struct SettingView: View {
             AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
         case let .plugin(id):
             AppSettingStore.saveSettingsSelection(type: "plugin", value: id)
+        case let .pluginCategory(category):
+            AppSettingStore.saveSettingsSelection(type: "pluginCategory", value: category.rawValue)
         }
     }
 
@@ -67,6 +76,11 @@ struct SettingView: View {
         pluginProvider.getPluginSettingsViews()
     }
 
+    /// 按分类分组的可配置插件
+    private var groupedPlugins: [(category: PluginCategory, plugins: [any SuperPlugin])] {
+        pluginProvider.getConfigurablePluginsGroupedByCategory()
+    }
+
     /// 侧边栏内容视图
     private var sidebarView: some View {
         VStack(spacing: 0) {
@@ -78,13 +92,27 @@ struct SettingView: View {
             // 设置列表
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    // 核心设置项
-                    ForEach(SettingTab.allCases, id: \.self) { tab in
-                        SidebarItemView(
-                            label: Label(tab.rawValue, systemImage: tab.icon),
-                            isSelected: selection == .core(tab)
-                        ) {
-                            selection = .core(tab)
+                    // 核心设置项（除"插件管理"外）
+                    ForEach(SettingTab.allCases.filter { $0 != .plugins }, id: \.self) { tab in
+                        // 在"插件管理"位置前插入可展开的插件分类组
+                        if tab == SettingTab(rawValue: "键盘快捷键") {
+                            // 键盘快捷键之后插入插件管理
+                            SidebarItemView(
+                                label: Label(tab.rawValue, systemImage: tab.icon),
+                                isSelected: selection == .core(tab)
+                            ) {
+                                selection = .core(tab)
+                            }
+
+                            // 插件管理：可展开的分组节点
+                            pluginCategorySection
+                        } else {
+                            SidebarItemView(
+                                label: Label(tab.rawValue, systemImage: tab.icon),
+                                isSelected: selection == .core(tab)
+                            ) {
+                                selection = .core(tab)
+                            }
                         }
                     }
 
@@ -111,6 +139,55 @@ struct SettingView: View {
         .background(.background.opacity(0.6))
     }
 
+    /// 插件管理可展开分组区域
+    private var pluginCategorySection: some View {
+        VStack(spacing: 0) {
+            // "插件管理"父节点
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isPluginCategoryExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "puzzlepiece.extension")
+                        .frame(width: 18)
+
+                    Text("插件管理")
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .rotationEffect(.degrees(isPluginCategoryExpanded ? 90 : 0))
+                        .foregroundColor(Color(hex: "98989E"))
+                }
+                .font(.system(size: 13))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // 展开的分类子项
+            if isPluginCategoryExpanded {
+                ForEach(groupedPlugins, id: \.category) { group in
+                    SidebarItemView(
+                        label: Label {
+                            Text(group.category.displayName)
+                        } icon: {
+                            Image(systemName: group.category.systemImage)
+                        },
+                        isSelected: selection == .pluginCategory(group.category)
+                    ) {
+                        selection = .pluginCategory(group.category)
+                    }
+                    .padding(.leading, 16)
+                }
+            }
+        }
+    }
+
     /// 详情区域视图
     private var detailView: some View {
         ZStack {
@@ -130,6 +207,8 @@ struct SettingView: View {
                             Text("插件未找到或已禁用")
                                 .foregroundColor(.secondary)
                         }
+                    case let .pluginCategory(category):
+                        PluginCategorySettingsView(category: category)
                     }
                 } else {
                     Text("请选择设置项")

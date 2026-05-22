@@ -1,7 +1,10 @@
 import SwiftUI
 import LumiUI
 
-/// 插件设置视图：控制各个插件的启用/禁用状态
+/// 插件设置总览视图：展示所有分类的摘要卡片
+///
+/// 从设置界面侧边栏的各分类子项可以直接进入分类详情页，
+/// 此总览页展示所有分类的概览信息，方便用户快速了解插件分布。
 struct PluginSettingsView: View {
     /// 插件设置存储
     private let settingsStore = AppPluginSettingsVM.shared
@@ -20,10 +23,10 @@ struct PluginSettingsView: View {
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // 按分类分组展示插件列表
+                VStack(alignment: .leading, spacing: 16) {
+                    // 按分类展示摘要卡片
                     ForEach(groupedPlugins, id: \.category) { group in
-                        categoryCard(for: group)
+                        categorySummaryCard(for: group)
                     }
 
                     // 空状态卡片
@@ -35,6 +38,9 @@ struct PluginSettingsView: View {
                 }
                 .padding(.horizontal, 24)
             }
+
+            // 底部统计栏
+            overallStatsBar
         }
         .navigationTitle("插件管理")
         .onAppear {
@@ -49,48 +55,44 @@ struct PluginSettingsView: View {
             GlassSectionHeader(
                 icon: "puzzlepiece.extension.fill",
                 title: "插件管理",
-                subtitle: "启用或禁用应用的插件功能"
+                subtitle: "启用或禁用应用的插件功能。在左侧选择分类查看详情。"
             )
         }
     }
 
-    // MARK: - Category Card
+    // MARK: - Category Summary Card
 
-    private func categoryCard(for group: (category: PluginCategory, plugins: [any SuperPlugin])) -> some View {
+    private func categorySummaryCard(for group: (category: PluginCategory, plugins: [any SuperPlugin])) -> some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 0) {
-                // 分类标题
-                GlassSectionHeader(
-                    icon: group.category.systemImage,
-                    title: group.category.displayName,
-                    iconColor: Color(hex: "7C6FFF"),
-                    spacing: 8
-                )
-                .padding(.bottom, 12)
-
-                // 插件列表
-                ForEach(Array(group.plugins.enumerated()), id: \.element.instanceLabel) { index, plugin in
-                    let pluginType = type(of: plugin)
-                    let pluginId = plugin.instanceLabel
-
-                    PluginToggleRow(
-                        name: pluginType.displayName,
-                        description: pluginType.description,
-                        icon: pluginType.iconName,
-                        isEnabled: Binding(
-                            get: { pluginStates[pluginId, default: true] },
-                            set: { newValue in
-                                pluginStates[pluginId] = newValue
-                                settingsStore.setPluginEnabled(pluginId, enabled: newValue)
-                                AppLogger.core.info("Plugin '\(pluginId)' is now \(newValue ? "enabled" : "disabled")")
-                            }
-                        )
+            HStack(spacing: 16) {
+                // 分类图标
+                Image(systemName: group.category.systemImage)
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "7C6FFF").opacity(0.1))
                     )
 
-                    if index < group.plugins.count - 1 {
-                        GlassDivider()
-                    }
+                // 分类信息
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(group.category.displayName)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+
+                    Text("\(group.plugins.count) 个插件 · \(enabledCount(for: group.plugins) ) 个已启用")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                 }
+
+                Spacer()
+
+                // 启用率进度环
+                MiniProgressRing(
+                    total: group.plugins.count,
+                    enabled: enabledCount(for: group.plugins)
+                )
             }
         }
     }
@@ -121,11 +123,36 @@ struct PluginSettingsView: View {
         }
     }
 
+    // MARK: - Overall Stats Bar
+
+    private var overallStatsBar: some View {
+        HStack {
+            Spacer()
+
+            let total = groupedPlugins.reduce(0) { $0 + $1.plugins.count }
+            let enabled = groupedPlugins.reduce(0) { $0 + enabledCount(for: $1.plugins) }
+
+            Text("共 \(total) 个插件 · \(enabled) 个已启用 · \(groupedPlugins.count) 个分类")
+                .font(.system(size: 11))
+                .foregroundColor(Color(hex: "98989E"))
+
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 24)
+        .background(.bar)
+    }
+
     // MARK: - Data
 
     /// 获取按分类分组的可配置插件
     private var groupedPlugins: [(category: PluginCategory, plugins: [any SuperPlugin])] {
         pluginProvider.getConfigurablePluginsGroupedByCategory()
+    }
+
+    /// 计算一组插件中已启用的数量
+    private func enabledCount(for plugins: [any SuperPlugin]) -> Int {
+        plugins.filter { pluginStates[$0.instanceLabel, default: true] }.count
     }
 
     /// 加载插件状态
@@ -139,6 +166,41 @@ struct PluginSettingsView: View {
         pluginStates = states
     }
 }
+
+// MARK: - Mini Progress Ring
+
+/// 小型进度环，显示启用率
+private struct MiniProgressRing: View {
+    let total: Int
+    let enabled: Int
+
+    private var ratio: CGFloat {
+        guard total > 0 else { return 0 }
+        return CGFloat(enabled) / CGFloat(total)
+    }
+
+    var body: some View {
+        ZStack {
+            // 背景圆环
+            Circle()
+                .stroke(Color(hex: "98989E").opacity(0.2), lineWidth: 3)
+
+            // 进度圆环
+            Circle()
+                .trim(from: 0, to: ratio)
+                .stroke(Color(hex: "7C6FFF"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            // 百分比文字
+            Text("\(Int(ratio * 100))%")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundColor(Color(hex: "7C6FFF"))
+        }
+        .frame(width: 32, height: 32)
+    }
+}
+
+// MARK: - Plugin Toggle Row
 
 /// 插件开关行视图
 struct PluginToggleRow: View {

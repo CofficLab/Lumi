@@ -55,4 +55,6 @@ enum SettingTab: String, CaseIterable, Hashable {
 enum SettingsSelection: Hashable {
     case core(SettingTab)
     case plugin(String)
+    /// 插件分类页
+    case pluginCategory(PluginCategory)
 }
