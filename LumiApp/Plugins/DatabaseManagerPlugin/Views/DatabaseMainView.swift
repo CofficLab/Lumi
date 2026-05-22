@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct DatabaseMainView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel = DatabaseViewModel()
     @State private var showAddConfigSheet = false
     
@@ -10,8 +12,8 @@ struct DatabaseMainView: View {
             // Sidebar
             VStack(alignment: .leading) {
                 Text(String(localized: "Connections", table: "DatabaseManager"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .padding(.horizontal)
                     .padding(.top)
                 
@@ -22,7 +24,7 @@ struct DatabaseMainView: View {
                         Spacer()
                         if viewModel.selectedConfig?.id == config.id && viewModel.isConnected {
                             Circle()
-                                .fill(Color(hex: "30D158"))
+                                .fill(theme.success)
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -49,8 +51,8 @@ struct DatabaseMainView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text(String(localized: "Keys", table: "DatabaseManager"))
-                                            .font(.system(size: 15, weight: .medium))
-                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                            .font(.appBodyEmphasized)
+                                            .foregroundColor(theme.textPrimary)
                                         Spacer()
                                         AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadRedisKeys() } })
                                     }
@@ -65,15 +67,15 @@ struct DatabaseMainView: View {
                                     .frame(minHeight: 120, maxHeight: 200)
                                 }
                             }
-                            GlassDivider()
+                            settingsDivider
                         }
                         if viewModel.selectedConfig?.type == .sqlite {
                             AppCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text(String(localized: "Tables", table: "DatabaseManager"))
-                                            .font(.system(size: 15, weight: .medium))
-                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                            .font(.appBodyEmphasized)
+                                            .foregroundColor(theme.textPrimary)
                                         Spacer()
                                         AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadSQLiteTables() } })
                                     }
@@ -88,14 +90,14 @@ struct DatabaseMainView: View {
                                     .frame(minHeight: 120, maxHeight: 200)
                                 }
                             }
-                            GlassDivider()
+                            settingsDivider
                         }
                         // Query Editor
                         TextEditor(text: $viewModel.queryText)
                             .font(.monospaced(.body)())
                             .padding(8)
                             .frame(minHeight: 100, maxHeight: 200)
-                            .border(Color(hex: "98989E").opacity(0.2))
+                            .border(theme.appSubtleBorder)
                         
                         // Toolbar
                         HStack {
@@ -113,30 +115,30 @@ struct DatabaseMainView: View {
                         .padding(8)
                         .background(Material.regularMaterial)
                         
-                        GlassDivider()
+                        settingsDivider
                         
                         // Results
                         if let error = viewModel.errorMessage {
                             Text(error)
-                                .foregroundColor(Color(hex: "FF453A"))
+                                .foregroundColor(theme.error)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
                             Text(String(localized: "No results", table: "DatabaseManager"))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
                 } else {
                     VStack {
                         Image(systemName: "database")
-                            .font(.system(size: 48))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appLargeTitle)
+                            .foregroundColor(theme.textSecondary)
                         Text(String(localized: "Select a database to connect", table: "DatabaseManager"))
-                            .font(.title2)
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appTitle)
+                            .foregroundColor(theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -146,9 +148,17 @@ struct DatabaseMainView: View {
             AddConnectionView(viewModel: viewModel, isPresented: $showAddConfigSheet)
         }
     }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
+    }
 }
 
 struct QueryResultView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let result: QueryResult
     
     var body: some View {
@@ -158,11 +168,11 @@ struct QueryResultView: View {
                 HStack(spacing: 0) {
                     ForEach(result.columns, id: \.self) { col in
                         Text(col)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
                             .padding(8)
                             .frame(width: 120, alignment: .leading)
-                            .border(Color(hex: "98989E").opacity(0.2))
+                            .border(theme.appSubtleBorder)
                     }
                 }
                 .background(Material.regularMaterial)
@@ -176,10 +186,10 @@ struct QueryResultView: View {
                                 let text = content(for: row[colIndex])
                                 Text(text)
                                     .font(.monospaced(.body)())
-                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                    .foregroundColor(theme.textPrimary)
                                     .padding(8)
                                     .frame(width: 160, alignment: .leading)
-                                    .border(Color(hex: "98989E").opacity(0.1))
+                                    .border(theme.appSubtleBorder.opacity(0.7))
                                     .contextMenu {
                                         Button(String(localized: "Copy", table: "DatabaseManager")) {
                                             NSPasteboard.general.clearContents()
@@ -207,6 +217,8 @@ struct QueryResultView: View {
 }
 
 struct AddConnectionView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var viewModel: DatabaseViewModel
     @Binding var isPresented: Bool
     
@@ -225,8 +237,8 @@ struct AddConnectionView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(String(localized: "Add Connection", table: "DatabaseManager"))
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appTitle)
+                .foregroundColor(theme.textPrimary)
             
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
@@ -234,7 +246,7 @@ struct AddConnectionView: View {
                     
                     HStack {
                         Text(String(localized: "Database Type", table: "DatabaseManager"))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .foregroundColor(theme.textSecondary)
                         Spacer()
                         Picker("", selection: $type) {
                             ForEach(DatabaseType.allCases, id: \.self) { t in
@@ -310,9 +322,9 @@ struct AddConnectionView: View {
             if let msg = testMessage {
                 HStack {
                     Image(systemName: testSuccess ? "checkmark.circle" : "xmark.octagon")
-                        .foregroundColor(testSuccess ? Color(hex: "30D158") : Color(hex: "FF453A"))
+                        .foregroundColor(testSuccess ? theme.success : theme.error)
                     Text(msg)
-                        .foregroundColor(testSuccess ? Color(hex: "30D158") : Color(hex: "FF453A"))
+                        .foregroundColor(testSuccess ? theme.success : theme.error)
                     if isTesting {
                         Spacer()
                         ProgressView().scaleEffect(0.5)
