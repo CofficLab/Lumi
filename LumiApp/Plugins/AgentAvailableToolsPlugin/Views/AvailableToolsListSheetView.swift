@@ -3,6 +3,8 @@ import LumiUI
 
 /// 可用工具列表详情视图（在 popover 中展示）
 struct AvailableToolsListDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject var conversationTurnServices: AppConversationTurnVM
     @State private var query = ""
     @State private var selectedLanguage: LanguagePreference = .english
@@ -40,14 +42,14 @@ extension AvailableToolsListDetailView {
     private var headerTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appTitle)
+                .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
 
             Text(toolsCountText)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         }
@@ -91,7 +93,7 @@ extension AvailableToolsListDetailView {
             }
             .padding(.vertical, 6)
         }
-        .background(Color.adaptive(light: "FFFFFF", dark: "14141A").opacity(0.82))
+        .background(theme.surface.opacity(0.82))
         .frame(minHeight: 340, maxHeight: 520)
     }
 
@@ -117,16 +119,16 @@ extension AvailableToolsListDetailView {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(tool.name)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .textSelection(.enabled)
                 Spacer()
             }
 
             if !tool.description(for: selectedLanguage).isEmpty {
                 Text(tool.description(for: selectedLanguage))
-                    .font(.system(size: 12.5, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .textSelection(.enabled)
                     .lineLimit(3)
                     .lineSpacing(2)
