@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LumiUI
 
 /// 菜单栏控制器
 @MainActor
@@ -391,11 +392,13 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 清理全局事件监听器。
     func popoverDidClose(_ notification: Notification) {
+        HoverCoordinator.shared.closeAll()
         removeGlobalEventMonitor()
     }
 
     /// 关闭弹窗
     private func closePopover() {
+        HoverCoordinator.shared.closeAll()
         popover?.performClose(nil)
         removeGlobalEventMonitor()
     }
