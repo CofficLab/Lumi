@@ -15,16 +15,16 @@ import ToolKit
 final class WindowPermissionHandlingVM: ObservableObject {
     private let permissionRequestViewModel: WindowPermissionRequestVM
     private let chatHistoryService: ChatHistoryService
-    private let toolExecutionService: ToolExecutionService
+    private let toolService: ToolService
 
     init(
         permissionRequestViewModel: WindowPermissionRequestVM,
         chatHistoryService: ChatHistoryService,
-        toolExecutionService: ToolExecutionService
+        toolService: ToolService
     ) {
         self.permissionRequestViewModel = permissionRequestViewModel
         self.chatHistoryService = chatHistoryService
-        self.toolExecutionService = toolExecutionService
+        self.toolService = toolService
     }
 
     func respondToPermissionRequest(allowed: Bool) async {
@@ -51,7 +51,7 @@ final class WindowPermissionHandlingVM: ObservableObject {
         permissionRequestViewModel.setPendingPermissionRequest(nil)
 
         if let next = calls.first(where: { $0.authorizationState.needsAuthorizationPrompt }) {
-            let risk = await toolExecutionService.evaluateRisk(toolName: next.name, arguments: next.arguments)
+            let risk = toolService.evaluateRisk(toolName: next.name, argumentsJSON: next.arguments)
             permissionRequestViewModel.setPendingPermissionRequest(
                 PermissionRequest(
                     toolName: next.name,

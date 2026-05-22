@@ -120,14 +120,35 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// 执行工具（JSON 字符串参数版本）
     func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext? = nil) async throws -> String {
-        let arguments: [String: Any]
-        if let data = argumentsJSON.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            arguments = json
-        } else {
-            arguments = [:]
+        try await executeTool(
+            named: name,
+            arguments: Self.parseToolArguments(from: argumentsJSON),
+            context: context
+        )
+    }
+
+    /// 执行工具调用
+    func executeTool(_ toolCall: ToolCall, context: ToolExecutionContext? = nil) async throws -> String {
+        let startTime = Date()
+        try context?.checkCancellation()
+
+        guard hasTool(named: toolCall.name) else {
+            throw ToolExecutionError.toolNotFound(toolName: toolCall.name)
         }
-        return try await executeTool(named: name, arguments: arguments, context: context)
+
+        let result = try await executeTool(
+            named: toolCall.name,
+            argumentsJSON: toolCall.arguments,
+            context: context
+        )
+        try context?.checkCancellation()
+
+        if Self.verbose {
+            let duration = Date().timeIntervalSince(startTime)
+            AppLogger.core.info("\(Self.t)✅ 工具 \(toolCall.name) 执行完成 (耗时：\(String(format: "%.2f", duration))s)")
+        }
+
+        return result
     }
 
     /// 执行工具
@@ -170,14 +191,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     // MARK: - 权限相关
 
     func requiresPermission(toolName: String, argumentsJSON: String?) -> Bool {
-        let arguments: [String: Any]?
-        if let json = argumentsJSON,
-           let data = json.data(using: .utf8),
-           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            arguments = parsed
-        } else {
-            arguments = nil
-        }
+        let arguments = argumentsJSON.flatMap { Self.parseToolArgumentsDict(from: $0) }
         return requiresPermission(toolName: toolName, arguments: arguments)
     }
 
@@ -188,12 +202,45 @@ class ToolService: SuperLog, @unchecked Sendable {
         return tool.permissionRiskLevel(arguments: toolArgs).requiresPermission
     }
 
+    /// 评估命令风险等级；工具未注册或未声明时返回 `.high`。
+    func evaluateRisk(toolName: String, argumentsJSON: String) -> CommandRiskLevel {
+        let parsed = Self.parseToolArgumentsDict(from: argumentsJSON)
+        if let declared = declaredRiskLevel(toolName: toolName, arguments: parsed ?? [:]) {
+            return declared
+        }
+        return .high
+    }
+
     /// 获取工具定义声明的风险等级；工具未注册时返回 `nil`。
     func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
         guard let tool = tool(named: toolName) else { return nil }
         let rawArgs = arguments ?? [:]
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
+    }
+
+    /// 将工具参数字符串尽量解析为对象；失败时返回 nil。
+    static func parseToolArgumentsDict(from argumentsJSON: String) -> [String: Any]? {
+        let trimmed = argumentsJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
+            return nil
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) else {
+            return nil
+        }
+        if let dict = json as? [String: Any] {
+            return dict
+        }
+        if let str = json as? String,
+           let innerData = str.data(using: .utf8),
+           let inner = try? JSONSerialization.jsonObject(with: innerData) as? [String: Any] {
+            return inner
+        }
+        return nil
+    }
+
+    private static func parseToolArguments(from argumentsJSON: String) -> [String: Any] {
+        parseToolArgumentsDict(from: argumentsJSON) ?? [:]
     }
 
     deinit {

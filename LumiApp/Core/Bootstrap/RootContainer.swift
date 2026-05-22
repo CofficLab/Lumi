@@ -39,7 +39,6 @@ final class RootContainer: ObservableObject, SuperLog {
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
     let conversationTurnServices: AppConversationTurnVM
-    let toolExecutionService: ToolExecutionService
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
     
@@ -128,7 +127,6 @@ final class RootContainer: ObservableObject, SuperLog {
         self.gitVM = AppGitVM()
         self.agentSessionConfig = AppLLMVM(llmService: llmService)
         toolService.llmVM = agentSessionConfig
-        self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
         
         // ========================================

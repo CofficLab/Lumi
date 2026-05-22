@@ -227,7 +227,7 @@ struct MarketingRail: View {
             MarketingResultRow(file: "ToolCallExecutor.swift", line: "42", text: "execute pending tool calls")
             MarketingResultRow(file: "AgentTurnService.swift", line: "118", text: "await toolCallExecutor.run")
             MarketingResultRow(file: "PermissionRequest.swift", line: "9", text: "riskLevel: CommandRiskLevel")
-            MarketingResultRow(file: "ToolExecutionService.swift", line: "76", text: "authorizationState")
+            MarketingResultRow(file: "ToolService.swift", line: "76", text: "authorizationState")
         }
     }
 

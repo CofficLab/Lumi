@@ -10,7 +10,6 @@ final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
     nonisolated static let verbose: Bool = false
 
-    private let toolExecutionService: ToolExecutionService
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
@@ -18,14 +17,12 @@ final class ToolCallExecutor: SuperLog {
     private let conversationVM: WindowConversationVM
 
     init(
-        toolExecutionService: ToolExecutionService,
         toolService: ToolService,
         agentSessionConfig: AppLLMVM,
         permissionRequestVM: WindowPermissionRequestVM,
         conversationSendStatusVM: WindowConversationStatusVM,
         conversationVM: WindowConversationVM
     ) {
-        self.toolExecutionService = toolExecutionService
         self.toolService = toolService
         self.agentSessionConfig = agentSessionConfig
         self.permissionRequestVM = permissionRequestVM
@@ -46,7 +43,7 @@ final class ToolCallExecutor: SuperLog {
         let autoApproveRisk = agentSessionConfig.chatMode.autoApproveRisk
 
         for i in calls.indices {
-            let risk = evaluateRiskSync(toolName: calls[i].name, arguments: calls[i].arguments)
+            let risk = toolService.evaluateRisk(toolName: calls[i].name, argumentsJSON: calls[i].arguments)
 
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)🔨 工具：\(calls[i].name)，风险：\(risk.displayName)")
@@ -71,10 +68,7 @@ final class ToolCallExecutor: SuperLog {
             return false
         }
 
-        let risk = await toolExecutionService.evaluateRisk(
-            toolName: firstPending.name,
-            arguments: firstPending.arguments
-        )
+        let risk = toolService.evaluateRisk(toolName: firstPending.name, argumentsJSON: firstPending.arguments)
         let request = PermissionRequest(
             toolName: firstPending.name,
             argumentsString: firstPending.arguments,
@@ -119,7 +113,6 @@ final class ToolCallExecutor: SuperLog {
 
             if toolCall.authorizationState == .userRejected {
                 hadUserRejection = true
-                // 跳过被拒绝的工具，但仍记录一条结果
                 let resultMsg = ChatMessage(
                     role: .tool,
                     conversationId: conversationId,
@@ -144,9 +137,8 @@ final class ToolCallExecutor: SuperLog {
 
     // MARK: - 私有
 
-    /// 从工具参数 JSON 中提取 LLM 传入的 display_name 字段
     private func extractDisplayName(from argumentsJSON: String) -> String? {
-        guard let dict = Self.parseArgsDict(from: argumentsJSON),
+        guard let dict = ToolService.parseToolArgumentsDict(from: argumentsJSON),
               let name = dict["display_name"] as? String,
               !name.isEmpty else {
             return nil
@@ -194,7 +186,7 @@ final class ToolCallExecutor: SuperLog {
         do {
             let result = try await withTaskCancellationHandler {
                 try toolContext.checkCancellation()
-                return try await toolExecutionService.executeTool(toolCall, context: toolContext)
+                return try await toolService.executeTool(toolCall, context: toolContext)
             } onCancel: {
                 progressTask.cancel()
                 toolContext.cancel()
@@ -235,7 +227,7 @@ final class ToolCallExecutor: SuperLog {
             )
         } catch {
             progressTask.cancel()
-            resultMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
+            resultMsg = createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .failed(
@@ -249,6 +241,22 @@ final class ToolCallExecutor: SuperLog {
         }
 
         return resultMsg
+    }
+
+    private func createErrorMessage(for toolCall: ToolCall, error: Error, conversationId: UUID) -> ChatMessage {
+        let errorContent: String
+        if let toolError = error as? ToolExecutionError {
+            errorContent = toolError.localizedDescription
+        } else {
+            errorContent = "Error executing tool: \(error.localizedDescription)"
+        }
+
+        return ChatMessage(
+            role: .tool,
+            conversationId: conversationId,
+            content: errorContent,
+            toolCallID: toolCall.id
+        )
     }
 
     private func launchProgressReporter(
@@ -280,27 +288,6 @@ final class ToolCallExecutor: SuperLog {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
-    }
-
-    /// 同步风险评估（用于权限评估阶段，已有 MainActor 保证）
-    private func evaluateRiskSync(toolName: String, arguments: String) -> CommandRiskLevel {
-        if let declared = toolService.declaredRiskLevel(toolName: toolName, arguments: Self.parseArgsDict(from: arguments) ?? [:]) {
-            return declared
-        }
-        return .high
-    }
-
-    private static func parseArgsDict(from arguments: String) -> [String: Any]? {
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { return nil }
-        guard let json = try? JSONSerialization.jsonObject(with: data) else { return nil }
-        if let dict = json as? [String: Any] { return dict }
-        if let str = json as? String,
-           let innerData = str.data(using: .utf8),
-           let inner = try? JSONSerialization.jsonObject(with: innerData) as? [String: Any] {
-            return inner
-        }
-        return nil
     }
 
     private static func errorSummary(from error: Error) -> String {

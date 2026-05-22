@@ -181,7 +181,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         self.permissionHandlingVM = WindowPermissionHandlingVM(
             permissionRequestViewModel: permissionRequestVM,
             chatHistoryService: container.chatHistoryService,
-            toolExecutionService: container.toolExecutionService
+            toolService: container.toolService
         )
         self.conversationSendStatusVM = WindowConversationStatusVM()
         self.commandSuggestionVM = WindowCommandSuggestionVM(
