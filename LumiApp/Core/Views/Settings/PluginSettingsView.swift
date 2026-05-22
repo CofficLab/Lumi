@@ -6,6 +6,8 @@ import LumiUI
 /// 从设置界面侧边栏的各分类子项可以直接进入分类详情页，
 /// 此总览页展示所有分类的概览信息，方便用户快速了解插件分布。
 struct PluginSettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 插件设置存储
     private let settingsStore = AppPluginSettingsVM.shared
 
@@ -14,6 +16,8 @@ struct PluginSettingsView: View {
 
     /// 插件启用状态
     @State private var pluginStates: [String: Bool] = [:]
+
+    init() {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -67,23 +71,23 @@ struct PluginSettingsView: View {
             HStack(spacing: 16) {
                 // 分类图标
                 Image(systemName: group.category.systemImage)
-                    .font(.system(size: 20))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.primary)
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(hex: "7C6FFF").opacity(0.1))
+                            .fill(theme.appAccentSoftFill)
                     )
 
                 // 分类信息
                 VStack(alignment: .leading, spacing: 4) {
                     Text(group.category.displayName)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
                     Text("\(group.plugins.count) 个插件 · \(enabledCount(for: group.plugins) ) 个已启用")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                 }
 
                 Spacer()
@@ -104,16 +108,16 @@ struct PluginSettingsView: View {
             VStack(spacing: 24) {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 48))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
 
                 VStack(spacing: 4) {
                     Text("暂无可配置的插件")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
                     Text("当插件标记为可配置时，会在此处显示")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                 }
 
                 Spacer()
@@ -133,8 +137,8 @@ struct PluginSettingsView: View {
             let enabled = groupedPlugins.reduce(0) { $0 + enabledCount(for: $1.plugins) }
 
             Text("共 \(total) 个插件 · \(enabled) 个已启用 · \(groupedPlugins.count) 个分类")
-                .font(.system(size: 11))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
 
             Spacer()
         }
@@ -171,8 +175,15 @@ struct PluginSettingsView: View {
 
 /// 小型进度环，显示启用率
 private struct MiniProgressRing: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let total: Int
     let enabled: Int
+
+    init(total: Int, enabled: Int) {
+        self.total = total
+        self.enabled = enabled
+    }
 
     private var ratio: CGFloat {
         guard total > 0 else { return 0 }
@@ -183,18 +194,18 @@ private struct MiniProgressRing: View {
         ZStack {
             // 背景圆环
             Circle()
-                .stroke(Color(hex: "98989E").opacity(0.2), lineWidth: 3)
+                .stroke(theme.appStatusMutedFill, lineWidth: 3)
 
             // 进度圆环
             Circle()
                 .trim(from: 0, to: ratio)
-                .stroke(Color(hex: "7C6FFF"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .stroke(theme.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
 
             // 百分比文字
             Text("\(Int(ratio * 100))%")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundColor(Color(hex: "7C6FFF"))
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.primary)
         }
         .frame(width: 32, height: 32)
     }
@@ -204,33 +215,42 @@ private struct MiniProgressRing: View {
 
 /// 插件开关行视图
 struct PluginToggleRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let name: String
     let description: String
     let icon: String
     @Binding var isEnabled: Bool
+
+    init(name: String, description: String, icon: String, isEnabled: Binding<Bool>) {
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self._isEnabled = isEnabled
+    }
 
     var body: some View {
         GlassRow {
             HStack(spacing: 16) {
                 // 图标
                 Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.primary)
                     .frame(width: 32, height: 32)
                     .background(
                         Circle()
-                            .fill(Color(hex: "7C6FFF").opacity(0.1))
+                            .fill(theme.appAccentSoftFill)
                     )
 
                 // 信息
                 VStack(alignment: .leading, spacing: 4) {
                     Text(name)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
                     Text(description)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                 }
 
                 Spacer()
