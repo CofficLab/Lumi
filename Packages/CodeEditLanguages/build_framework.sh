@@ -63,10 +63,7 @@ xcodebuild \
 status "Zipping CodeLanguagesContainer.xcframework..."
 zip -r -q -y "$OUTPUT_PATH".zip "$OUTPUT_PATH"
 
-# remove the unzipped xcframework
-rm -rf "$OUTPUT_PATH"
-
-status "CodeLanguagesContainer.xcframework.zip created!"
+status "CodeLanguagesContainer.xcframework and CodeLanguagesContainer.xcframework.zip created!"
 
 # copy language queries to package resources
 # set path variables
