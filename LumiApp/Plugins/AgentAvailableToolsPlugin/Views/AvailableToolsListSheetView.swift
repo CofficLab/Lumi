@@ -14,9 +14,16 @@ struct AvailableToolsListDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            GlassDivider()
+        StatusBarPopoverScaffold(
+            title: String(localized: "Tools", table: "AgentAvailableToolsPlugin"),
+            systemImage: "wrench.and.screwdriver",
+            subtitle: toolsCountText
+        ) {
+            HStack(spacing: 10) {
+                languagePicker
+                searchField
+            }
+        } content: {
             content
         }
         .onAppear {
@@ -28,34 +35,6 @@ struct AvailableToolsListDetailView: View {
 // MARK: - View
 
 extension AvailableToolsListDetailView {
-    private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            headerTitle
-            Spacer()
-            languagePicker
-            searchField
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-    }
-
-    private var headerTitle: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
-                .font(.appTitle)
-                .foregroundColor(theme.textPrimary)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-
-            Text(toolsCountText)
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .frame(minWidth: 150, alignment: .leading)
-    }
-
     private var toolsCountText: String {
         String.localizedStringWithFormat(
             String(localized: "%lld tools available", table: "AgentAvailableToolsPlugin", comment: "Count of available tools"),
@@ -93,7 +72,7 @@ extension AvailableToolsListDetailView {
             }
             .padding(.vertical, 6)
         }
-        .background(theme.surface.opacity(0.82))
+        .appSurface(style: .subtle, cornerRadius: 8)
         .frame(minHeight: 340, maxHeight: 520)
     }
 

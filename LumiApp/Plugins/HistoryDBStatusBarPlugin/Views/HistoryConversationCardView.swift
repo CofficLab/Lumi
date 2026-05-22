@@ -1,26 +1,29 @@
 import SwiftUI
+import LumiUI
 
 /// 历史对话卡片视图
 ///
 /// 以卡片形式展示单个历史对话，包含标题、项目、消息数、供应商/模型、时间等信息。
 struct HistoryConversationCardView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let row: HistoryConversationRow
 
     var body: some View {
         HStack(spacing: 10) {
             // 左侧图标
             Image(systemName: "message.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.accentColor)
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.primary)
                 .frame(width: 28, height: 28)
-                .background(Color.accentColor.opacity(0.1))
+                .background(theme.primary.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
             // 中间内容
             VStack(alignment: .leading, spacing: 3) {
                 Text(row.title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -28,47 +31,47 @@ struct HistoryConversationCardView: View {
                     if row.projectId != "-" {
                         Label {
                             Text(row.projectId)
-                                .font(.system(size: 10))
+                                .font(.appMicro)
                                 .lineLimit(1)
                         } icon: {
                             Image(systemName: "folder")
-                                .font(.system(size: 8))
+                                .font(.appMicro)
                         }
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(theme.textSecondary)
                     }
 
                     if let providerId = row.providerId {
                         Label {
                             Text(providerId)
-                                .font(.system(size: 10))
+                                .font(.appMicro)
                                 .lineLimit(1)
                         } icon: {
                             Image(systemName: "server.rack")
-                                .font(.system(size: 8))
+                                .font(.appMicro)
                         }
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(theme.textSecondary)
                     }
 
                     if let model = row.model {
                         Label {
                             Text(model)
-                                .font(.system(size: 10))
+                                .font(.appMicro)
                                 .lineLimit(1)
                         } icon: {
                             Image(systemName: "cpu")
-                                .font(.system(size: 8))
+                                .font(.appMicro)
                         }
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(theme.textSecondary)
                     }
 
                     Label {
                         Text("\(row.messageCount)")
-                            .font(.system(size: 10))
+                            .font(.appMicro)
                     } icon: {
                         Image(systemName: "text.bubble")
-                            .font(.system(size: 8))
+                            .font(.appMicro)
                     }
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
                 }
             }
 
@@ -77,17 +80,16 @@ struct HistoryConversationCardView: View {
             // 右侧时间
             VStack(alignment: .trailing, spacing: 2) {
                 Text(row.updatedAt, style: .date)
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
                 Text(row.updatedAt, style: .time)
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color.adaptive(light: "F2F2F7", dark: "1C1C1E"))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }
 

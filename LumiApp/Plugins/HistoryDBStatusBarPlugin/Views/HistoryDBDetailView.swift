@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct HistoryDBDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel: HistoryDBBrowserViewModel
 
     init(chatHistoryVM: AppChatHistoryVM, conversationVM: WindowConversationVM) {
@@ -14,21 +16,31 @@ struct HistoryDBDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-
-            if viewModel.isLoading {
-                Spacer()
-                ProgressView(String(localized: "Loading...", table: "HistoryDBStatusBar"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Spacer()
-            } else {
-                contentView
+        StatusBarPopoverScaffold(
+            title: String(localized: "History Database Browser", table: "HistoryDBStatusBar"),
+            systemImage: "tablecells"
+        ) {
+            AppIconButton(systemImage: "arrow.clockwise") {
+                Task { await viewModel.reload() }
             }
+            .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
+        } content: {
+            VStack(alignment: .leading, spacing: 0) {
+                modeTabs
 
-            footer
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView(String(localized: "Loading...", table: "HistoryDBStatusBar"))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Spacer()
+                } else {
+                    contentView
+                }
+
+                footer
+            }
+            .frame(height: 740)
         }
-        .frame(height: 800)
         .task {
             await viewModel.reload()
         }
@@ -48,67 +60,41 @@ struct HistoryDBDetailView: View {
 
     // MARK: - Header
 
-    private var header: some View {
-        VStack(spacing: 0) {
-            // 标题行
-            HStack {
-                Image(systemName: "tablecells")
-                    .font(.system(size: 13))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text(String(localized: "History Database Browser", table: "HistoryDBStatusBar"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+    private var modeTabs: some View {
+        HStack(spacing: 0) {
+            tabButton(
+                title: String(localized: "Messages", table: "HistoryDBStatusBar"),
+                icon: "text.bubble",
+                mode: .messages
+            )
 
-                Spacer()
-
-                Button {
-                    Task { await viewModel.reload() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                }
-                .buttonStyle(.plain)
-                .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
-            }
-
-            GlassDivider()
-                .padding(.vertical, 6)
-
-            // Tab 切换
-            HStack(spacing: 0) {
-                tabButton(
-                    title: String(localized: "Messages", table: "HistoryDBStatusBar"),
-                    icon: "text.bubble",
-                    mode: .messages
-                )
-
-                tabButton(
-                    title: String(localized: "Conversations", table: "HistoryDBStatusBar"),
-                    icon: "message.fill",
-                    mode: .conversations
-                )
-            }
+            tabButton(
+                title: String(localized: "Conversations", table: "HistoryDBStatusBar"),
+                icon: "message.fill",
+                mode: .conversations
+            )
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
+        .padding(2)
+        .appSurface(style: .subtle, cornerRadius: 8)
         .padding(.bottom, 8)
     }
 
     private func tabButton(title: String, icon: String, mode: HistoryDBViewMode) -> some View {
-        Button {
+        let isSelected = viewModel.selectedMode == mode
+
+        return Button {
             viewModel.selectedMode = mode
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.appMicroEmphasized)
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appCaptionEmphasized)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
-            .background(viewModel.selectedMode == mode ? Color.accentColor.opacity(0.15) : Color.clear)
-            .foregroundColor(viewModel.selectedMode == mode ? Color.accentColor : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .background(isSelected ? theme.primary.opacity(0.15) : Color.clear)
+            .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
@@ -136,25 +122,25 @@ struct HistoryDBDetailView: View {
             Table(viewModel.messageRows) {
                 TableColumn(String(localized: "Conversation", table: "HistoryDBStatusBar")) { row in
                     Text(row.conversationTitle)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 100)
 
                 TableColumn(String(localized: "Role", table: "HistoryDBStatusBar")) { row in
                     Text(row.role)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 60, max: 80)
 
                 TableColumn(String(localized: "Model", table: "HistoryDBStatusBar")) { row in
                     Text(row.model)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 100)
 
                 TableColumn(String(localized: "Tokens", table: "HistoryDBStatusBar")) { row in
                     Text("\(row.tokens)")
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 50, max: 70)
 
@@ -163,13 +149,13 @@ struct HistoryDBDetailView: View {
                         Text(row.timestamp, style: .date)
                         Text(row.timestamp, style: .time)
                     }
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 130)
 
                 TableColumn(String(localized: "Content", table: "HistoryDBStatusBar")) { row in
                     Text(row.contentPreview)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 200)
             }
@@ -207,15 +193,14 @@ struct HistoryDBDetailView: View {
                     viewModel.totalCount
                 )
             )
-            .font(.system(size: 11))
-            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .font(.appMicro)
+            .foregroundColor(theme.textSecondary)
 
             Spacer()
 
-            Button(String(localized: "Prev", table: "HistoryDBStatusBar")) {
+            AppButton(String(localized: "Prev", table: "HistoryDBStatusBar"), size: .small) {
                 viewModel.previousPage()
             }
-            .font(.system(size: 11))
             .disabled(viewModel.currentPage <= 1)
 
             Text(
@@ -225,17 +210,15 @@ struct HistoryDBDetailView: View {
                     viewModel.totalPages
                 )
             )
-            .font(.system(size: 11))
-            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .font(.appMicro)
+            .foregroundColor(theme.textSecondary)
 
-            Button(String(localized: "Next", table: "HistoryDBStatusBar")) {
+            AppButton(String(localized: "Next", table: "HistoryDBStatusBar"), size: .small) {
                 viewModel.nextPage()
             }
-            .font(.system(size: 11))
             .disabled(viewModel.currentPage >= viewModel.totalPages)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.top, 8)
     }
 
     // MARK: - Empty

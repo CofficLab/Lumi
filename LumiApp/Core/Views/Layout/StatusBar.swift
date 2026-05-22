@@ -7,7 +7,6 @@ struct StatusBar: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeChromeTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()

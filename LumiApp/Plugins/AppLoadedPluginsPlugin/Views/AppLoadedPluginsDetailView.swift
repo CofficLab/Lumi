@@ -8,10 +8,17 @@ struct AppLoadedPluginsDetailView: View {
     @StateObject private var viewModel = AppLoadedPluginsViewModel()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            headerView
-            countView
-
+        StatusBarPopoverScaffold(
+            title: String(localized: "App Plugins", table: "AppLoadedPlugins"),
+            systemImage: "puzzlepiece.extension",
+            subtitle: countText
+        ) {
+            AppIconButton(
+                systemImage: "arrow.clockwise",
+                action: viewModel.refresh
+            )
+            .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
+        } content: {
             if viewModel.enabledPlugins.isEmpty {
                 emptyView
             } else {
@@ -25,42 +32,19 @@ struct AppLoadedPluginsDetailView: View {
 
     // MARK: - Subviews
 
-    private var headerView: some View {
-        HStack {
-            Text(String(localized: "App Plugins", table: "AppLoadedPlugins"))
-                .font(.appCallout)
-                .foregroundColor(theme.textPrimary)
-
-            Spacer()
-
-            Button {
-                viewModel.refresh()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
-        }
-    }
-
-    private var countView: some View {
-        Text(
-            String(
-                format: String(localized: "Loaded %lld plugin(s)", table: "AppLoadedPlugins"),
-                Int64(viewModel.enabledPlugins.count)
-            )
+    private var countText: String {
+        String(
+            format: String(localized: "Loaded %lld plugin(s)", table: "AppLoadedPlugins"),
+            Int64(viewModel.enabledPlugins.count)
         )
-        .font(.appMicro)
-        .foregroundColor(theme.textSecondary)
     }
 
     private var emptyView: some View {
-        Text(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
-            .font(.appCaption)
-            .foregroundColor(theme.textTertiary)
-            .padding(.vertical, 8)
+        AppEmptyState(
+            icon: "puzzlepiece.extension",
+            title: LocalizedStringKey(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
+        )
+        .frame(minHeight: 220)
     }
 
     private var pluginList: some View {
@@ -105,6 +89,6 @@ private struct AppLoadedPluginRowView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .appSurface(style: .custom(theme.appAccentSoftFill), cornerRadius: 8)
+        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }

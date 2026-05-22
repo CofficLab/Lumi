@@ -2,14 +2,14 @@ import SwiftUI
 import LumiUI
 
 struct ThemePickerDetailView: View {
+    @LumiUI.LumiTheme private var uiTheme: any LumiUITheme
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "Theme", table: "ThemeStatusBar"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
+        StatusBarPopoverScaffold(
+            title: String(localized: "Theme", table: "ThemeStatusBar"),
+            systemImage: "paintbrush"
+        ) {
             if themeVM.themes.isEmpty {
                 AppEmptyState(
                     icon: "paintbrush",
@@ -36,25 +36,21 @@ struct ThemePickerDetailView: View {
         }) {
             HStack(spacing: 10) {
                 Image(systemName: theme.iconName)
-                    .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(isSelected ? .white : uiTheme.textSecondary)
                     .frame(width: 20, height: 20)
                     .background(
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(isSelected ? theme.iconColor : Color(hex: "98989E").opacity(0.12))
+                            .fill(isSelected ? theme.iconColor : uiTheme.textTertiary.opacity(0.12))
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(theme.displayName)
-                        .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                        .foregroundColor(
-                            isSelected
-                                ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                                : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
-                        )
+                        .font(isSelected ? .appCaptionEmphasized : .appCaption)
+                        .foregroundColor(isSelected ? uiTheme.textPrimary : uiTheme.textSecondary)
                     Text(theme.description)
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appMicro)
+                        .foregroundColor(uiTheme.textTertiary)
                         .lineLimit(1)
                 }
 
@@ -62,7 +58,7 @@ struct ThemePickerDetailView: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.appMicroEmphasized)
                         .foregroundColor(theme.iconColor)
                 }
             }

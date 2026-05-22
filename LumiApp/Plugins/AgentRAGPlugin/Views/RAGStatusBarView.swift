@@ -360,6 +360,8 @@ struct RAGStatusBarView: View, SuperLog {
 
 /// RAG 状态详情视图（在 popover 中显示）
 struct RAGStatusDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let indexStatus: RAGIndexStatus?
     let isIndexing: Bool
     let progressEvent: RAGIndexProgressEvent?
@@ -367,22 +369,10 @@ struct RAGStatusDetailView: View {
     let isNotInitialized: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 标题
-            HStack(spacing: 8) {
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(hex: "7C6FFF"))
-
-                Text(String(localized: "RAG 索引状态", table: "RAG"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                Spacer()
-            }
-
-            Divider()
-
+        StatusBarPopoverScaffold(
+            title: String(localized: "RAG 索引状态", table: "RAG"),
+            systemImage: "doc.text.magnifyingglass"
+        ) {
             if isIndexing {
                 indexingView()
             } else if let status = indexStatus {
@@ -405,8 +395,8 @@ struct RAGStatusDetailView: View {
                     .scaleEffect(0.8)
 
                 Text(String(localized: "正在索引...", table: "RAG"))
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.primary)
             }
 
             if let event = progressEvent {
@@ -419,12 +409,12 @@ struct RAGStatusDetailView: View {
                     if !event.currentFilePath.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(String(localized: "当前文件", table: "RAG"))
-                                .font(.system(size: 11))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
 
                             Text((event.currentFilePath as NSString).lastPathComponent)
-                                .font(.system(size: 10))
-                                .foregroundColor(Color(hex: "98989E"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textTertiary)
                                 .lineLimit(2)
                         }
                     }
@@ -445,11 +435,11 @@ struct RAGStatusDetailView: View {
             if status.isStale {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(Color(hex: "FF9F0A"))
+                        .foregroundColor(theme.warning)
 
                     Text(String(localized: "索引已过期，建议重新索引", table: "RAG"))
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "FF9F0A"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.warning)
                 }
             }
         }
@@ -459,16 +449,16 @@ struct RAGStatusDetailView: View {
     private var notInitializedView: some View {
         VStack(spacing: 16) {
             Image(systemName: "poweroff")
-                .font(.system(size: 32))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.system(size: 32, weight: .regular))
+                .foregroundColor(theme.textTertiary)
 
             Text(String(localized: "RAG 索引未初始化", table: "RAG"))
-                .font(.system(size: 13))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textSecondary)
 
             Text(String(localized: "RAG 服务将在插件启用时自动初始化", table: "RAG"))
-                .font(.system(size: 11))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -478,17 +468,17 @@ struct RAGStatusDetailView: View {
     private var errorView: some View {
         VStack(spacing: 16) {
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 32))
-                .foregroundColor(Color(hex: "FF453A"))
+                .font(.system(size: 32, weight: .regular))
+                .foregroundColor(theme.error)
 
             Text(String(localized: "获取索引状态失败", table: "RAG"))
-                .font(.system(size: 13))
-                .foregroundColor(Color(hex: "FF453A"))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.error)
 
             if let error = errorMessage {
                 Text(error)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -502,8 +492,8 @@ struct RAGStatusDetailView: View {
                 .scaleEffect(0.8)
 
             Text(String(localized: "正在检查索引状态...", table: "RAG"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -534,18 +524,7 @@ struct RAGProgressRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .frame(width: 70, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Spacer()
-        }
+        StatusBarPopoverInfoRow(label: label, value: value)
     }
 }
 
@@ -555,17 +534,6 @@ struct RAGInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .frame(width: 70, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Spacer()
-        }
+        StatusBarPopoverInfoRow(label: label, value: value)
     }
 }
