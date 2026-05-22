@@ -1,23 +1,26 @@
 import SwiftUI
+import LumiUI
 
 /// 正在扫描相关文件状态视图
 struct AppManagerScanningView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     var body: some View {
         VStack(spacing: 16) {
             Spacer()
             
             VStack(spacing: 12) {
                 Image(systemName: "magnifyingglass.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appLargeTitle)
+                    .foregroundColor(theme.primary)
                     .symbolRenderingMode(.hierarchical)
                 
                 ProgressView()
                     .scaleEffect(1.2)
                 
                 Text(String(localized: "Scanning related files...", table: "AppManager"))
-                    .font(.subheadline)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
             }
             
             Spacer()
