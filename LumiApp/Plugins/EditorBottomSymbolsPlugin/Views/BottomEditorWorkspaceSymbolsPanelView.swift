@@ -1,6 +1,9 @@
+import LumiUI
 import SwiftUI
 
 struct BottomEditorWorkspaceSymbolsPanelView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
@@ -17,6 +20,8 @@ struct BottomEditorWorkspaceSymbolsPanelView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Text(String(localized: "Workspace symbols not available", table: "EditorBottomSymbols"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -26,7 +31,8 @@ struct BottomEditorWorkspaceSymbolsPanelView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(panelTitle)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Spacer(minLength: 0)
 
@@ -34,7 +40,8 @@ struct BottomEditorWorkspaceSymbolsPanelView: View {
                 service.performPanelCommand(.closeWorkspaceSymbolSearch)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
