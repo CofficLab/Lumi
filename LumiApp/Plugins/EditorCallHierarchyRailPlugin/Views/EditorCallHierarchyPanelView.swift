@@ -1,7 +1,9 @@
+import LumiUI
 import SwiftUI
 
 struct EditorCallHierarchyPanelView: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
@@ -19,8 +21,8 @@ struct EditorCallHierarchyPanelView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(panelTitle)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Spacer(minLength: 0)
 
@@ -28,8 +30,8 @@ struct EditorCallHierarchyPanelView: View {
                 service.performPanelCommand(.closeCallHierarchy)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -63,8 +65,8 @@ struct EditorCallHierarchyPanelView: View {
     private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
 
@@ -97,23 +99,23 @@ struct EditorCallHierarchyPanelView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(badge)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
+                    .background(theme.textPrimary.opacity(0.05))
                     .clipShape(Capsule())
             }
 
             if !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.system(size: 10))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -121,20 +123,17 @@ struct EditorCallHierarchyPanelView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
-        )
+        .appSurface(style: .custom(theme.textPrimary.opacity(0.05)), cornerRadius: 8)
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
+                .font(.appTitle)
+                .foregroundColor(theme.textTertiary)
             Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)
