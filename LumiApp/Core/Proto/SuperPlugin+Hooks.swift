@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 // MARK: - Agent Tools Default Implementation
 

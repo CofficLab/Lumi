@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 网页搜索工具
 ///

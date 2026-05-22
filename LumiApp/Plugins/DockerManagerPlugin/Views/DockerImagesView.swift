@@ -234,6 +234,8 @@ struct DockerImageDocument: FileDocument {
 }
 
 struct DockerImageRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let image: DockerImage
 
     var body: some View {
@@ -261,6 +263,8 @@ struct DockerImageRow: View {
 }
 
 struct DockerImageDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let image: DockerImage
     let detail: DockerInspect?
     let history: [DockerImageHistory]

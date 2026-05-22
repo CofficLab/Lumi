@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 关闭防休眠工具
 ///

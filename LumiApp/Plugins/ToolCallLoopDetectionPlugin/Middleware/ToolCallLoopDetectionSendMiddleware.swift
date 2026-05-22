@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 工具调用循环检测发送中间件
 ///

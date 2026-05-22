@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import SwiftData
 
 /// 工具调用实体

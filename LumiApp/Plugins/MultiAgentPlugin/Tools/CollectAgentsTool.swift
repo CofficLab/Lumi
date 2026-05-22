@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 收集子智能体结果工具
 ///

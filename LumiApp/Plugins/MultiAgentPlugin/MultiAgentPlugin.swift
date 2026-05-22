@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import os
 
 /// 多智能体插件

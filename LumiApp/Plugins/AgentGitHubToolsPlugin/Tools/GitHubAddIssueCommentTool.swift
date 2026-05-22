@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import GitHubKit
 
 /// GitHub 添加 Issue 评论工具

@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 流式响应数据块
 struct StreamChunk: Sendable {

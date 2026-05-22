@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 待发送图片附件
 enum AgentPendingImageAttachment: Identifiable, Equatable {

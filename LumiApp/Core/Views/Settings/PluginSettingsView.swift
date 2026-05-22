@@ -43,8 +43,9 @@ struct PluginSettingsView: View {
                 .padding(.horizontal, 24)
             }
 
-            // 底部统计栏
-            overallStatsBar
+            AppSettingsStatsBar(
+                "共 \(overallTotal) 个插件 · \(overallEnabled) 个已启用 · \(groupedPlugins.count) 个分类"
+            )
         }
         .navigationTitle("插件管理")
         .onAppear {
@@ -89,7 +90,7 @@ struct PluginSettingsView: View {
                 Spacer()
 
                 // 启用率进度环
-                MiniProgressRing(
+                AppMiniProgressRing(
                     total: group.plugins.count,
                     enabled: enabledCount(for: group.plugins)
                 )
@@ -123,27 +124,17 @@ struct PluginSettingsView: View {
         }
     }
 
-    // MARK: - Overall Stats Bar
+    // MARK: - Data
 
-    private var overallStatsBar: some View {
-        HStack {
-            Spacer()
-
-            let total = groupedPlugins.reduce(0) { $0 + $1.plugins.count }
-            let enabled = groupedPlugins.reduce(0) { $0 + enabledCount(for: $1.plugins) }
-
-            Text("共 \(total) 个插件 · \(enabled) 个已启用 · \(groupedPlugins.count) 个分类")
-                .font(.appMicro)
-                .foregroundColor(theme.textTertiary)
-
-            Spacer()
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 24)
-        .background(.bar)
+    private var overallTotal: Int {
+        groupedPlugins.reduce(0) { $0 + $1.plugins.count }
     }
 
-    // MARK: - Data
+    private var overallEnabled: Int {
+        groupedPlugins.reduce(0) { $0 + enabledCount(for: $1.plugins) }
+    }
+
+    // MARK: - Data Helpers
 
     /// 获取按分类分组的可配置插件
     private var groupedPlugins: [(category: PluginCategory, plugins: [any SuperPlugin])] {
@@ -164,98 +155,6 @@ struct PluginSettingsView: View {
             states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
         }
         pluginStates = states
-    }
-}
-
-// MARK: - Mini Progress Ring
-
-/// 小型进度环，显示启用率
-private struct MiniProgressRing: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    let total: Int
-    let enabled: Int
-
-    init(total: Int, enabled: Int) {
-        self.total = total
-        self.enabled = enabled
-    }
-
-    private var ratio: CGFloat {
-        guard total > 0 else { return 0 }
-        return CGFloat(enabled) / CGFloat(total)
-    }
-
-    var body: some View {
-        ZStack {
-            // 背景圆环
-            Circle()
-                .stroke(theme.appStatusMutedFill, lineWidth: 3)
-
-            // 进度圆环
-            Circle()
-                .trim(from: 0, to: ratio)
-                .stroke(theme.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            // 百分比文字
-            Text("\(Int(ratio * 100))%")
-                .font(.appMicroEmphasized)
-                .foregroundColor(theme.primary)
-        }
-        .frame(width: 32, height: 32)
-    }
-}
-
-// MARK: - Plugin Toggle Row
-
-/// 插件开关行视图
-struct PluginToggleRow: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    let name: String
-    let description: String
-    let icon: String
-    @Binding var isEnabled: Bool
-
-    init(name: String, description: String, icon: String, isEnabled: Binding<Bool>) {
-        self.name = name
-        self.description = description
-        self.icon = icon
-        self._isEnabled = isEnabled
-    }
-
-    var body: some View {
-        AppSettingsRow {
-            HStack(spacing: 16) {
-                // 图标
-                Image(systemName: icon)
-                    .font(.appTitle)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        Circle()
-                            .fill(theme.appAccentSoftFill)
-                    )
-
-                // 信息
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(name)
-                        .font(.appBodyEmphasized)
-                        .foregroundColor(theme.textPrimary)
-
-                    Text(description)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textTertiary)
-                }
-
-                Spacer()
-
-                // 开关
-                Toggle("", isOn: $isEnabled)
-                    .labelsHidden()
-            }
-        }
     }
 }
 

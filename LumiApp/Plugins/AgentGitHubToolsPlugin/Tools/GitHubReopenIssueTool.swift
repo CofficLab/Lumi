@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import GitHubKit
 
 /// GitHub 重新打开 Issue 工具

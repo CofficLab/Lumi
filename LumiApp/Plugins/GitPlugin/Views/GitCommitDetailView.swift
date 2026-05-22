@@ -212,7 +212,7 @@ struct GitCommitDetailView: View {
                     AppEmptyState(
                         icon: "checkmark.circle.fill",
                         title: LocalizedStringKey(String(localized: "Clean Workspace", table: "GitPlugin")),
-                        subtitle: LocalizedStringKey(String(localized: "All changes committed", table: "GitPlugin"))
+                        description: LocalizedStringKey(String(localized: "All changes committed", table: "GitPlugin"))
                     )
                     .padding(.top, 40)
                 }
@@ -311,16 +311,12 @@ struct GitCommitDetailView: View {
         HStack(spacing: 10) {
             // Total Commits
             GlassKeyValueRow(
-                icon: "sourcecontrol",
-                iconColor: theme.primary,
                 label: String(localized: "Total Commits", table: "GitPlugin"),
                 value: "\(info.totalCommits)"
             )
 
             // Contributors
             GlassKeyValueRow(
-                icon: "person.2.fill",
-                iconColor: theme.warning,
                 label: String(localized: "Contributors", table: "GitPlugin"),
                 value: "\(info.contributors.count)"
             )
@@ -336,8 +332,8 @@ struct GitCommitDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             // 区块标题
             GlassSectionHeader(
-                String(localized: "Latest Commit", table: "GitPlugin"),
-                systemImage: "clock.arrow.circlepath"
+                icon: "clock.arrow.circlepath",
+                title: String(localized: "Latest Commit", table: "GitPlugin")
             )
 
             // Commit 内容卡片
@@ -599,10 +595,7 @@ struct GitCommitDetailView: View {
     }
 
     private func errorView(_ error: String) -> some View {
-        AppErrorBanner(
-            message: error,
-            icon: "exclamationmark.triangle"
-        )
+        AppErrorBanner(message: LocalizedStringKey(error))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }

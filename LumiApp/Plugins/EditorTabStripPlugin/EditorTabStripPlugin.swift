@@ -1,4 +1,5 @@
 import SwiftUI
+import ToolKit
 
 /// 编辑器 Tab 栏插件
 ///

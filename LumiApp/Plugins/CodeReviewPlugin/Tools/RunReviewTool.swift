@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 struct RunReviewTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔎"

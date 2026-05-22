@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 查询防休眠状态工具
 ///

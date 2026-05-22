@@ -57,7 +57,6 @@ private struct PDFViewWrapper: NSViewRepresentable {
         pdfView.displaysPageBreaks = true
         pdfView.displayMode = .singlePageContinuous
         pdfView.displayDirection = .vertical
-        pdfView.usePageViewController(true, withViewOptions: nil)
         return pdfView
     }
 

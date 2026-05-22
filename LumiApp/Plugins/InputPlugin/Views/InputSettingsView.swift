@@ -7,7 +7,7 @@ struct InputSettingsView: View {
 
     var body: some View {
         PluginSettingsScaffold(
-            String(localized: "Input Source", table: "Input"),
+            title: String(localized: "Input Source", table: "Input"),
             subtitle: String(localized: "Automatically switch input sources per application.", table: "Input")
         ) {
             AppCard {

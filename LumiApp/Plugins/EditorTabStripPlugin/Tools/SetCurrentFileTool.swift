@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 设置当前文件工具
 ///

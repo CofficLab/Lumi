@@ -1,4 +1,5 @@
 import LumiUI
+import ToolKit
 import SwiftUI
 
 /// 助手消息与工具调用视图

@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import OSLog
 
 /// 模型能力声明

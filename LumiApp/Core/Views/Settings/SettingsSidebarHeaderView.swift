@@ -3,35 +3,16 @@ import LumiUI
 
 /// 设置侧边栏头部 - 应用信息
 struct SettingsSidebarHeaderView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    private let appInfo = AppBundleInfo()
 
     var body: some View {
-        let appInfo = AppInfo()
-
-        VStack(alignment: .center, spacing: 12) {
-            Spacer().frame(height: 50)
-
-            // App 图标
+        AppSettingsSidebarHeader(
+            name: appInfo.name,
+            version: appInfo.version,
+            build: appInfo.build
+        ) {
             LogoView(scene: .about)
                 .frame(width: 64, height: 64)
-
-            // App 名称
-            Text(appInfo.name)
-                .font(.appBodyEmphasized)
-                .foregroundColor(theme.textPrimary)
-
-            // 版本和 Build 信息
-            VStack(alignment: .center, spacing: 2) {
-                Text("v\(appInfo.version ?? "Unknown")")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-
-                Text("Build \(appInfo.build ?? "Unknown")")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-            }
-
-            Spacer().frame(height: 16)
         }
     }
 }

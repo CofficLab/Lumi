@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 struct PermissionRequest: Identifiable, Sendable {
     let id = UUID()

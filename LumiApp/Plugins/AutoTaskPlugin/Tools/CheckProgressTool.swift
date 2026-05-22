@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 查询任务进度工具
 ///

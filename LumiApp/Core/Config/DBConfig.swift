@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import SwiftData
 
 /// 数据库配置管理器

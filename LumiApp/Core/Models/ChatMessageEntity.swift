@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import SwiftData
 
 /// 聊天消息实体

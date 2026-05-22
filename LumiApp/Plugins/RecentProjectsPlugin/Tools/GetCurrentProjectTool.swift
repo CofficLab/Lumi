@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 获取当前项目工具
 struct GetCurrentProjectTool: SuperAgentTool, SuperLog {

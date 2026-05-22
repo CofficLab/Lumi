@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import os
 
 /// Web Search 插件

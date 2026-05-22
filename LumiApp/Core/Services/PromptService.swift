@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 提示词服务 - 负责管理和构建系统提示词
 actor PromptService: SuperLog {

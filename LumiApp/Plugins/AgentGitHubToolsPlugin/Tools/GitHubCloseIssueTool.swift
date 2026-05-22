@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import GitHubKit
 
 /// GitHub 关闭 Issue 工具

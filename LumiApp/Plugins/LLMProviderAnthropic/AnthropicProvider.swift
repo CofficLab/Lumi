@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import os
 
 // MARK: - Anthropic Provider

@@ -34,8 +34,7 @@ struct PluginCategorySettingsView: View {
                 .padding(.horizontal, 24)
             }
 
-            // 底部统计栏
-            statsBar
+            AppSettingsStatsBar("共 \(plugins.count) 个插件 · \(enabledCount) 个已启用")
         }
         .navigationTitle(category.displayName)
         .onAppear {
@@ -60,7 +59,7 @@ struct PluginCategorySettingsView: View {
                     let pluginType = type(of: plugin)
                     let pluginId = plugin.instanceLabel
 
-                    PluginToggleRow(
+                    AppSettingsPluginToggleRow(
                         name: pluginType.displayName,
                         description: pluginType.description,
                         icon: pluginType.iconName,
@@ -75,7 +74,7 @@ struct PluginCategorySettingsView: View {
                     )
 
                     if index < plugins.count - 1 {
-                        settingsDivider
+                        AppSettingsDivider()
                     }
                 }
 
@@ -96,29 +95,6 @@ struct PluginCategorySettingsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-    }
-
-    // MARK: - Stats Bar
-
-    private var statsBar: some View {
-        HStack {
-            Spacer()
-
-            Text("共 \(plugins.count) 个插件 · \(enabledCount) 个已启用")
-                .font(.appMicro)
-                .foregroundColor(theme.textTertiary)
-
-            Spacer()
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 24)
-        .background(.bar)
-    }
-
-    private var settingsDivider: some View {
-        Rectangle()
-            .fill(theme.appDivider)
-            .frame(height: 1)
     }
 
     // MARK: - Data

@@ -1,4 +1,5 @@
 import os
+import ToolKit
 
 /// LLM 可用性检测插件
 /// 通过向每个供应商的每个模型发送 ping 请求，维护实际可用的供应商+模型列表

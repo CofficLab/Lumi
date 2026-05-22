@@ -1,7 +1,7 @@
 import Foundation
 
 /// 单条工具调用的授权结果（存于 `ToolCall.authorizationState`，随 `toolCalls` 序列化）。
-enum ToolCallAuthorizationState: String, Codable, Sendable, Equatable, CaseIterable {
+public enum ToolCallAuthorizationState: String, Codable, Sendable, Equatable, CaseIterable {
     /// 判定为无风险，可直接执行
     case noRisk
     /// 由策略自动批准（如标题栏「自动批准」）
@@ -14,7 +14,7 @@ enum ToolCallAuthorizationState: String, Codable, Sendable, Equatable, CaseItera
     case pendingAuthorization
 
     /// 简短中文标签（用于 UI）
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .noRisk: return "无风险"
         case .autoApproved: return "自动同意"
@@ -25,7 +25,7 @@ enum ToolCallAuthorizationState: String, Codable, Sendable, Equatable, CaseItera
     }
 
     /// 是否仍等待用户或策略处理（未同意也未拒绝）
-    var needsAuthorizationPrompt: Bool {
+    public var needsAuthorizationPrompt: Bool {
         self == .pendingAuthorization
     }
 }

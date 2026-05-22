@@ -1,4 +1,5 @@
 import SwiftUI
+import ToolKit
 import os
 
 /// Agent 规则管理插件

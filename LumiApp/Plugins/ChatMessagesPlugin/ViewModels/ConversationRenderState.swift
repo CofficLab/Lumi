@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 聊天时间线渲染态（仅 UI 层，按会话隔离，不落库）。
 struct ConversationRenderState {

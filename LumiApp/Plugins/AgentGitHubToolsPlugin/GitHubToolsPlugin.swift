@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import GitHubKit
 import os
 import SwiftUI

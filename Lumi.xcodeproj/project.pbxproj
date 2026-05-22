@@ -25,6 +25,7 @@
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
+		0BA8A7362FC08EB9004C2B71 /* ToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4712F70000100AAA109 /* ToolKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
@@ -304,6 +305,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BA8A7362FC08EB9004C2B71 /* ToolKit in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
 				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
 				0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */,
@@ -895,6 +897,7 @@
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				B58B244CDF214E2CB80C1953 /* LLMKit */,
 				0B52000230C3000000AA0001 /* RAGKit */,
+				A1B2C4712F70000100AAA109 /* ToolKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1001,6 +1004,7 @@
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
+				A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/ToolKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1262,27 +1266,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		A1B2D00230B2000100AAA202 /* Check CodeEdit Languages Framework */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Packages/CodeEditLanguages/Package.swift",
-				"$(SRCROOT)/scripts/check-codeedit-languages-framework.sh",
-			);
-			name = "Check CodeEdit Languages Framework";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/check-codeedit-languages-framework.sh\"\n";
-		};
 		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1310,6 +1293,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
+		};
+		A1B2D00230B2000100AAA202 /* Check CodeEdit Languages Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/CodeEditLanguages/Package.swift",
+				"$(SRCROOT)/scripts/check-codeedit-languages-framework.sh",
+			);
+			name = "Check CodeEdit Languages Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/check-codeedit-languages-framework.sh\"\n";
 		};
 		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1952,6 +1956,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/OpenInKit;
 		};
+		A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/ToolKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ToolKit;
+		};
 		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/XcodeKit;
@@ -2281,6 +2289,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4632F70000100AAA108 /* XCLocalSwiftPackageReference "Packages/OpenInKit" */;
 			productName = OpenInKit;
+		};
+		A1B2C4712F70000100AAA109 /* ToolKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/ToolKit" */;
+			productName = ToolKit;
 		};
 		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,4 +1,5 @@
 import SwiftUI
+import ToolKit
 import os
 
 /// 模型选择器插件

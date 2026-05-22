@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import Combine
 import MLXLLM
 @preconcurrency import MLXLMCommon

@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import LLMProviderKit
 
 /// OpenAI API 供应商实现
@@ -71,7 +72,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { ToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

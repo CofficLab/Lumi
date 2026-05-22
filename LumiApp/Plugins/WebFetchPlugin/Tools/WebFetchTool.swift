@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import WebFetchKit
 
 /// 网页抓取工具

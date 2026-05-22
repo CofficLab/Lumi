@@ -1,4 +1,5 @@
 import AppKit
+import ToolKit
 import EditorService
 import Foundation
 import SwiftUI

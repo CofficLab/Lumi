@@ -1,81 +1,32 @@
 import Foundation
+import ToolKit
 import Combine
 
 /// 工具服务：负责管理所有可用工具
 ///
 /// ToolService 是 Lumi 系统的工具管理中心，协调和管理所有 AI 可用的工具。
-///
-/// ## 功能概述
-///
-/// - **工具注册**: 管理内置工具和 MCP 工具
-/// - **工具执行**: 提供统一的工具执行接口
-/// - **权限管理**: 代理 PermissionService 进行权限检查
-/// - **插件集成**: 插件负责提供工具；内核只关心 Tool 抽象
-///
-/// ## 架构说明
-///
-/// ```text
-/// ToolService
-/// ├── 内置工具 (Built-in Tools)
-/// │   └── (已迁移到插件提供)
-/// │
-/// └── 插件工具 (Plugin Tools)
-///     ├── 内核工具插件
-///     │   ├── ShellTool (执行命令)
-///     │   ├── ListDirectoryTool (列出目录)
-///     │   ├── ReadFileTool (读取文件)
-///     │   └── WriteFileTool (写入文件)
-///     │
-///     └── MCP 工具 (MCP Tools)
-///         ├── 动态从 MCP 服务器获取
-///         └── 支持扩展的外部工具
-/// ```
+/// 作为 App 与 ToolKit 包之间的桥梁层。
 ///
 /// ## 线程安全
 ///
 /// 此类通过方法内部同步保证线程安全，因此可以安全地在并发代码中使用。
 /// 所有操作都是异步的，不阻塞主线程。
-///
-/// ## 使用示例
-///
-/// ```swift
-/// let toolService = ToolService()
-///
-/// // 获取所有工具
-/// let allTools = toolService.tools
-///
-/// // 执行工具
-/// let result = try await toolService.executeTool(
-///     named: "read_file",
-///     arguments: ["path": "/Users/angel/test.swift"]
-/// )
-///
-/// // 检查权限
-/// let requiresPermission = toolService.requiresPermission(
-///     toolName: "shell",
-///     arguments: ["command": "rm -rf /"]
-/// )
-/// ```
 class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Logger
 
-    /// 日志标识符
     nonisolated static let emoji = "🧰"
-    
-    /// 是否启用详细日志
     nonisolated static let verbose: Bool = false
+
     // MARK: - Properties
 
     /// 所有可用工具（原始，未本地化）
-    ///
-    /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [SuperAgentTool] = []
 
     /// 当前语言偏好（由 LLMRequester 在每次请求前设置）
     var languagePreference: LanguagePreference = .english
 
-    /// 内置工具列表
+    /// 内置工具列表（当前为空，全部由插件提供）
     private var builtInTools: [SuperAgentTool] = []
 
     /// 插件提供的工具列表
@@ -83,7 +34,7 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Dependencies
 
-    /// LLM 服务（可选）
+    /// LLM 服务（可选，传递给插件构建工具上下文）
     private let llmService: LLMService?
 
     /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
@@ -93,22 +44,15 @@ class ToolService: SuperLog, @unchecked Sendable {
     weak var conversationVM: WindowConversationVM?
 
     /// Combine 订阅集合
-    ///
-    /// 存储所有 Combine 订阅，用于清理。
     private var cancellables = Set<AnyCancellable>()
-    
+
     // MARK: - Notification Observers
-    
+
     private var pluginsDidLoadObserver: NSObjectProtocol?
     private var toolSourcesDidChangeObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
-    /// 初始化工具服务
-    ///
-    /// 执行以下初始化步骤：
-    /// 1. 设置插件工具监听
-    /// 2. 刷新工具列表
     @MainActor
     init(llmService: LLMService? = nil) {
         self.llmService = llmService
@@ -122,11 +66,6 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Setup
 
-    // 说明：原先 `setupBuiltInTools()` 已迁移到插件提供。
-
-    /// 设置插件工具监听
-    ///
-    /// 当插件加载完成时，刷新插件工具列表。
     @MainActor
     private func setupPluginObservers() {
         pluginsDidLoadObserver = NotificationCenter.default.addObserver(
@@ -151,8 +90,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     }
 
     /// 刷新所有工具列表
-    ///
-    /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
         let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
@@ -162,51 +99,27 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Public API
 
-    // MARK: - 工具相关
-
     /// 获取所有可用工具（已按语言偏好本地化）
-    ///
-    /// 返回经过 `LocalizedAgentTool` 包装的工具列表。
-    /// 包装器调用每个工具的 `description(for:)` / `inputSchema(for:)` 方法，
-    /// 使用 `languagePreference` 指定的语言。
-    /// Provider 层拿到的工具已经是特定语言的了，无需关心语言切换。
     var tools: [SuperAgentTool] {
-        return allTools.map { LocalizedAgentTool(underlying: $0, language: languagePreference) }
+        allTools.map { LocalizedAgentTool(underlying: $0, language: languagePreference) }
     }
 
     /// 根据名称获取工具
-    ///
-    /// - Parameter name: 工具名称
-    /// - Returns: 匹配的工具，如果未找到则返回 nil
     func tool(named name: String) -> SuperAgentTool? {
         let tool = allTools.first { $0.name == name }
-
         if Self.verbose && tool == nil {
             AppLogger.core.error("\(Self.t)❌ 工具 '\(name)' 未找到")
         }
-
         return tool
     }
 
     /// 检查工具是否存在
-    ///
-    /// - Parameter name: 工具名称
-    /// - Returns: 如果工具存在则返回 true
     func hasTool(named name: String) -> Bool {
-        return tool(named: name) != nil
+        tool(named: name) != nil
     }
 
     /// 执行工具（JSON 字符串参数版本）
-    ///
-    /// 通过工具名称和 JSON 字符串参数执行工具。
-    ///
-    /// - Parameters:
-    ///   - name: 工具名称
-    ///   - argumentsJSON: 工具参数（JSON 字符串格式）
-    /// - Returns: 执行结果字符串
-    /// - Throws: 如果工具不存在或执行失败则抛出错误
     func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext? = nil) async throws -> String {
-        // 解析 JSON 字符串
         let arguments: [String: Any]
         if let data = argumentsJSON.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -214,27 +127,11 @@ class ToolService: SuperLog, @unchecked Sendable {
         } else {
             arguments = [:]
         }
-        
         return try await executeTool(named: name, arguments: arguments, context: context)
     }
-    
+
     /// 执行工具
-    ///
-    /// 根据工具名称和参数执行对应的工具。
-    /// 执行流程：
-    /// 1. 查找工具
-    /// 2. 记录执行开始
-    /// 3. 转换参数类型
-    /// 4. 执行工具
-    /// 5. 记录执行结果和耗时
-    ///
-    /// - Parameters:
-    ///   - name: 工具名称
-    ///   - arguments: 工具参数字典
-    /// - Returns: 执行结果字符串
-    /// - Throws: 如果工具不存在或执行失败则抛出错误
     func executeTool(named name: String, arguments: [String: Any], context: ToolExecutionContext? = nil) async throws -> String {
-        // 查找工具
         guard let tool = tool(named: name) else {
             throw ToolError.toolNotFound(name)
         }
@@ -244,13 +141,9 @@ class ToolService: SuperLog, @unchecked Sendable {
             AppLogger.core.info("\(Self.t)⚙️ 执行工具：\(name)(\(argsPreview))")
         }
 
-        // 执行工具并记录耗时
         do {
             let startTime = Date()
-            // 转换 [String: Any] 到 [String: ToolArgument]
-            let toolArguments = arguments.mapValues { value in
-                ToolArgument(value)
-            }
+            let toolArguments = arguments.mapValues { ToolArgument($0) }
             let result: String
             if let context {
                 try context.checkCancellation()
@@ -274,16 +167,9 @@ class ToolService: SuperLog, @unchecked Sendable {
         }
     }
 
-    // MARK: - 权限相关（代理 PermissionService）
+    // MARK: - 权限相关
 
-    /// 检查工具是否需要权限（JSON 字符串版本）
-    ///
-    /// - Parameters:
-    ///   - toolName: 工具名称
-    ///   - argumentsJSON: 参数字典的 JSON 字符串
-    /// - Returns: 是否需要权限
     func requiresPermission(toolName: String, argumentsJSON: String?) -> Bool {
-        // 解析 JSON 字符串
         let arguments: [String: Any]?
         if let json = argumentsJSON,
            let data = json.data(using: .utf8),
@@ -292,18 +178,9 @@ class ToolService: SuperLog, @unchecked Sendable {
         } else {
             arguments = nil
         }
-
         return requiresPermission(toolName: toolName, arguments: arguments)
     }
-    
-    /// 检查工具是否需要权限
-    ///
-    /// 判断执行给定工具是否需要用户授权。
-    ///
-    /// - Parameters:
-    ///   - toolName: 工具名称
-    ///   - arguments: 参数字典
-    /// - Returns: 是否需要权限
+
     func requiresPermission(toolName: String, arguments: [String: Any]?) -> Bool {
         guard let tool = tool(named: toolName) else { return false }
         let rawArgs = arguments ?? [:]
@@ -318,36 +195,13 @@ class ToolService: SuperLog, @unchecked Sendable {
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
     }
-    
+
     deinit {
         if let pluginsDidLoadObserver {
             NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
         }
         if let toolSourcesDidChangeObserver {
             NotificationCenter.default.removeObserver(toolSourcesDidChangeObserver)
-        }
-    }
-}
-
-// MARK: - Tool Error
-
-/// 工具执行错误
-///
-/// 定义工具执行过程中可能发生的错误类型。
-enum ToolError: LocalizedError {
-    /// 工具未找到
-    case toolNotFound(String)
-    
-    /// 工具执行失败
-    case toolExecutionFailed(String, Error)
-
-    /// 错误描述
-    var errorDescription: String? {
-        switch self {
-        case .toolNotFound(let name):
-            return "Tool '\(name)' not found"
-        case .toolExecutionFailed(let name, let error):
-            return "Tool '\(name)' execution failed: \(error.localizedDescription)"
         }
     }
 }

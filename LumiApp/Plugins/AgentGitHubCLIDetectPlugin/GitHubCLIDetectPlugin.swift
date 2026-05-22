@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import os
 
 /// GitHub CLI 检测插件

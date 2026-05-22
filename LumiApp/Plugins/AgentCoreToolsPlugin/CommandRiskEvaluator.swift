@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// 命令风险评估工具
 enum CommandRiskEvaluator {

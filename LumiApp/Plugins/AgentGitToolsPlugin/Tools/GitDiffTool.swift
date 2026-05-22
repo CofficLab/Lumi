@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import SwiftUI
 
 /// Git 差异工具

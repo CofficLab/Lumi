@@ -1,4 +1,5 @@
 import SwiftUI
+import ToolKit
 import LumiUI
 
 /// 负责完整渲染一条助手消息（包含头部、思考过程、工具调用与正文）

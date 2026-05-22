@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// Git 日志工具
 struct GitLogTool: SuperAgentTool, SuperLog {

@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 import MCP
 import MCPKit
 

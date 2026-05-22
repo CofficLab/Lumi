@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 private enum DatabaseToolArguments {
     static func string(_ name: String, from arguments: [String: ToolArgument]) throws -> String {

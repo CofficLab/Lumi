@@ -944,6 +944,7 @@
       }
     },
     "Failed to load" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

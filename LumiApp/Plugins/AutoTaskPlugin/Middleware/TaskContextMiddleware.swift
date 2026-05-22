@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 /// AutoTask 进度注入中间件
 ///

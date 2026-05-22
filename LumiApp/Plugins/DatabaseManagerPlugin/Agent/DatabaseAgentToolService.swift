@@ -1,4 +1,5 @@
 import Foundation
+import ToolKit
 
 struct DatabaseConnectionSummary: Encodable {
     let id: String
