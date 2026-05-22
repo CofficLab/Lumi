@@ -86,7 +86,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(AliyunResponse.self, from: data)
 
         var textContent = ""

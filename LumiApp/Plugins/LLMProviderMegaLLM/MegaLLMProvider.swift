@@ -72,7 +72,7 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
         let kitToolCalls = result.toolCalls?.map { ToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)

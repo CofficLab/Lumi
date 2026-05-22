@@ -87,7 +87,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(ZhipuResponse.self, from: data)
 
         var textContent = ""

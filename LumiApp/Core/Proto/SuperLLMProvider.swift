@@ -57,10 +57,10 @@ struct LLMModelCatalogItem: Sendable, Equatable {
 
 struct LLMProviderResponse: Sendable, Equatable {
     let content: String
-    let toolCalls: [ToolCall]?
+    let toolCalls: [ToolKit.ToolCall]?
     let thinkingContent: String?
 
-    init(content: String, toolCalls: [ToolCall]?, thinkingContent: String? = nil) {
+    init(content: String, toolCalls: [ToolKit.ToolCall]?, thinkingContent: String? = nil) {
         self.content = content
         self.toolCalls = toolCalls
         self.thinkingContent = thinkingContent
@@ -206,7 +206,7 @@ protocol SuperLLMProvider: Sendable {
     /// - Parameter data: 响应数据
     /// - Returns: 包含内容和工具调用的元组
     /// - Throws: 解析错误
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?)
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?)
 
     /// 解析 API 响应及可选元数据。
     ///

@@ -60,7 +60,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolKit.ToolCall]?) {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
