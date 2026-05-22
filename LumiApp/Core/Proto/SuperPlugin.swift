@@ -396,7 +396,7 @@ protocol SuperPlugin: Actor {
     /// 插件分类
     ///
     /// 用于在插件设置等 UI 中按分类分组展示。
-    /// 如果插件不重写此属性，默认返回 ``PluginCategory/general``（通用）。
+    /// **必须提供**，每个插件都必须明确指定自己的功能分类。
     static var category: PluginCategory { get }
 
     /// 插件注册顺序（数字越小越先加载）
@@ -420,7 +420,7 @@ extension SuperPlugin {
 
     static var iconName: String { "puzzlepiece" }
 
-    static var category: PluginCategory { .general }
+    // 注意：category 必须由每个插件显式提供，不再有默认值
 
     static var isConfigurable: Bool { false }
 
