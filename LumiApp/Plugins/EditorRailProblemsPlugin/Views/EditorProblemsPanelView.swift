@@ -1,7 +1,9 @@
 import SwiftUI
+import LumiUI
 
 struct EditorProblemsPanelView: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
@@ -19,8 +21,8 @@ struct EditorProblemsPanelView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(panelTitle)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Spacer(minLength: 0)
 
@@ -28,8 +30,8 @@ struct EditorProblemsPanelView: View {
                 service.presentBottomPanel(nil)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -81,49 +83,43 @@ struct EditorProblemsPanelView: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+            .font(.appMicroEmphasized)
+            .foregroundColor(theme.textSecondary)
     }
 
     private func panelCard(title: String, subtitle: String, badge: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(badge)
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.08))
-                    )
+                    .appSurface(style: .subtle, cornerRadius: 999)
             }
 
             Text(subtitle)
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.035))
-        )
+        .appSurface(style: .subtle, cornerRadius: 10)
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appTitle)
+                .foregroundColor(theme.textSecondary)
             Text(title)
-                .font(.system(size: 12))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
