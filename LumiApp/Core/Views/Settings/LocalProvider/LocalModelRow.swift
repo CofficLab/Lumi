@@ -3,6 +3,8 @@ import LumiUI
 
 /// 本地模型行：显示名称、大小、已缓存、下载进度/加载按钮
 struct LocalModelRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let model: LocalModelInfo
     let isCached: Bool
     let isSelected: Bool
@@ -22,136 +24,123 @@ struct LocalModelRow: View {
     let onLoad: () -> Void
     let onUnload: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        HStack(spacing: 8) {
-            // 状态图标
-            Group {
-                if isDownloading {
-                    ProgressView()
-                        .controlSize(.small)
-                } else if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                } else if isCached {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .foregroundStyle(Color(hex: "7C6FFF").opacity(0.8))
-                } else {
-                    Image(systemName: "circle")
-                        .foregroundStyle(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                }
-            }
-            .frame(width: 20, height: 20)
-            .animation(.easeInOut(duration: 0.22), value: isLoading)
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(model.displayName)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                // 体积、内存要求、下载状态
-                HStack(spacing: 6) {
-                    Text("体积 \(model.size)")
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text("·")
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text("电脑内存 ≥ \(model.minRAM) GB")
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    if isDownloading, case .downloading(let fraction) = downloadStatus {
-                        Text("· \(Int(fraction * 100))%")
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(Color(hex: "7C6FFF"))
-                            .monospacedDigit()
-                    } else if isCached {
-                        if isLoading {
-                            Text("· 加载中…")
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color(hex: "7C6FFF"))
-                        } else {
-                            Text("· 已缓存")
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        }
-                    }
-                }
-                if !model.description.isEmpty {
-                    Text(model.description)
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        .lineLimit(2)
-                }
-                // 功能特性：工具调用、视觉等，便于用户理解模型能力
-                if model.supportsTools || model.supportsVision {
-                    HStack(spacing: 6) {
-                        Text("功能特性：")
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        if model.supportsTools {
-                            capabilityTag("工具调用", systemImage: "wrench.and.screwdriver")
-                        }
-                        if model.supportsVision {
-                            capabilityTag("视觉", systemImage: "eye")
-                        }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel(accessibilityRowLabel)
-            .accessibilityHint("本地模型")
-
-            if isDownloading {
-                ProgressView(value: downloadProgressFraction)
-                    .frame(width: 60)
-            } else if !isCached {
-                AppButton("下载", style: .secondary, size: .small, action: onDownload)
-                    .disabled(isDownloadDisabled)
-                    .accessibilityLabel("下载")
-                    .accessibilityHint("下载此模型到本地")
-            } else {
-                if isThisModelLoaded {
-                    Text("已加载")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                } else if isLoading {
-                    HStack(spacing: 6) {
+        AppSettingsRow(isSelected: isSelected, isHighlighted: isLoading) {
+            HStack(spacing: 8) {
+                // 状态图标
+                Group {
+                    if isDownloading {
                         ProgressView()
                             .controlSize(.small)
-                        Text("加载中…")
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color(hex: "7C6FFF"))
+                    } else if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    } else if isCached {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .foregroundStyle(theme.primary.opacity(0.8))
+                    } else {
+                        Image(systemName: "circle")
+                            .foregroundStyle(theme.textSecondary)
                     }
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                } else {
-                    AppButton("加载", style: .primary, size: .small, action: onLoad)
-                        .disabled(isLoadDisabled)
-                        .accessibilityLabel("加载")
-                        .accessibilityHint("将模型加载到内存以进行推理")
                 }
-                AppButton("卸载", style: .ghost, size: .small, action: onUnload)
-                    .disabled(!hasAnyModelLoaded)
-                    .accessibilityLabel("卸载")
-                    .accessibilityHint("从内存卸载当前已加载的模型")
+                .frame(width: 20, height: 20)
+                .animation(.easeInOut(duration: 0.22), value: isLoading)
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.displayName)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                    // 体积、内存要求、下载状态
+                    HStack(spacing: 6) {
+                        Text("体积 \(model.size)")
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                        Text("·")
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                        Text("电脑内存 ≥ \(model.minRAM) GB")
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                        if isDownloading, case .downloading(let fraction) = downloadStatus {
+                            Text("· \(Int(fraction * 100))%")
+                                .font(.appMonoMicro)
+                                .foregroundColor(theme.primary)
+                                .monospacedDigit()
+                        } else if isCached {
+                            if isLoading {
+                                Text("· 加载中…")
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.primary)
+                            } else {
+                                Text("· 已缓存")
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+                        }
+                    }
+                    if !model.description.isEmpty {
+                        Text(model.description)
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                            .lineLimit(2)
+                    }
+                    // 功能特性：工具调用、视觉等，便于用户理解模型能力
+                    if model.supportsTools || model.supportsVision {
+                        HStack(spacing: 6) {
+                            Text("功能特性：")
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
+                            if model.supportsTools {
+                                capabilityTag("工具调用", systemImage: "wrench.and.screwdriver")
+                            }
+                            if model.supportsVision {
+                                capabilityTag("视觉", systemImage: "eye")
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel(accessibilityRowLabel)
+                .accessibilityHint("本地模型")
+
+                if isDownloading {
+                    ProgressView(value: downloadProgressFraction)
+                        .frame(width: 60)
+                } else if !isCached {
+                    AppButton("下载", style: .secondary, size: .small, action: onDownload)
+                        .disabled(isDownloadDisabled)
+                        .accessibilityLabel("下载")
+                        .accessibilityHint("下载此模型到本地")
+                } else {
+                    if isThisModelLoaded {
+                        Text("已加载")
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                    } else if isLoading {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("加载中…")
+                                .font(.appCaption)
+                                .foregroundColor(theme.primary)
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    } else {
+                        AppButton("加载", style: .primary, size: .small, action: onLoad)
+                            .disabled(isLoadDisabled)
+                            .accessibilityLabel("加载")
+                            .accessibilityHint("将模型加载到内存以进行推理")
+                    }
+                    AppButton("卸载", style: .ghost, size: .small, action: onUnload)
+                        .disabled(!hasAnyModelLoaded)
+                        .accessibilityLabel("卸载")
+                        .accessibilityHint("从内存卸载当前已加载的模型")
+                }
             }
         }
         .animation(.easeInOut(duration: 0.22), value: isLoading)
-        .padding(8)
-        .contentShape(Rectangle())
-        .appSurface(
-            style: .custom(rowBackgroundColor),
-            cornerRadius: 8,
-            borderColor: Color.white.opacity(isHovered ? 0.15 : 0),
-            lineWidth: 1
-        )
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovered = hovering
-            }
-        }
     }
 
     private var downloadProgressFraction: Double {
@@ -174,19 +163,6 @@ struct LocalModelRow: View {
         }
         parts.append("体积 \(model.size)，需要内存至少 \(model.minRAM) GB")
         return parts.joined(separator: "，")
-    }
-
-    private var rowBackgroundColor: Color {
-        if isLoading {
-            return Color(hex: "7C6FFF").opacity(0.06)
-        }
-        if isSelected {
-            return Color(hex: "7C6FFF").opacity(0.08)
-        }
-        if isHovered {
-            return Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08)
-        }
-        return Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.05)
     }
 
     private func capabilityTag(_ title: String, systemImage: String) -> some View {
