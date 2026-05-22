@@ -8,7 +8,6 @@ struct AssistantMessage: View {
 
     let message: ChatMessage
     let isLastMessage: Bool
-    let relatedToolOutputs: [ChatMessage]
 
     @Binding var showRawMessage: Bool
     private static let timestampFormatter: DateFormatter = {
@@ -52,7 +51,6 @@ struct AssistantMessage: View {
                     if message.hasToolCalls {
                         MessageWithToolCallsView(
                             message: message,
-                            toolOutputMessages: relatedToolOutputs
                         )
                     } else {
                         MarkdownView(

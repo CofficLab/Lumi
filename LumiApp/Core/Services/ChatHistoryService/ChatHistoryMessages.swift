@@ -188,6 +188,8 @@ extension ChatHistoryService {
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil
     func loadMessages(forConversationId conversationId: UUID) -> [ChatMessage]? {
+        migrateEmbeddedToolResultsIfNeeded()
+
         let context = self.getContext()
 
         // 先验证会话是否存在
@@ -504,12 +506,14 @@ extension ChatHistoryService {
     }
 
     /// 清理不再被任何消息引用的孤立图片
-    private func cleanupOrphanedImages(in context: ModelContext) {
+    func cleanupOrphanedImages(in context: ModelContext) {
         let descriptor = FetchDescriptor<ImageAttachmentEntity>()
         guard let allImages = try? context.fetch(descriptor) else { return }
 
         for image in allImages {
-            if image.messages == nil || image.messages!.isEmpty {
+            let hasMessages = !(image.messages?.isEmpty ?? true)
+            let hasToolResults = !(image.toolCallResults?.isEmpty ?? true)
+            if !hasMessages && !hasToolResults {
                 context.delete(image)
             }
         }
@@ -547,16 +551,14 @@ extension ChatHistoryService {
 
         for toolCall in toolCalls {
             if let existing = existingByID[toolCall.id] {
-                // 已存在：就地更新字段
-                existing.name = toolCall.name
-                existing.arguments = toolCall.arguments
-                existing.authorizationState = toolCall.authorizationState.rawValue
+                existing.apply(from: toolCall)
+                syncToolCallResultImages(for: existing, with: toolCall, in: context)
                 syncedEntities.append(existing)
             } else {
-                // 新建
                 let newEntity = ToolCallEntity.from(toolCall)
                 newEntity.message = entity
                 context.insert(newEntity)
+                syncToolCallResultImages(for: newEntity, with: toolCall, in: context)
                 syncedEntities.append(newEntity)
             }
         }
@@ -568,5 +570,31 @@ extension ChatHistoryService {
         }
 
         entity.toolCalls = syncedEntities
+    }
+
+    /// 同步工具调用结果中的图片附件
+    private func syncToolCallResultImages(
+        for entity: ToolCallEntity,
+        with toolCall: ToolCall,
+        in context: ModelContext
+    ) {
+        let images = toolCall.result?.images ?? []
+        guard !images.isEmpty else {
+            entity.resultImages = []
+            return
+        }
+
+        entity.resultImages = images.map { attachment in
+            var descriptor = FetchDescriptor<ImageAttachmentEntity>(
+                predicate: #Predicate<ImageAttachmentEntity> { $0.id == attachment.id }
+            )
+            descriptor.fetchLimit = 1
+            if let existing = try? context.fetch(descriptor).first {
+                return existing
+            }
+            let newEntity = ImageAttachmentEntity.from(attachment)
+            context.insert(newEntity)
+            return newEntity
+        }
     }
 }

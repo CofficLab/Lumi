@@ -4,15 +4,14 @@ import SwiftData
 
 /// 工具调用实体
 ///
-/// 独立存储 AI 助手发起的每次工具调用。
+/// 独立存储 AI 助手发起的每次工具调用及其执行结果。
 /// 通过多对一关系关联到 ChatMessageEntity（assistant 消息）。
 ///
 /// ## 关系说明
 ///
 /// ```text
 /// ChatMessageEntity (assistant)
-///   ├── toolCalls → [ToolCallEntity]   (一对多，assistant 发起的调用)
-///   └── toolCallID ← ToolCallEntity.id (tool 消息通过此字段关联结果)
+///   └── toolCalls → [ToolCallEntity]   (调用请求 + 执行结果)
 /// ```
 @Model
 final class ToolCallEntity {
@@ -28,6 +27,19 @@ final class ToolCallEntity {
     /// 授权状态（本地 UI 用）
     var authorizationState: String
 
+    /// 执行结果文本
+    var resultContent: String?
+
+    /// 结果是否为错误
+    var resultIsError: Bool
+
+    /// 结果执行完成时间
+    var resultExecutedAt: Date?
+
+    /// 结果中的图片附件
+    @Relationship(deleteRule: .nullify, inverse: \ImageAttachmentEntity.toolCallResults)
+    var resultImages: [ImageAttachmentEntity] = []
+
     /// 创建时间
     var createdAt: Date
 
@@ -39,12 +51,16 @@ final class ToolCallEntity {
         name: String,
         arguments: String,
         authorizationState: ToolCallAuthorizationState = .pendingAuthorization,
+        result: ToolCallResult? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
         self.name = name
         self.arguments = arguments
         self.authorizationState = authorizationState.rawValue
+        self.resultContent = result?.content
+        self.resultIsError = result?.isError ?? false
+        self.resultExecutedAt = result?.executedAt
         self.createdAt = createdAt
     }
 
@@ -52,12 +68,23 @@ final class ToolCallEntity {
 
     /// 转换为业务层 ToolCall 模型
     func toToolCall() -> ToolCall {
-        ToolCall(
+        var result: ToolCallResult?
+        if let resultContent {
+            result = ToolCallResult(
+                content: resultContent,
+                images: resultImages.map { $0.toImageAttachment() },
+                isError: resultIsError,
+                executedAt: resultExecutedAt ?? createdAt
+            )
+        }
+
+        return ToolCall(
             id: id,
             name: name,
             arguments: arguments,
             authorizationState: ToolCallAuthorizationState(rawValue: authorizationState)
-                ?? .pendingAuthorization
+                ?? .pendingAuthorization,
+            result: result
         )
     }
 
@@ -67,7 +94,18 @@ final class ToolCallEntity {
             id: toolCall.id,
             name: toolCall.name,
             arguments: toolCall.arguments,
-            authorizationState: toolCall.authorizationState
+            authorizationState: toolCall.authorizationState,
+            result: toolCall.result
         )
+    }
+
+    /// 更新实体字段（不含图片关系，由 ChatHistoryService 同步）
+    func apply(from toolCall: ToolCall) {
+        name = toolCall.name
+        arguments = toolCall.arguments
+        authorizationState = toolCall.authorizationState.rawValue
+        resultContent = toolCall.result?.content
+        resultIsError = toolCall.result?.isError ?? false
+        resultExecutedAt = toolCall.result?.executedAt
     }
 }

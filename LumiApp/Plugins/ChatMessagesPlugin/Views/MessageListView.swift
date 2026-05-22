@@ -26,7 +26,6 @@ struct MessageListView: View {
     private struct DisplayRow: Identifiable {
         let id: UUID
         let message: ChatMessage
-        let relatedToolOutputs: [ChatMessage]
     }
 
     private struct LastRowChangeToken: Equatable {
@@ -164,7 +163,6 @@ extension MessageListView {
                 ChatBubble(
                     message: row.message,
                     isLastMessage: row.id == lastMessageID,
-                    relatedToolOutputs: row.relatedToolOutputs,
                     isStreaming: false
                 )
                 .id(row.id)
@@ -362,8 +360,7 @@ extension MessageListView {
         var rows = messages.map { message in
             DisplayRow(
                 id: message.id,
-                message: message,
-                relatedToolOutputs: timelineViewModel.toolOutputs(for: message)
+                message: message
             )
         }
         if let statusRow = statusRow {
@@ -384,7 +381,7 @@ extension MessageListView {
         guard let sid = timelineViewModel.selectedConversationId,
               let vmMessage = conversationSendStatusVM.statusMessage(for: sid)
         else { return nil }
-        return DisplayRow(id: vmMessage.id, message: vmMessage, relatedToolOutputs: [])
+        return DisplayRow(id: vmMessage.id, message: vmMessage)
     }
 
     private func lastRowChangeToken(for rows: [DisplayRow]) -> LastRowChangeToken {

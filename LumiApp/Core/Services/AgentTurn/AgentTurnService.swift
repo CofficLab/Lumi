@@ -48,8 +48,9 @@ final class AgentTurnService: SuperLog {
     /// 运行一轮完整的 Agent 循环。
     ///
     /// 从数据库中读取消息历史，根据最后一条消息的角色决定下一步：
-    /// - `user` / `tool`：向 LLM 发起流式请求
-    /// - `assistant`（含工具调用）：执行工具
+    /// - `user` / 遗留 `tool`：向 LLM 发起流式请求
+    /// - `assistant`（含未完成工具调用）：执行工具并将结果写回 ToolCall
+    /// - `assistant`（工具调用均已有结果）：向 LLM 发起流式请求
     /// - `assistant`（无工具调用）：对话回合结束
     ///
     /// - Parameters:
@@ -78,56 +79,42 @@ final class AgentTurnService: SuperLog {
 
             switch last.role {
             case .user, .tool:
-                // ── 向 LLM 请求 ──
-                let result = await llmRequester.request(
+                guard await requestLLM(
                     conversationId: conversationId,
-                    messages: messages,
-                    additionalSystemPrompts: remainingSystemPrompts
-                )
-                // 临时提示词只在第一轮使用
-                remainingSystemPrompts = []
-
-                switch result {
-                case let .success(assistantMessage):
-                    let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage)
-                    conversationVM.saveMessage(processed, to: conversationId)
-                    // 继续循环，下一轮会根据 assistantMessage 是否有 toolCalls 决定下一步
-
-                case .cancelled:
-                    turnFinalizer.finishTurnByCancellation(conversationId: conversationId)
-                    NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
-                    return
-
-                case let .failed(error):
-                    let providerId = llmRequester.currentProviderId(for: conversationId)
-                    turnFinalizer.finishTurnWithError(error, conversationId: conversationId, providerId: providerId)
-                    NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
-                    return
-                }
+                    storageMessages: messages,
+                    remainingSystemPrompts: &remainingSystemPrompts
+                ) else { return }
 
             case .assistant:
                 if last.hasToolCalls {
-                    // ── 执行工具 ──
-                    // 先检查是否需要弹窗授权
-                    if await toolCallExecutor.presentPermissionIfNeeded(assistantMessage: last, conversationId: conversationId) {
-                        return // 暂停循环，等待用户授权后恢复
+                    if last.toolCalls?.contains(where: { $0.result == nil }) == true {
+                        if await toolCallExecutor.presentPermissionIfNeeded(
+                            assistantMessage: last,
+                            conversationId: conversationId
+                        ) {
+                            return
+                        }
+
+                        let hadUserRejection = await toolCallExecutor.executeAll(
+                            assistantMessage: last,
+                            conversationId: conversationId
+                        )
+
+                        if hadUserRejection {
+                            turnFinalizer.finishTurnByUserRejection(conversationId: conversationId)
+                            NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
+                            return
+                        }
+
+                        continue
                     }
 
-                    // 执行所有工具调用
-                    let hadUserRejection = await toolCallExecutor.executeAll(
-                        assistantMessage: last,
-                        conversationId: conversationId
-                    )
-
-                    if hadUserRejection {
-                        turnFinalizer.finishTurnByUserRejection(conversationId: conversationId)
-                        NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
-                        return
-                    }
-
-                    // 工具结果已落库，继续循环 → 下一轮会读到 tool 消息，再次请求 LLM
+                    guard await requestLLM(
+                        conversationId: conversationId,
+                        storageMessages: messages,
+                        remainingSystemPrompts: &remainingSystemPrompts
+                    ) else { return }
                 } else {
-                    // 助手消息没有工具调用 → 对话回合正常结束
                     turnFinalizer.finishTurn(conversationId: conversationId)
                     NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                     return
@@ -136,6 +123,39 @@ final class AgentTurnService: SuperLog {
             case .system, .status, .error, .unknown:
                 return
             }
+        }
+    }
+
+    /// - Returns: 是否应继续 Agent 循环
+    private func requestLLM(
+        conversationId: UUID,
+        storageMessages: [ChatMessage],
+        remainingSystemPrompts: inout [String]
+    ) async -> Bool {
+        let llmMessages = chatHistoryService.expandMessagesForLLM(storageMessages)
+        let result = await llmRequester.request(
+            conversationId: conversationId,
+            messages: llmMessages,
+            additionalSystemPrompts: remainingSystemPrompts
+        )
+        remainingSystemPrompts = []
+
+        switch result {
+        case let .success(assistantMessage):
+            let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage)
+            conversationVM.saveMessage(processed, to: conversationId)
+            return true
+
+        case .cancelled:
+            turnFinalizer.finishTurnByCancellation(conversationId: conversationId)
+            NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
+            return false
+
+        case let .failed(error):
+            let providerId = llmRequester.currentProviderId(for: conversationId)
+            turnFinalizer.finishTurnWithError(error, conversationId: conversationId, providerId: providerId)
+            NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
+            return false
         }
     }
 }

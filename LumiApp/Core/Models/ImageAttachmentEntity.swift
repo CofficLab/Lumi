@@ -6,6 +6,7 @@ import SwiftData
 ///
 /// 与 ChatMessageEntity 为多对多关系：一条消息可包含多张图片，
 /// 同一张图片可被多条消息引用。
+/// 与 ToolCallEntity 为多对多关系：工具调用结果可包含多张图片。
 @Model
 final class ImageAttachmentEntity {
     @Attribute(.unique) var id: UUID
@@ -15,6 +16,9 @@ final class ImageAttachmentEntity {
 
     /// 反向关系：哪些消息引用了此图片
     var messages: [ChatMessageEntity]?
+
+    /// 反向关系：哪些工具调用结果引用了此图片
+    var toolCallResults: [ToolCallEntity]?
 
     init(
         id: UUID = UUID(),

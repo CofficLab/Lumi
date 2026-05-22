@@ -7,10 +7,7 @@ struct MessageWithToolCallsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     let message: ChatMessage
-    let toolOutputMessages: [ChatMessage]
-
     @EnvironmentObject var permissionRequestViewModel: WindowPermissionRequestVM
-    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
     @LumiMotionPreferenceReader private var motionPreference
 
     @State private var showRawMessage: Bool = false
@@ -42,11 +39,7 @@ struct MessageWithToolCallsView: View {
     private func toolCallRow(for toolCall: ToolCall) -> some View {
         let isParametersPresented = parameterPopoverToolCallID == toolCall.id
         let isResultsPresented = resultPopoverToolCallID == toolCall.id
-        let isLoadingResult = timelineViewModel.isLoadingToolOutput(for: toolCall.id)
-        let resultMessages = timelineViewModel.toolOutputs(for: toolCall.id)
-        let effectiveResults = resultMessages.isEmpty
-            ? toolOutputMessages.filter { $0.toolCallID == toolCall.id }
-            : resultMessages
+        let isLoadingResult = toolCall.result == nil && toolCall.authorizationState != .userRejected
         let shouldShowAuthState = toolCall.authorizationState != .noRisk
 
         VStack(alignment: .leading, spacing: 8) {
@@ -114,7 +107,7 @@ struct MessageWithToolCallsView: View {
                             title: String(localized: "调用结果", table: "CoreMessageRenderer"),
                             systemImage: "doc.text.magnifyingglass"
                         ) {
-                            ToolResultSectionView(outputs: effectiveResults, isLoading: isLoadingResult)
+                            ToolResultSectionView(result: toolCall.result, isLoading: isLoadingResult)
                         }
                     }
                 }
@@ -148,13 +141,7 @@ struct MessageWithToolCallsView: View {
     }
 
     private func toggleResultPopover(for toolCallID: String) {
-        let shouldShow = resultPopoverToolCallID != toolCallID
-
-        if shouldShow && !timelineViewModel.hasLoadedToolOutput(for: toolCallID) {
-            timelineViewModel.loadToolOutput(for: message, toolCallID: toolCallID)
-        }
-
-        resultPopoverToolCallID = shouldShow ? toolCallID : nil
+        resultPopoverToolCallID = resultPopoverToolCallID == toolCallID ? nil : toolCallID
     }
 
     private func popoverBinding(for toolCallID: String, selection: Binding<String?>) -> Binding<Bool> {
@@ -233,15 +220,8 @@ private struct ToolCallContentSectionView: View {
 private struct ToolResultSectionView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    let outputs: [ChatMessage]
+    let result: ToolCallResult?
     let isLoading: Bool
-
-    private var combinedContent: String {
-        outputs
-            .map(\.content)
-            .joined(separator: "\n\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 
     var body: some View {
         if isLoading {
@@ -254,8 +234,8 @@ private struct ToolResultSectionView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
-        } else if !combinedContent.isEmpty {
-            GenericToolSectionView(content: combinedContent)
+        } else if let result, !result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            GenericToolSectionView(content: result.content)
         } else {
             EmptyToolSectionView(
                 systemImage: "info.circle",

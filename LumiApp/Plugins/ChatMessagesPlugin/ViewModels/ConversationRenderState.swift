@@ -16,7 +16,6 @@ struct ConversationRenderState {
     var isLoadingMore: Bool = false
     var totalMessageCount: Int = 0
     var oldestLoadedTimestamp: Date?
-    var toolOutputsByToolCallID: [String: [ChatMessage]] = [:]
     var loadedToolCallIDs = Set<String>()
     var loadingToolCallIDs = Set<String>()
 

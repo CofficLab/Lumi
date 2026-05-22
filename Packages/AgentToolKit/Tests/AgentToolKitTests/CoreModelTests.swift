@@ -227,3 +227,43 @@ struct ImageAttachmentTests {
         #expect(decoded.mimeType == "image/png")
     }
 }
+
+// MARK: - ToolCallResult
+
+struct ToolCallResultTests {
+    @Test
+    func codableRoundTripPreservesFields() throws {
+        let executedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let original = ToolCallResult(
+            content: "file contents",
+            images: [ImageAttachment(data: Data([0x01]), mimeType: "image/png")],
+            isError: true,
+            executedAt: executedAt
+        )
+
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ToolCallResult.self, from: data)
+
+        #expect(decoded == original)
+    }
+}
+
+extension ToolCallTests {
+    @Test
+    func codableRoundTripPreservesEmbeddedResult() throws {
+        let result = ToolCallResult(content: "done")
+        let original = ToolCall(
+            id: "call_result",
+            name: "read_file",
+            arguments: "{}",
+            authorizationState: .userApproved,
+            result: result
+        )
+
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ToolCall.self, from: data)
+
+        #expect(decoded == original)
+        #expect(decoded.hasResult)
+    }
+}

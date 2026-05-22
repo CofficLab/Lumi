@@ -10,7 +10,6 @@ struct ChatBubble: View {
     /// 是否是最后一条消息
     let isLastMessage: Bool
     /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
-    let relatedToolOutputs: [ChatMessage]
     /// 是否为当前正在流式生成的 assistant 消息
     let isStreaming: Bool
 
@@ -24,16 +23,13 @@ struct ChatBubble: View {
     /// - Parameters:
     ///   - message: 消息对象
     ///   - isLastMessage: 是否是最后一条消息
-    ///   - relatedToolOutputs: 关联的工具输出
     init(
         message: ChatMessage,
         isLastMessage: Bool,
-        relatedToolOutputs: [ChatMessage] = [],
         isStreaming: Bool = false
     ) {
         self.message = message
         self.isLastMessage = isLastMessage
-        self.relatedToolOutputs = relatedToolOutputs
         self.isStreaming = isStreaming
     }
 

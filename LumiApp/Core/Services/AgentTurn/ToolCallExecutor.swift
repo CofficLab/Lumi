@@ -92,17 +92,17 @@ final class ToolCallExecutor: SuperLog {
 
     // MARK: - 执行工具
 
-    /// 执行某条助手消息中的全部工具调用，将每条结果以 `role: .tool` 消息落库。
+    /// 执行某条助手消息中的全部工具调用，将结果写回 assistant 消息内的 `ToolCall.result`。
     ///
     /// - Returns: 是否存在用户拒绝的工具调用
     @discardableResult
     func executeAll(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
-        guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else { return false }
+        guard var updatedCalls = assistantMessage.toolCalls, !updatedCalls.isEmpty else { return false }
 
-        let totalCount = toolCalls.count
+        let totalCount = updatedCalls.count
         var hadUserRejection = false
 
-        for (index, toolCall) in toolCalls.enumerated() {
+        for (index, toolCall) in updatedCalls.enumerated() where toolCall.result == nil {
             if Task.isCancelled {
                 conversationSendStatusVM.applyToolProgressEvent(
                     conversationId: conversationId,
@@ -113,24 +113,21 @@ final class ToolCallExecutor: SuperLog {
 
             if toolCall.authorizationState == .userRejected {
                 hadUserRejection = true
-                let resultMsg = ChatMessage(
-                    role: .tool,
-                    conversationId: conversationId,
-                    content: "用户拒绝执行此工具",
-                    toolCallID: toolCall.id
-                )
-                conversationVM.saveMessage(resultMsg, to: conversationId)
+                updatedCalls[index].result = ToolCallResult(content: "用户拒绝执行此工具")
                 continue
             }
 
-            let resultMsg = await executeOne(
+            updatedCalls[index].result = await executeOne(
                 toolCall: toolCall,
                 step: index + 1,
                 total: totalCount,
                 conversationId: conversationId
             )
-            conversationVM.saveMessage(resultMsg, to: conversationId)
         }
+
+        var updatedAssistant = assistantMessage
+        updatedAssistant.toolCalls = updatedCalls
+        conversationVM.saveMessage(updatedAssistant, to: conversationId)
 
         return hadUserRejection
     }
@@ -151,7 +148,7 @@ final class ToolCallExecutor: SuperLog {
         step: Int,
         total: Int,
         conversationId: UUID
-    ) async -> ChatMessage {
+    ) async -> ToolCallResult {
         let startedAt = Date()
         let initialShellStats = await Self.shellStats(for: toolCall.name)
         let displayName = extractDisplayName(from: toolCall.arguments)
@@ -182,7 +179,6 @@ final class ToolCallExecutor: SuperLog {
             toolName: toolCall.name
         )
 
-        let resultMsg: ChatMessage
         do {
             let result = try await withTaskCancellationHandler {
                 try toolContext.checkCancellation()
@@ -193,41 +189,31 @@ final class ToolCallExecutor: SuperLog {
             }
             try toolContext.checkCancellation()
             progressTask.cancel()
+
+            let toolResult: ToolCallResult
             if let decoded = ToolImageResultCodec.decode(result) {
-                resultMsg = ChatMessage(
-                    role: .tool,
-                    conversationId: conversationId,
+                toolResult = ToolCallResult(
                     content: decoded.content,
-                    toolCallID: toolCall.id,
                     images: decoded.images
                 )
             } else {
-                resultMsg = ChatMessage(
-                    role: .tool,
-                    conversationId: conversationId,
-                    content: result,
-                    toolCallID: toolCall.id
-                )
+                toolResult = ToolCallResult(content: result)
             }
+
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .completed(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
+            return toolResult
         } catch is CancellationError {
             progressTask.cancel()
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .cancelled(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
-            return ChatMessage(
-                role: .tool,
-                conversationId: conversationId,
-                content: "执行已取消",
-                toolCallID: toolCall.id
-            )
+            return ToolCallResult(content: "执行已取消")
         } catch {
             progressTask.cancel()
-            resultMsg = createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .failed(
@@ -238,12 +224,11 @@ final class ToolCallExecutor: SuperLog {
                     displayName: displayName
                 )
             )
+            return createErrorResult(for: toolCall, error: error)
         }
-
-        return resultMsg
     }
 
-    private func createErrorMessage(for toolCall: ToolCall, error: Error, conversationId: UUID) -> ChatMessage {
+    private func createErrorResult(for toolCall: ToolCall, error: Error) -> ToolCallResult {
         let errorContent: String
         if let toolError = error as? ToolExecutionError {
             errorContent = toolError.localizedDescription
@@ -251,12 +236,7 @@ final class ToolCallExecutor: SuperLog {
             errorContent = "Error executing tool: \(error.localizedDescription)"
         }
 
-        return ChatMessage(
-            role: .tool,
-            conversationId: conversationId,
-            content: errorContent,
-            toolCallID: toolCall.id
-        )
+        return ToolCallResult(content: errorContent, isError: true)
     }
 
     private func launchProgressReporter(

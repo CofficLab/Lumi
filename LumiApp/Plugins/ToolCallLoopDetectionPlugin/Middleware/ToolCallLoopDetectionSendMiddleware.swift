@@ -52,8 +52,22 @@ struct ToolCallLoopDetectionSuperSendMiddleware: SuperSendMiddleware {
         var signatureDetails: [String: ToolCallSignatureInfo] = [:]
 
         for message in recentMessages {
-            guard message.role == .tool,
-                  let toolCallID = message.toolCallID,
+            guard message.role == .assistant, let toolCalls = message.toolCalls else { continue }
+
+            for toolCall in toolCalls where toolCall.hasResult {
+                let signatureId = "\(toolCall.name):\(toolCall.arguments)"
+                signatureCounts[signatureId, default: 0] += 1
+                if signatureDetails[signatureId] == nil {
+                    signatureDetails[signatureId] = ToolCallSignatureInfo(
+                        name: toolCall.name,
+                        arguments: toolCall.arguments
+                    )
+                }
+            }
+        }
+
+        for message in recentMessages where message.role == .tool {
+            guard let toolCallID = message.toolCallID,
                   let assistantMessage = findAssistantMessage(for: toolCallID, in: recentMessages),
                   let toolCalls = assistantMessage.toolCalls,
                   let toolCall = toolCalls.first(where: { $0.id == toolCallID }) else {
@@ -61,11 +75,7 @@ struct ToolCallLoopDetectionSuperSendMiddleware: SuperSendMiddleware {
             }
 
             let signatureId = "\(toolCall.name):\(toolCall.arguments)"
-
-            // 统计次数
             signatureCounts[signatureId, default: 0] += 1
-
-            // 保存详情（只保存一次）
             if signatureDetails[signatureId] == nil {
                 signatureDetails[signatureId] = ToolCallSignatureInfo(
                     name: toolCall.name,
