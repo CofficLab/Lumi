@@ -3,6 +3,8 @@ import LumiUI
 
 /// 增强版工具输出视图 - 带有更多交互功能
 struct ToolOutputView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let content: String
     private let timestamp: Date?
     private let lineCountCached: Int
@@ -56,8 +58,8 @@ struct ToolOutputView: View {
                 // 时间戳
                 if let timestamp = timestamp {
                     Text(formatTimestamp(timestamp))
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
         }
@@ -96,8 +98,8 @@ struct ToolOutputView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(displayedContent)
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appMonoCaption)
+                        .foregroundColor(theme.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(12)
