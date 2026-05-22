@@ -6,6 +6,7 @@ import LanguageServerProtocol
 
 public enum EditorInlayHintLayout {
     /// 将可见区域映射为 LSP 行范围（0-based），供 `textDocument/inlayHint` 使用
+    @MainActor
     public static func visibleDocumentLSPRange(in textView: TextView) -> LSPRange? {
         let str = textView.string
         guard !str.isEmpty, let lm = textView.layoutManager else { return nil }

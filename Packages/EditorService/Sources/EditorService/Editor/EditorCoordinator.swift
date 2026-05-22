@@ -239,7 +239,7 @@ final class ContextMenuManager: SuperLog {
 
     /// 注册 textView，执行 swizzle（仅首次）并绑定 helper
     func register(textView: TextView, state: EditorState) {
-        let targetClass = object_getClass(textView)!
+        let targetClass: AnyClass = object_getClass(textView)!
 
         // 确保这个类只 swizzle 一次
         if objc_getAssociatedObject(targetClass, Self.swizzledKey) == nil {
