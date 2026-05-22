@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 应用管理器视图
 struct AppManagerView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel = AppManagerViewModel()
     
     var body: some View {
@@ -80,7 +82,7 @@ struct AppManagerView: View {
             // 第一行：搜索
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
                 TextField(
                     String(localized: "Search Apps", table: "AppManager"),
                     text: $viewModel.searchText
@@ -92,12 +94,12 @@ struct AppManagerView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
-                        .font(.subheadline)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCallout)
+                        .foregroundColor(theme.textSecondary)
 
                     Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
-                        .font(.caption)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
 
                 Spacer()
