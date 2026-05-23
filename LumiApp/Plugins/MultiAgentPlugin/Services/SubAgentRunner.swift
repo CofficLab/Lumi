@@ -255,9 +255,15 @@ actor SubAgentRunner: SuperLog {
 
                     let toolResult: String
                     do {
+                        let toolContext = ToolExecutionContext(
+                            conversationId: response.conversationId,
+                            toolCallId: toolCall.id,
+                            toolName: toolCall.name
+                        )
                         toolResult = try await toolService.executeTool(
                             named: toolCall.name,
-                            argumentsJSON: toolCall.arguments
+                            argumentsJSON: toolCall.arguments,
+                            context: toolContext
                         )
                     } catch {
                         toolResult = "Tool error: \(error.localizedDescription)"

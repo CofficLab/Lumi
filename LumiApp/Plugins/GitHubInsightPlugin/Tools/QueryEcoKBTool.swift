@@ -46,7 +46,7 @@ struct QueryEcoKBTool: SuperAgentTool {
     }
 
     /// 对项目专属或全局缓存条目执行关键词搜索。
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let query = (arguments["query"]?.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
             return String(localized: "Missing required parameter: query", table: "GitHubInsight")

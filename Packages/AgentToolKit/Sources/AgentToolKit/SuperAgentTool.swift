@@ -10,7 +10,7 @@ import Foundation
 /// - `description(for:)`: 功能描述，帮助 AI 理解何时使用
 /// - `inputSchema(for:)`: 输入参数的 JSON Schema
 /// - `permissionRiskLevel(arguments:)`: 当前调用的风险等级（必填）
-/// - `execute(arguments:)`: 实际执行工具逻辑
+/// - `execute(arguments:context:)`: 实际执行工具逻辑
 public protocol SuperAgentTool: Sendable {
     /// 工具名称（唯一标识符，不翻译）
     var name: String { get }
@@ -21,10 +21,7 @@ public protocol SuperAgentTool: Sendable {
     /// 输入参数 JSON Schema（多语言）
     func inputSchema(for language: LanguagePreference) -> [String: Any]
 
-    /// 执行工具
-    func execute(arguments: [String: ToolArgument]) async throws -> String
-
-    /// 带取消上下文的执行入口
+    /// 带上下文的执行入口
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String
 
     /// 工具自行评估当前调用的风险等级（必填）
@@ -40,12 +37,5 @@ extension SuperAgentTool {
     /// 默认 inputSchema（英文）
     public var inputSchema: [String: Any] {
         inputSchema(for: .english)
-    }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        let result = try await execute(arguments: arguments)
-        try context.checkCancellation()
-        return result
     }
 }

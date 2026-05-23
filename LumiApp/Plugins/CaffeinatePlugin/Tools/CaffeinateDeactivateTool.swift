@@ -30,7 +30,7 @@ struct CaffeinateDeactivateTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let manager = CaffeinateManager.shared
 
         guard manager.isActive else {

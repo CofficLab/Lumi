@@ -68,7 +68,7 @@ struct GitBranchTool: SuperAgentTool, SuperLog {
         }
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
         let action = arguments["action"]?.value as? String ?? "list"
         let name = arguments["name"]?.value as? String

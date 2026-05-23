@@ -74,25 +74,85 @@ jobs:
 
       - name: Update Xcode Project Version
         run: |
-          # 更新 MARKETING_VERSION
-          agvtool new-marketing-version ${{ env.new_version }} 2>/dev/null || true
-          # 强制使用 sed 更新所有 target 的 MARKETING_VERSION 配置
+          set -euo pipefail
+
+          echo "📝 Updating MARKETING_VERSION to ${{ env.new_version }}..."
+
+          # 直接使用 sed 更新 project.pbxproj 中所有 target 的 MARKETING_VERSION
+          # 不使用 agvtool，避免在 CI 环境中出现 "Cannot find YES" 错误
+          BEFORE_COUNT=$(grep -c "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj || echo "0")
+          if [ "$BEFORE_COUNT" -eq 0 ]; then
+            echo "❌ MARKETING_VERSION not found in project.pbxproj"
+            exit 1
+          fi
+
           sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
 
-          # 验证（使用 xcodebuild 而非 agvtool）
+          # 验证 sed 替换是否成功
+          AFTER_COUNT=$(grep -c "MARKETING_VERSION = ${{ env.new_version }}" Lumi.xcodeproj/project.pbxproj || echo "0")
+          if [ "$AFTER_COUNT" -eq 0 ]; then
+            echo "❌ sed 替换 MARKETING_VERSION 失败，未找到任何匹配项被替换为 ${{ env.new_version }}"
+            exit 1
+          fi
+          if [ "$AFTER_COUNT" -ne "$BEFORE_COUNT" ]; then
+            echo "❌ MARKETING_VERSION 替换数量不匹配: 替换前 $BEFORE_COUNT 处，替换后匹配 $AFTER_COUNT 处"
+            exit 1
+          fi
+
+          echo "✅ 替换了 $AFTER_COUNT 处 MARKETING_VERSION"
+
+          # 使用 xcodebuild 验证构建设置中的版本号
           NEW_MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}')
-          echo "Updated Marketing Version: $NEW_MARKETING_VERSION"
+          if [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
+            echo "❌ 验证失败: xcodebuild 报告 MARKETING_VERSION=$NEW_MARKETING_VERSION, 期望 ${{ env.new_version }}"
+            exit 1
+          fi
+          echo "✅ Updated Marketing Version: $NEW_MARKETING_VERSION"
 
       - name: Update Build Number
         run: |
-          # 更新 CURRENT_PROJECT_VERSION
-          agvtool next-version -all 2>/dev/null || true
-          NEW_BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
+          set -euo pipefail
 
-          # 强制使用 sed 同步所有 target 的 CURRENT_PROJECT_VERSION
+          echo "📝 Updating CURRENT_PROJECT_VERSION..."
+
+          # 读取当前构建号并自增
+          CURRENT_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
+          if [ -z "$CURRENT_BUILD" ]; then
+            echo "❌ 无法从 xcodebuild 获取当前 CURRENT_PROJECT_VERSION"
+            exit 1
+          fi
+          NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
+          echo "  Build number: $CURRENT_BUILD → $NEW_BUILD_VERSION"
+
+          # 使用 sed 更新所有 target 的 CURRENT_PROJECT_VERSION
+          BEFORE_COUNT=$(grep -c "CURRENT_PROJECT_VERSION = " Lumi.xcodeproj/project.pbxproj || echo "0")
+          if [ "$BEFORE_COUNT" -eq 0 ]; then
+            echo "❌ CURRENT_PROJECT_VERSION not found in project.pbxproj"
+            exit 1
+          fi
+
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
 
-          echo "Updated Build Version: $NEW_BUILD_VERSION"
+          # 验证 sed 替换是否成功
+          AFTER_COUNT=$(grep -c "CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION" Lumi.xcodeproj/project.pbxproj || echo "0")
+          if [ "$AFTER_COUNT" -eq 0 ]; then
+            echo "❌ sed 替换 CURRENT_PROJECT_VERSION 失败"
+            exit 1
+          fi
+          if [ "$AFTER_COUNT" -ne "$BEFORE_COUNT" ]; then
+            echo "❌ CURRENT_PROJECT_VERSION 替换数量不匹配: 替换前 $BEFORE_COUNT 处，替换后匹配 $AFTER_COUNT 处"
+            exit 1
+          fi
+
+          echo "✅ 替换了 $AFTER_COUNT 处 CURRENT_PROJECT_VERSION"
+
+          # 使用 xcodebuild 验证
+          VERIFY_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
+          if [ "$VERIFY_BUILD" != "$NEW_BUILD_VERSION" ]; then
+            echo "❌ 验证失败: xcodebuild 报告 CURRENT_PROJECT_VERSION=$VERIFY_BUILD, 期望 $NEW_BUILD_VERSION"
+            exit 1
+          fi
+          echo "✅ Updated Build Version: $NEW_BUILD_VERSION"
 
       - name: Determine Tag and Prerelease Status
         run: |

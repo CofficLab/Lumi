@@ -13,8 +13,7 @@ import os
 /// - `DelayMessageState`（@MainActor 单例）：存储从 Environment 同步来的 VM 引用
 /// - `DelayMessagePlugin`（Actor）：插件主体，提供 `addRootView` 和工具
 /// - `DelayMessageOverlay`（View）：通过 `addRootView` 挂载，用 `@EnvironmentObject` 监听 VM 变化
-/// - `GetCurrentConversationTool`：返回状态中缓存的当前会话 ID
-/// - `DelayMessageTool`：接收 conversationId + message + seconds，延时后入队
+/// - `DelayMessageTool`：接收 message + seconds，使用工具执行上下文中的会话 ID 延时后入队
 ///
 /// ## 数据流
 ///
@@ -22,8 +21,8 @@ import os
 /// EnvironmentObject (conversationVM / messageQueueVM)
 ///         ↓  (DelayMessageOverlay 同步)
 /// DelayMessageState (@MainActor 单例)
-///         ↓  (工具读取)
-/// DelayMessageTool / GetCurrentConversationTool
+///         ↓  (工具入队消息)
+/// DelayMessageTool
 /// ```
 actor DelayMessagePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.delay-message")
@@ -82,6 +81,6 @@ actor DelayMessagePlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [GetCurrentConversationTool(), DelayMessageTool()]
+        [DelayMessageTool()]
     }
 }

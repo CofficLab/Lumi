@@ -63,25 +63,21 @@ Supported content types:
         .medium
     }
     
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await executeFetch(arguments: arguments, context: nil)
-    }
-
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         return try await executeFetch(arguments: arguments, context: context)
     }
 
-    private func executeFetch(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
+    private func executeFetch(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let urlString = arguments["url"]?.value as? String else {
             return "Error: Missing required 'url' parameter"
         }
         
         let prompt = arguments["prompt"]?.value as? String
         let service = WebFetchService()
-        try context?.checkCancellation()
+        try context.checkCancellation()
         let result = await service.fetch(urlString: urlString, prompt: prompt)
-        try context?.checkCancellation()
+        try context.checkCancellation()
         return result
     }
 }

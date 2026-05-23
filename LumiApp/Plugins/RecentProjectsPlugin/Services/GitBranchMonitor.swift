@@ -47,7 +47,8 @@ final class GitBranchMonitor: ObservableObject {
     }
     
     deinit {
-        stopAll()
+        // Note: deinit cannot call @MainActor methods directly
+        // Cleanup is handled by stopAll() before the object is released
     }
     
     // MARK: - Public API
@@ -255,14 +256,14 @@ private extension Character {
 
 extension GitBranchMonitor {
     /// 便捷方法：开始监听并添加回调
-    func startMonitoring(projectPath: String, onBranchChange: @escaping BranchChangeCallback) {
-        onBranchChange(onBranchChange)
+    func startMonitoring(projectPath: String, onBranchChange callback: @escaping BranchChangeCallback) {
+        self.onBranchChange(callback)
         startMonitoring(projectPath: projectPath)
     }
     
     /// 便捷方法：开始监听多个项目
-    func startMonitoring(projectPaths: [String], onBranchChange: @escaping BranchChangeCallback) {
-        onBranchChange(onBranchChange)
+    func startMonitoring(projectPaths: [String], onBranchChange callback: @escaping BranchChangeCallback) {
+        self.onBranchChange(callback)
         for projectPath in projectPaths {
             startMonitoring(projectPath: projectPath)
         }

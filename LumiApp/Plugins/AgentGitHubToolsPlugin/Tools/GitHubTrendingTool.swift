@@ -47,7 +47,7 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let since = arguments["since"]?.value as? String ?? "daily"
         let limit = arguments["limit"]?.value as? Int ?? 10
 

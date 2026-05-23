@@ -41,7 +41,7 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let providerFilter = arguments["providerId"]?.value as? String
         let store = LLMAvailabilityStore.shared
         let allProviders = store.providers

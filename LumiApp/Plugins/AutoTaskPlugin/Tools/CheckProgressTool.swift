@@ -10,7 +10,6 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "check_progress"
-    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -34,8 +33,9 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
-
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId.uuidString
         let manager = TaskStateManager.shared
         let tasks = await manager.fetchTasks(conversationId: conversationId)
         let summary = await manager.getProgressSummary(conversationId: conversationId)

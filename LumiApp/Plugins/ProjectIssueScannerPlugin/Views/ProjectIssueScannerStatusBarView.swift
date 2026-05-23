@@ -86,11 +86,18 @@ struct ProjectIssueScannerStatusBarView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = ProjectIssueScannerViewModel()
 
+    /// 模型偏好（从 UserDefaults 加载）
+    @State private var modelPreference: ScannerModelPreference = ScannerModelPreference.load()
+
     var body: some View {
         Group {
             if shouldShow {
                 StatusBarHoverContainer(
-                    detailView: ProjectIssueScannerPopover(viewModel: viewModel, projectPath: projectVM.currentProjectPath),
+                    detailView: ProjectIssueScannerPopover(
+                        viewModel: viewModel,
+                        projectPath: projectVM.currentProjectPath,
+                        modelPreference: $modelPreference
+                    ),
                     popoverWidth: 480,
                     id: "project-issue-scanner"
                 ) {
@@ -117,6 +124,12 @@ struct ProjectIssueScannerStatusBarView: View {
         .onApplicationDidBecomeActive {
             Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
         }
+        .onChange(of: modelPreference) { _, newPreference in
+            Task {
+                await DeepIssueAnalyzer.shared.updateModelPreference(newPreference)
+                newPreference.save()
+            }
+        }
     }
 
     private var shouldShow: Bool {
@@ -137,8 +150,10 @@ struct ProjectIssueScannerStatusBarView: View {
 
 /// 问题列表弹窗视图。
 struct ProjectIssueScannerPopover: View {
+    @EnvironmentObject private var llmVM: AppLLMVM
     @ObservedObject var viewModel: ProjectIssueScannerViewModel
     let projectPath: String
+    @Binding var modelPreference: ScannerModelPreference
 
     private var primaryTextColor: Color {
         Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
@@ -151,6 +166,7 @@ struct ProjectIssueScannerPopover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            modelPickerSection
             issuesList
             footer
         }
@@ -172,6 +188,19 @@ struct ProjectIssueScannerPopover: View {
                 .font(.caption)
                 .foregroundColor(secondaryTextColor)
         }
+    }
+
+    private var modelPickerSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("模型选择")
+                .font(.caption)
+                .foregroundColor(secondaryTextColor)
+
+            ScannerModelPickerView(preference: $modelPreference)
+        }
+        .padding(10)
+        .background(Color.adaptive(light: "F5F5F7", dark: "1C1C1E"))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     @ViewBuilder

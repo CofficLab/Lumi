@@ -82,7 +82,7 @@ Usage:
         .high
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let filePath = arguments["file_path"]?.value as? String,
               let oldString = arguments["old_string"]?.value as? String,
               let newString = arguments["new_string"]?.value as? String else {

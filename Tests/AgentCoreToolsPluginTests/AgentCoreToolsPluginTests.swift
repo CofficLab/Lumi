@@ -63,9 +63,13 @@ final class AgentCoreToolsPluginTests: XCTestCase {
         try imageData.write(to: tempURL)
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let result = try await ReadFileTool().execute(arguments: [
-            "path": ToolArgument(tempURL.path)
-        ])
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "read_file_test", toolName: "read_file")
+        let result = try await ReadFileTool().execute(
+            arguments: [
+                "path": ToolArgument(tempURL.path)
+            ],
+            context: context
+        )
         let decoded = ToolImageResultCodec.decode(result)
 
         XCTAssertNotNil(decoded)

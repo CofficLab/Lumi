@@ -52,7 +52,8 @@ final class DatabaseManagerPluginTests: XCTestCase {
         )
         await DatabaseAgentConnectionRegistry.shared.upsert(config)
 
-        let output = try await DatabaseListConnectionsTool().execute(arguments: [:])
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "list_connections_test", toolName: "database_list_connections")
+        let output = try await DatabaseListConnectionsTool().execute(arguments: [:], context: context)
         XCTAssertTrue(output.contains("Secret DB"))
         XCTAssertFalse(output.contains("super-secret"))
     }
@@ -65,11 +66,15 @@ final class DatabaseManagerPluginTests: XCTestCase {
         _ = try await connection.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", params: nil)
         await DatabaseAgentConnectionRegistry.shared.upsert(config)
 
-        let output = try await DatabaseReadonlyQueryTool().execute(arguments: [
-            "connection_id": ToolArgument(config.id.uuidString),
-            "sql": ToolArgument("SELECT id, name FROM users"),
-            "limit": ToolArgument(10),
-        ])
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "readonly_query_test", toolName: "database_readonly_query")
+        let output = try await DatabaseReadonlyQueryTool().execute(
+            arguments: [
+                "connection_id": ToolArgument(config.id.uuidString),
+                "sql": ToolArgument("SELECT id, name FROM users"),
+                "limit": ToolArgument(10),
+            ],
+            context: context
+        )
 
         XCTAssertTrue(output.contains("Alice"))
         XCTAssertTrue(output.contains("rowsReturned"))

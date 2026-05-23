@@ -81,10 +81,6 @@ Note: Requires agent-browser CLI to be installed.
         .medium
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await executeCommand(arguments: arguments, context: nil)
-    }
-
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         return try await executeCommand(arguments: arguments, context: context)
@@ -92,7 +88,7 @@ Note: Requires agent-browser CLI to be installed.
 
     // MARK: - Implementation
 
-    private func executeCommand(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
+    private func executeCommand(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let command = arguments["command"]?.value as? String else {
             return "Error: Missing required 'command' parameter"
         }
@@ -112,7 +108,7 @@ Note: Requires agent-browser CLI to be installed.
         }
 
         do {
-            try context?.checkCancellation()
+            try context.checkCancellation()
 
             let args = command.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
             let options = ShellOptions(
@@ -126,7 +122,7 @@ Note: Requires agent-browser CLI to be installed.
                 options: options
             )
 
-            try context?.checkCancellation()
+            try context.checkCancellation()
 
             if Self.verbose {
                 Self.logger.info("\(self.t)✅ Command completed (exit: \(result.exitCode))")

@@ -51,7 +51,7 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let providerId = arguments["providerId"]?.value as? String, !providerId.isEmpty else {
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {

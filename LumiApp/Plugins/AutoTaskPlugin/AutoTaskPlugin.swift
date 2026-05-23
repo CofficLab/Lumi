@@ -10,8 +10,10 @@ import SwiftUI
 ///
 /// ## 核心功能
 /// - **create_task**: 将复杂目标拆解为可执行的子任务列表
+/// - **append_task**: 追加新任务到已有列表末尾（不影响已有任务）
 /// - **update_task**: 更新任务状态（进行中/已完成/跳过）
-/// - **check_progress**: 查询当前会话的任务进度
+/// - **list_tasks**: 获取当前会话的任务列表（可按状态筛选）
+/// - **check_progress**: 查询当前会话的任务进度摘要
 /// - **TaskContextMiddleware**: 每轮自动注入进度，保持 Agent 全局视野
 ///
 /// ## 工作流程
@@ -47,15 +49,12 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        guard let conversationId = context.conversationVM?.selectedConversationId?.uuidString else {
-            Self.logger.warning("\(Self.t)无法获取当前会话 ID，跳过注册 AutoTask 工具")
-            return []
-        }
-
         return [
-            CreateTaskTool(conversationId: conversationId),
-            UpdateTaskTool(conversationId: conversationId),
-            CheckProgressTool(conversationId: conversationId),
+            CreateTaskTool(),
+            AppendTaskTool(),
+            UpdateTaskTool(),
+            ListTasksTool(),
+            CheckProgressTool(),
         ]
     }
 

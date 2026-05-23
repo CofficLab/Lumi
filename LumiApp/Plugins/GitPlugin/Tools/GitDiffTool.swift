@@ -52,7 +52,7 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
         let staged = arguments["staged"]?.value as? Bool ?? false
         let file = arguments["file"]?.value as? String

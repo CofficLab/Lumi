@@ -31,7 +31,7 @@ struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let limit = min((arguments["limit"]?.value as? Int) ?? 5, 500)
 
         if Self.verbose {

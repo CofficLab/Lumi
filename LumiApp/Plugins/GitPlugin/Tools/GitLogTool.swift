@@ -59,7 +59,7 @@ struct GitLogTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
         let count = arguments["count"]?.value as? Int ?? 10
         let branch = arguments["branch"]?.value as? String
