@@ -48,8 +48,9 @@ public class TextLayoutManager: NSObject {
     ///
     /// This solves a small problem with layout performance, if you're seeing layout lagging behind while scrolling,
     /// adjusting this value higher may help fix that.
-    /// Defaults to `350`.
-    public var verticalLayoutPadding: CGFloat = 350 {
+    /// Optimized: Reduced from 350 to 200 to reduce unnecessary pre-layout.
+    /// Defaults to `200`.
+    public var verticalLayoutPadding: CGFloat = 200 {
         didSet {
             setNeedsLayout()
         }

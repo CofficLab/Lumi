@@ -189,7 +189,100 @@
 
 ---
 
-## 2. 文件树图标主题
+## 19. Editor 性能优化
+
+> 目标：解决 Editor 相关功能的卡顿问题，提升编辑、滚动、高亮和 LSP 交互的流畅度。详细分析见 `docs/editor-performance-analysis.md`。
+
+### Phase 1: TreeSitter 解析优化 (高优先级)
+
+- [x] 调整 `TreeSitterClient.Constants.parserTimeout` 从 50ms 到 100ms，减少超时导致的重新解析
+- [x] 降低 `maxSyncContentLength` 从 1MB 到 500KB，避免大文件阻塞主线程
+- [x] 降低 `maxSyncEditLength` 从 1024 到 512，减少编辑操作的同步处理阈值
+- [ ] 优化异步任务调度：使用 `Task(priority: .utility)` 替代 `.userInitiated`，降低主线程争用
+- [ ] 实现增量语法树更新：只更新受影响的语法范围，避免全量重新解析
+- [ ] 添加 TreeSitter 解析性能监控：记录解析时间、取消次数、异步切换次数
+
+### Phase 2: Highlighting 延迟更新 (高优先级)
+
+- [x] 为 `Highlighter.textStorage(_:didProcessEditing:)` 添加防抖机制（16ms 延迟，60fps）
+- [x] 优化 `visibleRangeProvider.visibleTextChanged()`：只在可见区域真正变化时触发
+- [x] 添加 `currentVisibleRange` 属性用于防抖比较
+- [ ] 实现 HighlightProvider 并行处理：使用 `TaskGroup` 并行执行多个 provider 的高亮查询
+- [ ] 添加高亮更新性能监控：记录更新频率、单次更新耗时、可见区域变化次数
+- [ ] 优化 `StyledRangeContainer.runsIn(range:)`：缓存最近查询结果，避免重复计算
+
+### Phase 3: LineOffsetTable 增量更新 (中优先级)
+
+- [x] 实现 `LineOffsetTable.update(editRange:changeInLength:)` 增量更新方法
+- [x] 避免每次编辑都重建行偏移表，只更新受影响的行
+- [x] 优化行计数初始化：使用更高效的方法替代 `content.filter { $0 == "\n" }`
+- [ ] 添加行偏移表性能监控：记录重建次数、增量更新次数、查询命中率
+
+### Phase 4: TextLayoutManager 布局优化 (中优先级)
+
+- [x] 调整 `verticalLayoutPadding` 从 350 到 200，减少不必要的预布局行数
+- [ ] 增加 View 复用池大小：从默认值增加到 200，减少视图创建开销
+- [ ] 优化 `layoutLines` 循环：跳过不需要重新布局的行，减少循环迭代次数
+- [ ] 实现布局结果缓存：缓存最近的布局结果，避免相同可见区域重复布局
+- [ ] 添加布局性能监控：记录单次布局耗时、布局行数、视图创建/复用比例
+
+### Phase 5: LSP 请求调度优化 (中优先级)
+
+- [ ] 实现 LSP 请求优先级队列：区分补全、诊断、悬停等不同优先级
+- [ ] 优化 debounce 策略：为不同场景（输入、滚动、文件切换）设置不同的 debounce 时间
+- [ ] 添加 LSP 请求取消机制：确保取消的请求不会执行回调
+- [ ] 实现 LSP 结果缓存：缓存最近的查询结果，避免相同位置重复请求
+- [ ] 添加 LSP 请求性能监控：记录请求频率、响应时间、取消比例
+
+### Phase 6: 内存泄漏修复 (高优先级)
+
+- [ ] 实现插件 `onDisable()` 调用：确保禁用插件时清理资源
+- [ ] 添加 `WindowContainer.cleanup()` 方法：窗口关闭时清理编辑器状态
+- [ ] 清理 EditorSession 状态：包括 LSP 请求、定时器、观察者、缓存的 UI 状态
+- [ ] 清理插件 UI 缓存：窗口关闭、插件禁用时清除 `AnyView` 缓存
+- [ ] 添加内存监控：记录编辑器相关对象的生命周期、内存使用峰值
+
+### Phase 7: EditorUndoManager 优化 (低优先级)
+
+- [ ] 实现撤销栈大小限制：最大 100 个条目，超出时移除最旧的
+- [ ] 优化撤销状态存储：只存储变化的部分，而不是完整文本快照
+- [ ] 实现撤销状态压缩：合并连续的小编辑为一个撤销条目
+- [ ] 添加撤销管理器性能监控：记录栈大小、内存使用、压缩次数
+
+### Phase 8: ContextMenuManager 优化 (低优先级)
+
+- [ ] 优化 ObjC runtime 使用：缓存方法查找结果，避免重复的 `class_replaceMethod`
+- [ ] 减少关联对象查找：缓存 helper 引用，避免每次右键都查找
+- [ ] 实现菜单项复用：复用已创建的 NSMenuItem，减少对象创建
+- [ ] 添加右键菜单性能监控：记录菜单创建时间、注入时间、菜单项数量
+
+### 性能监控指标
+
+建议在 `EditorPerformance.swift` 中添加以下监控点：
+
+```swift
+case treeSitterParse = "treesitter.parse"
+case highlightUpdate = "highlight.update"
+case layoutCalculation = "layout.calculation"
+case lspRequestQueue = "lsp.request.queue"
+case memoryPressure = "memory.pressure"
+case undoManagerSize = "undoManager.size"
+```
+
+### 成功标准
+
+- [ ] 快速输入时不卡顿，保持 60fps
+- [ ] 大文件（>1MB）编辑流畅，无明显延迟
+- [ ] 滚动时高亮更新不掉帧
+- [ ] LSP 请求响应及时，无堆积
+- [ ] 长时间运行无内存泄漏，对象正确释放
+- [ ] 👤 需要用户参与：在不同大小文件（小、中、大、超大）上验证编辑流畅度
+- [ ] 👤 需要用户参与：长时间使用（>2小时）后验证无明显卡顿
+- [ ] 👤 需要用户参与：使用 Instruments 验证主线程工作减少 40-60%
+
+---
+
+## 20. 文件树图标主题
 
 > 目标：让 Lumi 主题插件通过单一 `LumiThemeContribution` 配置文件树图标。
 

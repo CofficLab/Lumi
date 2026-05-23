@@ -71,13 +71,16 @@ public final class TreeSitterClient: HighlightProviding {
 
         /// The timeout for parsers to re-check if a task is canceled. This constant represents the period between
         /// checks and is directly related to editor responsiveness.
-        public static var parserTimeout: TimeInterval = 0.05
+        /// Optimized: Increased from 0.05s to 0.1s to reduce timeout-induced re-parsing.
+        public static var parserTimeout: TimeInterval = 0.1
 
         /// The maximum length of an edit before it must be processed asynchronously
-        public static var maxSyncEditLength: Int = 1024
+        /// Optimized: Reduced from 1024 to 512 to avoid main thread blocking.
+        public static var maxSyncEditLength: Int = 512
 
         /// The maximum length a document can be before all queries and edits must be processed asynchronously.
-        public static var maxSyncContentLength: Int = 1_000_000
+        /// Optimized: Reduced from 1MB to 500KB to improve responsiveness with large files.
+        public static var maxSyncContentLength: Int = 500_000
 
         /// The maximum length a query can be before it must be performed asynchronously.
         public static var maxSyncQueryLength: Int = 4096
