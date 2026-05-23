@@ -184,6 +184,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(contentPanelVisible: savedContentPanelVisible)
         }
+
+        // 恢复编辑器区域可见性
+        if let savedEditorVisible = store.loadEditorVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复编辑器区域可见性: \(savedEditorVisible)")
+            }
+            layoutVM.restoreFromPlugin(editorVisible: savedEditorVisible)
+        }
     }
 
     // MARK: - Observe
@@ -230,6 +238,15 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .sink { newValue in
                 guard hasRestored else { return }
                 LayoutPluginLocalStore.shared.saveContentPanelVisible(newValue)
+            }
+            .store(in: &cancellables)
+
+        // 观察 editorVisible
+        layoutVM.$editorVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveEditorVisible(newValue)
             }
             .store(in: &cancellables)
     }

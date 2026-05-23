@@ -37,6 +37,15 @@ struct PanelContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contextMenu {
+            Button {
+                withAnimation {
+                    layoutVM.editorVisible = false
+                }
+            } label: {
+                Label("Hide Editor", systemImage: "rectangle.center.inset.filled")
+            }
+        }
     }
 
     // ── 上半部分：Header + 主内容 ──

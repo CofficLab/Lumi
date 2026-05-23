@@ -128,6 +128,7 @@ struct ContentView: View, SuperLog {
             } else {
                 let sidebarSections = pluginProvider.getSidebarSections()
                 let hasRail = pluginProvider.hasRailTabs()
+                let showEditor = layoutVM.editorVisible
 
                 let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
@@ -142,8 +143,10 @@ struct ContentView: View, SuperLog {
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         RightSidebarContainerView(sections: sidebarSections)
                             .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
@@ -156,8 +159,10 @@ struct ContentView: View, SuperLog {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)
-                        PanelContentView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         RightSidebarContainerView(sections: sidebarSections)
                             .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
@@ -176,16 +181,20 @@ struct ContentView: View, SuperLog {
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)
-                        PanelContentView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 }

@@ -163,6 +163,19 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         set(visible, forKey: Keys.contentPanelVisible)
     }
 
+    // MARK: - Editor Visibility
+
+    /// 加载已保存的编辑器区域可见性（同步，需要返回值）
+    /// - Returns: 可见性，默认返回 nil 表示未保存过
+    func loadEditorVisible() -> Bool? {
+        object(forKey: Keys.editorVisible) as? Bool
+    }
+
+    /// 保存编辑器区域可见性（异步，不阻塞调用线程）
+    func saveEditorVisible(_ visible: Bool) {
+        set(visible, forKey: Keys.editorVisible)
+    }
+
     // MARK: - Keys
 
     private enum Keys {
@@ -173,6 +186,7 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         static let editorBottomPanelHeight = "editorBottomPanelHeight"
         static let bottomPanelVisible = "bottomPanelVisible"
         static let contentPanelVisible = "contentPanelVisible"
+        static let editorVisible = "editorVisible"
     }
 
     // MARK: - Private Helpers

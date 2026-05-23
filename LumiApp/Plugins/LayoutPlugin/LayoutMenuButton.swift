@@ -9,6 +9,9 @@ struct LayoutMenuButton: View {
 
     var body: some View {
         Menu {
+            Toggle(isOn: $layoutVM.editorVisible) {
+                Label("Editor", systemImage: "rectangle.center.inset.filled")
+            }
             Toggle(isOn: $layoutVM.contentPanelVisible) {
                 Label("Content Panel", systemImage: "rectangle.topthird.inset.filled")
             }
