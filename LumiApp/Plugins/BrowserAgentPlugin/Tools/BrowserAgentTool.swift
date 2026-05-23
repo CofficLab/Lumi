@@ -189,7 +189,7 @@ Note: Requires agent-browser CLI to be installed.
             let result = try await ShellExecutor.execute(
                 executable: "/bin/zsh",
                 arguments: ["-l", "-c", "which \(command)"],
-                options: .init(throwsOnError: false, timeout: 5)
+                options: .init(timeout: 5, throwsOnError: false)
             )
             let path = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
             return result.isSuccess && !path.isEmpty ? path : nil
