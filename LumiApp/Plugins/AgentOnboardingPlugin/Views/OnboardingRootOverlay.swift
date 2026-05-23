@@ -267,31 +267,6 @@ private struct OnboardingSheetView: View {
                 tip: nil
             ),
             OnboardingPage(
-                id: "layout",
-                icon: "rectangle.3.group.bubble.left",
-                iconGradient: [Color.green, Color.teal],
-                title: "理解界面布局",
-                subtitle: "三栏式设计，让工作流清晰高效",
-                features: [
-                    Feature(
-                        icon: "sidebar.left",
-                        title: "左侧栏",
-                        description: "会话列表 + 项目管理 + 插件面板，快速切换上下文"
-                    ),
-                    Feature(
-                        icon: "text.bubble",
-                        title: "中间对话区",
-                        description: "提问、查看回复、拖拽添加文件或文件夹作为项目"
-                    ),
-                    Feature(
-                        icon: "sidebar.right",
-                        title: "右侧面板",
-                        description: "插件提供的工具面板，如搜索、文件浏览等"
-                    )
-                ],
-                tip: "最左侧还有活动栏，可快速切换不同插件面板"
-            ),
-            OnboardingPage(
                 id: "project-context",
                 icon: "folder.badge.gearshape",
                 iconGradient: [Color.orange, Color.red],
@@ -763,43 +738,6 @@ private struct OnboardingSheetView: View {
             }
 
             Spacer()
-
-            // 主要操作按钮
-            if isLastPage {
-                HStack(spacing: 10) {
-                    // 打开设置按钮
-                    Button {
-                        NotificationCenter.postOpenSettings()
-                        completeOnboarding()
-                    } label: {
-                        Label(String(localized: "打开设置", table: "AgentOnboardingPlugin"), systemImage: "gearshape")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.quinary.opacity(0.5))
-                    .clipShape(Capsule())
-
-                    // 新建会话按钮
-                    Button {
-                        Task {
-                            await conversationVM.createNewConversation()
-                            completeOnboarding()
-                        }
-                    } label: {
-                        Label(String(localized: "新建会话", table: "AgentOnboardingPlugin"), systemImage: "plus")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.quinary.opacity(0.5))
-                    .clipShape(Capsule())
-                }
-            }
 
             // 下一步/开始使用按钮
             Button {
