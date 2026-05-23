@@ -29,10 +29,11 @@ actor MemoryRetrievalService {
         scope: MemoryScope,
         maxResults: Int = 3
     ) async -> [MemoryItem] {
-        await service.findRelevant(
+        let storage = await MemoryStorageService.shared.memoryKitStorage
+        return await service.findRelevant(
             query: query,
             scope: scope,
-            storage: MemoryStorageService.shared,
+            storage: storage,
             maxResults: maxResults
         )
     }

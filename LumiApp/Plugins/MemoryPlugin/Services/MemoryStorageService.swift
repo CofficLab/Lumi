@@ -10,6 +10,9 @@ actor MemoryStorageService {
 
     private let service: MemoryKit.MemoryStorageService
 
+    /// 暴露底层 MemoryKit 服务（供 MemoryRetrievalService 使用）
+    var memoryKitStorage: MemoryKit.MemoryStorageService { service }
+
     private init() {
         let rootURL = AppConfig.getDBFolderURL()
             .appendingPathComponent("Memory", isDirectory: true)
