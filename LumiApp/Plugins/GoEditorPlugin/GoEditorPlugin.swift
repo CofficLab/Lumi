@@ -41,9 +41,10 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
         registry.registerCompletionContributor(
             GoCompletionContributor()
         )
-        registry.registerCommandContributor(
-            GoCommandContributor(buildManager: buildManager, testManager: testManager)
-        )
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(
+        //     GoCommandContributor(buildManager: buildManager, testManager: testManager)
+        // )
         registry.registerPanelContributor(
             GoPanelContributor(buildManager: buildManager, testManager: testManager)
         )

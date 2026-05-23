@@ -15,7 +15,6 @@ actor EditorChatIntegrationPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // TODO: 暂时停用 Editor 右键菜单命令
-        // registry.registerCommandContributor(EditorChatIntegrationCommandContributor())
+         registry.registerCommandContributor(EditorChatIntegrationCommandContributor())
     }
 }

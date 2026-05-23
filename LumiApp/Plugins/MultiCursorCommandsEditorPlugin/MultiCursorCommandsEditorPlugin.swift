@@ -15,6 +15,7 @@ actor MultiCursorCommandsEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        registry.registerCommandContributor(MultiCursorCommandContributor())
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(MultiCursorCommandContributor())
     }
 }

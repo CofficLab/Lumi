@@ -35,7 +35,8 @@ actor JSEditorPlugin: SuperPlugin, SuperLog {
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         let taskManager = JSTaskManager()
         registry.registerLanguageIntegrationCapability(JSLanguageIntegrationCapability())
-        registry.registerCommandContributor(JSCommandContributor(taskManager: taskManager))
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(JSCommandContributor(taskManager: taskManager))
         registry.registerPanelContributor(JSPanelContributor(taskManager: taskManager))
         registry.registerStatusItemContributor(JSStatusItemContributor(taskManager: taskManager))
         registry.registerGutterDecorationContributor(JSTestGutterContributor())

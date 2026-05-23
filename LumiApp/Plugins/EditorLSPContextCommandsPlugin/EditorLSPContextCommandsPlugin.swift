@@ -31,13 +31,12 @@ actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-context-commands")
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // TODO: 暂时停用 Editor 右键菜单命令
-        // let contributor = EditorLSPContextCommandContributor()
-        // registry.registerCommandContributor(contributor)
-        // if Self.verbose {
-        //     if Self.verbose {
-        //                     Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
-        //     }
-        // }
+        let contributor = EditorLSPContextCommandContributor()
+        registry.registerCommandContributor(contributor)
+        if Self.verbose {
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
+            }
+        }
     }
 }

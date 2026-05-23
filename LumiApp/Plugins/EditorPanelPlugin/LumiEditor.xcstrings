@@ -477,50 +477,6 @@
         }
       }
     },
-    "Close Tabs to the Left" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close Tabs to the Left"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭左侧所有"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關閉左側所有"
-          }
-        }
-      }
-    },
-    "Close Tabs to the Right" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close Tabs to the Right"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭右侧所有"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關閉右側所有"
-          }
-        }
-      }
-    },
     "Close Split Editor" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -562,6 +518,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉分頁"
+          }
+        }
+      }
+    },
+    "Close Tabs to the Left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Tabs to the Left"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭左侧所有"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉左側所有"
+          }
+        }
+      }
+    },
+    "Close Tabs to the Right" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Tabs to the Right"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭右侧所有"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉右側所有"
           }
         }
       }
@@ -3121,6 +3121,7 @@
       }
     },
     "Peek Definition" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3143,6 +3144,7 @@
       }
     },
     "Peek References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3323,6 +3325,7 @@
       }
     },
     "Quick Fix" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
