@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */ = {isa = PBXBuildFile; productRef = MRK100000000000000001 /* ModelRouterKit */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
 		0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F822F662D8500F15618 /* MLXFast */; };
@@ -305,6 +306,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */,
 				0BA8A7362FC08EB9004C2B71 /* AgentToolKit in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
 				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
@@ -1962,10 +1964,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/AgentToolKit;
 		};
-		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ModelRouterKit;
-		};
 		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/XcodeKit;
@@ -2001,6 +1999,10 @@
 		F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FileTreeKit;
+		};
+		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ModelRouterKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -2301,11 +2303,6 @@
 			package = A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */;
 			productName = AgentToolKit;
 		};
-		MRK100000000000000001 /* ModelRouterKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */;
-			productName = ModelRouterKit;
-		};
 		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
@@ -2390,6 +2387,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
 			productName = XcodeProj;
+		};
+		MRK100000000000000001 /* ModelRouterKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */;
+			productName = ModelRouterKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

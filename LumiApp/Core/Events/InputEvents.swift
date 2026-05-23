@@ -20,12 +20,17 @@ extension NotificationCenter {
     }
 
     /// 发送「添加到聊天」事件
-    /// - Parameter text: 要插入聊天输入框的格式化文本
-    static func postAddToChat(text: String) {
+    /// - Parameters:
+    ///   - text: 要插入聊天输入框的格式化文本
+    ///   - windowId: 触发此操作的窗口 ID，用于多窗口场景下的事件隔离
+    static func postAddToChat(text: String, windowId: UUID? = nil) {
         NotificationCenter.default.post(
             name: .addToChat,
             object: nil,
-            userInfo: ["text": text]
+            userInfo: [
+                "text": text,
+                "windowId": windowId as Any,
+            ]
         )
     }
 }
@@ -43,13 +48,27 @@ extension View {
     }
 
     /// 监听「添加到聊天」事件
-    /// - Parameter action: 事件处理闭包，参数为要插入的文本
+    /// - Parameters:
+    ///   - windowId: 可选的窗口 ID 过滤，仅处理来自指定窗口的通知
+    ///   - action: 事件处理闭包，参数为要插入的文本
     /// - Returns: 修改后的视图
-    func onAddToChat(perform action: @escaping (String) -> Void) -> some View {
+    func onAddToChat(
+        windowId: UUID? = nil,
+        perform action: @escaping (String) -> Void
+    ) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .addToChat)) { notification in
-            if let text = notification.userInfo?["text"] as? String {
-                action(text)
+            guard let userInfo = notification.userInfo,
+                  let text = userInfo["text"] as? String else {
+                return
             }
+            // 如果指定了窗口 ID，仅处理匹配的通知
+            if let windowId {
+                guard let senderWindowId = userInfo["windowId"] as? UUID,
+                      senderWindowId == windowId else {
+                    return
+                }
+            }
+            action(text)
         }
     }
 }

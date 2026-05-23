@@ -983,7 +983,7 @@ private struct EditorPreviewMarkdownView: View {
 
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
-        NotificationCenter.postAddToChat(text: text)
+        NotificationCenter.postAddToChat(text: text, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
     }
 
     private var previewTheme: MarkdownTheme {

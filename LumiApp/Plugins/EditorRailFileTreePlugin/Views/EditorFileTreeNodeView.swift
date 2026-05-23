@@ -493,7 +493,9 @@ extension EditorFileTreeNodeView {
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
     private func addToConversation() {
-        NotificationCenter.postFileDroppedToChat(fileURL: url)
+        // 多窗口隔离：获取当前活跃窗口 ID
+        let windowId = RootContainer.shared.windowManagerVM.activeWindowId
+        NotificationCenter.postFileDroppedToChat(fileURL: url, windowId: windowId)
     }
 }
 

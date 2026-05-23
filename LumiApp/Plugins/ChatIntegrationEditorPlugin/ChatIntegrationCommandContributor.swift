@@ -65,7 +65,7 @@ final class ChatIntegrationCommandContributor: SuperEditorCommandContributor {
         \(selectedText)
         ```
         """
-        NotificationCenter.postAddToChat(text: payload)
+        NotificationCenter.postAddToChat(text: payload, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
     }
 
     private static func performAddLocationToChat(textView: TextView, state: EditorState) {
@@ -77,7 +77,7 @@ final class ChatIntegrationCommandContributor: SuperEditorCommandContributor {
             length: min(max(selection.length, 0), max(0, fullText.length - min(max(selection.location, 0), fullText.length)))
         )
         let locationText = selectionLocationText(range: safeSelection, fullText: fullText, state: state)
-        NotificationCenter.postAddToChat(text: locationText)
+        NotificationCenter.postAddToChat(text: locationText, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
     }
 
     // MARK: - Helpers

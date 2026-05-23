@@ -126,12 +126,17 @@ extension NotificationCenter {
     }
 
     /// 发送文件拖放到聊天框的通知
-    /// - Parameter fileURL: 文件 URL
-    static func postFileDroppedToChat(fileURL: URL) {
+    /// - Parameters:
+    ///   - fileURL: 文件 URL
+    ///   - windowId: 触发此操作的窗口 ID，用于多窗口场景下的事件隔离
+    static func postFileDroppedToChat(fileURL: URL, windowId: UUID? = nil) {
         NotificationCenter.default.post(
             name: .fileDroppedToChat,
             object: nil,
-            userInfo: ["fileURL": fileURL]
+            userInfo: [
+                "fileURL": fileURL,
+                "windowId": windowId as Any,
+            ]
         )
     }
 
@@ -233,13 +238,25 @@ extension View {
     }
 
     /// 监听文件拖放到聊天框的事件
-    /// - Parameter action: 事件处理闭包，参数为文件 URL
+    /// - Parameters:
+    ///   - windowId: 可选的窗口 ID 过滤，仅处理来自指定窗口的通知
+    ///   - action: 事件处理闭包，参数为文件 URL
     /// - Returns: 修改后的视图
-    func onFileDroppedToChat(perform action: @escaping (URL) -> Void) -> some View {
+    func onFileDroppedToChat(
+        windowId: UUID? = nil,
+        perform action: @escaping (URL) -> Void
+    ) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .fileDroppedToChat)) { notification in
             guard let userInfo = notification.userInfo,
                   let fileURL = userInfo["fileURL"] as? URL else {
                 return
+            }
+            // 如果指定了窗口 ID，仅处理匹配的通知
+            if let windowId {
+                guard let senderWindowId = userInfo["windowId"] as? UUID,
+                      senderWindowId == windowId else {
+                    return
+                }
             }
             action(fileURL)
         }

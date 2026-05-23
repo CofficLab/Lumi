@@ -9,6 +9,7 @@ struct ChatAttachmentDropRootView: View {
     @EnvironmentObject private var attachmentsVM: WindowAttachmentsVM
     @EnvironmentObject private var chatDraftVM: WindowChatDraftVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
+    @Environment(\.windowContainer) private var windowContainer
 
     let content: AnyView
 
@@ -36,10 +37,17 @@ struct ChatAttachmentDropRootView: View {
                     onPerform: { acceptChatFileDropFromProviders($0) }
                 )
             )
-            .onFileDroppedToChat { fileURL in
+            .onFileDroppedToChat(windowId: windowContainer?.id) { fileURL in
                 handleFileDrop(fileURL: fileURL)
             }
             .onReceive(NotificationCenter.default.publisher(for: .screenshotCaptured)) { notification in
+                // 多窗口隔离：仅处理属于当前窗口的截图
+                if let currentId = windowContainer?.id {
+                    guard let senderId = notification.userInfo?["windowId"] as? UUID,
+                          senderId == currentId else {
+                        return
+                    }
+                }
                 guard let data = notification.userInfo?["data"] as? Data else { return }
                 attachmentsVM.handleScreenshotData(data)
             }

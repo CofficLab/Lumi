@@ -79,7 +79,10 @@ final class ScreenshotState: ObservableObject {
         NotificationCenter.default.post(
             name: .screenshotCaptured,
             object: nil,
-            userInfo: ["data": pngData]
+            userInfo: [
+                "data": pngData,
+                "windowId": RootContainer.shared.windowManagerVM.activeWindowId as Any,
+            ]
         )
     }
 

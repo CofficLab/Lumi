@@ -82,7 +82,7 @@ struct InputView: View, SuperLog {
         .accessibilityLabel(String(localized: "Input Area", table: "ChatInputPlugin"))
         .onAppear(perform: onAppear)
         // 监听「添加到聊天」事件：将文件选区信息插入输入框
-        .onAddToChat { text in
+        .onAddToChat(windowId: windowContainer?.id) { text in
             chatDraftVM.append(text)
             isInputFocused = true
         }
@@ -120,8 +120,8 @@ extension InputView {
             onArrowUp: handleArrowUp,
             onArrowDown: handleArrowDown,
             onEnter: handleEnter,
-            onFileDrop: { url in
-                NotificationCenter.postFileDroppedToChat(fileURL: url)
+            onFileDrop: { [windowContainer] url in
+                NotificationCenter.postFileDroppedToChat(fileURL: url, windowId: windowContainer?.id)
             },
             isFocused: $isInputFocused,
             cursorPosition: $chatDraftVM.cursorPosition,
