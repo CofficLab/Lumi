@@ -8,7 +8,9 @@ struct HighlightedCodeView: View {
     let language: String?
     let font: Font
     let preferOuterScroll: Bool
-    let highlightProvider: (any CodeHighlightProviding)?
+
+    /// 直接从环境中读取高亮提供者，确保 SwiftUI 能正确追踪依赖并响应主题切换。
+    @Environment(\.codeHighlightProvider) private var highlightProvider
 
     /// 缓存的高亮结果
     @State private var attributedCode: AttributedString?
