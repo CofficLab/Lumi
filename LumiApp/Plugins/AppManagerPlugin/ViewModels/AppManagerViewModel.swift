@@ -90,27 +90,20 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
         // Cancel previous task if any
         scanTask?.cancel()
-        
-        // Wrap in TaskService for global tracking
+
         scanTask = Task {
-            try? await TaskService.shared.run(title: "Scanning app list", priority: .userInitiated) { progressCallback in
-                await self.performScan(force: force, progressCallback: progressCallback)
-            }
+            await self.performScan(force: force)
         }
         await scanTask?.value
     }
 
-    private func performScan(force: Bool, progressCallback: @escaping @Sendable (Double) -> Void) async {
+    private func performScan(force: Bool) async {
         isLoading = true
         defer { isLoading = false }
-        
-        progressCallback(0.1)
 
         // 先扫描应用列表
         let apps = await appService.scanInstalledApps(force: force)
         if Task.isCancelled { return }
-        
-        progressCallback(0.3)
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
@@ -121,7 +114,6 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
 
         // 在后台逐个计算大小，不阻塞 UI
-        let total = Double(apps.count)
         for index in apps.indices {
             if Task.isCancelled { break }
             var sizedApp = apps[index]
@@ -140,12 +132,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                     }
                 }
             }
-            // Update progress (from 0.3 to 1.0)
-            let currentProgress = 0.3 + (0.7 * Double(index + 1) / total)
-            progressCallback(currentProgress)
         }
-        
-        progressCallback(1.0)
 
         // 扫描结束后保存缓存
         if !Task.isCancelled {
