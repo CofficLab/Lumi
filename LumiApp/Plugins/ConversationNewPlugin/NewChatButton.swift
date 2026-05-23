@@ -21,7 +21,7 @@ struct NewChatButton: View {
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .clipShape(Circle())
         }
-        .help(String(localized: "Start New Conversation", table: "AgentNewChat"))
+        .help(String(localized: "Start New Conversation", table: "ConversationNew"))
     }
 }
 
