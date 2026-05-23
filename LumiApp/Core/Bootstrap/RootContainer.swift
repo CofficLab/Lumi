@@ -184,11 +184,11 @@ final class RootContainer: ObservableObject, SuperLog {
             AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
         }
         
-        EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
-            for contribution in AppPluginVM.shared.getThemeContributions() {
-                if let c = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
-                    registry.registerThemeContributor(c)
-                }
+        EditorSettingsLifecycle.registerEditorThemeContributors = { @MainActor registry in
+            for plugin in AppPluginVM.shared.plugins {
+                guard AppPluginVM.shared.isPluginEnabled(plugin),
+                      type(of: plugin).category == .theme else { continue }
+                plugin.registerEditorExtensions(into: registry)
             }
         }
         
@@ -256,6 +256,7 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         }
         registry.recordInstalledPlugins(pluginRecords)
+        EditorSettingsLifecycle.registerEditorThemeContributors?(registry)
         return registry
     }
     

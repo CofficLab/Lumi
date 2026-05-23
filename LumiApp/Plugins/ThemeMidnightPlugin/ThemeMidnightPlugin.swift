@@ -24,4 +24,10 @@ actor ThemeMidnightPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(MidnightSuperEditorThemeContributor())
+    }
+
 }

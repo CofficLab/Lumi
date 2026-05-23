@@ -24,4 +24,10 @@ actor ThemeRiverPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(RiverSuperEditorThemeContributor())
+    }
+
 }

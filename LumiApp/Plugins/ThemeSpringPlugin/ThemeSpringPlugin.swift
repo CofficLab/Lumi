@@ -24,4 +24,10 @@ actor ThemeSpringPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(SpringSuperEditorThemeContributor())
+    }
+
 }

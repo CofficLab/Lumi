@@ -23,8 +23,8 @@ public enum EditorSettingsLifecycle {
     /// 切换「编辑器功能插件」开关（宿主通常映射到 `AppPluginSettingsVM`）。
     public nonisolated(unsafe) static var setEditorFeaturePluginEnabled: ((String, Bool) -> Void)?
 
-    /// 将宿主主题贡献中的 `editorThemeContributor` 注册到编辑器 registry。
-    public nonisolated(unsafe) static var registerEditorThemeContributors: ((EditorExtensionRegistry) -> Void)?
+    /// 由各主题插件的 `registerEditorExtensions` 注册编辑器语法主题 contributor。
+    public nonisolated(unsafe) static var registerEditorThemeContributors: (@MainActor (EditorExtensionRegistry) -> Void)?
 
     /// 宿主注册多光标输入 swizzle（Lumi 中通常为 `MultiCursorInputInstaller`）。
     public nonisolated(unsafe) static var registerMultiCursorTextView: ((TextView, EditorState) -> Void)?

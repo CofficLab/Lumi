@@ -24,4 +24,10 @@ actor ThemeWinterPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(WinterSuperEditorThemeContributor())
+    }
+
 }

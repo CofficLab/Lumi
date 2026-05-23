@@ -24,4 +24,10 @@ actor ThemeOneDarkPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(OneDarkSuperEditorThemeContributor())
+    }
+
 }

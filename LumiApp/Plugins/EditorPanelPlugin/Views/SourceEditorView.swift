@@ -3,6 +3,8 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
 import EditorOverlayKit
+import EditorService
+import LumiUI
 
 /// 代码编辑器主视图。
 /// 基于 CodeEditSourceEditor 实现专业级编辑体验。
@@ -14,6 +16,8 @@ struct SourceEditorView: View, SuperLog {
     nonisolated static let verbose: Bool = false
     
     @ObservedObject var state: EditorState
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @Environment(\.colorScheme) private var colorScheme
     private let adapter = SourceEditorAdapter()
     private let bridge = SourceEditorViewBridge()
     
@@ -66,8 +70,9 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.showFoldingRibbon) { _, _ in updateConfigCache() }
             .onChange(of: state.tabWidth) { _, _ in updateConfigCache() }
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
-            .onChange(of: state.currentThemeId) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
+            .onChange(of: themeVM.currentThemeId) { _, _ in updateConfigCache() }
+            .onChange(of: colorScheme) { _, _ in updateConfigCache() }
             .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() }
 
         let runtimeObserved = appearanceObserved
@@ -128,7 +133,7 @@ struct SourceEditorView: View, SuperLog {
            textCoordinator != nil,
            cursorCoordinator != nil,
            contextMenuCoordinator != nil {
-            let config = cachedConfig ?? buildConfiguration()
+            let config = buildConfiguration()
             VStack(spacing: 0) {
                 SourceEditor(
                     content,
@@ -400,9 +405,30 @@ struct SourceEditorView: View, SuperLog {
 
     @MainActor
     private func buildConfiguration() -> SourceEditorConfiguration {
-        adapter.configuration(
+        var config = adapter.configuration(
             for: state,
             completionTriggerCharacters: completionDelegate.completionTriggerCharacters()
         )
+        applyAppChromeTheme(to: &config)
+        return config
+    }
+
+    /// 以 AppThemeVM 为单一来源解析编辑器语法主题，不依赖 EditorState 通知链。
+    @MainActor
+    private func applyAppChromeTheme(to config: inout SourceEditorConfiguration) {
+        guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
+        let editorThemeId = contribution.chromeTheme.resolvedEditorThemeId(
+            defaultEditorThemeId: contribution.editorThemeId,
+            colorScheme: colorScheme
+        )
+        if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
+            config.appearance.theme = contributor.createTheme()
+            config.appearance.themeIdentifier = editorThemeId
+            return
+        }
+        if let contributor = state.editorExtensions.theme(for: editorThemeId) {
+            config.appearance.theme = contributor.createTheme()
+            config.appearance.themeIdentifier = editorThemeId
+        }
     }
 }

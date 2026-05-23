@@ -24,4 +24,10 @@ actor ThemeAuroraPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(AuroraSuperEditorThemeContributor())
+    }
+
 }

@@ -84,7 +84,7 @@ struct SettingView: View {
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(SettingTab.allCases.filter { $0 != .plugins }, id: \.self) { tab in
-                            if tab == SettingTab(rawValue: "键盘快捷键") {
+                            if tab == .keyboardShortcuts {
                                 AppSettingsSidebarItem(
                                     label: Label(tab.rawValue, systemImage: tab.icon),
                                     isSelected: selection == .core(tab)

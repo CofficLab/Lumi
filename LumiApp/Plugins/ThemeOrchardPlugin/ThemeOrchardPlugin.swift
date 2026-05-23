@@ -24,4 +24,10 @@ actor ThemeOrchardPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(OrchardSuperEditorThemeContributor())
+    }
+
 }

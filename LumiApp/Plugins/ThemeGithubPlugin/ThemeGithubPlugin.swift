@@ -24,4 +24,10 @@ actor ThemeGithubPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(GithubSuperEditorThemeContributor())
+    }
+
 }

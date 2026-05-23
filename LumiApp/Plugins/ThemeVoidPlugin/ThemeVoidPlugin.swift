@@ -24,4 +24,10 @@ actor ThemeVoidPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(VoidSuperEditorThemeContributor())
+    }
+
 }

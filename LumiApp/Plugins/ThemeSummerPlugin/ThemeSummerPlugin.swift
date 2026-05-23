@@ -24,4 +24,10 @@ actor ThemeSummerPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(SummerSuperEditorThemeContributor())
+    }
+
 }

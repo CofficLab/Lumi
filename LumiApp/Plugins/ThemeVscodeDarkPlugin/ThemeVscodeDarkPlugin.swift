@@ -24,4 +24,10 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(VscodeDarkSuperEditorThemeContributor())
+    }
+
 }

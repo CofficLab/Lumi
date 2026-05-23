@@ -101,9 +101,11 @@ extension SourceEditorConfiguration {
                 needsHighlighterInvalidation = true
             }
 
-            // Use themeIdentifier (String) for reliable change detection.
-            // EditorTheme.Equatable compares NSColor fields which can be unreliable across color spaces.
-            if oldConfig?.themeIdentifier != themeIdentifier || oldConfig?.useThemeBackground != useThemeBackground {
+            // themeIdentifier 用于可靠检测主题切换；同时比较 theme，避免 ID 已更新但配色对象
+            // 尚未刷新时漏掉高亮失效（见 EditorState.applyEditorTheme 的更新顺序约定）。
+            if oldConfig?.themeIdentifier != themeIdentifier
+                || oldConfig?.useThemeBackground != useThemeBackground
+                || oldConfig?.theme != theme {
                 updateControllerNewTheme(controller: controller)
                 needsHighlighterInvalidation = true
             }
@@ -144,6 +146,16 @@ extension SourceEditorConfiguration {
             }
 
             if needsHighlighterInvalidation {
+                let documentRange = NSRange(
+                    location: 0,
+                    length: controller.textView.textStorage.length
+                )
+                if documentRange.length > 0 {
+                    controller.textView.textStorage.setAttributes(
+                        controller.attributesFor(nil),
+                        range: documentRange
+                    )
+                }
                 controller.highlighter?.invalidate()
             }
         }
