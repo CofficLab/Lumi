@@ -1,4 +1,5 @@
 import Foundation
+import LumiUI
 import os
 import SwiftUI
 
@@ -83,7 +84,7 @@ private struct ThemePersistenceAnchor<Content: View>: View {
         guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
         let editorThemeId = contribution.chromeTheme.resolvedEditorThemeId(
             defaultEditorThemeId: contribution.editorThemeId,
-            colorScheme: colorScheme
+            colorScheme: effectiveColorScheme(for: contribution.chromeTheme)
         )
         if ThemeStatusBarPlugin.verbose {
             ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)同步编辑器主题 → \(editorThemeId, privacy: .public)")
@@ -106,5 +107,12 @@ private struct ThemePersistenceAnchor<Content: View>: View {
             ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)恢复已保存主题: \(savedId, privacy: .public)")
         }
         themeVM.selectTheme(savedId)
+    }
+
+    private func effectiveColorScheme(for chromeTheme: any LumiAppChromeTheme) -> ColorScheme {
+        if chromeTheme.followsSystemAppearance {
+            return SystemAppearanceResolver.effectiveColorScheme
+        }
+        return colorScheme
     }
 }

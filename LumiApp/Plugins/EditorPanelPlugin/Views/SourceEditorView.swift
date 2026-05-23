@@ -419,7 +419,7 @@ struct SourceEditorView: View, SuperLog {
         guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
         let editorThemeId = contribution.chromeTheme.resolvedEditorThemeId(
             defaultEditorThemeId: contribution.editorThemeId,
-            colorScheme: colorScheme
+            colorScheme: effectiveColorScheme(for: contribution.chromeTheme)
         )
         if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
             config.appearance.theme = contributor.createTheme()
@@ -430,5 +430,12 @@ struct SourceEditorView: View, SuperLog {
             config.appearance.theme = contributor.createTheme()
             config.appearance.themeIdentifier = editorThemeId
         }
+    }
+
+    private func effectiveColorScheme(for chromeTheme: any LumiAppChromeTheme) -> ColorScheme {
+        if chromeTheme.followsSystemAppearance {
+            return SystemAppearanceResolver.effectiveColorScheme
+        }
+        return colorScheme
     }
 }
