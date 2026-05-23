@@ -3,6 +3,8 @@ import Foundation
 import SwiftUI
 
 struct ToolExecutionStatusCardView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let snapshot: ToolExecutionStatusSnapshot
     let conversationId: UUID
     @LumiMotionPreferenceReader private var motionPreference
@@ -21,40 +23,35 @@ struct ToolExecutionStatusCardView: View {
             MessageHeaderView {
                 HStack(spacing: 6) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.textSecondary)
                     Text(String(localized: "工具执行", table: "CoreMessageRenderer"))
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                     Text(snapshot.summary)
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary.opacity(0.8))
                         .lineLimit(1)
                 }
             } trailing: {
                 HStack(spacing: 8) {
                     if snapshot.phase == .running {
-                        Button {
+                        AppButton(
+                            didRequestStop
+                                ? String(localized: "Stopping…", table: "CoreMessageRenderer")
+                                : String(localized: "Stop Current Turn", table: "CoreMessageRenderer"),
+                            style: .destructive,
+                            size: .small
+                        ) {
                             didRequestStop = true
                             taskCancellationVM.requestCancel(conversationId: conversationId)
-                        } label: {
-                            Text(didRequestStop
-                            ? String(localized: "Stopping…", table: "CoreMessageRenderer")
-                            : String(localized: "Stop Current Turn", table: "CoreMessageRenderer"))
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.red.opacity(0.9))
-                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                         }
-                        .buttonStyle(.plain)
                     }
                     AppTag(snapshot.phase.label)
                     if let elapsedSeconds = snapshot.elapsedSeconds {
                         Text("\(elapsedSeconds)s")
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                     }
                 }
             }
@@ -78,34 +75,34 @@ struct ToolExecutionStatusCardView: View {
 
                         HStack(spacing: 10) {
                             Text(snapshot.toolName)
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .font(.appCaption)
+                                .foregroundColor(theme.textPrimary)
                                 .lineLimit(1)
                             Spacer()
                             if let current = snapshot.current, let total = snapshot.total {
                                 Text("\(current)/\(total)")
-                                    .font(.system(size: 11, weight: .regular))
-                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.textSecondary)
                             }
                         }
 
                         if let lines = snapshot.shellLines, let bytes = snapshot.shellBytes {
                             Text(String(format: String(localized: "Output: %lld lines, %@", table: "CoreMessageRenderer"), lines, Self.byteFormatter.string(fromByteCount: Int64(bytes))))
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
                         }
 
                         if let latestOutput = snapshot.latestOutput, !latestOutput.isEmpty {
                             Text(latestOutput)
-                                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .font(.appMonoCaption)
+                                .foregroundColor(theme.textPrimary)
                                 .lineLimit(3)
                         }
 
                         if let errorSummary = snapshot.errorSummary {
                             Text(errorSummary)
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color(hex: "FF453A"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.error)
                                 .lineLimit(2)
                         }
                     }

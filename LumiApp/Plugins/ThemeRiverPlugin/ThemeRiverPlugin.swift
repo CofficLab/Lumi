@@ -8,6 +8,7 @@ actor ThemeRiverPlugin: SuperPlugin {
     static let iconName: String = "water.waves"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 130 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -23,4 +24,10 @@ actor ThemeRiverPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(RiverSuperEditorThemeContributor())
+    }
+
 }

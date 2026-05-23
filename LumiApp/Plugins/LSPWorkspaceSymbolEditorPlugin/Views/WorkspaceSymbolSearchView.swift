@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 工作区符号搜索视图。
 ///
@@ -6,6 +7,8 @@ import SwiftUI
 /// 并调用 `WorkspaceSymbolProvider.searchSymbols(query:)` 获取 LSP `workspace/symbol` 结果。
 /// 该视图负责搜索框、加载态、空状态和结果列表展示；具体 LSP 请求和结果转换由 Provider 负责。
 struct WorkspaceSymbolItemSearchView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var provider: WorkspaceSymbolProvider
     @State private var query: String = ""
     @State private var selectedIndex: Int = 0
@@ -19,7 +22,8 @@ struct WorkspaceSymbolItemSearchView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(theme.textSecondary)
                 TextField("搜索符号...", text: $query)
                     .textFieldStyle(PlainTextFieldStyle())
                     .onSubmit {
@@ -45,19 +49,21 @@ struct WorkspaceSymbolItemSearchView: View {
                     }
                 if provider.isSearching { ProgressView().scaleEffect(0.7) }
             }
-            .padding(8).background(Color(nsColor: .textBackgroundColor))
+            .padding(8)
+            .appSurface(style: .subtle, cornerRadius: 0)
             Divider()
             if filteredSymbols.isEmpty && !provider.isSearching && !query.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: provider.searchError == nil ? "magnifyingglass" : "exclamationmark.triangle")
-                        .font(.system(size: 32))
-                        .foregroundColor(.secondary)
+                        .font(.appLargeTitle)
+                        .foregroundColor(theme.textSecondary)
                     Text(provider.searchError == nil ? "未找到匹配的符号" : "工作区符号当前不可用")
-                        .foregroundColor(.secondary)
+                        .font(.appBody)
+                        .foregroundColor(theme.textSecondary)
                     if let searchError = provider.searchError {
                         Text(searchError)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 16)
                     }
@@ -81,20 +87,33 @@ struct WorkspaceSymbolItemSearchView: View {
 ///
 /// 展示单个 `WorkspaceSymbolItem` 的图标、名称、容器名称和符号类型。
 struct WorkspaceSymbolRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let symbol: WorkspaceSymbolItem
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: symbol.iconSymbol).font(.system(size: 12)).frame(width: 20).foregroundColor(.accentColor)
+            Image(systemName: symbol.iconSymbol)
+                .font(.appCaption)
+                .frame(width: 20)
+                .foregroundColor(theme.primary)
             VStack(alignment: .leading, spacing: 2) {
-                Text(symbol.name).font(.system(size: 13))
+                Text(symbol.name)
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
                 if let container = symbol.containerName {
-                    Text(container).font(.system(size: 11)).foregroundColor(.secondary)
+                    Text(container)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
             Spacer()
-            Text(symbol.kindDisplayName).font(.system(size: 11)).foregroundColor(.secondary)
+            Text(symbol.kindDisplayName)
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
         }
-        .padding(.vertical, 4).padding(.horizontal, 8).contentShape(Rectangle())
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .contentShape(Rectangle())
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 用于搜索本地 GitHub 生态知识库的 Agent 工具。
 ///

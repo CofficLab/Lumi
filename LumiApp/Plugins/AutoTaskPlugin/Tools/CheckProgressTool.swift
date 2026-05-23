@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 查询任务进度工具
 ///
@@ -9,6 +10,7 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "check_progress"
+    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -24,13 +26,8 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
-            "properties": [
-                "conversation_id": [
-                    "type": "string",
-                    "description": "The conversation ID (UUID string) to check progress for",
-                ],
-            ],
-            "required": ["conversation_id"],
+            "properties": [:] as [String: Any],
+            "required": [] as [String],
         ]
     }
 
@@ -39,10 +36,6 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let conversationId = arguments["conversation_id"]?.value as? String else {
-            return String(localized: "Error: conversation_id is required", table: "AutoTask")
-        }
-
         let manager = TaskStateManager.shared
         let tasks = await manager.fetchTasks(conversationId: conversationId)
         let summary = await manager.getProgressSummary(conversationId: conversationId)

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 // MARK: - DeepSeek Provider
@@ -24,8 +25,8 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     static let defaultModel = "deepseek-chat"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "deepseek-chat", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "deepseek-coder", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "deepseek-chat", description: "DeepSeek Chat，通用对话模型，擅长中文理解和推理", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "deepseek-coder", description: "DeepSeek Coder，专业编程模型，擅长代码生成和调试", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - Adapter
@@ -68,9 +69,9 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

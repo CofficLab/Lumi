@@ -16,6 +16,7 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Hosts Manager", table: "HostsManager")
     static let description = String(localized: "Manage system hosts file configuration", table: "HostsManager")
     static let iconName = "list.bullet.rectangle"
+    static var category: PluginCategory { .system }
     static var order: Int { 21 }
 
     nonisolated var instanceLabel: String { Self.id }

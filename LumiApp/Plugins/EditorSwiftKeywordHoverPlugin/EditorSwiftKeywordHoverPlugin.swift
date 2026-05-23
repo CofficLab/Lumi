@@ -8,6 +8,7 @@ actor EditorSwiftKeywordHoverPlugin: SuperPlugin {
     static let description = String(localized: "Shows inline hover documentation for common Swift keywords.", table: "EditorSwiftKeywordHover")
     static let iconName = "swift"
     static let order = 20
+    static var category: PluginCategory { .general }
     static let enable = false
     static var isConfigurable: Bool { false }
 

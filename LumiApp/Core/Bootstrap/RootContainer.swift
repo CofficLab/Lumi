@@ -38,8 +38,8 @@ final class RootContainer: ObservableObject, SuperLog {
     let toolService: ToolService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
+    let performanceService: PerformanceService
     let conversationTurnServices: AppConversationTurnVM
-    let toolExecutionService: ToolExecutionService
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
     
@@ -117,8 +117,16 @@ final class RootContainer: ObservableObject, SuperLog {
             modelContainer: modelContainer,
             reason: "RootViewContainer"
         )
-        
-        self.chatHistoryVM = AppChatHistoryVM(chatHistoryService: chatHistoryService)
+
+        self.performanceService = PerformanceService(
+            modelContainer: modelContainer,
+            reason: "RootViewContainer"
+        )
+
+        self.chatHistoryVM = AppChatHistoryVM(
+            chatHistoryService: chatHistoryService,
+            performanceService: performanceService
+        )
         self.recentProjectsVM = AppProjectsVM()
         
         // ========================================
@@ -128,7 +136,6 @@ final class RootContainer: ObservableObject, SuperLog {
         self.gitVM = AppGitVM()
         self.agentSessionConfig = AppLLMVM(llmService: llmService)
         toolService.llmVM = agentSessionConfig
-        self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
         
         // ========================================
@@ -177,11 +184,11 @@ final class RootContainer: ObservableObject, SuperLog {
             AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
         }
         
-        EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
-            for contribution in AppPluginVM.shared.getThemeContributions() {
-                if let c = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
-                    registry.registerThemeContributor(c)
-                }
+        EditorSettingsLifecycle.registerEditorThemeContributors = { @MainActor registry in
+            for plugin in AppPluginVM.shared.plugins {
+                guard AppPluginVM.shared.isPluginEnabled(plugin),
+                      type(of: plugin).category == .theme else { continue }
+                plugin.registerEditorExtensions(into: registry)
             }
         }
         
@@ -249,6 +256,7 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         }
         registry.recordInstalledPlugins(pluginRecords)
+        EditorSettingsLifecycle.registerEditorThemeContributors?(registry)
         return registry
     }
     

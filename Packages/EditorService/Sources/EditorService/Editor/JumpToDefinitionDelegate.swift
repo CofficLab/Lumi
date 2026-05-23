@@ -37,10 +37,18 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     private let requestGeneration = RequestGeneration()
 
     public init() {}
+
+    private func treeSitterNodes(
+        in client: TreeSitterClient,
+        at location: Int
+    ) throws -> [TreeSitterClient.NodeResult] {
+        try client.nodesAt(location: location)
+    }
     
     // MARK: - JumpToDefinitionDelegate
     
     /// 查询定义链接 - 当用户 Cmd+Click 时，引擎调用此方法查找目标
+    @MainActor
     public func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
         guard let textStorage = textStorage else { return nil }
         let generation = requestGeneration.next()
@@ -78,7 +86,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             return [link]
         }
         
-        if await allowsLocalFallbackForDefinition() {
+        if allowsLocalFallbackForDefinition() {
             // 1. 优先：通过 AST 查找定义（精确）
             if let definitionRange = await findDefinitionViaAST(
                 word: word,
@@ -194,7 +202,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
         // 2. 回退：通过 AST（仅 Definition 支持）
         if fallbackToAST,
-           await allowsLocalFallbackForDefinition(),
+           allowsLocalFallbackForDefinition(),
            let definitionRange = await findDefinitionViaAST(
                word: word,
                cursorRange: range,
@@ -209,7 +217,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
         // 3. 回退：通过正则（仅 Definition 支持）
         if fallbackToRegex,
-           await allowsLocalFallbackForDefinition(),
+           allowsLocalFallbackForDefinition(),
            let fallbackRange = findDefinitionViaRegex(
                word: word,
                cursorRange: range,
@@ -304,6 +312,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         )
     }
 
+    @MainActor
     private func findDefinitionViaLSP(
         word: String,
         cursorRange: NSRange,
@@ -318,6 +327,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     }
 
     /// 通过 LSP 查找声明位置
+    @MainActor
     func findDeclarationLocation(
         word: String,
         cursorRange: NSRange,
@@ -332,6 +342,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     }
 
     /// 通过 LSP 查找类型定义位置
+    @MainActor
     func findTypeDefinitionLocation(
         word: String,
         cursorRange: NSRange,
@@ -346,6 +357,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     }
 
     /// 通过 LSP 查找实现位置
+    @MainActor
     func findImplementationLocation(
         word: String,
         cursorRange: NSRange,
@@ -517,15 +529,15 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         }
     }
 
-    private func allowsLocalFallbackForDefinition() async -> Bool {
-        await MainActor.run {
-            allowsLocalFallbackProvider?() ?? true
-        }
+    @MainActor
+    private func allowsLocalFallbackForDefinition() -> Bool {
+        allowsLocalFallbackProvider?() ?? true
     }
     
     // MARK: - AST 查找（核心逻辑）
     
     /// 通过 Tree-Sitter AST 查找定义
+    @MainActor
     private func findDefinitionViaAST(
         word: String,
         cursorRange: NSRange,
@@ -535,7 +547,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         
         do {
             // 获取当前光标位置的所有 AST 节点（可能有多层语言）
-            let nodes = try await treeSitterClient.nodesAt(location: cursorRange.location)
+            let nodes = try treeSitterNodes(in: treeSitterClient, at: cursorRange.location)
             
             for nodeResult in nodes {
                 if let defRange = searchNodeTree(
@@ -569,7 +581,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         }
         
         // 递归搜索子节点
-        var cursor = node.treeCursor
+        let cursor = node.treeCursor
         guard cursor.goToFirstChild() else { return nil }
         
         repeat {
@@ -644,7 +656,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     
     /// 在节点子树中查找 identifier
     private func findIdentifierInTree(node: Node) -> NSRange? {
-        var cursor = node.treeCursor
+        let cursor = node.treeCursor
         guard cursor.goToFirstChild() else { return nil }
         
         repeat {

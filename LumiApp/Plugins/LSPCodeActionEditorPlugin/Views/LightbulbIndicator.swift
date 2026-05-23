@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Code Action 灯泡指示器。
@@ -6,6 +7,7 @@ import SwiftUI
 /// 该视图只负责显示灯泡图标和处理点击事件，不负责计算动作是否可用；
 /// `hasActions` 由上层根据 `CodeActionProvider.actions` 或相关状态传入。
 struct LightbulbIndicator: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     let hasActions: Bool
     let onTap: () -> Void
@@ -13,8 +15,8 @@ struct LightbulbIndicator: View {
     var body: some View {
         Button(action: onTap) {
             Image(systemName: "lightbulb")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(hasActions ? Color(hex: "FF9F0A") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appMicroEmphasized)
+                .foregroundColor(hasActions ? theme.warning : theme.textSecondary)
                 .opacity(hasActions ? 1 : 0.3)
                 .frame(width: 16, height: 16)
         }

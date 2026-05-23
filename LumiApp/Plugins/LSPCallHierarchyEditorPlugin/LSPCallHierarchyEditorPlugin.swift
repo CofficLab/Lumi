@@ -14,7 +14,7 @@ import Foundation
 /// `CallHierarchyTreeView` 和 `CallHierarchyRowView`。这些视图属于调用层级功能的结果展示组件，
 /// 但本插件主入口不会自行注册应用级 UI 入口，例如侧边栏、底部面板、工具栏按钮或 Sheet contributor。
 ///
-/// 通常情况下：命令入口由 `LSPContextCommandsEditorPlugin` 提供，Sheet/面板容器由
+/// 通常情况下：命令入口由 `EditorLSPContextCommandsPlugin` 提供，Sheet/面板容器由
 /// `LSPSheetsEditorPlugin` 或其它消费 `SuperEditorCallHierarchyProvider` 的编辑器 UI 提供，
 /// 本插件则负责提供数据和可复用的结果展示视图。
 ///
@@ -29,6 +29,7 @@ actor LSPCallHierarchyEditorPlugin: SuperPlugin {
     static let order = 25
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

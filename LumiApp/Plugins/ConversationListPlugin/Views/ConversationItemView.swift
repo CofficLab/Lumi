@@ -1,9 +1,12 @@
+import LumiUI
 import SwiftData
 import SwiftUI
 
 /// 会话项视图
 /// 显示单个会话的标题、时间戳和项目信息，支持右键菜单删除操作
 struct ConversationItemView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 会话模型：包含标题、更新时间、项目 ID 等信息
     let conversation: Conversation
     /// 删除回调：用户确认删除后调用
@@ -18,7 +21,8 @@ struct ConversationItemView: View {
             VStack(alignment: .leading, spacing: 4) {
                 // 标题
                 Text(conversation.title)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -58,15 +62,18 @@ extension ConversationItemView {
             if let projectId = conversation.projectId {
                 let projectName = URL(fileURLWithPath: projectId).lastPathComponent
                 Text(projectName)
-                    .font(.system(size: 8))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
                     .lineLimit(1)
 
                 Text("•")
-                    .font(.system(size: 6))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             Text(coarseRelativeTime(from: conversation.updatedAt))
-                .font(.system(size: 8))
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
         }
     }
 }

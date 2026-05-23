@@ -1,8 +1,11 @@
 import SwiftUI
 import MarkdownKit
+import LumiUI
 
 /// 纯文本消息内容视图（不解析 Markdown）
 struct PlainTextMessageContentView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let content: String
     let monospaced: Bool
     @Environment(\.preferOuterScroll) private var preferOuterScroll
@@ -11,14 +14,14 @@ struct PlainTextMessageContentView: View {
         Group {
             if preferOuterScroll {
                 Text(verbatim: content)
-                    .font(monospaced ? .system(size: 13, weight: .regular, design: .monospaced) : .system(size: 15, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(monospaced ? .appMonoCaption : .appBody)
+                    .foregroundColor(theme.textPrimary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 TextEditor(text: .constant(content))
-                    .font(monospaced ? .system(size: 13, weight: .regular, design: .monospaced) : .system(size: 15, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(monospaced ? .appMonoCaption : .appBody)
+                    .foregroundColor(theme.textPrimary)
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
             }

@@ -21,6 +21,7 @@ actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
         table: "EditorBottomSymbols")
     static let iconName: String = "text.magnifyingglass"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 
     nonisolated var instanceLabel: String { Self.id }

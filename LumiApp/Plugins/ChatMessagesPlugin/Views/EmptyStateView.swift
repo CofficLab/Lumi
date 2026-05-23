@@ -3,6 +3,7 @@ import SwiftUI
 
 /// 空状态视图 - 未选择会话时显示
 struct EmptyStateView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @EnvironmentObject private var conversationVM: WindowConversationVM
 
     private var hasAnyConversation: Bool {
@@ -16,13 +17,12 @@ struct EmptyStateView: View {
             AppCard(style: .elevated, padding: EdgeInsets(top: 24, leading: 28, bottom: 24, trailing: 28)) {
                 VStack(spacing: 14) {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
+                        .font(.appLargeTitle)
+                        .foregroundColor(theme.textSecondary)
 
                     Text(String(localized: hasAnyConversation ? "Select Conversation" : "No Conversations", table: "AgentChat"))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                        .font(.appTitle)
+                        .foregroundColor(theme.textPrimary)
 
                     if !hasAnyConversation {
                         AppButton(String(localized: "New Conversation", table: "AgentChat"), systemImage: "plus.circle.fill", style: .primary) {

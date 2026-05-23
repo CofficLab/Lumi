@@ -12,6 +12,7 @@ actor AgentOpenInFinderPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in Finder", table: "AgentOpenInFinder")
     static let description = String(localized: "Open current project in Finder", table: "AgentOpenInFinder")
     static let iconName = "folder"
+    static var category: PluginCategory { .integration }
     static var order: Int { 96 }
 
     /// 用户可在设置中启用/禁用此插件
@@ -38,6 +39,8 @@ actor AgentOpenInFinderPlugin: SuperPlugin {
 
 /// Finder 打开状态栏视图
 struct OpenInFinderStatusBarView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -61,7 +64,7 @@ struct OpenInFinderStatusBarView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "folder.fill")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -75,14 +78,14 @@ struct OpenInFinderStatusBarView: View {
     private var emptyView: some View {
         HStack(spacing: 6) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 10))
+                .font(.appMicro)
 
             Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(.secondary.opacity(0.5))
+        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(String(localized: "无项目", table: "AgentOpenInFinder"))
     }
 
@@ -97,6 +100,8 @@ struct OpenInFinderStatusBarView: View {
 
 /// Finder 打开详情视图（在 popover 中显示）
 struct OpenInFinderDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -104,11 +109,12 @@ struct OpenInFinderDetailView: View {
             // 标题
             HStack(spacing: 8) {
                 Image(systemName: "folder.fill")
-                    .font(.system(size: 16))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
@@ -119,7 +125,7 @@ struct OpenInFinderDetailView: View {
                         Image(systemName: "arrow.up.right.square")
                         Text(String(localized: "打开", table: "OpenInFinderPlugin"))
                     }
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -129,13 +135,13 @@ struct OpenInFinderDetailView: View {
             // 项目路径显示
             HStack(spacing: 8) {
                 Text(String(localized: "项目", table: "OpenInFinderPlugin"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
                 Text(projectVM.currentProjectPath)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -146,7 +152,7 @@ struct OpenInFinderDetailView: View {
                     NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "复制路径", table: "OpenInFinderPlugin"))

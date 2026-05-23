@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 // MARK: - Anthropic Provider
@@ -45,13 +46,13 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     static let defaultModel = "claude-sonnet-4-20250514"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "claude-sonnet-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-opus-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-3-5-sonnet-20241022", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-3-5-sonnet-20240620", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-3-opus-20240229", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-3-sonnet-20240229", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-3-haiku-20240307", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-sonnet-4-20250514", description: "Claude 4 Sonnet，最新平衡型模型，兼具智能与速度", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-opus-4-20250514", description: "Claude 4 Opus，最强推理模型，适合复杂分析任务", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-5-sonnet-20241022", description: "Claude 3.5 Sonnet (2024-10)，成熟稳定的高性能模型", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-5-sonnet-20240620", description: "Claude 3.5 Sonnet (2024-06)，早期版本，性价比高", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-opus-20240229", description: "Claude 3 Opus，上一代旗舰模型，深度推理能力强", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-sonnet-20240229", description: "Claude 3 Sonnet，平衡型模型，适合日常使用", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-haiku-20240307", description: "Claude 3 Haiku，最快响应模型，适合轻量任务", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider
@@ -106,7 +107,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
 
         var textContent = ""

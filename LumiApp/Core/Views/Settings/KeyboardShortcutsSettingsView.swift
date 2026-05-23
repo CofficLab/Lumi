@@ -4,6 +4,8 @@ import SwiftUI
 import LumiUI
 
 struct KeyboardShortcutsSettingsView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var keybindingStore = EditorKeybindingStore.shared
     @State private var searchText = ""
     @State private var selectedCategory: EditorCommandCategory?
@@ -49,17 +51,12 @@ struct KeyboardShortcutsSettingsView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("快捷键")
     }
 
     private var headerCard: some View {
         AppCard {
             HStack(alignment: .top, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "keyboard",
-                    title: "快捷键",
-                    subtitle: "搜索、录制和管理编辑器命令快捷键"
-                )
+                AppSettingsSection(title: "快捷键", subtitle: "搜索、录制和管理编辑器命令快捷键") {}
 
                 Spacer()
 
@@ -78,11 +75,7 @@ struct KeyboardShortcutsSettingsView: View {
     private var controlsCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "command",
-                    title: "命令搜索",
-                    subtitle: "支持按命令名、分类、命令 ID 和快捷键搜索"
-                )
+                AppSettingsSection(title: "命令搜索", subtitle: "支持按命令名、分类、命令 ID 和快捷键搜索") {}
 
                 AppSearchBar(text: $searchText, placeholder: "搜索快捷键或命令…")
 
@@ -101,8 +94,8 @@ struct KeyboardShortcutsSettingsView: View {
                 }
 
                 Text(summaryText)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textTertiary)
             }
         }
     }
@@ -111,16 +104,16 @@ struct KeyboardShortcutsSettingsView: View {
         AppCard {
             VStack(spacing: 16) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 36))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appLargeTitle)
+                    .foregroundColor(theme.textSecondary)
 
                 Text("没有匹配的快捷键")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text("试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textTertiary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 32)
@@ -131,11 +124,11 @@ struct KeyboardShortcutsSettingsView: View {
         AppCard {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(Color(hex: "FF9F0A"))
+                    .foregroundColor(theme.warning)
 
                 Text(message)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -144,13 +137,9 @@ struct KeyboardShortcutsSettingsView: View {
     private func categoryCard(_ category: EditorCommandCategory, commands: [EditorShortcutDefinition]) -> some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: iconName(for: category),
-                    title: category.displayTitle,
-                    subtitle: "\(commands.count) 个命令"
-                )
+                AppSettingsSection(title: category.displayTitle, subtitle: "\(commands.count) 个命令") {}
 
-                GlassDivider()
+                settingsDivider
 
                 VStack(spacing: 4) {
                     ForEach(commands) { command in
@@ -166,29 +155,29 @@ struct KeyboardShortcutsSettingsView: View {
         let isCustomized = keybindingStore.customBindings[command.id] != nil
         let isRecording = recordingCommandID == command.id
 
-        return GlassRow {
+        return AppSettingsRow {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .center, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(command.title)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
 
                         Text(command.id)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textTertiary)
                     }
 
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(effectiveShortcut?.displayText ?? "未设置")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
 
                         Text(isCustomized ? "自定义" : "默认")
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(isCustomized ? Color(hex: "7C6FFF") : Color(hex: "98989E"))
+                            .font(.appMicro)
+                            .foregroundColor(isCustomized ? theme.primary : theme.textTertiary)
                     }
                     .frame(width: 90, alignment: .trailing)
 
@@ -222,12 +211,18 @@ struct KeyboardShortcutsSettingsView: View {
                         }
 
                         Text(recorderHint(for: command))
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textTertiary)
                     }
                 }
             }
         }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     private func applyRecordedShortcut(_ shortcut: EditorCommandShortcut, for command: EditorShortcutDefinition) {

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import Combine
 import os
 
@@ -59,7 +60,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 

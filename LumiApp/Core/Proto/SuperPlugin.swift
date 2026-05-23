@@ -1,4 +1,5 @@
 import AppKit
+import AgentToolKit
 import EditorService
 import Foundation
 import SwiftUI
@@ -393,6 +394,12 @@ protocol SuperPlugin: Actor {
     /// 插件被禁用时的回调
     nonisolated func onDisable()
 
+    /// 插件分类
+    ///
+    /// 用于在插件设置等 UI 中按分类分组展示。
+    /// **必须提供**，每个插件都必须明确指定自己的功能分类。
+    static var category: PluginCategory { get }
+
     /// 插件注册顺序（数字越小越先加载）
     static var order: Int { get }
 }
@@ -413,6 +420,8 @@ extension SuperPlugin {
     static var description: String { "" }
 
     static var iconName: String { "puzzlepiece" }
+
+    // 注意：category 必须由每个插件显式提供，不再有默认值
 
     static var isConfigurable: Bool { false }
 

@@ -13,9 +13,6 @@ struct SettingView: View {
     /// 当前选中的项
     @State private var selection: SettingsSelection?
 
-    /// 侧边栏宽度
-    private let sidebarWidth: CGFloat = 220
-
     /// 从 AppSettingStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
         guard let saved = AppSettingStore.loadSettingsSelection() else {
@@ -57,67 +54,55 @@ struct SettingView: View {
         self._selection = State(initialValue: nil)
     }
 
-    /// 应用信息
-    private var appInfo: AppInfo {
-        AppInfo()
-    }
-
-    /// 插件设置视图列表
+    /// 插件设置视图列表（单独提供了 addSettingsView 的插件）
     private var pluginSettings: [(id: String, name: String, icon: String, view: AnyView)] {
         pluginProvider.getPluginSettingsViews()
     }
 
     /// 侧边栏内容视图
     private var sidebarView: some View {
-        VStack(spacing: 0) {
-            // 应用信息头部
-            SettingsSidebarHeaderView()
+        AppSettingsSidebarContainer {
+            VStack(spacing: 0) {
+                SettingsSidebarHeaderView()
 
-            GlassDivider()
+                AppSettingsDivider()
 
-            // 设置列表
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    // 核心设置项
-                    ForEach(SettingTab.allCases, id: \.self) { tab in
-                        SidebarItemView(
-                            label: Label(tab.rawValue, systemImage: tab.icon),
-                            isSelected: selection == .core(tab)
-                        ) {
-                            selection = .core(tab)
-                        }
-                    }
-
-                    // 插件设置项
-                    if !pluginSettings.isEmpty {
-                        Divider()
-                            .padding(.vertical, 8)
-
-                        ForEach(pluginSettings, id: \.id) { item in
-                            SidebarItemView(
-                                label: Label(item.name, systemImage: item.icon),
-                                isSelected: selection == .plugin(item.id)
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        // 核心设置项
+                        ForEach(SettingTab.allCases, id: \.self) { tab in
+                            AppSettingsSidebarItem(
+                                label: Label(tab.rawValue, systemImage: tab.icon),
+                                isSelected: selection == .core(tab)
                             ) {
-                                selection = .plugin(item.id)
+                                selection = .core(tab)
+                            }
+                        }
+
+                        // 单独提供设置视图的插件
+                        if !pluginSettings.isEmpty {
+                            Divider()
+                                .padding(.vertical, 8)
+
+                            ForEach(pluginSettings, id: \.id) { item in
+                                AppSettingsSidebarItem(
+                                    label: Label(item.name, systemImage: item.icon),
+                                    isSelected: selection == .plugin(item.id)
+                                ) {
+                                    selection = .plugin(item.id)
+                                }
                             }
                         }
                     }
+                    .padding(.vertical, 8)
                 }
-                .padding(.vertical, 8)
             }
         }
-        .padding()
-        .frame(width: sidebarWidth)
-        .background(.background.opacity(0.6))
     }
 
     /// 详情区域视图
     private var detailView: some View {
-        ZStack {
-            Color.clear
-                .mystiqueBackground()
-                .ignoresSafeArea()
-
+        AppSettingsDetailPane {
             Group {
                 if let sel = selection {
                     switch sel {
@@ -136,21 +121,14 @@ struct SettingView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .background(.background.opacity(0.8))
         }
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            // 左侧侧边栏
+        AppSettingsSidebarShell {
             sidebarView
-
-            // 垂直分割线
-            Divider()
-
-            // 右侧详情区域
+        } detail: {
             detailView
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             // 加载上次选中的项

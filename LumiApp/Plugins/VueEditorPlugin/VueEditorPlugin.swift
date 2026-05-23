@@ -31,6 +31,7 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
     static let order = 35
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 
@@ -50,14 +51,14 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
         // 悬浮提示：Vue 指令、组件、宏、Scoped CSS
         registry.registerHoverContributor(VueHoverContributor())
 
-        // 区块导航命令：⌘+1/2/3
-        registry.registerCommandContributor(VueCommandContributor())
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(VueCommandContributor())
 
         // 组件自动导入补全
         registry.registerCompletionContributor(VueComponentImportResolver())
 
-        // Vite 开发服务器命令：启动/构建/预览
-        registry.registerCommandContributor(VueDevCommandContributor())
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(VueDevCommandContributor())
 
         // LSP 集成：Volar 配置注入（含健康检查和版本检测）
         registry.registerLanguageIntegrationCapability(

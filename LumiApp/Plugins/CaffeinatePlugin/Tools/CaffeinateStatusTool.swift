@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 查询防休眠状态工具
 ///

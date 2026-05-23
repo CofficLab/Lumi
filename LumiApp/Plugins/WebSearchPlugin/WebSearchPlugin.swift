@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 /// Web Search 插件
@@ -24,6 +25,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     /// 默认启用此插件，以确保 Qwen 模型能正常调用 web_fetch
     static let enable: Bool = true
     
+    static var category: PluginCategory { .network }
     static var order: Int { 101 }
 
     static let shared = WebSearchPlugin()

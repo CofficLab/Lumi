@@ -18,6 +18,7 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
         table: "EditorRailProblems")
     static let iconName: String = "exclamationmark.bubble"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }

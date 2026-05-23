@@ -138,12 +138,17 @@ final class AppThemeVM: ObservableObject {
 
     private func postThemeDidChange() {
         guard let selected = currentTheme ?? themes.first else { return }
+        let colorScheme = SystemAppearanceResolver.effectiveColorScheme
+        let editorThemeId = selected.chromeTheme.resolvedEditorThemeId(
+            defaultEditorThemeId: selected.editorThemeId,
+            colorScheme: colorScheme
+        )
         NotificationCenter.default.post(
             name: .lumiThemeDidChange,
             object: nil,
             userInfo: [
                 "themeId": selected.id,
-                "editorThemeId": selected.editorThemeId,
+                "editorThemeId": editorThemeId,
             ]
         )
     }

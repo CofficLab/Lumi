@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import GitHubKit
 
 /// GitHub 趋势项目工具

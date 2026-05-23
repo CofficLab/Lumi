@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 ///
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
 struct EditorTabItemView: View {
+    @LumiUI.LumiTheme private var uiTheme: any LumiUITheme
+
     @EnvironmentObject var editorVM: WindowEditorVM
     @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovered = false
@@ -90,18 +92,18 @@ struct EditorTabItemView: View {
         return HStack(spacing: 6) {
             if isDirty {
                 Circle()
-                    .fill(Color(hex: "FF9F0A"))
+                    .fill(uiTheme.warning)
                     .frame(width: 6, height: 6)
             }
 
             if tab.isPinned {
                 Image(systemName: "pin.fill")
-                    .font(.system(size: 8))
+                    .font(.appMicro)
                     .foregroundColor(theme.workspaceTertiaryTextColor())
             }
 
             Text(tab.title)
-                .font(.system(size: 11, weight: isActive ? .semibold : .regular))
+                .font(isActive ? .appMicroEmphasized : .appMicro)
                 .foregroundColor(isActive ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
                 .lineLimit(1)
 
@@ -109,7 +111,7 @@ struct EditorTabItemView: View {
                 closeSession(tab)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.appMicroEmphasized)
                     .foregroundColor(theme.workspaceTertiaryTextColor())
                     .frame(width: 14, height: 14)
                     .contentShape(Rectangle())
@@ -125,13 +127,10 @@ struct EditorTabItemView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .frame(height: 28)
-        .background(
-            RoundedRectangle(cornerRadius: 7)
-                .fill(theme.workspaceTextColor().opacity(backgroundOpacity))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(theme.workspaceTextColor().opacity(borderOpacity), lineWidth: 1)
+        .appSurface(
+            style: .custom(theme.workspaceTextColor().opacity(backgroundOpacity)),
+            cornerRadius: 7,
+            borderColor: theme.workspaceTextColor().opacity(borderOpacity)
         )
         .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovered)
         .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isActive)
@@ -171,14 +170,11 @@ struct EditorTabItemView: View {
                 DragPreview(fileURL: fileURL)
             } else {
                 Text(tab.title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.primary)
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(uiTheme.textPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.orange.opacity(0.95))
-                    )
+                    .appSurface(style: .custom(uiTheme.warning.opacity(0.95)), cornerRadius: 8)
             }
         }
     }

@@ -6,6 +6,7 @@ actor NettoPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     nonisolated static let emoji = "🛡️"
+    static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = false
 

@@ -20,6 +20,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Retrieval-Augmented Generation", table: "RAG")
     static let iconName = "doc.text.magnifyingglass"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static var order: Int { 200 }
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")

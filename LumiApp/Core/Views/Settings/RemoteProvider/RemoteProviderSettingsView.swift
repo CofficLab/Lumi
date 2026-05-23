@@ -8,6 +8,10 @@ struct RemoteProviderSettingsView: View, SuperLog {
     nonisolated static let emoji = "☁️"
     nonisolated static let verbose: Bool = false
 
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
+    init() {}
+
     // MARK: - State
 
     /// 当前选中的云端供应商 ID
@@ -91,15 +95,7 @@ extension RemoteProviderSettingsView {
     /// 云端供应商卡片（固定）
     private var cloudProviderCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "cloud.fill",
-                    title: "云端 LLM 供应商",
-                    subtitle: "选择你想使用的 AI 服务提供商"
-                )
-
-                GlassDivider()
-
+            AppSettingsSection(title: "云端 LLM 供应商", subtitle: "选择你想使用的 AI 服务提供商", spacing: 12) {
                 providerList
             }
         }
@@ -140,31 +136,25 @@ extension RemoteProviderSettingsView {
 
     /// API Key 配置区块
     private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            GlassSectionHeader(
-                icon: "key.fill",
-                title: "API 密钥",
-                subtitle: "配置你的访问凭证"
-            )
-
-            GlassDivider()
-
-            GlassRow {
+        AppSettingsSection(title: "API 密钥", subtitle: "配置你的访问凭证", spacing: 12) {
+            AppSettingsRow {
                 HStack(spacing: 16) {
                     Image(systemName: "lock.fill")
-                        .foregroundColor(Color(hex: "FF9F0A"))
+                        .font(.appCallout)
+                        .foregroundColor(theme.warning)
 
                     TextField("输入 API Key", text: $apiKey)
                         .textFieldStyle(.plain)
                         .textContentType(.password)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
 
                     Spacer()
 
                     if !apiKey.isEmpty {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(Color(hex: "30D158"))
+                            .font(.appCallout)
+                            .foregroundColor(theme.success)
                     }
                 }
             }
@@ -173,15 +163,7 @@ extension RemoteProviderSettingsView {
 
     /// 模型列表区块
     private var modelSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            GlassSectionHeader(
-                icon: "cpu.fill",
-                title: "可用模型",
-                subtitle: "点击某个模型可设为默认"
-            )
-
-            GlassDivider()
-
+        AppSettingsSection(title: "可用模型", subtitle: "点击某个模型可设为默认", spacing: 12) {
             VStack(spacing: 0) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(models, id: \.self) { model in
@@ -200,13 +182,20 @@ extension RemoteProviderSettingsView {
                     )
 
                     if model != models.last {
-                        GlassDivider()
+                        settingsDivider
                     }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
             .animation(.easeInOut(duration: 0.22), value: selectedProvider?.id ?? "")
         }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
+            .padding(.horizontal, 8)
     }
 }
 

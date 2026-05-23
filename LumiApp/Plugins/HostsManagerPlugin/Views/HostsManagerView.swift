@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct HostsManagerView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel = HostsManagerViewModel()
     @State private var showAddSheet = false
     @State private var showImportExport = false
@@ -38,7 +40,7 @@ struct HostsManagerView: View {
                     Button(String(localized: "Refresh", table: "HostsManager")) {
                         Task { await viewModel.loadHosts() }
                     }
-                    GlassDivider()
+                    Divider()
                     Button(String(localized: "Export Backup...", table: "HostsManager")) {
                         exportHosts()
                     }
@@ -46,17 +48,23 @@ struct HostsManagerView: View {
                         importHosts()
                     }
                 } label: {
-                    GlassRow {
-                        Label("More", systemImage: "ellipsis.circle")
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    HStack(spacing: 6) {
+                        Image(systemName: "ellipsis.circle")
+                        Text("More")
                     }
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(maxWidth: .infinity)
+                    .appSurface(style: .listRow, cornerRadius: 8)
                     .frame(width: 110)
                 }
             }
             .padding()
             .background(Material.regularMaterial)
 
-            GlassDivider()
+            settingsDivider
 
             if viewModel.isLoading {
                 AppLoadingOverlay(
@@ -89,6 +97,12 @@ struct HostsManagerView: View {
         .task {
             await viewModel.loadHosts()
         }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     func exportHosts() {
@@ -134,6 +148,8 @@ struct HostsManagerView: View {
 }
 
 struct HostRowView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let entry: HostEntry
     @ObservedObject var viewModel: HostsManagerViewModel
 
@@ -142,14 +158,14 @@ struct HostRowView: View {
         case .groupHeader(let name):
             AppListRow {
                 Text(name)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textSecondary)
             }
         case .comment(let text):
             AppListRow {
                 Text(text)
                     .font(.monospaced(.caption)())
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
             }
         case .entry(let ip, let domains, let isEnabled, let comment):
             AppCard(
@@ -165,7 +181,7 @@ struct HostRowView: View {
 
                     Spacer()
 
-                    AppIconButton(systemImage: "trash", tint: Color(hex: "FF453A").opacity(0.7)) {
+                    AppIconButton(systemImage: "trash", tint: theme.error.opacity(0.7)) {
                         viewModel.deleteEntry(entry)
                     }
                 }
@@ -192,23 +208,25 @@ struct HostRowView: View {
                     .fontWeight(.medium)
                     .foregroundColor(
                         isEnabled
-                        ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                        : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                        ? theme.textPrimary
+                        : theme.textSecondary
                     )
 
                 if let comment = comment {
                     Text("# \(comment)")
-                        .foregroundColor(Color(hex: "98989E"))
+                        .foregroundColor(theme.textTertiary)
                 }
             }
             Text(ip)
                 .font(.monospaced(.caption)())
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(theme.textSecondary)
         }
     }
 }
 
 struct HostAddView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var viewModel: HostsManagerViewModel
     @Binding var isPresented: Bool
 
@@ -221,8 +239,8 @@ struct HostAddView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(String(localized: "Add Host Entry", table: "HostsManager"))
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appTitle)
+                .foregroundColor(theme.textPrimary)
 
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {

@@ -17,6 +17,7 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Disk Manager", table: "DiskManager")
     static let description = String(localized: "Disk space analysis and large file cleaning", table: "DiskManager")
     static let iconName = "internaldrive"
+    static var category: PluginCategory { .system }
     static var order: Int { 22 }
 
     nonisolated var instanceLabel: String { Self.id }

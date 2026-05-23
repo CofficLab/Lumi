@@ -4,8 +4,8 @@ import LumiUI
 /// About view, displays app details
 struct AboutView: View {
     /// App info
-    private var appInfo: AppInfo {
-        AppInfo()
+    private var appInfo: AppBundleInfo {
+        AppBundleInfo()
     }
 
     /// Version info
@@ -39,18 +39,13 @@ struct AboutView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("关于")
     }
 
     // MARK: - Header Card
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "info.circle.fill",
-                title: "关于 Lumi",
-                subtitle: "了解应用的版本和系统信息"
-            )
+            AppSettingsSection(title: "关于 Lumi", subtitle: "了解应用的版本和系统信息") {}
         }
     }
 
@@ -90,27 +85,6 @@ struct AboutView: View {
             GlassKeyValueRow(label: "架构", value: versionInfo.architecture)
             GlassKeyValueRow(label: "应用路径", value: versionInfo.appPath)
         }
-    }
-}
-
-// MARK: - AppInfo Model
-
-struct AppInfo {
-    let name: String
-    let version: String?
-    let build: String?
-    let bundleIdentifier: String
-    let description: String?
-
-    init() {
-        let bundle = Bundle.main
-        self.name = bundle.object(forInfoDictionaryKey: "CFBundleName") as? String
-            ?? bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-            ?? "Lumi"
-        self.version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        self.build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-        self.bundleIdentifier = bundle.bundleIdentifier ?? "com.lumi.app"
-        self.description = bundle.object(forInfoDictionaryKey: "CFBundleGetInfoString") as? String
     }
 }
 

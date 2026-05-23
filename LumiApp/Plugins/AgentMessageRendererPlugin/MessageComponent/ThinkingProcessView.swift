@@ -4,6 +4,8 @@ import SwiftUI
 /// 思考过程展示视图（可展开/折叠）
 /// 用于显示 AI 助手的思考过程，支持展开查看详情
 struct ThinkingProcessView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 思考内容文本
     let thinkingText: String
     @LumiMotionPreferenceReader private var motionPreference
@@ -32,18 +34,18 @@ struct ThinkingProcessView: View {
                 MessageHeaderView {
                     HStack(spacing: 6) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appMicroEmphasized)
+                            .foregroundColor(theme.textSecondary)
 
                         Text(String(localized: "思考过程", table: "CoreMessageRenderer"))
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
 
                         // 折叠时展示一小段预览
                         if !isExpanded, !previewText.isEmpty {
                             Text(previewText)
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary.opacity(0.8))
                                 .lineLimit(1)
                         }
                     }
@@ -65,8 +67,8 @@ struct ThinkingProcessView: View {
                         Divider()
                             .opacity(0.2)
                         Text(thinkingText)
-                            .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appMonoCaption)
+                            .foregroundColor(theme.textPrimary)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

@@ -74,31 +74,26 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         errorMessage = nil
 
         scanTasks.scanTask = Task {
-            try? await TaskService.shared.run(title: String(localized: "Disk Scan: \(url.lastPathComponent)"), priority: .userInitiated) { progressCallback in
-                // Execute scan directly - progress is managed by ViewModel
-                do {
-                    let result = try await self.service.scan(url.path)
-                    progressCallback(1.0)
+            do {
+                let result = try await self.service.scan(url.path)
 
-                    if !Task.isCancelled {
-                        await MainActor.run {
-                            self.largeFiles = result.largeFiles
-                            self.rootEntries = result.entries
-                            self.isScanning = false
-                            if Self.verbose {
-                                if DiskManagerPlugin.verbose {
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.largeFiles = result.largeFiles
+                        self.rootEntries = result.entries
+                        self.isScanning = false
+                        if Self.verbose {
+                            if DiskManagerPlugin.verbose {
                                                                     DiskManagerPlugin.logger.info("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
-                                }
                             }
                         }
                     }
-                } catch {
-                    if !Task.isCancelled {
-                        await MainActor.run {
-                            self.errorMessage = error.localizedDescription
-                            self.isScanning = false
-                        }
-                        throw error // Propagate to TaskService
+                }
+            } catch {
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.errorMessage = error.localizedDescription
+                        self.isScanning = false
                     }
                 }
             }

@@ -31,7 +31,6 @@ struct GeneralSettingView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("通用设置")
         .onAppear {
             checkLaunchAtLoginStatus()
         }
@@ -41,11 +40,7 @@ struct GeneralSettingView: View {
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "gearshape.2",
-                title: "通用设置",
-                subtitle: "管理应用的基本行为和偏好设置"
-            )
+            AppSettingsSection(title: "通用设置", subtitle: "管理应用的基本行为和偏好设置") {}
         }
     }
 
@@ -53,30 +48,11 @@ struct GeneralSettingView: View {
 
     private var startupSection: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "power",
-                    title: "启动选项",
-                    subtitle: "管理应用启动行为"
-                )
-
-                GlassDivider()
-
-                GlassRow {
-                    HStack {
-                        Text("登录时启动")
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                        Spacer()
-
-                        Toggle("", isOn: $launchAtLogin)
-                            .labelsHidden()
-                            .onChange(of: launchAtLogin) { _, newValue in
-                                updateLaunchAtLogin(newValue)
-                            }
+            AppSettingsSection(title: "启动选项", subtitle: "管理应用启动行为", spacing: 12) {
+                AppSettingsToggleRow("登录时启动", systemImage: "power", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, newValue in
+                        updateLaunchAtLogin(newValue)
                     }
-                }
             }
         }
     }
@@ -119,15 +95,7 @@ struct GeneralSettingView: View {
 
     private var onboardingSection: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "graduationcap",
-                    title: "新手引导",
-                    subtitle: "随时重新查看产品使用指引"
-                )
-
-                GlassDivider()
-
+            AppSettingsSection(title: "新手引导", subtitle: "随时重新查看产品使用指引", spacing: 12) {
                 AppButton("重新查看新手引导", style: .secondary, fillsWidth: true, action: {
                     NotificationCenter.default.post(
                         name: Notification.Name("AgentOnboarding.Show"),
@@ -143,15 +111,7 @@ struct GeneralSettingView: View {
 
     private var supportSection: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "lifepreserver",
-                    title: "反馈与支持",
-                    subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位"
-                )
-
-                GlassDivider()
-
+            AppSettingsSection(title: "反馈与支持", subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位", spacing: 12) {
                 HStack(spacing: 8) {
                     AppButton("报告问题", style: .primary, fillsWidth: true, action: { openURL("https://github.com/CofficLab/Lumi/issues/new/choose") })
                     .accessibilityLabel("报告问题")

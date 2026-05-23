@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// Git Commit 详情视图
 ///
@@ -10,6 +11,8 @@ import SwiftUI
 struct GitCommitDetailView: View {
 
     // MARK: - 属性
+
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
@@ -149,45 +152,45 @@ struct GitCommitDetailView: View {
             HStack(spacing: 6) {
                 if uncommittedFiles.isEmpty {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                        .font(.system(size: 12))
+                        .foregroundColor(theme.success)
+                        .font(.appMicro)
                 } else {
                     Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 12))
+                        .foregroundColor(theme.warning)
+                        .font(.appMicro)
                 }
 
                 Text(String(localized: "Working State", table: "GitPlugin"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
                 if !uncommittedFiles.isEmpty {
                     Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.orange)
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.warning)
                 }
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .appSurface(style: .subtle)
     }
 
     private var uncommittedFileListSection: some View {
         VStack(spacing: 0) {
             HStack {
                 Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                 Spacer()
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color(NSColor.controlBackgroundColor))
+            .appSurface(style: .subtle)
 
-            Divider()
+            GlassDivider()
 
             List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
                 GitChangedFileRow(file: file)
@@ -206,17 +209,11 @@ struct GitCommitDetailView: View {
                     repoOverviewContent(info)
                 } else {
                     // 无信息时的简单提示
-                    VStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.green)
-                        Text(String(localized: "Clean Workspace", table: "GitPlugin"))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        Text(String(localized: "All changes committed", table: "GitPlugin"))
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    }
+                    AppEmptyState(
+                        icon: "checkmark.circle.fill",
+                        title: LocalizedStringKey(String(localized: "Clean Workspace", table: "GitPlugin")),
+                        description: LocalizedStringKey(String(localized: "All changes committed", table: "GitPlugin"))
+                    )
                     .padding(.top, 40)
                 }
             }
@@ -268,12 +265,12 @@ struct GitCommitDetailView: View {
             // 仓库名称
             HStack(spacing: 8) {
                 Image(systemName: "square.stack.3d.up.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.primary)
 
                 Text(projectVM.currentProjectName)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appLargeTitle)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
@@ -282,32 +279,11 @@ struct GitCommitDetailView: View {
             // 分支 + Remote + 干净状态
             HStack(spacing: 8) {
                 // 分支 badge
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.triangle.branch")
-                        .font(.system(size: 9))
-                    Text(info.branch)
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                }
-                .foregroundColor(Color(hex: "0A84FF"))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color(hex: "0A84FF").opacity(0.1))
-                .cornerRadius(4)
+                AppTag(info.branch, systemImage: "arrow.triangle.branch", style: .accent)
 
                 // Remote badge
                 if info.remote != "—" {
-                    HStack(spacing: 4) {
-                        Image(systemName: "globe")
-                            .font(.system(size: 9))
-                        Text(info.remote)
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .lineLimit(1)
-                    }
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.secondary.opacity(0.08))
-                    .cornerRadius(4)
+                    AppTag(info.remote, systemImage: "globe", style: .subtle)
                 }
 
                 Spacer()
@@ -315,11 +291,11 @@ struct GitCommitDetailView: View {
                 // 干净状态标识
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(.green)
+                        .font(.appMicro)
+                        .foregroundColor(theme.success)
                     Text(String(localized: "Clean", table: "GitPlugin"))
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.green)
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.success)
                 }
             }
         }
@@ -334,51 +310,19 @@ struct GitCommitDetailView: View {
     private func repoStatsRow(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
         HStack(spacing: 10) {
             // Total Commits
-            repoStatCard(
-                icon: "sourcecontrol",
-                iconColor: Color(hex: "7C6FFF"),
-                value: "\(info.totalCommits)",
-                label: String(localized: "Total Commits", table: "GitPlugin")
+            GlassKeyValueRow(
+                label: String(localized: "Total Commits", table: "GitPlugin"),
+                value: "\(info.totalCommits)"
             )
 
             // Contributors
-            repoStatCard(
-                icon: "person.2.fill",
-                iconColor: Color(hex: "FF9F0A"),
-                value: "\(info.contributors.count)",
-                label: String(localized: "Contributors", table: "GitPlugin")
+            GlassKeyValueRow(
+                label: String(localized: "Contributors", table: "GitPlugin"),
+                value: "\(info.contributors.count)"
             )
 
             Spacer()
         }
-    }
-
-    /// 单个统计指标卡片
-    private func repoStatCard(icon: String, iconColor: Color, value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                    .foregroundColor(iconColor)
-                Text(label)
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            }
-
-            Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
     }
 
     // MARK: - Repo Last Commit Section
@@ -387,61 +331,49 @@ struct GitCommitDetailView: View {
     private func repoLastCommitSection(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             // 区块标题
-            HStack(spacing: 5) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                Text(String(localized: "Latest Commit", table: "GitPlugin"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            }
+            GlassSectionHeader(
+                icon: "clock.arrow.circlepath",
+                title: String(localized: "Latest Commit", table: "GitPlugin")
+            )
 
             // Commit 内容卡片
-            VStack(alignment: .leading, spacing: 6) {
-                // Commit message
-                Text(info.lastCommitMessage)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                    .lineLimit(2)
-                    .textSelection(.enabled)
+            AppCard {
+                VStack(alignment: .leading, spacing: 6) {
+                    // Commit message
+                    Text(info.lastCommitMessage)
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
 
-                Divider()
-                    .padding(.vertical, 2)
+                    GlassDivider()
+                        .padding(.vertical, 2)
 
-                // 作者 + 时间
-                HStack(spacing: 12) {
-                    // 作者
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                        Text(info.lastCommitAuthor)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                            .lineLimit(1)
-                    }
+                    // 作者 + 时间
+                    HStack(spacing: 12) {
+                        // 作者
+                        HStack(spacing: 4) {
+                            Image(systemName: "person.circle.fill")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textTertiary)
+                            Text(info.lastCommitAuthor)
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                                .lineLimit(1)
+                        }
 
-                    // 时间
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                        Text(info.lastCommitDate)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        // 时间
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock.fill")
+                                .font(.appMicro)
+                                .foregroundColor(theme.textTertiary)
+                            Text(info.lastCommitDate)
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
                     }
                 }
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
         }
     }
 
@@ -453,17 +385,17 @@ struct GitCommitDetailView: View {
             // 区块标题
             HStack(spacing: 5) {
                 Image(systemName: "person.2")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
                 Text(String(localized: "Contributors", table: "GitPlugin"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textSecondary)
 
                 Spacer()
 
                 Text("\(info.contributors.count)")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .font(.appMonoMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             // 贡献者列表
@@ -476,25 +408,18 @@ struct GitCommitDetailView: View {
                             .frame(width: 16, height: 16)
                             .overlay(
                                 Text(String(name.prefix(1)).uppercased())
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.appMicroEmphasized)
                                     .foregroundColor(.white)
                             )
 
                         Text(name)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textPrimary)
                             .lineLimit(1)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
+                    .appSurface(style: .subtle, cornerRadius: 6)
                 }
             }
         }
@@ -525,13 +450,13 @@ struct GitCommitDetailView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "circle.circle.fill")
-                    .foregroundColor(.accentColor)
-                    .font(.system(size: 10))
+                    .foregroundColor(theme.primary)
+                    .font(.appMicro)
                     .padding(.top, 2)
 
                 Text(detail.message)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -551,8 +476,8 @@ struct GitCommitDetailView: View {
 
             if !detail.body.isEmpty {
                 Text(detail.body)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .lineLimit(3)
                     .textSelection(.enabled)
                     .padding(.leading, 16)
@@ -560,17 +485,17 @@ struct GitCommitDetailView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .appSurface(style: .subtle)
     }
 
     private func metaLabel(icon: String, value: String) -> some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 9))
-                .foregroundColor(.secondary)
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
             Text(value)
-                .font(.system(size: 10))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
                 .lineLimit(1)
         }
     }
@@ -578,10 +503,10 @@ struct GitCommitDetailView: View {
     private func hashLabel(_ detail: GitCommitDetail) -> some View {
         HStack(spacing: 2) {
             Text(detail.hash.prefix(7))
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appMonoMicro)
+                .foregroundColor(theme.textSecondary)
 
-            Button {
+            AppIconButton(systemImage: isCopied ? "checkmark.circle.fill" : "doc.on.doc") {
                 GitCommitDetailService.copyHash(detail.hash)
                 withAnimation(.spring()) {
                     isCopied = true
@@ -591,32 +516,28 @@ struct GitCommitDetailView: View {
                         isCopied = false
                     }
                 }
-            } label: {
-                Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                    .font(.system(size: 9))
-                    .foregroundColor(isCopied ? .green : .secondary)
             }
-            .buttonStyle(.plain)
+            .foregroundColor(isCopied ? theme.success : theme.textTertiary)
         }
     }
 
     private func statsBadges(_ stats: GitDiffStats) -> some View {
         HStack(spacing: 8) {
-            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitPlugin"), color: Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-            statBadge(value: "+\(stats.insertions)", label: nil, color: .green)
-            statBadge(value: "-\(stats.deletions)", label: nil, color: .red)
+            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitPlugin"), color: theme.textPrimary)
+            statBadge(value: "+\(stats.insertions)", label: nil, color: theme.success)
+            statBadge(value: "-\(stats.deletions)", label: nil, color: theme.error)
         }
     }
 
     private func statBadge(value: String, label: String?, color: Color) -> some View {
         HStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(.appMonoMicro)
                 .foregroundColor(color)
             if let label = label {
                 Text(label)
-                    .font(.system(size: 9))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             }
         }
     }
@@ -625,15 +546,15 @@ struct GitCommitDetailView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                 Spacer()
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color(NSColor.controlBackgroundColor))
+            .appSurface(style: .subtle)
 
-            Divider()
+            GlassDivider()
 
             List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
                 GitChangedFileRow(file: file)
@@ -655,14 +576,10 @@ struct GitCommitDetailView: View {
     // MARK: - State Views
 
     private var noFilesView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.4))
-            Text(String(localized: "No file changes in this commit", table: "GitPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
+        AppEmptyState(
+            icon: "doc.text",
+            title: LocalizedStringKey(String(localized: "No file changes in this commit", table: "GitPlugin"))
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -671,50 +588,31 @@ struct GitCommitDetailView: View {
             ProgressView()
                 .controlSize(.regular)
             Text(String(localized: "Loading...", table: "GitPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func errorView(_ error: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 24))
-                .foregroundColor(.orange.opacity(0.6))
-            Text(String(localized: "Failed to load", table: "GitPlugin"))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-            Text(error)
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .multilineTextAlignment(.center)
-        }
+        AppErrorBanner(message: LocalizedStringKey(error))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
 
     private var noSelectionView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "circle.circle")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a commit from the sidebar", table: "GitPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
+        AppEmptyState(
+            icon: "circle.circle",
+            title: LocalizedStringKey(String(localized: "Please select a commit from the sidebar", table: "GitPlugin"))
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var noProjectView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "folder.badge.questionmark")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a project first", table: "GitPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
+        AppEmptyState(
+            icon: "folder.badge.questionmark",
+            title: LocalizedStringKey(String(localized: "Please select a project first", table: "GitPlugin"))
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

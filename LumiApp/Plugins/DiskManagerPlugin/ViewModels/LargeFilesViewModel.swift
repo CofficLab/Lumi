@@ -61,36 +61,29 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
 
         scanTasks.scanTask?.cancel()
         scanTasks.scanTask = Task {
-            try? await TaskService.shared.run(
-                title: String(localized: "Disk Scan: \(URL(fileURLWithPath: scanPath).lastPathComponent)"),
-                priority: .userInitiated
-            ) { progressCallback in
-                do {
-                    let files = try await self.service.scanLargeFiles(atPath: self.scanPath)
-                    progressCallback(1.0)
+            do {
+                let files = try await self.service.scanLargeFiles(atPath: self.scanPath)
 
-                    if !Task.isCancelled {
-                        await MainActor.run {
-                            self.largeFiles = files
-                            self.isScanning = false
-                            self.scanProgress = nil
-                            self.scanTasks.cancelProgress()
-                            if Self.verbose {
-                                if DiskManagerPlugin.verbose {
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.largeFiles = files
+                        self.isScanning = false
+                        self.scanProgress = nil
+                        self.scanTasks.cancelProgress()
+                        if Self.verbose {
+                            if DiskManagerPlugin.verbose {
                                                                     DiskManagerPlugin.logger.info("\(self.t)大文件扫描完成，发现 \(files.count) 个大文件")
-                                }
                             }
                         }
                     }
-                } catch {
-                    if !Task.isCancelled {
-                        await MainActor.run {
-                            self.errorMessage = error.localizedDescription
-                            self.isScanning = false
-                            self.scanProgress = nil
-                            self.scanTasks.cancelProgress()
-                        }
-                        throw error
+                }
+            } catch {
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.errorMessage = error.localizedDescription
+                        self.isScanning = false
+                        self.scanProgress = nil
+                        self.scanTasks.cancelProgress()
                     }
                 }
             }

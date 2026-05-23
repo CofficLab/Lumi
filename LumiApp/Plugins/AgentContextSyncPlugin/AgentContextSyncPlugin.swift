@@ -23,6 +23,7 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
         localized: "Sync project context to conversation", table: "AgentContextSync")
     static let iconName: String = "arrow.triangle.2.circlepath"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static var order: Int { 1 }
 
     nonisolated var instanceLabel: String {

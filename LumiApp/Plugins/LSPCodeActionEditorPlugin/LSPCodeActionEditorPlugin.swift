@@ -27,6 +27,7 @@ actor LSPCodeActionEditorPlugin: SuperPlugin {
     static let order = 20
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

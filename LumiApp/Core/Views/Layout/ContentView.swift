@@ -120,12 +120,15 @@ struct ContentView: View, SuperLog {
             if providerRegistry.providerTypes.isEmpty {
                 HSplitView {
                     ActivityBar()
+                        .frame(maxHeight: .infinity)
                     AgentModeUnavailableGuideView()
+                        .frame(maxHeight: .infinity)
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let sidebarSections = pluginProvider.getSidebarSections()
                 let hasRail = pluginProvider.hasRailTabs()
+                let showEditor = layoutVM.editorVisible
 
                 let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
@@ -133,13 +136,19 @@ struct ContentView: View, SuperLog {
                 if !sidebarSections.isEmpty && hasRail {
                     HSplitView {
                         ActivityBar()
+                            .frame(maxHeight: .infinity)
                         RailView()
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView().frame(maxWidth: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         RightSidebarContainerView(sections: sidebarSections)
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 3
@@ -149,8 +158,13 @@ struct ContentView: View, SuperLog {
                 } else if !sidebarSections.isEmpty {
                     HSplitView {
                         ActivityBar()
-                        PanelContentView().frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         RightSidebarContainerView(sections: sidebarSections)
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 2
@@ -160,18 +174,27 @@ struct ContentView: View, SuperLog {
                 } else if hasRail {
                     HSplitView {
                         ActivityBar()
+                            .frame(maxHeight: .infinity)
                         RailView()
+                            .frame(maxHeight: .infinity)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.Rail",
                                 columnIndex: 1
                             ))
-                        PanelContentView().frame(maxWidth: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else {
                     HSplitView {
                         ActivityBar()
-                        PanelContentView().frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                        if showEditor {
+                            PanelContentView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 }
@@ -195,6 +218,7 @@ struct ContentView: View, SuperLog {
 
 struct ContentViewBody<Content: View>: View {
     @LumiMotionPreferenceReader private var motionPreference
+    @State private var systemColorScheme: ColorScheme = SystemAppearanceResolver.effectiveColorScheme
 
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
@@ -230,7 +254,8 @@ struct ContentViewBody<Content: View>: View {
 
     private var preferredColorScheme: ColorScheme? {
         if themeVM.activeChromeTheme.followsSystemAppearance {
-            return nil
+            // 显式跟随系统外观，避免从固定深色主题切换后仍继承 .preferredColorScheme(.dark)。
+            return systemColorScheme
         }
         return themeVM.activeChromeTheme.isDarkTheme ? .dark : .light
     }
@@ -246,7 +271,17 @@ struct ContentViewBody<Content: View>: View {
                 }
             }
             .animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference), value: themeVM.currentThemeId)
-            .onAppear(perform: onAppear)
+            .onAppear {
+                refreshSystemColorScheme()
+                onAppear()
+            }
+            .onChange(of: themeVM.currentThemeId) { _, _ in
+                refreshSystemColorScheme()
+            }
+            .onReceive(NSApp.publisher(for: \.effectiveAppearance)) { _ in
+                guard themeVM.activeChromeTheme.followsSystemAppearance else { return }
+                refreshSystemColorScheme()
+            }
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()
             }
@@ -254,6 +289,12 @@ struct ContentViewBody<Content: View>: View {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+    }
+
+    private func refreshSystemColorScheme() {
+        let resolved = SystemAppearanceResolver.effectiveColorScheme
+        guard systemColorScheme != resolved else { return }
+        systemColorScheme = resolved
     }
 }
 

@@ -7,6 +7,7 @@ actor AiRouterPlugin: SuperPlugin {
     static let displayName = "AiRouter"
     static let description = "AiRouter LLM Gateway"
     static let iconName = "arrow.triangle.branch"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

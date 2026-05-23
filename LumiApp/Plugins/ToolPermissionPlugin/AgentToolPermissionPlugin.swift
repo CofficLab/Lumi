@@ -8,6 +8,7 @@ actor AgentToolPermissionPlugin: SuperPlugin {
     static let displayName = String(localized: "Tool Permission", table: "AgentToolPermission")
     static let description = String(localized: "Tool permission overlay at root", table: "AgentToolPermission")
     static let iconName = "lock.shield"
+    static var category: PluginCategory { .agent }
     static var order: Int { 95 }
     static let enable: Bool = true
 

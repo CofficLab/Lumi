@@ -28,6 +28,7 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
     static let order = 34
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 
@@ -40,9 +41,10 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
         registry.registerCompletionContributor(
             GoCompletionContributor()
         )
-        registry.registerCommandContributor(
-            GoCommandContributor(buildManager: buildManager, testManager: testManager)
-        )
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // registry.registerCommandContributor(
+        //     GoCommandContributor(buildManager: buildManager, testManager: testManager)
+        // )
         registry.registerPanelContributor(
             GoPanelContributor(buildManager: buildManager, testManager: testManager)
         )

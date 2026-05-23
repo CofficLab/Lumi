@@ -1,7 +1,10 @@
+import LumiUI
 import SwiftUI
 
 /// 输入源规则列表空状态视图
 struct InputRulesEmptyStateView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     // MARK: - Body
 
     var body: some View {
@@ -10,18 +13,18 @@ struct InputRulesEmptyStateView: View {
 
             // 键盘图标
             Image(systemName: "keyboard")
-                .font(.system(size: 48))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appLargeTitle)
+                .foregroundColor(theme.textSecondary)
 
             // 标题
             Text(String(localized: "暂无输入源切换规则", table: "Input"))
-                .font(.title3)
-                .fontWeight(.medium)
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appSectionTitle)
+                .foregroundColor(theme.textPrimary)
 
             // 描述文字
             Text(String(localized: "添加应用和对应的输入源，切换应用时自动切换输入法", table: "Input"))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)
 

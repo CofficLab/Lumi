@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Inlay Hint 标签视图。
@@ -7,24 +8,17 @@ import SwiftUI
 /// 该视图只负责显示样式，不负责请求 hint、计算位置或参与编辑器布局；
 /// hint 数据由 `InlayHintProvider` 维护，实际叠加位置由消费 Provider 的编辑器 UI 决定。
 struct InlayHintLabel: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     
     let hint: InlayHintItem
-    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Text(hint.text)
-            .font(.system(size: 11, design: .monospaced))
-            .foregroundColor(
-                hint.isTypeHint
-                    ? Color(nsColor: .secondaryLabelColor)
-                    : Color(nsColor: .tertiaryLabelColor)
-            )
+            .font(.appMonoMicro)
+            .foregroundColor(hint.isTypeHint ? theme.textSecondary : theme.textTertiary)
             .padding(.horizontal, hint.paddingLeft ? 6 : 0)
             .padding(.horizontal, hint.paddingRight ? 6 : 0)
-            .background(
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-            )
+            .appSurface(style: .custom(theme.appStatusMutedFill), cornerRadius: 3)
             .help(hint.tooltip ?? "")
     }
 }

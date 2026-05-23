@@ -22,6 +22,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
     static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
     static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
+    static var category: PluginCategory { .integration }
     static var order: Int { 98 }
 
     /// 用户可在设置中启用/禁用此插件
@@ -48,6 +49,8 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
 
 /// GitOK 打开状态栏视图
 struct OpenInGitOKStatusBarView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
@@ -96,11 +99,11 @@ struct OpenInGitOKStatusBarView: View {
                 .frame(width: 10, height: 10)
 
             Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(.secondary.opacity(0.5))
+        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(String(localized: "无项目", table: "AgentOpenInGitOK"))
     }
 
@@ -115,6 +118,8 @@ struct OpenInGitOKStatusBarView: View {
 
 /// GitOK 打开详情视图（在 popover 中显示）
 struct OpenInGitOKDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
@@ -127,8 +132,8 @@ struct OpenInGitOKDetailView: View {
                     .frame(width: 16, height: 16)
 
                 Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
@@ -139,7 +144,7 @@ struct OpenInGitOKDetailView: View {
                         Image(systemName: "arrow.up.right.square")
                         Text(String(localized: "打开", table: "OpenInGitOKPlugin"))
                     }
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -149,13 +154,13 @@ struct OpenInGitOKDetailView: View {
             // 项目路径显示
             HStack(spacing: 8) {
                 Text(String(localized: "项目", table: "OpenInGitOKPlugin"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
                 Text(projectVM.currentProjectPath)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -166,7 +171,7 @@ struct OpenInGitOKDetailView: View {
                     NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "复制路径", table: "OpenInGitOKPlugin"))

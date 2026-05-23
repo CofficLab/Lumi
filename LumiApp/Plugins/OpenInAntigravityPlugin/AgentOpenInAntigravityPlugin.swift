@@ -12,6 +12,7 @@ actor AgentOpenInAntigravityPlugin: SuperPlugin {
     static let displayName = String(localized: "Open in Antigravity", table: "AgentOpenInAntigravity")
     static let description = String(localized: "Open current project in Antigravity editor", table: "AgentOpenInAntigravity")
     static let iconName = "paperplane"
+    static var category: PluginCategory { .integration }
     static var order: Int { 83 }
 
     /// 用户可在设置中启用/禁用此插件
@@ -39,6 +40,8 @@ actor AgentOpenInAntigravityPlugin: SuperPlugin {
 
 /// Antigravity 打开状态栏视图
 struct OpenInAntigravityStatusBarView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -81,11 +84,11 @@ struct OpenInAntigravityStatusBarView: View {
                 .frame(width: 10, height: 10)
 
             Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(.secondary.opacity(0.5))
+        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(String(localized: "无项目", table: "AgentOpenInAntigravity"))
     }
 
@@ -100,6 +103,8 @@ struct OpenInAntigravityStatusBarView: View {
 
 /// Antigravity 打开详情视图（在 popover 中显示）
 struct OpenInAntigravityDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -111,8 +116,8 @@ struct OpenInAntigravityDetailView: View {
                     .frame(width: 16, height: 16)
 
                 Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
@@ -123,7 +128,7 @@ struct OpenInAntigravityDetailView: View {
                         Image(systemName: "arrow.up.right.square")
                         Text(String(localized: "打开", table: "OpenInAntigravityPlugin"))
                     }
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -133,13 +138,13 @@ struct OpenInAntigravityDetailView: View {
             // 项目路径显示
             HStack(spacing: 8) {
                 Text(String(localized: "项目", table: "OpenInAntigravityPlugin"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
                 Text(projectVM.currentProjectPath)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -150,7 +155,7 @@ struct OpenInAntigravityDetailView: View {
                     NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "复制路径", table: "OpenInAntigravityPlugin"))

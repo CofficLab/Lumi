@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 激活防休眠工具
 ///

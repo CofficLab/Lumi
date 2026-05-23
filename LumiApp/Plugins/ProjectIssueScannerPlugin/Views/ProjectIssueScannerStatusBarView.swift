@@ -7,11 +7,20 @@ import AppKit
 /// 管理扫描状态的视图模型。
 @MainActor
 final class ProjectIssueScannerViewModel: ObservableObject {
+    /// Popover 列表最多展示的问题数
+    private let displayLimit = 50
+
     /// 当前扫描状态
     @Published var state: ScannerState = .idle
 
-    /// 未解决的问题列表
+    /// 当前展示的问题列表（最多 displayLimit 条）
     @Published var issues: [ProjectIssue] = []
+
+    /// 未解决问题的总数（可能大于 issues.count）
+    @Published var totalOpenCount: Int = 0
+
+    /// 是否有更多问题未展示
+    var hasMore: Bool { totalOpenCount > issues.count }
 
     /// 触发手动扫描
     func scan(projectPath: String) {
@@ -19,6 +28,7 @@ final class ProjectIssueScannerViewModel: ObservableObject {
         guard !path.isEmpty else {
             state = .idle
             issues = []
+            totalOpenCount = 0
             return
         }
 
@@ -33,9 +43,17 @@ final class ProjectIssueScannerViewModel: ObservableObject {
     /// 从 Store 重新加载问题列表
     func reloadIssues(projectPath: String) async {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        issues = path.isEmpty
-            ? []
-            : await ProjectIssueStore.shared.fetchOpen(projectPath: path)
+        guard !path.isEmpty else {
+            issues = []
+            totalOpenCount = 0
+            return
+        }
+
+        // 总数：状态栏图标需要准确数字
+        totalOpenCount = await ProjectIssueStore.shared.fetchOpen(projectPath: path).count
+        // 列表：按严重程度排序，截断展示
+        issues = await ProjectIssueStore.shared.fetchOpen(projectPath: path, limit: displayLimit)
+
         if state != .scanning {
             state = issues.isEmpty ? .idle : .ready
         }
@@ -78,14 +96,13 @@ struct ProjectIssueScannerStatusBarView: View {
                 ) {
                     HStack(spacing: 4) {
                         Image(systemName: iconName)
-                            .font(.system(size: 10))
-                        if !viewModel.issues.isEmpty {
-                            Text("\(viewModel.issues.count)")
-                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .font(.appMicroEmphasized)
+                        if viewModel.totalOpenCount > 0 {
+                            Text("\(viewModel.totalOpenCount)")
+                                .font(.appMonoMicro)
                                 .monospacedDigit()
                         }
                     }
-                    .foregroundColor(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                 }
@@ -149,7 +166,9 @@ struct ProjectIssueScannerPopover: View {
                 .font(.headline)
                 .foregroundColor(primaryTextColor)
             Spacer()
-            Text("\(viewModel.issues.count)")
+            Text(viewModel.hasMore
+                 ? "\(viewModel.issues.count)/\(viewModel.totalOpenCount)"
+                 : "\(viewModel.totalOpenCount)")
                 .font(.caption)
                 .foregroundColor(secondaryTextColor)
         }
@@ -166,6 +185,14 @@ struct ProjectIssueScannerPopover: View {
                         IssueRow(issue: issue) {
                             Task { await viewModel.dismiss(id: issue.id, projectPath: projectPath) }
                         }
+                    }
+
+                    if viewModel.hasMore {
+                        Text("Showing top \(viewModel.issues.count) of \(viewModel.totalOpenCount) issues, sorted by severity.")
+                            .font(.caption2)
+                            .foregroundColor(secondaryTextColor)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 4)
                     }
                 }
             }

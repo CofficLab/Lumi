@@ -8,6 +8,7 @@ actor ThemeNebulaPlugin: SuperPlugin {
     static let iconName: String = "cloud.moon.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 122 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -23,4 +24,10 @@ actor ThemeNebulaPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(NebulaSuperEditorThemeContributor())
+    }
+
 }

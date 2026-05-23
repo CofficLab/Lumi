@@ -2,15 +2,17 @@
 
 ## 一、将要实现什么
 
-当你 push 一个 tag（例如 v1.0.0）后：
+当你 push 到 `pre` 或 `main` 后：
 
 1.	GitHub Actions 自动运行
-2.	使用 Xcode 构建 .app
-3.	使用 Developer ID Application 证书签名
-4.	打包成 .dmg
-5.	提交 Apple Notarization
-6.	Staple 公证票据
-7.	自动创建 GitHub Release 并上传 DMG
+2.	根据 conventional commit 自动计算版本
+3.	使用 Xcode 构建 .app
+4.	使用 Developer ID Application 证书签名
+5.	打包成 .dmg
+6.	提交 Apple Notarization
+7.	Staple 公证票据并执行 Gatekeeper 验证
+8.	自动创建 GitHub Release 并上传 DMG
+9.	`main` 发布会生成 stable release 和 appcast；`pre` 发布会生成 prerelease
 
 ## 二、需要准备的东西
 
@@ -118,4 +120,3 @@ base64 AuthKey_XXXX.p8 > api.txt
 | APP_STORE_CONNECT_KEY_BASE64 | api.txt 内容 |
 | APP_STORE_CONNECT_KEY_ID | Key ID |
 | APP_STORE_CONNECT_KEY_ISSUER_ID | Issuer ID |
-

@@ -19,6 +19,7 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
         table: "EditorStickySymbolBar")
     static let iconName = "point.topleft.down.curvedto.point.bottomright.up"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 89 }
 
     nonisolated var instanceLabel: String { Self.id }

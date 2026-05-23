@@ -1,10 +1,46 @@
 import Foundation
 import LLMKit
+import ModelRouterKit
+
+/// 扫描器模型偏好
+enum ScannerModelPreference: Codable, Equatable, Hashable {
+    /// 使用自动路由选择最优模型
+    case auto
+    /// 使用用户手动指定的模型
+    case manual(providerId: String, model: String)
+
+    /// UserDefaults 键
+    private static let userDefaultsKey = "ProjectIssueScanner.ModelPreference"
+
+    /// 从 UserDefaults 加载偏好设置
+    static func load() -> ScannerModelPreference {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
+            return .auto
+        }
+        return (try? JSONDecoder().decode(ScannerModelPreference.self, from: data)) ?? .auto
+    }
+
+    /// 保存偏好设置到 UserDefaults
+    func save() {
+        guard let data = try? JSONEncoder().encode(self) else { return }
+        UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
+    }
+
+    /// 显示名称
+    var displayName: String {
+        switch self {
+        case .auto:
+            return "Auto (自动选择)"
+        case .manual(let providerId, let model):
+            return "\(providerId) / \(model)"
+        }
+    }
+}
 
 /// LLM 深度问题分析器
 ///
 /// 使用 LLM 对项目代码进行深度分析，发现潜在 bug、安全风险、性能问题等。
-/// LLM 服务通过 Root 视图的 @EnvironmentObject 获取，传递给本分析器。
+/// 支持自动模型路由或用户手动指定模型。
 actor DeepIssueAnalyzer: SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose = false
@@ -14,21 +50,44 @@ actor DeepIssueAnalyzer: SuperLog {
     // MARK: - State
 
     private var llmService: LLMService?
-    private var config: LLMConfig?
+
+    /// 当前模型偏好
+    private var modelPreference: ScannerModelPreference = .auto
 
     // MARK: - Public API
 
     /// 配置 LLM 服务（由 Root 视图调用）
     ///
     /// 通过 @EnvironmentObject 获取 AppLLMVM 后，调用此方法传递 LLM 服务引用。
-    func configure(llmService: LLMService, config: LLMConfig) {
+    func configure(llmService: LLMService) {
         self.llmService = llmService
-        self.config = config
+    }
+
+    /// 更新模型偏好
+    func updateModelPreference(_ preference: ScannerModelPreference) {
+        self.modelPreference = preference
+    }
+
+    /// 获取当前模型偏好
+    func getModelPreference() -> ScannerModelPreference {
+        return modelPreference
     }
 
     /// LLM 服务是否已就绪
     func isReady() -> Bool {
-        llmService != nil
+        guard let llmService else { return false }
+
+        switch modelPreference {
+        case .auto:
+            // 自动模式需要至少有一个可用的供应商和模型
+            return !llmService.allProviders().isEmpty
+        case .manual(let providerId, let model):
+            // 手动模式需要指定的供应商和模型存在
+            guard let provider = llmService.allProviders().first(where: { $0.id == providerId }) else {
+                return false
+            }
+            return provider.availableModels.contains(model)
+        }
     }
 
     /// 对指定项目执行深度分析
@@ -36,7 +95,11 @@ actor DeepIssueAnalyzer: SuperLog {
     /// - Parameter projectPath: 项目根路径
     /// - Returns: 发现的问题列表，如果服务未就绪或分析失败则返回 nil
     func analyze(projectPath: String) async -> [ProjectIssue]? {
-        guard let llmService, let config else {
+        guard let llmService else {
+            return nil
+        }
+
+        guard let config = resolveConfig(llmService: llmService) else {
             return nil
         }
 
@@ -55,6 +118,91 @@ actor DeepIssueAnalyzer: SuperLog {
         } catch {
             return nil
         }
+    }
+
+    /// 根据模型偏好解析 LLM 配置
+    private func resolveConfig(llmService: LLMService) -> LLMConfig? {
+        switch modelPreference {
+        case .auto:
+            return resolveAutoConfig(llmService: llmService)
+        case .manual(let providerId, let model):
+            return resolveManualConfig(llmService: llmService, providerId: providerId, model: model)
+        }
+    }
+
+    /// 自动路由选择最优模型
+    private func resolveAutoConfig(llmService: LLMService) -> LLMConfig? {
+        let candidates = collectRouteCandidates(llmService: llmService)
+        let router = ModelRouter()
+
+        let signal = RouteSignal(
+            hasImages: false,
+            messageLength: 0,
+            allowsTools: false,
+            currentProviderId: "",
+            currentModel: ""
+        )
+
+        guard let decision = router.route(candidates: candidates, signal: signal) else {
+            return nil
+        }
+
+        let apiKey = apiKey(forProviderId: decision.providerId, llmService: llmService) ?? ""
+        return LLMConfig(apiKey: apiKey, model: decision.model, providerId: decision.providerId)
+    }
+
+    /// 使用用户手动指定的模型
+    private func resolveManualConfig(llmService: LLMService, providerId: String, model: String) -> LLMConfig? {
+        guard let provider = llmService.allProviders().first(where: { $0.id == providerId }),
+              provider.availableModels.contains(model) else {
+            return nil
+        }
+
+        let apiKey = apiKey(forProviderId: providerId, llmService: llmService) ?? ""
+        return LLMConfig(apiKey: apiKey, model: model, providerId: providerId)
+    }
+
+    /// 收集路由候选模型
+    private func collectRouteCandidates(llmService: LLMService) -> [RouteCandidate] {
+        let availabilityStore = LLMModelAvailabilityStore.shared
+
+        return llmService.allProviders().flatMap { provider -> [RouteCandidate] in
+            guard provider.isEnabled else { return [] }
+
+            // 远程供应商必须有 API Key
+            if !provider.isLocal,
+               apiKey(forProviderId: provider.id, llmService: llmService)?.isEmpty != false {
+                return []
+            }
+
+            return provider.availableModels.compactMap { model -> RouteCandidate? in
+                // 可用性检查
+                let status = availabilityStore.status(providerId: provider.id, modelId: model)
+                if case .unavailable = status { return nil }
+
+                let candidateAvailability: CandidateAvailability
+                switch status {
+                case .available: candidateAvailability = .available
+                case .checking:  candidateAvailability = .checking
+                case .unknown, nil: candidateAvailability = .unknown
+                case .unavailable: return nil
+                }
+
+                return RouteCandidate(
+                    providerId: provider.id,
+                    providerDisplayName: provider.displayName,
+                    model: model,
+                    availability: candidateAvailability,
+                    contextWindowSizes: provider.contextWindowSizes
+                )
+            }
+        }
+    }
+
+    /// 获取供应商的 API Key
+    private func apiKey(forProviderId providerId: String, llmService: LLMService) -> String? {
+        guard let providerType = llmService.providerType(forId: providerId) else { return nil }
+        return APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey)
     }
 
     // MARK: - Prompts

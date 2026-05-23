@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMKit
 import HttpKit
 
@@ -161,7 +162,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
 
         // 构建请求体
-        let body: [String: Any]
+        var body: [String: Any]
         do {
             body = try provider.buildRequestBody(
                 messages: messages,
@@ -169,6 +170,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 tools: tools,
                 systemPrompt: ""
             )
+            applyGenerationOptions(from: config, to: &body)
         } catch {
             AppLogger.core.error("\(self.t)构建请求体失败：\(error.localizedDescription)")
             throw LLMServiceError.requestFailed(error.localizedDescription)
@@ -189,6 +191,11 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
 
             let response = try provider.parseResponseWithMetadata(data: data)
+            if response.content.isEmpty,
+               response.toolCalls?.isEmpty != false,
+               response.thinkingContent?.isEmpty != false {
+                throw LLMServiceError.requestFailed("模型响应为空，请检查供应商返回内容、max_tokens 设置或请求日志")
+            }
 
             let endTime = CFAbsoluteTimeGetCurrent()
             let latency = (endTime - startTime) * 1000.0
@@ -283,7 +290,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
 
         // 构建请求体
-        let body: [String: Any]
+        var body: [String: Any]
         do {
             body = try provider.buildStreamingRequestBody(
                 messages: messages,
@@ -291,6 +298,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 tools: tools,
                 systemPrompt: ""
             )
+            applyGenerationOptions(from: config, to: &body)
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
@@ -406,17 +414,24 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw LLMServiceError.requestFailed(error)
         }
 
+        let finalContent = await state.accumulatedContentChunks.joined()
+        let finalThinking = await state.getFinalThinking()
+        let kitToolCalls = await state.getFinalToolCalls()
+
+        if finalContent.isEmpty, finalThinking == nil, kitToolCalls == nil {
+            throw LLMServiceError.requestFailed("模型流式响应为空，请检查供应商返回内容、max_tokens 设置或请求日志")
+        }
+
         // 计算流式传输耗时
         let streamingDuration = await state.getStreamingDuration()
 
         // 桥接 KitToolCall → App ToolCall
-        let kitToolCalls = await state.getFinalToolCalls()
         let appToolCalls = kitToolCalls?.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
 
         return ChatMessage(
             role: .assistant,
             conversationId: conversationId,
-            content: await state.accumulatedContentChunks.joined(),
+            content: finalContent,
             toolCalls: appToolCalls,
             providerId: config.providerId,
             modelName: config.model,
@@ -429,8 +444,18 @@ class LLMService: SuperLog, @unchecked Sendable {
             finishReason: await state.stopReason,
             temperature: config.temperature,
             maxTokens: config.maxTokens,
-            thinkingContent: await state.getFinalThinking()
+            thinkingContent: finalThinking
         )
+    }
+
+    private func applyGenerationOptions(from config: LLMConfig, to body: inout [String: Any]) {
+        if let temperature = config.temperature {
+            body["temperature"] = temperature
+        }
+
+        if let maxTokens = config.maxTokens {
+            body["max_tokens"] = maxTokens
+        }
     }
 }
 

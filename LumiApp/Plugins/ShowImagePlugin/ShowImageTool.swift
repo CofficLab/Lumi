@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import SwiftUI
 import AppKit
 import os

@@ -15,7 +15,6 @@ struct AssistantMessageRenderer: SuperMessageRenderer {
             AssistantMessage(
                 message: message,
                 isLastMessage: false,
-                relatedToolOutputs: [],
                 showRawMessage: showRawMessage
             )
         )

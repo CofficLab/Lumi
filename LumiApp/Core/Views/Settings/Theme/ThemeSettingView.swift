@@ -23,18 +23,13 @@ struct ThemeSettingView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("主题风格")
     }
 
     // MARK: - Header Card
 
     private var headerCard: some View {
         AppCard {
-            GlassSectionHeader(
-                icon: "paintbrush.fill",
-                title: "主题风格",
-                subtitle: "选择你喜欢的视觉体验"
-            )
+            AppSettingsSection(title: "主题风格", subtitle: "选择你喜欢的视觉体验") {}
         }
     }
 
@@ -42,15 +37,7 @@ struct ThemeSettingView: View {
 
     private var themeSelectorCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 16) {
-                GlassSectionHeader(
-                    icon: "swatchpalette",
-                    title: "选择主题",
-                    subtitle: "点击主题卡片即可切换"
-                )
-
-                GlassDivider()
-
+            AppSettingsSection(title: "选择主题", subtitle: "点击主题卡片即可切换", spacing: 12) {
                 ThemeSelectorView()
                     .environmentObject(themeVM)
             }

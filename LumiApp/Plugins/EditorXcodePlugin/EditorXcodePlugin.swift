@@ -21,6 +21,7 @@ actor EditorXcodePlugin: SuperPlugin, SuperLog {
     static let order = 4  // 在 LSP Service 之前加载，确保 build context 就绪
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

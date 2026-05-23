@@ -944,6 +944,7 @@
       }
     },
     "Failed to load" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1798,6 +1799,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作區有未提交的更改"
+          }
+        }
+      }
+    },
+    "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides Git version control features including panel, commit history, status bar and Agent tools."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Git 版本控制相關的功能，包括面板、提交歷史、狀態欄和 Agent 工具。"
           }
         }
       }

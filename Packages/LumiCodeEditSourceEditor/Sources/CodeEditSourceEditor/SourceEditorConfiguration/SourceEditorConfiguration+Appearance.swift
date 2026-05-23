@@ -13,6 +13,14 @@ extension SourceEditorConfiguration {
         /// The theme for syntax highlighting.
         public var theme: EditorTheme
 
+        /// The theme's unique identifier (e.g. "xcode-dark", "monokai").
+        ///
+        /// Used for reliable change detection in `Equatable` and `didSetOnController`.
+        /// `EditorTheme` uses `NSColor` fields whose `==` comparison can be unreliable
+        /// across color spaces. Comparing `themeIdentifier` (a `String`) guarantees
+        /// correct detection of theme switches.
+        public var themeIdentifier: String
+
         /// Determines whether the editor uses the theme's background color, or a transparent background color.
         public var useThemeBackground: Bool = true
 
@@ -42,6 +50,7 @@ extension SourceEditorConfiguration {
         /// Create a new appearance configuration object.
         /// - Parameters:
         ///   - theme: The theme for syntax highlighting.
+        ///   - themeIdentifier: The theme's unique identifier for reliable change detection.
         ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
         ///                         background color.
         ///   - font: The default font.
@@ -55,6 +64,7 @@ extension SourceEditorConfiguration {
         ///                          ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
         public init(
             theme: EditorTheme,
+            themeIdentifier: String = "",
             useThemeBackground: Bool = true,
             font: NSFont,
             lineHeightMultiple: Double = 1.2,
@@ -65,6 +75,7 @@ extension SourceEditorConfiguration {
             bracketPairEmphasis: BracketPairEmphasis? = .flash
         ) {
             self.theme = theme
+            self.themeIdentifier = themeIdentifier
             self.useThemeBackground = useThemeBackground
             self.font = font
             self.lineHeightMultiple = lineHeightMultiple
@@ -90,7 +101,11 @@ extension SourceEditorConfiguration {
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig?.theme != theme || oldConfig?.useThemeBackground != useThemeBackground {
+            // themeIdentifier 用于可靠检测主题切换；同时比较 theme，避免 ID 已更新但配色对象
+            // 尚未刷新时漏掉高亮失效（见 EditorState.applyEditorTheme 的更新顺序约定）。
+            if oldConfig?.themeIdentifier != themeIdentifier
+                || oldConfig?.useThemeBackground != useThemeBackground
+                || oldConfig?.theme != theme {
                 updateControllerNewTheme(controller: controller)
                 needsHighlighterInvalidation = true
             }
@@ -131,6 +146,16 @@ extension SourceEditorConfiguration {
             }
 
             if needsHighlighterInvalidation {
+                let documentRange = NSRange(
+                    location: 0,
+                    length: controller.textView.textStorage.length
+                )
+                if documentRange.length > 0 {
+                    controller.textView.textStorage.setAttributes(
+                        controller.attributesFor(nil),
+                        range: documentRange
+                    )
+                }
                 controller.highlighter?.invalidate()
             }
         }

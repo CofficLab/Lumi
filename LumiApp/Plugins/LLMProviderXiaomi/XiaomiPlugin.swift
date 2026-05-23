@@ -7,6 +7,7 @@ actor XiaomiPlugin: SuperPlugin {
     static let displayName = "小米"
     static let description = "Xiaomi MiMo Models"
     static let iconName = "phone"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

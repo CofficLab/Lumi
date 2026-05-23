@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 ///
 /// ## 初始化规则

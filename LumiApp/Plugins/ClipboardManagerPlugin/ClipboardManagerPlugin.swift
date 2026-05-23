@@ -12,6 +12,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     static let displayName = String(localized: "Clipboard", table: "ClipboardManager")
     static let description = String(localized: "Manage clipboard history and snippets", table: "ClipboardManager")
     static let iconName = "doc.on.clipboard"
+    static var category: PluginCategory { .general }
     static var order: Int { 70 }
     nonisolated static let enable: Bool = true
     nonisolated static let isConfigurable: Bool = true

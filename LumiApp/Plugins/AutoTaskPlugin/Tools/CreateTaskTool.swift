@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 创建任务工具
 ///
@@ -9,6 +10,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "create_task"
+    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -27,10 +29,6 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         [
             "type": "object",
             "properties": [
-                "conversation_id": [
-                    "type": "string",
-                    "description": "The conversation ID (UUID string) to associate tasks with",
-                ],
                 "tasks": [
                     "type": "array",
                     "description": "Array of tasks to create. Each task has a title and optional detail.",
@@ -50,7 +48,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
                     ],
                 ],
             ],
-            "required": ["conversation_id", "tasks"],
+            "required": ["tasks"],
         ]
     }
 
@@ -59,10 +57,6 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let conversationId = arguments["conversation_id"]?.value as? String else {
-            return String(localized: "Error: conversation_id is required", table: "AutoTask")
-        }
-
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
             return String(localized: "Error: tasks array is required", table: "AutoTask")
         }
@@ -94,8 +88,6 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
             object: nil,
             userInfo: ["conversationId": conversationId]
         )
-
-        let summary = await manager.getProgressSummary(conversationId: conversationId)
 
         var result = "✅ \(String(localized: "Created", table: "AutoTask")) \(items.count) \(String(localized: "tasks:", table: "AutoTask"))\n\n"
         for (index, item) in items.enumerated() {

@@ -8,6 +8,7 @@ actor AgentOnboardingPlugin: SuperPlugin {
     static let displayName = String(localized: "Onboarding", table: "AgentOnboarding")
     static let description = String(localized: "Show first-run onboarding and guidance entry points", table: "AgentOnboarding")
     static let iconName = "hand.wave"
+    static var category: PluginCategory { .agent }
     static var order: Int { 10 }
     static let enable: Bool = true
 

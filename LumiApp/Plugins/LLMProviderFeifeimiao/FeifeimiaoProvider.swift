@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 /// Feifeimiao API 供应商实现
@@ -23,11 +24,11 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
     static let defaultModel = "gpt-5.5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.3", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.5", description: "GPT-5.5，OpenAI 最新旗舰模型，综合能力最强", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4", description: "GPT-5.4，OpenAI 高性能通用模型", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", description: "GPT-5.4 Mini，轻量高效版本，适合快速响应场景", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3", description: "GPT-5.3，通用对话模型，推理能力出色", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2", description: "GPT-5.2，稳定可靠的通用模型", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
@@ -68,9 +69,9 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

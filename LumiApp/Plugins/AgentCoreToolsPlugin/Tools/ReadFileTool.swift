@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import SwiftUI
 import WorkspaceFileKit
 
@@ -28,12 +29,23 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let displayDesc: String
+        switch language {
+        case .chinese:
+            displayDesc = "向用户展示当前操作描述，如：正在读取 xxx.swift"
+        case .english:
+            displayDesc = "A short description shown to the user, e.g. \"Reading xxx.swift\""
+        }
         return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
                     "description": "The absolute path to the file to read"
+                ],
+                "display_name": [
+                    "type": "string",
+                    "description": displayDesc
                 ]
             ],
             "required": ["path"]

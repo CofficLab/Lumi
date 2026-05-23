@@ -2,6 +2,8 @@ import LumiUI
 import SwiftUI
 
 struct AddTemplateView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @Binding var isPresented: Bool
     var onAdd: (String, String, String) -> Void
 
@@ -12,8 +14,8 @@ struct AddTemplateView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(String(localized: "Add New Template", table: "RClick"))
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appBodyEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Form {
                 TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)")), text: $name)
@@ -23,7 +25,7 @@ struct AddTemplateView: View {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "98989E").opacity(0.3)))
+                        .appSurface(style: .listRow, cornerRadius: 8, borderColor: theme.appSubtleBorder)
                 }
             }
             .formStyle(.grouped)

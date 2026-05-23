@@ -16,6 +16,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Network Monitor", table: "NetworkManager")
     static let description = String(localized: "Real-time monitoring of network speed, traffic, and connection status", table: "NetworkManager")
     static let iconName = "network"
+    static var category: PluginCategory { .system }
     static var order: Int { 30 }
 
     nonisolated var instanceLabel: String { Self.id }

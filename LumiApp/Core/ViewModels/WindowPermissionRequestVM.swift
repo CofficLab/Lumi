@@ -1,4 +1,5 @@
 import SwiftUI
+import AgentToolKit
 import Foundation
 
 /// 与 `pendingPermissionRequest` 配套的会话上下文（用于落库与恢复发送）

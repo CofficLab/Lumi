@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 网页搜索工具
 ///

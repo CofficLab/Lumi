@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 聊天时间线渲染态（仅 UI 层，按会话隔离，不落库）。
 struct ConversationRenderState {
@@ -15,7 +16,6 @@ struct ConversationRenderState {
     var isLoadingMore: Bool = false
     var totalMessageCount: Int = 0
     var oldestLoadedTimestamp: Date?
-    var toolOutputsByToolCallID: [String: [ChatMessage]] = [:]
     var loadedToolCallIDs = Set<String>()
     var loadingToolCallIDs = Set<String>()
 

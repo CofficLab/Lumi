@@ -1,4 +1,5 @@
 import SwiftUI
+import AgentToolKit
 
 /// 编辑器 Tab 栏插件
 ///
@@ -13,6 +14,7 @@ actor EditorTabStripPlugin: SuperPlugin {
         localized: "Tab bar for the editor panel", table: "EditorTabStrip")
     static let iconName = "rectangle.topthird.inset.filled"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 88 }
 
     nonisolated var instanceLabel: String { Self.id }

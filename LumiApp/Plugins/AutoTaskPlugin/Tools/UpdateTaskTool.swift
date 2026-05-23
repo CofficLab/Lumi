@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 更新任务状态工具
 ///
@@ -9,6 +10,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "update_task"
+    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -64,16 +66,12 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
             return "\(notFoundLabel) (id: \(taskId))"
         }
 
-        let updatedTask = await manager.fetchTask(id: taskId)
-
         // 通知 UI 刷新
-        if let updatedTask {
-            NotificationCenter.default.post(
-                name: .autoTaskDidChange,
-                object: nil,
-                userInfo: ["conversationId": updatedTask.conversationId]
-            )
-        }
+        NotificationCenter.default.post(
+            name: .autoTaskDidChange,
+            object: nil,
+            userInfo: ["conversationId": conversationId]
+        )
 
         let statusEmoji: String
         switch status {
@@ -86,8 +84,8 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         var result = "\(statusEmoji) \(String(localized: "Task status updated", table: "AutoTask")): **\(status.rawValue)**"
 
         // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
-        if (status == .completed || status == .skipped), let updatedTask {
-            let allTasks = await manager.fetchTasks(conversationId: updatedTask.conversationId)
+        if status == .completed || status == .skipped {
+            let allTasks = await manager.fetchTasks(conversationId: conversationId)
             if let nextTask = allTasks.first(where: { $0.status == .pending }) {
                 _ = await manager.updateTaskStatus(id: nextTask.id, status: .inProgress)
 
@@ -95,7 +93,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
                 NotificationCenter.default.post(
                     name: .autoTaskDidChange,
                     object: nil,
-                    userInfo: ["conversationId": updatedTask.conversationId]
+                    userInfo: ["conversationId": conversationId]
                 )
 
                 let autoStartedLabel = String(localized: "Next task auto-started", table: "AutoTask")

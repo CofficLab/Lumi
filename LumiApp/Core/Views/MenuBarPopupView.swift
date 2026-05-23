@@ -21,55 +21,18 @@ struct MenuBarPopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 第一部分：应用基本信息
-            appInfoSection
-
-            GlassDivider()
-
-            // 第二部分：插件提供的视图（如果有）
+            // 第一部分：插件提供的视图（如果有）
             if !pluginPopupViews.isEmpty {
                 pluginViewsSection
 
                 GlassDivider()
             }
 
-            // 第三部分：菜单项
+            // 第二部分：菜单项
             menuItemsSection
         }
         .frame(width: 300)
         .appSurface(style: .glass, cornerRadius: 0)
-    }
-
-    // MARK: - App Info Section
-
-    private var appInfoSection: some View {
-        VStack(spacing: 12) {
-            // 应用图标和名称
-            HStack(spacing: 12) {
-                // 应用图标
-                if let appIcon = NSApp.applicationIconImage {
-                    AppImageThumbnail(
-                        image: Image(nsImage: appIcon),
-                        size: CGSize(width: 40, height: 40),
-                        shape: .none
-                    )
-                }
-
-                // 应用信息
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Lumi")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                    Text("v\(appVersion)")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "98989E"))
-                }
-
-                Spacer()
-            }
-        }
-        .padding(12)
     }
 
     // MARK: - Plugin Views Section
@@ -118,11 +81,6 @@ struct MenuBarPopupView: View {
         }
     }
 
-    // MARK: - Helpers
-
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-    }
 }
 
 // MARK: - Menu Item Row

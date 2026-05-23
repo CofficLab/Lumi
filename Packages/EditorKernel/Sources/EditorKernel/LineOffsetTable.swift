@@ -6,7 +6,7 @@ public struct LineOffsetTable: Sendable {
 
     public init(content: String) {
         var starts = [Int]()
-        starts.reserveCapacity(content.filter { $0 == "\n" }.count + 1)
+        // Optimized: Single pass to count newlines and build line starts
         starts.append(0)
         var offset = 0
         for scalar in content.unicodeScalars {
@@ -16,7 +16,13 @@ public struct LineOffsetTable: Sendable {
             }
         }
         self.lineStarts = starts
-        self.totalUTF16Length = content.utf16.count
+        self.totalUTF16Length = offset
+    }
+    
+    /// Internal initializer for incremental updates
+    private init(lineStarts: [Int], totalUTF16Length: Int) {
+        self.lineStarts = lineStarts
+        self.totalUTF16Length = totalUTF16Length
     }
 
     public func utf16Offset(line: Int, character: Int) -> Int? {
@@ -57,4 +63,63 @@ public struct LineOffsetTable: Sendable {
 
     public var lineCount: Int { lineStarts.count }
     public var isEmpty: Bool { lineStarts.isEmpty }
+    
+    /// Incremental update for edit operations
+    /// - Parameters:
+    ///   - editRange: The range that was edited (in UTF-16 offsets)
+    ///   - changeInLength: The change in length (positive for insertions, negative for deletions)
+    ///   - newContent: The new content that was inserted (if any)
+    /// - Returns: A new LineOffsetTable with the updates applied
+    public func update(editRange: NSRange, changeInLength: Int, newContent: String? = nil) -> LineOffsetTable {
+        // Find the line containing the edit start
+        guard let startLine = lineContaining(utf16Offset: editRange.location) else {
+            return self
+        }
+        
+        // Find the line containing the edit end
+        let editEndLocation = editRange.location + editRange.length
+        let endLine = lineContaining(utf16Offset: editEndLocation) ?? startLine
+        
+        // Calculate new line starts
+        var newLineStarts = lineStarts
+        
+        // 1. Remove lines that were completely deleted
+        if changeInLength < 0 && endLine > startLine {
+            // Lines were deleted
+            newLineStarts.removeSubrange((startLine + 1)...endLine)
+        }
+        
+        // 2. Update offsets for lines after the edit
+        let delta = changeInLength
+        if delta != 0 {
+            for i in (startLine + 1)..<newLineStarts.count {
+                newLineStarts[i] += delta
+            }
+        }
+        
+        // 3. Handle new lines in inserted content
+        if let newContent = newContent, newContent.contains("\n") {
+            // Count new lines in inserted content
+            var newLineOffsets: [Int] = []
+            var contentOffset = 0
+            for scalar in newContent.unicodeScalars {
+                if scalar == "\n" {
+                    newLineOffsets.append(contentOffset + 1)
+                }
+                contentOffset += scalar.utf16.count
+            }
+            
+            // Insert new line starts at the correct position
+            let insertPosition = startLine + 1
+            for (index, lineOffset) in newLineOffsets.enumerated() {
+                let absoluteOffset = editRange.location + lineOffset
+                newLineStarts.insert(absoluteOffset, at: insertPosition + index)
+            }
+        }
+        
+        return LineOffsetTable(
+            lineStarts: newLineStarts,
+            totalUTF16Length: totalUTF16Length + changeInLength
+        )
+    }
 }

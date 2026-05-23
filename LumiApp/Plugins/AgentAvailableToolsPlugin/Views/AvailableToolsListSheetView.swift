@@ -1,7 +1,11 @@
 import SwiftUI
+import AgentToolKit
+import LumiUI
 
 /// 可用工具列表详情视图（在 popover 中展示）
 struct AvailableToolsListDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject var conversationTurnServices: AppConversationTurnVM
     @State private var query = ""
     @State private var selectedLanguage: LanguagePreference = .english
@@ -11,9 +15,16 @@ struct AvailableToolsListDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
+        StatusBarPopoverScaffold(
+            title: String(localized: "Tools", table: "AgentAvailableToolsPlugin"),
+            systemImage: "wrench.and.screwdriver",
+            subtitle: toolsCountText
+        ) {
+            HStack(spacing: 10) {
+                languagePicker
+                searchField
+            }
+        } content: {
             content
         }
         .onAppear {
@@ -25,34 +36,6 @@ struct AvailableToolsListDetailView: View {
 // MARK: - View
 
 extension AvailableToolsListDetailView {
-    private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            headerTitle
-            Spacer()
-            languagePicker
-            searchField
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-    }
-
-    private var headerTitle: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-
-            Text(toolsCountText)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .frame(minWidth: 150, alignment: .leading)
-    }
-
     private var toolsCountText: String {
         String.localizedStringWithFormat(
             String(localized: "%lld tools available", table: "AgentAvailableToolsPlugin", comment: "Count of available tools"),
@@ -61,9 +44,11 @@ extension AvailableToolsListDetailView {
     }
 
     private var searchField: some View {
-        TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
-            .textFieldStyle(.roundedBorder)
-            .frame(width: 280)
+        AppSearchBar(
+            text: $query,
+            placeholder: LocalizedStringKey(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"))
+        )
+        .frame(width: 280)
     }
 
     private var languagePicker: some View {
@@ -88,29 +73,23 @@ extension AvailableToolsListDetailView {
             }
             .padding(.vertical, 6)
         }
-        .background(Color.adaptive(light: "FFFFFF", dark: "14141A").opacity(0.82))
+        .appSurface(style: .subtle, cornerRadius: 8)
         .frame(minHeight: 340, maxHeight: 520)
     }
 
     private var emptyStateView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "No tools found", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 15, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-            Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsPlugin"))
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 18)
+        AppEmptyState(
+            icon: "wrench.and.screwdriver",
+            title: "No tools found",
+            description: "Try a different search keyword."
+        )
     }
 
     private var toolRows: some View {
         ForEach(Array(filteredTools.enumerated()), id: \.offset) { _, tool in
             VStack(spacing: 0) {
                 toolRow(tool)
-                Divider()
+                GlassDivider()
                     .padding(.leading, 18)
             }
         }
@@ -120,16 +99,16 @@ extension AvailableToolsListDetailView {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(tool.name)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .textSelection(.enabled)
                 Spacer()
             }
 
             if !tool.description(for: selectedLanguage).isEmpty {
                 Text(tool.description(for: selectedLanguage))
-                    .font(.system(size: 12.5, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .textSelection(.enabled)
                     .lineLimit(3)
                     .lineSpacing(2)

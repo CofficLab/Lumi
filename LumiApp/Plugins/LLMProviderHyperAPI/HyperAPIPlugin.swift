@@ -7,6 +7,7 @@ actor HyperAPIPlugin: SuperPlugin {
     static let displayName = "HyperAPI"
     static let description = "HyperAPI LLM Gateway"
     static let iconName = "bolt.horizontal"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

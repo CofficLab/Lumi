@@ -49,7 +49,7 @@ struct EditorPackageDependencyRow: View {
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .contextMenu { contextMenuContent }
-        .onTapGesture(count: 2) { revealInFinder() }
+        .onTapGesture(count: 2) { openLocation() }
         .help(dependency.location)
     }
 
@@ -64,8 +64,12 @@ struct EditorPackageDependencyRow: View {
 
     @ViewBuilder
     private var contextMenuContent: some View {
-        Button { revealInFinder() } label: {
-            Label(String(localized: "Reveal in Finder", table: "EditorRailFileTree"), systemImage: "finder")
+        Button { openLocation() } label: {
+            if dependency.kind == .local {
+                Label(String(localized: "Reveal in Finder", table: "EditorRailFileTree"), systemImage: "finder")
+            } else {
+                Label(String(localized: "Open Repository", table: "EditorRailFileTree"), systemImage: "link")
+            }
         }
         Button { copyLocation() } label: {
             Label(String(localized: "Copy URL/path", table: "EditorRailFileTree"), systemImage: "doc.on.doc")
@@ -75,7 +79,7 @@ struct EditorPackageDependencyRow: View {
         }
     }
 
-    private func revealInFinder() {
+    private func openLocation() {
         if dependency.kind == .local {
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: dependency.location)])
         } else if let url = URL(string: dependency.location) {

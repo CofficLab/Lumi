@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 /// GitHub CLI 检测插件
@@ -18,6 +19,7 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "检测系统是否安装了 GitHub CLI (gh) 命令行工具。", table: "GitHubCLIDetect")
     static let iconName: String = "terminal"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .general }
     static let enable: Bool = true
     static var order: Int { 16 }
 

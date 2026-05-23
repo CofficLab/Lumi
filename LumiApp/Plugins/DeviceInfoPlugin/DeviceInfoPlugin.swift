@@ -9,6 +9,7 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💻"
+    static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 

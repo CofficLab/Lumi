@@ -97,18 +97,32 @@ git clone https://github.com/Coffic/Lumi.git
 cd Lumi
 ```
 
-### 2. Open in Xcode
+### 2. Generate CodeLanguagesContainer
+
+`CodeEditLanguages` depends on a local binary framework that is not checked into Git
+(GitHub's 100 MB file limit). After a fresh clone, generate it before resolving
+Swift packages in Xcode (first run may take ~15 minutes):
+
+```bash
+cd Packages/CodeEditLanguages
+./build_framework.sh
+cd ../..
+```
+
+See [Packages/CodeEditLanguages/README.md](Packages/CodeEditLanguages/README.md) for details.
+
+### 3. Open in Xcode
 
 ```bash
 open Lumi.xcodeproj
 ```
 
-### 3. Build and Run
+### 4. Build and Run
 
 - Select the macOS target
 - Build (⌘B) and run (⌘R)
 
-### 4. Run Tests
+### 5. Run Tests
 
 Use the checked-in helper script so local runs avoid the known third-party
 SwiftLint build-tool plugin failure from `CodeEditTextView` / `CodeEditSourceEditor`.

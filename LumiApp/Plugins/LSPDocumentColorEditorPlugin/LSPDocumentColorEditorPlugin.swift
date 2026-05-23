@@ -18,6 +18,7 @@ actor LSPDocumentColorEditorPlugin: SuperPlugin {
     static let order = 28
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

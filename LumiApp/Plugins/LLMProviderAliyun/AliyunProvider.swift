@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 // MARK: - 阿里云供应商
@@ -26,12 +27,12 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let defaultModel = "qwen3.6-plus"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "qwen3.5-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "qwen3.6-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.7", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-5", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "MiniMax-M2.5", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "kimi-k2.5", spec: .init(contextWindowSize: 256_000, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen3.5-plus", description: "通义千问 3.5 Plus，阿里云旗舰大模型，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen3.6-plus", description: "通义千问 3.6 Plus，最新一代阿里云大模型，性能更强", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.7", description: "智谱 GLM 4.7，通用语言模型，支持长上下文和工具调用", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5", description: "智谱 GLM 5，最新一代通用语言模型，推理能力大幅提升", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "MiniMax-M2.5", description: "MiniMax M2.5，高性价比中文大模型，擅长对话和创作", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "kimi-k2.5", description: "Kimi K2.5，月之暗面出品，擅长长文档理解与分析", spec: .init(contextWindowSize: 256_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider
@@ -85,7 +86,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         return body
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try JSONDecoder().decode(AliyunResponse.self, from: data)
 
         var textContent = ""

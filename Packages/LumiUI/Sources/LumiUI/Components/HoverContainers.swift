@@ -56,6 +56,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     let arrowEdge: Edge
 
     @ObservedObject private var coordinator = HoverCoordinator.shared
+    @LumiTheme private var theme
     @LumiMotionPreferenceReader private var motionPreference
     @State private var isPresented = false
     @State private var isHovering = false
@@ -92,8 +93,11 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     @ViewBuilder
     private var baseContent: some View {
         let view = content
+            .font(.appMicro)
+            .foregroundColor(theme.textPrimary)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .background(hoverBackground)
-            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering || isPresented)
             .onHover { hovering in
                 AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                     isHovering = hovering
@@ -125,12 +129,19 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
 
     private var hoverBackground: some View {
         ZStack {
-            if isHovering {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.25))
+            if isHovering || isPresented {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(statusItemBackground)
                     .transition(.opacity)
             }
         }
+    }
+
+    private var statusItemBackground: Color {
+        if isPresented {
+            return theme.primary.opacity(0.14)
+        }
+        return theme.textPrimary.opacity(0.08)
     }
 
     @ViewBuilder
@@ -144,7 +155,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
                 }
                 .padding(24)
                 .frame(width: popoverWidth)
-                .background(Material.regularMaterial)
+                .appSurface(style: .custom(theme.elevatedSurface), cornerRadius: 12)
         }
     }
 }
@@ -157,17 +168,7 @@ public extension StatusBarHoverContainer {
         @ViewBuilder content: @escaping () -> C
     ) -> StatusBarHoverContainer<C, AnyView> {
         let detailContent = AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                if let title {
-                    Text(title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                }
-                Text(detailText)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    .textSelection(.enabled)
-            }
+            StatusBarTextDetailView(title: title, detailText: detailText)
         )
 
         return StatusBarHoverContainer<C, AnyView>(
@@ -175,6 +176,28 @@ public extension StatusBarHoverContainer {
             id: id,
             content: content
         )
+    }
+}
+
+private struct StatusBarTextDetailView: View {
+    @LumiTheme private var theme
+
+    let title: String?
+    let detailText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
+            }
+
+            Text(detailText)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .textSelection(.enabled)
+        }
     }
 }
 

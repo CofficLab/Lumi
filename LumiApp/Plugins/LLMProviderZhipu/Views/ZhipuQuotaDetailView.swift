@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
 struct ZhipuQuotaDetailView: View {
@@ -39,7 +40,7 @@ struct ZhipuQuotaDetailView: View {
                 .disabled(isRefreshing)
             }
 
-            Divider()
+            GlassDivider()
 
             switch status {
             case .loading:
@@ -72,9 +73,10 @@ struct ZhipuQuotaDetailView: View {
     private func quotaContent(_ data: ZhipuQuotaData) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             // 等级
-            QuotaInfoRow(
+            GlassKeyValueRow(
                 label: String(localized: "Level", table: "Zhipu"),
-                value: data.levelDisplay
+                value: data.levelDisplay,
+                labelWidth: 70
             )
 
             // 进度条
@@ -107,20 +109,21 @@ struct ZhipuQuotaDetailView: View {
                 }
             }
 
-            Divider()
+            GlassDivider()
 
             // 重置时间（显示完整日期和相对时间）
             VStack(alignment: .leading, spacing: 4) {
-                QuotaInfoRow(
+                GlassKeyValueRow(
                     label: String(localized: "Reset Time", table: "Zhipu"),
-                    value: data.resetTime
+                    value: data.resetTime,
+                    labelWidth: 70
                 )
                 Text("（\(data.resetTimeRelative)）")
                     .font(.system(size: 11))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
-            Divider()
+            GlassDivider()
 
             // MCP 每月额度
             VStack(alignment: .leading, spacing: 6) {
@@ -167,41 +170,20 @@ struct ZhipuQuotaDetailView: View {
 
     /// 认证错误内容
     private var authErrorContent: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 32))
-                .foregroundColor(Color(hex: "FF9F0A"))
-
-            Text(String(localized: "Auth expired", table: "Zhipu"))
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Text(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "Zhipu"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        AppEmptyState(
+            icon: "exclamationmark.triangle.fill",
+            title: LocalizedStringKey(String(localized: "Auth expired", table: "Zhipu")),
+            description: LocalizedStringKey(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "Zhipu"))
+        )
     }
 
     /// 不可用内容
     private var unavailableContent: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 32))
-                .foregroundColor(Color(hex: "FF9F0A"))
-
-            Text(String(localized: "Quota unavailable", table: "Zhipu"))
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Text(String(localized: "Please check network connection or try again later", table: "Zhipu"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        AppEmptyState(
+            icon: "exclamationmark.triangle",
+            title: LocalizedStringKey(String(localized: "Quota unavailable", table: "Zhipu")),
+            description: LocalizedStringKey(String(localized: "Please check network connection or try again later", table: "Zhipu"))
+        )
     }
 
     /// 根据百分比返回进度条颜色
@@ -223,27 +205,6 @@ struct ZhipuQuotaDetailView: View {
         // 动画完成后重置状态
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             isRefreshing = false
-        }
-    }
-}
-
-/// 配额信息行
-struct QuotaInfoRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                .frame(width: 70, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-            Spacer()
         }
     }
 }

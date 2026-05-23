@@ -1,8 +1,11 @@
-import SwiftUI
+import LumiUI
 import RAGKit
+import SwiftUI
 
 @MainActor
 struct RAGSettingsView: View, SuperLog {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
@@ -17,49 +20,32 @@ struct RAGSettingsView: View, SuperLog {
     @State private var message: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(String(localized: "RAG 索引状态", table: "RAG"))
-                    .font(.headline)
-                Spacer()
-                Button(String(localized: "刷新全部状态", table: "RAG")) {
-                    Task { await loadStatus() }
-                }
-                .disabled(isLoading)
+        PluginSettingsScaffold(
+            title: String(localized: "RAG 索引状态", table: "RAG"),
+            subtitle: String(localized: "Manage semantic indexes for tracked projects.", table: "RAG")
+        ) {
+            actionsCard
 
-                Button(String(localized: "重建全部索引", table: "RAG")) {
-                    Task { await rebuildIndex() }
+            if trackedProjects.isEmpty {
+                AppCard {
+                    AppEmptyState(
+                        icon: "folder.badge.questionmark",
+                        title: String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", table: "RAG")
+                    )
+                    .frame(minHeight: 160)
                 }
-                .disabled(isLoading)
+            } else {
+                if let runtimeInfo {
+                    runtimeCard(runtimeInfo)
+                }
+
+                ForEach(trackedProjects) { project in
+                    projectCard(project)
+                }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
 
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    if trackedProjects.isEmpty {
-                        Text(String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", table: "RAG"))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        if let runtimeInfo {
-                            runtimeSummary(runtimeInfo)
-                        }
-
-                        ForEach(trackedProjects) { project in
-                            projectCard(project)
-                        }
-                    }
-
-                    if let message {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
+            if let message {
+                AppErrorBanner(message: LocalizedStringKey(message))
             }
         }
         .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
@@ -73,94 +59,113 @@ struct RAGSettingsView: View, SuperLog {
             }
         }
     }
-}
 
-// MARK: - View
+    private var actionsCard: some View {
+        AppCard {
+            AppSettingsSection(title: String(localized: "Actions", table: "RAG"), spacing: 12) {
+                HStack(spacing: 8) {
+                    AppButton(
+                        String(localized: "刷新全部状态", table: "RAG"),
+                        style: .secondary,
+                        fillsWidth: true
+                    ) {
+                        Task { await loadStatus() }
+                    }
+                    .disabled(isLoading)
 
-extension RAGSettingsView {
+                    AppButton(
+                        String(localized: "重建全部索引", table: "RAG"),
+                        style: .primary,
+                        fillsWidth: true
+                    ) {
+                        Task { await rebuildIndex() }
+                    }
+                    .disabled(isLoading)
+                }
+            }
+        }
+    }
+
     @ViewBuilder
-    private func runtimeSummary(_ info: RAGRuntimeInfo) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(String(localized: "运行时", table: "RAG"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fontWeight(.medium)
-            Text(String(format: String(localized: "Vector Backend: %@", table: "RAG"), info.vectorBackend.rawValue))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
+        AppCard {
+            AppSettingsSection(title: String(localized: "运行时", table: "RAG"), spacing: 8) {
+                GlassKeyValueRow(
+                    label: String(localized: "Vector Backend", table: "RAG"),
+                    value: info.vectorBackend.rawValue
+                )
+            }
         }
     }
 
     @ViewBuilder
     private func projectCard(_ project: RAGTrackedProject) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(project.name)
-                .font(.subheadline)
-                .fontWeight(.medium)
-
-            Text(project.path)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-
-            if let status = statusesByPath[project.path] {
-                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
-                    GridRow {
-                        Text(String(localized: "最近索引", table: "RAG")).foregroundStyle(.secondary)
-                        Text(relativeDate(status.lastIndexedAt))
+        AppCard {
+            AppSettingsSection(title: project.name, subtitle: project.path, spacing: 12) {
+                if let status = statusesByPath[project.path] {
+                    GlassKeyValueRow(
+                        label: String(localized: "最近索引", table: "RAG"),
+                        value: relativeDate(status.lastIndexedAt)
+                    )
+                    GlassKeyValueRow(
+                        label: String(localized: "文件数", table: "RAG"),
+                        value: "\(status.fileCount)"
+                    )
+                    GlassKeyValueRow(
+                        label: String(localized: "片段数", table: "RAG"),
+                        value: "\(status.chunkCount)"
+                    )
+                    AppSettingsRow {
+                        HStack {
+                            Text(String(localized: "状态", table: "RAG"))
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                            Spacer()
+                            GlassBadge(
+                                text: LocalizedStringKey(
+                                    status.isStale
+                                        ? String(localized: "已过期", table: "RAG")
+                                        : String(localized: "最新", table: "RAG")
+                                ),
+                                style: status.isStale ? .warning : .success
+                            )
+                        }
                     }
-                    GridRow {
-                        Text(String(localized: "文件数", table: "RAG")).foregroundStyle(.secondary)
-                        Text("\(status.fileCount)")
-                    }
-                    GridRow {
-                        Text(String(localized: "片段数", table: "RAG")).foregroundStyle(.secondary)
-                        Text("\(status.chunkCount)")
-                    }
-                    GridRow {
-                        Text(String(localized: "状态", table: "RAG")).foregroundStyle(.secondary)
-                        Text(status.isStale ? String(localized: "已过期", table: "RAG") : String(localized: "最新", table: "RAG"))
-                            .foregroundStyle(status.isStale ? .orange : .green)
-                    }
+                } else if isLoading {
+                    Text(String(localized: "读取中…", table: "RAG"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                } else {
+                    Text(String(localized: "尚未建立索引", table: "RAG"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
-            } else if isLoading {
-                Text(String(localized: "读取中…", table: "RAG"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text(String(localized: "尚未建立索引", table: "RAG"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
 
-            if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
-                ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
-                Text(String(format: String(localized: "Progress: %lld/%lld", table: "RAG"), progress.scannedFiles, progress.totalFiles))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 8) {
-                Button(String(localized: "刷新", table: "RAG")) {
-                    Task { await refreshProjectStatus(projectPath: project.path) }
+                if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
+                    ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
+                    Text(String(format: String(localized: "Progress: %lld/%lld", table: "RAG"), progress.scannedFiles, progress.totalFiles))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textTertiary)
                 }
-                .disabled(isLoading)
 
-                Button(String(localized: "重建", table: "RAG")) {
-                    Task { await rebuildProjectIndex(projectPath: project.path) }
-                }
-                .disabled(isLoading)
+                HStack(spacing: 8) {
+                    AppButton(String(localized: "刷新", table: "RAG"), style: .secondary, fillsWidth: true) {
+                        Task { await refreshProjectStatus(projectPath: project.path) }
+                    }
+                    .disabled(isLoading)
 
-                if activeProjectActionPath == project.path {
-                    ProgressView()
-                        .controlSize(.small)
+                    AppButton(String(localized: "重建", table: "RAG"), style: .primary, fillsWidth: true) {
+                        Task { await rebuildProjectIndex(projectPath: project.path) }
+                    }
+                    .disabled(isLoading)
+
+                    if activeProjectActionPath == project.path {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
     }
 }
 

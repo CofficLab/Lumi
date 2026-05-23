@@ -5,6 +5,8 @@ import SwiftUI
 ///
 /// `LLMServiceError` 转为错误消息后的专用说明（占位键由 `ChatMessage` 定义）。
 struct LLMInlineConfigErrorView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     let message: ChatMessage
@@ -74,13 +76,13 @@ struct LLMInlineConfigErrorView: View {
                 ErrorIconView(size: 14)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appCallout)
                         .fontWeight(.semibold)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
                     if !detailText.isEmpty {
                         Text(detailText)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

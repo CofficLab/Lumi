@@ -11,6 +11,7 @@ struct PanelBottomView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
 
     /// 当前选中的 Tab ID
     @State private var activeTabId: String?
@@ -39,6 +40,15 @@ struct PanelBottomView: View {
             Rectangle()
                 .fill(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.08))
                 .frame(height: 1)
+        }
+        .contextMenu {
+            Button {
+                withAnimation {
+                    layoutVM.bottomPanelVisible = false
+                }
+            } label: {
+                Label("Hide Bottom Panel", systemImage: "rectangle.bottomthird.inset.filled")
+            }
         }
         .onAppear {
             // 首次出现时自动选中第一个 Tab

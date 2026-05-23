@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 // MARK: - OpenRouter Provider
@@ -25,25 +26,25 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
     static let defaultModel = "alibaba/qwen3.5-397b"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "alibaba/qwen3.5-397b", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
-        .init(id: "anthropic/claude-haiku-4-5-20251001", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "anthropic/claude-opus-4-5-20251101", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "anthropic/claude-sonnet-4-5-20250929", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "bytedance-seed/seedream-4.5", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "deepseek/deepseek-v3.1", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "google/gemma-3-27b-it:free", spec: .init(contextWindowSize: 131_072, supportsVision: true, supportsTools: true)),
-        .init(id: "google/gemini-pro-2.5", spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
-        .init(id: "meta-llama/llama-3.3-70b-instruct", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "minimax/minimax-m2.1", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "minimax/minimax-m2.5:free", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "nvidia/nemotron-3-super-120b-a12b:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "openai/gpt-4o", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "openai/gpt-5", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "openai/gpt-5-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "openai/gpt-oss-20b:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "qwen/qwen3.6-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "stepfun/step-3.5-flash:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "z-ai/glm-4.5-air:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "alibaba/qwen3.5-397b", description: "通义千问 3.5 397B，阿里云超大参数模型，综合能力强", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "anthropic/claude-haiku-4-5-20251001", description: "Claude 4.5 Haiku，Anthropic 最新轻量模型，响应极快", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "anthropic/claude-opus-4-5-20251101", description: "Claude 4.5 Opus，Anthropic 最新旗舰，深度推理能力顶尖", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "anthropic/claude-sonnet-4-5-20250929", description: "Claude 4.5 Sonnet，Anthropic 平衡型模型，智能与速度兼备", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "bytedance-seed/seedream-4.5", description: "Seedream 4.5，字节跳动多模态模型，支持视觉理解", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "deepseek/deepseek-v3.1", description: "DeepSeek V3.1，高性能推理模型，擅长逻辑和代码", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "google/gemma-3-27b-it:free", description: "Gemma 3 27B，Google 开源模型，免费可用", spec: .init(contextWindowSize: 131_072, supportsVision: true, supportsTools: true)),
+        .init(id: "google/gemini-pro-2.5", description: "Gemini Pro 2.5，Google 旗舰模型，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
+        .init(id: "meta-llama/llama-3.3-70b-instruct", description: "Llama 3.3 70B，Meta 开源大模型，性能均衡", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "minimax/minimax-m2.1", description: "MiniMax M2.1，高性价比中文模型，擅长对话", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "minimax/minimax-m2.5:free", description: "MiniMax M2.5，免费版本，适合轻量使用", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "nvidia/nemotron-3-super-120b-a12b:free", description: "Nemotron 3 Super 120B，NVIDIA 开源超大模型，免费可用", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "openai/gpt-4o", description: "GPT-4o，OpenAI 多模态旗舰模型，支持视觉和工具", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "openai/gpt-5", description: "GPT-5，OpenAI 最新旗舰模型，综合能力最强", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "openai/gpt-5-mini", description: "GPT-5 Mini，OpenAI 轻量模型，适合快速响应", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "openai/gpt-oss-20b:free", description: "GPT-OSS 20B，OpenAI 开源模型，免费可用", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen/qwen3.6-plus", description: "通义千问 3.6 Plus，最新一代阿里云大模型，性能更强", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "stepfun/step-3.5-flash:free", description: "Step 3.5 Flash，阶跃星辰轻量模型，免费可用", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "z-ai/glm-4.5-air:free", description: "GLM 4.5 Air，智谱轻量模型，免费可用", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - Adapter
@@ -92,9 +93,9 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

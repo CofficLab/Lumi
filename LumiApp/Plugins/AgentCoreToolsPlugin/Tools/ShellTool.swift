@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// Shell 命令执行工具
 ///
@@ -24,11 +25,14 @@ struct ShellTool: SuperAgentTool, SuperLog {
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
         let commandDescription: String
+        let displayDesc: String
         switch language {
         case .chinese:
             commandDescription = "要执行的命令字符串（如 'git status'）"
+            displayDesc = "向用户展示当前操作描述，如：正在执行 git status"
         case .english:
             commandDescription = "The command string to execute (e.g., 'git status')"
+            displayDesc = "A short description shown to the user, e.g. \"Running git status\""
         }
         return [
             "type": "object",
@@ -36,6 +40,10 @@ struct ShellTool: SuperAgentTool, SuperLog {
                 "command": [
                     "type": "string",
                     "description": commandDescription
+                ],
+                "display_name": [
+                    "type": "string",
+                    "description": displayDesc
                 ]
             ],
             "required": ["command"]

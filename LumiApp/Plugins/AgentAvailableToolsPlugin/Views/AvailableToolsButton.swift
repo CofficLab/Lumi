@@ -12,7 +12,7 @@ struct AvailableToolsButton: View {
             id: "available-tools-status"
         ) {
             Image(systemName: "wrench.and.screwdriver")
-                .font(.system(size: 10))
+                .font(.appMicroEmphasized)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
         }

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 列出 Agent 规则文档工具
 ///

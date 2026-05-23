@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Close search" : {
+
+    },
     "Content" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -135,6 +138,9 @@
         }
       }
     },
+    "Navigate results" : {
+
+    },
     "No matching files found" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -179,6 +185,9 @@
           }
         }
       }
+    },
+    "Open file search" : {
+
     },
     "Please select a project to enable file search" : {
       "localizations" : {
@@ -268,6 +277,9 @@
           }
         }
       }
+    },
+    "Select file" : {
+
     },
     "Type filename to search" : {
       "extractionState" : "stale",

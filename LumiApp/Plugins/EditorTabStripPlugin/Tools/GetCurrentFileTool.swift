@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 /// 获取当前文件工具

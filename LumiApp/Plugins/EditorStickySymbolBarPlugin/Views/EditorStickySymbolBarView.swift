@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 编辑器符号面包屑头部视图。
@@ -26,7 +27,7 @@ struct EditorStickySymbolBarHeaderView: View {
 /// 提供快速导航功能，点击任意符号可跳转到对应代码位置。
 /// 固定在编辑器顶部区域，滚动代码时始终可见，帮助开发者在大型或深层嵌套的文件中保持上下文感知。
 struct EditorStickySymbolBarView: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     /// 编辑器服务门面（用于获取光标行号、执行符号跳转等操作）
     @ObservedObject private var service: EditorService
@@ -41,8 +42,8 @@ struct EditorStickySymbolBarView: View {
     var body: some View {
         HStack(spacing: 10) {
             Label(String(localized: "Current Symbol", table: "LumiEditor"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.textSecondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -51,8 +52,8 @@ struct EditorStickySymbolBarView: View {
 
                         if index < symbols.count - 1 {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
+                                .font(.appMicroEmphasized)
+                                .foregroundColor(theme.textTertiary)
                         }
                     }
                 }
@@ -61,19 +62,19 @@ struct EditorStickySymbolBarView: View {
             Spacer(minLength: 0)
 
             Text(String(localized: "Ln \(service.cursorLine)", table: "LumiEditor"))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
+                .background(theme.textPrimary.opacity(0.05))
                 .clipShape(Capsule())
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.035))
+        .background(theme.textTertiary.opacity(0.035))
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .fill(theme.textTertiary.opacity(0.08))
                 .frame(height: 1)
         }
     }
@@ -85,15 +86,15 @@ struct EditorStickySymbolBarView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: symbol.iconSymbol)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.appMicroEmphasized)
                 Text(symbol.name)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.appMicroEmphasized)
                     .lineLimit(1)
             }
-            .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+            .foregroundColor(theme.textPrimary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
+            .background(theme.textPrimary.opacity(0.05))
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

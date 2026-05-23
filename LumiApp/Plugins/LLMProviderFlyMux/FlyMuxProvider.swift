@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 /// FlyMux API 供应商实现
@@ -23,17 +24,17 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let defaultModel = "gpt-5.1-codex"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4-openai-compact", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.3", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.2-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4", description: "GPT-5.4，OpenAI 最新通用模型，综合性能优秀", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", description: "GPT-5.4 Mini，轻量高效版本，速度快成本低", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-openai-compact", description: "GPT-5.4 Compact，OpenAI 紧凑版模型，适合资源受限场景", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3", description: "GPT-5.3，通用对话模型，推理能力出色", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3-codex", description: "GPT-5.3 Codex，编程专用模型，擅长代码生成", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2", description: "GPT-5.2，新一代通用模型，推理和创作能力出色", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2-codex", description: "GPT-5.2 Codex，新一代编程模型，代码能力更强", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1", description: "GPT-5.1，通用对话模型，推理能力增强", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex", description: "GPT-5.1 Codex，编程模型，代码理解和生成能力优秀", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-max", description: "GPT-5.1 Codex Max，最强编程模型，适合复杂代码任务", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-mini", description: "GPT-5.1 Codex Mini，轻量编程模型，性价比高", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
@@ -74,9 +75,9 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

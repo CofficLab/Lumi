@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 设置当前文件工具
 ///

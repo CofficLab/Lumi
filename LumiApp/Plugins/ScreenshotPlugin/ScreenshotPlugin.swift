@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import os
 
@@ -16,6 +17,7 @@ actor ScreenshotPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Screenshot", table: "AgentChat")
     static let description = String(localized: "Capture screen region as chat attachment", table: "AgentChat")
     static let iconName = "crop"
+    static var category: PluginCategory { .integration }
     static var order: Int { 85 }
     nonisolated static let enable: Bool = true
     static let shared = ScreenshotPlugin()
@@ -52,7 +54,7 @@ actor ScreenshotPlugin: SuperPlugin, SuperLog {
 ///
 /// 点击启动截图选区流程，截图中显示加载指示器。
 private struct ScreenshotToolbarButton: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @StateObject private var screenshotState = ScreenshotState.shared
 
     var body: some View {
@@ -65,12 +67,12 @@ private struct ScreenshotToolbarButton: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "crop")
-                        .font(.system(size: 13))
+                        .font(.appCaptionEmphasized)
                 }
             }
-            .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+            .foregroundColor(theme.textSecondary)
             .frame(width: 28, height: 28)
-            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
+            .background(theme.textPrimary.opacity(0.06))
             .clipShape(Circle())
         }
         .buttonStyle(.plain)

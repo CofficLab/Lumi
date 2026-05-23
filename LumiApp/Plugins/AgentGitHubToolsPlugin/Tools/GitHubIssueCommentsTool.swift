@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import GitHubKit
 
 /// GitHub Issue 评论列表工具

@@ -22,6 +22,7 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Embedded preview powered by LumiPreviewKit", table: "EditorPreview")
     static let iconName: String = "rectangle.inset.filled"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 84 }
 
     nonisolated var instanceLabel: String { Self.id }

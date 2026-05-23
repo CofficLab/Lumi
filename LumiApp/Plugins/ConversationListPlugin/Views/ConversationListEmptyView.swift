@@ -1,16 +1,19 @@
+import LumiUI
 import SwiftUI
 
 /// 会话列表空状态视图
 struct ConversationListEmptyView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "message")
-                .font(.system(size: 24))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appTitle)
+                .foregroundColor(theme.textTertiary)
 
             Text(String(localized: "No conversations", table: "ConversationList"))
-                .font(.system(size: 10))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
         }
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)

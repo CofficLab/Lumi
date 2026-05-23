@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 /// Xiaomi AI 供应商实现
@@ -23,14 +24,14 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let defaultModel = "mimo-v2.5-pro"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "mimo-v2.5-pro", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2.5", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2-pro", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2-omni", spec: .init(contextWindowSize: 256_000, supportsVision: true, supportsTools: true)),
-        .init(id: "mimo-v2.5-tts", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voiceclone", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voicedesign", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2-tts", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-pro", description: "MiMo V2.5 Pro，小米旗舰语言模型，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2.5", description: "MiMo V2.5，小米通用语言模型，综合能力强", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2-pro", description: "MiMo V2 Pro，小米专业版模型，适合复杂任务", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2-omni", description: "MiMo V2 Omni，小米多模态模型，支持视觉理解", spec: .init(contextWindowSize: 256_000, supportsVision: true, supportsTools: true)),
+        .init(id: "mimo-v2.5-tts", description: "MiMo V2.5 TTS，小米语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-tts-voiceclone", description: "MiMo V2.5 TTS VoiceClone，支持声音克隆的语音合成", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-tts-voicedesign", description: "MiMo V2.5 TTS VoiceDesign，支持自定义音色设计", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2-tts", description: "MiMo V2 TTS，小米基础语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
     ]
 
     // MARK: - Adapter
@@ -67,15 +68,15 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 
     func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {
         let result = try adapter.parseResponse(data: data)
-        let toolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let toolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return LLMProviderResponse(
             content: result.content,
             toolCalls: toolCalls,

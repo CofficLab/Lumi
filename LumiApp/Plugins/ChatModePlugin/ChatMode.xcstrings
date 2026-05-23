@@ -54,19 +54,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Switch between chat mode and build mode"
+            "value": "Switch between chat, build, and autonomous modes"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "切换对话模式或构建模式"
+            "value": "切换对话、构建或自主模式"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "切換對話模式或構建模式"
+            "value": "切換對話、構建或自主模式"
           }
         }
       }
@@ -90,6 +90,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "構建模式：可執行工具和修改代碼"
+          }
+        }
+      }
+    },
+    "Autonomous Mode Description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autonomous mode: tools and code changes, high-risk auto-approved"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自主模式：可执行工具和修改代码，高风险自动批准"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自主模式：可執行工具和修改代碼，高風險自動批准"
           }
         }
       }

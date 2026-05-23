@@ -1,31 +1,34 @@
+import LumiUI
 import SwiftUI
 
 /// 会话列表头部视图
 /// 显示在会话列表顶部，包含折叠按钮、图标和标题文字
 struct ConversationListHeader: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @Binding var isExpanded: Bool
     @State private var isHovered: Bool = false
 
     var body: some View {
         HStack {
             Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.textSecondary)
                 .frame(width: 16, height: 16)
 
             Image(systemName: "message.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.accentColor)
+                .font(.appCallout)
+                .foregroundColor(theme.primary)
 
             Text(String(localized: "Conversation History", table: "ConversationList"))
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Spacer()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
+        .background(isHovered ? theme.textSecondary.opacity(0.05) : Color.clear)
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {

@@ -1,4 +1,5 @@
 import AppKit
+import AgentToolKit
 import Foundation
 import SwiftUI
 
@@ -25,9 +26,6 @@ final class WindowProjectVM: ObservableObject, SuperLog {
 
     // 语言偏好
     @Published var languagePreference: LanguagePreference = .chinese
-
-    // 自动批准风险
-    @Published var autoApproveRisk: Bool = false
 
     /// 当前项目名称
     var currentProjectName: String {
@@ -116,9 +114,5 @@ final class WindowProjectVM: ObservableObject, SuperLog {
 
     func setLanguagePreference(_ preference: LanguagePreference) {
         self.languagePreference = preference
-    }
-
-    func setAutoApproveRisk(_ enabled: Bool) {
-        autoApproveRisk = enabled
     }
 }

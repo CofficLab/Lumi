@@ -15,9 +15,8 @@ struct RequestLogStatusBarView: View {
         ) {
             HStack(spacing: 6) {
                 Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 11))
+                    .font(.appMicroEmphasized)
             }
-            .foregroundColor(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }

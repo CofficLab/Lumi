@@ -23,6 +23,7 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "scope"
     static let isConfigurable: Bool = true
     static let enable: Bool = true
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 97 }
 
     static let shared = ProjectIssueScannerPlugin()
@@ -40,6 +41,13 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(ProjectIssueScannerRoot(content: content()))
+    }
+
+    // MARK: - Settings View
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        AnyView(ProjectIssueScannerSettingsView())
     }
 
     // MARK: - Send Middleware

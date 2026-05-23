@@ -97,13 +97,25 @@ git clone https://github.com/Coffic/Lumi.git
 cd Lumi
 ```
 
-### 2. 在 Xcode 中打开
+### 2. 生成 CodeLanguagesContainer
+
+`CodeEditLanguages` 依赖本地二进制框架 `CodeLanguagesContainer.xcframework`，该文件未纳入 Git（超过 GitHub 100 MB 限制）。全新克隆后，请先在 Xcode 中解析 Swift Package 之前执行（首次约 15 分钟）：
+
+```bash
+cd Packages/CodeEditLanguages
+./build_framework.sh
+cd ../..
+```
+
+详见 [Packages/CodeEditLanguages/README.md](Packages/CodeEditLanguages/README.md)。
+
+### 3. 在 Xcode 中打开
 
 ```bash
 open Lumi.xcodeproj
 ```
 
-### 3. 构建与运行
+### 4. 构建与运行
 
 - 选择合适的 macOS 目标
 - 构建 (⌘B) 并运行 (⌘R)

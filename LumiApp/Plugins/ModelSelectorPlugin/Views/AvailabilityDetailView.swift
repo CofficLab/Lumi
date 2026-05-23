@@ -48,21 +48,12 @@ struct AvailabilityDetailView: View {
 
     // MARK: - Adaptive Colors
 
-    private var availableColor: Color {
-        Color(hex: "30D158")
-    }
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private var unavailableColor: Color {
-        Color(hex: "FF3B30")
-    }
-
-    private var checkingColor: Color {
-        Color(hex: "FF9F0A")
-    }
-
-    private var unknownColor: Color {
-        Color(hex: "98989E")
-    }
+    private var availableColor: Color { theme.success }
+    private var unavailableColor: Color { theme.error }
+    private var checkingColor: Color { theme.warning }
+    private var unknownColor: Color { theme.textTertiary }
 
     // MARK: - Body
 
@@ -134,46 +125,43 @@ struct AvailabilityDetailView: View {
             // 可用数量
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(.appMicro)
                     .foregroundColor(availableColor)
 
                 Text("\(availableModelCount)")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(String(localized: "Available", table: "LLMAvailability"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
 
             // 总数
             HStack(spacing: 6) {
                 Image(systemName: "doc.text.fill")
-                    .font(.system(size: 12))
+                    .font(.appMicro)
                     .foregroundColor(unknownColor)
 
                 Text("\(totalModelCount)")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(String(localized: "Total", table: "LLMAvailability"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.adaptive(light: "F5F5F7", dark: "1C1C1E"))
-        )
+        .appSurface(style: .subtle, cornerRadius: 8)
     }
 
     private var providerListSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             if filteredProviders.isEmpty {
                 Text(String(localized: "No providers found", table: "LLMAvailability"))
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                     .foregroundColor(unknownColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -186,46 +174,41 @@ struct AvailabilityDetailView: View {
     }
 
     private func providerCard(provider: LLMProviderAvailability) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 供应商标题
-            HStack(spacing: 8) {
-                providerStatusIcon(provider: provider)
+        AppCard {
+            VStack(alignment: .leading, spacing: 8) {
+                // 供应商标题
+                HStack(spacing: 8) {
+                    providerStatusIcon(provider: provider)
 
-                Text(provider.displayName)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    Text(provider.displayName)
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
-                Spacer()
+                    Spacer()
 
-                Button(action: { recheckProvider(provider) }) {
-                    Image(systemName: checkingProviderIds.contains(provider.providerId) ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    AppIconButton(
+                        systemImage: checkingProviderIds.contains(provider.providerId) ? "arrow.triangle.2.circlepath" : "arrow.clockwise",
+                        size: .compact,
+                        action: { recheckProvider(provider) }
+                    )
+                    .help(String(localized: "Recheck this provider", table: "LLMAvailability"))
+                    .disabled(checkingProviderIds.contains(provider.providerId) || isRefreshing)
+
+                    Text("\(provider.availableModels.count)/\(provider.models.count)")
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
-                .buttonStyle(.plain)
-                .help(String(localized: "Recheck this provider", table: "LLMAvailability"))
-                .disabled(checkingProviderIds.contains(provider.providerId) || isRefreshing)
 
-                Text("\(provider.availableModels.count)/\(provider.models.count)")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            }
-
-            // 模型列表
-            if !provider.models.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(provider.models) { model in
-                        modelRow(model: model)
+                // 模型列表
+                if !provider.models.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(provider.models) { model in
+                            modelRow(model: model)
+                        }
                     }
                 }
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.adaptive(light: "FFFFFF", dark: "0D0D12"))
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-        )
     }
 
     private func modelRow(model: LLMModelAvailability) -> some View {
@@ -234,15 +217,15 @@ struct AvailabilityDetailView: View {
                 .frame(width: 16, alignment: .center)
 
             Text(model.modelId)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appCaption)
+                .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
 
             Spacer()
 
             if case .unavailable(let reason) = model.status {
                 Text(reason)
-                    .font(.system(size: 10))
+                    .font(.appMicro)
                     .foregroundColor(unavailableColor)
                     .lineLimit(1)
             }
@@ -260,11 +243,11 @@ struct AvailabilityDetailView: View {
     private func providerStatusIcon(provider: LLMProviderAvailability) -> some View {
         if provider.hasAvailableModels {
             return Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14))
+                .font(.appCaption)
                 .foregroundColor(availableColor)
         } else {
             return Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 14))
+                .font(.appCaption)
                 .foregroundColor(unavailableColor)
         }
     }
@@ -273,19 +256,19 @@ struct AvailabilityDetailView: View {
         switch model.status {
         case .available:
             return Image(systemName: "checkmark")
-                .font(.system(size: 10, weight: .medium))
+                .font(.appMicroEmphasized)
                 .foregroundColor(availableColor)
         case .unavailable:
             return Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .medium))
+                .font(.appMicroEmphasized)
                 .foregroundColor(unavailableColor)
         case .checking:
             return Image(systemName: "ellipsis")
-                .font(.system(size: 10, weight: .medium))
+                .font(.appMicroEmphasized)
                 .foregroundColor(checkingColor)
         case .unknown:
             return Image(systemName: "questionmark")
-                .font(.system(size: 10, weight: .medium))
+                .font(.appMicroEmphasized)
                 .foregroundColor(unknownColor)
         }
     }
@@ -309,8 +292,8 @@ struct AvailabilityDetailView: View {
         VStack(spacing: 16) {
             ProgressView().scaleEffect(0.8)
             Text(String(localized: "Loading provider information…", table: "LLMAvailability"))
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -319,12 +302,12 @@ struct AvailabilityDetailView: View {
     private func errorView(message: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 24))
-                .foregroundColor(Color(hex: "FF9F0A"))
+                .font(.appLargeTitle)
+                .foregroundColor(theme.warning)
 
             Text(message)
-                .font(.system(size: 12))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
         }
@@ -335,16 +318,16 @@ struct AvailabilityDetailView: View {
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "network.slash")
-                .font(.system(size: 32))
+                .font(.appLargeTitle)
                 .foregroundColor(unknownColor)
 
             Text(String(localized: "No LLM providers configured", table: "LLMAvailability"))
-                .font(.system(size: 13))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
 
             Text(String(localized: "Please add LLM providers in Settings to enable AI features.", table: "LLMAvailability"))
-                .font(.system(size: 11))
-                .foregroundColor(unknownColor)
+                .font(.appCaption)
+                .foregroundColor(theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -357,13 +340,13 @@ struct AvailabilityDetailView: View {
             ProgressView()
                 .scaleEffect(0.7)
             Text(String(localized: "Checking availability…", table: "LLMAvailability"))
-                .font(.system(size: 11))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
             Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(Color.adaptive(light: "F5F5F7", dark: "0D0D12"))
+        .appSurface(style: .subtle)
     }
 
     // MARK: - Actions

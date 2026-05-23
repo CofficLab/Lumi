@@ -6,10 +6,11 @@ import SwiftUI
 /// 在错误气泡底部以可折叠的形式展示原始的 HTTP 状态码和响应体，
 /// 便于用户或开发者排查问题。
 struct RawErrorDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let rawDetail: String
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isExpanded = false
 
     private var zh: Bool {
@@ -31,25 +32,25 @@ struct RawErrorDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.appMicroEmphasized)
                     Text(toggleText)
-                        .font(.system(size: 11, weight: .regular))
+                        .font(.appMicro)
                 }
-                .foregroundColor(Color(hex: "98989E"))
+                .foregroundColor(theme.textTertiary)
             }
             .buttonStyle(.plain)
 
             if isExpanded {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(rawDetail)
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appMonoCaption)
+                        .foregroundColor(theme.textTertiary)
                         .textSelection(.enabled)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(themeVM.activeChromeTheme.workspaceSecondaryTextColor().opacity(0.05))
+                            Color.clear
+                                .appSurface(style: .subtle, cornerRadius: 6)
                         )
                 }
                 .frame(maxHeight: 150)
@@ -62,6 +63,8 @@ struct RawErrorDetailView: View {
 
 /// 特殊错误内容视图（包含图标、标题、描述和建议）
 struct SpecialErrorContentView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let description: String
     let suggestion: String?
@@ -69,14 +72,14 @@ struct SpecialErrorContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 16, weight: .medium))
+                .font(.appCallout)
                 .fontWeight(.semibold)
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .foregroundColor(theme.textPrimary)
 
             if !description.isEmpty {
                 Text(description)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -84,11 +87,11 @@ struct SpecialErrorContentView: View {
             if let suggestion = suggestion, !suggestion.isEmpty {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "lightbulb.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "FF9F0A"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.warning)
                     Text(suggestion)
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, 4)
@@ -99,12 +102,12 @@ struct SpecialErrorContentView: View {
 
 /// 特殊错误视图（用于 API 请求失败、网络错误等预定义错误）
 struct SpecialErrorView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let description: String
     let suggestion: String?
     let rawErrorDetail: String?
-
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -120,7 +123,7 @@ struct SpecialErrorView: View {
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(theme.divider)
                     .padding(.top, 2)
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
@@ -133,11 +136,11 @@ struct SpecialErrorView: View {
 
 /// 默认错误视图（通用错误展示）
 struct DefaultErrorView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let message: String
     let rawErrorDetail: String?
-
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -146,14 +149,14 @@ struct DefaultErrorView: View {
                     content: message,
                     monospaced: false
                 )
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
             }
 
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(theme.divider)
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
             }

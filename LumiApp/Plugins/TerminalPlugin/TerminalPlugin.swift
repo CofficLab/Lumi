@@ -14,6 +14,7 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Native interactive terminal powered by SwiftTerm", table: "Terminal")
     static let iconName = "terminal"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 90 }
 
     nonisolated var instanceLabel: String { Self.id }

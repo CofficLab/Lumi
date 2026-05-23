@@ -9,6 +9,7 @@ actor XybbzPlugin: SuperPlugin {
     static let iconName = "server.rack"
     static var order: Int { 11 }
     static let enable: Bool = true
+    static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         XybbzProvider.self

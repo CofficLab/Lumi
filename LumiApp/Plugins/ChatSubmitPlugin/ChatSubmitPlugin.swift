@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import os
 
@@ -14,6 +15,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Submit", table: "AgentChat")
     static let description = String(localized: "Send or stop chat messages", table: "AgentChat")
     static let iconName = "paperplane"
+    static var category: PluginCategory { .agent }
     static var order: Int { 86 }
     nonisolated static let enable: Bool = true
     static let shared = ChatSubmitPlugin()
@@ -48,6 +50,8 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
 
 /// 聊天发送/停止按钮
 private struct ChatSubmitToolbarButton: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var taskCancellationVM: WindowTaskCancellationVM
@@ -86,10 +90,10 @@ extension ChatSubmitToolbarButton {
         if isSendPipelineActive {
             Button(action: stopGenerating) {
                 Image(systemName: "stop.fill")
-                    .font(.system(size: 14))
+                    .font(.appCallout)
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(Color.red)
+                    .background(theme.error)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -100,10 +104,10 @@ extension ChatSubmitToolbarButton {
         } else {
             Button(action: submit) {
                 Image(systemName: "paperplane.fill")
-                    .font(.system(size: 14))
+                    .font(.appCallout)
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(isSendDisabled ? Color.gray.opacity(0.5) : Color.accentColor)
+                    .background(isSendDisabled ? theme.textDisabled.opacity(0.5) : theme.primary)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)

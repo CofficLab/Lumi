@@ -23,6 +23,7 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     static let shared = LayoutPlugin()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     nonisolated static let emoji = "📐"
+    static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 
@@ -31,9 +32,17 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     static let description: String = "Persist and restore layout state across app launches"
     static let iconName: String = "sidebar.left"
     static let isConfigurable: Bool = false
-    static var order: Int { 1 }
+    static var order: Int { 99 }
 
     nonisolated var instanceLabel: String { Self.id }
+
+    // MARK: - Toolbar Views
+
+    /// 工具栏右侧：布局菜单
+    @MainActor
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(LayoutMenuButton())
+    }
 
     // MARK: - Root View（布局持久化锚点）
 
@@ -159,6 +168,30 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(ratios: savedRatios)
         }
+
+        // 恢复底部面板可见性
+        if let savedBottomPanelVisible = store.loadBottomPanelVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复底部面板可见性: \(savedBottomPanelVisible)")
+            }
+            layoutVM.restoreFromPlugin(bottomPanelVisible: savedBottomPanelVisible)
+        }
+
+        // 恢复内容面板可见性
+        if let savedContentPanelVisible = store.loadContentPanelVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复内容面板可见性: \(savedContentPanelVisible)")
+            }
+            layoutVM.restoreFromPlugin(contentPanelVisible: savedContentPanelVisible)
+        }
+
+        // 恢复编辑器区域可见性
+        if let savedEditorVisible = store.loadEditorVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复编辑器区域可见性: \(savedEditorVisible)")
+            }
+            layoutVM.restoreFromPlugin(editorVisible: savedEditorVisible)
+        }
     }
 
     // MARK: - Observe
@@ -187,6 +220,33 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .sink { newRatios in
                 guard hasRestored else { return }
                 LayoutPluginLocalStore.shared.saveLayoutRatios(newRatios)
+            }
+            .store(in: &cancellables)
+
+        // 观察 bottomPanelVisible
+        layoutVM.$bottomPanelVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveBottomPanelVisible(newValue)
+            }
+            .store(in: &cancellables)
+
+        // 观察 contentPanelVisible
+        layoutVM.$contentPanelVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveContentPanelVisible(newValue)
+            }
+            .store(in: &cancellables)
+
+        // 观察 editorVisible
+        layoutVM.$editorVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveEditorVisible(newValue)
             }
             .store(in: &cancellables)
     }

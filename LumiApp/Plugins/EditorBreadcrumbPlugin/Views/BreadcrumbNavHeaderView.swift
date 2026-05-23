@@ -22,6 +22,8 @@ struct BreadcrumbNavHeaderView: View {
 
 /// 面包屑路径视图
 struct BreadcrumbNavPathView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var editorVM: WindowEditorVM
     @LumiMotionPreferenceReader private var motionPreference
@@ -149,16 +151,14 @@ struct BreadcrumbNavPathView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(
-            themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.035)
+            theme.textTertiary.opacity(0.035)
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .fill(theme.textTertiary.opacity(0.08))
                 .frame(height: 1)
         }
     }
-
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     // MARK: - Truncation Logic
 
@@ -209,12 +209,13 @@ struct BreadcrumbNavPathView: View {
 
 /// 单个面包屑路径段组件
 struct BreadcrumbNavComponent: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let item: BreadcrumbItem
     let isLastItem: Bool
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @EnvironmentObject private var themeVM: AppThemeVM
     @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
     @State private var isMenuVisible = false
@@ -232,32 +233,22 @@ struct BreadcrumbNavComponent: View {
                 HStack(spacing: 4) {
                     // 文件图标
                     Image(systemName: iconName(for: item))
-                        .font(.system(size: 10))
+                        .font(.appMicro)
                         .foregroundColor(iconColor(for: item))
 
                     // 文件名
                     Text(item.name)
-                        .font(.system(size: 11, weight: isLastItem ? .semibold : .regular))
-                        .foregroundColor(
-                            isLastItem
-                                ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                                : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
-                        )
+                        .font(isLastItem ? .appMicroEmphasized : .appMicro)
+                        .foregroundColor(isLastItem ? theme.textPrimary : theme.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(hoverBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(
-                            isMenuVisible ? Color(hex: "7C6FFF").opacity(0.3) : Color.clear,
-                            lineWidth: 1
-                        )
+                .appSurface(
+                    style: .custom(hoverBackground),
+                    cornerRadius: 4,
+                    borderColor: isMenuVisible ? theme.primary.opacity(0.3) : Color.clear
                 )
             }
             .menuStyle(.borderlessButton)
@@ -310,13 +301,13 @@ struct BreadcrumbNavComponent: View {
                     Image(systemName: "chevron.up")
                     Image(systemName: "chevron.down")
                 }
-                .font(.system(size: 6, weight: .bold, design: .default))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.textTertiary)
                 .padding(.top, 0.5)
             } else {
                 Image(systemName: "chevron.compact.right")
-                    .font(.system(size: 9, weight: .medium, design: .default))
-                    .foregroundStyle(Color(hex: "98989E"))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textTertiary)
                     .scaleEffect(x: 1.30, y: 1.0, anchor: .center)
                     .imageScale(.large)
             }
@@ -328,8 +319,7 @@ struct BreadcrumbNavComponent: View {
 
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
-        let theme = themeVM.activeChromeTheme
-        return theme.workspaceTextColor().opacity(0.06)
+        return theme.textPrimary.opacity(0.06)
     }
 
     // MARK: - Icon Helpers
@@ -384,7 +374,7 @@ struct BreadcrumbNavComponent: View {
         case "go": return Color.cyan
         case "rs": return Color.orange
         case "sh", "bash", "zsh": return Color.green
-        default: return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+        default: return theme.textSecondary
         }
     }
 }
@@ -432,6 +422,8 @@ struct BreadcrumbMenuContent: View {
 // MARK: - Breadcrumb Menu Row
 
 struct BreadcrumbMenuRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let sibling: BreadcrumbSibling
     let isCurrent: Bool
     let onSelectFile: (URL) -> Void
@@ -442,19 +434,19 @@ struct BreadcrumbMenuRow: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: iconName)
-                    .font(.system(size: 11))
+                    .font(.appMicro)
                     .foregroundColor(iconColor)
                     .frame(width: 14)
 
                 Text(sibling.name)
-                    .font(.system(size: 12))
+                    .font(.appCaption)
 
                 Spacer()
 
                 if isCurrent {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(hex: "7C6FFF"))
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.primary)
                 }
             }
         }
@@ -509,7 +501,7 @@ struct BreadcrumbMenuRow: View {
         case "go": return Color.cyan
         case "rs": return Color.orange
         case "sh", "bash", "zsh": return Color.green
-        default: return .secondary
+        default: return theme.textSecondary
         }
     }
 }

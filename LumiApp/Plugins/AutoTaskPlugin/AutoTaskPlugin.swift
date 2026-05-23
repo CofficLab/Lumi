@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 import SwiftUI
 
@@ -29,6 +30,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "checklist"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .agent }
     static var order: Int { 90 }
 
     static let shared = AutoTaskPlugin()
@@ -45,10 +47,15 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [
-            CreateTaskTool(),
-            UpdateTaskTool(),
-            CheckProgressTool(),
+        guard let conversationId = context.conversationVM?.selectedConversationId?.uuidString else {
+            Self.logger.warning("\(Self.t)无法获取当前会话 ID，跳过注册 AutoTask 工具")
+            return []
+        }
+
+        return [
+            CreateTaskTool(conversationId: conversationId),
+            UpdateTaskTool(conversationId: conversationId),
+            CheckProgressTool(conversationId: conversationId),
         ]
     }
 

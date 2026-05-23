@@ -18,6 +18,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
         localized: "Code editor with file tree", table: "LumiEditor")
     static let iconName = "chevron.left.forwardslash.chevron.right"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 77 }
 
     nonisolated var instanceLabel: String { Self.id }

@@ -8,6 +8,7 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
     static let iconName: String = "terminal.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 129 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -23,4 +24,10 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(VscodeDarkSuperEditorThemeContributor())
+    }
+
 }

@@ -8,16 +8,18 @@ enum ToolProgressEvent: Sendable {
         current: Int,
         total: Int,
         elapsedSeconds: Int,
-        shellStats: ToolProgressShellStats?
+        shellStats: ToolProgressShellStats?,
+        displayName: String?
     )
-    case completed(toolName: String, current: Int, total: Int)
-    case cancelled(toolName: String, current: Int, total: Int)
+    case completed(toolName: String, current: Int, total: Int, displayName: String?)
+    case cancelled(toolName: String, current: Int, total: Int, displayName: String?)
     case cancelledAll
     case failed(
         toolName: String,
         current: Int,
         total: Int,
-        errorSummary: String
+        errorSummary: String,
+        displayName: String?
     )
 }
 
@@ -154,7 +156,7 @@ final class WindowConversationStatusVM: ObservableObject {
     /// 根据工具执行事件更新状态文案
     func applyToolProgressEvent(conversationId: UUID, event: ToolProgressEvent) {
         switch event {
-        case let .running(toolName, current, total, elapsedSeconds, shellStats):
+        case let .running(toolName, current, total, elapsedSeconds, shellStats, displayName):
             let statsSuffix: String
             if let shellStats {
                 let outputPreview = Self.normalizedShellPreview(shellStats.latestOutputPreview)
@@ -163,23 +165,28 @@ final class WindowConversationStatusVM: ObservableObject {
             } else {
                 statsSuffix = ""
             }
+            // 使用 displayName（LLM 传入的展示文案），否则降级为 toolName
+            let showName = displayName ?? toolName
             setStatus(
                 conversationId: conversationId,
-                content: "正在执行工具 \(current)/\(total)：\(toolName)（\(max(0, elapsedSeconds))s\(statsSuffix)）"
+                content: "\(showName)（\(max(0, elapsedSeconds))s\(statsSuffix)）"
             )
-        case let .completed(toolName, current, total):
+        case let .completed(toolName, current, total, displayName):
+            let showName = displayName ?? toolName
             setStatus(
                 conversationId: conversationId,
-                content: "工具 \(current)/\(total) 已完成：\(toolName)"
+                content: "✅ \(showName)"
             )
-        case let .cancelled(toolName, _, _):
-            setStatus(conversationId: conversationId, content: "已停止执行工具：\(toolName)")
+        case let .cancelled(toolName, _, _, displayName):
+            let showName = displayName ?? toolName
+            setStatus(conversationId: conversationId, content: "⛔️ \(showName) 已停止")
         case .cancelledAll:
             setStatus(conversationId: conversationId, content: "已停止执行工具")
-        case let .failed(toolName, current, total, errorSummary):
+        case let .failed(toolName, current, total, errorSummary, displayName):
+            let showName = displayName ?? toolName
             setStatus(
                 conversationId: conversationId,
-                content: "工具执行失败 \(current)/\(total)：\(toolName)（\(errorSummary)）"
+                content: "❌ \(showName) 失败（\(errorSummary)）"
             )
         }
     }

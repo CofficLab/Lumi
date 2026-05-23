@@ -4,6 +4,12 @@ public enum AppSurfaceStyle {
     case glass
     case glassThick
     case glassUltraThick
+    case panel
+    case popover
+    case toolbar
+    case listRow
+    case listRowHover
+    case listRowSelected
     case subtle
     case custom(Color)
 }
@@ -34,6 +40,18 @@ private struct AppSurfaceModifier: ViewModifier {
             AnyShapeStyle(DesignTokens.Material.glassThick)
         case .glassUltraThick:
             AnyShapeStyle(DesignTokens.Material.glassUltraThick)
+        case .panel:
+            AnyShapeStyle(theme.appPanelBackground)
+        case .popover:
+            AnyShapeStyle(theme.appPopoverBackground)
+        case .toolbar:
+            AnyShapeStyle(theme.appToolbarBackground)
+        case .listRow:
+            AnyShapeStyle(theme.appListRowBackground)
+        case .listRowHover:
+            AnyShapeStyle(theme.appListRowHoverBackground)
+        case .listRowSelected:
+            AnyShapeStyle(theme.appListRowSelectedBackground)
         case .subtle:
             AnyShapeStyle(theme.textSecondary.opacity(0.06))
         case let .custom(color):

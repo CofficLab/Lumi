@@ -3,6 +3,8 @@ import LumiUI
 
 /// 流式阶段助手消息：仅渲染纯文本，避免高频 Markdown 解析。
 struct StreamingAssistantRowView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let message: ChatMessage
     private let maxVisibleChars = 6_000
 
@@ -28,8 +30,8 @@ struct StreamingAssistantRowView: View {
             }
 
             Text(verbatim: visibleContent)
-                .font(.system(size: 15, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .font(.appBody)
+                .foregroundColor(theme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)

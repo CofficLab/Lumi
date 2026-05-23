@@ -17,6 +17,12 @@
         }
       }
     },
+    " %@" : {
+
+    },
+    " = " : {
+
+    },
     " to see." : {
       "localizations" : {
         "zh-Hans" : {
@@ -34,6 +40,9 @@
       }
     },
     "--" : {
+
+    },
+    ": " : {
 
     },
     ":%lld" : {
@@ -119,6 +128,9 @@
         }
       }
     },
+    "\"%@\"" : {
+
+    },
     "(%@)" : {
 
     },
@@ -145,6 +157,7 @@
 
     },
     "/path/to/db.sqlite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -428,7 +441,17 @@
         }
       }
     },
+    "• **Auto**：自动从所有可用模型中选择最优的" : {
+
+    },
+    "• **手动指定**：固定使用某个供应商的特定模型" : {
+
+    },
+    "• 每日最多执行 5 次深度分析（节省成本）" : {
+
+    },
     "••••••••" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -507,6 +530,7 @@
       }
     },
     "127.0.0.1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -558,6 +582,7 @@
       }
     },
     "3306" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -574,6 +599,7 @@
       }
     },
     "5432" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -590,6 +616,7 @@
       }
     },
     "6379" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -750,6 +777,7 @@
 
     },
     "API 密钥" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -904,6 +932,9 @@
         }
       }
     },
+    "Auto (自动选择)" : {
+
+    },
     "Available Models" : {
 
     },
@@ -923,10 +954,14 @@
         }
       }
     },
+    "Bottom Panel" : {
+
+    },
     "Branch name" : {
 
     },
     "Build %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1084,6 +1119,7 @@
       }
     },
     "Comment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1120,6 +1156,7 @@
 
     },
     "Connection Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1150,6 +1187,9 @@
           }
         }
       }
+    },
+    "Content Panel" : {
+
     },
     "CPU" : {
       "extractionState" : "manual",
@@ -1188,6 +1228,7 @@
       }
     },
     "Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1221,6 +1262,7 @@
       }
     },
     "Database Path" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1320,6 +1362,7 @@
       }
     },
     "dev.example.com" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1421,6 +1464,7 @@
       }
     },
     "Disk Scan: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1454,6 +1498,7 @@
       }
     },
     "Domain" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1501,7 +1546,11 @@
         }
       }
     },
+    "Editor" : {
+
+    },
     "Enable Auto Input Source Switching" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1518,6 +1567,7 @@
       }
     },
     "Enable Clipboard Monitoring" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1625,6 +1675,7 @@
       }
     },
     "General" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1662,7 +1713,14 @@
         }
       }
     },
+    "Hide Bottom Panel" : {
+
+    },
+    "Hide Editor" : {
+
+    },
     "History Size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1695,6 +1753,7 @@
       }
     },
     "Host" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1728,6 +1787,7 @@
       }
     },
     "Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1827,6 +1887,7 @@
       }
     },
     "IP Address" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1924,6 +1985,9 @@
 
     },
     "Live sample" : {
+
+    },
+    "LLM 模型选择" : {
 
     },
     "Load" : {
@@ -2041,6 +2105,7 @@
       }
     },
     "My Database" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2057,6 +2122,7 @@
       }
     },
     "myrepo:v1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2123,6 +2189,7 @@
       }
     },
     "New Tag" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2139,6 +2206,7 @@
       }
     },
     "nginx:latest" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2170,18 +2238,6 @@
         }
       }
     },
-    "No Fast Models" : {
-
-    },
-    "No Fast Models Description" : {
-
-    },
-    "No Frequent Models" : {
-
-    },
-    "No Frequent Models Description" : {
-
-    },
     "No Listening Ports" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2198,12 +2254,6 @@
           }
         }
       }
-    },
-    "No Matching Models" : {
-
-    },
-    "No Provider Selected" : {
-
     },
     "Not Connected" : {
       "localizations" : {
@@ -2259,6 +2309,7 @@
       }
     },
     "Optional" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2278,6 +2329,7 @@
 
     },
     "Password" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2359,6 +2411,7 @@
       }
     },
     "Port" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2392,6 +2445,7 @@
       }
     },
     "postgres" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2454,6 +2508,9 @@
           }
         }
       }
+    },
+    "Project Issue Scanner 设置" : {
+
     },
     "Public IP" : {
       "localizations" : {
@@ -2660,6 +2717,7 @@
 
     },
     "Search clipboard history..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2732,6 +2790,7 @@
 
     },
     "Search..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2842,6 +2901,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展示系統狀態，如 CPU、内存、磁盤、电池等"
+          }
+        }
+      }
+    },
+    "Showing top %lld of %lld issues, sorted by severity." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Showing top %1$lld of %2$lld issues, sorted by severity."
           }
         }
       }
@@ -2966,6 +3035,7 @@
       }
     },
     "test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3217,6 +3287,7 @@
 
     },
     "user" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3233,6 +3304,7 @@
       }
     },
     "Username" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3335,6 +3407,7 @@
       }
     },
     "主题风格" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3382,6 +3455,9 @@
         }
       }
     },
+    "供应商" : {
+
+    },
     "保存" : {
 
     },
@@ -3404,9 +3480,6 @@
     "全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。" : {
 
     },
-    "关于" : {
-
-    },
     "内存 %lld GB" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3424,6 +3497,12 @@
       }
     },
     "最近一次路由" : {
+
+    },
+    "切换 LLM 供应商" : {
+
+    },
+    "切换模型系列" : {
 
     },
     "功能特性：" : {
@@ -3491,6 +3570,7 @@
       }
     },
     "双击切换 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3507,6 +3587,7 @@
       }
     },
     "双击切换模型系列" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3539,6 +3620,7 @@
       }
     },
     "可用模型" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3732,6 +3814,7 @@
 
     },
     "当插件标记为可配置时，会在此处显示" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3747,10 +3830,10 @@
         }
       }
     },
-    "快捷键" : {
+    "快速修复" : {
 
     },
-    "快速修复" : {
+    "手动指定" : {
 
     },
     "打开App Support目录" : {
@@ -3872,6 +3955,7 @@
       }
     },
     "插件管理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3941,6 +4025,7 @@
 
     },
     "暂无可配置的插件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3971,9 +4056,6 @@
           }
         }
       }
-    },
-    "暂无消息" : {
-
     },
     "未找到匹配的符号" : {
 
@@ -4043,6 +4125,12 @@
           }
         }
       }
+    },
+    "模型" : {
+
+    },
+    "模型选择" : {
+
     },
     "欢迎使用 Lumi" : {
       "localizations" : {
@@ -4122,6 +4210,7 @@
       }
     },
     "登录时启动" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4154,9 +4243,6 @@
       }
     },
     "编辑器" : {
-
-    },
-    "编辑器设置" : {
 
     },
     "自定义" : {
@@ -4197,6 +4283,12 @@
     "试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。" : {
 
     },
+    "该分类下暂无可配置的插件" : {
+
+    },
+    "说明" : {
+
+    },
     "请从侧边栏选择一个导航入口" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4228,6 +4320,9 @@
           }
         }
       }
+    },
+    "请选择" : {
+
     },
     "请选择设置项" : {
       "localizations" : {
@@ -4281,6 +4376,7 @@
       }
     },
     "输入 GitHub Token" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4296,7 +4392,11 @@
         }
       }
     },
+    "选择用于深度分析的 LLM 模型。自动模式将根据可用性和成本自动选择最优模型。" : {
+
+    },
     "通用设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

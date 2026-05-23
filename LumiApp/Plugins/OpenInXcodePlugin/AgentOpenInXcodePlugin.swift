@@ -18,6 +18,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Displays a button in the header to open the current project in Xcode", table: "AgentOpenInXcode")
     static let iconName: String = "hammer"
     static let isConfigurable: Bool = true
+    static var category: PluginCategory { .integration }
     static let enable: Bool = true
     static var order: Int { 95 }
 
@@ -39,6 +40,8 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
 /// Xcode 打开状态栏视图
 struct OpenInXcodeStatusBarView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -62,7 +65,7 @@ struct OpenInXcodeStatusBarView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "hammer.fill")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -76,14 +79,14 @@ struct OpenInXcodeStatusBarView: View {
     private var emptyView: some View {
         HStack(spacing: 6) {
             Image(systemName: "hammer.fill")
-                .font(.system(size: 10))
+                .font(.appMicro)
 
             Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
-                .font(.system(size: 11))
+                .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(.secondary.opacity(0.5))
+        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(String(localized: "无项目", table: "AgentOpenInXcode"))
     }
 
@@ -98,6 +101,8 @@ struct OpenInXcodeStatusBarView: View {
 
 /// Xcode 打开详情视图（在 popover 中显示）
 struct OpenInXcodeDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
@@ -105,11 +110,12 @@ struct OpenInXcodeDetailView: View {
             // 标题
             HStack(spacing: 8) {
                 Image(systemName: "hammer.fill")
-                    .font(.system(size: 16))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
@@ -120,7 +126,7 @@ struct OpenInXcodeDetailView: View {
                         Image(systemName: "arrow.up.right.square")
                         Text(String(localized: "打开", table: "OpenInXcodePlugin"))
                     }
-                    .font(.system(size: 12))
+                    .font(.appCaption)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -130,13 +136,13 @@ struct OpenInXcodeDetailView: View {
             // 项目路径显示
             HStack(spacing: 8) {
                 Text(String(localized: "项目", table: "OpenInXcodePlugin"))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
                 Text(projectVM.currentProjectPath)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -147,7 +153,7 @@ struct OpenInXcodeDetailView: View {
                     NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
+                        .font(.appCaption)
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "复制路径", table: "OpenInXcodePlugin"))

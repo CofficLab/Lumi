@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 获取当前会话 ID 工具
 ///

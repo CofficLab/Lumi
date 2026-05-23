@@ -84,6 +84,10 @@ final class AutomationController: SuperLog {
         case "app.terminate", "appTerminate":
             handleAppTerminate()
 
+        // 主题切换
+        case "theme.switch", "themeSwitch":
+            handleThemeSwitch(payload: payload)
+
         default:
             Self.logger.info("🤖 Unhandled action: \(action, privacy: .public)")
         }
@@ -182,6 +186,23 @@ final class AutomationController: SuperLog {
     private func handleAppTerminate() {
         Self.logger.info("🤖 app.terminate")
         NSApp.terminate(nil)
+    }
+
+    /// 处理主题切换
+    private func handleThemeSwitch(payload: [String: Any]?) {
+        guard let themeId = payload?["themeId"] as? String else {
+            Self.logger.warning("🤖 theme.switch: missing 'themeId' in payload")
+            return
+        }
+
+        Self.logger.info("🤖 Switching theme to: \(themeId, privacy: .public)")
+
+        // 直接通过 AppThemeVM 切换主题
+        let themeVM = RootContainer.shared.themeVM
+        themeVM.selectTheme(themeId)
+
+        Self.logger.info("🤖 Theme switched to: \(themeId, privacy: .public)")
+        alert_info("自动化测试：切换主题到 \(themeId)")
     }
 
     /// 处理通用按钮点击

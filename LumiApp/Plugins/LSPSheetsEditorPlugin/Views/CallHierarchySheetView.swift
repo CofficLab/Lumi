@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 调用层级 Sheet 内容视图。
@@ -6,6 +7,8 @@ import SwiftUI
 /// 分栏展示出来。该视图自身不请求 LSP 数据，只读取 `EditorState.callHierarchyProvider` 中的状态；
 /// 打开、关闭和跳转行为通过 `EditorState` 的 panel/open item 命令回写给编辑器内核。
 struct CallHierarchySheetView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var state: EditorState
 
     var body: some View {
@@ -25,16 +28,18 @@ struct CallHierarchySheetView: View {
         HStack(spacing: 10) {
             if let root = state.callHierarchyProvider.rootItem {
                 Image(systemName: root.iconSymbol)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(theme.primary)
                 Text(root.name)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                 Text(root.kindDisplayName)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             } else {
                 Text(String(localized: "调用层级", table: "LSPSheetsEditor"))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
             }
             Spacer()
             Button(String(localized: "关闭", table: "LSPSheetsEditor")) {
@@ -55,10 +60,11 @@ struct CallHierarchySheetView: View {
                     .padding(.top, 1)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(issue.title)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(theme.textPrimary)
                     Text(issue.message)
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
@@ -66,8 +72,8 @@ struct CallHierarchySheetView: View {
                     state.resyncProjectContext()
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.accentColor)
+                .font(.appMicroEmphasized)
+                .foregroundColor(theme.primary)
                 .disabled(state.isResyncingProjectContext)
             }
             .padding(.horizontal, 14)
@@ -82,18 +88,18 @@ struct CallHierarchySheetView: View {
             VStack(spacing: 10) {
                 ProgressView()
                 Text(String(localized: "加载调用层级中...", table: "LSPSheetsEditor"))
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 12))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if state.callHierarchyProvider.rootItem == nil {
             VStack(spacing: 10) {
                 Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 28))
-                    .foregroundColor(.secondary)
+                    .font(.appLargeTitle)
+                    .foregroundColor(theme.textSecondary)
                 Text(String(localized: "未找到调用层级信息", table: "LSPSheetsEditor"))
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 12))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -129,11 +135,11 @@ struct CallHierarchySheetView: View {
     private func color(for severity: EditorSemanticAvailabilitySeverity) -> Color {
         switch severity {
         case .info:
-            return .accentColor
+            return theme.info
         case .warning:
-            return .orange
+            return theme.warning
         case .error:
-            return .red
+            return theme.error
         }
     }
 }

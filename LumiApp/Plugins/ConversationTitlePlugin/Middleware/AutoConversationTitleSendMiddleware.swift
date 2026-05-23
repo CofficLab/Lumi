@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 
 /// 在管线继续后异步生成标题，避免阻塞后续 `send`。
 @MainActor
@@ -52,7 +53,14 @@ struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         let userCount = history.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
-        let config = agentSessionConfig.getCurrentConfig()
+        let config: LLMConfig
+        if let providerId = conversation.providerId,
+           let model = conversation.model,
+           let conversationConfig = agentSessionConfig.makeConfig(providerId: providerId, model: model) {
+            config = conversationConfig
+        } else {
+            config = agentSessionConfig.getCurrentConfig()
+        }
         let title = await chatHistoryService.generateConversationTitle(from: trimmed, config: config)
         chatHistoryService.updateConversationTitle(conversation, newTitle: title)
     }

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 // MARK: - Local Model Info
 

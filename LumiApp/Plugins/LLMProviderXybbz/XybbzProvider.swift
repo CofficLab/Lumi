@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import LLMProviderKit
 
 /// Xybbz API 供应商实现
@@ -23,8 +24,8 @@ final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let defaultModel = "gpt-5.5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.5", description: "GPT-5.5，OpenAI 最新旗舰模型，支持视觉和工具调用", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.4", description: "GPT-5.4，OpenAI 高性能模型，支持视觉和工具调用", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
@@ -65,9 +66,9 @@ final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         )
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
     }
 

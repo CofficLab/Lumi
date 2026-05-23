@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 /// 语言偏好注入中间件

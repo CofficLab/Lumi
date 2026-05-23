@@ -28,6 +28,8 @@ struct ThemeSelectorView: View {
 
 // MARK: - 主题选项卡片
 struct ThemeOptionCard: View {
+    @LumiUI.LumiTheme private var appTheme: any LumiUITheme
+
     let theme: LumiUIThemeContribution
     let isSelected: Bool
     let action: () -> Void
@@ -43,20 +45,20 @@ struct ThemeOptionCard: View {
             HStack(spacing: 16) {
                 // 图标
                 Image(systemName: theme.iconName)
-                    .font(.system(size: 24))
-                    .foregroundColor(isSelected ? theme.iconColor : Color(hex: "98989E"))
+                    .font(.appTitle)
+                    .foregroundColor(isSelected ? theme.iconColor : appTheme.textTertiary)
                     .frame(width: 40)
 
                 VStack(alignment: .leading, spacing: 4) {
                     // 名称
                     Text(theme.displayName)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appBody)
+                        .foregroundColor(isSelected ? appTheme.textPrimary : appTheme.textSecondary)
 
                     // 描述
                     Text(theme.description)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appCaption)
+                        .foregroundColor(appTheme.textTertiary)
                 }
             }
         }

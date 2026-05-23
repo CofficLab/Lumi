@@ -29,6 +29,11 @@ class VisibleRangeProvider {
     lazy var visibleSet: IndexSet = {
         return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
     }()
+    
+    /// The current visible range of the text view (for debouncing)
+    var currentVisibleRange: NSRange {
+        textView?.visibleTextRange ?? .notFound
+    }
 
     init(textView: TextView, minimapView: MinimapView?) {
         self.textView = textView

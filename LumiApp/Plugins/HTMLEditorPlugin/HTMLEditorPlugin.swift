@@ -17,6 +17,7 @@ actor HTMLEditorPlugin: SuperPlugin {
     static let order = 31
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -1,4 +1,5 @@
 import LumiUI
+import AgentToolKit
 import SwiftUI
 import LLMKit
 
@@ -7,6 +8,8 @@ import LLMKit
 /// 当当前供应商未配置 API Key 时，在错误消息中渲染的专用视图。
 /// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
 struct ApiKeyMissingErrorView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var agentSessionConfig: AppLLMVM
     @EnvironmentObject private var providerRegistry: LLMProviderRegistry
@@ -51,13 +54,13 @@ struct ApiKeyMissingErrorView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appCallout)
                         .fontWeight(.semibold)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(theme.textPrimary)
 
                     Text(descriptionText)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
 
@@ -66,10 +69,10 @@ struct ApiKeyMissingErrorView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Text(provider.displayName)
-                            .font(.system(size: 12, weight: .regular))
+                            .font(.appCaption)
                         Spacer()
                     }
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
 
                     AppInputField(
                         LocalizedStringKey(

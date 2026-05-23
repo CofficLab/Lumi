@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import GitHubKit
 import os
 import SwiftUI
@@ -21,6 +22,7 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "star.circle.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .developerTool }
     static var order: Int { 15 }
 
     static let shared = GitHubToolsPlugin()

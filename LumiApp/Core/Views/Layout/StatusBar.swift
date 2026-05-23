@@ -7,7 +7,6 @@ struct StatusBar: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeChromeTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
@@ -56,11 +55,11 @@ struct StatusBar: View {
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 32)
-                .foregroundColor(.white)
+                .foregroundColor(statusBarForegroundColor)
                 .appSurface(style: .custom(statusBarBackground), cornerRadius: 0)
                 .overlay(alignment: .top) {
                     Rectangle()
-                        .fill(theme.workspaceTextColor().opacity(0.18))
+                        .fill(statusBarDividerColor)
                         .frame(height: 1)
                 }
             }
@@ -69,9 +68,16 @@ struct StatusBar: View {
 
     private var statusBarBackground: Color {
         let theme = themeVM.activeChromeTheme
-        // 状态栏使用主题的深色氛围色，确保与整体主题协调
         return theme.isDarkTheme
             ? theme.atmosphereColors().deep
-            : theme.accentColors().primary
+            : theme.atmosphereColors().medium
+    }
+
+    private var statusBarForegroundColor: Color {
+        themeVM.activeChromeTheme.workspaceTextColor()
+    }
+
+    private var statusBarDividerColor: Color {
+        themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.18)
     }
 }

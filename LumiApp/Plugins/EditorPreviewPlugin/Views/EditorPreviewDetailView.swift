@@ -183,6 +183,26 @@ struct EditorPreviewDetailView: View, SuperLog {
             Label(String(localized: "String Catalog Preview", table: "EditorPreview"), systemImage: "character.book.closed")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        case .json:
+            Label(String(localized: "JSON Preview", table: "EditorPreview"), systemImage: "curlybraces")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .plist:
+            Label(String(localized: "Plist Preview", table: "EditorPreview"), systemImage: "list.bullet.rectangle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .csv:
+            Label(String(localized: "CSV Preview", table: "EditorPreview"), systemImage: "tablecells")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .html:
+            Label(String(localized: "HTML Preview", table: "EditorPreview"), systemImage: "globe")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .pdf:
+            Label(String(localized: "PDF Preview", table: "EditorPreview"), systemImage: "doc.richtext")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         case let .unsupported(url):
             Label(url?.pathExtension.isEmpty == false ? url!.pathExtension.uppercased() : "File", systemImage: "doc")
                 .font(.caption)
@@ -513,6 +533,21 @@ struct EditorPreviewDetailView: View, SuperLog {
         case .stringCatalog:
             EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
                 .environmentObject(themeVM)
+        case let .json(url):
+            EditorPreviewJSONView(jsonText: sourceText ?? "")
+                .environmentObject(themeVM)
+        case let .plist(url):
+            EditorPreviewPlistView(plistText: sourceText ?? "")
+                .environmentObject(themeVM)
+        case let .csv(url):
+            EditorPreviewCSVView(csvText: sourceText ?? "", fileURL: url)
+                .environmentObject(themeVM)
+        case let .html(url):
+            EditorPreviewHTMLView(htmlText: sourceText ?? "", fileURL: url)
+                .environmentObject(themeVM)
+        case let .pdf(url):
+            EditorPreviewPDFView(fileURL: url)
+                .environmentObject(themeVM)
         case let .unsupported(url):
             unsupportedPreview(url: url)
         }
@@ -611,7 +646,7 @@ struct EditorPreviewDetailView: View, SuperLog {
                     .font(.system(size: 36))
                     .foregroundStyle(.secondary)
                 Text(url == nil
-                     ? String(localized: "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here.", table: "EditorPreview")
+                     ? String(localized: "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here.", table: "EditorPreview")
                      : String(localized: "This file type is not supported by Inline Preview yet.", table: "EditorPreview"))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -948,7 +983,7 @@ private struct EditorPreviewMarkdownView: View {
 
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
-        NotificationCenter.postAddToChat(text: text)
+        NotificationCenter.postAddToChat(text: text, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
     }
 
     private var previewTheme: MarkdownTheme {

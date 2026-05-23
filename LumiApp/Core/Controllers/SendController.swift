@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 聊天发送与回合驱动控制器
 ///
@@ -22,34 +23,24 @@ final class SendController: ObservableObject, SuperLog {
         self.global = global
 
         // 组装 AgentTurnService 的依赖（使用窗口级 VM）
-        let llmRequester = LLMRequester(
+        let toolCallExecutor = ToolCallExecutor(
+            toolService: global.toolService,
+            agentSessionConfig: global.agentSessionConfig,
+            permissionRequestVM: windowContainer.permissionRequestVM,
+            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
+            conversationVM: windowContainer.conversationVM
+        )
+        self.agentTurnService = AgentTurnService(
             llmService: global.llmService,
             agentSessionConfig: global.agentSessionConfig,
             toolService: global.toolService,
             pluginVM: global.pluginVM,
             statusVM: windowContainer.conversationSendStatusVM,
-            projectVM: windowContainer.projectVM
-        )
-        let toolCallExecutor = ToolCallExecutor(
-            toolExecutionService: global.toolExecutionService,
-            toolService: global.toolService,
             projectVM: windowContainer.projectVM,
-            permissionRequestVM: windowContainer.permissionRequestVM,
-            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
-            conversationVM: windowContainer.conversationVM
-        )
-        let turnFinalizer = TurnFinalizer(
             conversationVM: windowContainer.conversationVM,
-            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
-            messageQueueVM: windowContainer.messageQueueVM
-        )
-        self.agentTurnService = AgentTurnService(
-            llmRequester: llmRequester,
-            toolCallExecutor: toolCallExecutor,
-            turnFinalizer: turnFinalizer,
+            messageQueueVM: windowContainer.messageQueueVM,
             chatHistoryService: global.chatHistoryService,
-            conversationVM: windowContainer.conversationVM,
-            messageQueueVM: windowContainer.messageQueueVM
+            toolCallExecutor: toolCallExecutor
         )
     }
 

@@ -17,6 +17,7 @@ actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", table: "BreadcrumbNav")
     static let iconName: String = "point.topleft.down.curvedto.point.bottomright.up"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 70 }
 
     nonisolated var instanceLabel: String { Self.id }

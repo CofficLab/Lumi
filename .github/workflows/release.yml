@@ -6,6 +6,10 @@ on:
       - pre
       - main
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -15,6 +19,7 @@ env:
   REPO_LINK: "https://github.com/CofficLab/Lumi"
   DESTINATION: "generic/platform=macOS"
   ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
+  DERIVED_DATA_PATH: "./DerivedData"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
 
@@ -24,7 +29,7 @@ env:
   BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
   APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
   APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-  APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }}
+  APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSUER_ID }}
   SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
 
 jobs:
@@ -131,17 +136,37 @@ jobs:
             echo "⚠️  Attempt $i: Timestamp service not reachable, retrying..."
             sleep 2
           done
-          echo "❌ Timestamp service is not reachable after 3 attempts"
-          exit 1
+          echo "⚠️ Timestamp service is not reachable after 3 attempts; continuing and letting codesign validate timestamping"
 
       - name: Install xcpretty
         run: gem install xcpretty
+
+      - name: Restore CodeEditLanguages Framework
+        id: codeedit-languages-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
+            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework.zip
+          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
+
+      - name: Build CodeEditLanguages Framework
+        if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
+        run: |
+          cd Packages/CodeEditLanguages
+          ./build_framework.sh
+
+      - name: Check CodeEditLanguages Framework
+        run: scripts/check-codeedit-languages-framework.sh
 
       - name: Build App (Archive)
         run: |
           set -o pipefail
           xcodebuild archive \
+            -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
+            -destination "${{ env.DESTINATION }}" \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
             -skipPackagePluginValidation \
@@ -250,6 +275,7 @@ jobs:
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
+          spctl --assess --type open --context context:primary-signature -vv "$file"
 
       - name: Prepare Updates Directory
         run: |
@@ -282,8 +308,8 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         run: |
           # 解决依赖以获取 Sparkle 工具
-          xcodebuild -resolvePackageDependencies
-          SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/SourcePackages/artifacts/sparkle/Sparkle/bin | head -n 1)
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" -resolvePackageDependencies
+          SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
           if [ -d "$SPARKLE_BIN" ]; then
             cd "$SPARKLE_BIN"
@@ -299,24 +325,27 @@ jobs:
           cd updates
           if [ -f appcast.xml ]; then
             dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
-            if [ -n "$dmg_file" ]; then
-              # 对文件名进行 URL 编码处理（简单处理空格）
-              dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
-
-              # 构建正确的下载链接（使用具体 tag 而不是 latest，确保永久有效）
-              DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
-
-              # 替换 enclosure 标签中的 url 属性，无论当前 URL 是什么
-              # 匹配 url="任意内容" 并替换为正确的链接
-              sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "appcast.xml"
-
-              # 移动到根目录以便提交
-              mv appcast.xml ../appcast.xml
-
-              echo "✅ Appcast updated with link: $DOWNLOAD_URL"
-              echo "📝 Preview:"
-              cat ../appcast.xml | head -n 20
+            if [ -z "$dmg_file" ]; then
+              echo "❌ DMG not found in updates directory"
+              exit 1
             fi
+
+            # 对文件名进行 URL 编码处理（简单处理空格）
+            dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
+
+            # 构建正确的下载链接（使用具体 tag 而不是 latest，确保永久有效）
+            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
+
+            # 替换 enclosure 标签中的 url 属性，无论当前 URL 是什么
+            # 匹配 url="任意内容" 并替换为正确的链接
+            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "appcast.xml"
+
+            # 移动到根目录以便提交
+            mv appcast.xml ../appcast.xml
+
+            echo "✅ Appcast updated with link: $DOWNLOAD_URL"
+            echo "📝 Preview:"
+            cat ../appcast.xml | head -n 20
           else
              echo "❌ appcast.xml generation failed"
              exit 1
@@ -335,6 +364,35 @@ jobs:
           push_options: "--follow-tags"
           # 仅提交项目文件和appcast
           file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
+
+      - name: Prepare Release Assets
+        if: success()
+        run: |
+          rm -rf release-assets
+          mkdir -p release-assets
+
+          if ! compgen -G "./updates/*.dmg" > /dev/null; then
+            echo "❌ No DMG found in updates directory"
+            exit 1
+          fi
+          cp ./updates/*.dmg release-assets/
+
+          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+            if [ ! -f ./appcast.xml ]; then
+              echo "❌ appcast.xml is required for stable releases"
+              exit 1
+            fi
+            cp ./appcast.xml release-assets/
+          fi
+
+          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+          if [ -f "$DSYM_ZIP" ]; then
+            cp "$DSYM_ZIP" release-assets/
+          else
+            echo "⚠️ dSYM zip not found, continuing without it"
+          fi
+
+          ls -alh release-assets
 
       # =================================================================================================
       # 5. 发布 Release
@@ -364,9 +422,7 @@ jobs:
           prerelease: ${{ env.IS_PRERELEASE }}
           body_path: changelog.md
           files: |
-            ./updates/*.dmg
-            ./appcast.xml
-            ./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip
+            ./release-assets/*
 
   rebase:
     if: github.ref == 'refs/heads/main'
@@ -395,5 +451,17 @@ jobs:
           git config --global user.email "action@github.com"
           git fetch origin pre
           git checkout pre
-          git rebase origin/main
-          git push origin pre --force-with-lease
+          if ! git rebase origin/main; then
+            echo "## Rebase pre on main failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The release completed, but the pre branch could not be rebased automatically." >> "$GITHUB_STEP_SUMMARY"
+            echo "Resolve the conflict locally and push pre manually." >> "$GITHUB_STEP_SUMMARY"
+            git rebase --abort || true
+            exit 1
+          fi
+          if ! git push origin pre --force-with-lease; then
+            echo "## Push pre after rebase failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The release completed, but the rebased pre branch could not be pushed." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

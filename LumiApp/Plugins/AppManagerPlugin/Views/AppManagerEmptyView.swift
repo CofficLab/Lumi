@@ -1,22 +1,26 @@
 import SwiftUI
+import LumiUI
 
 /// 应用管理器空状态视图
 struct AppManagerEmptyView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     var searchText: String = ""
 
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "app.dashed")
-                .font(.system(size: 64))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appLargeTitle)
+                .foregroundColor(theme.textSecondary)
 
             Text(String(localized: "No applications found", table: "AppManager"))
-                .font(.title3)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appSectionTitle)
+                .foregroundColor(theme.textSecondary)
 
             if !searchText.isEmpty {
                 Text(String(localized: "Try other search keywords", table: "AppManager"))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

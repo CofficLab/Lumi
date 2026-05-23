@@ -80,6 +80,15 @@ class Highlighter: NSObject {
 
     /// Counts upwards to provide unique IDs for new highlight providers.
     private var providerIdCounter: Int
+    
+    /// Debounce task for highlight updates to avoid excessive re-highlighting
+    private var highlightDebounceTask: Task<Void, Never>?
+    
+    /// Duration for debouncing highlight updates (16ms = ~60fps)
+    private let highlightDebounceDuration: Duration = .milliseconds(16)
+    
+    /// Flag to track if visible range has actually changed
+    private var lastVisibleRange: NSRange?
 
     // MARK: - Init
 
@@ -210,6 +219,7 @@ class Highlighter: NSObject {
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProviders = []
+        self.highlightDebounceTask?.cancel()
     }
 }
 
@@ -227,16 +237,35 @@ extension Highlighter: @preconcurrency NSTextStorageDelegate {
         // each time an attribute is applied, we check to make sure this is in response to an edit.
         guard editedMask.contains(.editedCharacters) else { return }
 
+        // Update style container immediately for responsiveness
         styleContainer.storageUpdated(editedRange: editedRange, changeInLength: delta)
 
         if delta > 0 {
             visibleRangeProvider.visibleSet.insert(range: editedRange)
         }
 
-        visibleRangeProvider.visibleTextChanged()
-
-        let providerRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
-        highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
+        // Debounce the expensive highlight update operations
+        highlightDebounceTask?.cancel()
+        highlightDebounceTask = Task { @MainActor [weak self] in
+            // Wait for debounce duration (16ms = ~60fps)
+            try? await Task.sleep(for: self?.highlightDebounceDuration ?? .milliseconds(16))
+            
+            // Check if task was cancelled
+            guard !Task.isCancelled else { return }
+            
+            guard let self = self else { return }
+            
+            // Only trigger visibleTextChanged if the visible range actually changed
+            let currentVisibleRange = self.visibleRangeProvider.currentVisibleRange
+            if self.lastVisibleRange != currentVisibleRange {
+                self.lastVisibleRange = currentVisibleRange
+                self.visibleRangeProvider.visibleTextChanged()
+            }
+            
+            // Notify highlight providers about the edit
+            let providerRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+            self.highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
+        }
     }
 
     func textStorage(

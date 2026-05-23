@@ -67,18 +67,25 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     // MARK: - 配置管理
 
     func getCurrentConfig() -> LLMConfig {
-        guard selectedProviderId.isEmpty == false,
-              let providerType = llmService.providerType(forId: selectedProviderId),
-              llmService.createProvider(id: selectedProviderId) != nil else {
-            return LLMConfig.default
+        makeConfig(providerId: selectedProviderId, model: currentModel) ?? LLMConfig.default
+    }
+
+    func makeConfig(providerId: String, model: String) -> LLMConfig? {
+        guard !providerId.isEmpty,
+              !model.isEmpty,
+              let providerType = llmService.providerType(forId: providerId),
+              llmService.createProvider(id: providerId) != nil,
+              let provider = llmService.allProviders().first(where: { $0.id == providerId }),
+              provider.availableModels.contains(model) else {
+            return nil
         }
 
         let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         return LLMConfig(
             apiKey: apiKey,
-            model: currentModel,
-            providerId: selectedProviderId
+            model: model,
+            providerId: providerId
         )
     }
 

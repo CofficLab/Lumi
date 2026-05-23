@@ -21,6 +21,7 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
         table: "EditorBottomReferences")
     static let iconName: String = "arrow.triangle.branch"
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 
     nonisolated var instanceLabel: String { Self.id }

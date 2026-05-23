@@ -8,6 +8,7 @@ actor ThemeOrchardPlugin: SuperPlugin {
     static let iconName: String = "applelogo"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .theme }
     static var order: Int { 128 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -23,4 +24,10 @@ actor ThemeOrchardPlugin: SuperPlugin {
             )
         ]
     }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        registry.registerThemeContributor(OrchardSuperEditorThemeContributor())
+    }
+
 }

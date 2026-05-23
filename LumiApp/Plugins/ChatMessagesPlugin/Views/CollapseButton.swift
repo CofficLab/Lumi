@@ -6,6 +6,8 @@ import SwiftUI
 /// 折叠按钮组件
 /// 用于在助手消息 Header 中显示折叠/展开操作
 struct CollapseButton: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 点击回调
     let action: () -> Void
 
@@ -13,7 +15,7 @@ struct CollapseButton: View {
         AppIconButton(
             systemImage: "chevron.up",
             label: String(localized: "Collapse", table: "AgentChat"),
-            tint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8),
+            tint: theme.textSecondary.opacity(0.8),
             size: .compact,
             action: action
         )

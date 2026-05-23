@@ -1,45 +1,5 @@
+import LumiUI
 import SwiftUI
-
-// Shared list-row chrome for editor settings (package-local; avoids AppUI / DesignTokens).
-private struct EditorSettingsRowChrome<Content: View>: View {
-    let content: Content
-    @State private var isHovering = false
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .padding(12)
-            .background(rowBackground)
-            .overlay(rowBorder)
-            .contentShape(Rectangle())
-            .onHover { hovering in
-                withAnimation(.easeOut(duration: 0.12)) {
-                    isHovering = hovering
-                }
-            }
-    }
-
-    private var rowBackground: some View {
-        Group {
-            if isHovering {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.primary.opacity(0.06))
-            } else {
-                Color.clear
-            }
-        }
-    }
-
-    @ViewBuilder private var rowBorder: some View {
-        if isHovering {
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        }
-    }
-}
 
 public struct EditorToggleSettingRow: View {
     let title: String
@@ -53,22 +13,7 @@ public struct EditorToggleSettingRow: View {
     }
 
     public var body: some View {
-        EditorSettingsRowChrome {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.body.weight(.semibold))
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
-            }
-        }
+        AppSettingsToggleRow(title, description: subtitle, isOn: $isOn)
     }
 }
 
@@ -86,25 +31,7 @@ public struct EditorStepperSettingRow: View {
     }
 
     public var body: some View {
-        EditorSettingsRowChrome {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.body.weight(.semibold))
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Stepper(value: $value, in: range) {
-                    Text("\(value)")
-                        .frame(minWidth: 28, alignment: .trailing)
-                }
-                .frame(width: 112)
-            }
-        }
+        AppSettingsStepperRow(title, description: subtitle, value: $value, in: range)
     }
 }
 
@@ -122,27 +49,7 @@ public struct EditorSegmentedSettingRow: View {
     }
 
     public var body: some View {
-        EditorSettingsRowChrome {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.body.weight(.semibold))
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Picker(title, selection: $selection) {
-                    ForEach(options, id: \.self) { option in
-                        Text("\(option)").tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-            }
-        }
+        AppSettingsSegmentedPickerRow(title, description: subtitle, selection: $selection, options: options)
     }
 }
 
@@ -158,28 +65,6 @@ public struct EditorReadOnlySettingRow: View {
     }
 
     public var body: some View {
-        EditorSettingsRowChrome {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.body.weight(.semibold))
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Text(badge)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.secondary.opacity(0.15))
-                    )
-            }
-        }
+        AppSettingsReadOnlyRow(title, description: subtitle, badge: badge)
     }
 }

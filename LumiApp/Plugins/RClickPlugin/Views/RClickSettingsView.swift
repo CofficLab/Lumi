@@ -2,7 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct RClickSettingsView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var configManager = RClickConfigManager.shared
     @State private var showingAddTemplateSheet = false
 
@@ -10,8 +11,8 @@ struct RClickSettingsView: View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
                 Text(String(localized: "Preview", table: "RClick"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textSecondary)
 
                 RClickPreviewView(config: configManager.config)
                     .shadow(color: Color.black.opacity(0.09), radius: 12, x: 0, y: 4)
@@ -20,9 +21,7 @@ struct RClickSettingsView: View {
 
             .frame(width: 260)
 
-            GlassDivider()
-                .frame(width: 1, height: 380)
-                .rotationEffect(.degrees(90))
+            settingsDivider
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -30,16 +29,16 @@ struct RClickSettingsView: View {
                         VStack(spacing: 8) {
                             HStack(spacing: 8) {
                                 Image(systemName: "puzzlepiece.extension")
-                                    .font(.system(size: 28))
-                                    .foregroundColor(Color(hex: "7C6FFF"))
+                                    .font(.appTitle)
+                                    .foregroundColor(theme.primary)
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(String(localized: "Enable Finder Extension", table: "RClick"))
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                        .font(.appTitle)
+                                        .foregroundColor(theme.textPrimary)
                                     Text(String(localized: "The right-click menu functionality requires the Finder extension to be enabled in System Settings.", table: "RClick"))
-                                        .font(.system(size: 12, weight: .regular))
-                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                        .font(.appCaption)
+                                        .foregroundColor(theme.textSecondary)
                                 }
 
                                 Spacer()
@@ -52,8 +51,8 @@ struct RClickSettingsView: View {
                                 Spacer()
 
                                 Text(String(localized: "System Settings → Privacy & Security → Extensions → Added Extensions", table: "RClick"))
-                                    .font(.system(size: 11, weight: .regular))
-                                    .foregroundColor(Color(hex: "98989E"))
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.textTertiary)
                             }
                         }
                     }
@@ -61,19 +60,20 @@ struct RClickSettingsView: View {
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(String(localized: "General Actions", table: "RClick"))
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .font(.appTitle)
+                                .foregroundColor(theme.textPrimary)
 
                             VStack(spacing: 4) {
                                 ForEach(configManager.config.items) { item in
                                     if item.type != .newFile {
-                                        GlassRow {
+                                        AppSettingsRow {
                                             HStack {
                                                 Image(systemName: item.type.iconName)
                                                     .frame(width: 20)
-                                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                                    .foregroundColor(theme.textSecondary)
                                                 Text(item.title)
-                                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                                    .font(.appBody)
+                                                    .foregroundColor(theme.textPrimary)
                                                 Spacer()
                                                 Toggle("", isOn: Binding(
                                                     get: { item.isEnabled },
@@ -92,21 +92,22 @@ struct RClickSettingsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(String(localized: "New File Menu", table: "RClick"))
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                    .font(.appTitle)
+                                    .foregroundColor(theme.textPrimary)
                                 Spacer()
                                 AppButton(localized: "Add Template", table: "Localizable", style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
                                 .frame(width: 120)
                             }
 
                             if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
-                                GlassRow {
+                                AppSettingsRow {
                                     HStack {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
-                                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                            .foregroundColor(theme.textSecondary)
                                         Text(String(localized: "Enable 'New File' Submenu", table: "RClick"))
-                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                            .font(.appBody)
+                                            .foregroundColor(theme.textPrimary)
                                         Spacer()
                                         Toggle("", isOn: Binding(
                                             get: { newFileItem.isEnabled },
@@ -123,10 +124,11 @@ struct RClickSettingsView: View {
                                         HStack {
                                             VStack(alignment: .leading) {
                                                 Text(template.name)
-                                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                                    .font(.appBody)
+                                                    .foregroundColor(theme.textPrimary)
                                                 Text(".\(template.extensionName)")
-                                                    .font(.system(size: 11, weight: .regular))
-                                                    .foregroundColor(Color(hex: "98989E"))
+                                                    .font(.appMicro)
+                                                    .foregroundColor(theme.textTertiary)
                                             }
                                             Spacer()
                                             Toggle("", isOn: Binding(
@@ -148,8 +150,8 @@ struct RClickSettingsView: View {
                     AppCard {
                         HStack {
                             Text(String(localized: "Reset to Defaults", table: "RClick"))
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(Color.adaptive(light: "FF3B30", dark: "FF453A"))
+                                .font(.appBodyEmphasized)
+                                .foregroundColor(theme.error)
                             Spacer()
                             AppButton(localized: "Reset", table: "Localizable", style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
                             .frame(width: 100)
@@ -165,6 +167,12 @@ struct RClickSettingsView: View {
                 }
             }
         }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(theme.appDivider)
+            .frame(height: 1)
     }
 
     // MARK: - Private

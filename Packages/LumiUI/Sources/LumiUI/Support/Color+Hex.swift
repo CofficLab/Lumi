@@ -1,6 +1,14 @@
 import AppKit
 import SwiftUI
 
+/// 解析 macOS 当前有效外观（不受 SwiftUI `preferredColorScheme` 残留影响）。
+@MainActor
+public enum SystemAppearanceResolver {
+    public static var effectiveColorScheme: ColorScheme {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+    }
+}
+
 extension Color {
     public init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -65,5 +73,19 @@ extension Color {
         }
         let index = Int(hash % UInt64(palette.count))
         return palette[max(0, index)]
+    }
+
+    /// 判断当前颜色在当前外观下是否为浅色（感知亮度 > 0.5）
+    ///
+    /// 使用 NSColor 解析后计算相对亮度，支持自适应颜色（adaptive color）。
+    public var isLightColor: Bool {
+        let nsColor = NSColor(self)
+        guard let rgbColor = nsColor.usingColorSpace(.sRGB) else { return false }
+        let r = Double(rgbColor.redComponent)
+        let g = Double(rgbColor.greenComponent)
+        let b = Double(rgbColor.blueComponent)
+        // ITU-R BT.601 感知亮度公式
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.5
     }
 }

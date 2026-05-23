@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import SwiftData
 
 /// 聊天消息实体
@@ -9,8 +10,10 @@ final class ChatMessageEntity {
     var content: String
     var timestamp: Date
     var isError: Bool
-    var toolCallsData: Data?  // 序列化的 ToolCall
-    var toolCallID: String?
+
+    /// 工具调用列表（一对多关系，独立存储在 ToolCallEntity 表中）
+    @Relationship(deleteRule: .cascade, inverse: \ToolCallEntity.message)
+    var toolCalls: [ToolCallEntity] = []
 
     /// 图片附件（多对多关系，独立存储在 ImageAttachmentEntity 表中）
     @Relationship(deleteRule: .deny, inverse: \ImageAttachmentEntity.messages)
@@ -51,16 +54,13 @@ final class ChatMessageEntity {
     }
     
     init(id: UUID = UUID(), role: MessageRole, content: String, timestamp: Date = Date(),
-         isError: Bool = false, toolCallsData: Data? = nil,
-         toolCallID: String? = nil,
+         isError: Bool = false,
          providerId: String? = nil, modelName: String? = nil) {
         self.id = id
         self._role = role.rawValue
         self.content = content
         self.timestamp = timestamp
         self.isError = isError
-        self.toolCallsData = toolCallsData
-        self.toolCallID = toolCallID
         self.providerId = providerId
         self.modelName = modelName
     }
@@ -110,10 +110,10 @@ final class ChatMessageEntity {
             return nil
         }
         
-        var toolCalls: [ToolCall]?
-        if let toolCallsData = toolCallsData {
-            toolCalls = try? JSONDecoder().decode([ToolCall].self, from: toolCallsData)
-        }
+        // 从关系中获取工具调用
+        let toolCallList: [ToolCall]? = toolCalls.isEmpty
+            ? nil
+            : toolCalls.map { $0.toToolCall() }
         
         // 从关系中获取图片附件
         let imageAttachments = images.map { $0.toImageAttachment() }
@@ -154,8 +154,7 @@ final class ChatMessageEntity {
             content: content,
             timestamp: timestamp,
             isError: isError,
-            toolCalls: toolCalls,
-            toolCallID: toolCallID,
+            toolCalls: toolCallList,
             images: imageAttachments,
             providerId: providerId,
             modelName: modelName,
@@ -177,7 +176,8 @@ final class ChatMessageEntity {
     
     /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
     ///
-    /// 注意：图片关系更新由 `ChatHistoryService.syncImageRelations` 处理，
+    /// 注意：图片关系和工具调用关系更新由 ChatHistoryService 的
+    /// syncImageRelations / syncToolCallRelations 处理，
     /// 此方法仅更新消息自身字段和性能指标。
     func apply(from message: ChatMessage, in context: ModelContext) {
         // 使用计算属性设置类型安全的角色
@@ -185,12 +185,6 @@ final class ChatMessageEntity {
         content = message.content
         timestamp = message.timestamp
         isError = message.isError
-        if let toolCalls = message.toolCalls {
-            toolCallsData = try? JSONEncoder().encode(toolCalls)
-        } else {
-            toolCallsData = nil
-        }
-        toolCallID = message.toolCallID
         providerId = message.providerId
         modelName = message.modelName
         rawErrorDetail = message.rawErrorDetail
@@ -227,21 +221,14 @@ final class ChatMessageEntity {
         }
     }
 
-    /// 从 ChatMessage 创建（不含图片关系，图片由 ChatHistoryService 单独处理）
+    /// 从 ChatMessage 创建（不含图片和工具调用关系，由 ChatHistoryService 单独处理）
     static func fromChatMessage(_ message: ChatMessage, in context: ModelContext) -> ChatMessageEntity {
-        var toolCallsData: Data?
-        if let toolCalls = message.toolCalls {
-            toolCallsData = try? JSONEncoder().encode(toolCalls)
-        }
-
         let entity = ChatMessageEntity(
             id: message.id,
             role: message.role,  // 类型安全的枚举
             content: message.content,
             timestamp: message.timestamp,
             isError: message.isError,
-            toolCallsData: toolCallsData,
-            toolCallID: message.toolCallID,
             providerId: message.providerId,
             modelName: message.modelName
         )

@@ -3,6 +3,8 @@ import LumiUI
 import Darwin
 
 struct LocalMachineInfoView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     private static func localChipName() -> String {
         var size: Int = 0
         sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
@@ -44,35 +46,33 @@ struct LocalMachineInfoView: View {
         let diskGB = Self.localDiskTotalGB()
         let osVer = ProcessInfo.processInfo.operatingSystemVersion
         let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
-        let style: Font = .system(size: 11, weight: .regular)
-        let color = Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Label(chip, systemImage: "cpu")
-                    .font(style)
-                    .foregroundColor(color)
-                Text("·").font(style).foregroundColor(color)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                Text("·").font(.appMicro).foregroundColor(theme.textSecondary)
                 Label("内存 \(ramGB) GB", systemImage: "memorychip")
-                    .font(style)
-                    .foregroundColor(color)
-                Text("·").font(style).foregroundColor(color)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                Text("·").font(.appMicro).foregroundColor(theme.textSecondary)
                 Label("磁盘 \(diskGB) GB", systemImage: "internaldrive")
-                    .font(style)
-                    .foregroundColor(color)
-                Text("·").font(style).foregroundColor(color)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                Text("·").font(.appMicro).foregroundColor(theme.textSecondary)
                 Label(osString, systemImage: "desktopcomputer")
-                    .font(style)
-                    .foregroundColor(color)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             }
             Text("请根据本机配置选择合适的模型进行下载和加载，以获得更稳定的体验。")
-                .font(.system(size: 11, weight: .regular))
-                .foregroundColor(Color(hex: "98989E"))
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .appSurface(
-            style: .custom(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08)),
+            style: .custom(theme.appStatusMutedFill),
             cornerRadius: 8
         )
     }

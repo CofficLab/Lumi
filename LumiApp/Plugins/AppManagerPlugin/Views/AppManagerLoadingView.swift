@@ -1,7 +1,10 @@
 import SwiftUI
+import LumiUI
 
 /// 应用管理器加载状态视图
 struct AppManagerLoadingView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     var message: String = String(localized: "Scanning applications...", table: "AppManager")
 
     var body: some View {
@@ -10,7 +13,8 @@ struct AppManagerLoadingView: View {
                 .scaleEffect(1.5)
 
             Text(message)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

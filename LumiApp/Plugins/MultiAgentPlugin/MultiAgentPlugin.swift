@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import os
 
 /// 多智能体插件
@@ -30,6 +31,7 @@ actor MultiAgentPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "person.3.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
+    static var category: PluginCategory { .agent }
     static var order: Int { 88 }
 
     static let shared = MultiAgentPlugin()

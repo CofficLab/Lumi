@@ -1573,8 +1573,7 @@ public final class EditorState: ObservableObject, SuperLog {
     
     /// 切换主题
     func setTheme(_ themeId: String) {
-        currentThemeId = themeId
-        currentTheme = resolveTheme(for: themeId)
+        applyEditorTheme(id: themeId)
         persistConfig()
     }
 
@@ -1584,8 +1583,7 @@ public final class EditorState: ObservableObject, SuperLog {
             currentThemeId: currentThemeId,
             incomingThemeId: themeId
         ) else { return }
-        currentThemeId = themeId
-        currentTheme = resolveTheme(for: themeId)
+        applyEditorTheme(id: themeId)
     }
 
     /// 获取所有可用主题
@@ -1593,14 +1591,23 @@ public final class EditorState: ObservableObject, SuperLog {
         editorExtensions.allThemes()
     }
 
+    /// 应用编辑器主题。先更新 `currentTheme` 再更新 `currentThemeId`，避免 SwiftUI
+    /// 在 `currentThemeId` 的 `onChange` 中读到尚未刷新的旧配色。
+    private func applyEditorTheme(id themeId: String) {
+        currentTheme = resolveTheme(for: themeId)
+        currentThemeId = themeId
+    }
+
     /// 根据主题 ID 解析 EditorTheme
     /// 优先从插件系统获取，fallback 到 EditorThemeAdapter 默认主题
     private func resolveTheme(for id: String) -> EditorTheme {
         if let contributor = editorExtensions.theme(for: id) {
+            logger.info("\(Self.t)✅ resolveTheme: found contributor for '\(id)'")
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
-        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id)'，使用 fallback")
+        let available = editorExtensions.allThemes().map(\.id)
+        logger.warning("\(Self.t)⚠️ resolveTheme: 找不到主题 contributor for '\(id)', available=\(available)")
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1611,12 +1618,10 @@ public final class EditorState: ObservableObject, SuperLog {
             if shouldRegisterThemeContributors {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
             }
+            let available = self.editorExtensions.allThemes().map(\.id)
+            logger.info("\(Self.t)🎨 observeThemeChanges: themeId='\(themeId)', current='\(self.currentThemeId)', available=\(available)")
             guard self.currentThemeId != themeId else { return }
-            if Self.verbose {
-                            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId) → \(themeId)")
-            }
-            self.currentThemeId = themeId
-            self.currentTheme = self.resolveTheme(for: themeId)
+            self.applyEditorTheme(id: themeId)
         }
     }
 
@@ -1627,20 +1632,18 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 AppThemeVM 当前主题同步到 EditorState。
     func syncInitialThemeFromExternal(_ editorThemeId: String) {
         let before = self.currentThemeId
-        guard before != editorThemeId else {
+        EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
+        if before == editorThemeId {
+            currentTheme = resolveTheme(for: editorThemeId)
             if Self.verbose {
-                if Self.verbose {
-                                    self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before)）")
-                }
+                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 刷新主题配色（\(editorThemeId)）")
             }
             return
         }
         if Self.verbose {
-                    self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before) → \(editorThemeId)")
+            self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before) → \(editorThemeId)")
         }
-        EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
-        self.currentThemeId = editorThemeId
-        self.currentTheme = self.resolveTheme(for: editorThemeId)
+        applyEditorTheme(id: editorThemeId)
     }
     
     // MARK: - File Loading

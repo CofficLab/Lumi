@@ -1,13 +1,13 @@
 import LumiUI
+import AgentToolKit
 import SwiftUI
 
 /// 助手消息与工具调用视图
 struct MessageWithToolCallsView: View {
-    let message: ChatMessage
-    let toolOutputMessages: [ChatMessage]
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
+    let message: ChatMessage
     @EnvironmentObject var permissionRequestViewModel: WindowPermissionRequestVM
-    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
     @LumiMotionPreferenceReader private var motionPreference
 
     @State private var showRawMessage: Bool = false
@@ -39,11 +39,7 @@ struct MessageWithToolCallsView: View {
     private func toolCallRow(for toolCall: ToolCall) -> some View {
         let isParametersPresented = parameterPopoverToolCallID == toolCall.id
         let isResultsPresented = resultPopoverToolCallID == toolCall.id
-        let isLoadingResult = timelineViewModel.isLoadingToolOutput(for: toolCall.id)
-        let resultMessages = timelineViewModel.toolOutputs(for: toolCall.id)
-        let effectiveResults = resultMessages.isEmpty
-            ? toolOutputMessages.filter { $0.toolCallID == toolCall.id }
-            : resultMessages
+        let isLoadingResult = toolCall.result == nil && toolCall.authorizationState != .userRejected
         let shouldShowAuthState = toolCall.authorizationState != .noRisk
 
         VStack(alignment: .leading, spacing: 8) {
@@ -54,21 +50,21 @@ struct MessageWithToolCallsView: View {
                 HStack(spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "wrench.and.screwdriver")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appCaptionEmphasized)
+                            .foregroundColor(theme.textSecondary)
 
                         Text(toolCall.name)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textPrimary)
                             .lineLimit(1)
 
                         if shouldShowAuthState {
                             Text("·")
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
 
                             Text(toolCall.authorizationState.displayName)
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
                                 .lineLimit(1)
                         }
                     }
@@ -78,8 +74,8 @@ struct MessageWithToolCallsView: View {
                     AppIconButton(
                         systemImage: "slider.horizontal.3",
                         tint: isParametersPresented
-                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
+                            ? theme.textPrimary
+                            : theme.textSecondary,
                         size: .regular,
                         isActive: isParametersPresented
                     ) {
@@ -98,8 +94,8 @@ struct MessageWithToolCallsView: View {
                     AppIconButton(
                         systemImage: isLoadingResult ? "hourglass" : "doc.text.magnifyingglass",
                         tint: isResultsPresented
-                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
+                            ? theme.textPrimary
+                            : theme.textSecondary,
                         size: .regular,
                         isActive: isResultsPresented
                     ) {
@@ -111,7 +107,7 @@ struct MessageWithToolCallsView: View {
                             title: String(localized: "调用结果", table: "CoreMessageRenderer"),
                             systemImage: "doc.text.magnifyingglass"
                         ) {
-                            ToolResultSectionView(outputs: effectiveResults, isLoading: isLoadingResult)
+                            ToolResultSectionView(result: toolCall.result, isLoading: isLoadingResult)
                         }
                     }
                 }
@@ -145,13 +141,7 @@ struct MessageWithToolCallsView: View {
     }
 
     private func toggleResultPopover(for toolCallID: String) {
-        let shouldShow = resultPopoverToolCallID != toolCallID
-
-        if shouldShow && !timelineViewModel.hasLoadedToolOutput(for: toolCallID) {
-            timelineViewModel.loadToolOutput(for: message, toolCallID: toolCallID)
-        }
-
-        resultPopoverToolCallID = shouldShow ? toolCallID : nil
+        resultPopoverToolCallID = resultPopoverToolCallID == toolCallID ? nil : toolCallID
     }
 
     private func popoverBinding(for toolCallID: String, selection: Binding<String?>) -> Binding<Bool> {
@@ -167,6 +157,8 @@ struct MessageWithToolCallsView: View {
 }
 
 private struct ToolDetailPopoverView<Content: View>: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let systemImage: String
     @ViewBuilder let content: Content
@@ -175,12 +167,12 @@ private struct ToolDetailPopoverView<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textSecondary)
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appCallout)
+                    .foregroundColor(theme.textPrimary)
             }
 
             content
@@ -226,15 +218,10 @@ private struct ToolCallContentSectionView: View {
 }
 
 private struct ToolResultSectionView: View {
-    let outputs: [ChatMessage]
-    let isLoading: Bool
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    private var combinedContent: String {
-        outputs
-            .map(\.content)
-            .joined(separator: "\n\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    let result: ToolCallResult?
+    let isLoading: Bool
 
     var body: some View {
         if isLoading {
@@ -242,13 +229,13 @@ private struct ToolResultSectionView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(String(localized: "查询结果中…", table: "CoreMessageRenderer"))
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
-        } else if !combinedContent.isEmpty {
-            GenericToolSectionView(content: combinedContent)
+        } else if let result, !result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            GenericToolSectionView(content: result.content)
         } else {
             EmptyToolSectionView(
                 systemImage: "info.circle",
@@ -259,6 +246,8 @@ private struct ToolResultSectionView: View {
 }
 
 private struct GenericToolSectionView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let content: String
 
     var body: some View {
@@ -268,8 +257,8 @@ private struct GenericToolSectionView: View {
         ) {
             ScrollView(.vertical, showsIndicators: true) {
                 Text(content)
-                    .font(.system(size: 13, weight: .regular, design: .monospaced))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
@@ -279,16 +268,18 @@ private struct GenericToolSectionView: View {
 }
 
 private struct EmptyToolSectionView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let systemImage: String
     let text: String
 
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: systemImage)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(theme.textSecondary)
             Text(text)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(SubtleToolCardModifier())

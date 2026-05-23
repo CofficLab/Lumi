@@ -28,7 +28,6 @@ public struct MarkdownBlockRenderer: View {
 
     @State private var blocks: [MarkdownBlock] = []
     @Environment(\.preferOuterScroll) private var preferOuterScroll
-    @Environment(\.codeHighlightProvider) private var highlightProvider
 
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.blockSpacing) {
@@ -139,8 +138,7 @@ public struct MarkdownBlockRenderer: View {
                 code: code,
                 language: language,
                 font: theme.codeFont,
-                preferOuterScroll: preferOuterScroll,
-                highlightProvider: highlightProvider
+                preferOuterScroll: preferOuterScroll
             )
         }
         .background(theme.codeBlockBackground)

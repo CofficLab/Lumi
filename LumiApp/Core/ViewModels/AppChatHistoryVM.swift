@@ -1,8 +1,9 @@
 import Foundation
+import LLMKit
 
 /// 聊天历史 ViewModel
 ///
-/// 管理聊天历史的服务访问，提供统一的聊天历史操作接口。
+/// 管理聊天历史和对话的服务访问，提供统一的操作接口。
 ///
 /// ## 初始化规则
 ///
@@ -12,26 +13,20 @@ import Foundation
 final class AppChatHistoryVM: ObservableObject {
     // MARK: - Properties
 
-    /// 聊天历史服务
+    /// 聊天历史服务（消息 + 对话 CRUD）
     let chatHistoryService: ChatHistoryService
+
+    /// 性能统计服务
+    let performanceService: PerformanceService
 
     // MARK: - Initialization
 
-    init(chatHistoryService: ChatHistoryService) {
+    init(chatHistoryService: ChatHistoryService, performanceService: PerformanceService) {
         self.chatHistoryService = chatHistoryService
+        self.performanceService = performanceService
     }
 
-    // MARK: - Convenience Methods
-
-    /// 获取模型详细性能统计
-    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
-        chatHistoryService.getModelDetailedStats()
-    }
-
-    /// 获取模型延迟统计
-    func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
-        chatHistoryService.getModelLatencyStats()
-    }
+    // MARK: - 消息操作（委托给 ChatHistoryService）
 
     /// 分页加载消息
     func loadMessagesPage(
@@ -43,17 +38,6 @@ final class AppChatHistoryVM: ObservableObject {
             forConversationId: conversationId,
             limit: limit,
             beforeTimestamp: beforeTimestamp
-        )
-    }
-
-    /// 加载工具输出消息
-    func loadToolOutputMessages(
-        forConversationId conversationId: UUID,
-        toolCallIDs: [String]
-    ) async -> [ChatMessage] {
-        await chatHistoryService.loadToolOutputMessages(
-            forConversationId: conversationId,
-            toolCallIDs: toolCallIDs
         )
     }
 
@@ -92,5 +76,86 @@ final class AppChatHistoryVM: ObservableObject {
     /// - Returns: 实际删除的消息数量
     func deleteMessagesAsync(messageIds: [UUID], conversationId: UUID) async -> Int {
         await chatHistoryService.deleteMessagesAsync(messageIds: messageIds, conversationId: conversationId)
+    }
+
+    // MARK: - 对话操作（委托给 ChatHistoryService）
+
+    /// 创建新对话
+    @discardableResult
+    func createConversation(
+        projectId: String? = nil,
+        title: String = "新对话",
+        chatMode: String? = nil
+    ) -> Conversation {
+        chatHistoryService.createConversation(
+            projectId: projectId,
+            title: title,
+            chatMode: chatMode
+        )
+    }
+
+    /// 获取所有对话（按创建时间倒序）
+    func fetchAllConversations() -> [Conversation] {
+        chatHistoryService.fetchAllConversations()
+    }
+
+    /// 分页获取对话
+    func fetchConversationsPage(
+        limit: Int,
+        offset: Int,
+        projectId: String? = nil
+    ) -> [Conversation] {
+        chatHistoryService.fetchConversationsPage(
+            limit: limit,
+            offset: offset,
+            projectId: projectId
+        )
+    }
+
+    /// 获取指定项目最近更新的一个对话
+    func fetchLatestConversation(projectId: String) -> Conversation? {
+        chatHistoryService.fetchLatestConversation(projectId: projectId)
+    }
+
+    /// 根据 ID 获取对话
+    func fetchConversation(id: UUID) -> Conversation? {
+        chatHistoryService.fetchConversation(id: id)
+    }
+
+    /// 更新对话标题
+    func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
+        chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
+    }
+
+    /// 基于用户消息自动生成会话标题
+    func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
+        await chatHistoryService.generateConversationTitle(from: userMessage, config: config)
+    }
+
+    /// 更新对话的供应商/模型偏好
+    func updateModelPreference(_ conversation: Conversation, providerId: String?, model: String?) {
+        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+    }
+
+    /// 更新对话的聊天模式偏好
+    func updateChatMode(_ conversation: Conversation, chatMode: String?) {
+        chatHistoryService.updateChatMode(conversation, chatMode: chatMode)
+    }
+
+    /// 删除对话
+    func deleteConversation(_ conversation: Conversation) {
+        chatHistoryService.deleteConversation(conversation)
+    }
+
+    // MARK: - 性能统计（委托给 PerformanceService）
+
+    /// 获取每个供应商和模型的平均耗时
+    func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
+        performanceService.getModelLatencyStats()
+    }
+
+    /// 获取每个供应商和模型的详细性能统计
+    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
+        performanceService.getModelDetailedStats()
     }
 }

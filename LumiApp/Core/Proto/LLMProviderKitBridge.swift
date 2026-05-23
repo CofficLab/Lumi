@@ -1,5 +1,6 @@
 import Foundation
 import LLMProviderKit
+import AgentToolKit
 
 // MARK: - SuperAgentTool 桥接到 LLMToolSchemaProviding
 //
@@ -13,12 +14,6 @@ struct SuperAgentToolBridge: LLMToolSchemaProviding {
     var toolDescription: String { tool.description(for: .english) }
     var inputSchema: [String: Any] { tool.inputSchema(for: .english) }
 }
-
-// MARK: - Kit 类型别名
-//
-// 注意：不能使用 private/fileprivate，因为扩展初始化方法需要能被其他文件看到。
-// 这些类型别名仅供本文件内部使用，但 Swift 没有"仅限本文件可见的类型别名但允许跨文件扩展"的机制。
-// 因此我们使用前缀命名来避免冲突。
 
 // MARK: - MessageRole 转换
 
@@ -53,7 +48,7 @@ extension MessageRole {
 // MARK: - ToolCall 转换
 
 extension LLMProviderKit.ToolCall {
-    init(app toolCall: ToolCall) {
+    init(app toolCall: AgentToolKit.ToolCall) {
         self.init(
             id: toolCall.id,
             name: toolCall.name,
@@ -62,7 +57,7 @@ extension LLMProviderKit.ToolCall {
     }
 }
 
-extension ToolCall {
+extension AgentToolKit.ToolCall {
     init(kit toolCall: LLMProviderKit.ToolCall) {
         self.init(id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments)
     }
@@ -90,7 +85,7 @@ extension StreamChunk {
         self.init(
             content: chunk.content,
             isDone: chunk.isDone,
-            toolCalls: chunk.toolCalls?.map { ToolCall(kit: $0) },
+            toolCalls: chunk.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) },
             error: chunk.error,
             partialJson: chunk.partialJson,
             eventType: chunk.eventType.map { StreamEventType(kit: $0) },
@@ -113,7 +108,7 @@ extension StreamEventType {
         case .messageStop:        self = .messageStop
         case .contentBlockStart:  self = .contentBlockStart
         case .contentBlockDelta:  self = .contentBlockDelta
-        case .contentBlockStop:   self = .contentBlockStop
+        case .contentBlockStop:  self = .contentBlockStop
         case .thinkingDelta:      self = .thinkingDelta
         case .textDelta:          self = .textDelta
         case .inputJsonDelta:     self = .inputJsonDelta

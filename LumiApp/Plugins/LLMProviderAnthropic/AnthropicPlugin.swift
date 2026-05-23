@@ -7,6 +7,7 @@ actor AnthropicPlugin: SuperPlugin {
     static let displayName = "Anthropic"
     static let description = "Claude AI by Anthropic"
     static let iconName = "brain"
+    static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
     static let enable: Bool = true
 

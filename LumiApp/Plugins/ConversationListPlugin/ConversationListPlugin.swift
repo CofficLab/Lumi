@@ -12,6 +12,7 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💬"
+    static var category: PluginCategory { .agent }
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
     static let id: String = "ConversationList"

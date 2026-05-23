@@ -13,10 +13,11 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../LumiUI"),
         .package(path: "../EditorKernel"),
         .package(path: "../LumiCodeEditSourceEditor"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.1"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20"),
+        .package(path: "../CodeEditTextView"),
+        .package(path: "../CodeEditLanguages"),
         .package(path: "../SuperLogKit"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
@@ -25,6 +26,7 @@ let package = Package(
         .target(
             name: "EditorService",
             dependencies: [
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),

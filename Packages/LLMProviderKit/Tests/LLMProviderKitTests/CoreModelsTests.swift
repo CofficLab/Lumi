@@ -5,6 +5,7 @@ final class CoreModelsTests: XCTestCase {
     func testModelCatalogItemStoresSpecAndCapabilities() {
         let item = LLMModelCatalogItem(
             id: "gpt-4o",
+            description: "OpenAI 旗舰多模态模型，支持视觉和工具调用",
             spec: LLMModelSpec(
                 contextWindowSize: 128_000,
                 supportsVision: true,

@@ -20,6 +20,7 @@ actor LSPServiceEditorPlugin: SuperPlugin {
     static let order = 5
     static let enable = true
     static var isConfigurable: Bool { false }
+    static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -3,6 +3,8 @@ import SwiftUI
 import DockerKit
 
 struct DockerImagesView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @StateObject private var viewModel = DockerManagerViewModel()
     @State private var showPullSheet = false
     @State private var pullImageName = ""
@@ -38,7 +40,7 @@ struct DockerImagesView: View {
                     } label: {
                         GlassRow {
                             Label(String(localized: "Sort", table: "DockerManager"), systemImage: "arrow.up.arrow.down")
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .foregroundColor(theme.textPrimary)
                         }
                         .frame(width: 90)
                     }
@@ -94,8 +96,8 @@ struct DockerImagesView: View {
                 // Footer
                 HStack {
                     Text("\(viewModel.filteredImages.count) images")
-                        .font(.caption)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                     Spacer()
                     AppButton(String(localized: "Import", table: "DockerManager"), style: .secondary, size: .small) {
                         showFileImporter = true
@@ -124,8 +126,8 @@ struct DockerImagesView: View {
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
                 Text(String(localized: "Pull New Image", table: "DockerManager"))
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.textPrimary)
                 GlassTextField(
                     title: "Image",
                     text: $pullImageName,
@@ -153,12 +155,12 @@ struct DockerImagesView: View {
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
                 Text(String(localized: "Tag Image", table: "DockerManager"))
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .font(.appTitle)
+                    .foregroundColor(theme.textPrimary)
                 if let img = imageToTag {
                     Text(String(localized: "Source:", table: "DockerManager") + " \(img.name)")
-                        .font(.caption)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
                 GlassTextField(
                     title: "New Tag",
@@ -232,21 +234,23 @@ struct DockerImageDocument: FileDocument {
 }
 
 struct DockerImageRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let image: DockerImage
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "cube")
-                .foregroundColor(Color(hex: "0A84FF"))
+                .foregroundColor(theme.info)
             VStack(alignment: .leading, spacing: 2) {
                 Text(image.name)
                     .font(.body)
                     .fontWeight(.medium)
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .foregroundColor(theme.textPrimary)
                 Text(image.shortID)
-                    .font(.caption)
+                    .font(.appMicro)
                     .fontDesign(.monospaced)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(theme.textSecondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
@@ -259,6 +263,8 @@ struct DockerImageRow: View {
 }
 
 struct DockerImageDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let image: DockerImage
     let detail: DockerInspect?
     let history: [DockerImageHistory]
@@ -275,12 +281,12 @@ struct DockerImageDetailView: View {
                         Text(image.repository)
                             .font(.title)
                             .fontWeight(.bold)
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .foregroundColor(theme.textPrimary)
                         HStack {
                             AppTag(image.tag, style: .accent)
                             Text(image.imageID)
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
                         }
                     }
                     Spacer()
@@ -296,13 +302,13 @@ struct DockerImageDetailView: View {
                     AppCard(style: .subtle, cornerRadius: 8) {
                         VStack(alignment: .leading, spacing: 8) {
                         Text(String(localized: "Security Scan", table: "DockerManager"))
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .font(.appBody)
+                            .foregroundColor(theme.textPrimary)
 
                         ScrollView([.horizontal, .vertical]) {
                             Text(scanResult)
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .foregroundColor(theme.textPrimary)
                                 .padding()
                         }
                         .frame(maxHeight: 200)
@@ -328,8 +334,8 @@ struct DockerImageDetailView: View {
                         AppCard(style: .subtle, cornerRadius: 8) {
                             VStack(alignment: .leading, spacing: 8) {
                             Text(String(localized: "Configuration", table: "DockerManager"))
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
 
                             if let cmds = config.Cmd {
                                 Text("CMD: " + cmds.joined(separator: " "))
@@ -338,18 +344,18 @@ struct DockerImageDetailView: View {
 
                             if let envs = config.Env {
                                 Text(String(localized: "ENV:", table: "DockerManager"))
-                                    .font(.caption)
+                                    .font(.appMicro)
                                     .fontWeight(.bold)
-                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    .foregroundColor(theme.textSecondary)
                                 ForEach(envs.prefix(5), id: \.self) { env in
                                     Text(env)
                                         .font(.monospaced(.caption)())
-                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                        .foregroundColor(theme.textSecondary)
                                 }
                                 if envs.count > 5 {
                                     Text("... (+ \(envs.count - 5)) " + String(localized: "more", table: "DockerManager"))
-                                        .font(.caption)
-                                        .foregroundColor(Color(hex: "98989E"))
+                                        .font(.appMicro)
+                                        .foregroundColor(theme.textTertiary)
                                 }
                             }
                         }
@@ -361,26 +367,26 @@ struct DockerImageDetailView: View {
                 AppCard(style: .subtle, cornerRadius: 8) {
                     VStack(alignment: .leading, spacing: 8) {
                     Text(String(localized: "History / Layers", table: "DockerManager"))
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
 
                     ForEach(history) { layer in
                         HStack(alignment: .top) {
                             Text(layer.id.prefix(8))
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
                                 .frame(width: 60, alignment: .leading)
 
                             Text(layer.CreatedBy)
                                 .font(.monospaced(.caption)())
                                 .lineLimit(2)
-                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                                .foregroundColor(theme.textPrimary)
 
                             Spacer()
 
                             Text(layer.Size)
-                                .font(.caption)
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .font(.appMicro)
+                                .foregroundColor(theme.textSecondary)
                         }
                         .padding(.vertical, 4)
                         GlassDivider()

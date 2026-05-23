@@ -6,6 +6,42 @@
 
 ---
 
+## 0. App UI LumiUI 化迁移
+
+> 目标：让整个 app 的通用 UI 尽可能由 `Packages/LumiUI` 承担，app 和插件只表达业务结构、状态和少量领域特定布局。首轮审计见 `docs/lumiui-migration-audit.md`，可重复运行 `scripts/audit-lumiui-styles.sh LumiApp` 更新基线。
+
+### Phase 1: 审计和边界定义
+
+- [x] 增加可重复运行的 UI 样式审计脚本，统计 `Color.adaptive`、`Color(hex:)`、`.font(.system...)`、`RoundedRectangle`、`.cornerRadius(...)`、`activeChromeTheme.*Color()` 等逃逸点。
+- [x] 生成首轮审计文档，按 Core Settings、Chat、Status/Menu Bar、Editor Plugins、Other Plugins 汇总迁移热点。
+- [ ] 标记可直接替换为现有 LumiUI 组件的调用点，例如 `Button` -> `AppButton/AppIconButton`、自定义 row -> `AppListRow/GlassRow`、空态 -> `AppEmptyState`、错误态 -> `AppErrorBanner`、搜索框 -> `AppSearchBar`。
+- [ ] 标记不能直接替换的重复模式，沉淀为 LumiUI 新组件或组件参数，而不是在 app 层复制 modifier。
+- [ ] 明确例外清单：编辑器语法高亮、terminal、QuickLook/PDF/image preview、营销截图、第三方嵌入控件。
+
+### Phase 2: 补齐 LumiUI 缺口
+
+- [x] 增加公开 typography API：title、section、body、caption、mono caption、status text。
+- [x] 增加公开 semantic surface API：panel、popover、toolbar strip、list row hover/selected、divider、focus ring。
+- [ ] 完善 settings/form/list scaffold：settings section、row、picker row、text field row、toggle row、footer actions。
+- [ ] 完善状态组件：metric card、status pill、inline progress、inline loading、empty/loading/error state。
+
+### Phase 3: 第一批迁移
+
+- [ ] 迁移 Core Settings 中重复 row/page：`PluginSettingsView`、`LocalModelRow`、provider/model row 系列。
+- [x] 用 `PluginSettingsView` 做小范围试迁移，验证 app 侧可以直接使用 `Font.app*` 和 `LumiUITheme` 语义色。
+- [ ] 迁移状态栏和菜单栏详情：DeviceInfo、NetworkManager、HistoryDB、AgentRequestLog、RAG status detail。
+- [ ] 迁移管理类插件详情页：Git commit detail、Docker images、Model availability、GitHub plugin settings。
+- [ ] 每批迁移后重新运行审计脚本，记录数量下降和剩余例外。
+
+### 成功标准
+
+- [ ] Core Views 和主要插件视图不再直接写通用颜色、字号、圆角、阴影和动效。
+- [ ] 主题切换能覆盖主要 app chrome、设置页、聊天页、状态栏弹层和插件管理页。
+- [ ] 新 UI 能从 LumiUI 组合出来，缺组件时优先补 LumiUI，而不是在业务层临时写样式。
+- [ ] 👤 需要用户参与：深色/浅色主题各完成一轮视觉验收。
+
+---
+
 ## 1. App UI 平滑度
 
 > 目标：让 Lumi 在输入、聊天流式、面板切换、主题/布局刷新等高频 UI 路径中更流畅。
@@ -153,7 +189,100 @@
 
 ---
 
-## 2. 文件树图标主题
+## 19. Editor 性能优化
+
+> 目标：解决 Editor 相关功能的卡顿问题，提升编辑、滚动、高亮和 LSP 交互的流畅度。详细分析见 `docs/editor-performance-analysis.md`。
+
+### Phase 1: TreeSitter 解析优化 (高优先级)
+
+- [x] 调整 `TreeSitterClient.Constants.parserTimeout` 从 50ms 到 100ms，减少超时导致的重新解析
+- [x] 降低 `maxSyncContentLength` 从 1MB 到 500KB，避免大文件阻塞主线程
+- [x] 降低 `maxSyncEditLength` 从 1024 到 512，减少编辑操作的同步处理阈值
+- [ ] 优化异步任务调度：使用 `Task(priority: .utility)` 替代 `.userInitiated`，降低主线程争用
+- [ ] 实现增量语法树更新：只更新受影响的语法范围，避免全量重新解析
+- [ ] 添加 TreeSitter 解析性能监控：记录解析时间、取消次数、异步切换次数
+
+### Phase 2: Highlighting 延迟更新 (高优先级)
+
+- [x] 为 `Highlighter.textStorage(_:didProcessEditing:)` 添加防抖机制（16ms 延迟，60fps）
+- [x] 优化 `visibleRangeProvider.visibleTextChanged()`：只在可见区域真正变化时触发
+- [x] 添加 `currentVisibleRange` 属性用于防抖比较
+- [ ] 实现 HighlightProvider 并行处理：使用 `TaskGroup` 并行执行多个 provider 的高亮查询
+- [ ] 添加高亮更新性能监控：记录更新频率、单次更新耗时、可见区域变化次数
+- [ ] 优化 `StyledRangeContainer.runsIn(range:)`：缓存最近查询结果，避免重复计算
+
+### Phase 3: LineOffsetTable 增量更新 (中优先级)
+
+- [x] 实现 `LineOffsetTable.update(editRange:changeInLength:)` 增量更新方法
+- [x] 避免每次编辑都重建行偏移表，只更新受影响的行
+- [x] 优化行计数初始化：使用更高效的方法替代 `content.filter { $0 == "\n" }`
+- [ ] 添加行偏移表性能监控：记录重建次数、增量更新次数、查询命中率
+
+### Phase 4: TextLayoutManager 布局优化 (中优先级)
+
+- [x] 调整 `verticalLayoutPadding` 从 350 到 200，减少不必要的预布局行数
+- [ ] 增加 View 复用池大小：从默认值增加到 200，减少视图创建开销
+- [ ] 优化 `layoutLines` 循环：跳过不需要重新布局的行，减少循环迭代次数
+- [ ] 实现布局结果缓存：缓存最近的布局结果，避免相同可见区域重复布局
+- [ ] 添加布局性能监控：记录单次布局耗时、布局行数、视图创建/复用比例
+
+### Phase 5: LSP 请求调度优化 (中优先级)
+
+- [ ] 实现 LSP 请求优先级队列：区分补全、诊断、悬停等不同优先级
+- [ ] 优化 debounce 策略：为不同场景（输入、滚动、文件切换）设置不同的 debounce 时间
+- [ ] 添加 LSP 请求取消机制：确保取消的请求不会执行回调
+- [ ] 实现 LSP 结果缓存：缓存最近的查询结果，避免相同位置重复请求
+- [ ] 添加 LSP 请求性能监控：记录请求频率、响应时间、取消比例
+
+### Phase 6: 内存泄漏修复 (高优先级)
+
+- [ ] 实现插件 `onDisable()` 调用：确保禁用插件时清理资源
+- [ ] 添加 `WindowContainer.cleanup()` 方法：窗口关闭时清理编辑器状态
+- [ ] 清理 EditorSession 状态：包括 LSP 请求、定时器、观察者、缓存的 UI 状态
+- [ ] 清理插件 UI 缓存：窗口关闭、插件禁用时清除 `AnyView` 缓存
+- [ ] 添加内存监控：记录编辑器相关对象的生命周期、内存使用峰值
+
+### Phase 7: EditorUndoManager 优化 (低优先级)
+
+- [ ] 实现撤销栈大小限制：最大 100 个条目，超出时移除最旧的
+- [ ] 优化撤销状态存储：只存储变化的部分，而不是完整文本快照
+- [ ] 实现撤销状态压缩：合并连续的小编辑为一个撤销条目
+- [ ] 添加撤销管理器性能监控：记录栈大小、内存使用、压缩次数
+
+### Phase 8: ContextMenuManager 优化 (低优先级)
+
+- [ ] 优化 ObjC runtime 使用：缓存方法查找结果，避免重复的 `class_replaceMethod`
+- [ ] 减少关联对象查找：缓存 helper 引用，避免每次右键都查找
+- [ ] 实现菜单项复用：复用已创建的 NSMenuItem，减少对象创建
+- [ ] 添加右键菜单性能监控：记录菜单创建时间、注入时间、菜单项数量
+
+### 性能监控指标
+
+建议在 `EditorPerformance.swift` 中添加以下监控点：
+
+```swift
+case treeSitterParse = "treesitter.parse"
+case highlightUpdate = "highlight.update"
+case layoutCalculation = "layout.calculation"
+case lspRequestQueue = "lsp.request.queue"
+case memoryPressure = "memory.pressure"
+case undoManagerSize = "undoManager.size"
+```
+
+### 成功标准
+
+- [ ] 快速输入时不卡顿，保持 60fps
+- [ ] 大文件（>1MB）编辑流畅，无明显延迟
+- [ ] 滚动时高亮更新不掉帧
+- [ ] LSP 请求响应及时，无堆积
+- [ ] 长时间运行无内存泄漏，对象正确释放
+- [ ] 👤 需要用户参与：在不同大小文件（小、中、大、超大）上验证编辑流畅度
+- [ ] 👤 需要用户参与：长时间使用（>2小时）后验证无明显卡顿
+- [ ] 👤 需要用户参与：使用 Instruments 验证主线程工作减少 40-60%
+
+---
+
+## 20. 文件树图标主题
 
 > 目标：让 Lumi 主题插件通过单一 `LumiThemeContribution` 配置文件树图标。
 
@@ -506,6 +635,81 @@
 ### Phase 4: 调试与工具链
 
 - [ ] Vue DevTools 桥接、Vite 联动优化
+
+---
+
+## 21. 编辑器主题切换代码高亮不更新
+
+> 目标：切换主题后编辑器代码高亮配色正确反映新主题。详细分析见下文。
+
+### 问题分析
+
+**现象**：无论切换什么主题，编辑器中的代码语法高亮配色完全不变。
+
+**完整数据流追踪**：
+
+1. `AppThemeVM.selectTheme()` → 发送 `lumiThemeDidChange` 通知
+2. `ThemePersistenceAnchor.syncEditorThemeToWindow()` → `editorVM.syncInitialEditorTheme(editorThemeId)`
+3. `EditorState.syncInitialThemeFromExternal()` → `currentTheme = resolveTheme(for: editorThemeId)`
+4. `EditorState.observeThemeChanges()` 也通过通知同步设置 `currentTheme`
+5. `SourceEditorView.onChange(of: state.currentTheme)` → `updateConfigCache()` → 新 `SourceEditorConfiguration`
+6. `SourceEditor.updateNSViewController()` → `paramsAreEqual()` 比较配置 → 如果不同则 `controller.configuration = configuration`
+7. `SourceEditorConfiguration.Appearance.didSetOnController()` → `updateControllerNewTheme()` → 更新文本属性
+8. `Highlighter.invalidate()` → 触发全文重新高亮
+9. `Highlighter.styleContainerDidUpdate(in:)` → 调用 `attributeProvider.attributesFor(capture)` → 使用新 `theme.colorFor(capture)`
+
+**根因**：整个更新链路依赖 `EditorTheme` 的 `Equatable` 实现进行变更检测。存在两层潜在短路：
+
+#### 短路点 1：`onChange(of: state.currentTheme)` 可能不触发
+
+- `SourceEditorView` 使用 `onChange(of: state.currentTheme)` 监听主题变化
+- `EditorTheme` 使用编译器自动合成的 `Equatable`
+- `EditorTheme` 包含 `EditorTheme.Attribute`（内部有 `NSColor`）
+- `NSColor` 的 `==` 比较依赖 color space，在动态颜色 vs 静态颜色、不同 color space 之间比较时行为不可靠
+- 如果两个不同主题的 `EditorTheme` 被错误判断为相等，`@Published` 不会发出变更信号，`onChange` 不会被触发
+
+#### 短路点 2：`paramsAreEqual` 跳过配置更新
+
+- `SourceEditor.updateNSViewController` 中通过 `paramsAreEqual` 进行 diff：
+  ```swift
+  guard !paramsAreEqual(controller: controller, coordinator: context.coordinator) else { return }
+  ```
+- `paramsAreEqual` 比较 `controller.configuration == configuration`
+- `SourceEditorConfiguration` 及其 `Appearance` 都是 `Equatable`
+- `Appearance` 包含 `theme: EditorTheme`
+- 如果 `EditorTheme` 的 `==` 比较返回 `true`（即使两个主题实际不同），`paramsAreEqual` 返回 `true`
+- 导致 `controller.configuration = configuration` **永远不会执行**
+- 进而 `Appearance.didSetOnController` → `updateControllerNewTheme` 不会被调用
+- 高亮配色永远不会更新
+
+### 修复方案（已实施）
+
+- [x] **在 `Appearance` 中增加 `themeIdentifier: String` 字段**：通过可靠的 `String` 比较进行主题变更检测，绕过 `NSColor` 的 `Equatable` 不可靠问题。
+- [x] **`SourceEditorAdapter` 传递 `currentThemeId`**：将 `EditorState.currentThemeId` 作为 `themeIdentifier` 传入 `Appearance`，确保主题 ID 在整个配置链路中流转。
+- [x] **`didSetOnController` 使用 `themeIdentifier` 比较**：将 `oldConfig?.theme != theme` 改为 `oldConfig?.themeIdentifier != themeIdentifier`，保证主题更新不被短路。
+- [x] **自动合成的 `Equatable` 自动覆盖**：`Appearance` 的 `Equatable` 现在包含 `themeIdentifier` 字段，`paramsAreEqual` 中的 `controller.configuration == configuration` 比较自动使用可靠的字符串比较。
+
+### 修复后数据流
+
+1. 用户切换主题 → `EditorState.currentThemeId` 变化（`String`，可靠）
+2. `SourceEditorView.onChange(of: state.currentThemeId)` → `updateConfigCache()`
+3. `SourceEditorAdapter.configuration()` 将 `currentThemeId` 作为 `themeIdentifier` 传入 `Appearance`
+4. `SourceEditor.updateNSViewController()` → `paramsAreEqual()` 比较配置
+5. `Appearance.Equatable` 比较 `themeIdentifier`（String）→ 不等 → 返回 `false`
+6. `controller.configuration = configuration` → 触发 `didSetOnController`
+7. `didSetOnController` 比较 `oldConfig?.themeIdentifier != themeIdentifier` → 不等 → 调用 `updateControllerNewTheme`
+8. `Highlighter.invalidate()` → 全文重新高亮 → 配色正确更新
+
+### 涉及文件
+
+- `Packages/LumiCodeEditSourceEditor/Sources/CodeEditSourceEditor/SourceEditorConfiguration/SourceEditorConfiguration+Appearance.swift` — 增加 `themeIdentifier` 字段，修改 `didSetOnController` 比较逻辑
+- `Packages/EditorService/Sources/EditorService/Editor/SourceEditorAdapter.swift` — 传递 `currentThemeId` 作为 `themeIdentifier`
+- `Packages/LumiCodeEditSourceEditor/Sources/CodeEditSourceEditor/Theme/EditorTheme.swift` — 未修改（Equatable 行为不变）
+- `Packages/LumiCodeEditSourceEditor/Sources/CodeEditSourceEditor/SourceEditor/SourceEditor.swift` — 未修改（`paramsAreEqual` 通过 Equatable 自动生效）
+- `LumiApp/Plugins/EditorPanelPlugin/Views/SourceEditorView.swift` — 未修改（已有 `onChange(of: state.currentThemeId)` 兜底）
+- `Packages/EditorService/Sources/EditorService/Store/EditorState.swift` — 未修改
+
+- [ ] **👤 需要用户参与**：修复后切换每个主题，验证代码高亮配色正确更新（关键字、字符串、注释、类型等各有不同颜色）。
 
 ---
 

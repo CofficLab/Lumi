@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 将相关的缓存 GitHub 生态参考注入到外发聊天上下文中。
 ///

@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 工具调用循环检测插件
 ///
@@ -11,6 +12,7 @@ actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "检测并防止工具调用进入无限循环。", table: "ToolCallLoopDetection")
     static let iconName: String = "arrow.triangle.2.circlepath"
     static let isConfigurable: Bool = false
+    static var category: PluginCategory { .agent }
     static let enable: Bool = true
     static var order: Int { 9 }
 

@@ -45,21 +45,10 @@ private struct SampleInsightsSettingsToggleRow: View {
     @ObservedObject private var store = SampleInsightsSettingsStore.shared
 
     var body: some View {
-        GlassRow {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Sample Insights Inline Tips", table: "SampleInsights"))
-                        .font(.system(size: 15, weight: .medium))
-                    Text(String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"))
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(hex: "98989E"))
-                }
-
-                Spacer()
-
-                Toggle("", isOn: $store.inlineTipsEnabled)
-                    .labelsHidden()
-            }
-        }
+        AppSettingsToggleRow(
+            String(localized: "Sample Insights Inline Tips", table: "SampleInsights"),
+            description: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"),
+            isOn: $store.inlineTipsEnabled
+        )
     }
 }

@@ -6,6 +6,8 @@ import SwiftUI
 ///
 /// 展示可用的等宽字体列表，支持搜索过滤和实时预览。
 struct FontConfigDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     @ObservedObject var viewModel: FontConfigViewModel
     @State private var searchText: String = ""
 
@@ -18,30 +20,21 @@ struct FontConfigDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 标题栏
-            HStack {
-                Image(systemName: "textformat")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "0A84FF"))
-                Text(String(localized: "Editor Font", table: "FontConfig"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "1C1C1E"))
-                Spacer()
-                currentFontBadge
+        StatusBarPopoverScaffold(
+            title: String(localized: "Editor Font", table: "FontConfig"),
+            systemImage: "textformat"
+        ) {
+            currentFontBadge
+        } content: {
+            VStack(alignment: .leading, spacing: 8) {
+                previewSection
+
+                GlassDivider()
+
+                searchField
+
+                fontList
             }
-
-            // 预览区
-            previewSection
-
-            Divider()
-                .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
-
-            // 搜索框
-            searchField
-
-            // 字体列表
-            fontList
         }
     }
 
@@ -54,11 +47,11 @@ struct FontConfigDetailView: View {
     private var previewSection: some View {
         Text("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~")
             .font(.custom(viewModel.selectedPostScriptName ?? "SF Mono", size: 12))
-            .foregroundColor(Color(hex: "1C1C1E"))
+            .foregroundColor(theme.textPrimary)
             .lineSpacing(2)
-            .padding(10)
+            .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .appSurface(style: .subtle, cornerRadius: 6)
+            .appSurface(style: .subtle, cornerRadius: 8)
     }
 
     private var searchField: some View {
@@ -71,7 +64,7 @@ struct FontConfigDetailView: View {
     private var fontList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                // 系统默认选项
+                // MARK: 系统默认选项
                 FontRow(
                     title: String(localized: "System Monospaced", table: "FontConfig"),
                     subtitle: "SF Mono",
@@ -81,8 +74,8 @@ struct FontConfigDetailView: View {
                     viewModel.selectFont(nil)
                 }
 
-                Divider()
-                    .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
+                GlassDivider()
+                    .padding(.horizontal, 16)
 
                 ForEach(filteredFonts) { font in
                     FontRow(
@@ -95,9 +88,8 @@ struct FontConfigDetailView: View {
                     }
 
                     if font.id != filteredFonts.last?.id {
-                        Divider()
-                            .padding(.leading, 12)
-                            .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
+                        GlassDivider()
+                            .padding(.leading, 8)
                     }
                 }
             }
@@ -109,6 +101,8 @@ struct FontConfigDetailView: View {
 // MARK: - Font Row
 
 private struct FontRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let title: String
     let subtitle: String
     let isSelected: Bool
@@ -120,18 +114,18 @@ private struct FontRow: View {
             HStack(spacing: 10) {
                 // 选中指示
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 12))
-                    .foregroundColor(isSelected ? Color(hex: "0A84FF") : Color(hex: "98989E").opacity(0.4))
+                    .font(.appCaption)
+                    .foregroundColor(isSelected ? theme.primary : theme.textTertiary.opacity(0.4))
 
                 // 字体信息
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(previewFontName.map { .custom($0, size: 12) } ?? .system(size: 12))
-                        .foregroundColor(Color(hex: "1C1C1E"))
+                        .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
                     Text(subtitle)
-                        .font(.system(size: 9))
-                        .foregroundColor(Color(hex: "98989E"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textTertiary)
                         .lineLimit(1)
                 }
 

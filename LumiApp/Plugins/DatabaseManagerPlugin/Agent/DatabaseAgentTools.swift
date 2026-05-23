@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 private enum DatabaseToolArguments {
     static func string(_ name: String, from arguments: [String: ToolArgument]) throws -> String {
