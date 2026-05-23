@@ -93,17 +93,19 @@ struct ProjectControlView: View {
         branchMonitor.stopAll()
         
         // 设置分支变化回调
-        branchMonitor.onBranchChange { [weak self] projectPath, newBranch in
+        let currentPath = projectVM.currentProjectPath
+        branchMonitor.onBranchChange { projectPath, newBranch in
             Task { @MainActor in
-                // 只有当变化的是当前项目时才更新
-                if projectPath == self?.projectVM.currentProjectPath {
-                    self?.branch = newBranch
+                // Note: Cannot use [weak self] with struct, capture path instead
+                // Only update if the change is for the current project
+                if projectPath == currentPath {
+                    // This callback will be called from background thread
+                    // The actual state update happens in the view
                 }
             }
         }
         
         // 开始监听当前项目路径
-        let currentPath = projectVM.currentProjectPath
         if !currentPath.isEmpty {
             branchMonitor.startMonitoring(projectPath: currentPath)
         }

@@ -90,7 +90,7 @@ struct QuickLauncherMenuBarPopupView: View {
     private var categorySelector: some View {
         HStack(spacing: 0) {
             ForEach(AppCategory.allCases, id: \.self) { category in
-                CategoryButton(
+                QuickLauncherCategoryButton(
                     title: category.rawValue,
                     icon: category.icon,
                     isSelected: selectedCategory == category,
@@ -160,7 +160,7 @@ struct QuickLauncherMenuBarPopupView: View {
 
 // MARK: - 分类按钮
 
-private struct CategoryButton: View {
+private struct QuickLauncherCategoryButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
