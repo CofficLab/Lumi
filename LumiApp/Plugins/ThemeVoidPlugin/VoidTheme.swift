@@ -13,6 +13,7 @@ struct VoidTheme: LumiAppChromeTheme {
     let compactName = "虚空"
     let description = "纯粹的虚空黑，深邃而神秘"
     let iconName = "circle.fill"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "4F46E5", dark: "6366F1")

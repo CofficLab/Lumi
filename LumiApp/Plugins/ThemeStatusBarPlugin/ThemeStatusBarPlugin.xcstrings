@@ -1,6 +1,41 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "All" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "全部" } }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暗色" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "暗色" } }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "亮色" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "亮色" } }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "跟隨系統" } }
+      }
+    },
+    "No themes in this category" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No themes in this category" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "该分类下暂无主题" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "該分類下暫無主題" } }
+      }
+    },
     "Display and switch editor theme in the status bar" : {
       "extractionState" : "stale",
       "localizations" : {

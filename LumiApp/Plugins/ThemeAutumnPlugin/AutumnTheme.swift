@@ -6,6 +6,7 @@ struct AutumnTheme: LumiAppChromeTheme {
     let compactName = "秋"
     let description = "枫影微红，温润深远"
     let iconName = "wind"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "EA580C", dark: "F97316")

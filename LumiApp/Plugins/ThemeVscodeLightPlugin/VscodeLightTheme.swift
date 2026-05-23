@@ -12,7 +12,7 @@ struct VscodeLightTheme: LumiAppChromeTheme {
     let compactName = "VSCode亮"
     let description = "Visual Studio Code Light+ 经典亮色 IDE 配色"
     let iconName = "terminal"
-    let isDarkTheme = false
+    let appearanceKind: ThemeAppearanceKind = .light
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color(hex: "007ACC")

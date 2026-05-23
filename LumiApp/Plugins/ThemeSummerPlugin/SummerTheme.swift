@@ -6,6 +6,7 @@ struct SummerTheme: LumiAppChromeTheme {
     let compactName = "夏"
     let description = "炽阳海风，清澈明朗"
     let iconName = "sun.max.fill"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "0284C7", dark: "38BDF8")

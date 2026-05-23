@@ -1,9 +1,45 @@
 import SwiftUI
 import LumiUI
 
+private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
+    case all
+    case dark
+    case light
+    case system
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            String(localized: "All", table: "ThemeStatusBar")
+        case .dark:
+            String(localized: "Dark", table: "ThemeStatusBar")
+        case .light:
+            String(localized: "Light", table: "ThemeStatusBar")
+        case .system:
+            String(localized: "System", table: "ThemeStatusBar")
+        }
+    }
+
+    func matches(_ kind: ThemeAppearanceKind) -> Bool {
+        switch self {
+        case .all: return true
+        case .dark: return kind == .dark
+        case .light: return kind == .light
+        case .system: return kind == .system
+        }
+    }
+}
+
 struct ThemePickerDetailView: View {
     @LumiUI.LumiTheme private var uiTheme: any LumiUITheme
     @EnvironmentObject private var themeVM: AppThemeVM
+    @State private var appearanceFilter: ThemeAppearanceFilter = .all
+
+    private var filteredThemes: [LumiUIThemeContribution] {
+        themeVM.themes.filter { appearanceFilter.matches($0.appearanceKind) }
+    }
 
     var body: some View {
         StatusBarPopoverScaffold(
@@ -16,14 +52,34 @@ struct ThemePickerDetailView: View {
                     title: LocalizedStringKey(String(localized: "No themes available", table: "ThemeStatusBar"))
                 )
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 6) {
-                        ForEach(themeVM.themes) { theme in
-                            themeRow(theme)
+                VStack(spacing: 8) {
+                    Picker("", selection: $appearanceFilter) {
+                        ForEach(ThemeAppearanceFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+
+                    if filteredThemes.isEmpty {
+                        AppEmptyState(
+                            icon: "line.3.horizontal.decrease.circle",
+                            title: LocalizedStringKey(
+                                String(localized: "No themes in this category", table: "ThemeStatusBar")
+                            )
+                        )
+                        .frame(minHeight: 180)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 6) {
+                                ForEach(filteredThemes) { theme in
+                                    themeRow(theme)
+                                }
+                            }
+                        }
+                        .frame(minHeight: 220)
+                    }
                 }
-                .frame(minHeight: 220)
             }
         }
     }

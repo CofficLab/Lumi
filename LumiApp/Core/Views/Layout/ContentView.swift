@@ -293,8 +293,12 @@ struct ContentViewBody<Content: View>: View {
 
     private func refreshSystemColorScheme() {
         let resolved = SystemAppearanceResolver.effectiveColorScheme
-        guard systemColorScheme != resolved else { return }
-        systemColorScheme = resolved
+        if systemColorScheme != resolved {
+            systemColorScheme = resolved
+        }
+        if themeVM.activeChromeTheme.followsSystemAppearance {
+            themeVM.refreshAppearanceDependentChrome()
+        }
     }
 }
 

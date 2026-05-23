@@ -12,6 +12,7 @@ struct DraculaTheme: LumiAppChromeTheme {
     let compactName = "Dracula"
     let description = "Dracula Official 经典深色配色，高对比度且醒目"
     let iconName = "moon.stars.fill"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color(hex: "BD93F9")

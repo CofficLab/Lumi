@@ -12,6 +12,7 @@ struct OneDarkTheme: LumiAppChromeTheme {
     let compactName = "One Dark"
     let description = "Atom One Dark 经典深色配色，舒适且平衡"
     let iconName = "circle.hexagongrid"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color(hex: "528BFF")

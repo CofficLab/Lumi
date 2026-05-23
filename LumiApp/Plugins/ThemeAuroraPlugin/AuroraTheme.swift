@@ -13,6 +13,7 @@ struct AuroraTheme: LumiAppChromeTheme {
     let compactName = "极光"
     let description = "绚丽的极光紫，梦幻而优雅"
     let iconName = "sparkles"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "8B5CF6", dark: "A78BFA")

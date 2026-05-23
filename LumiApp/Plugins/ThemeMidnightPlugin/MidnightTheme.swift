@@ -21,6 +21,7 @@ struct MidnightTheme: LumiAppChromeTheme {
     let compactName = "午夜"
     let description = "深邃的午夜蓝调，神秘而宁静"
     let iconName = "moon.stars.fill"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "5B4FCF", dark: "5B4FCF")

@@ -6,6 +6,7 @@ struct MountainTheme: LumiAppChromeTheme {
     let compactName = "山"
     let description = "石色沉稳，松影清远"
     let iconName = "mountain.2.fill"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "475569", dark: "64748B")

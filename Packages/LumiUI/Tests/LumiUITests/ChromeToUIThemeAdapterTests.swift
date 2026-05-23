@@ -9,6 +9,7 @@ private struct ChromeFixture: LumiAppChromeTheme {
     let description = "Test"
     let iconName = "star"
     let iconColor = Color.red
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
         (.red, .orange, .yellow)

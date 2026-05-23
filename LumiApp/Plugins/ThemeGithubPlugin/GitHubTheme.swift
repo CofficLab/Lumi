@@ -13,6 +13,7 @@ struct GitHubTheme: LumiAppChromeTheme {
     let compactName = "GitHub"
     let description = "灵感来源于 GitHub 的深色主题，深邃而专业"
     let iconName = "chevron.left.forwardslash.chevron.right"
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "24292E", dark: "58A6FF")

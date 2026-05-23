@@ -9,13 +9,13 @@ private struct MockChromeTheme: LumiAppChromeTheme {
     let description: String
     let iconName: String
     let iconColor: Color
-    let isDarkTheme: Bool
+    let appearanceKind: ThemeAppearanceKind
 
     init(
         id: String,
         name: String = "Mock",
         pluginTint: Color = .purple,
-        isDark: Bool = true
+        appearanceKind: ThemeAppearanceKind = .dark
     ) {
         identifier = id
         displayName = name
@@ -23,7 +23,7 @@ private struct MockChromeTheme: LumiAppChromeTheme {
         description = "Mock theme \(id)"
         iconName = "circle.fill"
         iconColor = pluginTint
-        isDarkTheme = isDark
+        self.appearanceKind = appearanceKind
     }
 
     func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
@@ -134,6 +134,7 @@ struct LumiUIThemeRegistryTests {
             let description = ""
             let iconName = "moon"
             let iconColor = Color.blue
+            let appearanceKind: ThemeAppearanceKind = .system
 
             func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
                 (.blue, .blue, .blue)
