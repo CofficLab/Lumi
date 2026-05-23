@@ -28,7 +28,15 @@ actor GitPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [GitStatusTool(), GitDiffTool(), GitLogTool(), GitCommitTool()]
+        [
+            GitStatusTool(),
+            GitDiffTool(),
+            GitLogTool(),
+            GitCommitTool(),
+            GitShowTool(),
+            GitBranchTool(),
+            GitUnpushedTool(),
+        ]
     }
 
     // MARK: - UI Contributions
