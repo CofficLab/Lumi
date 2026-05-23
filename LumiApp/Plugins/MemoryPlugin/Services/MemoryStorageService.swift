@@ -74,7 +74,7 @@ actor MemoryStorageService: SuperLog {
             .replacingOccurrences(of: ".", with: "_")
             .prefix(32)
         // 用简单的字符编码和作为轻量"指纹"
-        let hashValue = path.utf8.reduce(0) { ($0 &* 31 + UInt8($1)) }
+        let hashValue = path.utf8.reduce(UInt8(0)) { ($0 &* 31 &+ $1) }
         return "\(safeName)_\(String(format: "%04x", hashValue))"
     }
 
