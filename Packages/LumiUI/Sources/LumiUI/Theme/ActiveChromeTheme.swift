@@ -14,6 +14,7 @@ struct UnconfiguredChromeTheme: LumiAppChromeTheme {
     let description = ""
     let iconName = "circle.dashed"
     let iconColor = Color.clear
+    let appearanceKind: ThemeAppearanceKind = .dark
 
     func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
         (.clear, .clear, .clear)

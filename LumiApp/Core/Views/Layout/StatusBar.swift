@@ -68,7 +68,7 @@ struct StatusBar: View {
 
     private var statusBarBackground: Color {
         let theme = themeVM.activeChromeTheme
-        return theme.isDarkTheme
+        return theme.effectiveIsDarkTheme
             ? theme.atmosphereColors().deep
             : theme.atmosphereColors().medium
     }

@@ -9,6 +9,7 @@ struct ProjectControlView: View {
 
     @State private var isPopoverPresented = false
     @State private var branch: String?
+    @StateObject private var branchMonitor = GitBranchMonitor(verbose: true)
 
     var body: some View {
         if !projectVM.isProjectSelected {
@@ -48,9 +49,11 @@ struct ProjectControlView: View {
                 .frame(width: 300, height: 400)
         }
         .onAppear {
+            setupBranchMonitor()
             refreshBranch()
         }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
+        .onChange(of: projectVM.currentProjectPath) { _, newPath in
+            updateBranchMonitor(for: newPath)
             refreshBranch()
         }
         .onApplicationDidBecomeActive {
@@ -83,8 +86,44 @@ struct ProjectControlView: View {
         )
     }
 
+    // MARK: - Branch Monitor Setup
+    
+    private func setupBranchMonitor() {
+        // 清空调回调，避免重复添加
+        branchMonitor.stopAll()
+        
+        // 设置分支变化回调
+        branchMonitor.onBranchChange { [weak self] projectPath, newBranch in
+            Task { @MainActor in
+                // 只有当变化的是当前项目时才更新
+                if projectPath == self?.projectVM.currentProjectPath {
+                    self?.branch = newBranch
+                }
+            }
+        }
+        
+        // 开始监听当前项目路径
+        let currentPath = projectVM.currentProjectPath
+        if !currentPath.isEmpty {
+            branchMonitor.startMonitoring(projectPath: currentPath)
+        }
+    }
+    
+    private func updateBranchMonitor(for newPath: String) {
+        // 停止监听旧路径（如果有）
+        // 注意：branchMonitor 内部会处理重复监听的情况
+        
+        // 开始监听新路径
+        if newPath.isEmpty {
+            // 如果新路径为空，停止所有监听
+            branchMonitor.stopAll()
+        } else {
+            branchMonitor.startMonitoring(projectPath: newPath)
+        }
+    }
+    
     // MARK: - Branch Refresh
-
+    
     private func refreshBranch() {
         let path = projectVM.currentProjectPath
         guard !path.isEmpty else {

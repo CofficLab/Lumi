@@ -10,7 +10,7 @@ struct LumiTheme: LumiAppChromeTheme {
     let compactName = "Lumi"
     let description = "均衡默认主题，随系统明暗自动适配"
     let iconName = "circle.hexagonpath.fill"
-    let followsSystemAppearance = true
+    let appearanceKind: ThemeAppearanceKind = .system
 
     func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String {
         colorScheme == .dark ? "lumi-dark" : "lumi-light"

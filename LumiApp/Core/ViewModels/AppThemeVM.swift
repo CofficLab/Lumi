@@ -58,6 +58,17 @@ final class AppThemeVM: ObservableObject {
         syncPublishedStateFromRegistry(preserveSelection: true)
     }
 
+    /// 系统明暗变化时，刷新跟随外观的 chrome / LumiUI 组件主题缓存。
+    func refreshAppearanceDependentChrome() {
+        guard activeChromeTheme.followsSystemAppearance else { return }
+        do {
+            try registry.select(themeId: currentThemeId)
+        } catch {
+            return
+        }
+        postThemeDidChange()
+    }
+
     func selectTheme(_ themeId: String) {
         guard themes.contains(where: { $0.id == themeId }) else { return }
         if currentThemeId != themeId {

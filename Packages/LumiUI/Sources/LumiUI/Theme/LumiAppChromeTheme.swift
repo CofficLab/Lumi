@@ -11,8 +11,8 @@ public protocol LumiAppChromeTheme {
     var description: String { get }
     var iconName: String { get }
     var iconColor: Color { get }
-    var isDarkTheme: Bool { get }
-    var followsSystemAppearance: Bool { get }
+    /// 主题外观类型（暗色 / 亮色 / 跟随系统）。
+    var appearanceKind: ThemeAppearanceKind { get }
 
     func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String
 
@@ -38,8 +38,20 @@ public protocol LumiAppChromeTheme {
 // MARK: - Default Implementations
 
 public extension LumiAppChromeTheme {
-    var isDarkTheme: Bool { true }
-    var followsSystemAppearance: Bool { false }
+    var isDarkTheme: Bool { appearanceKind == .dark }
+
+    var followsSystemAppearance: Bool { appearanceKind == .system }
+
+    /// 对跟随系统的主题，按 macOS 有效外观解析；否则由 `appearanceKind` 决定。
+    @MainActor
+    var effectiveIsDarkTheme: Bool {
+        switch appearanceKind {
+        case .dark: return true
+        case .light: return false
+        case .system:
+            return SystemAppearanceResolver.effectiveColorScheme == .dark
+        }
+    }
 
     func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String {
         defaultEditorThemeId

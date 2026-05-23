@@ -10,6 +10,8 @@ public struct LumiUIThemeContribution: Identifiable {
     public let iconName: String
     public let iconColor: Color
     public let chromeTheme: any LumiAppChromeTheme
+    /// 主题外观类型（来自 chrome 主题声明）。
+    public var appearanceKind: ThemeAppearanceKind { chromeTheme.appearanceKind }
     public let editorThemeId: String
     public let uiTheme: (any LumiUITheme)?
     public let attachments: ThemeAttachments
