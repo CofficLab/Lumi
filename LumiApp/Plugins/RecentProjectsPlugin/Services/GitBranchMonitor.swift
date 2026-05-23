@@ -173,47 +173,53 @@ final class GitBranchMonitor: ObservableObject {
     
     /// 处理文件变化事件
     private func handleFileChange(projectPath: String) {
-        // 取消防抖任务
-        debounceTasks[projectPath]?.cancel()
-        
-        // 创建新的防抖任务
-        debounceTasks[projectPath] = Task { [weak self] in
-            guard let self = self else { return }
+        // 所有 @MainActor 隔离的属性访问都必须在主线程上
+        Task { @MainActor in
+            // 取消防抖任务
+            debounceTasks[projectPath]?.cancel()
             
-            // 等待防抖延迟
-            try? await Task.sleep(nanoseconds: UInt64(self.debounceDelay * 1_000_000_000))
-            
-            // 检查任务是否被取消
-            guard !Task.isCancelled else { return }
-            
-            // 读取当前分支
-            let newBranch = self.readCurrentBranch(projectPath: projectPath)
-            
-            // 获取上次分支
-            let lastBranch = self.monitors[projectPath]?.lastBranch
-            
-            // 只有当分支真正变化时才通知
-            if newBranch != lastBranch {
-                // 更新监听器状态
-                if let state = self.monitors[projectPath] {
-                    let newState = MonitorState(
-                        fileDescriptor: state.fileDescriptor,
-                        dispatchSource: state.dispatchSource,
-                        lastBranch: newBranch,
-                        lastUpdateTime: Date()
-                    )
-                    self.monitors[projectPath] = newState
-                }
+            // 创建新的防抖任务
+            debounceTasks[projectPath] = Task { [weak self] in
+                guard let self = self else { return }
                 
-                // 通知所有回调
-                for callback in self.callbacks {
-                    callback(projectPath, newBranch)
-                }
+                // 等待防抖延迟
+                try? await Task.sleep(nanoseconds: UInt64(self.debounceDelay * 1_000_000_000))
                 
-                if self.verbose {
-                    self.logger.info("🔄 分支变化检测: \(projectPath)")
-                    self.logger.info("   • 旧分支: \(lastBranch ?? "nil")")
-                    self.logger.info("   • 新分支: \(newBranch ?? "nil")")
+                // 检查任务是否被取消
+                guard !Task.isCancelled else { return }
+                
+                // 读取当前分支（I/O 操作在后台执行）
+                let newBranch = self.readCurrentBranch(projectPath: projectPath)
+                
+                // 切换回主线程更新状态
+                await MainActor.run {
+                    // 获取上次分支
+                    let lastBranch = self.monitors[projectPath]?.lastBranch
+                    
+                    // 只有当分支真正变化时才通知
+                    if newBranch != lastBranch {
+                        // 更新监听器状态
+                        if let state = self.monitors[projectPath] {
+                            let newState = MonitorState(
+                                fileDescriptor: state.fileDescriptor,
+                                dispatchSource: state.dispatchSource,
+                                lastBranch: newBranch,
+                                lastUpdateTime: Date()
+                            )
+                            self.monitors[projectPath] = newState
+                        }
+                        
+                        // 通知所有回调
+                        for callback in self.callbacks {
+                            callback(projectPath, newBranch)
+                        }
+                        
+                        if self.verbose {
+                            self.logger.info("🔄 分支变化检测: \(projectPath)")
+                            self.logger.info("   • 旧分支: \(lastBranch ?? "nil")")
+                            self.logger.info("   • 新分支: \(newBranch ?? "nil")")
+                        }
+                    }
                 }
             }
         }

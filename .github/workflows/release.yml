@@ -373,7 +373,11 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         run: |
           # 解决依赖以获取 Sparkle 工具
-          xcodebuild -project ${{ env.SCHEME }}.xcodeproj -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" -resolvePackageDependencies
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
+            -scheme ${{ env.SCHEME }} \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+            -resolvePackageDependencies \
+            -skipPackagePluginValidation
           SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
           if [ -d "$SPARKLE_BIN" ]; then
