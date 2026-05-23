@@ -3,7 +3,7 @@ import CodeEditTextView
 import os
 
 @MainActor
-final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
+final class EditorLSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose: Bool = false
 
@@ -16,15 +16,15 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
     ) -> [EditorCommandSuggestion] {
         let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         if Self.verbose {
-            if LSPContextCommandsEditorPlugin.verbose {
-                            LSPContextCommandsEditorPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
+            if EditorLSPContextCommandsPlugin.verbose {
+                            EditorLSPContextCommandsPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
             }
         }
 
         return [
             .init(
                 id: "builtin.rename-symbol",
-                title: String(localized: "Rename Symbol", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Rename Symbol", table: "EditorLSPContextCommands"),
                 systemImage: "pencil.and.list.clipboard",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 10,
@@ -48,7 +48,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.go-to-definition",
-                title: String(localized: "Go to Definition", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Go to Definition", table: "EditorLSPContextCommands"),
                 systemImage: "arrow.right.square",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 20,
@@ -74,7 +74,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.go-to-declaration",
-                title: String(localized: "Go to Declaration", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Go to Declaration", table: "EditorLSPContextCommands"),
                 systemImage: "doc.badge.plus",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 30,
@@ -87,7 +87,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.go-to-type-definition",
-                title: String(localized: "Go to Type Definition", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Go to Type Definition", table: "EditorLSPContextCommands"),
                 systemImage: "square.on.square",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 40,
@@ -100,7 +100,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.go-to-implementation",
-                title: String(localized: "Go to Implementation", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Go to Implementation", table: "EditorLSPContextCommands"),
                 systemImage: "arrowtriangle.right",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 50,
@@ -113,7 +113,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.find-references",
-                title: String(localized: "Find References", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Find References", table: "EditorLSPContextCommands"),
                 systemImage: "link",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 60,
@@ -139,7 +139,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.format-document",
-                title: String(localized: "Format Document", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Format Document", table: "EditorLSPContextCommands"),
                 systemImage: "text.alignleft",
                 category: EditorCommandCategory.format.rawValue,
                 order: 70,
@@ -152,7 +152,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.workspace-symbols",
-                title: String(localized: "Workspace Symbols", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Workspace Symbols", table: "EditorLSPContextCommands"),
                 systemImage: "magnifyingglass.circle",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 80,
@@ -163,7 +163,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.call-hierarchy",
-                title: String(localized: "Call Hierarchy", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Call Hierarchy", table: "EditorLSPContextCommands"),
                 systemImage: "arrow.triangle.branch",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 90,
@@ -176,7 +176,7 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
             ),
             .init(
                 id: "builtin.toggle-problems",
-                title: String(localized: "Toggle Problems", table: "LSPContextCommandsEditor"),
+                title: String(localized: "Toggle Problems", table: "EditorLSPContextCommands"),
                 systemImage: "exclamationmark.triangle",
                 category: EditorCommandCategory.lsp.rawValue,
                 order: 100,

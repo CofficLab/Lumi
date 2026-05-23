@@ -12,14 +12,14 @@ import os
 ///
 /// 该插件没有独立 View；它通过 `SuperEditorCommandContributor` 把命令贡献给命令面板、
 /// 右键菜单或其它消费编辑器命令的 UI。
-actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
-    static let shared = LSPContextCommandsEditorPlugin()
+actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
+    static let shared = EditorLSPContextCommandsPlugin()
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose: Bool = false
 
-    static let id = "LSPContextCommandsEditor"
-    static let displayName = String(localized: "LSP Context Commands", table: "LSPContextCommandsEditor")
-    static let description = String(localized: "Adds LSP context commands like go to definition and rename.", table: "LSPContextCommandsEditor")
+    static let id = "EditorLSPContextCommands"
+    static let displayName = String(localized: "LSP Context Commands", table: "EditorLSPContextCommands")
+    static let description = String(localized: "Adds LSP context commands like go to definition and rename.", table: "EditorLSPContextCommands")
     static let iconName = "command"
     static let order = 15
     static let enable = true
@@ -31,12 +31,13 @@ actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-context-commands")
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        let contributor = LSPContextCommandContributor()
-        registry.registerCommandContributor(contributor)
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
-            }
-        }
+        // TODO: 暂时停用 Editor 右键菜单命令
+        // let contributor = EditorLSPContextCommandContributor()
+        // registry.registerCommandContributor(contributor)
+        // if Self.verbose {
+        //     if Self.verbose {
+        //                     Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
+        //     }
+        // }
     }
 }
