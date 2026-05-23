@@ -10,9 +10,9 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "提交 Git 变更。支持指定提交信息、添加特定文件，或修改最后一次提交。在提交前，建议先根据最近的 commit 历史确定提交风格，以保持一致性。"
+            return "提交 Git 变更。支持指定提交信息、添加特定文件，或修改最后一次提交。在提交前，建议先根据最近的 commit 历史确定提交风格，以保持一致性。重要：应按主题提交变更，确保每个提交只包含相关的逻辑变更。如果变更涉及多个不相关的主题，请拆分成多个独立的提交。"
         case .english:
-            return "Commit Git changes. Supports specifying commit message, adding specific files, or amending the last commit. Before committing, it's recommended to first examine recent commit history to determine the commit style for consistency."
+            return "Commit Git changes. Supports specifying commit message, adding specific files, or amending the last commit. Before committing, it's recommended to first examine recent commit history to determine the commit style for consistency. Important: Commit changes by topic, ensuring each commit contains only related logical changes. If changes involve multiple unrelated topics, split them into separate commits."
         }
     }
 
@@ -25,12 +25,12 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         switch language {
         case .chinese:
             pathDesc = "Git 仓库路径，默认为当前工作目录"
-            messageDesc = "提交信息（必填）。应遵循项目的 commit 风格（如 feat:、fix:、chore: 等前缀），建议先查看最近的 commit 历史确定风格。"
+            messageDesc = "提交信息（必填）。应遵循项目的 commit 风格（如 feat:、fix:、chore: 等前缀），建议先查看最近的 commit 历史确定风格。重要：应按主题提交变更，确保每个提交只包含相关的逻辑变更。如果变更涉及多个不相关的主题，请拆分成多个独立的提交。"
             filesDesc = "要添加的文件路径列表（可选），空数组表示添加所有变更"
             amendDesc = "是否修改最后一次提交（可选），默认为 false"
         case .english:
             pathDesc = "Git repository path, defaults to current working directory"
-            messageDesc = "Commit message (required). Should follow the project's commit style (e.g., feat:, fix:, chore: prefixes). It's recommended to first check recent commit history to determine the style."
+            messageDesc = "Commit message (required). Should follow the project's commit style (e.g., feat:, fix:, chore: prefixes). It's recommended to first check recent commit history to determine the style. Important: Commit changes by topic, ensuring each commit contains only related logical changes. If changes involve multiple unrelated topics, split them into separate commits."
             filesDesc = "List of file paths to add (optional), empty array means add all changes"
             amendDesc = "Whether to amend the last commit (optional), default false"
         }
