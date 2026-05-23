@@ -25,8 +25,9 @@ LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
 LAST_TAG="${LAST_TAG#v}"
 
 # Get the current version from Xcode project
-# xcodebuild provides more reliable output than agvtool
-XCODE_VERSION=$(xcodebuild -project Lumi.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}' || echo "0.0.0")
+# Read directly from project.pbxproj to avoid depending on xcodebuild,
+# which requires resolving SPM package dependencies and may fail in CI.
+XCODE_VERSION=$(grep -m1 "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = \([0-9.]*\);/\1/' || echo "0.0.0")
 
 # Compare versions and use the higher one
 # sort -V does version-aware sorting (e.g., 1.10 > 1.9)

@@ -101,32 +101,16 @@ jobs:
 
           echo "✅ 替换了 $AFTER_COUNT 处 MARKETING_VERSION"
 
-          # 使用 xcodebuild 验证构建设置中的版本号
-          # 使用 set +e 避免管道失败导致脚本退出
-          set +e
-          XCODEBUILD_OUTPUT=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>&1)
-          NEW_MARKETING_VERSION=$(echo "$XCODEBUILD_OUTPUT" | grep "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | sed 's/.*= *//' | tr -d '[:space:]')
-          set -e
-
-          if [ -z "$NEW_MARKETING_VERSION" ]; then
-            echo "⚠️ 无法从 xcodebuild 获取 MARKETING_VERSION，跳过验证"
-          elif [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
-            echo "❌ 验证失败: xcodebuild 报告 MARKETING_VERSION=$NEW_MARKETING_VERSION, 期望 ${{ env.new_version }}"
-            exit 1
-          else
-            echo "✅ Updated Marketing Version: $NEW_MARKETING_VERSION"
-          fi
-
       - name: Update Build Number
         run: |
           set -euo pipefail
 
           echo "📝 Updating CURRENT_PROJECT_VERSION..."
 
-          # 读取当前构建号并自增
-          CURRENT_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
+          # 直接从 project.pbxproj 读取当前构建号（避免依赖 xcodebuild 解析 SPM 包依赖）
+          CURRENT_BUILD=$(grep -m1 "CURRENT_PROJECT_VERSION = " Lumi.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/')
           if [ -z "$CURRENT_BUILD" ]; then
-            echo "❌ 无法从 xcodebuild 获取当前 CURRENT_PROJECT_VERSION"
+            echo "❌ 无法从 project.pbxproj 获取当前 CURRENT_PROJECT_VERSION"
             exit 1
           fi
           NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
@@ -154,17 +138,12 @@ jobs:
 
           echo "✅ 替换了 $AFTER_COUNT 处 CURRENT_PROJECT_VERSION"
 
-          # 使用 xcodebuild 验证
-          VERIFY_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
-          if [ "$VERIFY_BUILD" != "$NEW_BUILD_VERSION" ]; then
-            echo "❌ 验证失败: xcodebuild 报告 CURRENT_PROJECT_VERSION=$VERIFY_BUILD, 期望 $NEW_BUILD_VERSION"
-            exit 1
-          fi
-          echo "✅ Updated Build Version: $NEW_BUILD_VERSION"
+          # 保存构建号供后续步骤使用
+          echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
 
       - name: Determine Tag and Prerelease Status
         run: |
-          BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
+          BUILD_VERSION="${{ env.build_number }}"
 
           if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
             TAG_NAME="p${{ env.new_version }}($BUILD_VERSION)"
