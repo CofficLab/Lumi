@@ -13,6 +13,14 @@ extension SourceEditorConfiguration {
         /// The theme for syntax highlighting.
         public var theme: EditorTheme
 
+        /// The theme's unique identifier (e.g. "xcode-dark", "monokai").
+        ///
+        /// Used for reliable change detection in `Equatable` and `didSetOnController`.
+        /// `EditorTheme` uses `NSColor` fields whose `==` comparison can be unreliable
+        /// across color spaces. Comparing `themeIdentifier` (a `String`) guarantees
+        /// correct detection of theme switches.
+        public var themeIdentifier: String
+
         /// Determines whether the editor uses the theme's background color, or a transparent background color.
         public var useThemeBackground: Bool = true
 
@@ -42,6 +50,7 @@ extension SourceEditorConfiguration {
         /// Create a new appearance configuration object.
         /// - Parameters:
         ///   - theme: The theme for syntax highlighting.
+        ///   - themeIdentifier: The theme's unique identifier for reliable change detection.
         ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
         ///                         background color.
         ///   - font: The default font.
@@ -55,6 +64,7 @@ extension SourceEditorConfiguration {
         ///                          ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
         public init(
             theme: EditorTheme,
+            themeIdentifier: String = "",
             useThemeBackground: Bool = true,
             font: NSFont,
             lineHeightMultiple: Double = 1.2,
@@ -65,6 +75,7 @@ extension SourceEditorConfiguration {
             bracketPairEmphasis: BracketPairEmphasis? = .flash
         ) {
             self.theme = theme
+            self.themeIdentifier = themeIdentifier
             self.useThemeBackground = useThemeBackground
             self.font = font
             self.lineHeightMultiple = lineHeightMultiple
@@ -90,7 +101,9 @@ extension SourceEditorConfiguration {
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig?.theme != theme || oldConfig?.useThemeBackground != useThemeBackground {
+            // Use themeIdentifier (String) for reliable change detection.
+            // EditorTheme.Equatable compares NSColor fields which can be unreliable across color spaces.
+            if oldConfig?.themeIdentifier != themeIdentifier || oldConfig?.useThemeBackground != useThemeBackground {
                 updateControllerNewTheme(controller: controller)
                 needsHighlighterInvalidation = true
             }

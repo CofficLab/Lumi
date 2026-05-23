@@ -72,6 +72,7 @@ public struct SourceEditorAdapter {
         return SourceEditorConfiguration(
             appearance: .init(
                 theme: state.currentTheme ?? EditorThemeAdapter.fallbackTheme(),
+                themeIdentifier: state.currentThemeId,
                 useThemeBackground: true,
                 font: font,
                 lineHeightMultiple: 1.2,
