@@ -413,21 +413,10 @@ enum DateParseHelper {
 
 extension GitService {
     /// 获取带跳过的提交日志（分页加载用），使用 LibGit2Swift
+    /// 已由 GitService.gitQueue 串行保护（调用 GitService.shared.getLogWithSkip）
     func getLogWithSkip(path: String?, count: Int, skip: Int, branch: String?) async throws -> [GitCommitLog] {
-        let repoPath = path ?? FileManager.default.currentDirectoryPath
-
-        let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
-
-        let dateFormatter = ISO8601DateFormatter()
-        return gitCommits.map { commit in
-            GitCommitLog(
-                hash: commit.hash,
-                author: commit.author,
-                email: commit.email,
-                date: dateFormatter.string(from: commit.date),
-                message: commit.message.components(separatedBy: "\n").first ?? commit.message
-            )
-        }
+        // 委托给 GitService 主文件中受 gitQueue 保护的方法
+        return try await getLogWithSkip(path: path, count: count, skip: skip)
     }
 }
 

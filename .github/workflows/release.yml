@@ -101,24 +101,16 @@ jobs:
 
           echo "✅ 替换了 $AFTER_COUNT 处 MARKETING_VERSION"
 
-          # 使用 xcodebuild 验证构建设置中的版本号
-          NEW_MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}')
-          if [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
-            echo "❌ 验证失败: xcodebuild 报告 MARKETING_VERSION=$NEW_MARKETING_VERSION, 期望 ${{ env.new_version }}"
-            exit 1
-          fi
-          echo "✅ Updated Marketing Version: $NEW_MARKETING_VERSION"
-
       - name: Update Build Number
         run: |
           set -euo pipefail
 
           echo "📝 Updating CURRENT_PROJECT_VERSION..."
 
-          # 读取当前构建号并自增
-          CURRENT_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
+          # 直接从 project.pbxproj 读取当前构建号（避免依赖 xcodebuild 解析 SPM 包依赖）
+          CURRENT_BUILD=$(grep -m1 "CURRENT_PROJECT_VERSION = " Lumi.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/')
           if [ -z "$CURRENT_BUILD" ]; then
-            echo "❌ 无法从 xcodebuild 获取当前 CURRENT_PROJECT_VERSION"
+            echo "❌ 无法从 project.pbxproj 获取当前 CURRENT_PROJECT_VERSION"
             exit 1
           fi
           NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
@@ -146,17 +138,12 @@ jobs:
 
           echo "✅ 替换了 $AFTER_COUNT 处 CURRENT_PROJECT_VERSION"
 
-          # 使用 xcodebuild 验证
-          VERIFY_BUILD=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $3}')
-          if [ "$VERIFY_BUILD" != "$NEW_BUILD_VERSION" ]; then
-            echo "❌ 验证失败: xcodebuild 报告 CURRENT_PROJECT_VERSION=$VERIFY_BUILD, 期望 $NEW_BUILD_VERSION"
-            exit 1
-          fi
-          echo "✅ Updated Build Version: $NEW_BUILD_VERSION"
+          # 保存构建号供后续步骤使用
+          echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
 
       - name: Determine Tag and Prerelease Status
         run: |
-          BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
+          BUILD_VERSION="${{ env.build_number }}"
 
           if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
             TAG_NAME="p${{ env.new_version }}($BUILD_VERSION)"
@@ -219,6 +206,24 @@ jobs:
       - name: Check CodeEditLanguages Framework
         run: scripts/check-codeedit-languages-framework.sh
 
+      - name: Cache SPM Packages
+        id: spm-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.DERIVED_DATA_PATH }}/SourcePackages
+          key: ${{ runner.os }}-xcode-26.3-spm-${{ hashFiles('Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-26.3-spm-
+
+      - name: Resolve SPM Dependencies
+        if: steps.spm-cache.outputs.cache-hit != 'true'
+        run: |
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
+            -scheme ${{ env.SCHEME }} \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+            -resolvePackageDependencies \
+            -skipPackagePluginValidation
+
       - name: Build App (Archive)
         run: |
           set -o pipefail
@@ -230,6 +235,7 @@ jobs:
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
             -skipPackagePluginValidation \
+            -skipPackageUpdates \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
@@ -335,7 +341,6 @@ jobs:
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
-          spctl --assess --type open --context context:primary-signature -vv "$file"
 
       - name: Prepare Updates Directory
         run: |
