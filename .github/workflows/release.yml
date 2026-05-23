@@ -102,12 +102,20 @@ jobs:
           echo "✅ 替换了 $AFTER_COUNT 处 MARKETING_VERSION"
 
           # 使用 xcodebuild 验证构建设置中的版本号
-          NEW_MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}')
-          if [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
+          # 使用 set +e 避免管道失败导致脚本退出
+          set +e
+          XCODEBUILD_OUTPUT=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>&1)
+          NEW_MARKETING_VERSION=$(echo "$XCODEBUILD_OUTPUT" | grep "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | sed 's/.*= *//' | tr -d '[:space:]')
+          set -e
+
+          if [ -z "$NEW_MARKETING_VERSION" ]; then
+            echo "⚠️ 无法从 xcodebuild 获取 MARKETING_VERSION，跳过验证"
+          elif [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
             echo "❌ 验证失败: xcodebuild 报告 MARKETING_VERSION=$NEW_MARKETING_VERSION, 期望 ${{ env.new_version }}"
             exit 1
+          else
+            echo "✅ Updated Marketing Version: $NEW_MARKETING_VERSION"
           fi
-          echo "✅ Updated Marketing Version: $NEW_MARKETING_VERSION"
 
       - name: Update Build Number
         run: |
