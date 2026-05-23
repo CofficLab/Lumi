@@ -192,7 +192,8 @@ struct SuperAgentToolTests {
     @Test
     func executeReturnsUnderlyingResult() async throws {
         let tool = MockAgentTool(result: "file contents")
-        let result = try await tool.execute(arguments: [:])
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+        let result = try await tool.execute(arguments: [:], context: context)
 
         #expect(result == "file contents")
     }
@@ -286,8 +287,9 @@ struct LocalizedAgentToolTests {
     func executeDelegatesToUnderlyingTool() async throws {
         let underlying = MockAgentTool(result: "payload")
         let localized = LocalizedAgentTool(underlying: underlying, language: .english)
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: localized.name)
 
-        let result = try await localized.execute(arguments: [:])
+        let result = try await localized.execute(arguments: [:], context: context)
         #expect(result == "payload")
     }
 

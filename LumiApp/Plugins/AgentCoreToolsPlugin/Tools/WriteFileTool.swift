@@ -52,7 +52,7 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         .high
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String,
               let content = arguments["content"]?.value as? String else {
             throw NSError(

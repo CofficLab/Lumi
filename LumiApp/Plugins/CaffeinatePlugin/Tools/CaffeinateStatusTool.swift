@@ -31,7 +31,7 @@ struct CaffeinateStatusTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let manager = CaffeinateManager.shared
 
         if Self.verbose {

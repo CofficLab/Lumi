@@ -116,7 +116,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     }
 
     /// 执行工具（JSON 字符串参数版本）
-    func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext? = nil) async throws -> String {
+    func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext) async throws -> String {
         try await executeTool(
             named: name,
             arguments: Self.parseToolArguments(from: argumentsJSON),
@@ -125,9 +125,9 @@ class ToolService: SuperLog, @unchecked Sendable {
     }
 
     /// 执行工具调用
-    func executeTool(_ toolCall: ToolCall, context: ToolExecutionContext? = nil) async throws -> String {
+    func executeTool(_ toolCall: ToolCall, context: ToolExecutionContext) async throws -> String {
         let startTime = Date()
-        try context?.checkCancellation()
+        try context.checkCancellation()
 
         guard hasTool(named: toolCall.name) else {
             throw ToolExecutionError.toolNotFound(toolName: toolCall.name)
@@ -138,7 +138,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             argumentsJSON: toolCall.arguments,
             context: context
         )
-        try context?.checkCancellation()
+        try context.checkCancellation()
 
         if Self.verbose {
             let duration = Date().timeIntervalSince(startTime)
@@ -149,7 +149,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     }
 
     /// 执行工具
-    func executeTool(named name: String, arguments: [String: Any], context: ToolExecutionContext? = nil) async throws -> String {
+    func executeTool(named name: String, arguments: [String: Any], context: ToolExecutionContext) async throws -> String {
         guard let tool = tool(named: name) else {
             throw ToolError.toolNotFound(name)
         }
@@ -163,13 +163,9 @@ class ToolService: SuperLog, @unchecked Sendable {
             let startTime = Date()
             let toolArguments = arguments.mapValues { ToolArgument($0) }
             let result: String
-            if let context {
-                try context.checkCancellation()
-                result = try await tool.execute(arguments: toolArguments, context: context)
-                try context.checkCancellation()
-            } else {
-                result = try await tool.execute(arguments: toolArguments)
-            }
+            try context.checkCancellation()
+            result = try await tool.execute(arguments: toolArguments, context: context)
+            try context.checkCancellation()
             let duration = Date().timeIntervalSince(startTime)
 
             if Self.verbose {

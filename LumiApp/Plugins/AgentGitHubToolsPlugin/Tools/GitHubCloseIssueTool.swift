@@ -63,7 +63,7 @@ struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
         .medium
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
               let issueNumber = arguments["issueNumber"]?.value as? Int else {

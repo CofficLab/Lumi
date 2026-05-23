@@ -44,13 +44,15 @@ struct MockAgentTool: SuperAgentTool {
         }
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
         if let failure {
             throw failure
         }
         if executeDelayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: executeDelayNanoseconds)
         }
+        try context.checkCancellation()
         return result
     }
 

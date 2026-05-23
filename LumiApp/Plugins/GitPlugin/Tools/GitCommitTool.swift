@@ -64,7 +64,7 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         .medium // 提交会修改代码库，风险中等
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
         guard let message = arguments["message"]?.value as? String else {
             throw NSError(domain: "GitCommitTool", code: -1, 

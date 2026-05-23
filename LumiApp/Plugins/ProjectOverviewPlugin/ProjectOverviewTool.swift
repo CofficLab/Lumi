@@ -31,7 +31,7 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: path).standardizedFileURL
 

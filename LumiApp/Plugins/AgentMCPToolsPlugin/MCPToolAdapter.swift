@@ -42,16 +42,12 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         return json
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await executeMCP(arguments: arguments, context: nil)
-    }
-
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         return try await executeMCP(arguments: arguments, context: context)
     }
 
-    private func executeMCP(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
+    private func executeMCP(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         if AgentMCPToolsPlugin.verbose {
             if AgentMCPToolsPlugin.verbose {
                             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
@@ -87,13 +83,13 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         let startTime = Date()
 
         do {
-            try context?.checkCancellation()
+            try context.checkCancellation()
             let result = try await withTaskCancellationHandler {
                 try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
             } onCancel: {
-                context?.cancel()
+                context.cancel()
             }
-            try context?.checkCancellation()
+            try context.checkCancellation()
             let duration = Date().timeIntervalSince(startTime)
 
             if AgentMCPToolsPlugin.verbose {

@@ -36,7 +36,7 @@ struct DatabaseListConnectionsTool: SuperAgentTool {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try await DatabaseAgentToolService.shared.listConnections()
     }
 }
@@ -73,7 +73,7 @@ struct DatabaseDescribeSchemaTool: SuperAgentTool {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
         let limit = try DatabaseToolArguments.limit(from: arguments)
         return try await DatabaseAgentToolService.shared.describeSchema(connectionId: id, limit: limit)
@@ -116,7 +116,7 @@ struct DatabaseReadonlyQueryTool: SuperAgentTool {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
         let sql = try DatabaseToolArguments.string("sql", from: arguments)
         let limit = try DatabaseToolArguments.limit(from: arguments)
@@ -160,7 +160,7 @@ struct DatabaseSampleTableTool: SuperAgentTool {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
         let table = try DatabaseToolArguments.string("table", from: arguments)
         let limit = try DatabaseToolArguments.limit(from: arguments)

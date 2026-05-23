@@ -42,7 +42,7 @@ struct RunReviewTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let llmService else {
             return "Code review failed: LLM service is unavailable."
         }

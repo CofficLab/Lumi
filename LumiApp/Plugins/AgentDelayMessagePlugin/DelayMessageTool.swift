@@ -8,8 +8,7 @@ import AgentToolKit
 ///
 /// ## 工作原理
 ///
-/// 1. LLM 调用 `get_current_conversation()` 获取会话 ID
-/// 2. LLM 调用 `delay_message(conversation_id, message, seconds)`
+/// 1. LLM 调用 `delay_message(message, seconds)`
 /// 3. 工具立即返回，当前回合正常结束
 /// 4. 后台 Task sleep N 秒后，通过 `DelayMessageState` 持有的 messageQueueVM 引用入队消息
 /// 5. RootView 检测到 queueVersion 变化，触发 attemptBeginNextQueuedSend()
@@ -27,9 +26,9 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "在指定秒数后向某个对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。请先使用 get_current_conversation 获取对话 ID。"
+            return "在指定秒数后向当前对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。"
         case .english:
-            return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+            return "Send a delayed user message to the current conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives."
         }
     }
 
@@ -37,10 +36,6 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
         [
             "type": "object",
             "properties": [
-                "conversation_id": [
-                    "type": "string",
-                    "description": "The UUID of the target conversation. Obtain this from get_current_conversation."
-                ],
                 "message": [
                     "type": "string",
                     "description": "The message content to send after the delay. This will appear as a user message in the conversation."
@@ -50,7 +45,7 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
                     "description": "Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour)."
                 ]
             ],
-            "required": ["conversation_id", "message", "seconds"]
+            "required": ["message", "seconds"]
         ]
     }
 
@@ -59,13 +54,9 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
-
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        // 解析 conversation_id
-        guard let conversationIdString = arguments["conversation_id"]?.value as? String,
-              let conversationId = UUID(uuidString: conversationIdString) else {
-            return "Error: invalid or missing 'conversation_id'. Use get_current_conversation to obtain a valid ID."
-        }
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId
 
         // 解析 message
         let message = (arguments["message"]?.value as? String)?

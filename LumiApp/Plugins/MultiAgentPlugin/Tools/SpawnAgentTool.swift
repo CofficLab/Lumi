@@ -86,7 +86,9 @@ struct SpawnAgentTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+
         guard let task = arguments["task"]?.value as? String, !task.isEmpty else {
             throw SubAgentError.missingArgument("task")
         }
@@ -151,11 +153,5 @@ struct SpawnAgentTool: SuperAgentTool, SuperLog {
 
             The agent is now running in the background. Use `collect_agents` with this agent_id to get the result when it finishes. You can spawn more agents and then collect them all at once.
             """
-    }
-
-    @MainActor
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        return try await execute(arguments: arguments)
     }
 }

@@ -28,7 +28,7 @@ struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
                             GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")

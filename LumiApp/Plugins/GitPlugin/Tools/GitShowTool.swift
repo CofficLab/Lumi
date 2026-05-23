@@ -47,7 +47,7 @@ struct GitShowTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
         guard let hash = arguments["hash"]?.value as? String else {
             throw NSError(domain: "GitShowTool", code: -1,

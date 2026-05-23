@@ -68,11 +68,6 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
     // MARK: - Execute
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await execute(arguments: arguments, conversationId: conversationVM.selectedConversationId)
-    }
-
-    @MainActor
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try await execute(arguments: arguments, conversationId: context.conversationId)
     }

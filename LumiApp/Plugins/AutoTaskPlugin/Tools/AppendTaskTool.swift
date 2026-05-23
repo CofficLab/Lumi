@@ -53,11 +53,6 @@ struct AppendTaskTool: SuperAgentTool, SuperLog {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
-
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
-        String(localized: "Error: missing tool execution context", table: "AutoTask")
-    }
-
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         let conversationId = context.conversationId.uuidString

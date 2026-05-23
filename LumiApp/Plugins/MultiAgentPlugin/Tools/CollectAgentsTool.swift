@@ -56,7 +56,9 @@ struct CollectAgentsTool: SuperAgentTool, SuperLog {
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+
         guard let agentIdsRaw = arguments["agent_ids"]?.value as? String, !agentIdsRaw.isEmpty else {
             throw SubAgentError.missingArgument("agent_ids")
         }
@@ -105,11 +107,5 @@ struct CollectAgentsTool: SuperAgentTool, SuperLog {
         output += "**Summary**: \(completedCount)/\(results.count) agents completed successfully."
 
         return output
-    }
-
-    @MainActor
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        return try await execute(arguments: arguments)
     }
 }

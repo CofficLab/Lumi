@@ -45,7 +45,7 @@ struct CreateAgentRuleTool: SuperAgentTool {
         .medium
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
             throw AgentRulesError.invalidFileFormat("project_path is required")
         }

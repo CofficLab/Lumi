@@ -32,7 +32,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
             return "❌ Error: Missing required parameter 'path'"
         }

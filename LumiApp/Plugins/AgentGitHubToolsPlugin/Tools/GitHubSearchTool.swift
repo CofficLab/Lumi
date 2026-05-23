@@ -61,7 +61,7 @@ struct GitHubSearchTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument]) async throws -> String {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let query = arguments["query"]?.value as? String else {
             throw NSError(
                 domain: name,

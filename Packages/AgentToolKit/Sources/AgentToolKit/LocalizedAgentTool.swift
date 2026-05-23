@@ -23,10 +23,6 @@ public struct LocalizedAgentTool: SuperAgentTool, Sendable {
         underlying.inputSchema(for: self.language)
     }
 
-    public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await underlying.execute(arguments: arguments)
-    }
-
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try await underlying.execute(arguments: arguments, context: context)
     }
