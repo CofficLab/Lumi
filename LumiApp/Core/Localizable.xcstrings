@@ -370,16 +370,6 @@
         }
       }
     },
-    "%lld 个插件 · %lld 个已启用" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld 个插件 · %2$lld 个已启用"
-          }
-        }
-      }
-    },
     "%lld/%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3417,6 +3407,7 @@
       }
     },
     "主题风格" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3487,9 +3478,6 @@
       }
     },
     "全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。" : {
-
-    },
-    "关于" : {
 
     },
     "内存 %lld GB" : {
@@ -3826,6 +3814,7 @@
 
     },
     "当插件标记为可配置时，会在此处显示" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3840,9 +3829,6 @@
           }
         }
       }
-    },
-    "快捷键" : {
-
     },
     "快速修复" : {
 
@@ -3969,6 +3955,7 @@
       }
     },
     "插件管理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4038,6 +4025,7 @@
 
     },
     "暂无可配置的插件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4257,9 +4245,6 @@
     "编辑器" : {
 
     },
-    "编辑器设置" : {
-
-    },
     "自定义" : {
 
     },
@@ -4411,6 +4396,7 @@
 
     },
     "通用设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

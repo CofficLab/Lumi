@@ -23,7 +23,6 @@ struct ThemeSettingView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("主题风格")
     }
 
     // MARK: - Header Card

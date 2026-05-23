@@ -36,7 +36,6 @@ struct PluginCategorySettingsView: View {
 
             AppSettingsStatsBar("共 \(plugins.count) 个插件 · \(enabledCount) 个已启用")
         }
-        .navigationTitle(category.displayName)
         .onAppear {
             loadPluginStates()
         }

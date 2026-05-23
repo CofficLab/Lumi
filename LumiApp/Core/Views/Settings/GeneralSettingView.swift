@@ -31,7 +31,6 @@ struct GeneralSettingView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("通用设置")
         .onAppear {
             checkLaunchAtLoginStatus()
         }

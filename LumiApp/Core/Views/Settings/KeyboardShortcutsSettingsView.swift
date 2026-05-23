@@ -51,7 +51,6 @@ struct KeyboardShortcutsSettingsView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("快捷键")
     }
 
     private var headerCard: some View {

@@ -109,7 +109,6 @@ struct EditorSettingsView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("编辑器设置")
         .onAppear {
             applyPendingSearchQuery()
         }

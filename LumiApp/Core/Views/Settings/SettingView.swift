@@ -13,9 +13,6 @@ struct SettingView: View {
     /// 当前选中的项
     @State private var selection: SettingsSelection?
 
-    /// 插件分类是否展开
-    @State private var isPluginCategoryExpanded: Bool = true
-
     /// 从 AppSettingStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
         guard let saved = AppSettingStore.loadSettingsSelection() else {
@@ -29,10 +26,6 @@ struct SettingView: View {
             }
         case "plugin":
             return .plugin(saved.value)
-        case "pluginCategory":
-            if let category = PluginCategory(rawValue: saved.value) {
-                return .pluginCategory(category)
-            }
         default:
             break
         }
@@ -51,8 +44,6 @@ struct SettingView: View {
             AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
         case let .plugin(id):
             AppSettingStore.saveSettingsSelection(type: "plugin", value: id)
-        case let .pluginCategory(category):
-            AppSettingStore.saveSettingsSelection(type: "pluginCategory", value: category.rawValue)
         }
     }
 
@@ -63,14 +54,9 @@ struct SettingView: View {
         self._selection = State(initialValue: nil)
     }
 
-    /// 插件设置视图列表
+    /// 插件设置视图列表（单独提供了 addSettingsView 的插件）
     private var pluginSettings: [(id: String, name: String, icon: String, view: AnyView)] {
         pluginProvider.getPluginSettingsViews()
-    }
-
-    /// 按分类分组的可配置插件
-    private var groupedPlugins: [(category: PluginCategory, plugins: [any SuperPlugin])] {
-        pluginProvider.getConfigurablePluginsGroupedByCategory()
     }
 
     /// 侧边栏内容视图
@@ -83,26 +69,17 @@ struct SettingView: View {
 
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(SettingTab.allCases.filter { $0 != .plugins }, id: \.self) { tab in
-                            if tab == .keyboardShortcuts {
-                                AppSettingsSidebarItem(
-                                    label: Label(tab.rawValue, systemImage: tab.icon),
-                                    isSelected: selection == .core(tab)
-                                ) {
-                                    selection = .core(tab)
-                                }
-
-                                pluginCategorySection
-                            } else {
-                                AppSettingsSidebarItem(
-                                    label: Label(tab.rawValue, systemImage: tab.icon),
-                                    isSelected: selection == .core(tab)
-                                ) {
-                                    selection = .core(tab)
-                                }
+                        // 核心设置项
+                        ForEach(SettingTab.allCases, id: \.self) { tab in
+                            AppSettingsSidebarItem(
+                                label: Label(tab.rawValue, systemImage: tab.icon),
+                                isSelected: selection == .core(tab)
+                            ) {
+                                selection = .core(tab)
                             }
                         }
 
+                        // 单独提供设置视图的插件
                         if !pluginSettings.isEmpty {
                             Divider()
                                 .padding(.vertical, 8)
@@ -123,29 +100,6 @@ struct SettingView: View {
         }
     }
 
-    /// 插件管理可展开分组区域
-    private var pluginCategorySection: some View {
-        AppSettingsExpandableSidebarGroup(
-            isExpanded: $isPluginCategoryExpanded,
-            title: "插件管理",
-            systemImage: "puzzlepiece.extension"
-        ) {
-            ForEach(groupedPlugins, id: \.category) { group in
-                AppSettingsSidebarItem(
-                    label: Label {
-                        Text(group.category.displayName)
-                    } icon: {
-                        Image(systemName: group.category.systemImage)
-                    },
-                    isSelected: selection == .pluginCategory(group.category)
-                ) {
-                    selection = .pluginCategory(group.category)
-                }
-                .padding(.leading, 16)
-            }
-        }
-    }
-
     /// 详情区域视图
     private var detailView: some View {
         AppSettingsDetailPane {
@@ -161,8 +115,6 @@ struct SettingView: View {
                             Text("插件未找到或已禁用")
                                 .foregroundColor(.secondary)
                         }
-                    case let .pluginCategory(category):
-                        PluginCategorySettingsView(category: category)
                     }
                 } else {
                     Text("请选择设置项")

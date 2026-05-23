@@ -1,6 +1,14 @@
 import AppKit
 import SwiftUI
 
+/// 解析 macOS 当前有效外观（不受 SwiftUI `preferredColorScheme` 残留影响）。
+@MainActor
+public enum SystemAppearanceResolver {
+    public static var effectiveColorScheme: ColorScheme {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+    }
+}
+
 extension Color {
     public init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

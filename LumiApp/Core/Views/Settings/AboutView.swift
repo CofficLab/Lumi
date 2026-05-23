@@ -39,7 +39,6 @@ struct AboutView: View {
                 .padding(.horizontal, 24)
             }
         }
-        .navigationTitle("关于")
     }
 
     // MARK: - Header Card
