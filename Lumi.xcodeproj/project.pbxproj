@@ -24,6 +24,7 @@
 		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
+		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
 		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
 		0BA8A7362FC08EB9004C2B71 /* AgentToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4712F70000100AAA109 /* AgentToolKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
@@ -352,6 +353,7 @@
 				0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */,
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
+				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
@@ -899,6 +901,7 @@
 				0B52000230C3000000AA0001 /* RAGKit */,
 				A1B2C4712F70000100AAA109 /* AgentToolKit */,
 				MRK100000000000000001 /* ModelRouterKit */,
+				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1007,6 +1010,7 @@
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 				A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */,
 				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
+				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1886,6 +1890,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorOverlayKit;
 		};
+		0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MemoryKit;
+		};
 		0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ChatInputEditorKit;
@@ -2181,6 +2189,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */;
 			productName = EditorOverlayKit;
+		};
+		0B7A440B2FC1FA390056DFA2 /* MemoryKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MemoryKit;
 		};
 		0B9A100230C9000000CE0001 /* ChatInputEditorKit */ = {
 			isa = XCSwiftPackageProductDependency;
