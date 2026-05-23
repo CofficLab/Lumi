@@ -86,7 +86,6 @@ public struct LineOffsetTable: Sendable {
         // 1. Remove lines that were completely deleted
         if changeInLength < 0 && endLine > startLine {
             // Lines were deleted
-            let linesToDelete = endLine - startLine
             newLineStarts.removeSubrange((startLine + 1)...endLine)
         }
         
