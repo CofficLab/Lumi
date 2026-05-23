@@ -898,6 +898,7 @@
 				B58B244CDF214E2CB80C1953 /* LLMKit */,
 				0B52000230C3000000AA0001 /* RAGKit */,
 				A1B2C4712F70000100AAA109 /* AgentToolKit */,
+				MRK100000000000000001 /* ModelRouterKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1005,6 +1006,7 @@
 				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 				A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */,
+				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1960,6 +1962,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/AgentToolKit;
 		};
+		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ModelRouterKit;
+		};
 		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/XcodeKit;
@@ -2294,6 +2300,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */;
 			productName = AgentToolKit;
+		};
+		MRK100000000000000001 /* ModelRouterKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */;
+			productName = ModelRouterKit;
 		};
 		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
 			isa = XCSwiftPackageProductDependency;
