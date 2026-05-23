@@ -36,7 +36,7 @@ jobs:
   release_pipeline:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref_name }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Restore CodeEditLanguages Framework
         id: codeedit-languages-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
@@ -356,7 +356,7 @@ jobs:
       # =================================================================================================
       - name: Commit and Push Changes
         if: success()
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "ci: bump to ${{ env.new_version }}"
           commit_user_name: GitHub Action
@@ -416,7 +416,7 @@ jobs:
 
       - name: Create GitHub Release
         if: success()
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.tag }}
           prerelease: ${{ env.IS_PRERELEASE }}
@@ -431,7 +431,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
