@@ -27,45 +27,12 @@ actor BrowserAgentPlugin: SuperPlugin, SuperLog {
 
     static let shared = BrowserAgentPlugin()
 
-    /// agent-browser 是否可用
-    private(set) var isAgentBrowserAvailable: Bool = false
-
     private init() {}
 
-    func onEnable() async {
-        // 检测 agent-browser 是否安装
-        isAgentBrowserAvailable = await Self.checkAgentBrowserAvailability()
-
-        if !isAgentBrowserAvailable {
-            Self.logger.warning("\(self.t)⚠️ agent-browser is not installed")
-        }
-    }
-
-    /// 检测 agent-browser 是否可用
-    private static func checkAgentBrowserAvailability() async -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["agent-browser"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
-        }
-    }
+    func onEnable() async {}
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        guard isAgentBrowserAvailable else {
-            Self.logger.warning("\(self.t)⚠️ agent-browser not available, tools disabled")
-            return []
-        }
-        return [BrowserAgentTool()]
+        [BrowserAgentTool()]
     }
 }

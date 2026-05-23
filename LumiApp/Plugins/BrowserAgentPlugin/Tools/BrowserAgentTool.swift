@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import os
+import ShellKit
 
 /// 浏览器自动化工具
 ///
@@ -103,21 +104,38 @@ Note: Requires agent-browser CLI to be installed.
         }
 
         // 检测 agent-browser 是否可用
-        let isAvailable = await checkAgentBrowserInstalled()
-        guard isAvailable else {
+        let agentBrowserPath = await ShellExecutor.findCommand("agent-browser")
+        guard agentBrowserPath != nil else {
             return Self.installationGuide
         }
 
         do {
             try context?.checkCancellation()
-            let output = try await runAgentBrowser(command: command, timeout: timeout, context: context)
+
+            let args = command.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+            let options = ShellOptions(
+                timeout: TimeInterval(timeout),
+                throwsOnError: false
+            )
+
+            let result = try await ShellExecutor.execute(
+                executable: "agent-browser",
+                arguments: args,
+                options: options
+            )
+
             try context?.checkCancellation()
 
             if Self.verbose {
-                Self.logger.info("\(self.t)✅ Command completed")
+                Self.logger.info("\(self.t)✅ Command completed (exit: \(result.exitCode))")
             }
 
-            return output
+            if result.exitCode == 0 {
+                return result.stdout.isEmpty ? "Command completed successfully" : result.stdout
+            } else {
+                let errorMsg = result.stderr.isEmpty ? "Command failed with exit code \(result.exitCode)" : result.stderr
+                return "Error: \(errorMsg)"
+            }
         } catch let error as CancellationError {
             throw error
         } catch {
@@ -126,114 +144,8 @@ Note: Requires agent-browser CLI to be installed.
         }
     }
 
-    /// 检测 agent-browser 是否已安装
-    private func checkAgentBrowserInstalled() async -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["agent-browser"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
-        }
-    }
-
-    /// 执行 agent-browser 命令
-    @Sendable
-    private func runAgentBrowser(command: String, timeout: Int, context: ToolExecutionContext?) async throws -> String {
-        try context?.checkCancellation()
-
-        return try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/local/bin/agent-browser")
-
-            // 解析命令参数
-            let args = command.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-            process.arguments = args
-
-            let outputPipe = Pipe()
-            let errorPipe = Pipe()
-            process.standardOutput = outputPipe
-            process.standardError = errorPipe
-
-            // 超时处理
-            var hasResumed = false
-            let lock = NSLock()
-
-            let timeoutTask = Task {
-                try await Task.sleep(for: .seconds(timeout))
-                lock.lock()
-                defer { lock.unlock() }
-
-                guard !hasResumed else { return }
-                hasResumed = true
-
-                process.terminate()
-                continuation.resume(returning: "Error: Command timed out after \(timeout) seconds")
-            }
-
-            // 取消处理
-            let cancellationId = context?.onCancel {
-                lock.lock()
-                defer { lock.unlock() }
-
-                guard !hasResumed else { return }
-                hasResumed = true
-
-                timeoutTask.cancel()
-                process.terminate()
-                continuation.resume(returning: "Error: Command was cancelled")
-            }
-
-            process.terminationHandler = { proc in
-                lock.lock()
-                defer { lock.unlock() }
-
-                guard !hasResumed else { return }
-                hasResumed = true
-
-                timeoutTask.cancel()
-                context?.removeCancellationHandler(cancellationId)
-
-                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-
-                let output = String(data: outputData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                let errorOutput = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-                if proc.terminationStatus == 0 {
-                    continuation.resume(returning: output.isEmpty ? "Command completed successfully" : output)
-                } else {
-                    let errorMsg = errorOutput.isEmpty ? "Command failed with exit code \(proc.terminationStatus)" : errorOutput
-                    continuation.resume(returning: "Error: \(errorMsg)")
-                }
-            }
-
-            do {
-                try process.run()
-            } catch {
-                lock.lock()
-                defer { lock.unlock() }
-
-                guard !hasResumed else { return }
-                hasResumed = true
-
-                timeoutTask.cancel()
-                context?.removeCancellationHandler(cancellationId)
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
     /// 安装指南
-    private var installationGuide: String {
+    private static var installationGuide: String {
         """
         Error: agent-browser is not installed on this system.
 
