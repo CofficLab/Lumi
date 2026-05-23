@@ -1597,10 +1597,12 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 优先从插件系统获取，fallback 到 EditorThemeAdapter 默认主题
     private func resolveTheme(for id: String) -> EditorTheme {
         if let contributor = editorExtensions.theme(for: id) {
+            logger.info("\(Self.t)✅ resolveTheme: found contributor for '\(id)'")
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
-        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id)'，使用 fallback")
+        let available = editorExtensions.allThemes().map(\.id)
+        logger.warning("\(Self.t)⚠️ resolveTheme: 找不到主题 contributor for '\(id)', available=\(available)")
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1611,10 +1613,9 @@ public final class EditorState: ObservableObject, SuperLog {
             if shouldRegisterThemeContributors {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
             }
+            let available = self.editorExtensions.allThemes().map(\.id)
+            logger.info("\(Self.t)🎨 observeThemeChanges: themeId='\(themeId)', current='\(self.currentThemeId)', available=\(available)")
             guard self.currentThemeId != themeId else { return }
-            if Self.verbose {
-                            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId) → \(themeId)")
-            }
             self.currentThemeId = themeId
             self.currentTheme = self.resolveTheme(for: themeId)
         }

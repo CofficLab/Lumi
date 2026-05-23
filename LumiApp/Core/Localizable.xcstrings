@@ -451,6 +451,15 @@
         }
       }
     },
+    "• **Auto**：自动从所有可用模型中选择最优的" : {
+
+    },
+    "• **手动指定**：固定使用某个供应商的特定模型" : {
+
+    },
+    "• 每日最多执行 5 次深度分析（节省成本）" : {
+
+    },
     "••••••••" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -932,6 +941,9 @@
           }
         }
       }
+    },
+    "Auto (自动选择)" : {
+
     },
     "Available Models" : {
 
@@ -1544,6 +1556,9 @@
         }
       }
     },
+    "Editor" : {
+
+    },
     "Enable Auto Input Source Switching" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1709,6 +1724,9 @@
       }
     },
     "Hide Bottom Panel" : {
+
+    },
+    "Hide Editor" : {
 
     },
     "History Size" : {
@@ -1977,6 +1995,9 @@
 
     },
     "Live sample" : {
+
+    },
+    "LLM 模型选择" : {
 
     },
     "Load" : {
@@ -2497,6 +2518,9 @@
           }
         }
       }
+    },
+    "Project Issue Scanner 设置" : {
+
     },
     "Public IP" : {
       "localizations" : {
@@ -3440,6 +3464,9 @@
         }
       }
     },
+    "供应商" : {
+
+    },
     "保存" : {
 
     },
@@ -3820,6 +3847,9 @@
     "快速修复" : {
 
     },
+    "手动指定" : {
+
+    },
     "打开App Support目录" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4108,6 +4138,12 @@
         }
       }
     },
+    "模型" : {
+
+    },
+    "模型选择" : {
+
+    },
     "欢迎使用 Lumi" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4265,6 +4301,9 @@
     "该分类下暂无可配置的插件" : {
 
     },
+    "说明" : {
+
+    },
     "请从侧边栏选择一个导航入口" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4296,6 +4335,9 @@
           }
         }
       }
+    },
+    "请选择" : {
+
     },
     "请选择设置项" : {
       "localizations" : {
@@ -4364,6 +4406,9 @@
           }
         }
       }
+    },
+    "选择用于深度分析的 LLM 模型。自动模式将根据可用性和成本自动选择最优模型。" : {
+
     },
     "通用设置" : {
       "localizations" : {
