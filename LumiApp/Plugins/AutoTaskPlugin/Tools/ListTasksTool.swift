@@ -10,7 +10,6 @@ struct ListTasksTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "list_tasks"
-    let conversationId: String
 
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -44,6 +43,12 @@ struct ListTasksTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        String(localized: "Error: missing tool execution context", table: "AutoTask")
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId.uuidString
         let manager = TaskStateManager.shared
 
         let tasks: [TaskItem]

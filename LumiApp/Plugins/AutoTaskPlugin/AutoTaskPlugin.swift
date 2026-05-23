@@ -49,17 +49,12 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        guard let conversationId = context.conversationVM?.selectedConversationId?.uuidString else {
-            Self.logger.warning("\(Self.t)无法获取当前会话 ID，跳过注册 AutoTask 工具")
-            return []
-        }
-
         return [
-            CreateTaskTool(conversationId: conversationId),
-            AppendTaskTool(conversationId: conversationId),
-            UpdateTaskTool(conversationId: conversationId),
-            ListTasksTool(conversationId: conversationId),
-            CheckProgressTool(conversationId: conversationId),
+            CreateTaskTool(),
+            AppendTaskTool(),
+            UpdateTaskTool(),
+            ListTasksTool(),
+            CheckProgressTool(),
         ]
     }
 

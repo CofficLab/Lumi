@@ -10,7 +10,6 @@ struct AppendTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "append_task"
-    let conversationId: String
 
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -56,6 +55,13 @@ struct AppendTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        String(localized: "Error: missing tool execution context", table: "AutoTask")
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId.uuidString
+
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
             return String(localized: "Error: tasks array is required", table: "AutoTask")
         }
@@ -89,7 +95,7 @@ struct AppendTaskTool: SuperAgentTool, SuperLog {
         )
 
         var result = "✅ \(String(localized: "Appended \(items.count) tasks:", table: "AutoTask")) \n\n"
-        for (index, task) in appendedTasks.enumerated() {
+        for task in appendedTasks {
             result += "\(task.order). [\(task.id)] **\(task.title)**"
             if let detail = task.detail {
                 result += "\n   \(detail)"

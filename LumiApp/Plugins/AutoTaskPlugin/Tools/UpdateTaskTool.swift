@@ -10,7 +10,6 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "update_task"
-    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -48,6 +47,13 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        String(localized: "Error: missing tool execution context", table: "AutoTask")
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId.uuidString
+
         guard let taskId = arguments["task_id"]?.value as? String else {
             return String(localized: "Error: task_id is required", table: "AutoTask")
         }
@@ -59,7 +65,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         }
 
         let manager = TaskStateManager.shared
-        let success = await manager.updateTaskStatus(id: taskId, status: status)
+        let success = await manager.updateTaskStatus(id: taskId, conversationId: conversationId, status: status)
 
         guard success else {
             let notFoundLabel = String(localized: "Error: task not found", table: "AutoTask")
@@ -87,7 +93,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         if status == .completed || status == .skipped {
             let allTasks = await manager.fetchTasks(conversationId: conversationId)
             if let nextTask = allTasks.first(where: { $0.status == .pending }) {
-                _ = await manager.updateTaskStatus(id: nextTask.id, status: .inProgress)
+                _ = await manager.updateTaskStatus(id: nextTask.id, conversationId: conversationId, status: .inProgress)
 
                 // 再次通知 UI 刷新（推进了下一个任务）
                 NotificationCenter.default.post(

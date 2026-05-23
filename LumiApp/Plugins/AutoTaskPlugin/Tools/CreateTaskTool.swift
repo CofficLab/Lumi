@@ -10,7 +10,6 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "create_task"
-    let conversationId: String
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -57,6 +56,13 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        String(localized: "Error: missing tool execution context", table: "AutoTask")
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId.uuidString
+
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
             return String(localized: "Error: tasks array is required", table: "AutoTask")
         }

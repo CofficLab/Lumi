@@ -219,10 +219,27 @@ actor TaskStateManager: SuperLog {
 
     /// 更新任务状态
     func updateTaskStatus(id: String, status: TaskItem.TaskStatus) -> Bool {
+        updateTaskStatusScoped(id: id, conversationId: nil, status: status)
+    }
+
+    /// 更新当前会话内的任务状态
+    func updateTaskStatus(id: String, conversationId: String, status: TaskItem.TaskStatus) -> Bool {
+        updateTaskStatusScoped(id: id, conversationId: conversationId, status: status)
+    }
+
+    private func updateTaskStatusScoped(id: String, conversationId: String?, status: TaskItem.TaskStatus) -> Bool {
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<TaskItem>(
-            predicate: #Predicate<TaskItem> { $0.id == id }
-        )
+
+        let descriptor: FetchDescriptor<TaskItem>
+        if let conversationId {
+            descriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate<TaskItem> { $0.id == id && $0.conversationId == conversationId }
+            )
+        } else {
+            descriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate<TaskItem> { $0.id == id }
+            )
+        }
 
         guard let task = try? context.fetch(descriptor).first else {
             if Self.verbose {
