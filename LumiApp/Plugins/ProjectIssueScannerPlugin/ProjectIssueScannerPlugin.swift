@@ -43,6 +43,13 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
         AnyView(ProjectIssueScannerRoot(content: content()))
     }
 
+    // MARK: - Settings View
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        AnyView(ProjectIssueScannerSettingsView())
+    }
+
     // MARK: - Send Middleware
 
     @MainActor
