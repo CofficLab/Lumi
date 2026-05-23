@@ -23,15 +23,6 @@ final class SendController: ObservableObject, SuperLog {
         self.global = global
 
         // 组装 AgentTurnService 的依赖（使用窗口级 VM）
-        let llmRequester = LLMRequester(
-            llmService: global.llmService,
-            agentSessionConfig: global.agentSessionConfig,
-            toolService: global.toolService,
-            pluginVM: global.pluginVM,
-            statusVM: windowContainer.conversationSendStatusVM,
-            projectVM: windowContainer.projectVM,
-            conversationVM: windowContainer.conversationVM
-        )
         let toolCallExecutor = ToolCallExecutor(
             toolService: global.toolService,
             agentSessionConfig: global.agentSessionConfig,
@@ -39,18 +30,17 @@ final class SendController: ObservableObject, SuperLog {
             conversationSendStatusVM: windowContainer.conversationSendStatusVM,
             conversationVM: windowContainer.conversationVM
         )
-        let turnFinalizer = TurnFinalizer(
-            conversationVM: windowContainer.conversationVM,
-            conversationSendStatusVM: windowContainer.conversationSendStatusVM,
-            messageQueueVM: windowContainer.messageQueueVM
-        )
         self.agentTurnService = AgentTurnService(
-            llmRequester: llmRequester,
-            toolCallExecutor: toolCallExecutor,
-            turnFinalizer: turnFinalizer,
-            chatHistoryService: global.chatHistoryService,
+            llmService: global.llmService,
+            agentSessionConfig: global.agentSessionConfig,
+            toolService: global.toolService,
+            pluginVM: global.pluginVM,
+            statusVM: windowContainer.conversationSendStatusVM,
+            projectVM: windowContainer.projectVM,
             conversationVM: windowContainer.conversationVM,
-            messageQueueVM: windowContainer.messageQueueVM
+            messageQueueVM: windowContainer.messageQueueVM,
+            chatHistoryService: global.chatHistoryService,
+            toolCallExecutor: toolCallExecutor
         )
     }
 
