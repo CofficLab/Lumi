@@ -2,7 +2,7 @@ import Foundation
 import CodeEditTextView
 
 @MainActor
-final class ChatIntegrationCommandContributor: SuperEditorCommandContributor {
+final class EditorChatIntegrationCommandContributor: SuperEditorCommandContributor {
     let id: String = "builtin.chat.integration"
 
     func provideCommands(
