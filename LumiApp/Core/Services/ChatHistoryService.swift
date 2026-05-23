@@ -1,16 +1,355 @@
 import Foundation
 import AgentToolKit
 import SwiftData
+import LLMKit
 
-// MARK: - 消息操作扩展
+// MARK: - 通知常量
 
-extension ChatHistoryService {
+extension Notification.Name {
+    static let conversationDidChange = Notification.Name("ChatHistoryService.ConversationDidChange")
+}
+
+enum ConversationChangeType: String {
+    case created
+    case updated
+    case deleted
+}
+
+enum ConversationChangeUserInfoKey {
+    static let type = "type"
+    static let conversationId = "conversationId"
+}
+
+// MARK: - ToolCall / ChatMessage 便捷扩展
+
+extension ToolCall {
+    /// 将嵌入在 ToolCall 中的结果投影为 LLM 所需的 `role: .tool` 消息。
+    func projectedToolOutputMessage(conversationId: UUID) -> ChatMessage? {
+        guard let result else { return nil }
+        return ChatMessage(
+            role: .tool,
+            conversationId: conversationId,
+            content: result.content,
+            isError: result.isError,
+            toolCallID: id,
+            images: result.images
+        )
+    }
+}
+
+extension ChatMessage {
+    /// 发送给 LLM 时使用的 assistant 消息副本（不包含嵌入的工具结果）。
+    func forLLMAssistantMessage() -> ChatMessage {
+        var message = self
+        if let toolCalls {
+            message.toolCalls = toolCalls.map {
+                ToolCall(
+                    id: $0.id,
+                    name: $0.name,
+                    arguments: $0.arguments,
+                    authorizationState: $0.authorizationState
+                )
+            }
+        }
+        return message
+    }
+}
+
+// MARK: - ChatHistoryService
+
+/// 聊天历史服务 - 使用 SwiftData 存储对话
+///
+/// ## 线程安全
+///
+/// 整个服务标记为 `@MainActor`，所有数据库操作都在主线程执行，
+/// 消除 `Unbinding from the main queue` 警告和跨线程竞态。
+@MainActor
+final class ChatHistoryService: SuperLog, Sendable {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose: Bool = false
+    let modelContainer: ModelContainer
+    let modelContext: ModelContext
+    let llmService: LLMService
+
     struct ConversationTimelineSummary {
         let messageCount: Int
         let currentContextTokens: Int
     }
 
-    // MARK: - 保存消息
+    /// 使用 LLM 服务和模型容器初始化
+    init(llmService: LLMService, modelContainer: ModelContainer, reason: String) {
+        self.llmService = llmService
+        self.modelContainer = modelContainer
+        self.modelContext = ModelContext(modelContainer)
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)✅ (\(reason)) 聊天存储已初始化")
+        }
+    }
+
+    /// 获取模型上下文
+    internal func getContext() -> ModelContext {
+        return modelContext
+    }
+
+    /// 获取模型容器（用于 @Query）
+    func getModelContainer() -> ModelContainer {
+        return modelContainer
+    }
+}
+
+// MARK: - 对话创建
+
+extension ChatHistoryService {
+
+    /// 创建新对话
+    func createConversation(projectId: String? = nil, title: String = "新对话", chatMode: String? = nil) -> Conversation {
+        let conversation = Conversation(
+            projectId: projectId,
+            title: title,
+            createdAt: Date(),
+            updatedAt: Date(),
+            chatMode: chatMode
+        )
+
+        saveConversation(conversation)
+        notifyConversationChanged(type: .created, conversationId: conversation.id)
+        NotificationCenter.postConversationCreated(conversationId: conversation.id)
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)✨ 创建新对话：\(title)")
+        }
+
+        return conversation
+    }
+}
+
+// MARK: - 对话查询
+
+extension ChatHistoryService {
+
+    /// 获取所有对话（按创建时间倒序）
+    func fetchAllConversations() -> [Conversation] {
+        let context = self.getContext()
+        let descriptor = FetchDescriptor<Conversation>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+
+        do {
+            let conversations = try context.fetch(descriptor)
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📄 获取到 \(conversations.count) 个对话")
+            }
+            return conversations
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// 分页获取对话
+    /// - Parameters:
+    ///   - limit: 每页数量
+    ///   - offset: 偏移量
+    ///   - projectId: 可选项目 ID；为 nil 时拉取全部对话
+    /// - Returns: 当前页对话数据
+    func fetchConversationsPage(limit: Int, offset: Int, projectId: String? = nil) -> [Conversation] {
+        let context = self.getContext()
+
+        guard limit > 0, offset >= 0 else { return [] }
+
+        var descriptor: FetchDescriptor<Conversation>
+        if let projectId {
+            descriptor = FetchDescriptor<Conversation>(
+                predicate: #Predicate { $0.projectId == projectId },
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Conversation>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+        descriptor.fetchOffset = offset
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 分页获取对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// 获取指定项目最近更新的一个对话
+    /// - Parameter projectId: 项目路径
+    /// - Returns: 该项目最近使用的对话，不存在时返回 nil
+    func fetchLatestConversation(projectId: String) -> Conversation? {
+        let context = self.getContext()
+        var descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.projectId == projectId },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 获取项目最新对话失败：\(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// 根据 ID 获取对话
+    func fetchConversation(id: UUID) -> Conversation? {
+        let context = self.getContext()
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        do {
+            let conversations = try context.fetch(descriptor)
+            return conversations.first
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
+            return nil
+        }
+    }
+}
+
+// MARK: - 对话更新
+
+extension ChatHistoryService {
+
+    /// 更新对话标题
+    func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
+        conversation.title = newTitle
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+        notifyConversationChanged(type: .updated, conversationId: conversation.id)
+        NotificationCenter.postConversationUpdated(conversationId: conversation.id)
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
+        }
+    }
+
+    /// 基于用户消息生成会话标题
+    /// - Parameters:
+    ///   - userMessage: 用户的第一条消息
+    ///   - config: LLM 配置
+    /// - Returns: 生成的标题（最多 20 个字符）
+    func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
+        await ConversationTitleGenerator().generate(userMessage: userMessage, config: config) { [llmService] messages, config in
+            try await llmService.sendMessage(messages: messages, config: config, tools: [])
+        }
+    }
+
+    /// 更新对话的供应商/模型偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - providerId: 供应商 ID，nil 表示清除对话级偏好（回退到项目偏好）
+    ///   - model: 模型名称，nil 表示清除对话级偏好（回退到项目偏好）
+    func updateModelPreference(_ conversation: Conversation, providerId: String?, model: String?) {
+        conversation.providerId = providerId
+        conversation.model = model
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let providerId, let model {
+                AppLogger.core.info("\(Self.t)🎯 已保存对话 '\(conversation.title)' 的模型偏好：\(providerId) - \(model)")
+            } else {
+                AppLogger.core.info("\(Self.t)🎯 已清除对话 '\(conversation.title)' 的模型偏好")
+            }
+        }
+    }
+
+    /// 更新对话的聊天模式偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - chatMode: 聊天模式 rawValue，nil 表示清除对话级偏好（回退到全局偏好）
+    func updateChatMode(_ conversation: Conversation, chatMode: String?) {
+        conversation.chatMode = chatMode
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let chatMode {
+                AppLogger.core.info("\(Self.t)🔄 已保存对话 '\(conversation.title)' 的聊天模式：\(chatMode)")
+            } else {
+                AppLogger.core.info("\(Self.t)🔄 已清除对话 '\(conversation.title)' 的聊天模式")
+            }
+        }
+    }
+}
+
+// MARK: - 对话存储与删除
+
+extension ChatHistoryService {
+
+    /// 保存或更新对话
+    func saveConversation(_ conversation: Conversation) {
+        let context = self.getContext()
+        context.insert(conversation)
+
+        do {
+            try context.save()
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
+        }
+    }
+
+    func notifyConversationChanged(type: ConversationChangeType, conversationId: UUID) {
+        let userInfo: [String: String] = [
+            ConversationChangeUserInfoKey.type: type.rawValue,
+            ConversationChangeUserInfoKey.conversationId: conversationId.uuidString,
+        ]
+
+        let postOnCurrentThread = {
+            NotificationCenter.default.post(
+                name: .conversationDidChange,
+                object: nil,
+                userInfo: userInfo
+            )
+        }
+
+        if Thread.isMainThread {
+            postOnCurrentThread()
+        } else {
+            Task { @MainActor in
+                NotificationCenter.default.post(
+                    name: .conversationDidChange,
+                    object: nil,
+                    userInfo: userInfo
+                )
+            }
+        }
+    }
+
+    /// 删除对话
+    func deleteConversation(_ conversation: Conversation) {
+        let context = self.getContext()
+        context.delete(conversation)
+
+        do {
+            try context.save()
+            notifyConversationChanged(type: .deleted, conversationId: conversation.id)
+            NotificationCenter.postConversationDeleted(conversationId: conversation.id)
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
+            }
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - 消息保存
+
+extension ChatHistoryService {
 
     /// 保存消息到指定对话
     /// - Parameters:
@@ -175,8 +514,11 @@ extension ChatHistoryService {
             return 0
         }
     }
+}
 
-    // MARK: - 加载消息
+// MARK: - 消息加载
+
+extension ChatHistoryService {
 
     /// 加载对话消息
     ///
@@ -217,6 +559,31 @@ extension ChatHistoryService {
         let messages = messageEntities.compactMap { $0.toChatMessage() }
         if Self.verbose {
             AppLogger.core.info("\(Self.t)✅ [\(conversationId)] 加载到 \(messages.count) 条消息")
+        }
+        return messages
+    }
+
+    /// 加载对话的消息
+    func loadMessages(for conversation: Conversation) -> [ChatMessage] {
+        let context = getContext()
+
+        // 直接查询 ChatMessageEntity 表，绕过 @Relationship
+        let conversationId = conversation.id
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { msg in
+                msg.conversation?.id == conversationId
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+
+        guard let entities = try? context.fetch(descriptor) else {
+            AppLogger.core.error("\(Self.t)❌ 加载消息失败")
+            return []
+        }
+
+        let messages = entities.compactMap { $0.toChatMessage() }
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📄 [\(conversationId)] 加载到 \(messages.count) 条消息")
         }
         return messages
     }
@@ -412,33 +779,52 @@ extension ChatHistoryService {
 
         return (try? context.fetchCount(descriptor)) ?? 0
     }
+}
 
-    /// 加载对话的消息
-    func loadMessages(for conversation: Conversation) -> [ChatMessage] {
-        let context = getContext()
+// MARK: - 消息展开（LLM 上下文）
 
-        // 直接查询 ChatMessageEntity 表，绕过 @Relationship
-        let conversationId = conversation.id
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate<ChatMessageEntity> { msg in
-                msg.conversation?.id == conversationId
-            },
-            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-        )
+extension ChatHistoryService {
 
-        guard let entities = try? context.fetch(descriptor) else {
-            AppLogger.core.error("\(Self.t)❌ 加载消息失败")
-            return []
+    /// 将存储中的 assistant/toolCalls 展开为 LLM 可消费的完整消息序列。
+    func expandMessagesForLLM(_ messages: [ChatMessage]) -> [ChatMessage] {
+        var expanded: [ChatMessage] = []
+
+        for message in messages {
+            switch message.role {
+            case .tool:
+                // 独立的 tool 消息（投影产生的）
+                if message.shouldSendToLLM {
+                    expanded.append(message)
+                }
+            case .assistant:
+                expanded.append(message.forLLMAssistantMessage())
+                if let toolCalls = message.toolCalls {
+                    for toolCall in toolCalls {
+                        if let projected = toolCall.projectedToolOutputMessage(conversationId: message.conversationId) {
+                            expanded.append(projected)
+                        }
+                    }
+                }
+            default:
+                if message.shouldSendToLLM {
+                    expanded.append(message)
+                }
+            }
         }
 
-        let messages = entities.compactMap { $0.toChatMessage() }
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📄 [\(conversationId)] 加载到 \(messages.count) 条消息")
-        }
-        return messages
+        return expanded
     }
 
-    // MARK: - 图片关系管理
+    /// 加载会话消息并展开为 LLM 上下文。
+    func loadMessagesExpandedForLLM(forConversationId conversationId: UUID) -> [ChatMessage]? {
+        guard let messages = loadMessages(forConversationId: conversationId) else { return nil }
+        return expandMessagesForLLM(messages)
+    }
+}
+
+// MARK: - 关系同步（私有）
+
+extension ChatHistoryService {
 
     /// 同步消息实体与图片附件的关系
     ///
@@ -484,8 +870,6 @@ extension ChatHistoryService {
             }
         }
     }
-
-    // MARK: - 工具调用关系管理
 
     /// 同步消息实体与工具调用的关系
     ///

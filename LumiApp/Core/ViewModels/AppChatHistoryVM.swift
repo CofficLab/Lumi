@@ -13,20 +13,16 @@ import LLMKit
 final class AppChatHistoryVM: ObservableObject {
     // MARK: - Properties
 
-    /// 聊天历史服务（消息操作）
+    /// 聊天历史服务（消息 + 对话 CRUD）
     let chatHistoryService: ChatHistoryService
-
-    /// 对话服务（对话表 CRUD）
-    let conversationService: ConversationService
 
     /// 性能统计服务
     let performanceService: PerformanceService
 
     // MARK: - Initialization
 
-    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService, performanceService: PerformanceService) {
+    init(chatHistoryService: ChatHistoryService, performanceService: PerformanceService) {
         self.chatHistoryService = chatHistoryService
-        self.conversationService = conversationService
         self.performanceService = performanceService
     }
 
@@ -82,7 +78,7 @@ final class AppChatHistoryVM: ObservableObject {
         await chatHistoryService.deleteMessagesAsync(messageIds: messageIds, conversationId: conversationId)
     }
 
-    // MARK: - 对话操作（委托给 ConversationService）
+    // MARK: - 对话操作（委托给 ChatHistoryService）
 
     /// 创建新对话
     @discardableResult
@@ -91,7 +87,7 @@ final class AppChatHistoryVM: ObservableObject {
         title: String = "新对话",
         chatMode: String? = nil
     ) -> Conversation {
-        conversationService.createConversation(
+        chatHistoryService.createConversation(
             projectId: projectId,
             title: title,
             chatMode: chatMode
@@ -100,7 +96,7 @@ final class AppChatHistoryVM: ObservableObject {
 
     /// 获取所有对话（按创建时间倒序）
     func fetchAllConversations() -> [Conversation] {
-        conversationService.fetchAllConversations()
+        chatHistoryService.fetchAllConversations()
     }
 
     /// 分页获取对话
@@ -109,7 +105,7 @@ final class AppChatHistoryVM: ObservableObject {
         offset: Int,
         projectId: String? = nil
     ) -> [Conversation] {
-        conversationService.fetchConversationsPage(
+        chatHistoryService.fetchConversationsPage(
             limit: limit,
             offset: offset,
             projectId: projectId
@@ -118,37 +114,37 @@ final class AppChatHistoryVM: ObservableObject {
 
     /// 获取指定项目最近更新的一个对话
     func fetchLatestConversation(projectId: String) -> Conversation? {
-        conversationService.fetchLatestConversation(projectId: projectId)
+        chatHistoryService.fetchLatestConversation(projectId: projectId)
     }
 
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
-        conversationService.fetchConversation(id: id)
+        chatHistoryService.fetchConversation(id: id)
     }
 
     /// 更新对话标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
-        conversationService.updateConversationTitle(conversation, newTitle: newTitle)
+        chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
     }
 
     /// 基于用户消息自动生成会话标题
     func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
-        await conversationService.generateConversationTitle(from: userMessage, config: config)
+        await chatHistoryService.generateConversationTitle(from: userMessage, config: config)
     }
 
     /// 更新对话的供应商/模型偏好
     func updateModelPreference(_ conversation: Conversation, providerId: String?, model: String?) {
-        conversationService.updateModelPreference(conversation, providerId: providerId, model: model)
+        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
     }
 
     /// 更新对话的聊天模式偏好
     func updateChatMode(_ conversation: Conversation, chatMode: String?) {
-        conversationService.updateChatMode(conversation, chatMode: chatMode)
+        chatHistoryService.updateChatMode(conversation, chatMode: chatMode)
     }
 
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
-        conversationService.deleteConversation(conversation)
+        chatHistoryService.deleteConversation(conversation)
     }
 
     // MARK: - 性能统计（委托给 PerformanceService）
