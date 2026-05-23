@@ -528,7 +528,7 @@ struct EditorPreviewDetailView: View, SuperLog {
         case let .image(url):
             EditorPreviewImageView(fileURL: url)
         case .markdown:
-            EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL)
+            EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorVM.service)
                 .environmentObject(themeVM)
         case .stringCatalog:
             EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
@@ -861,6 +861,7 @@ private struct EditorPreviewMarkdownView: View {
 
     let markdown: String
     let fileURL: URL?
+    let editorService: EditorService?
     @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
@@ -963,6 +964,12 @@ private struct EditorPreviewMarkdownView: View {
                         } label: {
                             Label(String(localized: "Add to Chat", table: "EditorPreview"), systemImage: "bubble.left")
                         }
+                        Divider()
+                        Button(role: .destructive) {
+                            deleteHeadingAndContent(heading: heading)
+                        } label: {
+                            Label(String(localized: "Delete", table: "EditorPreview"), systemImage: "trash")
+                        }
                     }
                 }
             }
@@ -984,6 +991,64 @@ private struct EditorPreviewMarkdownView: View {
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
         NotificationCenter.postAddToChat(text: text, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
+    }
+
+    /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。
+    private func deleteHeadingAndContent(heading: MarkdownTOCHeading) {
+        guard let editorService, let fileURL else { return }
+
+        let lines = markdown.components(separatedBy: .newlines)
+        let startLine = heading.lineNumber
+
+        // 找到删除范围的结束行：下一个 level <= heading.level 的标题，或文件末尾
+        var endLine = lines.count
+        var inFence = false
+        for i in (startLine + 1)..<lines.count {
+            let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence.toggle()
+                continue
+            }
+            guard !inFence, let parsed = parseATXHeadingQuick(trimmed) else { continue }
+            if parsed <= heading.level {
+                endLine = i
+                break
+            }
+        }
+
+        // 计算要删除的文本范围
+        let prefix = lines[..<startLine].joined(separator: "\n")
+        let suffix = lines[endLine...].joined(separator: "\n")
+        var newContent = prefix
+        if !suffix.isEmpty {
+            // 如果 prefix 末尾有换行且 suffix 开头有换行，避免多余空行
+            if prefix.hasSuffix("\n") || (!newContent.isEmpty && newContent.last != "\n") {
+                newContent += "\n"
+            }
+            newContent += suffix
+        }
+
+        // 清理多余空行（超过两个连续换行合并为两个）
+        newContent = newContent.replacingOccurrences(
+            of: "\n{4,}",
+            with: "\n\n\n",
+            options: .regularExpression
+        )
+
+        // 替换编辑器内容
+        _ = editorService.replaceCurrentDocumentText(newContent, reason: "markdown_delete_heading")
+        editorService.saveNow()
+    }
+
+    /// 快速解析 ATX 标题，只返回 level
+    private func parseATXHeadingQuick(_ trimmedLine: String) -> Int? {
+        guard trimmedLine.hasPrefix("#") else { return nil }
+        let hashes = trimmedLine.prefix { $0 == "#" }
+        let level = hashes.count
+        guard (1...6).contains(level) else { return nil }
+        let remainder = trimmedLine.dropFirst(level)
+        guard remainder.first == " " || remainder.first == "\t" else { return nil }
+        return level
     }
 
     private var previewTheme: MarkdownTheme {
