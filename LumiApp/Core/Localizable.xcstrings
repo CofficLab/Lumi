@@ -1708,6 +1708,9 @@
         }
       }
     },
+    "Hide Bottom Panel" : {
+
+    },
     "History Size" : {
       "extractionState" : "stale",
       "localizations" : {
