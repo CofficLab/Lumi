@@ -104,8 +104,10 @@ Note: Requires agent-browser CLI to be installed.
         }
 
         // 检测 agent-browser 是否可用
-        let agentBrowserPath = await ShellExecutor.findCommand("agent-browser")
-        guard agentBrowserPath != nil else {
+        // 注意：macOS GUI 应用的 PATH 可能不包含 /opt/homebrew/bin 等 Homebrew 路径，
+        // 所以先尝试 which，找不到再逐一检查常见安装路径
+        let agentBrowserPath = await Self.findAgentBrowser()
+        guard let agentBrowserPath else {
             return Self.installationGuide
         }
 
@@ -119,7 +121,7 @@ Note: Requires agent-browser CLI to be installed.
             )
 
             let result = try await ShellExecutor.execute(
-                executable: "agent-browser",
+                executable: agentBrowserPath,
                 arguments: args,
                 options: options
             )
@@ -141,6 +143,58 @@ Note: Requires agent-browser CLI to be installed.
         } catch {
             Self.logger.error("\(self.t)❌ Command failed: \(error.localizedDescription)")
             return "Error: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Command Discovery
+
+    /// agent-browser 的常见安装路径（macOS GUI 应用 PATH 可能不包含这些目录）
+    private static let candidatePaths = [
+        "/opt/homebrew/bin/agent-browser",     // Apple Silicon Homebrew
+        "/usr/local/bin/agent-browser",         // Intel Homebrew
+        "/usr/bin/agent-browser",               // 系统级安装
+        "/Users/\(NSUserName())/.volta/bin/agent-browser", // Volta (npm 全局)
+    ]
+
+    /// 查找 agent-browser 可执行文件路径
+    ///
+    /// 先尝试 `which`（在应用 PATH 环境中查找），找不到则逐一检查常见安装路径。
+    /// 最后尝试通过 shell 登录获取用户的完整 PATH 来查找。
+    private static func findAgentBrowser() async -> String? {
+        // 1. 先尝试 which（应用进程的 PATH）
+        if let path = await ShellExecutor.findCommand("agent-browser") {
+            return path
+        }
+
+        // 2. 逐一检查常见路径
+        for path in candidatePaths {
+            if FileManager.default.isExecutableFile(atPath: path) {
+                return path
+            }
+        }
+
+        // 3. 通过登录 shell 获取用户的完整 PATH，再尝试 which
+        // macOS GUI 应用继承 launchd 的环境，PATH 通常只有 /usr/bin:/bin:/usr/sbin:/sbin
+        // 而用户的 shell 配置（.zshrc/.zprofile）中的 PATH 不会被加载
+        if let path = await findCommandViaLoginShell("agent-browser") {
+            return path
+        }
+
+        return nil
+    }
+
+    /// 通过登录 shell 获取用户完整 PATH 来查找命令
+    private static func findCommandViaLoginShell(_ command: String) async -> String? {
+        do {
+            let result = try await ShellExecutor.execute(
+                executable: "/bin/zsh",
+                arguments: ["-l", "-c", "which \(command)"],
+                options: .init(throwsOnError: false, timeout: 5)
+            )
+            let path = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+            return result.isSuccess && !path.isEmpty ? path : nil
+        } catch {
+            return nil
         }
     }
 
