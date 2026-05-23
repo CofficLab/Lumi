@@ -1,26 +1,25 @@
 import Foundation
 import AgentToolKit
 
-/// 创建任务工具
+/// 追加任务工具
 ///
-/// 用于创建单个任务或批量创建任务列表。
-/// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
-struct CreateTaskTool: SuperAgentTool, SuperLog {
+/// 在已有任务列表末尾追加新任务，不影响已有任务的状态和顺序。
+/// 适用于 Agent 在执行过程中发现需要额外步骤的场景。
+struct AppendTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = false
 
-    let name = "create_task"
+    let name = "append_task"
     let conversationId: String
+
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "为复杂目标创建任务。当用户提出需要多步完成的请求时，使用此工具将其拆分为任务。可以一次创建单个任务或一批任务。每个任务都应是具体、可执行的步骤。任务会在看板中跟踪，并自动提醒进度。创建任务后，应立即开始处理第一个任务。"
+            return "追加新任务到已有任务列表末尾。当执行过程中发现需要额外步骤时，使用此工具添加新任务。不会影响已有任务的状态。"
         case .english:
-            return     """
-    Create tasks for a complex goal. When the user asks you to do something that requires multiple steps, \
-    break it down into tasks using this tool. You can create a single task or a batch of tasks at once. \
-    Each task should be a concrete, actionable step. Tasks are tracked in a kanban board and you will be \
-    reminded of progress automatically. After creating tasks, start working on the first one immediately.
+            return """
+    Append new tasks to the end of the existing task list. Use this when you discover \
+    additional steps are needed during execution. Existing tasks and their statuses are not affected.
     """
         }
     }
@@ -31,13 +30,13 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
             "properties": [
                 "tasks": [
                     "type": "array",
-                    "description": "Array of tasks to create. Each task has a title and optional detail.",
+                    "description": "Array of tasks to append. Each task has a title and optional detail.",
                     "items": [
                         "type": "object",
                         "properties": [
                             "title": [
                                 "type": "string",
-                                "description": "Short, actionable task title (e.g., 'Setup project structure')",
+                                "description": "Short, actionable task title",
                             ],
                             "detail": [
                                 "type": "string",
@@ -76,10 +75,10 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         }
 
         let manager = TaskStateManager.shared
-        let createdTasks = await manager.createTasks(conversationId: conversationId, items: items)
+        let appendedTasks = await manager.appendTasks(conversationId: conversationId, items: items)
 
         if AutoTaskPlugin.verbose {
-                    AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")
+            AutoTaskPlugin.logger.info("\(Self.t)Appended \(items.count) tasks for cid=\(conversationId.prefix(8))")
         }
 
         // 通知 UI 刷新
@@ -89,21 +88,18 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
             userInfo: ["conversationId": conversationId]
         )
 
-        var result = "✅ \(String(localized: "Created", table: "AutoTask")) \(items.count) \(String(localized: "tasks:", table: "AutoTask"))\n\n"
-        for (index, task) in createdTasks.enumerated() {
-            result += "\(index + 1). [\(task.id)] **\(task.title)**"
+        var result = "✅ \(String(localized: "Appended %lld tasks:", table: "AutoTask", arguments: items.count)) \n\n"
+        for (index, task) in appendedTasks.enumerated() {
+            result += "\(task.order). [\(task.id)] **\(task.title)**"
             if let detail = task.detail {
                 result += "\n   \(detail)"
             }
             result += "\n"
         }
-        let startLabel = String(localized: "Now start working on task #1", table: "AutoTask")
-        let firstTask = createdTasks.first!
-        result += "\n\(startLabel): [\(firstTask.id)] \(firstTask.title)"
 
         if Self.verbose {
             if AutoTaskPlugin.verbose {
-                            AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks for conversation \(conversationId)")
+                AutoTaskPlugin.logger.info("\(Self.t)Appended \(items.count) tasks for conversation \(conversationId)")
             }
         }
 

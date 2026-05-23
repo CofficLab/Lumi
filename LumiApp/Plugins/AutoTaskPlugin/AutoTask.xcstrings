@@ -1,6 +1,29 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Appended %lld tasks:" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appended %lld tasks:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已追加 %lld 个任务："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已追加 %lld 個任務："
+          }
+        }
+      }
+    },
     "All tasks completed!" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -314,6 +337,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錯誤：任務列表不能為空"
+          }
+        }
+      }
+    },
+    "Tasks (%lld total)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks (%lld total)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任务列表（共 %lld 个）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任務列表（共 %lld 個）"
           }
         }
       }

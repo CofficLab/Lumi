@@ -1,0 +1,81 @@
+import Foundation
+import AgentToolKit
+
+/// 获取任务列表工具
+///
+/// 返回当前会话的所有任务，以结构化的列表形式展示 ID、标题、状态和详情。
+/// 用于 Agent 需要查看完整任务列表以做决策的场景（如判断是否需要追加任务）。
+struct ListTasksTool: SuperAgentTool, SuperLog {
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose: Bool = false
+
+    let name = "list_tasks"
+    let conversationId: String
+
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取当前会话的任务列表。返回所有任务的 ID、标题、状态和详情。用于查看完整任务信息以做决策，例如判断是否需要追加新任务。"
+        case .english:
+            return """
+    Get the task list for the current conversation. Returns all tasks with their IDs, titles, \
+    statuses, and details. Use this to review full task information for decision-making, \
+    such as determining whether to append new tasks.
+    """
+        }
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "status": [
+                    "type": "string",
+                    "description": "Optional filter by status: 'pending', 'in_progress', 'completed', 'skipped'. Omit to return all tasks.",
+                    "enum": ["pending", "in_progress", "completed", "skipped"],
+                ],
+            ],
+            "required": [] as [String],
+        ]
+    }
+
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        let manager = TaskStateManager.shared
+
+        let tasks: [TaskItem]
+        if let statusString = arguments["status"]?.value as? String,
+           let status = TaskItem.TaskStatus(rawValue: statusString)
+        {
+            tasks = await manager.fetchTasks(conversationId: conversationId, status: status)
+        } else {
+            tasks = await manager.fetchTasks(conversationId: conversationId)
+        }
+
+        if tasks.isEmpty {
+            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", table: "AutoTask")
+        }
+
+        let statusLabels: [TaskItem.TaskStatus: String] = [
+            .pending: "pending",
+            .inProgress: "in_progress",
+            .completed: "completed",
+            .skipped: "skipped",
+        ]
+
+        var result = "📋 \(String(localized: "Tasks (%lld total)", table: "AutoTask", arguments: tasks.count))\n\n"
+        for task in tasks {
+            let statusLabel = statusLabels[task.status] ?? "unknown"
+            result += "#\(task.order) `\(task.id)` [\(statusLabel)] **\(task.title)**"
+            if let detail = task.detail {
+                result += "\n   \(detail)"
+            }
+            result += "\n"
+        }
+
+        return result
+    }
+}

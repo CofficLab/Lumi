@@ -75,12 +75,14 @@ actor TaskStateManager: SuperLog {
     }
 
     /// 批量创建任务（用于一次性拆解后批量写入）
-    func createTasks(conversationId: String, items: [(title: String, detail: String?)]) {
+    @discardableResult
+    func createTasks(conversationId: String, items: [(title: String, detail: String?)]) -> [TaskItem] {
         let context = ModelContext(container)
 
         // 先清除该会话的所有旧任务
         deleteAllForConversation(conversationId, context: context)
 
+        var created: [TaskItem] = []
         for (index, item) in items.enumerated() {
             let task = TaskItem(
                 conversationId: conversationId,
@@ -89,6 +91,7 @@ actor TaskStateManager: SuperLog {
                 order: index + 1
             )
             context.insert(task)
+            created.append(task)
         }
 
         try? context.save()
@@ -98,6 +101,42 @@ actor TaskStateManager: SuperLog {
                             AutoTaskPlugin.logger.info("\(Self.t)批量创建 \(items.count) 个任务 (会话: \(conversationId))")
             }
         }
+
+        return created
+    }
+
+    // MARK: - Append
+
+    /// 追加任务到已有任务列表末尾（不清除旧任务）
+    @discardableResult
+    func appendTasks(conversationId: String, items: [(title: String, detail: String?)]) -> [TaskItem] {
+        let context = ModelContext(container)
+
+        // 获取当前最大 order
+        let existingTasks = fetchTasks(conversationId: conversationId)
+        let maxOrder = existingTasks.map(\.order).max() ?? 0
+
+        var created: [TaskItem] = []
+        for (index, item) in items.enumerated() {
+            let task = TaskItem(
+                conversationId: conversationId,
+                title: item.title,
+                detail: item.detail,
+                order: maxOrder + index + 1
+            )
+            context.insert(task)
+            created.append(task)
+        }
+
+        try? context.save()
+
+        if Self.verbose {
+            if AutoTaskPlugin.verbose {
+                AutoTaskPlugin.logger.info("\(Self.t)追加 \(items.count) 个任务 (会话: \(conversationId))")
+            }
+        }
+
+        return created
     }
 
     // MARK: - Read
