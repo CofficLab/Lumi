@@ -32,7 +32,7 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     static let description: String = "Persist and restore layout state across app launches"
     static let iconName: String = "sidebar.left"
     static let isConfigurable: Bool = false
-    static var order: Int { 1 }
+    static var order: Int { 99 }
 
     nonisolated var instanceLabel: String { Self.id }
 
@@ -232,30 +232,5 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 LayoutPluginLocalStore.shared.saveContentPanelVisible(newValue)
             }
             .store(in: &cancellables)
-    }
-}
-
-// MARK: - Layout Menu Button
-
-/// 工具栏右侧的布局菜单按钮
-///
-/// 提供下拉菜单，控制各面板区域的显示/隐藏。
-private struct LayoutMenuButton: View {
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
-    @EnvironmentObject private var themeVM: AppThemeVM
-
-    var body: some View {
-        Menu {
-            Toggle(isOn: $layoutVM.contentPanelVisible) {
-                Label("Content Panel", systemImage: "rectangle.topthird.inset.filled")
-            }
-            Toggle(isOn: $layoutVM.bottomPanelVisible) {
-                Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
-            }
-        } label: {
-            Image(systemName: "sidebar.leading")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
 }
