@@ -206,6 +206,24 @@ jobs:
       - name: Check CodeEditLanguages Framework
         run: scripts/check-codeedit-languages-framework.sh
 
+      - name: Cache SPM Packages
+        id: spm-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.DERIVED_DATA_PATH }}/SourcePackages
+          key: ${{ runner.os }}-xcode-26.3-spm-${{ hashFiles('Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-26.3-spm-
+
+      - name: Resolve SPM Dependencies
+        if: steps.spm-cache.outputs.cache-hit != 'true'
+        run: |
+          xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
+            -scheme ${{ env.SCHEME }} \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+            -resolvePackageDependencies \
+            -skipPackagePluginValidation
+
       - name: Build App (Archive)
         run: |
           set -o pipefail
@@ -217,6 +235,7 @@ jobs:
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
             -skipPackagePluginValidation \
+            -skipPackageUpdates \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
