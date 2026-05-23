@@ -88,7 +88,7 @@ struct AppendTaskTool: SuperAgentTool, SuperLog {
             userInfo: ["conversationId": conversationId]
         )
 
-        var result = "✅ \(String(localized: "Appended %lld tasks:", table: "AutoTask", arguments: items.count)) \n\n"
+        var result = "✅ \(String(localized: "Appended \(items.count) tasks:", table: "AutoTask")) \n\n"
         for (index, task) in appendedTasks.enumerated() {
             result += "\(task.order). [\(task.id)] **\(task.title)**"
             if let detail = task.detail {
