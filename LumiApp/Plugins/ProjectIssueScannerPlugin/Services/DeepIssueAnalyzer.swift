@@ -3,7 +3,7 @@ import LLMKit
 import ModelRouterKit
 
 /// 扫描器模型偏好
-enum ScannerModelPreference: Codable, Equatable {
+enum ScannerModelPreference: Codable, Equatable, Hashable {
     /// 使用自动路由选择最优模型
     case auto
     /// 使用用户手动指定的模型
