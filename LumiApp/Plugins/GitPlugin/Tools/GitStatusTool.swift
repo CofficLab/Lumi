@@ -43,17 +43,15 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         let path = arguments["path"]?.value as? String
 
         if Self.verbose {
-            if GitToolsPlugin.verbose {
-                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
-            }
+            GitPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
         }
 
         do {
             let status = try await GitService.shared.getStatus(path: path)
             return formatStatus(status)
         } catch {
-            if GitToolsPlugin.verbose {
-                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
+            if Self.verbose {
+                GitPlugin.logger.error("\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
             }
             return "获取 Git 状态失败：\(error.localizedDescription)"
         }
@@ -121,16 +119,4 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
 
         return output
     }
-}
-
-// MARK: - Git Status Model
-
-struct GitStatus: Codable {
-    let branch: String
-    let remote: String?
-    let modified: [String]
-    let added: [String]
-    let deleted: [String]
-    let renamed: [String]
-    let staged: [String]
 }

@@ -1,6 +1,5 @@
 import Foundation
 import AgentToolKit
-import SwiftUI
 
 /// Git 差异工具
 struct GitDiffTool: SuperAgentTool, SuperLog {
@@ -59,9 +58,7 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            if GitToolsPlugin.verbose {
-                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
-            }
+            GitPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
         }
 
         do {
@@ -72,8 +69,8 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
             )
             return formatDiff(diff)
         } catch {
-            if GitToolsPlugin.verbose {
-                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            if Self.verbose {
+                GitPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
             }
             return "获取 Git 差异失败：\(error.localizedDescription)"
         }
@@ -93,66 +90,5 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         output += "```diff\n\(diff.content)\n```"
 
         return output
-    }
-}
-
-// MARK: - Git Diff Model
-
-struct GitDiff: Codable {
-    let content: String
-    let stats: GitDiffStats?
-
-    var isEmpty: Bool {
-        content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-}
-
-struct GitDiffStats: Codable {
-    let filesChanged: Int
-    let insertions: Int
-    let deletions: Int
-}
-
-// MARK: - Git Change Type
-
-/// 文件变更类型
-enum GitChangeType: String, Codable {
-    case modified = "M"
-    case added = "A"
-    case deleted = "D"
-    case renamed = "R"
-    case untracked = "?"
-
-    /// 显示用的短标签
-    var displayLabel: String {
-        switch self {
-        case .modified: return "M"
-        case .added: return "A"
-        case .deleted: return "D"
-        case .renamed: return "R"
-        case .untracked: return "?"
-        }
-    }
-
-    /// 对应的颜色
-    var color: Color {
-        switch self {
-        case .modified: return .orange
-        case .added: return .green
-        case .deleted: return .red
-        case .renamed: return .blue
-        case .untracked: return .gray
-        }
-    }
-}
-
-/// 变更文件模型
-struct GitChangedFile: Identifiable, Equatable {
-    let id = UUID()
-    let path: String
-    let changeType: GitChangeType
-
-    static func == (lhs: GitChangedFile, rhs: GitChangedFile) -> Bool {
-        lhs.path == rhs.path
     }
 }

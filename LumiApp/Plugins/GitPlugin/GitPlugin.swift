@@ -1,8 +1,9 @@
 import SwiftUI
 import Foundation
+import AgentToolKit
 import os
 
-/// Git 插件：统一提供 Git 面板、提交历史、分支状态栏和快捷提交能力
+/// Git 插件：统一提供 Git 面板、提交历史、分支状态栏、快捷提交和 Agent 工具
 actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
@@ -12,7 +13,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     static let id: String = "GitPlugin"
     static let navigationId: String? = nil
     static let displayName: String = "Git"
-    static let description: String = "Git branch, commit history, status and quick commit"
+    static let description: String = String(localized: "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。", table: "GitPlugin")
     static let iconName: String = "arrow.triangle.branch"
     static let isConfigurable: Bool = false
     static var category: PluginCategory { .developerTool }
@@ -20,6 +21,15 @@ actor GitPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = GitPlugin()
+
+    private init() {}
+
+    // MARK: - Agent Tools
+
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [GitStatusTool(), GitDiffTool(), GitLogTool(), GitCommitTool()]
+    }
 
     // MARK: - UI Contributions
 

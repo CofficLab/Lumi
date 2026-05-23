@@ -75,9 +75,7 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         let amend = arguments["amend"]?.value as? Bool ?? false
         
         if Self.verbose {
-            if GitToolsPlugin.verbose {
-                GitToolsPlugin.logger.info("\(Self.t)执行 Git 提交：\(message)")
-            }
+            GitPlugin.logger.info("\(Self.t)执行 Git 提交：\(message)")
         }
         
         do {
@@ -89,8 +87,8 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
             )
             return formatCommitResult(result)
         } catch {
-            if GitToolsPlugin.verbose {
-                GitToolsPlugin.logger.error("\(Self.t)Git 提交失败：\(error.localizedDescription)")
+            if Self.verbose {
+                GitPlugin.logger.error("\(Self.t)Git 提交失败：\(error.localizedDescription)")
             }
             return "Git 提交失败：\(error.localizedDescription)"
         }

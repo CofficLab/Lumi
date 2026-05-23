@@ -9,7 +9,7 @@ import SwiftUI
 /// 参考 GitOK 的 Project+File 实现。
 final class GitService: @unchecked Sendable, SuperLog {
     nonisolated static let verbose: Bool = false
-    nonisolated static let emoji = "📦"
+    nonisolated static let emoji = "🌿"
     static let shared = GitService()
 
     private init() {}
