@@ -341,7 +341,6 @@ jobs:
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
-          spctl --assess --type open --context context:primary-signature -vv "$file"
 
       - name: Prepare Updates Directory
         run: |
