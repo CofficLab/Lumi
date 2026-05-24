@@ -4,6 +4,8 @@
 <dict>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Lumi needs permission to open selected files and folders in Terminal or Visual Studio Code.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
