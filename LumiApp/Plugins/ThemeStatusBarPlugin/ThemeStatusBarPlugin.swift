@@ -37,7 +37,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     // MARK: - Status Bar
 
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         AnyView(ThemeStatusBarView())
     }
 }

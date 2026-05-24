@@ -62,7 +62,7 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     // MARK: - 状态栏
 
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         AnyView(SkillStatusBarView())
     }
 }

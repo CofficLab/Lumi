@@ -31,8 +31,8 @@ actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
 
     /// 状态栏右侧：可用工具按钮（仅在编辑器激活时显示）
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(AvailableToolsButton())
     }
 }

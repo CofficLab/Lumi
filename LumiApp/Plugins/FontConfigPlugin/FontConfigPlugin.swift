@@ -22,8 +22,8 @@ actor FontConfigPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示字体配置入口
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(FontStatusBarView())
     }
 }

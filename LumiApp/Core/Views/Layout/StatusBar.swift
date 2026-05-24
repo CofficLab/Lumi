@@ -7,9 +7,10 @@ struct StatusBar: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
-        let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
-        let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
+        let context = PluginContext(activeIcon: pluginProvider.activePanelIcon)
+        let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
+        let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)
+        let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews(context: context)
         let hasLeadingViews = !statusBarLeadingViews.isEmpty
         let hasCenterViews = !statusBarCenterViews.isEmpty
         let hasTrailingViews = !statusBarTrailingViews.isEmpty

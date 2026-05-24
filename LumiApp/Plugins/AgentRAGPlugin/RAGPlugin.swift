@@ -82,8 +82,8 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     /// 提供状态栏右侧视图（仅在编辑器激活时显示）
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(RAGStatusBarView())
     }
 

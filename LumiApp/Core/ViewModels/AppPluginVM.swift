@@ -697,12 +697,12 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
     /// 多个插件的状态栏视图会水平排列显示在左侧。
     ///
+    /// - Parameter context: 由调用方组装的插件上下文
     /// - Returns: 状态栏左侧视图数组
-    func getStatusBarLeadingViews() -> [AnyView] {
-        let activeIcon = activePanelIcon
+    func getStatusBarLeadingViews(context: PluginContext) -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarLeadingView(activeIcon: activeIcon) }
+            .compactMap { $0.addStatusBarLeadingView(context: context) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -719,12 +719,12 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
     /// 多个插件的状态栏视图会水平排列显示在中间。
     ///
+    /// - Parameter context: 由调用方组装的插件上下文
     /// - Returns: 状态栏中间视图数组
-    func getStatusBarCenterViews() -> [AnyView] {
-        let activeIcon = activePanelIcon
+    func getStatusBarCenterViews(context: PluginContext) -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarCenterView(activeIcon: activeIcon) }
+            .compactMap { $0.addStatusBarCenterView(context: context) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -741,12 +741,12 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
     /// 多个插件的状态栏视图会水平排列显示在右侧。
     ///
+    /// - Parameter context: 由调用方组装的插件上下文
     /// - Returns: 状态栏右侧视图数组
-    func getStatusBarTrailingViews() -> [AnyView] {
-        let activeIcon = activePanelIcon
+    func getStatusBarTrailingViews(context: PluginContext) -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarTrailingView(activeIcon: activeIcon) }
+            .compactMap { $0.addStatusBarTrailingView(context: context) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }

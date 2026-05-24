@@ -22,7 +22,7 @@ actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示已加载插件入口
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(AppLoadedPluginsStatusBarView())
     }
 }
