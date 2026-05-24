@@ -560,7 +560,7 @@ struct EditorPreviewDetailView: View, SuperLog {
             ZStack {
                 EditorPreviewBoardGrid()
 
-                if !hasFrame {
+                if !hasFrame && !isEntryFailed {
                     VStack(spacing: 12) {
                         if viewModel.entryStatus == .noPreview, currentFileURL?.pathExtension == "swift" {
                             Image(systemName: "bolt.slash")
@@ -597,11 +597,7 @@ struct EditorPreviewDetailView: View, SuperLog {
                 .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
                 if let failure = entryFailure {
-                    VStack {
-                        Spacer()
-                        EditorPreviewFailureDetailsView(failure: failure)
-                            .padding(16)
-                    }
+                    EditorPreviewFailureDetailsView(failure: failure)
                 }
 
                 if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
@@ -622,6 +618,13 @@ struct EditorPreviewDetailView: View, SuperLog {
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var isEntryFailed: Bool {
+        if case .failed = viewModel.entryStatus {
+            return true
+        }
+        return false
     }
 
     private var entryFailure: EditorPreviewViewModel.EntryFailure? {
@@ -1087,53 +1090,25 @@ private struct EditorPreviewMarkdownView: View {
 private struct EditorPreviewFailureDetailsView: View {
     let failure: EditorPreviewViewModel.EntryFailure
 
-    @State private var isExpanded = false
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: failure.systemImage)
+                    .font(.system(size: 20))
                     .foregroundStyle(.orange)
                 Text(failure.title)
-                    .font(.system(size: 13, weight: .semibold))
-                Spacer(minLength: 8)
-                Button {
-                    isExpanded.toggle()
-                } label: {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                }
-                .buttonStyle(.borderless)
-                .help(String(localized: "Show error details", table: "EditorPreview"))
+                    .font(.system(size: 14, weight: .semibold))
             }
 
-            if isExpanded {
-                ScrollView {
-                    Text(failure.message)
-                        .font(.system(size: 12, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
-                }
-                .frame(maxHeight: 180)
-                .background(Color.black.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else {
+            ScrollView {
                 Text(failure.message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
+                    .font(.system(size: 12, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(12)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary.opacity(0.18), lineWidth: 1)
-        )
-        .frame(maxWidth: 620)
-        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

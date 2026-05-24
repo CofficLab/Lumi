@@ -1243,6 +1243,7 @@
       }
     },
     "Show error details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
