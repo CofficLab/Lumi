@@ -14,9 +14,8 @@ actor MarkdownEditorPlugin: SuperPlugin {
 
     nonisolated var providesEditorExtensions: Bool { true }
 
-    private let contributor = MarkdownHighlightContributor()
-
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        let contributor = MarkdownHighlightContributor()
         registry.registerHighlightProviderContributor(contributor)
     }
 }

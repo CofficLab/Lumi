@@ -68,12 +68,12 @@ final class SignatureHelpProvider: ObservableObject, SuperEditorSignatureHelpPro
 
                 currentHelp = SignatureHelpItem(
                     label: activeSignature.label,
-                    documentation: extractDocumentation(from: activeSignature.documentation),
+                    documentation: self.extractDocumentation(from: activeSignature.documentation),
                     parameters: activeSignature.parameters?.compactMap { param -> SignatureParam? in
-                        guard let label = extractParamLabel(from: param.label) else { return nil }
+                        guard let label = self.extractParamLabel(from: param.label) else { return nil }
                         return SignatureParam(
                             label: label,
-                            documentation: extractParamDocumentation(from: param.documentation)
+                            documentation: self.extractParamDocumentation(from: param.documentation)
                         )
                     } ?? [],
                     activeParameterIndex: activeParamIndex

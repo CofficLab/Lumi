@@ -39,14 +39,14 @@ final class InlayHintProvider: ObservableObject, SuperEditorInlayHintProvider {
             apply: { [weak self] newHints in
                 guard let self else { return }
                 hints = newHints.compactMap { hint in
-                    let text = formatLabel(hint.label)
+                    let text = self.formatLabel(hint.label)
                     guard !text.isEmpty else { return nil }
                     return InlayHintItem(
                         line: Int(hint.position.line),
                         character: Int(hint.position.character),
                         text: text,
                         kind: hint.kind,
-                        tooltip: extractTooltip(from: hint.tooltip),
+                        tooltip: self.extractTooltip(from: hint.tooltip),
                         paddingLeft: hint.paddingLeft == true,
                         paddingRight: hint.paddingRight == true
                     )
