@@ -561,7 +561,7 @@ struct EditorPreviewDetailView: View, SuperLog {
                 .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
                 if let failure = entryFailure {
-                    EditorPreviewFailureDetailsView(failure: failure)
+                    PreviewFailureView(failure: failure)
                 }
 
                 if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
@@ -1048,60 +1048,6 @@ private struct EditorPreviewMarkdownView: View {
             return nil
         }
         return TreeSitterCodeHighlightProvider(editorTheme: contributor.createTheme())
-    }
-}
-
-private struct EditorPreviewFailureDetailsView: View {
-    let failure: EditorPreviewViewModel.EntryFailure
-
-    @State private var isCopied = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: failure.systemImage)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.orange)
-                Text(failure.title)
-                    .font(.system(size: 14, weight: .semibold))
-
-                Spacer()
-
-                Button {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(failure.message, forType: .string)
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isCopied = true
-                    }
-                    Task {
-                        try? await Task.sleep(nanoseconds: 1_500_000_000)
-                        await MainActor.run {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isCopied = false
-                            }
-                        }
-                    }
-                } label: {
-                    Label(isCopied ? String(localized: "Copied", table: "EditorPreview") : String(localized: "Copy", table: "EditorPreview"),
-                          systemImage: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                        .labelStyle(.titleAndIcon)
-                        .font(.caption)
-                        .foregroundStyle(isCopied ? .green : .secondary)
-                }
-                .buttonStyle(.borderless)
-                .help(String(localized: "Copy error message to clipboard", table: "EditorPreview"))
-            }
-
-            ScrollView {
-                Text(failure.message)
-                    .font(.system(size: 12, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
