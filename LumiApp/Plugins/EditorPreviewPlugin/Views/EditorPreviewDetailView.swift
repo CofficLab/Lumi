@@ -576,7 +576,7 @@ struct EditorPreviewDetailView: View, SuperLog {
                 }
 
                 if let file = buildingFileName {
-                    PreviewBuildingOverlay(fileName: file)
+                    PreviewBuildingView(fileName: file)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)

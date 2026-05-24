@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// 预览构建过程中的加载覆盖层。
+/// 预览构建过程中的加载视图。
 ///
 /// 显示旋转进度指示器和正在构建的文件名，叠在画布网格线之上。
-struct PreviewBuildingOverlay: View {
+struct PreviewBuildingView: View {
     let fileName: String
 
     var body: some View {
