@@ -14,15 +14,20 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
     /// 执行完成时间
     public var executedAt: Date
 
+    /// 执行耗时（秒），精确记录从工具开始执行到完成的时间间隔
+    public var duration: TimeInterval?
+
     public init(
         content: String,
         images: [ImageAttachment] = [],
         isError: Bool = false,
-        executedAt: Date = Date()
+        executedAt: Date = Date(),
+        duration: TimeInterval? = nil
     ) {
         self.content = content
         self.images = images
         self.isError = isError
         self.executedAt = executedAt
+        self.duration = duration
     }
 }

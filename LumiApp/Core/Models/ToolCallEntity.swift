@@ -36,6 +36,9 @@ final class ToolCallEntity {
     /// 结果执行完成时间
     var resultExecutedAt: Date?
 
+    /// 执行耗时（秒）
+    var resultDuration: TimeInterval?
+
     /// 结果中的图片附件
     @Relationship(deleteRule: .nullify, inverse: \ImageAttachmentEntity.toolCallResults)
     var resultImages: [ImageAttachmentEntity] = []
@@ -61,6 +64,7 @@ final class ToolCallEntity {
         self.resultContent = result?.content
         self.resultIsError = result?.isError ?? false
         self.resultExecutedAt = result?.executedAt
+        self.resultDuration = result?.duration
         self.createdAt = createdAt
     }
 
@@ -74,7 +78,8 @@ final class ToolCallEntity {
                 content: resultContent,
                 images: resultImages.map { $0.toImageAttachment() },
                 isError: resultIsError,
-                executedAt: resultExecutedAt ?? createdAt
+                executedAt: resultExecutedAt ?? createdAt,
+                duration: resultDuration
             )
         }
 
@@ -107,5 +112,6 @@ final class ToolCallEntity {
         resultContent = toolCall.result?.content
         resultIsError = toolCall.result?.isError ?? false
         resultExecutedAt = toolCall.result?.executedAt
+        resultDuration = toolCall.result?.duration
     }
 }

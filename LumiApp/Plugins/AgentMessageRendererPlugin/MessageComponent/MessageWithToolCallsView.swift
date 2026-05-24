@@ -71,6 +71,12 @@ struct MessageWithToolCallsView: View {
 
                     Spacer()
 
+                    if let duration = toolCall.result?.duration {
+                        Text(formatDuration(duration))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                    }
+
                     AppIconButton(
                         systemImage: "slider.horizontal.3",
                         tint: isParametersPresented
@@ -151,6 +157,22 @@ struct MessageWithToolCallsView: View {
             if !isPresented, selection.wrappedValue == toolCallID {
                 selection.wrappedValue = nil
             }
+        }
+    }
+
+    /// 格式化耗时显示
+    /// - 不到 1 秒显示毫秒，如 "320ms"
+    /// - 1 秒以上显示秒（保留 1 位小数），如 "2.3s"
+    /// - 超过 60 秒显示分秒，如 "1m 23s"
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        if duration < 1.0 {
+            return "\(Int(duration * 1000))ms"
+        } else if duration < 60.0 {
+            return String(format: "%.1fs", duration)
+        } else {
+            let minutes = Int(duration) / 60
+            let seconds = Int(duration) % 60
+            return "\(minutes)m \(seconds)s"
         }
     }
 
