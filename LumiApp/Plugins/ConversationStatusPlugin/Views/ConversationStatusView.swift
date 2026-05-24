@@ -51,7 +51,7 @@ struct StatusMessageRow: View {
             // 状态文本
             Text(message.content)
                 .font(.caption)
-                .foregroundColor(themeVM.activeChromeTheme.secondaryTextColor())
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                 .lineLimit(1)
 
             Spacer()
@@ -96,7 +96,7 @@ struct StatusMessageRow: View {
         } else if content.contains("停止") || content.contains("⛔️") {
             return .yellow
         } else {
-            return themeVM.activeChromeTheme.secondaryTextColor()
+            return themeVM.activeChromeTheme.workspaceSecondaryTextColor()
         }
     }
 }
