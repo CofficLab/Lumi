@@ -163,6 +163,7 @@
       }
     },
     "^[%lld day](inflect: true) ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -208,6 +209,7 @@
       }
     },
     "^[%lld hour](inflect: true) ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -253,6 +255,7 @@
       }
     },
     "^[%lld minute](inflect: true) ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -317,6 +320,7 @@
       }
     },
     "Checking index status..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -432,6 +436,7 @@
       }
     },
     "Indexing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -454,6 +459,7 @@
       }
     },
     "Just now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -479,6 +485,7 @@
 
     },
     "No project selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -501,6 +508,7 @@
       }
     },
     "Not initialized" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -539,6 +547,7 @@
       }
     },
     "RAG" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
