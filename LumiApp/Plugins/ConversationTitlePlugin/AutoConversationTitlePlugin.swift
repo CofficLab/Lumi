@@ -47,19 +47,21 @@ private struct ConversationTitleToolbarView: View {
     private let maxTitleLength = 30
 
     var body: some View {
-        if currentTitle.isEmpty {
-            EmptyView()
-        } else {
-            Text(currentTitle)
-                .font(.caption)
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: 200, alignment: .trailing)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.secondary.opacity(0.1))
-                .cornerRadius(6)
+        Group {
+            if currentTitle.isEmpty {
+                EmptyView()
+            } else {
+                Text(currentTitle)
+                    .font(.caption)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 200, alignment: .trailing)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.secondary.opacity(0.1))
+                    .cornerRadius(6)
+            }
         }
         .onChange(of: conversationVM.selectedConversationId) { _, newId in
             updateTitle(for: newId)
