@@ -1054,6 +1054,8 @@ private struct EditorPreviewMarkdownView: View {
 private struct EditorPreviewFailureDetailsView: View {
     let failure: EditorPreviewViewModel.EntryFailure
 
+    @State private var isCopied = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
@@ -1062,6 +1064,32 @@ private struct EditorPreviewFailureDetailsView: View {
                     .foregroundStyle(.orange)
                 Text(failure.title)
                     .font(.system(size: 14, weight: .semibold))
+
+                Spacer()
+
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(failure.message, forType: .string)
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isCopied = true
+                    }
+                    Task {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                        await MainActor.run {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isCopied = false
+                            }
+                        }
+                    }
+                } label: {
+                    Label(isCopied ? String(localized: "Copied", table: "EditorPreview") : String(localized: "Copy", table: "EditorPreview"),
+                          systemImage: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption)
+                        .foregroundStyle(isCopied ? .green : .secondary)
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "Copy error message to clipboard", table: "EditorPreview"))
             }
 
             ScrollView {
