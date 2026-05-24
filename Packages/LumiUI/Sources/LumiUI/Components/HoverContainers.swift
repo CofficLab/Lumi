@@ -277,3 +277,200 @@ private struct SpaceAwarePopoverWindowConfigurator: NSViewRepresentable {
         }
     }
 }
+
+// MARK: - Sidebar Toolbar Hover Container
+
+/// 右侧栏底部工具栏 Hover 容器
+///
+/// 为右侧栏底部工具栏的按钮提供统一的 hover 效果。
+/// 当鼠标悬停时显示背景色变化，点击时可触发 popover 或执行操作。
+///
+/// ## 使用示例
+///
+/// ```swift
+/// SidebarToolbarHoverContainer(
+///     id: "my-button",
+///     tooltip: "Click me"
+/// ) {
+///     Image(systemName: "star")
+/// }
+/// ```
+///
+/// 或者带 popover：
+///
+/// ```swift
+/// SidebarToolbarHoverContainer(
+///     detailView: MyDetailView(),
+///     id: "my-button"
+/// ) {
+///     Image(systemName: "star")
+/// }
+/// ```
+public struct SidebarToolbarHoverContainer<Content: View, Detail: View>: View {
+    let content: Content
+    let detailView: Detail?
+    let id: String
+    let tooltip: String?
+    let cornerRadius: CGFloat
+
+    @ObservedObject private var coordinator = HoverCoordinator.shared
+    @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
+    @State private var isPresented = false
+    @State private var isHovering = false
+
+    /// 创建带 popover 的 hover 容器
+    ///
+    /// - Parameters:
+    ///   - detailView: 点击后显示的 popover 内容视图
+    ///   - id: 唯一标识符，用于 HoverCoordinator 管理
+    ///   - cornerRadius: 圆角半径，默认为 6
+    ///   - tooltip: 悬停时显示的提示文本（仅在无 detailView 时生效）
+    ///   - content: 容器内容视图
+    public init(
+        detailView: Detail,
+        id: String = UUID().uuidString,
+        cornerRadius: CGFloat = 6,
+        tooltip: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.detailView = detailView
+        self.id = id
+        self.cornerRadius = cornerRadius
+        self.tooltip = tooltip
+        self.content = content()
+    }
+
+    /// 创建无 popover 的 hover 容器
+    ///
+    /// - Parameters:
+    ///   - id: 唯一标识符，用于 HoverCoordinator 管理
+    ///   - cornerRadius: 圆角半径，默认为 6
+    ///   - tooltip: 悬停时显示的提示文本
+    ///   - content: 容器内容视图
+    public init(
+        id: String = UUID().uuidString,
+        cornerRadius: CGFloat = 6,
+        tooltip: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) where Detail == EmptyView {
+        self.detailView = nil
+        self.id = id
+        self.cornerRadius = cornerRadius
+        self.tooltip = tooltip
+        self.content = content()
+    }
+
+    public var body: some View {
+        baseContent
+    }
+
+    @ViewBuilder
+    private var baseContent: some View {
+        let view = content
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .background(hoverBackground)
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering || isPresented)
+            .onHover { hovering in
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
+            }
+            .onTapGesture {
+                guard detailView != nil else { return }
+
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+                    if isPresented {
+                        isPresented = false
+                        coordinator.close(id: self.id)
+                    } else {
+                        coordinator.closeAll()
+                        isPresented = true
+                        coordinator.open(id: self.id)
+                    }
+                }
+            }
+
+        if detailView != nil {
+            view.popover(isPresented: $isPresented, arrowEdge: .leading) {
+                popoverContent
+            }
+        } else if let tooltip {
+            view.help(tooltip)
+        } else {
+            view
+        }
+    }
+
+    private var hoverBackground: some View {
+        ZStack {
+            if isHovering || isPresented {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(hoverBackgroundColor)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private var hoverBackgroundColor: Color {
+        if isPresented {
+            return theme.primary.opacity(0.14)
+        }
+        return theme.textPrimary.opacity(0.08)
+    }
+
+    @ViewBuilder
+    private var popoverContent: some View {
+        if let detailView {
+            detailView
+                .onHover { hovering in
+                    if hovering {
+                        coordinator.open(id: self.id)
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Sidebar Toolbar Hover Container Extensions
+
+/// 创建简单的 hover 按钮（无 popover）
+///
+/// - Parameters:
+///   - id: 唯一标识符
+///   - tooltip: 悬停提示
+///   - action: 点击动作
+///   - content: 内容视图
+@MainActor
+@ViewBuilder
+public func sidebarToolbarButton<Content: View>(
+    id: String = UUID().uuidString,
+    tooltip: String? = nil,
+    action: @escaping () -> Void,
+    @ViewBuilder content: () -> Content
+) -> some View {
+    SidebarToolbarHoverContainer(id: id, tooltip: tooltip) {
+        Button(action: action) {
+            content()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 创建带 popover 的 hover 按钮
+///
+/// - Parameters:
+///   - detailView: popover 内容
+///   - id: 唯一标识符
+///   - content: 内容视图
+@MainActor
+@ViewBuilder
+public func sidebarToolbarPopover<Content: View, Detail: View>(
+    detailView: Detail,
+    id: String = UUID().uuidString,
+    @ViewBuilder content: () -> Content
+) -> some View {
+    SidebarToolbarHoverContainer(detailView: detailView, id: id) {
+        content()
+    }
+}

@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import MagicAlert
 
 /// 模式切换工具栏按钮
@@ -13,7 +14,10 @@ struct ChatModeToolbarButton: View {
     private static let modeOrder: [ChatMode] = [.chat, .build, .autonomous]
 
     var body: some View {
-        Button(action: {
+        sidebarToolbarButton(
+            id: "chat-mode",
+            tooltip: helpText
+        ) {
             let currentIndex = Self.modeOrder.firstIndex(of: llmVM.chatMode) ?? 0
             let nextIndex = (currentIndex + 1) % Self.modeOrder.count
             let newMode = Self.modeOrder[nextIndex]
@@ -26,7 +30,7 @@ struct ChatModeToolbarButton: View {
                 String(localized: "Switched to \(newMode.displayName) Mode", table: "ChatMode"),
                 subtitle: newMode.description
             )
-        }) {
+        } content: {
             HStack(spacing: 4) {
                 Image(systemName: llmVM.chatMode.iconName)
                     .font(.system(size: 13))
@@ -40,8 +44,6 @@ struct ChatModeToolbarButton: View {
             .background(backgroundColor)
             .cornerRadius(6)
         }
-        .buttonStyle(.plain)
-        .help(helpText)
         .accessibilityLabel(String(localized: "Chat Mode", table: "ChatMode"))
         .accessibilityHint(String(localized: "Chat Mode Hint", table: "ChatMode"))
     }

@@ -58,9 +58,12 @@ private struct ScreenshotToolbarButton: View {
     @StateObject private var screenshotState = ScreenshotState.shared
 
     var body: some View {
-        Button(action: {
+        sidebarToolbarButton(
+            id: "screenshot",
+            tooltip: helpText
+        ) {
             screenshotState.startCapture()
-        }) {
+        } content: {
             Group {
                 if screenshotState.isPreparing {
                     ProgressView()
@@ -75,9 +78,7 @@ private struct ScreenshotToolbarButton: View {
             .background(theme.textPrimary.opacity(0.06))
             .clipShape(Circle())
         }
-        .buttonStyle(.plain)
         .disabled(screenshotState.isCapturing)
-        .help(helpText)
         .keyboardShortcut("S", modifiers: [.command, .shift])
         .accessibilityLabel(String(localized: "Screenshot Region", table: "AgentChat"))
         .accessibilityHint(String(localized: "Screenshot Region Hint", table: "AgentChat"))
