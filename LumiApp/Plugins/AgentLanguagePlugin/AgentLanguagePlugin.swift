@@ -2,8 +2,9 @@ import SwiftUI
 
 /// 语言切换插件
 ///
-/// 在工具栏右侧提供语言选择器（LanguageSelector），
-/// 并通过中间件自动将语言偏好注入 LLM 系统提示。
+/// 在右侧栏底部工具栏提供语言切换按钮（LanguageToggleButton），
+/// 位于 ChatMode 按钮左侧，点击循环切换中文/英文。
+/// 通过中间件自动将语言偏好注入 LLM 系统提示。
 actor AgentLanguagePlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = true
@@ -13,10 +14,10 @@ actor AgentLanguagePlugin: SuperPlugin {
     static let iconName = "globe"
     static var category: PluginCategory { .agent }
     static var order: Int { 83 }
-    
+
     /// 核心功能，禁止用户配置
     static var isConfigurable: Bool { false }
-    
+
     static let enable: Bool = true
 
     static let shared = AgentLanguagePlugin()
@@ -32,12 +33,26 @@ actor AgentLanguagePlugin: SuperPlugin {
         [AnySuperSendMiddleware(LanguageSendMiddleware())]
     }
 
-    // MARK: - Toolbar Views
+    // MARK: - Sidebar Toolbar
 
-    /// 工具栏右侧：语言选择器
+    /// 右侧栏底部工具栏左侧：语言切换按钮（在 ChatMode 按钮左侧）
     @MainActor
-    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
-        return AnyView(LanguageSelector())
+    func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [
+            SidebarToolbarItem(
+                id: "language-toggle",
+                title: String(localized: "Language Selector", table: "AgentLanguageHeader"),
+                systemImage: "globe",
+                priority: 5  // 低于 ChatMode 的 10，排在左侧
+            )
+        ]
+    }
+
+    /// 语言切换按钮的自定义视图
+    @MainActor
+    func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+        guard itemId == "language-toggle" else { return nil }
+        return AnyView(LanguageToggleButton())
     }
 }
