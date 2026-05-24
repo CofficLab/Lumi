@@ -337,6 +337,25 @@ extension ChatHistoryService {
             }
         }
     }
+
+    /// 更新对话的响应详细程度偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - verbosity: 详细程度 rawValue，nil 表示清除对话级偏好（回退到全局偏好）
+    func updateVerbosity(_ conversation: Conversation, verbosity: String?) {
+        conversation.verbosity = verbosity
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let verbosity {
+                AppLogger.core.info("\(Self.t)📝 已保存对话 '\(conversation.title)' 的详细程度：\(verbosity)")
+            } else {
+                AppLogger.core.info("\(Self.t)📝 已清除对话 '\(conversation.title)' 的详细程度")
+            }
+        }
+    }
 }
 
 // MARK: - 对话存储与删除
