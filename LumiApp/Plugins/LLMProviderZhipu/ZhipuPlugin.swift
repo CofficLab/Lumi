@@ -1,12 +1,13 @@
 import Foundation
 import SwiftUI
+import LumiPluginKit
 import os
 
 /// 智谱 LLM 供应商插件
 actor ZhipuPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.zhipu")
     nonisolated static let emoji = "🔴"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "LLMProviderZhipu"
     static let navigationId: String? = nil
@@ -28,10 +29,11 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        if Self.verbose {
-                            Self.logger.info("\(Self.t)提供 ZhipuQuotaStatusBarView")
-
+    ///
+    /// 仅在当前活跃供应商为智谱时返回视图，避免非智谱场景下不必要的 UI 和网络请求。
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeProviderId == "zhipu" else {
+            return nil
         }
         return AnyView(ZhipuQuotaStatusBarView())
     }

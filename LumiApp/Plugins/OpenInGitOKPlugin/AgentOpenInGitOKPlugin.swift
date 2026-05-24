@@ -17,7 +17,7 @@ import SwiftUI
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
 actor AgentOpenInGitOKPlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentOpenInGitOK"
     static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
     static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
@@ -41,6 +41,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
     /// 添加状态栏左侧视图
     @MainActor
     func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(OpenInGitOKStatusBarView())
     }
 }

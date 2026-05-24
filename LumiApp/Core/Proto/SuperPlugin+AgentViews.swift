@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Foundation
+import LumiPluginKit
 
 /// Agent 模式视图扩展
 ///
@@ -8,11 +9,11 @@ import Foundation
 /// 插件可以选择性地实现这些方法来贡献 UI。
 extension SuperPlugin {
     /// 默认实现：不提供状态栏左侧视图
-    @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供状态栏中间视图
-    @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addStatusBarCenterView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供状态栏右侧视图
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? { nil }
 }

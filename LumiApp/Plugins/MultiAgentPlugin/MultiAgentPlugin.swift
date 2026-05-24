@@ -23,7 +23,7 @@ import os
 actor MultiAgentPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.multi-agent")
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "MultiAgent"
     static let displayName = String(localized: "Multi Agent", table: "MultiAgent")

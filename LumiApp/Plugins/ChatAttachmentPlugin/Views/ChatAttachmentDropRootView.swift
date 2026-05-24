@@ -54,7 +54,7 @@ struct ChatAttachmentDropRootView: View {
     }
 
     private var imageDropHoverOverlay: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .appSurface(
@@ -63,6 +63,7 @@ struct ChatAttachmentDropRootView: View {
                     borderColor: theme.textSecondary.opacity(0.65),
                     lineWidth: 2
                 )
+                .allowsHitTesting(false)
 
             VStack(spacing: 8) {
                 Image(systemName: "photo.badge.plus")
@@ -76,8 +77,19 @@ struct ChatAttachmentDropRootView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
             }
+            .allowsHitTesting(false)
+
+            Button {
+                isImageDragHovering = false
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.appBody)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(theme.textSecondary)
+            }
+            .buttonStyle(.plain)
+            .padding(8)
         }
-        .allowsHitTesting(false)
         .transition(.opacity)
     }
 

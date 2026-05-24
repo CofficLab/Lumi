@@ -479,12 +479,6 @@
         }
       }
     },
-    "^[%lld Chunk](inflect: true)" : {
-
-    },
-    "^[%lld File](inflect: true)" : {
-
-    },
     "+%lld" : {
 
     },
@@ -4196,12 +4190,6 @@
           }
         }
       }
-    },
-    "正在启动 code-server…" : {
-
-    },
-    "正在查找 code-server…" : {
-
     },
     "没有匹配的快捷键" : {
 

@@ -13,45 +13,13 @@ struct IdleStatusBarView: View {
                     popoverWidth: 480,
                     id: "idle-time-status"
                 ) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "moon.zzz")
-                            .font(.appMicroEmphasized)
-                        Text(compactLabel)
-                            .font(.appMicro)
-                            .lineLimit(1)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    Image(systemName: "moon.zzz")
+                        .font(.appMicroEmphasized)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                 }
             }
         }
     }
 
-    private var compactLabel: String {
-        let label = idleTimeVM.confidenceLabel
-        switch label {
-        case .learning:
-            return String(localized: "Idle learning", table: "IdleTime")
-        case .medium:
-            if let window = idleTimeVM.restWindow {
-                return "\(String(localized: "Idle", table: "IdleTime")) ~\(formatWindow(window))"
-            }
-            return String(localized: "Idle learning", table: "IdleTime")
-        case .high:
-            if let window = idleTimeVM.restWindow {
-                return "\(String(localized: "Idle", table: "IdleTime")) \(formatWindow(window))"
-            }
-            return String(localized: "Idle learning", table: "IdleTime")
-        }
-    }
-
-    private func formatWindow(_ window: RestWindow) -> String {
-        "\(formatMinute(window.startMinuteOfDay))-\(formatMinute(window.endMinuteOfDay))"
-    }
-
-    private func formatMinute(_ minuteOfDay: Int) -> String {
-        let hour = minuteOfDay / 60
-        let minute = minuteOfDay % 60
-        return String(format: "%02d:%02d", hour, minute)
-    }
 }

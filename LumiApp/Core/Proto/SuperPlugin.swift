@@ -3,6 +3,7 @@ import AgentToolKit
 import EditorService
 import Foundation
 import SwiftUI
+import LumiPluginKit
 
 /// Rail 标签页定义
 ///
@@ -322,16 +323,16 @@ protocol SuperPlugin: Actor {
     @MainActor func addMenuBarContentView() -> AnyView?
 
     /// 添加状态栏左侧视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView?
 
     /// 添加状态栏中间视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addStatusBarCenterView(context: PluginContext) -> AnyView?
 
     /// 添加状态栏右侧视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView?
 
     /// 提供主题贡献（App + Editor 一体化主题）。
     @MainActor func addThemeContributions() -> [LumiUIThemeContribution]

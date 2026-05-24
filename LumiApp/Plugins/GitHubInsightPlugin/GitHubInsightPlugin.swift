@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiPluginKit
 import os
 import SwiftUI
 
@@ -10,7 +11,7 @@ import SwiftUI
 actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-insight")
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "GitHubInsight"
     static let displayName = String(localized: "GitHub Insight", table: "GitHubInsight")
@@ -26,7 +27,7 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
 
     /// 在状态栏右侧添加 GitHub 生态知识库状态指示器。
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         AnyView(GitHubKBStatusBarView())
     }
 

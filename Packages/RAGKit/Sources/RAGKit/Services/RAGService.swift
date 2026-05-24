@@ -50,7 +50,7 @@ public actor RAGService {
         self.databaseDirectoryProvider = databaseDirectoryProvider
         self.logger = logger
         self.onProgress = onProgress
-        logger.info("🦞 RAG 服务已创建")
+        logger.info("RAG 服务已创建")
     }
 
     // MARK: - Lifecycle

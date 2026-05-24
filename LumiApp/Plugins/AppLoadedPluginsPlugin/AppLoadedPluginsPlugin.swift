@@ -1,11 +1,12 @@
 import SwiftUI
+import LumiPluginKit
 
 /// App 插件状态栏入口：在状态栏右侧显示已加载 App 插件数量与详情
 actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧩"
     static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "AppLoadedPlugins"
     static let displayName: String = String(
@@ -22,7 +23,7 @@ actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示已加载插件入口
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(AppLoadedPluginsStatusBarView())
     }
 }

@@ -6,7 +6,7 @@ import Foundation
 /// 对话时间线详情视图（在 Popover 中显示）
 struct ConversationTimelineDetailView: View, SuperLog {
     nonisolated static let emoji = "📅"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let conversationId: UUID
     @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM

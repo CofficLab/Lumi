@@ -9,7 +9,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🛜"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "NetworkManager"
     static let navigationId = "network_manager"

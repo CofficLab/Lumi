@@ -8,7 +8,7 @@ actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-pending-messages")
 
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "ChatPendingMessages"
     static let displayName = String(localized: "Chat Pending Messages", table: "AgentChat")
     static let description = String(localized: "Show queued chat messages above the input area", table: "AgentChat")

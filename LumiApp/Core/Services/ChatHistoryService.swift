@@ -66,7 +66,7 @@ extension ChatMessage {
 @MainActor
 final class ChatHistoryService: SuperLog, Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let modelContainer: ModelContainer
     let modelContext: ModelContext
     let llmService: LLMService
@@ -197,6 +197,59 @@ extension ChatHistoryService {
             AppLogger.core.error("\(Self.t)❌ 获取项目最新对话失败：\(error.localizedDescription)")
             return nil
         }
+    }
+
+    /// 获取最流行的供应商和模型（基于对话历史分析）
+    ///
+    /// 统计所有设置了模型偏好的对话，返回使用次数最多的供应商和模型组合。
+    /// - Returns: 最流行的 (providerId, model) 组合，如果没有任何对话设置了偏好则返回 nil
+    func fetchMostPopularModelPreference() -> (providerId: String, model: String)? {
+        let context = self.getContext()
+
+        // 拉取所有设置了模型偏好的对话
+        var descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.providerId != nil && $0.model != nil },
+            sortBy: []
+        )
+
+        guard let conversations = try? context.fetch(descriptor), !conversations.isEmpty else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📊 无对话记录设置模型偏好")
+            }
+            return nil
+        }
+
+        // 统计 (providerId, model) 组合的出现次数
+        var usageCount: [String: Int] = [:]
+        for conversation in conversations {
+            guard let providerId = conversation.providerId,
+                  let model = conversation.model else {
+                continue
+            }
+            let key = "\(providerId)|\(model)"
+            usageCount[key] = (usageCount[key] ?? 0) + 1
+        }
+
+        // 找出使用次数最多的组合
+        guard let topKey = usageCount.max(by: { $0.value < $1.value })?.key else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📊 无法确定最流行的模型偏好")
+            }
+            return nil
+        }
+
+        let components = topKey.split(separator: "|", maxSplits: 1)
+        guard components.count == 2 else {
+            return nil
+        }
+
+        let result = (providerId: String(components[0]), model: String(components[1]))
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📊 最流行模型偏好：\(result.providerId) - \(result.model)（使用 \(usageCount[topKey] ?? 0) 次）")
+        }
+
+        return result
     }
 
     /// 根据 ID 获取对话

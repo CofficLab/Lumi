@@ -10,7 +10,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-submit")
 
     nonisolated static let emoji = "🚀"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "ChatSubmit"
     static let displayName = String(localized: "Chat Submit", table: "AgentChat")
     static let description = String(localized: "Send or stop chat messages", table: "AgentChat")

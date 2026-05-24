@@ -14,7 +14,7 @@ import SwiftUI
 /// View 通过 `@EnvironmentObject var commandSuggestionVM: WindowCommandSuggestionVM` 访问。
 @MainActor
 class WindowCommandSuggestionVM: ObservableObject, SuperLog {
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let emoji = "🔍"
 
     @Published private(set) var suggestions: [CommandSuggestion] = []

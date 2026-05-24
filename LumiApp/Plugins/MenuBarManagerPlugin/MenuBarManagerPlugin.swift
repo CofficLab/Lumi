@@ -15,7 +15,7 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 
     static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "MenuBarManager"
     static let navigationId: String = "menu_bar_manager"

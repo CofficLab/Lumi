@@ -13,7 +13,7 @@ import Foundation
 @MainActor
 final class WindowMessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     /// 所有队列中的消息
     @Published private(set) var messages: [ChatMessage] = []

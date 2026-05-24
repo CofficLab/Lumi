@@ -18,7 +18,7 @@ import SwiftUI
 @MainActor
 final class WindowProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published private(set) var currentProject: Project? = nil
 
     /// 当前代码选区范围（包含文件路径和行列号，不含具体内容）

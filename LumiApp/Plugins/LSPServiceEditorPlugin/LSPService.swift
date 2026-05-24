@@ -16,7 +16,7 @@ final class LSPService: ObservableObject, SuperLog {
     
     static let shared = LSPService()
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     // MARK: - Published State
     

@@ -26,10 +26,15 @@ struct UserMessage: View {
                 }
 
                 if !message.content.isEmpty {
-                    PlainTextMessageContentView(
-                        content: message.content,
-                        monospaced: false
-                    )
+                    CollapsibleMessageContent(
+                        rawContent: message.content,
+                        collapsedLineLimit: 20
+                    ) {
+                        PlainTextMessageContentView(
+                            content: message.content,
+                            monospaced: false
+                        )
+                    }
                 }
             }
             .messageBubbleStyle(role: message.role, isError: message.isError)

@@ -304,6 +304,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// 创建新会话
     ///
     /// 执行创建新会话的完整流程：创建会话记录、选中、注入系统上下文消息和欢迎消息。
+    /// 如果当前项目存在历史对话且带有模型偏好，新会话将自动继承该偏好。
     ///
     /// - Parameters:
     ///   - projectName: 当前项目名称，为 nil 表示未选择项目
@@ -322,6 +323,18 @@ final class WindowConversationVM: ObservableObject, SuperLog {
             title: "新会话 " + formatter.string(from: Date()),
             chatMode: agentSessionConfig.chatMode.rawValue
         )
+
+        // 继承同项目上一条对话的模型偏好
+        if let projectPath,
+           let latestConversation = chatHistoryService.fetchLatestConversation(projectId: projectPath),
+           latestConversation.id != conversation.id,
+           let providerId = latestConversation.providerId,
+           let model = latestConversation.model {
+            chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📋 新会话继承项目模型偏好：\(providerId) - \(model)")
+            }
+        }
 
         setSelectedConversation(conversation.id, reason: "createNewConversation")
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)

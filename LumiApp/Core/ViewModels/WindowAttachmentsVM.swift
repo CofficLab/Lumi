@@ -14,7 +14,7 @@ import AgentToolKit
 @MainActor
 final class WindowAttachmentsVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📎"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published private(set) var pendingAttachments: [AgentPendingImageAttachment] = []
 
     func removeAttachment(id: UUID) {

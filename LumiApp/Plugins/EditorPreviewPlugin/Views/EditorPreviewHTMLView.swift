@@ -11,7 +11,7 @@ struct EditorPreviewHTMLView: View, SuperLog {
         category: "plugin.editor-inline-preview.html-view"
     )
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var themeVM: AppThemeVM
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiPluginKit
 
 /// ProjectIssueScanner 插件
 ///
@@ -15,7 +16,7 @@ import SwiftUI
 /// 6. **提示注入**：中间件读取未解决问题，注入 `transientSystemPrompts`。
 actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "ProjectIssueScanner"
     static let displayName: String = "Project Issue Scanner"
@@ -32,8 +33,9 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
 
     /// 在状态栏右侧添加问题扫描状态图标。
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(ProjectIssueScannerStatusBarView())
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(ProjectIssueScannerStatusBarView())
     }
 
     // MARK: - Root View

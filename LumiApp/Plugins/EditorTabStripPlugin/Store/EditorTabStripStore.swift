@@ -8,7 +8,7 @@ import os
 /// 存储位置：<dbRoot>/EditorTabStrip/projects/<projectHash>/tabs.json
 final class EditorTabStripStore: @unchecked Sendable, SuperLog {
     nonisolated static var emoji: String { "📑" }
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip-store")
 

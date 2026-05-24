@@ -33,7 +33,7 @@ private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
 @MainActor
 final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @Published var tasks: [TaskDisplayItem] = []
     @Published var summary: TaskProgressSummary?

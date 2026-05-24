@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import LumiPluginKit
 
 /// 请求日志插件
 ///
@@ -7,7 +8,7 @@ import SwiftUI
 /// 用于调试和审计。
 actor RequestLogPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "RequestLog"
     static let displayName: String = String(localized: "PluginName", table: "RequestLog")
     static let description: String = String(localized: "PluginDescription", table: "RequestLog")
@@ -27,7 +28,8 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(RequestLogStatusBarView())
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(RequestLogStatusBarView())
     }
 }

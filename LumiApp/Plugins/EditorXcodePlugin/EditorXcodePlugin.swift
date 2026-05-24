@@ -104,17 +104,7 @@ actor EditorXcodePlugin: SuperPlugin, SuperLog {
         }
     }
 
-    /// 在工具栏显示 Xcode 项目状态
-    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? {
-        // 只在编辑器图标激活时显示 Xcode 项目状态栏
-        guard activeIcon == EditorPlugin.iconName else { return nil }
-        return AnyView(XcodeProjectStatusBar())
-    }
-
-    /// 在状态栏右侧显示 Xcode 构建上下文状态
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(XcodeStatusBarTrailingView())
-    }
+    /// 不再在工具栏/状态栏提供 UI
 
     /// 添加根视图包裹器
     @MainActor func addRootView<Content: View>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {

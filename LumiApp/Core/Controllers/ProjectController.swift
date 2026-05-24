@@ -6,7 +6,7 @@ import Foundation
 @MainActor
 final class ProjectController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     private let windowContainer: WindowContainer
     private let global: RootContainer

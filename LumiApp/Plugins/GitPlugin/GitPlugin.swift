@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import AgentToolKit
+import LumiPluginKit
 import os
 
 /// Git 插件：统一提供 Git 面板、提交历史、分支状态栏、快捷提交和 Agent 工具
@@ -8,7 +9,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "GitPlugin"
     static let navigationId: String? = nil
@@ -58,7 +59,8 @@ actor GitPlugin: SuperPlugin, SuperLog {
 
     /// 底部状态栏 Git 入口：当前分支 + 快捷 Git 弹窗
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(GitPluginStatusBarView())
     }
 }

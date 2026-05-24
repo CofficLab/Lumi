@@ -4,7 +4,7 @@ import SwiftUI
 // MARK: - 通知
 
 private enum OnboardingNotification {
-    static let show = Notification.Name("AgentOnboarding.Show")
+    static let show = Notification.Name("Onboarding.Show")
 }
 
 // MARK: - ViewModel
@@ -21,7 +21,7 @@ final class OnboardingPluginViewModel: ObservableObject {
 
     // MARK: - 初始化
 
-    init(store: OnboardingPluginStore = .init(pluginId: "AgentOnboarding")) {
+    init(store: OnboardingPluginStore = .init(pluginId: "Onboarding")) {
         self.store = store
     }
 
@@ -375,10 +375,10 @@ private struct OnboardingSheetView: View {
                     id: "plugin-selection",
                     icon: "puzzlepiece.extension.fill",
                     iconGradient: [Color.indigo, Color.cyan],
-                    title: String(localized: "选择你的插件", table: "AgentOnboardingPlugin"),
-                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", table: "AgentOnboardingPlugin"),
+                    title: String(localized: "选择你的插件", table: "OnboardingPlugin"),
+                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", table: "OnboardingPlugin"),
                     features: [],
-                    tip: String(localized: "插件选择会在完成引导后立即生效", table: "AgentOnboardingPlugin")
+                    tip: String(localized: "插件选择会在完成引导后立即生效", table: "OnboardingPlugin")
                 ),
                 at: quickStartIndex
             )
@@ -474,7 +474,7 @@ private struct OnboardingSheetView: View {
     /// 顶部导航栏
     private var topBar: some View {
         HStack {
-            Label(String(localized: "新手引导", table: "AgentOnboardingPlugin"), systemImage: "graduationcap.fill")
+            Label(String(localized: "新手引导", table: "OnboardingPlugin"), systemImage: "graduationcap.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -486,7 +486,7 @@ private struct OnboardingSheetView: View {
             Spacer()
 
             // 跳过按钮
-            Button(String(localized: "跳过", table: "AgentOnboardingPlugin")) {
+            Button(String(localized: "跳过", table: "OnboardingPlugin")) {
                 viewModel.skip()
             }
             .font(.system(size: 13, weight: .medium))
@@ -726,7 +726,7 @@ private struct OnboardingSheetView: View {
                 Button {
                     viewModel.previousStep()
                 } label: {
-                    Label(String(localized: "上一步", table: "AgentOnboardingPlugin"), systemImage: "chevron.left")
+                    Label(String(localized: "上一步", table: "OnboardingPlugin"), systemImage: "chevron.left")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.plain)
@@ -749,8 +749,8 @@ private struct OnboardingSheetView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(isLastPage
-                        ? String(localized: "开始使用", table: "AgentOnboardingPlugin")
-                        : String(localized: "下一步", table: "AgentOnboardingPlugin"))
+                        ? String(localized: "开始使用", table: "OnboardingPlugin")
+                        : String(localized: "下一步", table: "OnboardingPlugin"))
                         .font(.system(size: 13, weight: .semibold))
 
                     if !isLastPage {

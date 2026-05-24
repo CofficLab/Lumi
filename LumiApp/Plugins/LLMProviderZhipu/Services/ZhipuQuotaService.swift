@@ -5,7 +5,7 @@ import os
 /// 智谱配额查询辅助工具
 enum ZhipuQuotaService: SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     /// 请求超时时间（秒）
     private static let timeout: TimeInterval = 5.0

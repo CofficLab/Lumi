@@ -35,8 +35,8 @@ struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
     ) async {
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
 
-        let newConversation = String(localized: "New Conversation", table: "AutoConversationTitlePlugin")
-        let newChat = String(localized: "New Chat", table: "AutoConversationTitlePlugin")
+        let newConversation = String(localized: "New Conversation", table: "ConversationList")
+        let newChat = String(localized: "New Chat", table: "ConversationList")
         let policy = AutoConversationTitlePolicy()
         let preflight = policy.preflight(
             AutoConversationTitlePolicy.PreflightInput(

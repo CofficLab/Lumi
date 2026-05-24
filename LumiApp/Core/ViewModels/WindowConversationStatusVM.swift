@@ -11,7 +11,7 @@ enum ToolProgressEvent: Sendable {
         shellStats: ToolProgressShellStats?,
         displayName: String?
     )
-    case completed(toolName: String, current: Int, total: Int, displayName: String?)
+    case completed(toolName: String, current: Int, total: Int, elapsedSeconds: Int?, displayName: String?)
     case cancelled(toolName: String, current: Int, total: Int, displayName: String?)
     case cancelledAll
     case failed(
@@ -171,11 +171,12 @@ final class WindowConversationStatusVM: ObservableObject {
                 conversationId: conversationId,
                 content: "\(showName)（\(max(0, elapsedSeconds))s\(statsSuffix)）"
             )
-        case let .completed(toolName, current, total, displayName):
+        case let .completed(toolName, current, total, elapsedSeconds, displayName):
             let showName = displayName ?? toolName
+            let durationSuffix = elapsedSeconds.map { "（\(max(0, $0))s）" } ?? ""
             setStatus(
                 conversationId: conversationId,
-                content: "✅ \(showName)"
+                content: "✅ \(showName)\(durationSuffix)"
             )
         case let .cancelled(toolName, _, _, displayName):
             let showName = displayName ?? toolName

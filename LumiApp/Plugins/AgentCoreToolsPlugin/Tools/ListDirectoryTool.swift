@@ -5,7 +5,7 @@ import WorkspaceFileKit
 
 struct ListDirectoryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     private let lister = WorkspaceDirectoryLister()
     let name = "ls"
     func description(for language: LanguagePreference) -> String {

@@ -4,7 +4,7 @@ import AgentToolKit
 /// 列出最近项目工具
 struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "list_recent_projects"
     func description(for language: LanguagePreference) -> String {
         switch language {

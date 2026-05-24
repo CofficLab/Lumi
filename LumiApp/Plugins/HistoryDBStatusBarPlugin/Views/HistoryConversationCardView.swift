@@ -28,6 +28,19 @@ struct HistoryConversationCardView: View {
                     .truncationMode(.tail)
 
                 HStack(spacing: 6) {
+                    if let chatModeRaw = row.chatMode,
+                       let chatMode = ChatMode(rawValue: chatModeRaw) {
+                        Label {
+                            Text(chatMode.displayName)
+                                .font(.appMicro)
+                                .lineLimit(1)
+                        } icon: {
+                            Image(systemName: chatMode.iconName)
+                                .font(.appMicro)
+                        }
+                        .foregroundColor(theme.textSecondary)
+                    }
+
                     if row.projectId != "-" {
                         Label {
                             Text(row.projectId)
@@ -105,7 +118,8 @@ struct HistoryConversationCardView: View {
             updatedAt: Date().addingTimeInterval(-300),
             messageCount: 12,
             providerId: "openai",
-            model: "gpt-4o"
+            model: "gpt-4o",
+            chatMode: "build"
         )
     )
     .frame(width: 400)

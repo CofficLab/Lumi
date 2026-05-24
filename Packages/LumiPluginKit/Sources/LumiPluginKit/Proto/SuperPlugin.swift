@@ -189,13 +189,13 @@ public protocol SuperPlugin: Actor {
     @MainActor func addMenuBarContentView() -> AnyView?
 
     /// 添加状态栏左侧视图
-    @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView?
+    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView?
 
     /// 添加状态栏中间视图
-    @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView?
+    @MainActor func addStatusBarCenterView(context: PluginContext) -> AnyView?
 
     /// 添加状态栏右侧视图
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView?
 
     /// 提供主题贡献
     @MainActor func addThemeContributions() -> [LumiUIThemeContribution]

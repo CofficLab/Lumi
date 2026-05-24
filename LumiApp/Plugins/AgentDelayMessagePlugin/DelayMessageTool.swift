@@ -21,7 +21,7 @@ import AgentToolKit
 /// - 不依赖 `RootViewContainer.shared`
 struct DelayMessageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "⏳"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "delay_message"
     func description(for language: LanguagePreference) -> String {
         switch language {

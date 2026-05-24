@@ -31,7 +31,7 @@ actor DelayMessagePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "⏳"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "DelayMessage"
     static let displayName: String = String(localized: "Delay Message", table: "DelayMessage")
     static let description: String = String(localized: "Schedule delayed messages to resume conversations automatically.", table: "DelayMessage")

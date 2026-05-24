@@ -10,7 +10,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-availability")
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "LLMAvailability"
     static let displayName = String(localized: "LLM Availability", table: "LLMAvailability")
     static let description = String(localized: "Detect available LLM providers and models via health checks", table: "LLMAvailability")
@@ -19,8 +19,8 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     static var order: Int { 15 }
     static let enable: Bool = true
 
-    /// 用户可在设置中启用/禁用此插件
-    static var isConfigurable: Bool { true }
+    /// 核心基础设施插件，不允许用户禁用
+    static var isConfigurable: Bool { false }
 
     static let shared = LLMAvailabilityPlugin()
 

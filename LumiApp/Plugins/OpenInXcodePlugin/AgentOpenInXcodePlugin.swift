@@ -11,7 +11,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
 
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "AgentOpenInXcode"
     static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")
@@ -32,6 +32,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     /// 添加状态栏左侧视图
     @MainActor
     func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(OpenInXcodeStatusBarView())
     }
 }

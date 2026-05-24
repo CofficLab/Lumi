@@ -68,7 +68,7 @@ final class FileLogCoordinator: @unchecked Sendable {
     private var isRunning = false
     private var isFileLoggingDisabled = false
     private var lastPolledDate = Date.distantPast
-    private var pollTimer: Timer?
+    private var pollTimer: DispatchSourceTimer?
 
     // MARK: - Log Directory
 
@@ -103,7 +103,7 @@ final class FileLogCoordinator: @unchecked Sendable {
         queue.async { [self] in
             guard isRunning else { return }
             isRunning = false
-            pollTimer?.invalidate()
+            pollTimer?.cancel()
             pollTimer = nil
             pollOnce() // flush 剩余
             closeCurrentFile()
@@ -183,13 +183,12 @@ final class FileLogCoordinator: @unchecked Sendable {
     // MARK: - Polling
 
     private func schedulePollTimer() {
-        let timer = Timer(timeInterval: pollInterval, repeats: true) { [weak self] _ in
-            guard let coordinator = self else { return }
-            coordinator.queue.async { [weak coordinator] in
-                coordinator?.pollOnce()
-            }
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + pollInterval, repeating: pollInterval, leeway: .seconds(1))
+        timer.setEventHandler { [weak self] in
+            self?.pollOnce()
         }
-        RunLoop.main.add(timer, forMode: .common)
+        timer.resume()
         pollTimer = timer
     }
 
@@ -263,7 +262,7 @@ final class FileLogCoordinator: @unchecked Sendable {
         guard !isFileLoggingDisabled else { return }
         isFileLoggingDisabled = true
         isRunning = false
-        pollTimer?.invalidate()
+        pollTimer?.cancel()
         pollTimer = nil
 
         let handle = currentFileHandle

@@ -100,9 +100,8 @@ class FinderSync: FIFinderSync, SuperLog {
         }
 
         func menuIcon(_ name: String) -> NSImage? {
-            let appearanceMatch = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-            let currentMatch = NSAppearance.current.bestMatch(from: [.darkAqua, .aqua])
-            let isDark = appearanceMatch == .darkAqua || currentMatch == .darkAqua || (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleInterfaceStyle"] as? String == "Dark")
+            let isDark = NSAppearance.current.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                || (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleInterfaceStyle"] as? String == "Dark")
             let color = isDark ? NSColor.white : NSColor.black
             guard let symbolImage = NSImage(systemSymbolName: name, accessibilityDescription: nil) else {
                 return nil

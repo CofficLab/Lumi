@@ -1,11 +1,12 @@
 import SwiftUI
+import LumiPluginKit
 
 /// 字体配置插件：在状态栏提供编辑器字体快速切换入口
 actor FontConfigPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔤"
     static var category: PluginCategory { .theme }
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "FontConfig"
     static let displayName: String = String(
@@ -22,7 +23,8 @@ actor FontConfigPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示字体配置入口
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.isEditorVisible else { return nil }
         return AnyView(FontStatusBarView())
     }
 }

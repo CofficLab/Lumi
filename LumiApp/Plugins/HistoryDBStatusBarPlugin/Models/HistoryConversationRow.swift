@@ -9,4 +9,5 @@ struct HistoryConversationRow: Identifiable {
     let messageCount: Int
     let providerId: String?
     let model: String?
+    let chatMode: String?
 }

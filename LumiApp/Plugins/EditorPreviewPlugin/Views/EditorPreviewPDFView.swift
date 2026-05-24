@@ -11,7 +11,7 @@ struct EditorPreviewPDFView: View, SuperLog {
         category: "plugin.editor-inline-preview.pdf-view"
     )
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var themeVM: AppThemeVM
 

@@ -8,7 +8,7 @@ import AgentToolKit
 @MainActor
 final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
@@ -190,30 +190,35 @@ final class ToolCallExecutor: SuperLog {
             try toolContext.checkCancellation()
             progressTask.cancel()
 
+            let elapsedDuration = Date().timeIntervalSince(startedAt)
+
             let toolResult: ToolCallResult
             if let decoded = ToolImageResultCodec.decode(result) {
                 toolResult = ToolCallResult(
                     content: decoded.content,
-                    images: decoded.images
+                    images: decoded.images,
+                    duration: elapsedDuration
                 )
             } else {
-                toolResult = ToolCallResult(content: result)
+                toolResult = ToolCallResult(content: result, duration: elapsedDuration)
             }
 
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
-                event: .completed(toolName: toolCall.name, current: step, total: total, displayName: displayName)
+                event: .completed(toolName: toolCall.name, current: step, total: total, elapsedSeconds: Int(elapsedDuration), displayName: displayName)
             )
             return toolResult
         } catch is CancellationError {
             progressTask.cancel()
+            let elapsedDuration = Date().timeIntervalSince(startedAt)
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .cancelled(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
-            return ToolCallResult(content: "执行已取消")
+            return ToolCallResult(content: "执行已取消", duration: elapsedDuration)
         } catch {
             progressTask.cancel()
+            let elapsedDuration = Date().timeIntervalSince(startedAt)
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .failed(
@@ -224,11 +229,11 @@ final class ToolCallExecutor: SuperLog {
                     displayName: displayName
                 )
             )
-            return createErrorResult(for: toolCall, error: error)
+            return createErrorResult(for: toolCall, error: error, duration: elapsedDuration)
         }
     }
 
-    private func createErrorResult(for toolCall: ToolCall, error: Error) -> ToolCallResult {
+    private func createErrorResult(for toolCall: ToolCall, error: Error, duration: TimeInterval? = nil) -> ToolCallResult {
         let errorContent: String
         if let toolError = error as? ToolExecutionError {
             errorContent = toolError.localizedDescription
@@ -236,7 +241,7 @@ final class ToolCallExecutor: SuperLog {
             errorContent = "Error executing tool: \(error.localizedDescription)"
         }
 
-        return ToolCallResult(content: errorContent, isError: true)
+        return ToolCallResult(content: errorContent, isError: true, duration: duration)
     }
 
     private func launchProgressReporter(

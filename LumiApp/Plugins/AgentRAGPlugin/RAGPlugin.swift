@@ -1,6 +1,7 @@
 import RAGKit
 import SwiftUI
 import os
+import LumiPluginKit
 
 /// RAG 插件
 ///
@@ -12,7 +13,7 @@ import os
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "rag"
     static let navigationId: String = "rag_settings"
@@ -36,7 +37,6 @@ actor RAGPlugin: SuperPlugin, SuperLog {
         databaseDirectoryProvider: {
             AppConfig.getPluginDBFolderURL(pluginName: "RAGPlugin")
         },
-        logger: RAGPluginLogger(),
         onProgress: { event in
             NotificationCenter.postRAGIndexProgress(event)
         }
@@ -46,9 +46,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onEnable() {
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)🦞 RAG 插件已启用，开始初始化服务...")
-            }
+            Self.logger.info("\(Self.t)RAG 插件已启用，开始初始化服务...")
         }
 
         // 在后台异步初始化 RAG 服务
@@ -57,9 +55,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
                 try await Self.service.initialize()
             } catch {
                 if Self.verbose {
-                    if Self.verbose {
-                                            Self.logger.error("\(Self.t)❌ RAG 服务初始化失败：\(error.localizedDescription)")
-                    }
+                    Self.logger.error("\(Self.t)RAG 服务初始化失败：\(error.localizedDescription)")
                 }
             }
         }
@@ -70,9 +66,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)🦞 RAG 中间件已注册")
-            }
+            Self.logger.info("\(Self.t)RAG 中间件已注册")
         }
         return [AnySuperSendMiddleware(RAGSuperSendMiddleware())]
     }
@@ -87,10 +81,11 @@ actor RAGPlugin: SuperPlugin, SuperLog {
         AnyView(RAGSettingsView())
     }
 
-    /// 提供状态栏右侧视图
+    /// 提供状态栏右侧视图（仅在编辑器激活时显示）
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(RAGStatusBarView())
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(RAGStatusBarView())
     }
 
     /// 获取 RAG 服务实例
@@ -98,22 +93,5 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     @MainActor
     static func getService() -> RAGKit.RAGService {
         service
-    }
-}
-
-private struct RAGPluginLogger: RAGLogger {
-    func info(_ message: String) {
-        guard RAGPlugin.verbose else { return }
-        RAGPlugin.logger.info("\(message)")
-    }
-
-    func error(_ message: String) {
-        guard RAGPlugin.verbose else { return }
-        RAGPlugin.logger.error("\(message)")
-    }
-
-    func warning(_ message: String) {
-        guard RAGPlugin.verbose else { return }
-        RAGPlugin.logger.warning("\(message)")
     }
 }

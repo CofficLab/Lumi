@@ -25,7 +25,7 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📐"
     static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "Layout"
     static let displayName: String = "Layout Persistence"
@@ -38,10 +38,11 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Toolbar Views
 
-    /// 工具栏右侧：布局菜单
+    /// 工具栏右侧：布局菜单（仅在编辑器激活时显示）
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(LayoutMenuButton())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(LayoutMenuButton())
     }
 
     // MARK: - Root View（布局持久化锚点）

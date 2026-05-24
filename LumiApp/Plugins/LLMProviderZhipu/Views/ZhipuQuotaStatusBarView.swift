@@ -4,10 +4,12 @@ import Foundation
 import os
 
 /// 智谱 GLM 配额状态栏视图
+///
+/// 显示/隐藏由 ``ZhipuPlugin`` 在插件层根据 ``PluginContext.activeProviderId`` 控制，
+/// 此视图被创建时即可假定当前活跃供应商为智谱。
 struct ZhipuQuotaStatusBarView: View, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
-    @EnvironmentObject private var llmVM: AppLLMVM
+    nonisolated static let verbose: Bool = true
     @State private var quotaStatus: ZhipuQuotaStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var timer: Timer?
@@ -19,42 +21,22 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
         return Date().timeIntervalSince(lastUpdate) > cacheTTL
     }
 
-    /// 判断是否应该显示（仅在 Zhipu 供应商激活时）
-    private var shouldShow: Bool {
-        llmVM.selectedProviderId == "zhipu"
-    }
-
     var body: some View {
         Group {
-            if shouldShow {
-                switch quotaStatus {
-                case .loading:
-                    loadingView
-                case .success(let data):
-                    successView(data)
-                case .authError:
-                    errorView("认证过期")
-                case .unavailable:
-                    errorView("配额不可用")
-                }
+            switch quotaStatus {
+            case .loading:
+                loadingView
+            case .success(let data):
+                successView(data)
+            case .authError:
+                errorView("认证过期")
+            case .unavailable:
+                errorView("配额不可用")
             }
         }
         .onAppear {
-            if shouldShow {
-                refreshQuota()
-                startTimer()
-            }
-        }
-        .onChange(of: llmVM.selectedProviderId) { _, newId in
-            // 监听供应商切换
-            if newId == "zhipu" {
-                // 切换到 Zhipu，刷新配额并启动定时器
-                refreshQuota()
-                startTimer()
-            } else {
-                // 切换到其他供应商，停止定时器
-                stopTimer()
-            }
+            refreshQuota()
+            startTimer()
         }
         .onDisappear {
             stopTimer()
@@ -128,9 +110,6 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
     private func startTimer() {
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-            // 仅在当前使用 Zhipu 供应商时刷新
-            guard shouldShow else { return }
-
             if shouldRefresh {
                 refreshQuota()
             }

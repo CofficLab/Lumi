@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import LumiPluginKit
 import os
 
 /// 对话时间线状态栏插件：在状态栏显示对话图标，点击显示当前对话的消息历史时间线
@@ -8,7 +9,7 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📅"
     static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "ConversationTimeline"
     static let navigationId: String? = nil
@@ -24,7 +25,7 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图
-    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(ConversationTimelineView())
     }
 }

@@ -24,13 +24,13 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🧠"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "Memory"
     static let displayName: String = String(localized: "Memory", table: "Memory")
     static let description: String = String(
         localized: "Persistent memory system for cross-session context", table: "Memory")
     static let iconName: String = "brain.head.profile"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var category: PluginCategory { .agent }
     static var order: Int { 15 }

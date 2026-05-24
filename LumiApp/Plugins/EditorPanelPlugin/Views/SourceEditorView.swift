@@ -13,7 +13,7 @@ import LumiUI
 /// EditorPanel 中源码编辑体验的核心入口。
 struct SourceEditorView: View, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     @ObservedObject var state: EditorState
     @EnvironmentObject private var themeVM: AppThemeVM

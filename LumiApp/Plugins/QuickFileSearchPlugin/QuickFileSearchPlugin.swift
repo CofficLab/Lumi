@@ -15,7 +15,7 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔍"
     static var category: PluginCategory { .general }
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "QuickFileSearch"
     static let displayName = String(localized: "Quick File Search", table: "QuickFileSearch")

@@ -1,5 +1,6 @@
 import SwiftUI
 import SkillKit
+import LumiPluginKit
 import os
 
 /// Skill 插件
@@ -11,7 +12,7 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.skill")
 
     nonisolated static let emoji = "✨"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     // MARK: - 插件基本信息
 
@@ -62,7 +63,7 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     // MARK: - 状态栏
 
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         AnyView(SkillStatusBarView())
     }
 }

@@ -1,12 +1,13 @@
 import os
 import SwiftUI
+import LumiPluginKit
 
 /// 可用工具插件
 ///
 /// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
 actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧰"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-available-tools")
 
     static let id = "AgentAvailableToolsPlugin"
@@ -29,9 +30,10 @@ actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - StatusBar Views
 
-    /// 状态栏右侧：可用工具按钮
+    /// 状态栏右侧：可用工具按钮（仅在编辑器激活时显示）
     @MainActor
-    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(AvailableToolsButton())
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(AvailableToolsButton())
     }
 }

@@ -15,7 +15,7 @@ import SwiftUI
 /// 这是因为 libgit2 的 `git_repository` 对象不是线程安全的，
 /// 并发打开同一仓库或并发读取 index 可能导致 C 层内存错误。
 final class GitService: @unchecked Sendable, SuperLog {
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let emoji = "🌿"
     static let shared = GitService()
 
@@ -342,9 +342,9 @@ final class GitService: @unchecked Sendable, SuperLog {
                     let hash: String
                     if amend {
                         hash = try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
-                    } else if files.isEmpty {
-                        hash = try LibGit2.createCommit(message: message, at: repoPath, verbose: Self.verbose)
                     } else {
+                        // addAndCommit with empty files correctly stages ALL changes then commits.
+                        // Direct createCommit would only commit what's already staged, leaving working tree changes behind.
                         hash = try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
                     }
                     continuation.resume(returning: hash)

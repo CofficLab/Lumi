@@ -14,7 +14,7 @@ actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌐"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "BrowserAgent"
     static let displayName: String = String(localized: "Browser Agent", table: "BrowserAgent")
