@@ -21,11 +21,19 @@ public struct PluginContext {
     /// 当编辑器未显示时（如纯 Agent 模式），依赖编辑器的插件可据此隐藏自身视图。
     public let isEditorVisible: Bool
 
+    /// 当前活跃的 LLM 供应商 ID
+    ///
+    /// 优先取对话级偏好，无偏好时回退到全局选择。
+    /// 供应商插件可据此决定是否展示供应商专属 UI（如配额状态栏）。
+    public let activeProviderId: String?
+
     public init(
         activeIcon: String? = nil,
-        isEditorVisible: Bool = true
+        isEditorVisible: Bool = true,
+        activeProviderId: String? = nil
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
+        self.activeProviderId = activeProviderId
     }
 }

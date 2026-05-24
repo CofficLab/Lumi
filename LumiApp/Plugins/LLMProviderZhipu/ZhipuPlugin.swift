@@ -29,10 +29,11 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
+    ///
+    /// 仅在当前活跃供应商为智谱时返回视图，避免非智谱场景下不必要的 UI 和网络请求。
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        if Self.verbose {
-                            Self.logger.info("\(Self.t)提供 ZhipuQuotaStatusBarView")
-
+        guard context.activeProviderId == "zhipu" else {
+            return nil
         }
         return AnyView(ZhipuQuotaStatusBarView())
     }

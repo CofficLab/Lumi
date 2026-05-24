@@ -7,11 +7,19 @@ struct StatusBar: View {
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @EnvironmentObject private var llmVM: AppLLMVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+
+    /// 当前活跃的供应商 ID（优先对话级偏好，回退到全局选择）
+    private var activeProviderId: String? {
+        conversationVM.getModelPreference()?.providerId ?? llmVM.selectedProviderId
+    }
 
     var body: some View {
         let context = PluginContext(
             activeIcon: pluginProvider.activePanelIcon,
-            isEditorVisible: layoutVM.editorVisible
+            isEditorVisible: layoutVM.editorVisible,
+            activeProviderId: activeProviderId
         )
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)
