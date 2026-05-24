@@ -127,13 +127,14 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let sidebarSections = pluginProvider.getSidebarSections()
-                let hasRail = pluginProvider.hasRailTabs()
+                let hasRailTabs = pluginProvider.hasRailTabs()
+                let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible
 
-                let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
+                let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
 
-                if !sidebarSections.isEmpty && hasRail {
+                if !sidebarSections.isEmpty && showRail {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)
@@ -171,7 +172,7 @@ struct ContentView: View, SuperLog {
                             ))
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else if hasRail {
+                } else if showRail {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)

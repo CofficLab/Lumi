@@ -176,6 +176,19 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         set(visible, forKey: Keys.editorVisible)
     }
 
+    // MARK: - Rail Visibility
+
+    /// 加载已保存的 Rail 区域可见性（同步，需要返回值）
+    /// - Returns: 可见性，默认返回 nil 表示未保存过
+    func loadRailVisible() -> Bool? {
+        object(forKey: Keys.railVisible) as? Bool
+    }
+
+    /// 保存 Rail 区域可见性（异步，不阻塞调用线程）
+    func saveRailVisible(_ visible: Bool) {
+        set(visible, forKey: Keys.railVisible)
+    }
+
     // MARK: - Keys
 
     private enum Keys {
@@ -187,6 +200,7 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         static let bottomPanelVisible = "bottomPanelVisible"
         static let contentPanelVisible = "contentPanelVisible"
         static let editorVisible = "editorVisible"
+        static let railVisible = "railVisible"
     }
 
     // MARK: - Private Helpers

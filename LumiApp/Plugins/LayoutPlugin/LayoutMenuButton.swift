@@ -18,6 +18,9 @@ struct LayoutMenuButton: View {
             Toggle(isOn: $layoutVM.bottomPanelVisible) {
                 Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
             }
+            Toggle(isOn: $layoutVM.railVisible) {
+                Label("Rail", systemImage: "sidebar.right")
+            }
         } label: {
             Image(systemName: "sidebar.leading")
         }

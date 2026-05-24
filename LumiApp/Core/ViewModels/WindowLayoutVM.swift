@@ -32,6 +32,9 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 编辑器区域是否可见（包含 PanelContent 和 PanelBottom）
     @Published var editorVisible: Bool = true
     
+    /// Rail 区域是否可见（位于活动栏与面板内容区之间的辅助栏）
+    @Published var railVisible: Bool = true
+    
     /// 当前选中的 Agent 模式侧边栏 Tab ID
     @Published var selectedAgentSidebarTabId: String = ""
     
@@ -154,6 +157,11 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 由 LayoutPlugin 调用，从本地存储恢复编辑器区域可见性
     func restoreFromPlugin(editorVisible: Bool) {
         self.editorVisible = editorVisible
+    }
+
+    /// 由 LayoutPlugin 调用，从本地存储恢复 Rail 区域可见性
+    func restoreFromPlugin(railVisible: Bool) {
+        self.railVisible = railVisible
     }
 
     /// 更新指定分栏的宽度比例。

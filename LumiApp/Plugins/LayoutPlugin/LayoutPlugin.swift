@@ -193,6 +193,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(editorVisible: savedEditorVisible)
         }
+
+        // 恢复 Rail 区域可见性
+        if let savedRailVisible = store.loadRailVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Rail 区域可见性: \(savedRailVisible)")
+            }
+            layoutVM.restoreFromPlugin(railVisible: savedRailVisible)
+        }
     }
 
     // MARK: - Observe
@@ -248,6 +256,15 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .sink { newValue in
                 guard hasRestored else { return }
                 LayoutPluginLocalStore.shared.saveEditorVisible(newValue)
+            }
+            .store(in: &cancellables)
+
+        // 观察 railVisible
+        layoutVM.$railVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveRailVisible(newValue)
             }
             .store(in: &cancellables)
     }
