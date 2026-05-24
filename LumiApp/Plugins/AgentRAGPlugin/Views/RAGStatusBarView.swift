@@ -60,27 +60,9 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private var statusBarContent: some View {
-        HStack(spacing: 8) {
-            // 状态图标
-            statusIcon
-
-            // 状态文本
-            if let status = indexStatus {
-                statusText(for: status)
-            } else if isIndexing {
-                indexingText
-            } else if projectVM.currentProjectPath.isEmpty {
-                noProjectText
-            } else if isNotInitialized {
-                notInitializedText
-            } else if hasError {
-                errorText
-            } else {
-                loadingText
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        statusIcon
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
     }
 
     // MARK: - 视图构建
@@ -109,83 +91,6 @@ struct RAGStatusBarView: View, SuperLog {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.appMicroEmphasized)
         }
-    }
-
-    @ViewBuilder
-    private func statusText(for status: RAGIndexStatus) -> some View {
-        HStack(spacing: 4) {
-            Text(String(localized: "RAG", table: "RAG"))
-                .font(.appMicroEmphasized)
-
-            Text("·")
-                .font(.appMicro)
-                .opacity(0.7)
-
-            Text(formatIndexTime(status.lastIndexedAt))
-                .font(.appMicro)
-                .opacity(0.7)
-
-            Text("·")
-                .font(.appMicro)
-                .opacity(0.7)
-
-            Text("^[\(status.fileCount) File](inflect: true)")
-                .font(.appMicro)
-
-            Text("·")
-                .font(.appMicro)
-                .opacity(0.7)
-
-            Text("^[\(status.chunkCount) Chunk](inflect: true)")
-                .font(.appMicro)
-        }
-    }
-
-    @ViewBuilder
-    private var indexingText: some View {
-        if let event = progressEvent {
-            HStack(spacing: 4) {
-                Text(String(localized: "Indexing...", table: "RAG"))
-                    .font(.appMicroEmphasized)
-
-                Text("·")
-                    .font(.appMicro)
-                    .opacity(0.7)
-
-                Text("\(event.scannedFiles)/\(event.totalFiles)")
-                    .font(.appMicro)
-                    .opacity(0.7)
-            }
-        } else {
-            Text(String(localized: "Indexing...", table: "RAG"))
-                .font(.appMicro)
-        }
-    }
-
-    @ViewBuilder
-    private var notInitializedText: some View {
-        Text(String(localized: "Not initialized", table: "RAG"))
-            .font(.appMicro)
-    }
-
-    @ViewBuilder
-    private var errorText: some View {
-        if let error = errorMessage {
-            Text(error)
-                .font(.appMicro)
-        }
-    }
-
-    @ViewBuilder
-    private var noProjectText: some View {
-        Text(String(localized: "No project selected", table: "RAG"))
-            .font(.appMicro)
-    }
-
-    @ViewBuilder
-    private var loadingText: some View {
-        Text(String(localized: "Checking index status...", table: "RAG"))
-            .font(.appMicro)
     }
 
     // MARK: - 通知处理
@@ -239,26 +144,6 @@ struct RAGStatusBarView: View, SuperLog {
                 try? await Task.sleep(nanoseconds: 1500000000) // 1.5 秒
                 progressEvent = nil
             }
-        }
-    }
-
-    // MARK: - 私有方法
-
-    private func formatIndexTime(_ date: Date) -> String {
-        let now = Date()
-        let interval = now.timeIntervalSince(date)
-
-        if interval < 60 {
-            return String(localized: "Just now", table: "RAG")
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return String(localized: "^[\(minutes) minute](inflect: true) ago", table: "RAG")
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return String(localized: "^[\(hours) hour](inflect: true) ago", table: "RAG")
-        } else {
-            let days = Int(interval / 86400)
-            return String(localized: "^[\(days) day](inflect: true) ago", table: "RAG")
         }
     }
 
