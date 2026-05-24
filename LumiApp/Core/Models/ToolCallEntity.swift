@@ -39,6 +39,9 @@ final class ToolCallEntity {
     /// 执行耗时（秒）
     var resultDuration: TimeInterval?
 
+    /// 面向用户的操作描述（由工具自身根据参数生成）
+    var displayName: String?
+
     /// 结果中的图片附件
     @Relationship(deleteRule: .nullify, inverse: \ImageAttachmentEntity.toolCallResults)
     var resultImages: [ImageAttachmentEntity] = []
@@ -89,19 +92,22 @@ final class ToolCallEntity {
             arguments: arguments,
             authorizationState: ToolCallAuthorizationState(rawValue: authorizationState)
                 ?? .pendingAuthorization,
-            result: result
+            result: result,
+            displayName: displayName
         )
     }
 
     /// 从业务层 ToolCall 模型创建实体
     static func from(_ toolCall: ToolCall) -> ToolCallEntity {
-        ToolCallEntity(
+        let entity = ToolCallEntity(
             id: toolCall.id,
             name: toolCall.name,
             arguments: toolCall.arguments,
             authorizationState: toolCall.authorizationState,
             result: toolCall.result
         )
+        entity.displayName = toolCall.displayName
+        return entity
     }
 
     /// 更新实体字段（不含图片关系，由 ChatHistoryService 同步）
@@ -113,5 +119,6 @@ final class ToolCallEntity {
         resultIsError = toolCall.result?.isError ?? false
         resultExecutedAt = toolCall.result?.executedAt
         resultDuration = toolCall.result?.duration
+        displayName = toolCall.displayName
     }
 }

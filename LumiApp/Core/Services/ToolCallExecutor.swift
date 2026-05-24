@@ -117,6 +117,14 @@ final class ToolCallExecutor: SuperLog {
                 continue
             }
 
+            // 在执行前写入 displayName（由工具自身根据参数生成）
+            if updatedCalls[index].displayName == nil {
+                updatedCalls[index].displayName = toolService.displayDescription(
+                    toolName: toolCall.name,
+                    argumentsJSON: toolCall.arguments
+                )
+            }
+
             updatedCalls[index].result = await executeOne(
                 toolCall: toolCall,
                 step: index + 1,
@@ -134,15 +142,6 @@ final class ToolCallExecutor: SuperLog {
 
     // MARK: - 私有
 
-    private func extractDisplayName(from argumentsJSON: String) -> String? {
-        guard let dict = ToolService.parseToolArgumentsDict(from: argumentsJSON),
-              let name = dict["display_name"] as? String,
-              !name.isEmpty else {
-            return nil
-        }
-        return name
-    }
-
     private func executeOne(
         toolCall: ToolCall,
         step: Int,
@@ -151,7 +150,12 @@ final class ToolCallExecutor: SuperLog {
     ) async -> ToolCallResult {
         let startedAt = Date()
         let initialShellStats = await Self.shellStats(for: toolCall.name)
-        let displayName = extractDisplayName(from: toolCall.arguments)
+
+        // 通过工具实例获取面向用户的操作描述
+        let displayName = toolService.displayDescription(
+            toolName: toolCall.name,
+            argumentsJSON: toolCall.arguments
+        )
 
         conversationSendStatusVM.applyToolProgressEvent(
             conversationId: conversationId,

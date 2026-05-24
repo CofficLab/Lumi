@@ -82,6 +82,12 @@ Usage:
         .high
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
+        guard let filePath = arguments["file_path"]?.value as? String else { return nil }
+        let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+        return "编辑 \(fileName)"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let filePath = arguments["file_path"]?.value as? String,
               let oldString = arguments["old_string"]?.value as? String,

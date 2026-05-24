@@ -53,7 +53,7 @@ struct MessageWithToolCallsView: View {
                             .font(.appCaptionEmphasized)
                             .foregroundColor(theme.textSecondary)
 
-                        Text(toolCall.name)
+                        Text(toolCall.displayName ?? toolCall.name)
                             .font(.appCaption)
                             .foregroundColor(theme.textPrimary)
                             .lineLimit(1)

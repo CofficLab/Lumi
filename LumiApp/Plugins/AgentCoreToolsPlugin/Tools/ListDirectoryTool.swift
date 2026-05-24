@@ -49,6 +49,12 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
         .low
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
+        guard let path = arguments["path"]?.value as? String else { return nil }
+        let dirName = URL(fileURLWithPath: path).lastPathComponent
+        return "列出 \(dirName) 目录"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
             throw NSError(domain: "ListDirectoryTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])

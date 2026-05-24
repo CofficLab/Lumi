@@ -26,6 +26,18 @@ public protocol SuperAgentTool: Sendable {
 
     /// 工具自行评估当前调用的风险等级（必填）
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
+
+    /// 根据当前调用参数返回面向用户的简短操作描述
+    ///
+    /// 例如：
+    /// - `EditFileTool` → `"编辑 Foo.swift"`
+    /// - `ShellTool` → `"执行 git status"`
+    /// - `ReadFileTool` → `"读取 Bar.swift"`
+    ///
+    /// 返回 `nil` 时，UI 层将回退到显示 `toolCall.name`。
+    /// - Parameter arguments: 本次调用的参数
+    /// - Returns: 人类可读的操作描述，或 `nil`
+    func displayDescription(for arguments: [String: ToolArgument]) -> String?
 }
 
 extension SuperAgentTool {
@@ -37,5 +49,10 @@ extension SuperAgentTool {
     /// 默认 inputSchema（英文）
     public var inputSchema: [String: Any] {
         inputSchema(for: .english)
+    }
+
+    /// 默认不提供操作描述，UI 层将回退到显示 `toolCall.name`
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String? {
+        nil
     }
 }

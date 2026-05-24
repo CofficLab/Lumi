@@ -110,6 +110,19 @@ class ToolService: SuperLog, @unchecked Sendable {
         return tool
     }
 
+    /// 根据工具名称和参数 JSON 获取面向用户的操作描述
+    ///
+    /// 通过工具的 `displayDescription(for:)` 方法获取描述，
+    /// 工具未注册或未提供描述时返回 `nil`。
+    func displayDescription(toolName: String, argumentsJSON: String) -> String? {
+        guard let tool = tool(named: toolName),
+              let dict = Self.parseToolArgumentsDict(from: argumentsJSON) else {
+            return nil
+        }
+        let toolArgs = dict.mapValues { ToolArgument($0) }
+        return tool.displayDescription(for: toolArgs)
+    }
+
     /// 检查工具是否存在
     func hasTool(named name: String) -> Bool {
         tool(named: name) != nil
