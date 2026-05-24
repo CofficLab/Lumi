@@ -479,12 +479,6 @@
         }
       }
     },
-    "^[%lld Chunk](inflect: true)" : {
-
-    },
-    "^[%lld File](inflect: true)" : {
-
-    },
     "+%lld" : {
 
     },
