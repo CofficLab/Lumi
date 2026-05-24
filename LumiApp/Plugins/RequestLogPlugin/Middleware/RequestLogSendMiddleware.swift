@@ -23,8 +23,28 @@ struct RequestLogSuperSendMiddleware: SuperSendMiddleware {
         metadata: HTTPRequestMetadata,
         response: ChatMessage?
     ) async {
-        _ = response
-        // 记录请求数据到数据库
-        await RequestLogHistoryManager.shared.add(metadata: metadata)
+        var mutableMetadata = metadata
+
+        // 从响应中提取响应体内容
+        if let response {
+            let content = response.content
+            mutableMetadata.responseBodySizeBytes = content.utf8.count
+
+            // 截断到 2000 字符作为预览
+            let previewLimit = 2000
+            if content.utf8.count > previewLimit {
+                let truncated = String(content.prefix(previewLimit))
+                mutableMetadata.responseBodyPreview = truncated + "…"
+            } else {
+                mutableMetadata.responseBodyPreview = content
+            }
+
+            // 错误详情也记录
+            if let rawError = response.rawErrorDetail, !rawError.isEmpty {
+                mutableMetadata.responseBodyPreview = (mutableMetadata.responseBodyPreview ?? "") + "\n--- Error Detail ---\n" + rawError
+            }
+        }
+
+        await RequestLogHistoryManager.shared.add(metadata: mutableMetadata)
     }
 }

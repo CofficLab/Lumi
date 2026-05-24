@@ -45,6 +45,8 @@ actor RequestLogHistoryManager: SuperLog {
             requestBodyPreview: metadata.requestBodyPreview,
             responseStatusCode: metadata.responseStatusCode,
             responseHeadersJSON: toJSONString(metadata.responseHeaders),
+            responseBodySize: metadata.responseBodySizeBytes,
+            responseBodyPreview: metadata.responseBodyPreview,
             isSuccess: metadata.isSuccess,
             errorMessage: metadata.error?.localizedDescription,
             duration: metadata.duration
