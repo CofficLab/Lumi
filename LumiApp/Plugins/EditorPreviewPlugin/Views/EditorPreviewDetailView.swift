@@ -1101,6 +1101,7 @@ private struct EditorPreviewFailureDetailsView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
