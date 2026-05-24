@@ -113,7 +113,8 @@ actor EditorXcodePlugin: SuperPlugin, SuperLog {
 
     /// 在状态栏右侧显示 Xcode 构建上下文状态
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(XcodeStatusBarTrailingView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(XcodeStatusBarTrailingView())
     }
 
     /// 添加根视图包裹器

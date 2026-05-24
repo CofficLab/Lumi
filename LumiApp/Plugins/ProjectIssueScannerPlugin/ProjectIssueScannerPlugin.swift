@@ -33,7 +33,8 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     /// 在状态栏右侧添加问题扫描状态图标。
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(ProjectIssueScannerStatusBarView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(ProjectIssueScannerStatusBarView())
     }
 
     // MARK: - Root View

@@ -41,6 +41,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
     /// 添加状态栏左侧视图
     @MainActor
     func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(OpenInGitOKStatusBarView())
     }
 }

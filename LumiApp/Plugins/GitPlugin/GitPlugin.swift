@@ -59,6 +59,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     /// 底部状态栏 Git 入口：当前分支 + 快捷 Git 弹窗
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(GitPluginStatusBarView())
     }
 }
