@@ -101,14 +101,11 @@ public final class GitBranchMonitor: ObservableObject {
         // 设置事件处理器
         // DispatchSource 在后台队列上运行。不能直接捕获 self（@MainActor 隔离的实例），
         // 否则 Swift 并发运行时会进行 executor 隔离检查并在后台线程上 crash。
-        // 使用 Unmanaged 传递 raw pointer 绕过隔离检查，在 Task { @MainActor } 内部恢复实例。
+        // 闭包字面量定义在 @MainActor 方法内会隐式继承 @MainActor 隔离，
+        // 因此通过非隔离的静态方法创建闭包，打破隐式隔离继承。
         let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-        dispatchSource.setEventHandler {
-            Task { @MainActor in
-                let monitor = Unmanaged<GitBranchMonitor>.fromOpaque(selfPtr).takeUnretainedValue()
-                monitor.handleFileChange(projectPath: projectPath)
-            }
-        }
+        let handler = GitBranchMonitor._makeEventHandler(selfPtr: selfPtr, projectPath: projectPath)
+        dispatchSource.setEventHandler(handler: handler)
 
         // 设置取消处理器（纯 C 调用，关闭文件描述符，不涉及 Actor 隔离）
         dispatchSource.setCancelHandler {
@@ -214,6 +211,24 @@ public final class GitBranchMonitor: ObservableObject {
     }
 
     // MARK: - Static Helpers (pure functions, easily testable)
+
+    /// 创建 DispatchSource 事件处理器闭包。
+    ///
+    /// 此方法**不**在 `@MainActor` 上执行，因此返回的闭包不会隐式继承 `@MainActor` 隔离，
+    /// 可以安全地在 DispatchSource 的后台队列上执行。
+    /// 闭包内部通过 `Task { @MainActor }` 跳回主线程后再访问实例成员。
+    static func _makeEventHandler(selfPtr: UnsafeMutableRawPointer, projectPath: String) -> @Sendable () -> Void {
+        struct SafePtr: @unchecked Sendable {
+            let ptr: UnsafeMutableRawPointer
+        }
+        let safe = SafePtr(ptr: selfPtr)
+        return {
+            Task { @MainActor in
+                let monitor = Unmanaged<GitBranchMonitor>.fromOpaque(safe.ptr).takeUnretainedValue()
+                monitor.handleFileChange(projectPath: projectPath)
+            }
+        }
+    }
 
     /// 构造 .git/HEAD 文件路径
     public static func headPath(for projectPath: String) -> String {
