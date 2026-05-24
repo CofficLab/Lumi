@@ -15,8 +15,24 @@ struct ConversationItemView: View {
     /// 是否显示删除确认对话框
     @State private var showDeleteConfirmation = false
 
+    /// 判断是否有真实标题（非默认的"新对话"/"New Chat"前缀）
+    private var hasRealTitle: Bool {
+        let title = conversation.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return false }
+        let newConversation = String(localized: "New Conversation", table: "ConversationList")
+        let newChat = String(localized: "New Chat", table: "ConversationList")
+        return title != newConversation && !title.hasPrefix(newChat)
+    }
+
     var body: some View {
         HStack(spacing: 8) {
+            // 图标（仅当有真实标题时显示）
+            if hasRealTitle {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
+            }
+
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
                 // 标题
