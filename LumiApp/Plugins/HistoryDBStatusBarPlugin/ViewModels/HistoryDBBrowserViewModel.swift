@@ -141,7 +141,8 @@ final class HistoryDBBrowserViewModel: ObservableObject {
                 updatedAt: conversation.updatedAt,
                 messageCount: count,
                 providerId: conversation.providerId,
-                model: conversation.model
+                model: conversation.model,
+                chatMode: conversation.chatMode
             )
         }
 
