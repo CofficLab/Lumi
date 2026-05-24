@@ -19,6 +19,17 @@ struct LanguageToggleButton: View {
             withAnimation {
                 projectVM.setLanguagePreference(newLanguage)
             }
+            let title: String
+            let subtitle: String
+            switch newLanguage {
+            case .chinese:
+                title = "已切换为中文"
+                subtitle = "AI 将使用中文回复"
+            case .english:
+                title = "Switched to English"
+                subtitle = "AI will respond in English"
+            }
+            alert_info(title, subtitle: subtitle)
         }) {
             HStack(spacing: 4) {
                 Image(systemName: projectVM.languagePreference.iconName)

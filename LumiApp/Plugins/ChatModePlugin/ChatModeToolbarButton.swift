@@ -21,6 +21,10 @@ struct ChatModeToolbarButton: View {
             }
             // 直接保存到当前对话的聊天模式偏好
             conversationVM.saveChatModePreference(newMode)
+            alert_info(
+                String(localized: "Switched to \(newMode.displayName) Mode", table: "ChatMode"),
+                subtitle: newMode.description
+            )
         }) {
             HStack(spacing: 4) {
                 Image(systemName: llmVM.chatMode.iconName)
