@@ -347,7 +347,6 @@
       }
     },
     "Onboarding" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -416,7 +415,6 @@
       }
     },
     "Show first-run onboarding and guidance entry points" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

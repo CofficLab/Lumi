@@ -98,19 +98,15 @@ public final class GitBranchMonitor: ObservableObject {
             queue: queue
         )
 
-        // 设置事件处理器
-        // DispatchSource 在后台队列上运行。不能直接捕获 self（@MainActor 隔离的实例），
-        // 否则 Swift 并发运行时会进行 executor 隔离检查并在后台线程上 crash。
-        // 闭包字面量定义在 @MainActor 方法内会隐式继承 @MainActor 隔离，
-        // 因此通过非隔离的静态方法创建闭包，打破隐式隔离继承。
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-        let handler = GitBranchMonitor._makeEventHandler(selfPtr: selfPtr, projectPath: projectPath)
-        dispatchSource.setEventHandler(handler: handler)
-
-        // 设置取消处理器（纯 C 调用，关闭文件描述符，不涉及 Actor 隔离）
-        dispatchSource.setCancelHandler {
-            Darwin.close(fileDescriptor)
-        }
+        // 使用非隔离的 SourceConfigurator 配置 DispatchSource
+        // 这确保所有闭包字面量在非隔离上下文中创建，不会继承 @MainActor
+        let selfPtr = SourceConfigurator.RawPtr(value: Unmanaged.passUnretained(self).toOpaque())
+        SourceConfigurator.configure(
+            dispatchSource,
+            selfPtr: selfPtr,
+            projectPath: projectPath,
+            fileDescriptor: fileDescriptor
+        )
 
         // 启动监听
         dispatchSource.resume()
@@ -210,25 +206,7 @@ public final class GitBranchMonitor: ObservableObject {
         }
     }
 
-    // MARK: - Static Helpers (pure functions, easily testable)
-
-    /// 创建 DispatchSource 事件处理器闭包。
-    ///
-    /// 此方法**不**在 `@MainActor` 上执行，因此返回的闭包不会隐式继承 `@MainActor` 隔离，
-    /// 可以安全地在 DispatchSource 的后台队列上执行。
-    /// 闭包内部通过 `Task { @MainActor }` 跳回主线程后再访问实例成员。
-    static func _makeEventHandler(selfPtr: UnsafeMutableRawPointer, projectPath: String) -> @Sendable () -> Void {
-        struct SafePtr: @unchecked Sendable {
-            let ptr: UnsafeMutableRawPointer
-        }
-        let safe = SafePtr(ptr: selfPtr)
-        return {
-            Task { @MainActor in
-                let monitor = Unmanaged<GitBranchMonitor>.fromOpaque(safe.ptr).takeUnretainedValue()
-                monitor.handleFileChange(projectPath: projectPath)
-            }
-        }
-    }
+    // MARK: - Static Helpers
 
     /// 构造 .git/HEAD 文件路径
     public static func headPath(for projectPath: String) -> String {
@@ -236,11 +214,6 @@ public final class GitBranchMonitor: ObservableObject {
     }
 
     /// 解析 .git/HEAD 文件内容，提取分支名称
-    ///
-    /// 支持格式：
-    /// - `ref: refs/heads/main` → `"main"`
-    /// - `abc123...`（40 位十六进制）→ `nil`（分离头指针）
-    /// - 文件不存在或无法读取 → `nil`
     public static func parseHeadFile(at path: String) -> String? {
         guard let content = try? String(contentsOfFile: path, encoding: .utf8) else {
             return nil
@@ -249,24 +222,51 @@ public final class GitBranchMonitor: ObservableObject {
     }
 
     /// 解析 HEAD 文件内容字符串
-    ///
-    /// - Parameter content: HEAD 文件的原始内容
-    /// - Returns: 分支名称，或 `nil` 表示分离头指针 / 无法解析
     public static func parseHeadContent(_ content: String) -> String? {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // 标准格式: "ref: refs/heads/<branch>"
         if trimmed.hasPrefix("ref: refs/heads/") {
             let branch = String(trimmed.dropFirst("ref: refs/heads/".count))
             return branch.isEmpty ? nil : branch
         }
 
-        // 分离头指针: 40 位十六进制 commit hash
         if trimmed.count == 40 && trimmed.allSatisfy(\.isHexDigit) {
             return nil
         }
 
         return nil
+    }
+}
+
+// MARK: - SourceConfigurator
+
+/// 独立的非隔离结构体，用于配置 DispatchSource。
+///
+/// 将闭包的创建移出 `@MainActor` 类，确保 Swift 并发运行时
+/// 不会将 `@MainActor` 隔离附加到闭包上。
+/// 这是解决 Swift 6 严格并发检查下 `dispatch_assert_queue` 崩溃的关键。
+private struct SourceConfigurator {
+    /// 安全的原始指针包装器，用于跨 actor 边界传递。
+    struct RawPtr: @unchecked Sendable {
+        let value: UnsafeMutableRawPointer
+    }
+
+    nonisolated static func configure(
+        _ source: DispatchSourceFileSystemObject,
+        selfPtr: RawPtr,
+        projectPath: String,
+        fileDescriptor: Int32
+    ) {
+        source.setEventHandler {
+            Task { @MainActor in
+                let monitor = Unmanaged<GitBranchMonitor>.fromOpaque(selfPtr.value).takeUnretainedValue()
+                monitor.handleFileChange(projectPath: projectPath)
+            }
+        }
+
+        source.setCancelHandler {
+            Darwin.close(fileDescriptor)
+        }
     }
 }
 
