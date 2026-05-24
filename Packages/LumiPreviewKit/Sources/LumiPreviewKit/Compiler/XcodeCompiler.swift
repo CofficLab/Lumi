@@ -375,10 +375,11 @@ final class XcodeCompiler: Sendable {
                 }
             }
 
-            // 3. Build/Intermediates — Xcode 编译 SPM 包时的中间产物目录。
-            //    搜索所有 modulemap 和 common-args.resp 文件。
-            //    common-args.resp 包含每个 target 的真实编译参数（-I 路径），
-            //    可以发现本地路径依赖（.package(path:)）中的 ObjC 模块搜索路径。
+            // 3. Build/Intermediates — 通过 common-args.resp 发现本地 SPM 包中的 ObjC/C 模块。
+            //    不直接收集 Intermediates 中的 modulemap 文件——Swift 模块的 modulemap
+            //    已由 GENERATED_MODULEMAP_DIR（步骤 1）完整覆盖，
+            //    各 .build 目录下的同名 modulemap 会导致 redefinition 错误。
+            //    唯一目的是通过 ObjC target 的编译参数发现本地包源码中的 modulemap。
             let intermediatesDirectory = derivedDataDirectory
                 .appendingPathComponent("Build", isDirectory: true)
                 .appendingPathComponent("Intermediates.noindex", isDirectory: true)
@@ -389,12 +390,7 @@ final class XcodeCompiler: Sendable {
                 options: [.skipsHiddenFiles]
                ) {
                 for case let url as URL in enumerator {
-                    // 直接搜索 modulemap 文件
-                    if url.lastPathComponent == "module.modulemap" || url.pathExtension == "modulemap" {
-                        urls.append(url)
-                        continue
-                    }
-                    // 从 common-args.resp 中提取 -I 路径，发现本地包的 include 目录
+                    // 只解析 common-args.resp，不收集散落的 modulemap
                     if url.lastPathComponent.hasSuffix("-common-args.resp") {
                         urls.append(contentsOf: moduleMapURLsFromCommonArgs(url))
                     }
