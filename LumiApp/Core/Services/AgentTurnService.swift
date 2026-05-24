@@ -531,6 +531,8 @@ extension AgentTurnService {
                case let .httpError(statusCode, _) = apiError {
                 mutableMetadata.responseStatusCode = statusCode
             }
+        } else {
+            mutableMetadata.responseStatusCode = 200
         }
         let pipeline = SendPipeline(middlewares: middlewares)
         await pipeline.runPost(metadata: mutableMetadata, response: response)
