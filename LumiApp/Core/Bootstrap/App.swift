@@ -40,9 +40,13 @@ struct CoreApp: App {
 
     var body: some Scene {
         // 主窗口（可多开）
+        //
+        // 禁用系统场景恢复：会话/项目/编辑器等状态均绑定稳定的 windowId 并由
+        // CoreWindowIDStore + WindowPersistencePlugin 写盘；若与 macOS 默认恢复叠加会重复开窗。
         WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
             MainWindowSceneContent(route: route)
         }
+        .restorationBehavior(.disabled)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 1000, height: 800)
@@ -68,6 +72,8 @@ struct CoreApp: App {
             SettingView()
                 .inRootView(container: WindowContainer(container: RootContainer.shared))
         }
+        .restorationBehavior(.disabled)
+        .defaultLaunchBehavior(.suppressed)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
