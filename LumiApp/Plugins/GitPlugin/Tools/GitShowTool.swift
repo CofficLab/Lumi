@@ -4,7 +4,7 @@ import AgentToolKit
 /// Git 查看 Commit 详情工具
 struct GitShowTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔎"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "git_show"
 
     func description(for language: LanguagePreference) -> String {

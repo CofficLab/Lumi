@@ -8,7 +8,7 @@ import AgentToolKit
 @MainActor
 final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM

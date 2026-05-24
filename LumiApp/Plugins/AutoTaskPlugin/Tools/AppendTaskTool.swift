@@ -7,7 +7,7 @@ import AgentToolKit
 /// 适用于 Agent 在执行过程中发现需要额外步骤的场景。
 struct AppendTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "append_task"
 

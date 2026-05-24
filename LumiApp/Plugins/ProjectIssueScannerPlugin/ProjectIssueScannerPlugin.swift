@@ -15,7 +15,7 @@ import SwiftUI
 /// 6. **提示注入**：中间件读取未解决问题，注入 `transientSystemPrompts`。
 actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "ProjectIssueScanner"
     static let displayName: String = "Project Issue Scanner"

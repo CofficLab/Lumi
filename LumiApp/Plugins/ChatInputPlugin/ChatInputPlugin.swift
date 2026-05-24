@@ -11,7 +11,7 @@ actor ChatInputPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-input")
 
     nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "ChatInput"
     static let displayName = String(localized: "Chat Input", table: "ChatInputPlugin")
     static let description = String(localized: "Chat input area with editor and command suggestions", table: "ChatInputPlugin")

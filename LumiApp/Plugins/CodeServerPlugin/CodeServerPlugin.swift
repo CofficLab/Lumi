@@ -11,7 +11,7 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖥️"
     static var category: PluginCategory { .developerTool }
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "CodeServer"
     static let navigationId: String = "code-server"

@@ -10,7 +10,7 @@ struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     

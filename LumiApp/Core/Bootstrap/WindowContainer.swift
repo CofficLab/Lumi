@@ -22,7 +22,7 @@ import SwiftUI
 @MainActor
 final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     nonisolated static let emoji = "🪟"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     // MARK: - Identity
 

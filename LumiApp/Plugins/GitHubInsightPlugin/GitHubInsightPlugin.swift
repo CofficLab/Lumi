@@ -10,7 +10,7 @@ import SwiftUI
 actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-insight")
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "GitHubInsight"
     static let displayName = String(localized: "GitHub Insight", table: "GitHubInsight")

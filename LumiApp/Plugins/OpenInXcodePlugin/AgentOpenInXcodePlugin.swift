@@ -11,7 +11,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
 
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "AgentOpenInXcode"
     static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")

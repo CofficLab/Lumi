@@ -5,7 +5,7 @@ import SwiftUI
 /// 在工具栏右侧提供新建对话按钮（NewChatButton）。
 actor ConversationNewHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentChatToolbar"
     static let displayName = String(localized: "New Chat Button", table: "ConversationNew")
     static let description = String(localized: "Create new chat from header", table: "ConversationNew")

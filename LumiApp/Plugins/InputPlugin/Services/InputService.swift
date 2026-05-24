@@ -6,7 +6,7 @@ import Carbon
 @MainActor
 class InputService: ObservableObject, SuperLog {
     nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let shared = InputService()
 
     @Published var config: InputConfig {

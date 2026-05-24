@@ -7,7 +7,7 @@ import AgentToolKit
 /// 用于 Agent 需要查看完整任务列表以做决策的场景（如判断是否需要追加任务）。
 struct ListTasksTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "list_tasks"
 

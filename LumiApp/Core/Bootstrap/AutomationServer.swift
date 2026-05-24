@@ -132,7 +132,7 @@ extension View {
 /// ```
 final class AutomationServer: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Singleton
 

@@ -11,7 +11,7 @@ import LLMKit
 /// 然后调用 collect_agents 一次性收集所有结果。
 struct SpawnAgentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🚀"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "spawn_agent"
 

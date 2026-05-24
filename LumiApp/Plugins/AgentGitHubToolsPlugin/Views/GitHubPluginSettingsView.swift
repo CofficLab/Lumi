@@ -6,7 +6,7 @@ struct GitHubPluginSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @State private var token: String = ""
     @State private var isSaved: Bool = false

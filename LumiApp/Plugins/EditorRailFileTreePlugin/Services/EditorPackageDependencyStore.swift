@@ -4,7 +4,7 @@ import os
 @MainActor
 final class EditorPackageDependencyStore: ObservableObject, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.packages")
 
     @Published private(set) var dependencies: [EditorPackageDependency] = []

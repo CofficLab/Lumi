@@ -9,7 +9,7 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-attachment")
 
     nonisolated static let emoji = "📎"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "ChatAttachment"
     static let displayName = String(localized: "Chat Attachment", table: "AgentChat")
     static let description = String(localized: "Pending chat attachments and sidebar drop handling", table: "AgentChat")

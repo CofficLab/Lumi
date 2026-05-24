@@ -8,7 +8,7 @@ import LLMProviderKit
 /// 使用 LLMProviderKit 的 OpenAICompatibleProviderAdapter 处理请求构建和响应解析。
 final class MegaLLMProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     nonisolated static let emoji = "🚀"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     // MARK: - 基础信息
 

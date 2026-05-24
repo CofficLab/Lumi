@@ -15,7 +15,7 @@ import SwiftUI
 /// 这是因为 libgit2 的 `git_repository` 对象不是线程安全的，
 /// 并发打开同一仓库或并发读取 index 可能导致 C 层内存错误。
 final class GitService: @unchecked Sendable, SuperLog {
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let emoji = "🌿"
     static let shared = GitService()
 

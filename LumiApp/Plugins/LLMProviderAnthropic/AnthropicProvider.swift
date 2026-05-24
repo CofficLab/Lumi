@@ -31,7 +31,7 @@ import os
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - Basic Info
 
     static let id = "anthropic"

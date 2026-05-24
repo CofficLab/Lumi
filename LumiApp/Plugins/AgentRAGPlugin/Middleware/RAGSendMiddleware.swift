@@ -19,7 +19,7 @@ import os
 @MainActor
 final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let id = "rag"
     let order: Int = 100
 

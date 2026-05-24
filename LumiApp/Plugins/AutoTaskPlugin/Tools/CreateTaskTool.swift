@@ -7,7 +7,7 @@ import AgentToolKit
 /// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
 struct CreateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "create_task"
     func description(for language: LanguagePreference) -> String {

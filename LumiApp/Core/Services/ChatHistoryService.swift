@@ -66,7 +66,7 @@ extension ChatMessage {
 @MainActor
 final class ChatHistoryService: SuperLog, Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let modelContainer: ModelContainer
     let modelContext: ModelContext
     let llmService: LLMService

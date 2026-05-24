@@ -5,7 +5,7 @@ import GitHubKit
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_file_content"
     func description(for language: LanguagePreference) -> String {
         switch language {

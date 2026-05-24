@@ -9,7 +9,7 @@ actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "📁"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "EditorRailFileTree"
     static let displayName: String = String(
         localized: "Editor Rail File Tree", table: "EditorRailFileTree")

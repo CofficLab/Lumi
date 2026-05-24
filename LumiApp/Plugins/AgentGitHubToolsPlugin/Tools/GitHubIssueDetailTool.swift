@@ -5,7 +5,7 @@ import GitHubKit
 /// GitHub Issue 详情工具
 struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_issue_detail"
     func description(for language: LanguagePreference) -> String {
         switch language {

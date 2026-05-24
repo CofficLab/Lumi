@@ -24,7 +24,7 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🧠"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "Memory"
     static let displayName: String = String(localized: "Memory", table: "Memory")
     static let description: String = String(

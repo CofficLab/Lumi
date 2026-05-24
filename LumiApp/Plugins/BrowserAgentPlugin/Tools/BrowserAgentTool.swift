@@ -9,7 +9,7 @@ import ShellKit
 /// 包括网页导航、元素交互、截图、获取页面快照等。
 struct BrowserAgentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser-agent.tool")
 

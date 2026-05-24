@@ -61,7 +61,7 @@ public struct ModelPerformanceStats: Sendable {
 @MainActor
 final class PerformanceService: SuperLog, Sendable {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let modelContainer: ModelContainer
     let modelContext: ModelContext

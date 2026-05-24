@@ -11,7 +11,7 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
 
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "ModelSelector"
     static let displayName = String(localized: "Model Selector", table: "AgentChat")
     static let description = String(localized: "Select LLM provider and model", table: "AgentChat")

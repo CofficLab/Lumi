@@ -5,7 +5,7 @@ import Sparkle
 @MainActor
 final class UpdateController: NSObject, SuperLog, SPUUpdaterDelegate {
     nonisolated static let emoji = "✨"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - Properties
 
     static let shared = UpdateController()

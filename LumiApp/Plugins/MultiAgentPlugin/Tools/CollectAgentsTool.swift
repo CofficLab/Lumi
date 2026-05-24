@@ -7,7 +7,7 @@ import AgentToolKit
 /// 超时后自动取消未完成的智能体。
 struct CollectAgentsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "collect_agents"
 

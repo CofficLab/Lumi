@@ -12,7 +12,7 @@ import os
 @MainActor
 class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     nonisolated static let emoji = "😊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService

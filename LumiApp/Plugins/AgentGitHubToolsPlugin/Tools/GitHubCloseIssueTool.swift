@@ -5,7 +5,7 @@ import GitHubKit
 /// GitHub 关闭 Issue 工具
 struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔒"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_close_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {

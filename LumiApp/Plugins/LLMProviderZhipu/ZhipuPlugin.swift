@@ -6,7 +6,7 @@ import os
 actor ZhipuPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.zhipu")
     nonisolated static let emoji = "🔴"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "LLMProviderZhipu"
     static let navigationId: String? = nil

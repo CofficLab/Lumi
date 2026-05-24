@@ -4,7 +4,7 @@ import AgentToolKit
 /// Git 差异工具
 struct GitDiffTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "git_diff"
     func description(for language: LanguagePreference) -> String {
         switch language {

@@ -34,7 +34,7 @@ import os
 /// ```
 struct ShowImageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🖼️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")
 
     let name = "show_image"

@@ -7,7 +7,7 @@ import AgentToolKit
 /// 适用于后台下载等需要保持系统运行但不需要屏幕的场景。
 struct CaffeinateTurnOffDisplayTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "caffeinate_turn_off_display"
     func description(for language: LanguagePreference) -> String {

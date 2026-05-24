@@ -6,7 +6,7 @@ import LumiUI
 /// 云端大模型设置视图（仅展示远程/API 供应商）
 struct RemoteProviderSettingsView: View, SuperLog {
     nonisolated static let emoji = "☁️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 

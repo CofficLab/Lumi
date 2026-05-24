@@ -9,7 +9,7 @@ import SwiftUI
 /// 支持悬停弹出详细信息
 struct RAGStatusBarView: View, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - 属性
 
     @EnvironmentObject private var projectVM: WindowProjectVM
