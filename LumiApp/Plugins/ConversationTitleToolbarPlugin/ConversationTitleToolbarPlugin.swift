@@ -30,7 +30,8 @@ actor ConversationTitleToolbarPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(ConversationTitleToolbarView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(ConversationTitleToolbarView())
     }
 }
 
