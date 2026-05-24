@@ -5,9 +5,13 @@ import LumiUI
 struct StatusBar: View {
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
 
     var body: some View {
-        let context = PluginContext(activeIcon: pluginProvider.activePanelIcon)
+        let context = PluginContext(
+            activeIcon: pluginProvider.activePanelIcon,
+            isEditorVisible: layoutVM.editorVisible
+        )
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews(context: context)

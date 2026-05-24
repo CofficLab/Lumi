@@ -16,7 +16,16 @@ public struct PluginContext {
     /// 插件可以通过比较此值与自己的面板图标来决定是否提供视图。
     public let activeIcon: String?
 
-    public init(activeIcon: String? = nil) {
+    /// 编辑器是否可见
+    ///
+    /// 当编辑器未显示时（如纯 Agent 模式），依赖编辑器的插件可据此隐藏自身视图。
+    public let isEditorVisible: Bool
+
+    public init(
+        activeIcon: String? = nil,
+        isEditorVisible: Bool = true
+    ) {
         self.activeIcon = activeIcon
+        self.isEditorVisible = isEditorVisible
     }
 }
