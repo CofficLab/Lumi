@@ -141,8 +141,6 @@ struct EditorPreviewDetailView: View, SuperLog {
             Spacer()
 
             if viewModel.previewMode == .swift {
-                entryStatusBadge
-
                 buildInfoBadge
 
                 cacheControls
@@ -457,40 +455,6 @@ struct EditorPreviewDetailView: View, SuperLog {
                     )
                 )
             }
-        }
-    }
-
-    @ViewBuilder
-    private var entryStatusBadge: some View {
-        switch viewModel.entryStatus {
-        case .noPreview:
-            EmptyView()
-        case let .building(file):
-            HStack(spacing: 4) {
-                ProgressView().controlSize(.small)
-                Text(String(localized: "building \(file)", table: "EditorPreview"))
-            }
-            .font(.caption)
-            .foregroundStyle(.orange)
-            .lineLimit(1)
-        case let .loading(path):
-            Text(String(localized: "loading \((path as NSString).lastPathComponent)", table: "EditorPreview"))
-                .font(.caption)
-                .foregroundStyle(.orange)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        case let .loaded(_, title):
-            Text(String(localized: "entry · \(title)", table: "EditorPreview"))
-                .font(.caption)
-                .foregroundStyle(.green)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        case let .failed(failure):
-            Text(failure.title)
-                .font(.caption)
-                .foregroundStyle(.red)
-                .lineLimit(1)
-                .truncationMode(.middle)
         }
     }
 
