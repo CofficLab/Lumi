@@ -29,6 +29,8 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     /// 聊天模式
     @Published var chatMode: ChatMode = .build
+    /// 响应详细程度
+    @Published var verbosity: ResponseVerbosity = .normal
     @Published var isAutoMode: Bool = false
     @Published var lastAutoRouteSummary: String?
 
@@ -107,6 +109,12 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     func setChatMode(_ mode: ChatMode) {
         chatMode = mode
+    }
+
+    // MARK: - Verbosity
+
+    func setVerbosity(_ level: ResponseVerbosity) {
+        verbosity = level
     }
 
     // MARK: - Selection Guard

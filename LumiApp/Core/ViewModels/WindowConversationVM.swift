@@ -185,6 +185,30 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         return ChatMode(rawValue: rawValue)
     }
 
+    /// 保存当前对话的响应详细程度偏好
+    /// - Parameter verbosity: 详细程度，传入 nil 表示清除对话级偏好
+    func saveVerbosityPreference(_ verbosity: ResponseVerbosity?) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存详细程度")
+            }
+            return
+        }
+        chatHistoryService.updateVerbosity(conversation, verbosity: verbosity?.rawValue)
+    }
+
+    /// 获取当前对话的响应详细程度偏好
+    /// - Returns: 详细程度，如果对话未指定则返回 nil
+    func getVerbosityPreference() -> ResponseVerbosity? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let rawValue = conversation.verbosity else {
+            return nil
+        }
+        return ResponseVerbosity(rawValue: rawValue)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
