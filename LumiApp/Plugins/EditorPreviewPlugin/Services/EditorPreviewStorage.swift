@@ -34,7 +34,8 @@ enum EditorPreviewStorage {
             try? paths.ensureDirectoriesExist()
             for directory in [
                 root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
-                root.appendingPathComponent("DerivedData", isDirectory: true)
+                root.appendingPathComponent("DerivedData", isDirectory: true),
+                root.appendingPathComponent("build-logs", isDirectory: true)
             ] {
                 try? FileManager.default.createDirectory(
                     at: directory,
@@ -58,6 +59,11 @@ enum EditorPreviewStorage {
 
     static var derivedDataDirectory: URL {
         rootDirectory.appendingPathComponent("DerivedData", isDirectory: true)
+    }
+
+    /// 构建日志目录，存放每次预览构建失败的完整日志。
+    static var buildLogsDirectory: URL {
+        rootDirectory.appendingPathComponent("build-logs", isDirectory: true)
     }
 
     static func cacheSummary() -> CacheSummary {

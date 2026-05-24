@@ -561,7 +561,11 @@ struct EditorPreviewDetailView: View, SuperLog {
                 .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
                 if let failure = entryFailure {
-                    PreviewFailureView(failure: failure)
+                    PreviewFailureView(
+                        failure: failure,
+                        buildLogURL: viewModel.lastBuildLogURL,
+                        onRetry: { viewModel.retryBuild() }
+                    )
                 }
 
                 if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
