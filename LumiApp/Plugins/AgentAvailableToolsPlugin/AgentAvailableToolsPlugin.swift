@@ -29,9 +29,10 @@ actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - StatusBar Views
 
-    /// 状态栏右侧：可用工具按钮
+    /// 状态栏右侧：可用工具按钮（仅在编辑器激活时显示）
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(AvailableToolsButton())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(AvailableToolsButton())
     }
 }

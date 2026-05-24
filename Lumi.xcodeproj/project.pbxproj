@@ -42,6 +42,7 @@
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
+		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
 		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
 		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
@@ -69,7 +70,6 @@
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
-		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
