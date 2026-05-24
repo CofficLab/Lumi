@@ -21,6 +21,7 @@ actor HistoryDBStatusBarPlugin: SuperPlugin {
 
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(HistoryDBStatusBarView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(HistoryDBStatusBarView())
     }
 }

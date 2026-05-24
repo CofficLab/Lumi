@@ -28,6 +28,7 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(RequestLogStatusBarView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(RequestLogStatusBarView())
     }
 }
