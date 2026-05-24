@@ -24,7 +24,8 @@ actor IdleTimePlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(IdleStatusBarView())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(IdleStatusBarView())
     }
 
     @MainActor
