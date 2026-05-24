@@ -342,9 +342,9 @@ final class GitService: @unchecked Sendable, SuperLog {
                     let hash: String
                     if amend {
                         hash = try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
-                    } else if files.isEmpty {
-                        hash = try LibGit2.createCommit(message: message, at: repoPath, verbose: Self.verbose)
                     } else {
+                        // addAndCommit with empty files correctly stages ALL changes then commits.
+                        // Direct createCommit would only commit what's already staged, leaving working tree changes behind.
                         hash = try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
                     }
                     continuation.resume(returning: hash)

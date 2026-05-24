@@ -99,12 +99,14 @@ public final class GitBranchMonitor: ObservableObject {
         )
 
         // 设置事件处理器
-        // DispatchSource 在后台队列上运行，通过 Task { @MainActor } 跳回主线程。
-        // 不能用 { [weak self] in Task { await self?.... } } 因为 self 是 @MainActor 的，
-        // 在后台线程捕获 self 会触发 actor isolation 检查。
-        dispatchSource.setEventHandler { [weak self] in
-            Task { @MainActor [weak self] in
-                self?.handleFileChange(projectPath: projectPath)
+        // DispatchSource 在后台队列上运行。不能直接捕获 self（@MainActor 隔离的实例），
+        // 否则 Swift 并发运行时会进行 executor 隔离检查并在后台线程上 crash。
+        // 使用 Unmanaged 传递 raw pointer 绕过隔离检查，在 Task { @MainActor } 内部恢复实例。
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        dispatchSource.setEventHandler {
+            Task { @MainActor in
+                let monitor = Unmanaged<GitBranchMonitor>.fromOpaque(selfPtr).takeUnretainedValue()
+                monitor.handleFileChange(projectPath: projectPath)
             }
         }
 
