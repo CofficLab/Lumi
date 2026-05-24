@@ -595,22 +595,62 @@ final class XcodeCompiler: Sendable {
             return "xcodebuild failed with exit code \(result.terminationStatus)"
         }
 
+        // 优先提取编译/链接级别的诊断行（file:line:col: error/warning: 格式）
+        let diagnosticPattern = #":\d+:\d+:\s*(?:error|warning):"#
         let diagnosticLines = combinedOutput
             .split(separator: "\n", omittingEmptySubsequences: false)
             .map(String.init)
             .filter { line in
-                line.contains(": error:")
-                    || line.contains("error:")
-                    || line.contains("No such file")
-                    || line.contains("does not exist")
-                    || line.contains("scheme")
+                line.range(of: diagnosticPattern, options: .regularExpression) != nil
             }
 
         if !diagnosticLines.isEmpty {
             return diagnosticLines.joined(separator: "\n")
         }
 
-        return combinedOutput
+        // 其次匹配 xcodebuild 自身的 error 行（但不匹配命令行回显中的 -scheme 等参数）
+        let errorLines = combinedOutput
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                // 排除 xcodebuild 命令行回显（以 / 开头 + xcodebuild 参数）
+                guard !trimmed.hasPrefix("/") || !trimmed.contains("xcodebuild") else {
+                    return false
+                }
+                return trimmed.contains(": error:")
+                    || trimmed.hasPrefix("error:")
+                    || trimmed.contains("No such file")
+                    || trimmed.contains("does not exist")
+                    || trimmed.contains("BUILD FAILED")
+                    || trimmed.contains("Undefined symbol")
+                    || trimmed.contains("linker command failed")
+                    || trimmed.contains("clang: error:")
+                    || trimmed.contains("ld:")
+            }
+
+        if !errorLines.isEmpty {
+            return errorLines.joined(separator: "\n")
+        }
+
+        // 最终兜底：返回输出中排除 xcodebuild 命令行回显后的内容
+        let filteredOutput = combinedOutput
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                // 排除 xcodebuild 命令行回显
+                guard !trimmed.hasPrefix("/") || !trimmed.contains("xcodebuild") else {
+                    return false
+                }
+                // 排除纯空白行
+                return !trimmed.isEmpty
+            }
+            .joined(separator: "\n")
+
+        return filteredOutput.isEmpty
+            ? "xcodebuild failed with exit code \(result.terminationStatus)"
+            : filteredOutput
     }
 }
 
