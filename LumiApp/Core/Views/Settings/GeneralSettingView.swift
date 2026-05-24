@@ -98,7 +98,7 @@ struct GeneralSettingView: View {
             AppSettingsSection(title: "新手引导", subtitle: "随时重新查看产品使用指引", spacing: 12) {
                 AppButton("重新查看新手引导", style: .secondary, fillsWidth: true, action: {
                     NotificationCenter.default.post(
-                        name: Notification.Name("AgentOnboarding.Show"),
+                        name: Notification.Name("Onboarding.Show"),
                         object: nil,
                         userInfo: ["reset": true]
                     )
