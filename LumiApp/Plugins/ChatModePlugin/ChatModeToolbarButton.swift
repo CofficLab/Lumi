@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicAlert
 
 /// 模式切换工具栏按钮
 ///

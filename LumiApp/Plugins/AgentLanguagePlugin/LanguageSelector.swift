@@ -1,5 +1,6 @@
 import AgentToolKit
 import SwiftUI
+import MagicAlert
 
 /// 语言切换按钮：点击循环切换中文/英文
 ///
