@@ -222,6 +222,25 @@ struct RequestLogDetailView: View {
             }
             .width(min: 82, max: 96)
 
+            TableColumn(String(localized: "Response Body", table: "RequestLog")) { row in
+                if let preview = row.responseBodyPreview {
+                    Text(preview)
+                        .font(.system(size: 10, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .foregroundColor(theme.textPrimary)
+                } else if let size = row.responseBodySize {
+                    Text(formatBytes(size))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                } else {
+                    Text("--")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textTertiary)
+                }
+            }
+            .width(min: 140)
+
             TableColumn(String(localized: "Error", table: "RequestLog")) { row in
                 if let error = row.errorMessage {
                     Text(error)
@@ -307,6 +326,11 @@ struct RequestLogDetailView: View {
         } else {
             return String(format: "%.1f MB", Double(bytes) / (1024 * 1024))
         }
+    }
+
+    private func formatBytes(_ bytes: Int?) -> String {
+        guard let bytes else { return "--" }
+        return formatBytes(bytes)
     }
 
     private func statusColor(code: Int) -> Color {

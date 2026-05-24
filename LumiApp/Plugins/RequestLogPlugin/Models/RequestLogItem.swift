@@ -18,6 +18,8 @@ final class RequestLogItem {
     // Response
     var responseStatusCode: Int?
     var responseHeadersJSON: String?
+    var responseBodySize: Int?
+    var responseBodyPreview: String?
     var isSuccess: Bool
     var errorMessage: String?
     var duration: Double?
@@ -33,6 +35,8 @@ final class RequestLogItem {
         requestBodyPreview: String?,
         responseStatusCode: Int?,
         responseHeadersJSON: String?,
+        responseBodySize: Int?,
+        responseBodyPreview: String?,
         isSuccess: Bool,
         errorMessage: String?,
         duration: Double?
@@ -47,6 +51,8 @@ final class RequestLogItem {
         self.requestBodyPreview = requestBodyPreview
         self.responseStatusCode = responseStatusCode
         self.responseHeadersJSON = responseHeadersJSON
+        self.responseBodySize = responseBodySize
+        self.responseBodyPreview = responseBodyPreview
         self.isSuccess = isSuccess
         self.errorMessage = errorMessage
         self.duration = duration
@@ -72,7 +78,10 @@ struct RequestLogItemDTO: Sendable, Identifiable {
     let method: String
     let requestURL: String
     let requestBodySize: Int
+    let requestBodyPreview: String?
     let responseStatusCode: Int?
+    let responseBodySize: Int?
+    let responseBodyPreview: String?
     let isSuccess: Bool
     let errorMessage: String?
     let duration: Double?
@@ -84,7 +93,10 @@ struct RequestLogItemDTO: Sendable, Identifiable {
         self.method = item.method
         self.requestURL = item.requestURL
         self.requestBodySize = item.requestBodySize
+        self.requestBodyPreview = item.requestBodyPreview
         self.responseStatusCode = item.responseStatusCode
+        self.responseBodySize = item.responseBodySize
+        self.responseBodyPreview = item.responseBodyPreview
         self.isSuccess = item.isSuccess
         self.errorMessage = item.errorMessage
         self.duration = item.duration

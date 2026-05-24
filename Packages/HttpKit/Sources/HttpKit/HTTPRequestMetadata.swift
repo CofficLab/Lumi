@@ -11,6 +11,8 @@ public struct HTTPRequestMetadata: Sendable {
 
     public var responseStatusCode: Int?
     public var responseHeaders: [String: String]?
+    public var responseBodySizeBytes: Int?
+    public var responseBodyPreview: String?
     public var duration: TimeInterval?
     public var error: Error?
 
@@ -24,6 +26,8 @@ public struct HTTPRequestMetadata: Sendable {
         sentAt: Date,
         responseStatusCode: Int? = nil,
         responseHeaders: [String: String]? = nil,
+        responseBodySizeBytes: Int? = nil,
+        responseBodyPreview: String? = nil,
         duration: TimeInterval? = nil,
         error: Error? = nil
     ) {
@@ -36,6 +40,8 @@ public struct HTTPRequestMetadata: Sendable {
         self.sentAt = sentAt
         self.responseStatusCode = responseStatusCode
         self.responseHeaders = responseHeaders
+        self.responseBodySizeBytes = responseBodySizeBytes
+        self.responseBodyPreview = responseBodyPreview
         self.duration = duration
         self.error = error
     }
@@ -58,5 +64,22 @@ public struct HTTPRequestMetadata: Sendable {
 
     public var isSuccess: Bool {
         error == nil
+    }
+
+    public var formattedResponseBodySize: String {
+        guard let size = responseBodySizeBytes else { return "--" }
+        let kb = 1024
+        let mb = kb * 1024
+        let gb = mb * 1024
+
+        if size >= gb {
+            return String(format: "%.2f GB", Double(size) / Double(gb))
+        } else if size >= mb {
+            return String(format: "%.2f MB", Double(size) / Double(mb))
+        } else if size >= kb {
+            return String(format: "%.2f KB", Double(size) / Double(kb))
+        } else {
+            return "\(size) bytes"
+        }
     }
 }
