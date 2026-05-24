@@ -727,12 +727,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarCenterView(context: context) }
 
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getStatusBarCenterViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏中间视图数量=\(views.count)")
-        }
-
         return views
     }
 
@@ -748,12 +742,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
         let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarTrailingView(context: context) }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getStatusBarTrailingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏右侧视图数量=\(views.count)")
-        }
 
         return views
     }
@@ -782,9 +770,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// - Parameter registry: 供应商注册表
     func registerLLMProviders(to registry: LLMProviderRegistry) {
         registry.register(discoveredLLMProviderTypes)
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)📦 Registered \(self.discoveredLLMProviderTypes.count) LLM providers from plugins.")
-        }
     }
 
     // MARK: - Category Aggregation
