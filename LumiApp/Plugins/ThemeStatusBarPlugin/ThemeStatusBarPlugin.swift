@@ -2,6 +2,7 @@ import Foundation
 import LumiUI
 import os
 import SwiftUI
+import LumiPluginKit
 
 /// 主题状态栏插件
 ///

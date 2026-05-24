@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import LumiPluginKit
 
 /// 请求日志插件
 ///

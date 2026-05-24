@@ -1,5 +1,6 @@
 import SwiftUI
 import SkillKit
+import LumiPluginKit
 import os
 
 /// Skill 插件

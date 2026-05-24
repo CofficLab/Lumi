@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Foundation
+import LumiPluginKit
 
 /// Agent 模式视图扩展
 ///

@@ -1,5 +1,6 @@
 import AppKit
 import AgentToolKit
+import LumiPluginKit
 import Foundation
 import SwiftUI
 import ObjectiveC.runtime
