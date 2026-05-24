@@ -42,6 +42,7 @@
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
+		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
 		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
 		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
@@ -354,6 +355,7 @@
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
+				GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
@@ -900,6 +902,7 @@
 				B58B244CDF214E2CB80C1953 /* LLMKit */,
 				0B52000230C3000000AA0001 /* RAGKit */,
 				A1B2C4712F70000100AAA109 /* AgentToolKit */,
+				GBK2000000000000000001 /* GitBranchMonitorKit */,
 				MRK100000000000000001 /* ModelRouterKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 			);
@@ -1009,6 +1012,7 @@
 				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 				A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */,
+				GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */,
 				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
 				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
 			);
@@ -2006,6 +2010,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FileTreeKit;
 		};
+		GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/GitBranchMonitorKit;
+		};
 		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ModelRouterKit;
@@ -2397,6 +2405,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
 			productName = XcodeProj;
+		};
+		GBK2000000000000000001 /* GitBranchMonitorKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */;
+			productName = GitBranchMonitorKit;
 		};
 		MRK100000000000000001 /* ModelRouterKit */ = {
 			isa = XCSwiftPackageProductDependency;

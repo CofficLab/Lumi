@@ -1,3 +1,4 @@
+import GitBranchMonitorKit
 import LibGit2Swift
 import SwiftUI
 
