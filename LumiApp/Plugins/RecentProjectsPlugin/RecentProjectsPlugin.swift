@@ -55,4 +55,11 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
             AddProjectTool(),
         ]
     }
+
+    // MARK: - Agent Middlewares
+
+    /// 提供最近项目上下文注入中间件
+    nonisolated func sendMiddlewares() -> [any SuperSendMiddleware.Type]? {
+        [RecentProjectsSendMiddleware.self]
+    }
 }
