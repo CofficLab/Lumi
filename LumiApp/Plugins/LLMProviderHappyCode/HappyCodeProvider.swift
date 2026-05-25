@@ -22,14 +22,10 @@ final class HappyCodeProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_HappyCode"
-    static let defaultModel = "gpt-4o"
+    static let defaultModel = "gpt-5.5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-4o", description: "GPT-4o，OpenAI 多模态旗舰模型，支持视觉和工具调用", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4o-mini", description: "GPT-4o Mini，轻量高效版本，适合快速响应", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4-turbo", description: "GPT-4 Turbo，高性能版本，支持更长上下文", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4", description: "GPT-4，经典旗舰模型，推理能力出色", spec: .init(contextWindowSize: 8_192, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-3.5-turbo", description: "GPT-3.5 Turbo，经济实惠模型，适合轻量任务", spec: .init(contextWindowSize: 16_385, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.5", description: "GPT-5.5，OpenAI 最新旗舰模型，超强推理和多模态能力", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
