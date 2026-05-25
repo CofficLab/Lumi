@@ -31,7 +31,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 提示词服务
     ///
-    /// 用于生成系统上下文消息和欢迎消息。
+    /// 用于生成欢迎消息。
     private let promptService: PromptService
 
     /// Agent 会话配置
@@ -327,7 +327,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 创建新会话
     ///
-    /// 执行创建新会话的完整流程：创建会话记录、选中、注入系统上下文消息和欢迎消息。
+    /// 执行创建新会话的完整流程：创建会话记录、选中、注入欢迎消息。
     /// 如果当前项目存在历史对话且带有模型偏好，新会话将自动继承该偏好。
     ///
     /// - Parameters:
@@ -362,18 +362,6 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
         setSelectedConversation(conversation.id, reason: "createNewConversation")
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
-
-        let systemMessage = await promptService.getSystemContextMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference
-        )
-        if !systemMessage.isEmpty {
-            saveMessage(
-                ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage),
-                to: conversation.id
-            )
-        }
 
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,
