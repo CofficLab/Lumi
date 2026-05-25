@@ -27,96 +27,14 @@ struct MessageWithToolCallsView: View {
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(toolCalls.enumerated()), id: \.offset) { _, toolCall in
-                        toolCallRow(for: toolCall)
+                        ToolCallRow(
+                            toolCall: toolCall,
+                            parameterPopoverToolCallID: $parameterPopoverToolCallID,
+                            resultPopoverToolCallID: $resultPopoverToolCallID
+                        )
                     }
                 }
                 .padding(.top, (message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || shouldHideMessageBody) ? 0 : 8)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func toolCallRow(for toolCall: ToolCall) -> some View {
-        let isParametersPresented = parameterPopoverToolCallID == toolCall.id
-        let isResultsPresented = resultPopoverToolCallID == toolCall.id
-        let isLoadingResult = toolCall.result == nil && toolCall.authorizationState != .userRejected
-        let shouldShowAuthState = toolCall.authorizationState != .noRisk
-
-        VStack(alignment: .leading, spacing: 8) {
-            AppCard(
-                style: .subtle,
-                padding: EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10)
-            ) {
-                HStack(spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "wrench.and.screwdriver")
-                            .font(.appCaptionEmphasized)
-                            .foregroundColor(theme.textSecondary)
-
-                        Text(toolCall.displayName ?? toolCall.name)
-                            .font(.appCaption)
-                            .foregroundColor(theme.textPrimary)
-                            .lineLimit(1)
-
-                        if shouldShowAuthState {
-                            Text("·")
-                                .foregroundColor(theme.textSecondary)
-
-                            Text(toolCall.authorizationState.displayName)
-                                .font(.appMicro)
-                                .foregroundColor(theme.textSecondary)
-                                .lineLimit(1)
-                        }
-                    }
-
-                    Spacer()
-
-                    if let duration = toolCall.result?.duration {
-                        Text(formatDuration(duration))
-                            .font(.appMicro)
-                            .foregroundColor(theme.textSecondary)
-                    }
-
-                    AppIconButton(
-                        systemImage: "slider.horizontal.3",
-                        tint: isParametersPresented
-                            ? theme.textPrimary
-                            : theme.textSecondary,
-                        size: .regular,
-                        isActive: isParametersPresented
-                    ) {
-                        toggleParameterPopover(for: toolCall.id)
-                    }
-                    .help(String(localized: "调用参数", table: "CoreMessageRenderer"))
-                    .popover(isPresented: popoverBinding(for: toolCall.id, selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
-                        ToolDetailPopoverView(
-                            title: String(localized: "调用参数", table: "CoreMessageRenderer"),
-                            systemImage: "slider.horizontal.3"
-                        ) {
-                            ToolCallContentSectionView(toolCall: toolCall)
-                        }
-                    }
-
-                    AppIconButton(
-                        systemImage: isLoadingResult ? "hourglass" : "doc.text.magnifyingglass",
-                        tint: isResultsPresented
-                            ? theme.textPrimary
-                            : theme.textSecondary,
-                        size: .regular,
-                        isActive: isResultsPresented
-                    ) {
-                        toggleResultPopover(for: toolCall.id)
-                    }
-                    .help(String(localized: "调用结果", table: "CoreMessageRenderer"))
-                    .popover(isPresented: popoverBinding(for: toolCall.id, selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
-                        ToolDetailPopoverView(
-                            title: String(localized: "调用结果", table: "CoreMessageRenderer"),
-                            systemImage: "doc.text.magnifyingglass"
-                        ) {
-                            ToolResultSectionView(result: toolCall.result, isLoading: isLoadingResult)
-                        }
-                    }
-                }
             }
         }
     }
@@ -142,19 +60,156 @@ struct MessageWithToolCallsView: View {
         return lines.count <= toolCount + 1
     }
 
-    private func toggleParameterPopover(for toolCallID: String) {
-        parameterPopoverToolCallID = parameterPopoverToolCallID == toolCallID ? nil : toolCallID
+}
+
+// MARK: - Tool Call Row
+
+/// 单条工具调用行，支持 hover 高亮效果
+private struct ToolCallRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiMotionPreferenceReader private var motionPreference
+
+    let toolCall: ToolCall
+    @Binding var parameterPopoverToolCallID: String?
+    @Binding var resultPopoverToolCallID: String?
+
+    @State private var isHovering = false
+
+    private var isParametersPresented: Bool {
+        parameterPopoverToolCallID == toolCall.id
     }
 
-    private func toggleResultPopover(for toolCallID: String) {
-        resultPopoverToolCallID = resultPopoverToolCallID == toolCallID ? nil : toolCallID
+    private var isResultsPresented: Bool {
+        resultPopoverToolCallID == toolCall.id
     }
 
-    private func popoverBinding(for toolCallID: String, selection: Binding<String?>) -> Binding<Bool> {
+    private var isLoadingResult: Bool {
+        toolCall.result == nil && toolCall.authorizationState != .userRejected
+    }
+
+    private var shouldShowAuthState: Bool {
+        toolCall.authorizationState != .noRisk
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "wrench.and.screwdriver")
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.textSecondary)
+
+                Text(toolCall.displayName ?? toolCall.name)
+                    .font(.appCaption)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+
+                if shouldShowAuthState {
+                    Text("·")
+                        .foregroundColor(theme.textSecondary)
+
+                    Text(toolCall.authorizationState.displayName)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            if let duration = toolCall.result?.duration {
+                Text(formatDuration(duration))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+            }
+
+            AppIconButton(
+                systemImage: "slider.horizontal.3",
+                tint: isParametersPresented
+                    ? theme.textPrimary
+                    : theme.textSecondary,
+                size: .regular,
+                isActive: isParametersPresented
+            ) {
+                toggleParameterPopover()
+            }
+            .help(String(localized: "调用参数", table: "CoreMessageRenderer"))
+            .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
+                ToolDetailPopoverView(
+                    title: String(localized: "调用参数", table: "CoreMessageRenderer"),
+                    systemImage: "slider.horizontal.3"
+                ) {
+                    ToolCallContentSectionView(toolCall: toolCall)
+                }
+            }
+
+            AppIconButton(
+                systemImage: isLoadingResult ? "hourglass" : "doc.text.magnifyingglass",
+                tint: isResultsPresented
+                    ? theme.textPrimary
+                    : theme.textSecondary,
+                size: .regular,
+                isActive: isResultsPresented
+            ) {
+                toggleResultPopover()
+            }
+            .help(String(localized: "调用结果", table: "CoreMessageRenderer"))
+            .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
+                ToolDetailPopoverView(
+                    title: String(localized: "调用结果", table: "CoreMessageRenderer"),
+                    systemImage: "doc.text.magnifyingglass"
+                ) {
+                    ToolResultSectionView(result: toolCall.result, isLoading: isLoadingResult)
+                }
+            }
+        }
+        .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
+        .background(hoverBackground)
+        .overlay(hoverBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .scaleEffect(isHovering && motionPreference.allowsMotion ? LumiMotion.rowHoverScale : 1.0)
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovering)
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovering = hovering
+            }
+        }
+    }
+
+    // MARK: - Hover Styles
+
+    private var hoverBackground: some View {
+        Group {
+            if isHovering {
+                Color.white.opacity(0.08)
+            } else {
+                theme.textSecondary.opacity(0.06)
+            }
+        }
+    }
+
+    private var hoverBorder: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(
+                isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
+                lineWidth: 1
+            )
+    }
+
+    // MARK: - Actions
+
+    private func toggleParameterPopover() {
+        parameterPopoverToolCallID = parameterPopoverToolCallID == toolCall.id ? nil : toolCall.id
+    }
+
+    private func toggleResultPopover() {
+        resultPopoverToolCallID = resultPopoverToolCallID == toolCall.id ? nil : toolCall.id
+    }
+
+    private func popoverBinding(selection: Binding<String?>) -> Binding<Bool> {
         Binding {
-            selection.wrappedValue == toolCallID
+            selection.wrappedValue == toolCall.id
         } set: { isPresented in
-            if !isPresented, selection.wrappedValue == toolCallID {
+            if !isPresented, selection.wrappedValue == toolCall.id {
                 selection.wrappedValue = nil
             }
         }
@@ -175,8 +230,9 @@ struct MessageWithToolCallsView: View {
             return "\(minutes)m \(seconds)s"
         }
     }
-
 }
+
+// MARK: - Popover & Section Views
 
 private struct ToolDetailPopoverView<Content: View>: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
