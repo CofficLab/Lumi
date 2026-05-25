@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// 底部状态栏视图
 struct StatusBar: View {

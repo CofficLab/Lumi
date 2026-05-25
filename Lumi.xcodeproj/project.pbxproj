@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */ = {isa = PBXBuildFile; productRef = MRK100000000000000001 /* ModelRouterKit */; };
-		0B12E9182FC3111D00F7DC5D /* LumiPluginKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiPluginKit */; };
+		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
 		0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9192FC3111D00F7DC5D /* PluginWebFetch */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
@@ -328,7 +328,7 @@
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
 				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
-				0B12E9182FC3111D00F7DC5D /* LumiPluginKit in Frameworks */,
+				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
 				0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */,
 				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
@@ -909,7 +909,7 @@
 				GBK2000000000000000001 /* GitBranchMonitorKit */,
 				MRK100000000000000001 /* ModelRouterKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
-				0B12E9172FC3111D00F7DC5D /* LumiPluginKit */,
+				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
 				0B12E9192FC3111D00F7DC5D /* PluginWebFetch */,
 			);
 			productName = Lumi;
@@ -1021,7 +1021,7 @@
 				GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */,
 				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
 				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
-				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiPluginKit" */,
+				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				0B12E91B2FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/PluginWebFetch" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1894,9 +1894,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiPluginKit" */ = {
+		0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiPluginKit;
+			relativePath = Packages/LumiCoreKit;
 		};
 		0B12E91B2FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/PluginWebFetch" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2144,9 +2144,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0B12E9172FC3111D00F7DC5D /* LumiPluginKit */ = {
+		0B12E9172FC3111D00F7DC5D /* LumiCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiPluginKit;
+			productName = LumiCoreKit;
 		};
 		0B12E9192FC3111D00F7DC5D /* PluginWebFetch */ = {
 			isa = XCSwiftPackageProductDependency;

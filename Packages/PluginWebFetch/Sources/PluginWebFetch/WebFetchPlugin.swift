@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 import SuperLogKit
 import os
 

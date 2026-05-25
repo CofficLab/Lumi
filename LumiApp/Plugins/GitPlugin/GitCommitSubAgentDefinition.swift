@@ -1,5 +1,5 @@
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 
 struct GitCommitSubAgentDefinition: SubAgentDefinitionProtocol {
     let id = "git.commit"

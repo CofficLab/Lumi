@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// 字体配置插件：在状态栏提供编辑器字体快速切换入口
 actor FontConfigPlugin: SuperPlugin, SuperLog {

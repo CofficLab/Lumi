@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// App 插件状态栏入口：在状态栏右侧显示已加载 App 插件数量与详情
 actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {

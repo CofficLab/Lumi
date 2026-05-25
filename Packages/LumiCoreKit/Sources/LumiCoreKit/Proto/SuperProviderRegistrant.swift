@@ -12,7 +12,7 @@ public protocol SuperProviderRegistrant {
 
 /// 供应商注册表抽象
 ///
-/// 将注册能力抽象为协议，使 PluginKit 不依赖内核具体的 LLMProviderRegistry 实现。
+/// 将注册能力抽象为协议，使 LumiCoreKit 不依赖内核具体的 LLMProviderRegistry 实现。
 /// 内核的 LLMProviderRegistry 只需遵循此协议即可。
 public protocol LLMProviderRegistering: Sendable {
     func register<T: SuperLLMProvider>(_ providerType: T.Type)

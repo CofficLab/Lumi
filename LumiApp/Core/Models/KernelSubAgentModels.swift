@@ -1,5 +1,5 @@
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 
 enum KernelSubAgentStatus: String, Sendable {
     case running

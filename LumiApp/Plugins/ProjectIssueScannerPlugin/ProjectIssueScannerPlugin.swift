@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// ProjectIssueScanner 插件
 ///

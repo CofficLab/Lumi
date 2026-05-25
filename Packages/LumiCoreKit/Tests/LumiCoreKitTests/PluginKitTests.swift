@@ -1,10 +1,10 @@
 import Foundation
 import AgentToolKit
 import Testing
-@testable import PluginKit
+@testable import LumiCoreKit
 
-@Suite("PluginKit 基础类型测试")
-struct PluginKitTests {
+@Suite("LumiCoreKit 基础类型测试")
+struct LumiCoreKitTests {
 
     @Test("ChatMessage 初始化与属性")
     func chatMessageInit() {
@@ -109,9 +109,9 @@ struct PluginKitTests {
 
 // MARK: - MainActor 隔离测试
 
-@Suite("PluginKit MainActor 隔离测试")
+@Suite("LumiCoreKit MainActor 隔离测试")
 @MainActor
-struct PluginKitActorTests {
+struct LumiCoreKitActorTests {
 
     @Test("SendMessageContext 基本操作")
     func sendMessageContext() async {

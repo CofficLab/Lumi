@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../AgentToolKit"),
-        .package(path: "../LumiPluginKit"),
+        .package(path: "../LumiCoreKit"),
         .package(path: "../SuperLogKit"),
         .package(path: "../WebFetchKit"),
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "PluginWebFetch",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiPluginKit", package: "LumiPluginKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "WebFetchKit", package: "WebFetchKit"),
             ],

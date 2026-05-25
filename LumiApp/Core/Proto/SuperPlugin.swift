@@ -3,7 +3,7 @@ import AgentToolKit
 import EditorService
 import Foundation
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// Rail 标签页定义
 ///

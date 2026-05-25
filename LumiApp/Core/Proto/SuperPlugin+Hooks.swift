@@ -1,6 +1,6 @@
 import Foundation
 import AgentToolKit
-import LumiPluginKit
+import LumiCoreKit
 
 // MARK: - Agent Tools Default Implementation
 

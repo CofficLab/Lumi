@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 
 /// Agent 模式视图扩展
 ///

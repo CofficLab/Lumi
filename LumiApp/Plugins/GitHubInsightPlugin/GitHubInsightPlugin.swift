@@ -1,6 +1,6 @@
 import Foundation
 import AgentToolKit
-import LumiPluginKit
+import LumiCoreKit
 import os
 import SwiftUI
 

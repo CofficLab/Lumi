@@ -1,6 +1,6 @@
 import SwiftUI
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 import os
 
 /// 对话时间线状态栏插件：在状态栏显示对话图标，点击显示当前对话的消息历史时间线

@@ -1,7 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMKit
-import LumiPluginKit
+import LumiCoreKit
 
 actor SubAgentScheduler: SuperLog {
     nonisolated static let emoji = "🧩"

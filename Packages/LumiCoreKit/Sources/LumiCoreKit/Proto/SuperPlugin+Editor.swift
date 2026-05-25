@@ -2,7 +2,7 @@ import Foundation
 
 /// 编辑器扩展注册中心协议
 ///
-/// PluginKit 通过此协议与 EditorService 解耦。
+/// LumiCoreKit 通过此协议与 EditorService 解耦。
 /// 内核的 EditorExtensionRegistry 需遵循此协议。
 /// 编辑器插件通过 `registerEditorExtensions(into:)` 接收此协议实现并注册能力。
 @MainActor
@@ -13,7 +13,7 @@ public protocol EditorExtensionRegistryProtocol: AnyObject {
     /// 插件在 `registerEditorExtensions(into:)` 中将参数强转为
     /// `EditorService.EditorExtensionRegistry` 来使用完整 API。
     ///
-    /// 这种设计允许 PluginKit 不直接依赖 EditorService（及其沉重的编辑器依赖链），
+    /// 这种设计允许 LumiCoreKit 不直接依赖 EditorService（及其沉重的编辑器依赖链），
     /// 同时保持类型安全。
 }
 

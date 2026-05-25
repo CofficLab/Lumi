@@ -1,5 +1,5 @@
 import AgentToolKit
-import LumiPluginKit
+import LumiCoreKit
 import Testing
 @testable import PluginWebFetch
 

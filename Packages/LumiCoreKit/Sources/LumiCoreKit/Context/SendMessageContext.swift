@@ -33,9 +33,9 @@ public class SendMessageContext {
     /// 终止本轮发送的回调
     public var abortTurn: (() -> Void)?
 
-    // MARK: - Initializer (PluginKit 最小集合)
+    // MARK: - Initializer (LumiCoreKit 最小集合)
 
-    /// PluginKit 提供的简化初始化器
+    /// LumiCoreKit 提供的简化初始化器
     ///
     /// 内核在创建 SendMessageContext 时使用完整初始化器（包含所有服务依赖），
     /// 插件和测试可以使用此简化版本。
