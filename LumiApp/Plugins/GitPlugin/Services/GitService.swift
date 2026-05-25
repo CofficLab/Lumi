@@ -29,7 +29,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Git Status
 
     func getStatus(path: String?) async throws -> GitStatus {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -87,7 +87,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Git Diff
 
     func getDiff(path: String?, staged: Bool, file: String?) async throws -> GitDiff {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -121,7 +121,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Git Log
 
     func getLog(path: String?, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -151,7 +151,7 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     /// 带跳过的日志获取（分页加载）
     func getLogWithSkip(path: String?, count: Int, skip: Int) async throws -> [GitCommitLog] {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -183,7 +183,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     ///
     /// 使用 `LibGit2.getCommitDetail` 直接按 hash 查找，避免遍历大量 commit。
     func getCommitDetail(path: String?, hash: String) async throws -> GitCommitDetail {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -232,7 +232,7 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     /// 获取 commit 的变更文件列表（含精确变更类型）
     func getCommitChangedFiles(path: String?, hash: String) throws -> [GitChangedFile] {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
         return try gitQueue.sync {
             let diffFiles = try LibGit2.getCommitDiffFiles(atCommit: hash, at: repoPath)
             return diffFiles.map { file in
@@ -245,7 +245,7 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     /// 获取未提交变更的文件列表
     func getUncommittedChanges(path: String?) async throws -> [GitChangedFile] {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -276,7 +276,7 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     /// 获取未提交文件的内容差异
     func getUncommittedFileContentChange(path: String?, file: String) async throws -> (before: String?, after: String?) {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
                 do {
@@ -291,7 +291,7 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     /// 获取指定 commit 中某个文件的变更前后内容
     func getCommitFileContentChange(path: String?, hash: String, file: String) async throws -> (before: String?, after: String?) {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
         return try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
                 do {
@@ -317,7 +317,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     /// 获取未推送到远程的 commit 哈希列表
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
     func getUnpushedCommitHashes(path: String?) -> [String] {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
         return gitQueue.sync {
             do {
                 let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false)
@@ -334,7 +334,7 @@ final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Git Commit
 
     func commit(path: String?, message: String, files: [String], amend: Bool) async throws -> GitCommitResult {
-        let repoPath = resolvePath(path)
+        let repoPath = Self.resolvePath(path)
 
         let commitHash: String = try await withCheckedThrowingContinuation { continuation in
             gitQueue.async {
@@ -366,10 +366,60 @@ final class GitService: @unchecked Sendable, SuperLog {
         )
     }
 
+    // MARK: - Path Validation
+
+    /// 验证路径是否在允许的目录范围内
+    ///
+    /// - Parameters:
+    ///   - path: 要验证的路径（可选，nil 表示当前工作目录）
+    ///   - allowedDirectories: 允许的目录白名单
+    /// - Returns: 验证通过的绝对路径
+    /// - Throws: 如果路径不在允许范围内，抛出错误
+    static func validatePath(_ path: String?, allowedDirectories: [String]) throws -> String {
+        let resolvedPath = Self.resolvePath(path)
+
+        // 如果没有限制，直接返回
+        guard !allowedDirectories.isEmpty else {
+            return resolvedPath
+        }
+
+        // 检查路径是否在允许的目录范围内
+        let isAllowed = allowedDirectories.contains { allowedDir in
+            resolvedPath.hasPrefix(allowedDir)
+        }
+
+        guard isAllowed else {
+            throw GitServiceError.pathNotAllowed(
+                path: resolvedPath,
+                allowedDirectories: allowedDirectories
+            )
+        }
+
+        return resolvedPath
+    }
+
     // MARK: - Helper
 
-    private func resolvePath(_ path: String?) -> String {
-        path ?? FileManager.default.currentDirectoryPath
+    private static func resolvePath(_ path: String?) -> String {
+        let rawPath = path ?? FileManager.default.currentDirectoryPath
+        let expanded = (rawPath as NSString).expandingTildeInPath
+        let url = URL(fileURLWithPath: expanded)
+        let resolved = url.resolvingSymlinksInPath().path
+        return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+}
+
+// MARK: - Git Service Error
+
+enum GitServiceError: LocalizedError {
+    case pathNotAllowed(path: String, allowedDirectories: [String])
+
+    var errorDescription: String? {
+        switch self {
+        case .pathNotAllowed(let path, let allowedDirectories):
+            let formattedDirs = allowedDirectories.map { "`\($0)`" }.joined(separator: ", ")
+            return "🚫 路径访问被拒绝：\(path)\n\n允许的目录：\(formattedDirs)\n\n此路径不在允许的访问范围内。请确保 Git 操作在允许的项目目录中执行。"
+        }
     }
 }
 

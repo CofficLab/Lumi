@@ -342,10 +342,12 @@ final class XcodeCompiler: Sendable {
 
     private static func moduleMapURLs(from settings: [String: String]) -> [URL] {
         var urls: [URL] = []
+        let fileManager = FileManager.default
 
+        // 1. GENERATED_MODULEMAP_DIR — Xcode 自动生成的 Swift modulemaps
         if let directory = settings["GENERATED_MODULEMAP_DIR"],
            !directory.isEmpty,
-           let entries = try? FileManager.default.contentsOfDirectory(
+           let entries = try? fileManager.contentsOfDirectory(
             at: URL(fileURLWithPath: directory, isDirectory: true),
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
@@ -358,10 +360,12 @@ final class XcodeCompiler: Sendable {
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
+
+            // 2. SourcePackages/checkouts — 远程 SPM 依赖中的 C/ObjC 模块
             let checkoutsDirectory = derivedDataDirectory
                 .appendingPathComponent("SourcePackages", isDirectory: true)
                 .appendingPathComponent("checkouts", isDirectory: true)
-            if let enumerator = FileManager.default.enumerator(
+            if let enumerator = fileManager.enumerator(
                 at: checkoutsDirectory,
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
@@ -370,12 +374,107 @@ final class XcodeCompiler: Sendable {
                     urls.append(url)
                 }
             }
+
+            // 3. Build/Intermediates — 通过 common-args.resp 发现本地 SPM 包中的 ObjC/C 模块。
+            //    不直接收集 Intermediates 中的 modulemap 文件——Swift 模块的 modulemap
+            //    已由 GENERATED_MODULEMAP_DIR（步骤 1）完整覆盖，
+            //    各 .build 目录下的同名 modulemap 会导致 redefinition 错误。
+            //    唯一目的是通过 ObjC target 的编译参数发现本地包源码中的 modulemap。
+            let intermediatesDirectory = derivedDataDirectory
+                .appendingPathComponent("Build", isDirectory: true)
+                .appendingPathComponent("Intermediates.noindex", isDirectory: true)
+            if fileManager.fileExists(atPath: intermediatesDirectory.path),
+               let enumerator = fileManager.enumerator(
+                at: intermediatesDirectory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+               ) {
+                for case let url as URL in enumerator {
+                    // 只解析 common-args.resp，不收集散落的 modulemap
+                    if url.lastPathComponent.hasSuffix("-common-args.resp") {
+                        urls.append(contentsOf: moduleMapURLsFromCommonArgs(url))
+                    }
+                }
+            }
+        }
+
+        // 4. HEADER_SEARCH_PATHS / USER_HEADER_SEARCH_PATHS —
+        //    Xcode target 可能通过 header search paths 引用本地包中的 ObjC 模块。
+        let headerSearchPathKeys = [
+            "HEADER_SEARCH_PATHS",
+            "USER_HEADER_SEARCH_PATHS",
+            "SYSTEM_HEADER_SEARCH_PATHS"
+        ]
+        for key in headerSearchPathKeys {
+            for path in splitBuildSettingList(settings[key] ?? "") {
+                let headerDir = URL(fileURLWithPath: path, isDirectory: true)
+                guard fileManager.fileExists(atPath: headerDir.path) else { continue }
+
+                // 直接检查该目录下的 modulemap
+                if let entries = try? fileManager.contentsOfDirectory(
+                    at: headerDir,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) {
+                    urls.append(contentsOf: entries.filter { $0.pathExtension == "modulemap" })
+                }
+            }
         }
 
         return urls
             .filter { $0.pathExtension == "modulemap" }
             .filter { isCompatibleModuleMap($0) }
             .uniqued()
+    }
+
+    /// 从 Xcode 中间产物 `common-args.resp` 文件中提取包含 modulemap 的 `-I` 路径。
+    ///
+    /// Xcode 为每个 target 生成 `common-args.resp`，其中包含实际的编译参数。
+    /// 对于本地 SPM 包中的 ObjC target（如 `CodeEditTextViewObjC`），
+    /// 文件会包含 `-I /path/to/Sources/TargetName/include` 这样的参数，
+    /// 而 modulemap 就在该 include 目录中。
+    static func moduleMapURLsFromCommonArgs(_ respURL: URL) -> [URL] {
+        guard let content = try? String(contentsOf: respURL, encoding: .utf8) else { return [] }
+        var urls: [URL] = []
+
+        // 提取 -I 参数中的路径
+        let args = content.split(separator: " ").map(String.init)
+        var index = 0
+        while index < args.count {
+            let arg = args[index]
+            if arg == "-I" && index + 1 < args.count {
+                let path = args[index + 1]
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                let includeDir = URL(fileURLWithPath: path, isDirectory: true)
+                if FileManager.default.fileExists(atPath: includeDir.path),
+                   let entries = try? FileManager.default.contentsOfDirectory(
+                    at: includeDir,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                   ) {
+                    urls.append(contentsOf: entries.filter { $0.pathExtension == "modulemap" })
+                }
+                index += 2
+                continue
+            }
+            // 处理 -I/Path 形式
+            if arg.hasPrefix("-I/") {
+                let path = String(arg.dropFirst(2))
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                let includeDir = URL(fileURLWithPath: path, isDirectory: true)
+                if FileManager.default.fileExists(atPath: includeDir.path),
+                   let entries = try? FileManager.default.contentsOfDirectory(
+                    at: includeDir,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                   ) {
+                    urls.append(contentsOf: entries.filter { $0.pathExtension == "modulemap" })
+                }
+            }
+            index += 1
+        }
+
+        return urls
     }
 
     private static func isCompatibleModuleMap(_ url: URL) -> Bool {

@@ -1,6 +1,6 @@
 import SwiftUI
 import Foundation
-import LumiPluginKit
+import LumiCoreKit
 import os
 
 /// 对话时间线状态栏插件：在状态栏显示对话图标，点击显示当前对话的消息历史时间线
@@ -27,5 +27,11 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     /// 添加状态栏尾部视图
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(ConversationTimelineView())
+    }
+
+    /// 右侧栏 Section：对话摘要交接入口。
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [AnyView(ConversationHandoffSidebarSection())]
     }
 }

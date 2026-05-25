@@ -13,6 +13,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "openai"
     static let displayName = String(localized: "OpenAI", table: "OpenAI")
+    static let shortName = "OA"
     static let description = String(localized: "GPT by OpenAI", table: "OpenAI")
 
     static let websiteURL: String? = "https://openai.com"

@@ -28,6 +28,7 @@ struct EditorPreviewDetailView: View, SuperLog {
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
     @State private var isConfirmingProjectStringCatalogClean = false
+    @State private var isTakingScreenshot = false
 
     private var sourceText: String? {
         editorVM.service.content?.string
@@ -140,9 +141,9 @@ struct EditorPreviewDetailView: View, SuperLog {
 
             Spacer()
 
-            if viewModel.previewMode == .swift {
-                entryStatusBadge
+            screenshotButton
 
+            if viewModel.previewMode == .swift {
                 buildInfoBadge
 
                 cacheControls
@@ -375,6 +376,145 @@ struct EditorPreviewDetailView: View, SuperLog {
         return false
     }
 
+    // MARK: - Screenshot
+
+    @ViewBuilder
+    private var screenshotButton: some View {
+        Button {
+            takeScreenshot()
+        } label: {
+            if isTakingScreenshot {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Image(systemName: "camera.viewfinder")
+            }
+        }
+        .buttonStyle(.borderless)
+        .disabled(canTakeScreenshot == false)
+        .help(String(localized: "Screenshot preview canvas", table: "EditorPreview"))
+    }
+
+    /// 当前是否可以截图：swift 预览正在运行且已加载 entry，或非 swift 静态预览（image、markdown 等）。
+    private var canTakeScreenshot: Bool {
+        switch viewModel.previewMode {
+        case .swift:
+            return viewModel.status == .running && viewModel.currentFrame != nil
+        case .unsupported:
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func takeScreenshot() {
+        guard !isTakingScreenshot else { return }
+        isTakingScreenshot = true
+
+        switch viewModel.previewMode {
+        case .swift:
+            takeSwiftScreenshot()
+        default:
+            takeStaticScreenshot()
+        }
+    }
+
+    private func takeSwiftScreenshot() {
+        // 获取当前 window 的 contentView，从中找到 PreviewSurfaceView
+        guard let window = NSApp.keyWindow else {
+            isTakingScreenshot = false
+            return
+        }
+
+        let image = viewModel.takeScreenshot(from: window.contentView)
+        isTakingScreenshot = false
+
+        guard let image else {
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        saveScreenshotToDesktop(image)
+    }
+
+    private func takeStaticScreenshot() {
+        // 对于非 Swift 预览（图片、Markdown 等），使用 NSView 截图
+        guard let window = NSApp.keyWindow else {
+            isTakingScreenshot = false
+            return
+        }
+
+        guard let contentView = window.contentView else {
+            isTakingScreenshot = false
+            return
+        }
+
+        let bounds = contentView.bounds
+        guard bounds.width > 0, bounds.height > 0 else {
+            isTakingScreenshot = false
+            return
+        }
+
+        guard let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: bounds) else {
+            isTakingScreenshot = false
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        contentView.cacheDisplay(in: bounds, to: bitmapRep)
+        let image = NSImage()
+        image.addRepresentation(bitmapRep)
+        image.size = bounds.size
+
+        isTakingScreenshot = false
+        saveScreenshotToDesktop(image)
+    }
+
+    private func saveScreenshotToDesktop(_ image: NSImage) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = formatter.string(from: Date())
+
+        let fileName = "Preview_\(timestamp).png"
+        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+        let fileURL = desktopURL?.appendingPathComponent(fileName)
+
+        guard let fileURL,
+              let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        do {
+            try pngData.write(to: fileURL)
+
+            // 同时复制到剪贴板
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.writeObjects([image])
+
+            alert_success(
+                String(
+                    format: String(localized: "Screenshot saved to Desktop and copied to clipboard: %@", table: "EditorPreview"),
+                    fileName
+                )
+            )
+
+            if Self.verbose {
+                Self.logger.info("\(self.t)📸 截图已保存至：\(fileURL.path)")
+            }
+        } catch {
+            alert_error(
+                String(
+                    format: String(localized: "Failed to save screenshot: %@", table: "EditorPreview"),
+                    error.localizedDescription
+                )
+            )
+        }
+    }
+
     private static let buildTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -461,40 +601,6 @@ struct EditorPreviewDetailView: View, SuperLog {
     }
 
     @ViewBuilder
-    private var entryStatusBadge: some View {
-        switch viewModel.entryStatus {
-        case .noPreview:
-            EmptyView()
-        case let .building(file):
-            HStack(spacing: 4) {
-                ProgressView().controlSize(.small)
-                Text(String(localized: "building \(file)", table: "EditorPreview"))
-            }
-            .font(.caption)
-            .foregroundStyle(.orange)
-            .lineLimit(1)
-        case let .loading(path):
-            Text(String(localized: "loading \((path as NSString).lastPathComponent)", table: "EditorPreview"))
-                .font(.caption)
-                .foregroundStyle(.orange)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        case let .loaded(_, title):
-            Text(String(localized: "entry · \(title)", table: "EditorPreview"))
-                .font(.caption)
-                .foregroundStyle(.green)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        case let .failed(failure):
-            Text(failure.title)
-                .font(.caption)
-                .foregroundStyle(.red)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-    }
-
-    @ViewBuilder
     private var statusBadge: some View {
         switch viewModel.status {
         case .idle:
@@ -560,7 +666,7 @@ struct EditorPreviewDetailView: View, SuperLog {
             ZStack {
                 EditorPreviewBoardGrid()
 
-                if !hasFrame {
+                if !hasFrame && !isEntryFailed {
                     VStack(spacing: 12) {
                         if viewModel.entryStatus == .noPreview, currentFileURL?.pathExtension == "swift" {
                             Image(systemName: "bolt.slash")
@@ -597,11 +703,11 @@ struct EditorPreviewDetailView: View, SuperLog {
                 .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
                 if let failure = entryFailure {
-                    VStack {
-                        Spacer()
-                        EditorPreviewFailureDetailsView(failure: failure)
-                            .padding(16)
-                    }
+                    PreviewFailureView(
+                        failure: failure,
+                        buildLogURL: viewModel.lastBuildLogURL,
+                        onRetry: { viewModel.retryBuild() }
+                    )
                 }
 
                 if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
@@ -616,12 +722,19 @@ struct EditorPreviewDetailView: View, SuperLog {
                 }
 
                 if let file = buildingFileName {
-                    EditorPreviewBuildingOverlay(fileName: file)
+                    PreviewBuildingView(fileName: file)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var isEntryFailed: Bool {
+        if case .failed = viewModel.entryStatus {
+            return true
+        }
+        return false
     }
 
     private var entryFailure: EditorPreviewViewModel.EntryFailure? {
@@ -706,37 +819,6 @@ private struct EditorPreviewDebugStateView: View {
         )
         .frame(width: 360)
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
-    }
-}
-
-private struct EditorPreviewBuildingOverlay: View {
-    let fileName: String
-
-    var body: some View {
-        VStack(spacing: 10) {
-            ProgressView()
-                .controlSize(.regular)
-            Text(String(localized: "building \(fileName)", table: "EditorPreview"))
-                .font(.callout)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Text(fileName)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
-        .frame(minWidth: 220, maxWidth: 360)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08))
-        }
-        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
-        .padding(24)
     }
 }
 
@@ -1081,59 +1163,6 @@ private struct EditorPreviewMarkdownView: View {
             return nil
         }
         return TreeSitterCodeHighlightProvider(editorTheme: contributor.createTheme())
-    }
-}
-
-private struct EditorPreviewFailureDetailsView: View {
-    let failure: EditorPreviewViewModel.EntryFailure
-
-    @State private var isExpanded = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: failure.systemImage)
-                    .foregroundStyle(.orange)
-                Text(failure.title)
-                    .font(.system(size: 13, weight: .semibold))
-                Spacer(minLength: 8)
-                Button {
-                    isExpanded.toggle()
-                } label: {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                }
-                .buttonStyle(.borderless)
-                .help(String(localized: "Show error details", table: "EditorPreview"))
-            }
-
-            if isExpanded {
-                ScrollView {
-                    Text(failure.message)
-                        .font(.system(size: 12, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
-                }
-                .frame(maxHeight: 180)
-                .background(Color.black.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else {
-                Text(failure.message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-            }
-        }
-        .padding(12)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.secondary.opacity(0.18), lineWidth: 1)
-        )
-        .frame(maxWidth: 620)
-        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
     }
 }
 

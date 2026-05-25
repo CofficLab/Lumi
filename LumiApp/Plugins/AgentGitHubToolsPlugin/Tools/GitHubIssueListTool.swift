@@ -77,6 +77,7 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "列出 Issue"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

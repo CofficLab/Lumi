@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// 底部状态栏视图
 struct StatusBar: View {
@@ -17,7 +17,7 @@ struct StatusBar: View {
 
     var body: some View {
         let context = PluginContext(
-            activeIcon: pluginProvider.activePanelIcon,
+            activeIcon: layoutVM.activePanelIcon,
             isEditorVisible: layoutVM.editorVisible,
             activeProviderId: activeProviderId
         )
@@ -81,17 +81,14 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
-        let theme = themeVM.activeChromeTheme
-        return theme.effectiveIsDarkTheme
-            ? theme.atmosphereColors().deep
-            : theme.atmosphereColors().medium
+        themeVM.activeChromeTheme.statusBarBackgroundColor()
     }
 
     private var statusBarForegroundColor: Color {
-        themeVM.activeChromeTheme.workspaceTextColor()
+        themeVM.activeChromeTheme.statusBarForegroundColor()
     }
 
     private var statusBarDividerColor: Color {
-        themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.18)
+        themeVM.activeChromeTheme.statusBarDividerColor()
     }
 }

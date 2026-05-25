@@ -20,7 +20,17 @@ actor ThemeVscodeLightPlugin: SuperPlugin {
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light",
                 editorThemeContributor: VscodeLightSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeLight()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "vscode-light-file-icons",
+                    displayName: "VS Code Light File Icons",
+                    defaultFile: .systemImage("doc.plaintext"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraExtensions: [
+                        "json": .systemImage("curlybraces.square"),
+                        "md": .systemImage("book.pages"),
+                        "markdown": .systemImage("book.pages"),
+                    ]
+                )
             )
         ]
     }

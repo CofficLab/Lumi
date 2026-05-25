@@ -35,7 +35,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     private let llmService: LLMService?
 
     /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
-    weak var llmVM: AppLLMVM?
+    weak var llmVM: AppLLMVM? {
+        didSet {
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
 
     /// 对话管理 ViewModel（可选，由 WindowContainer 注入）
     weak var conversationVM: WindowConversationVM?
@@ -91,7 +97,24 @@ class ToolService: SuperLog, @unchecked Sendable {
     private func refreshAllTools() {
         let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
-        allTools = pluginTools
+        allTools = coreAgentTools() + pluginTools
+
+        let definitions = AppPluginVM.shared.collectSubAgentDefinitions()
+        Task {
+            await SubAgentScheduler.shared.registerDefinitions(definitions)
+        }
+    }
+
+    @MainActor
+    private func coreAgentTools() -> [SuperAgentTool] {
+        guard let llmService, let llmVM else {
+            return []
+        }
+
+        return [
+            SpawnSubAgentTool(llmService: llmService, llmVM: llmVM, toolService: self),
+            CollectSubAgentTool(),
+        ]
     }
 
     // MARK: - Public API
@@ -108,6 +131,19 @@ class ToolService: SuperLog, @unchecked Sendable {
             AppLogger.core.error("\(Self.t)❌ 工具 '\(name)' 未找到")
         }
         return tool
+    }
+
+    /// 根据工具名称和参数 JSON 获取面向用户的操作描述
+    ///
+    /// 通过工具的 `displayDescription(for:)` 方法获取描述，
+    /// 工具未注册时返回 `nil`。
+    func displayDescription(toolName: String, argumentsJSON: String) -> String? {
+        guard let tool = tool(named: toolName),
+              let dict = Self.parseToolArgumentsDict(from: argumentsJSON) else {
+            return nil
+        }
+        let toolArgs = dict.mapValues { ToolArgument($0) }
+        return tool.displayDescription(for: toolArgs)
     }
 
     /// 检查工具是否存在
@@ -204,12 +240,54 @@ class ToolService: SuperLog, @unchecked Sendable {
         return .high
     }
 
+    /// 带上下文的风险评估；路径不在沙箱内时自动提升风险等级。
+    func evaluateRisk(toolName: String, argumentsJSON: String, context: ToolExecutionContext) -> CommandRiskLevel {
+        let parsed = Self.parseToolArgumentsDict(from: argumentsJSON) ?? [:]
+        let toolArgs = parsed.mapValues { ToolArgument($0) }
+        guard let tool = tool(named: toolName) else { return .high }
+
+        let baseRisk = tool.permissionRiskLevel(arguments: toolArgs, context: context)
+
+        // 如果路径不在沙箱内，提升风险等级
+        return Self.elevatedRiskIfPathOutOfBounds(arguments: toolArgs, baseRisk: baseRisk, context: context)
+    }
+
     /// 获取工具定义声明的风险等级；工具未注册时返回 `nil`。
     func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
         guard let tool = tool(named: toolName) else { return nil }
         let rawArgs = arguments ?? [:]
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
+    }
+
+    // MARK: - Sandbox Risk Elevation
+
+    /// 如果操作涉及的文件路径不在允许的目录范围内，则提升风险等级。
+    static func elevatedRiskIfPathOutOfBounds(
+        arguments: [String: ToolArgument],
+        baseRisk: CommandRiskLevel,
+        context: ToolExecutionContext
+    ) -> CommandRiskLevel {
+        guard !context.allowedDirectories.isEmpty else { return baseRisk }
+
+        // 提取路径参数
+        let filePath = (arguments["file_path"]?.value as? String) ??
+                        (arguments["path"]?.value as? String) ??
+                        (arguments["directory"]?.value as? String)
+
+        guard let path = filePath else { return baseRisk }
+
+        if context.isPathAllowed(path) {
+            return baseRisk
+        }
+
+        // 路径不在沙箱内，提升至少一级风险
+        switch baseRisk {
+        case .safe:  return .low
+        case .low:   return .medium
+        case .medium: return .high
+        case .high:  return .high
+        }
     }
 
     /// 将工具参数字符串尽量解析为对象；失败时返回 nil。

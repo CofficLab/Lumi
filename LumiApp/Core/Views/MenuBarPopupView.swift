@@ -90,20 +90,25 @@ struct MenuItemRow: View {
     var color: Color = .primary
     let action: () -> Void
 
+    @State private var isHovering = false
+
     var body: some View {
         Button(action: action) {
-            GlassRow {
-                HStack(spacing: 12) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(color)
-                        .padding(.horizontal, 8)
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(isHovering ? color.opacity(0.8) : color)
+                    .padding(.horizontal, 12)
 
-                    Spacer()
-                }
+                Spacer()
             }
+            .padding(.vertical, 8)
+            .background(isHovering ? Color.adaptive(light: "F2F2F7", dark: "2C2C2E").opacity(0.5) : Color.clear)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 }
 

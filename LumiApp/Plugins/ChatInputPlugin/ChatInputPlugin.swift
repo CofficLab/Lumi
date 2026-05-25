@@ -25,7 +25,7 @@ actor ChatInputPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section：输入区域
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(InputView())]
     }
 }

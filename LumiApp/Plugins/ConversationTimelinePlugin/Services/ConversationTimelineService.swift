@@ -58,6 +58,11 @@ struct ConversationTimelineService {
         providers.first(where: { $0.id == providerId })?.contextWindowSizes[model] ?? 0
     }
 
+    func contextUsageRatio(currentTokens: Int, limit: Int) -> Double {
+        guard limit > 0 else { return 0 }
+        return Double(currentTokens) / Double(limit)
+    }
+
     func formatToken(_ value: Int) -> String {
         if value >= 1000 {
             let k = Double(value) / 1000.0

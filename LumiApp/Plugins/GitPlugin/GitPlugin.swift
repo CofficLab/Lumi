@@ -1,7 +1,7 @@
 import SwiftUI
 import Foundation
 import AgentToolKit
-import LumiPluginKit
+import LumiCoreKit
 import os
 
 /// Git 插件：统一提供 Git 面板、提交历史、分支状态栏、快捷提交和 Agent 工具
@@ -37,6 +37,13 @@ actor GitPlugin: SuperPlugin, SuperLog {
             GitShowTool(),
             GitBranchTool(),
             GitUnpushedTool(),
+        ]
+    }
+
+    @MainActor
+    func subAgentDefinitions() -> [any SubAgentDefinitionProtocol] {
+        [
+            GitCommitSubAgentDefinition(),
         ]
     }
 

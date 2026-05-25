@@ -1,32 +1,30 @@
 import Foundation
 import AgentToolKit
+import PluginWebSearch
 import os
 
-/// Web Search 插件
+/// Web Search 插件 App 侧注册适配器。
 ///
-/// 提供基础的网页搜索工具。
-/// 主要用于满足阿里云 Qwen 系列模型对 Function Calling 的限制要求：
-/// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
+/// 当前 App 仍通过 ObjC runtime 扫描 `Lumi.*Plugin` 类注册插件；
+/// package 中的 `PluginWebSearch.WebSearchPlugin` 不在 `Lumi` 命名空间内，
+/// 因此这里保留一个薄适配器，实际实现转发给 package 插件。
 actor WebSearchPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-search")
-    
+
     /// 日志标识符
     nonisolated static let emoji = "🔍"
-    
+
     /// 是否启用详细日志
     nonisolated static let verbose: Bool = true
-    static let id: String = "WebSearch"
-    static let displayName: String = String(localized: "Web Search", table: "WebSearch")
-    static let description: String = String(localized: "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。", table: "WebSearch")
-    static let iconName: String = "magnifyingglass"
-    static let isConfigurable: Bool = false
-    
-    /// 默认启用此插件，以确保 Qwen 模型能正常调用 web_fetch
-    static let enable: Bool = true
-    
+    static let id: String = PluginWebSearch.WebSearchPlugin.id
+    static let displayName: String = PluginWebSearch.WebSearchPlugin.displayName
+    static let description: String = PluginWebSearch.WebSearchPlugin.description
+    static let iconName: String = PluginWebSearch.WebSearchPlugin.iconName
+    static let isConfigurable: Bool = PluginWebSearch.WebSearchPlugin.isConfigurable
+    static let enable: Bool = PluginWebSearch.WebSearchPlugin.enable
     static var category: PluginCategory { .network }
-    static var order: Int { 101 }
+    static var order: Int { PluginWebSearch.WebSearchPlugin.order }
 
     static let shared = WebSearchPlugin()
 
@@ -34,6 +32,6 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [WebSearchTool()]
+        [PluginWebSearch.WebSearchTool()]
     }
 }

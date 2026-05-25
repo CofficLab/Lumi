@@ -35,6 +35,9 @@ struct GitUnpushedTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看未推送提交"
+    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -46,7 +49,10 @@ struct GitUnpushedTool: SuperAgentTool, SuperLog {
             GitPlugin.logger.info("\(Self.t)检查未推送 commit：\(path ?? "当前目录")")
         }
 
-        let hashes = GitService.shared.getUnpushedCommitHashes(path: path)
+        // 验证路径是否在允许的范围内
+        let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+
+        let hashes = GitService.shared.getUnpushedCommitHashes(path: validatedPath)
 
         return formatResult(hashes)
     }

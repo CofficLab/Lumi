@@ -97,7 +97,10 @@ struct EditorFileTreeNodeView: View {
         self.iconMetadata = FileTreeIconMetadata(
             fileName: url.lastPathComponent,
             fileExtension: url.pathExtension.lowercased(),
-            isDirectory: self.isDirectory
+            isDirectory: self.isDirectory,
+            isSwiftPackageDirectory: self.isDirectory && FileManager.default.fileExists(
+                atPath: url.appendingPathComponent("Package.swift", isDirectory: false).path
+            )
         )
 
         // 从 store 恢复展开状态
@@ -350,6 +353,7 @@ struct EditorFileTreeNodeView: View {
             fileExtension: iconMetadata.fileExtension,
             isDirectory: iconMetadata.isDirectory,
             isExpanded: isExpanded,
+            isSwiftPackageDirectory: iconMetadata.isSwiftPackageDirectory,
             projectRootPath: projectRootPath
         )
         let defaultContributor = LumiDefaultFileIconThemeContributor()
@@ -395,6 +399,7 @@ private struct FileTreeIconMetadata {
     let fileName: String
     let fileExtension: String
     let isDirectory: Bool
+    let isSwiftPackageDirectory: Bool
 }
 
 // MARK: - Actions

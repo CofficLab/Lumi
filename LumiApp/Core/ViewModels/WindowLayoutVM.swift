@@ -32,6 +32,16 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 编辑器区域是否可见（包含 PanelContent 和 PanelBottom）
     @Published var editorVisible: Bool = true
     
+    /// Rail 区域是否可见（位于活动栏与面板内容区之间的辅助栏）
+    @Published var railVisible: Bool = true
+
+    /// 当前激活的 ActivityBar 图标（SF Symbol 名称）
+    ///
+    /// 窗口级状态：每个窗口可以激活不同的面板。
+    /// 点击 ActivityBar 图标时更新，驱动面板内容区切换。
+    /// 持久化由 LayoutPlugin 负责。
+    @Published var activePanelIcon: String?
+
     /// 当前选中的 Agent 模式侧边栏 Tab ID
     @Published var selectedAgentSidebarTabId: String = ""
     
@@ -126,6 +136,11 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     
     // MARK: - Plugin Restore
     
+    /// 由 LayoutPlugin 调用，从本地存储恢复活动栏图标
+    func restoreFromPlugin(activePanelIcon: String?) {
+        self.activePanelIcon = activePanelIcon
+    }
+
     /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID
     func restoreFromPlugin(tabId: String) {
         selectedAgentSidebarTabId = tabId == "GitCommitHistory" ? GitPlugin.id : tabId
@@ -154,6 +169,11 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 由 LayoutPlugin 调用，从本地存储恢复编辑器区域可见性
     func restoreFromPlugin(editorVisible: Bool) {
         self.editorVisible = editorVisible
+    }
+
+    /// 由 LayoutPlugin 调用，从本地存储恢复 Rail 区域可见性
+    func restoreFromPlugin(railVisible: Bool) {
+        self.railVisible = railVisible
     }
 
     /// 更新指定分栏的宽度比例。

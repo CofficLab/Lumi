@@ -4,6 +4,12 @@ import SwiftUI
 
 /// 会话项视图
 /// 显示单个会话的标题、时间戳和项目信息，支持右键菜单删除操作
+///
+/// ## 活跃状态
+///
+/// 对话项支持两种活跃状态：
+/// - **处理中**：对话正在处理消息，图标会显示脉冲动画和主题色
+/// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
 struct ConversationItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
@@ -12,31 +18,42 @@ struct ConversationItemView: View {
     /// 删除回调：用户确认删除后调用
     let onDelete: () -> Void
 
+    /// 对话是否正在处理消息（由 WindowConversationStatusVM 驱动）
+    var isProcessing: Bool = false
+
+    /// 近期活跃时间窗口，默认 5 分钟
+    var recentActivityWindow: TimeInterval = 5 * 60
+
     /// 是否显示删除确认对话框
     @State private var showDeleteConfirmation = false
 
-    /// 判断是否有真实标题（非默认的"新对话"/"New Chat"前缀）
-    private var hasRealTitle: Bool {
-        let title = conversation.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return false }
-        let newConversation = String(localized: "New Conversation", table: "ConversationList")
-        let newChat = String(localized: "New Chat", table: "ConversationList")
-        return title != newConversation && !title.hasPrefix(newChat)
+    /// 计算：对话是否在近期活跃时间窗口内有更新
+    private var isRecentlyActive: Bool {
+        Date().timeIntervalSince(conversation.updatedAt) < recentActivityWindow
     }
 
     var body: some View {
         HStack(spacing: 8) {
-            // 图标（仅当有真实标题时显示）
-            if hasRealTitle {
+            // 对话图标（活跃状态有不同表现）
+            ZStack(alignment: .topTrailing) {
                 Image(systemName: "bubble.left.and.bubble.right")
                     .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(isProcessing ? theme.primary : theme.textTertiary)
+                    .padding(3)
+
+                if isProcessing {
+                    // 处理中：脉冲动画
+                    ProcessingPulseIndicator(color: theme.primary)
+                } else if isRecentlyActive {
+                    // 近期活跃：小圆点
+                    RecentActivityIndicator(color: theme.primary)
+                }
             }
 
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
                 // 标题
-                Text(conversation.title)
+                Text(conversation.displayTitle)
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
@@ -62,8 +79,43 @@ struct ConversationItemView: View {
             }
         } message: {
             let format = String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", table: "ConversationList")
-            Text(String(format: format, conversation.title))
+            Text(String(format: format, conversation.displayTitle))
         }
+    }
+}
+
+// MARK: - Activity Indicators
+
+/// 处理中脉冲动画指示器
+private struct ProcessingPulseIndicator: View {
+    let color: Color
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .fill(color.opacity(0.3))
+            .frame(width: 12, height: 12)
+            .scaleEffect(isAnimating ? 1.8 : 1.0)
+            .opacity(isAnimating ? 0 : 0.5)
+            .animation(
+                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
+                value: isAnimating
+            )
+            .onAppear {
+                isAnimating = true
+            }
+    }
+}
+
+/// 近期活跃小圆点指示器
+private struct RecentActivityIndicator: View {
+    let color: Color
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 4, height: 4)
+            .offset(x: 4, y: -4)
     }
 }
 
@@ -138,6 +190,25 @@ private extension ConversationItemView {
     ConversationItemView(
         conversation: Conversation.example(),
         onDelete: { if ConversationListPlugin.verbose { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") } }
+    )
+    .frame(width: 200)
+    .padding()
+}
+
+#Preview("会话项 - 处理中") {
+    ConversationItemView(
+        conversation: Conversation.example(),
+        onDelete: {},
+        isProcessing: true
+    )
+    .frame(width: 200)
+    .padding()
+}
+
+#Preview("会话项 - 近期活跃") {
+    ConversationItemView(
+        conversation: Conversation.example(minutesAgo: 2),
+        onDelete: {}
     )
     .frame(width: 200)
     .padding()

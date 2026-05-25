@@ -92,6 +92,128 @@ struct XcodeCompilerTests {
         #expect(command == expectedCommand)
     }
 
+    // MARK: - common-args.resp 解析 → 发现本地 SPM 包中的 ObjC modulemap
+
+    @Test("common-args.resp 中 -I/Path 形式参数能发现本地包 ObjC modulemap")
+    func commonArgsRespDiscoversObjCModuleMapFromJoinedPath() throws {
+        // 模拟本地包的 ObjC target 目录结构：
+        //   PackageRoot/Sources/SomeObjCTarget/include/module.modulemap
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CommonArgs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let includeDir = tmp
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("SomeObjCTarget", isDirectory: true)
+            .appendingPathComponent("include", isDirectory: true)
+        try FileManager.default.createDirectory(at: includeDir, withIntermediateDirectories: true)
+
+        let modulemapContent = """
+        module SomeObjCTarget {
+            header "SomeHeader.h"
+        }
+        """
+        try modulemapContent.write(
+            to: includeDir.appendingPathComponent("module.modulemap"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "void someFunc(void);".write(
+            to: includeDir.appendingPathComponent("SomeHeader.h"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        // 模拟 Xcode 生成的 common-args.resp，包含 -I/Path 形式的参数
+        // （这是真实的 Xcode 输出格式：-I 后面直接跟路径，没有空格）
+        let respContent = "-fobjc-arc -fmodules -I\(includeDir.path) -I/tmp/nonexistent -O0"
+        let respURL = tmp.appendingPathComponent("e6072d4f65d7061329687fe24e3d63a7-common-args.resp")
+        try respContent.write(to: respURL, atomically: true, encoding: .utf8)
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(respURL)
+
+        #expect(discovered.count == 1)
+        #expect(discovered[0].lastPathComponent == "module.modulemap")
+        #expect(discovered[0].path.hasSuffix("SomeObjCTarget/include/module.modulemap"))
+    }
+
+    @Test("common-args.resp 中 '-I /Path' 分离形式参数能发现 ObjC modulemap")
+    func commonArgsRespDiscoversObjCModuleMapFromSplitPath() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CommonArgs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let includeDir = tmp
+            .appendingPathComponent("include", isDirectory: true)
+        try FileManager.default.createDirectory(at: includeDir, withIntermediateDirectories: true)
+
+        let modulemapContent = """
+        module MyCLib {
+            header "mylib.h"
+        }
+        """
+        try modulemapContent.write(
+            to: includeDir.appendingPathComponent("module.modulemap"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        // 模拟 '-I /Path' 分离形式（有些 resp 文件用这种格式）
+        let respContent = "-fobjc-arc -fmodules -I \(includeDir.path) -O0"
+        let respURL = tmp.appendingPathComponent("test-common-args.resp")
+        try respContent.write(to: respURL, atomically: true, encoding: .utf8)
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(respURL)
+
+        #expect(discovered.count == 1)
+        #expect(discovered[0].lastPathComponent == "module.modulemap")
+    }
+
+    @Test("common-args.resp 中不含 include 目录时返回空列表")
+    func commonArgsRespReturnsEmptyWhenNoModuleMaps() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CommonArgs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        // 没有 modulemap 的 include 目录
+        let includeDir = tmp.appendingPathComponent("include", isDirectory: true)
+        try FileManager.default.createDirectory(at: includeDir, withIntermediateDirectories: true)
+
+        let respContent = "-fobjc-arc -I\(includeDir.path) -O0"
+        let respURL = tmp.appendingPathComponent("test-common-args.resp")
+        try respContent.write(to: respURL, atomically: true, encoding: .utf8)
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(respURL)
+
+        #expect(discovered.isEmpty)
+    }
+
+    @Test("common-args.resp 中引用的 -I 路径不存在时不崩溃")
+    func commonArgsRespHandlesNonexistentPaths() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CommonArgs-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let nonexistentPath = "/tmp/this-path-does-not-exist-\(UUID().uuidString)"
+        let respContent = "-I\(nonexistentPath) -O0"
+        let respURL = tmp.appendingPathComponent("test-common-args.resp")
+        try respContent.write(to: respURL, atomically: true, encoding: .utf8)
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(respURL)
+
+        #expect(discovered.isEmpty)
+    }
+
+    @Test("common-args.resp 文件不存在时返回空列表")
+    func commonArgsRespHandlesMissingFile() {
+        let nonexistentURL = URL(fileURLWithPath: "/tmp/nonexistent-\(UUID().uuidString).resp")
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(nonexistentURL)
+
+        #expect(discovered.isEmpty)
+    }
+
     @Test("preview compiler arguments include Xcode deployment target")
     func previewCompilerArgumentsIncludeDeploymentTarget() async throws {
         let project = try makeTemporaryXcodeProject(

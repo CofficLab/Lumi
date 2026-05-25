@@ -56,12 +56,33 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
         .low
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .low
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let path = arguments["path"]?.value as? String else { return "读取文件" }
+        let fileName = URL(fileURLWithPath: path).lastPathComponent
+        return "读取 \(fileName)"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
             throw NSError(
                 domain: "ReadFileTool",
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"]
+            )
+        }
+
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(path) {
+            throw NSError(
+                domain: "ReadFileTool",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)\n\n此路径不在允许的文件操作范围内。"]
             )
         }
 

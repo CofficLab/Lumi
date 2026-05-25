@@ -1,10 +1,13 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 
 // MARK: - Agent Tools Default Implementation
 
 extension SuperPlugin {
     @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool] { [] }
+
+    @MainActor func subAgentDefinitions() -> [any SubAgentDefinitionProtocol] { [] }
 
     @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 

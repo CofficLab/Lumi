@@ -89,7 +89,7 @@ final class RootContainer: ObservableObject, SuperLog {
         pluginVM.registerLLMProviders(to: providerRegistry)
         
         self.llmService = LLMService(registry: providerRegistry)
-        self.promptService = PromptService(contextService: contextService)
+        self.promptService = PromptService()
         self.slashCommandService = SlashCommandService()
         self.toolService = ToolService(llmService: llmService)
         

@@ -35,6 +35,10 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看 Git 状态"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -47,7 +51,10 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         }
 
         do {
-            let status = try await GitService.shared.getStatus(path: path)
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
+            let status = try await GitService.shared.getStatus(path: validatedPath)
             return formatStatus(status)
         } catch {
             if Self.verbose {

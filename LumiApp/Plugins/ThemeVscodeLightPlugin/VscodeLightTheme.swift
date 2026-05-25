@@ -44,6 +44,26 @@ struct VscodeLightTheme: LumiAppChromeTheme {
         )
     }
 
+    func statusBarBackgroundColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "007ACC")
+    }
+
+    func statusBarForegroundColor() -> SwiftUI.Color {
+        .white
+    }
+
+    func statusBarDividerColor() -> SwiftUI.Color {
+        SwiftUI.Color.black.opacity(0.12)
+    }
+
+    func statusBarItemBackgroundColor(isPresented: Bool) -> SwiftUI.Color {
+        SwiftUI.Color.white.opacity(isPresented ? 0.24 : 0.16)
+    }
+
+    func statusBarItemForegroundColor() -> SwiftUI.Color {
+        .white
+    }
+
     func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {

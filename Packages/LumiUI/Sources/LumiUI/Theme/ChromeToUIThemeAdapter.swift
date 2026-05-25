@@ -31,4 +31,16 @@ public struct ChromeToUIThemeAdapter: LumiUITheme {
     public var info: Color { chrome.accentColors().tertiary }
 
     public var glowAccent: Color { chrome.accentColors().primary }
+
+    public var statusBarItemForeground: Color {
+        chrome.statusBarItemForegroundColor()
+    }
+
+    public var statusBarItemBackground: Color {
+        chrome.statusBarItemBackgroundColor(isPresented: false)
+    }
+
+    public var statusBarItemPresentedBackground: Color {
+        chrome.statusBarItemBackgroundColor(isPresented: true)
+    }
 }

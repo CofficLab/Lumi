@@ -3,7 +3,7 @@ import AgentToolKit
 import EditorService
 import Foundation
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// Rail 标签页定义
 ///
@@ -341,6 +341,9 @@ protocol SuperPlugin: Actor {
 
     /// 提供 Agent 工具列表（可按需使用 `context` 注入依赖）。
     @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool]
+
+    /// 提供内核级子 Agent 定义列表。
+    @MainActor func subAgentDefinitions() -> [any SubAgentDefinitionProtocol]
 
     // MARK: - Send Pipeline
 

@@ -20,7 +20,17 @@ actor ThemeWinterPlugin: SuperPlugin {
                 appTheme: WinterTheme(),
                 editorThemeId: "winter",
                 editorThemeContributor: WinterSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.winter()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "winter-file-icons",
+                    displayName: "Winter File Icons",
+                    defaultFile: .systemImage("snowflake"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.questionmark", "folder.fill.badge.questionmark"),
+                    extraExtensions: [
+                        "sh": .systemImage("terminal.fill"),
+                        "bash": .systemImage("terminal.fill"),
+                        "zsh": .systemImage("terminal.fill"),
+                    ]
+                )
             )
         ]
     }

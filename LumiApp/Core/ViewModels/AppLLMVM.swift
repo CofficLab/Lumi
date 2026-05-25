@@ -15,12 +15,14 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = "" {
         didSet {
             guard selectedProviderId != oldValue else { return }
+            AppSettingStore.saveLastSelectedProviderId(selectedProviderId)
             ensureProviderAndModelSelection()
         }
     }
     @Published var currentModel: String = "" {
         didSet {
             guard currentModel != oldValue else { return }
+            AppSettingStore.saveLastSelectedModel(currentModel)
             if currentModel.isEmpty {
                 ensureProviderAndModelSelection()
             }
@@ -29,6 +31,8 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     /// 聊天模式
     @Published var chatMode: ChatMode = .build
+    /// 响应详细程度
+    @Published var verbosity: ResponseVerbosity = .brief
     @Published var isAutoMode: Bool = false
     @Published var lastAutoRouteSummary: String?
 
@@ -37,6 +41,15 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     init(llmService: LLMService) {
         self.llmService = llmService
+
+        // 从持久化存储恢复上次选择的供应商和模型
+        if let lastProviderId = AppSettingStore.loadLastSelectedProviderId() {
+            selectedProviderId = lastProviderId
+        }
+        if let lastModel = AppSettingStore.loadLastSelectedModel() {
+            currentModel = lastModel
+        }
+
         ensureProviderAndModelSelection()
     }
 
@@ -107,6 +120,12 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     func setChatMode(_ mode: ChatMode) {
         chatMode = mode
+    }
+
+    // MARK: - Verbosity
+
+    func setVerbosity(_ level: ResponseVerbosity) {
+        verbosity = level
     }
 
     // MARK: - Selection Guard

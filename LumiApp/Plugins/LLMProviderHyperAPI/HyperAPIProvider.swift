@@ -14,6 +14,7 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "hyperapi"
     static let displayName = String(localized: "HyperAPI", table: "HyperAPI")
+    static let shortName = "HA"
     static let description = String(localized: "LLM Router by hyperapi.cc", table: "HyperAPI")
 
     static let websiteURL: String? = "https://hyperapi.cc"

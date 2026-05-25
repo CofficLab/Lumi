@@ -51,7 +51,12 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
 
     init() {}
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "延迟发送消息"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
         .low
     }
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {

@@ -31,7 +31,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 提示词服务
     ///
-    /// 用于生成系统上下文消息和欢迎消息。
+    /// 用于生成欢迎消息。
     private let promptService: PromptService
 
     /// Agent 会话配置
@@ -185,6 +185,30 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         return ChatMode(rawValue: rawValue)
     }
 
+    /// 保存当前对话的响应详细程度偏好
+    /// - Parameter verbosity: 详细程度，传入 nil 表示清除对话级偏好
+    func saveVerbosityPreference(_ verbosity: ResponseVerbosity?) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存详细程度")
+            }
+            return
+        }
+        chatHistoryService.updateVerbosity(conversation, verbosity: verbosity?.rawValue)
+    }
+
+    /// 获取当前对话的响应详细程度偏好
+    /// - Returns: 详细程度，如果对话未指定则返回 nil
+    func getVerbosityPreference() -> ResponseVerbosity? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let rawValue = conversation.verbosity else {
+            return nil
+        }
+        return ResponseVerbosity(rawValue: rawValue)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
@@ -303,7 +327,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 创建新会话
     ///
-    /// 执行创建新会话的完整流程：创建会话记录、选中、注入系统上下文消息和欢迎消息。
+    /// 执行创建新会话的完整流程：创建会话记录、选中、注入欢迎消息。
     /// 如果当前项目存在历史对话且带有模型偏好，新会话将自动继承该偏好。
     ///
     /// - Parameters:
@@ -315,12 +339,8 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         projectPath: String? = nil,
         languagePreference: LanguagePreference = .chinese
     ) async {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-
         let conversation = chatHistoryService.createConversation(
             projectId: projectPath,
-            title: "新会话 " + formatter.string(from: Date()),
             chatMode: agentSessionConfig.chatMode.rawValue
         )
 
@@ -338,18 +358,6 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
         setSelectedConversation(conversation.id, reason: "createNewConversation")
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
-
-        let systemMessage = await promptService.getSystemContextMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference
-        )
-        if !systemMessage.isEmpty {
-            saveMessage(
-                ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage),
-                to: conversation.id
-            )
-        }
 
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,

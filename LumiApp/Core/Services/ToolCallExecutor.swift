@@ -15,19 +15,22 @@ final class ToolCallExecutor: SuperLog {
     private let permissionRequestVM: WindowPermissionRequestVM
     private let conversationSendStatusVM: WindowConversationStatusVM
     private let conversationVM: WindowConversationVM
+    private let projectVM: WindowProjectVM
 
     init(
         toolService: ToolService,
         agentSessionConfig: AppLLMVM,
         permissionRequestVM: WindowPermissionRequestVM,
         conversationSendStatusVM: WindowConversationStatusVM,
-        conversationVM: WindowConversationVM
+        conversationVM: WindowConversationVM,
+        projectVM: WindowProjectVM
     ) {
         self.toolService = toolService
         self.agentSessionConfig = agentSessionConfig
         self.permissionRequestVM = permissionRequestVM
         self.conversationSendStatusVM = conversationSendStatusVM
         self.conversationVM = conversationVM
+        self.projectVM = projectVM
     }
 
     // MARK: - 权限评估
@@ -36,14 +39,27 @@ final class ToolCallExecutor: SuperLog {
     ///
     /// - Returns: 评估后的消息（toolCalls 的 authorizationState 已更新）
     @discardableResult
-    func evaluatePermissions(for message: ChatMessage) -> ChatMessage {
+    func evaluatePermissions(for message: ChatMessage, conversationId: UUID? = nil) -> ChatMessage {
         var message = message
         guard var calls = message.toolCalls else { return message }
 
         let autoApproveRisk = agentSessionConfig.chatMode.autoApproveRisk
+        let allowedDirectories = buildAllowedDirectories()
+        let currentProjectPath = projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath
 
         for i in calls.indices {
-            let risk = toolService.evaluateRisk(toolName: calls[i].name, argumentsJSON: calls[i].arguments)
+            let context = ToolExecutionContext(
+                conversationId: conversationId ?? message.conversationId,
+                toolCallId: calls[i].id,
+                toolName: calls[i].name,
+                currentProjectPath: currentProjectPath,
+                allowedDirectories: allowedDirectories
+            )
+            let risk = toolService.evaluateRisk(
+                toolName: calls[i].name,
+                argumentsJSON: calls[i].arguments,
+                context: context
+            )
 
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)🔨 工具：\(calls[i].name)，风险：\(risk.displayName)")
@@ -68,7 +84,18 @@ final class ToolCallExecutor: SuperLog {
             return false
         }
 
-        let risk = toolService.evaluateRisk(toolName: firstPending.name, argumentsJSON: firstPending.arguments)
+        let context = ToolExecutionContext(
+            conversationId: conversationId,
+            toolCallId: firstPending.id,
+            toolName: firstPending.name,
+            currentProjectPath: projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath,
+            allowedDirectories: buildAllowedDirectories()
+        )
+        let risk = toolService.evaluateRisk(
+            toolName: firstPending.name,
+            argumentsJSON: firstPending.arguments,
+            context: context
+        )
         let request = PermissionRequest(
             toolName: firstPending.name,
             argumentsString: firstPending.arguments,
@@ -117,6 +144,14 @@ final class ToolCallExecutor: SuperLog {
                 continue
             }
 
+            // 在执行前写入 displayName（由工具自身根据参数生成）
+            if updatedCalls[index].displayName == nil {
+                updatedCalls[index].displayName = toolService.displayDescription(
+                    toolName: toolCall.name,
+                    argumentsJSON: toolCall.arguments
+                )
+            }
+
             updatedCalls[index].result = await executeOne(
                 toolCall: toolCall,
                 step: index + 1,
@@ -134,15 +169,6 @@ final class ToolCallExecutor: SuperLog {
 
     // MARK: - 私有
 
-    private func extractDisplayName(from argumentsJSON: String) -> String? {
-        guard let dict = ToolService.parseToolArgumentsDict(from: argumentsJSON),
-              let name = dict["display_name"] as? String,
-              !name.isEmpty else {
-            return nil
-        }
-        return name
-    }
-
     private func executeOne(
         toolCall: ToolCall,
         step: Int,
@@ -151,7 +177,12 @@ final class ToolCallExecutor: SuperLog {
     ) async -> ToolCallResult {
         let startedAt = Date()
         let initialShellStats = await Self.shellStats(for: toolCall.name)
-        let displayName = extractDisplayName(from: toolCall.arguments)
+
+        // 通过工具实例获取面向用户的操作描述
+        let displayName = toolService.displayDescription(
+            toolName: toolCall.name,
+            argumentsJSON: toolCall.arguments
+        )
 
         conversationSendStatusVM.applyToolProgressEvent(
             conversationId: conversationId,
@@ -176,7 +207,9 @@ final class ToolCallExecutor: SuperLog {
         let toolContext = ToolExecutionContext(
             conversationId: conversationId,
             toolCallId: toolCall.id,
-            toolName: toolCall.name
+            toolName: toolCall.name,
+            currentProjectPath: projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath,
+            allowedDirectories: buildAllowedDirectories()
         )
 
         do {
@@ -293,5 +326,29 @@ final class ToolCallExecutor: SuperLog {
             totalBytes: snapshot.totalBytes,
             latestOutputPreview: snapshot.latestOutputPreview
         )
+    }
+
+    // MARK: - Sandbox Helpers
+
+    /// 构建允许的目录列表：当前项目 + 最近项目的规范化路径
+    private func buildAllowedDirectories() -> [String] {
+        var dirs: [String] = []
+
+        // 当前项目路径
+        if !projectVM.currentProjectPath.isEmpty {
+            dirs.append(ToolExecutionContext.resolvePath(projectVM.currentProjectPath))
+        }
+
+        // 最近项目路径
+        let store = ProjectsStore()
+        let recentProjects = store.loadProjects()
+        for project in recentProjects {
+            let resolved = ToolExecutionContext.resolvePath(project.path)
+            if !dirs.contains(resolved) {
+                dirs.append(resolved)
+            }
+        }
+
+        return dirs
     }
 }

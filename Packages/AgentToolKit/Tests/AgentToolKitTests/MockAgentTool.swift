@@ -59,4 +59,8 @@ struct MockAgentTool: SuperAgentTool {
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         risk
     }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        name
+    }
 }

@@ -20,7 +20,17 @@ actor ThemeMidnightPlugin: SuperPlugin {
                 appTheme: MidnightTheme(),
                 editorThemeId: "midnight",
                 editorThemeContributor: MidnightSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.midnight()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "midnight-file-icons",
+                    displayName: "Midnight File Icons",
+                    defaultFile: .systemImage("doc"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraExtensions: [
+                        "md": .systemImage("text.alignleft"),
+                        "markdown": .systemImage("text.alignleft"),
+                        "json": .systemImage("curlybraces.square"),
+                    ]
+                )
             )
         ]
     }

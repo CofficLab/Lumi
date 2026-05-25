@@ -190,7 +190,8 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         self.projectContextRequestVM = WindowProjectContextRequestVM()
         self.chatTimelineViewModel = WindowChatTimelineViewModel(
             chatHistoryService: container.chatHistoryService,
-            conversationVM: conversationVM
+            conversationVM: conversationVM,
+            conversationSendStatusVM: conversationSendStatusVM
         )
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
@@ -248,7 +249,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             images: allImages
         )
         messageQueueVM.enqueueMessage(message)
-        chatTimelineViewModel.handleMessageQueued(message)
 
         Task { [weak self] in
             guard let self, !self.hasCleanedUp else { return }
@@ -354,7 +354,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     func updateTitle() {
         if let conversationId = conversationVM.selectedConversationId,
            let conversation = conversationVM.fetchConversation(id: conversationId) {
-            title = conversation.title
+            title = conversation.displayTitle
         } else if let _ = projectPath {
             title = "Lumi - \(projectVM.currentProjectName)"
         } else {

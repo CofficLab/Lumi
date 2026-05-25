@@ -8,6 +8,7 @@ import SwiftUI
 /// 底部固定渲染水平工具栏，聚合所有插件的 leading/trailing SidebarToolbarItem。
 struct RightSidebarContainerView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
@@ -18,7 +19,7 @@ struct RightSidebarContainerView: View {
             return AnyView(Color.clear)
         }
 
-        return pluginProvider.getRightSidebarRootWrapper(activeIcon: pluginProvider.activePanelIcon) {
+        return pluginProvider.getRightSidebarRootWrapper(activeIcon: layoutVM.activePanelIcon) {
             VStack(spacing: 0) {
                 // ── 上半部分：Section 视图区 ──
                 ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
@@ -31,8 +32,9 @@ struct RightSidebarContainerView: View {
                 }
 
                 // ── 下半部分：底部工具栏 ──
-                let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems()
-                let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems()
+                let activeIcon = layoutVM.activePanelIcon
+                let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems(activeIcon: activeIcon)
+                let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems(activeIcon: activeIcon)
                 if !leadingToolbarItems.isEmpty || !trailingToolbarItems.isEmpty {
                     GlassDivider()
                     SidebarToolbarBar(
@@ -55,6 +57,7 @@ struct RightSidebarContainerView: View {
 /// 优先使用插件自定义视图（`addSidebarToolbarItemView`），否则使用默认图标按钮。
 private struct SidebarToolbarBar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
     let leadingItems: [SidebarToolbarItem]
@@ -82,7 +85,7 @@ private struct SidebarToolbarBar: View {
     @ViewBuilder
     private func toolbarButton(for item: SidebarToolbarItem) -> some View {
         // 优先使用插件提供的自定义视图
-        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id) {
+        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, activeIcon: layoutVM.activePanelIcon) {
             customView
                 .help(item.title)
                 .accessibilityLabel(item.title)

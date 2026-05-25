@@ -52,6 +52,18 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         .high
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .high
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let path = arguments["path"]?.value as? String else { return "写入文件" }
+        let fileName = URL(fileURLWithPath: path).lastPathComponent
+        return "写入 \(fileName)"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String,
               let content = arguments["content"]?.value as? String else {
@@ -59,6 +71,15 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
                 domain: "WriteFileTool",
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "Missing 'path' or 'content' argument"]
+            )
+        }
+
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(path) {
+            throw NSError(
+                domain: "WriteFileTool",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)\n\n此路径不在允许的文件操作范围内。"]
             )
         }
 

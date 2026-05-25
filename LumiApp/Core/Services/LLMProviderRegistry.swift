@@ -82,6 +82,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 return LLMProviderInfo(
                     id: type.id,
                     displayName: type.displayName,
+                    shortName: type.shortName,
                     description: type.description,
                     websiteURL: type.websiteURL,
                     availableModels: type.availableModels,
@@ -105,6 +106,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
+                shortName: type.shortName,
                 description: type.description,
                 websiteURL: type.websiteURL,
                 availableModels: type.availableModels,

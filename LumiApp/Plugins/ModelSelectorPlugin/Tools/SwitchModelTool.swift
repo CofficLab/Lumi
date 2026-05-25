@@ -51,6 +51,7 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "切换模型"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -113,8 +114,12 @@ struct SwitchModelTool: SuperAgentTool, SuperLog {
         let previousProvider = previousPreference?.providerId ?? llmVM.selectedProviderId
         let previousModel = previousPreference?.model ?? llmVM.currentModel
 
-        // 执行切换：模型选择是对话级状态，不修改全局 AppLLMVM 的 provider/model。
+        // 执行切换
         llmVM.isAutoMode = false
+
+        // 同步更新 AppLLMVM 的全局选择（会自动持久化）
+        llmVM.selectedProviderId = providerId
+        llmVM.currentModel = modelId
 
         // 保存到当前对话的模型偏好
         if let conversationId {

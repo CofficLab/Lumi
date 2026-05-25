@@ -20,7 +20,16 @@ actor ThemeRiverPlugin: SuperPlugin {
                 appTheme: RiverTheme(),
                 editorThemeId: "river",
                 editorThemeContributor: RiverSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.river()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "river-file-icons",
+                    displayName: "River File Icons",
+                    defaultFile: .systemImage("water.waves"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("externaldrive", "externaldrive.fill"),
+                    extraExtensions: [
+                        "xml": .systemImage("point.3.connected.trianglepath.dotted"),
+                        "json": .systemImage("point.3.connected.trianglepath.dotted"),
+                    ]
+                )
             )
         ]
     }

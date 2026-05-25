@@ -31,6 +31,11 @@ public protocol LumiAppChromeTheme {
     func workspaceTextColor() -> Color
     func workspaceSecondaryTextColor() -> Color
     func workspaceTertiaryTextColor() -> Color
+    func statusBarBackgroundColor() -> Color
+    func statusBarForegroundColor() -> Color
+    func statusBarDividerColor() -> Color
+    func statusBarItemBackgroundColor(isPresented: Bool) -> Color
+    func statusBarItemForegroundColor() -> Color
 
     func makeGlobalBackground(proxy: GeometryProxy) -> AnyView
 }
@@ -83,6 +88,29 @@ public extension LumiAppChromeTheme {
 
     func workspaceTertiaryTextColor() -> Color {
         isDarkTheme ? Color.white.opacity(0.4) : Color(hex: "98989E")
+    }
+
+    func statusBarBackgroundColor() -> Color {
+        isDarkTheme ? atmosphereColors().deep : atmosphereColors().medium
+    }
+
+    func statusBarForegroundColor() -> Color {
+        workspaceTextColor()
+    }
+
+    func statusBarDividerColor() -> Color {
+        workspaceTertiaryTextColor().opacity(0.18)
+    }
+
+    func statusBarItemBackgroundColor(isPresented: Bool) -> Color {
+        if isPresented {
+            return accentColors().primary.opacity(0.14)
+        }
+        return workspaceTextColor().opacity(0.08)
+    }
+
+    func statusBarItemForegroundColor() -> Color {
+        workspaceTextColor()
     }
 
     func backgroundGradient() -> LinearGradient {

@@ -16,6 +16,7 @@ private enum DatabaseToolArguments {
 
 struct DatabaseListConnectionsTool: SuperAgentTool {
     let name = "database_list_connections"
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "列出数据库连接" }
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -73,6 +74,10 @@ struct DatabaseDescribeSchemaTool: SuperAgentTool {
         .low
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看数据库结构"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
         let limit = try DatabaseToolArguments.limit(from: arguments)
@@ -114,6 +119,10 @@ struct DatabaseReadonlyQueryTool: SuperAgentTool {
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "执行只读数据库查询"
     }
 
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
@@ -158,6 +167,10 @@ struct DatabaseSampleTableTool: SuperAgentTool {
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看数据库表样本"
     }
 
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {

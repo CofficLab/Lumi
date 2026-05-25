@@ -59,6 +59,15 @@ struct GitBranchTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        let action = arguments["action"]?.value as? String ?? "list"
+        switch action {
+        case "create": return "创建分支"
+        case "checkout": return "切换分支"
+        default: return "查看分支"
+        }
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         guard let action = arguments["action"]?.value as? String else { return .low }
         switch action {
@@ -78,21 +87,24 @@ struct GitBranchTool: SuperAgentTool, SuperLog {
             GitPlugin.logger.info("\(Self.t)分支操作：\(action) name=\(name ?? "nil")")
         }
 
+        // 验证路径是否在允许的范围内
+        let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+
         switch action {
         case "list":
-            return try await listBranches(path: path, remote: remote)
+            return try await listBranches(path: validatedPath, remote: remote)
         case "create":
             guard let name else {
                 throw NSError(domain: "GitBranchTool", code: -1,
                              userInfo: [NSLocalizedDescriptionKey: "创建分支需要指定 name 参数"])
             }
-            return try await createBranch(path: path, name: name)
+            return try await createBranch(path: validatedPath, name: name)
         case "checkout":
             guard let name else {
                 throw NSError(domain: "GitBranchTool", code: -1,
                              userInfo: [NSLocalizedDescriptionKey: "切换分支需要指定 name 参数"])
             }
-            return try await checkoutBranch(path: path, name: name)
+            return try await checkoutBranch(path: validatedPath, name: name)
         default:
             throw NSError(domain: "GitBranchTool", code: -1,
                          userInfo: [NSLocalizedDescriptionKey: "不支持的操作：\(action)"])

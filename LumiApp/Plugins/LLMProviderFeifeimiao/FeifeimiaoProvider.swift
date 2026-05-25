@@ -14,6 +14,7 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
 
     static let id = "feifeimiao"
     static let displayName = String(localized: "Feifeimiao", table: "Feifeimiao")
+    static let shortName = "FF"
     static let description = String(localized: "LLM API by feifeimiao", table: "Feifeimiao")
 
     static let websiteURL: String? = "https://api.feifeimiao.top"

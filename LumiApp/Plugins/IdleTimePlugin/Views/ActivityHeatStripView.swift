@@ -1,13 +1,16 @@
 import SwiftUI
+import LumiUI
 
 struct ActivityHeatStripView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let scores: [Double]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(String(localized: "24-hour activity", table: "IdleTime"))
-                .font(.caption)
-                .foregroundColor(secondaryTextColor)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
 
             HStack(spacing: 2) {
                 ForEach(0..<RestWindowInferencer.bucketsPerDay, id: \.self) { index in
@@ -28,8 +31,8 @@ struct ActivityHeatStripView: View {
                 Spacer()
                 Text("24")
             }
-            .font(.caption2)
-            .foregroundColor(secondaryTextColor)
+            .font(.appMicro)
+            .foregroundColor(theme.textSecondary)
         }
     }
 
@@ -44,12 +47,8 @@ struct ActivityHeatStripView: View {
 
     private func color(for normalized: Double) -> Color {
         if normalized <= 0 {
-            return secondaryTextColor.opacity(0.12)
+            return theme.textSecondary.opacity(0.12)
         }
-        return Color.accentColor.opacity(0.18 + normalized * 0.72)
-    }
-
-    private var secondaryTextColor: Color {
-        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+        return theme.primary.opacity(0.18 + normalized * 0.72)
     }
 }

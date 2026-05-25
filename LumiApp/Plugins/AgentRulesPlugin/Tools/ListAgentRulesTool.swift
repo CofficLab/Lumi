@@ -33,6 +33,7 @@ struct ListAgentRulesTool: SuperAgentTool {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "列出规则"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

@@ -59,6 +59,7 @@ struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "关闭 Issue"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

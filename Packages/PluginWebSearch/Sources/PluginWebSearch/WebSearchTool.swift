@@ -1,0 +1,83 @@
+import AgentToolKit
+import Foundation
+import SuperLogKit
+import os
+
+/// 网页搜索工具。
+///
+/// 提供网页搜索功能。
+/// 该工具的存在主要是为了满足阿里云 Qwen 系列模型的 Function Calling 限制：
+/// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
+///
+/// 当前为轻量级实现，仅返回提示信息，可根据需求后续接入真实搜索 API。
+public struct WebSearchTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = true
+    private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.web-search")
+
+    public let name = "web_search"
+
+    public init() {}
+
+    public func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return """
+搜索网页以获取实时信息。
+使用此工具从互联网查找最新信息、新闻或特定数据。
+
+注意：某些 AI 模型（例如 Qwen）通常要求此工具与 web_fetch 或 web_extractor 配合使用。
+"""
+        case .english:
+            return """
+Search the web for real-time information.
+Use this tool to find current information, news, or specific data from the internet.
+
+Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).
+"""
+        }
+    }
+
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "query": [
+                    "type": "string",
+                    "description": "The search query to find information on the web",
+                ],
+            ],
+            "required": ["query"],
+        ]
+    }
+
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "搜索网页"
+    }
+
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
+    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        guard let query = arguments["query"]?.value as? String else {
+            return "Error: Missing required 'query' parameter"
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔍 Searching for: \(query)")
+        }
+
+        // 当前实现为轻量级占位，满足 Qwen 模型参数校验要求
+        // 如需真实搜索功能，可在此接入 Tavily、Bing 或 DuckDuckGo 等 API
+        return """
+## Web Search Result
+
+**Query**: \(query)
+**Status**: Web search tool is currently in placeholder mode.
+
+Note: This tool exists to satisfy API requirements for models like Qwen that require web_search to be present alongside web_fetch. 
+To perform actual searches, please use `web_fetch` with a search engine URL (e.g., https://www.google.com/search?q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""))
+"""
+    }
+}

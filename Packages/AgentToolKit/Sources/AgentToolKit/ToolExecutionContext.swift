@@ -1,9 +1,9 @@
 import Foundation
 
-/// 单次工具调用的取消上下文。
+/// 单次工具调用的执行上下文。
 ///
-/// 和 Swift `Task.cancel()` 不同，这个上下文会显式传入工具内部，让工具可以把取消
-/// 转发给底层资源（如 `Process.terminate()`、`WKWebView.stopLoading()` 或外部 SDK）。
+/// 除取消机制外，还携带沙箱目录信息，供工具判断路径是否在允许范围内。
+/// 路径不在 `allowedDirectories` 中的操作应提升风险等级，提醒用户确认。
 public final class ToolExecutionContext: @unchecked Sendable {
     public typealias CancellationHandler = @Sendable () -> Void
 
@@ -11,14 +11,52 @@ public final class ToolExecutionContext: @unchecked Sendable {
     public let toolCallId: String
     public let toolName: String
 
+    /// 当前活跃项目的路径（可选）
+    public let currentProjectPath: String?
+
+    /// 允许的目录白名单（最近项目路径的规范化形式）
+    /// 工具执行时若路径不在此列表内，应提升风险等级
+    public let allowedDirectories: [String]
+
+    // MARK: - Path Sandbox
+
+    /// 检查给定路径是否在允许的目录范围内。
+    ///
+    /// - Parameter path: 待检查的绝对路径（支持 ~ 展开、symlink 解析）
+    /// - Returns: `true` 表示路径在沙箱内，安全操作；`false` 表示越界
+    public func isPathAllowed(_ path: String) -> Bool {
+        guard !allowedDirectories.isEmpty else { return true }
+
+        let resolved = Self.resolvePath(path)
+        return allowedDirectories.contains { allowedDir in
+            resolved.hasPrefix(allowedDir)
+        }
+    }
+
+    /// 规范化路径：展开 ~、解析 symlink、消除 `..` 和 `.`
+    public static func resolvePath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        let url = URL(fileURLWithPath: expanded)
+        let resolved = url.resolvingSymlinksInPath().path
+        return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+
     private let lock = NSLock()
     private var cancelled = false
     private var handlers: [UUID: CancellationHandler] = [:]
 
-    public init(conversationId: UUID, toolCallId: String, toolName: String) {
+    public init(
+        conversationId: UUID,
+        toolCallId: String,
+        toolName: String,
+        currentProjectPath: String? = nil,
+        allowedDirectories: [String] = []
+    ) {
         self.conversationId = conversationId
         self.toolCallId = toolCallId
         self.toolName = toolName
+        self.currentProjectPath = currentProjectPath
+        self.allowedDirectories = allowedDirectories
     }
 
     public var isCancelled: Bool {

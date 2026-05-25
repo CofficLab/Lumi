@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 模型选择器工具栏按钮
 ///
@@ -8,13 +9,11 @@ struct ModelSelectorToolbarButton: View {
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
-    /// Popover 显示状态
-    @State private var isPresented = false
-
     var body: some View {
-        Button(action: {
-            isPresented = true
-        }) {
+        sidebarToolbarPopover(
+            detailView: ModelSelectorView(),
+            id: "model-selector"
+        ) {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
                     .font(.system(size: 13))
@@ -29,12 +28,6 @@ struct ModelSelectorToolbarButton: View {
             .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
-            .cornerRadius(6)
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPresented, arrowEdge: .leading) {
-            ModelSelectorView()
         }
         .accessibilityLabel(String(localized: "Select Model", table: "AgentChat"))
         .accessibilityHint(String(localized: "Select Model Hint", table: "AgentChat"))
@@ -67,6 +60,6 @@ struct ModelSelectorToolbarButton: View {
         guard let providerType = llmVM.providerType(forId: providerId) else {
             return displayModel
         }
-        return "\(providerType.displayName) · \(displayModel)"
+        return "\(providerType.shortName) · \(displayModel)"
     }
 }

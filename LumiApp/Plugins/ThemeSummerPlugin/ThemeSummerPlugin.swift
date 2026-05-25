@@ -20,7 +20,18 @@ actor ThemeSummerPlugin: SuperPlugin {
                 appTheme: SummerTheme(),
                 editorThemeId: "summer",
                 editorThemeContributor: SummerSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.summer()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "summer-file-icons",
+                    displayName: "Summer File Icons",
+                    defaultFile: .systemImage("sun.max"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.person.crop", "folder.fill.badge.person.crop"),
+                    extraExtensions: [
+                        "png": .systemImage("sun.max"),
+                        "jpg": .systemImage("sun.max"),
+                        "jpeg": .systemImage("sun.max"),
+                        "pdf": .systemImage("doc.richtext.fill"),
+                    ]
+                )
             )
         ]
     }

@@ -2,7 +2,7 @@ import Foundation
 import LumiUI
 import os
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// 主题状态栏插件
 ///

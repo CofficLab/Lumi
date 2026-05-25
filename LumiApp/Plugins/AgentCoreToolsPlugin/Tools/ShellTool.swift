@@ -59,6 +59,12 @@ struct ShellTool: SuperAgentTool, SuperLog {
         return CommandRiskEvaluator.evaluate(command: command)
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let command = arguments["command"]?.value as? String else { return "执行命令" }
+        let preview = command.count > 40 ? String(command.prefix(40)) + "…" : command
+        return "执行 \(preview)"
+    }
+
     @MainActor
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()

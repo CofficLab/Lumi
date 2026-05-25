@@ -15,7 +15,7 @@ struct NewChatButton: View {
                 await conversationVM.createNewConversation()
             }
         } label: {
-            Image(systemName: "plus.circle")
+            Image(systemName: "plus")
                 .font(.appCallout)
                 .foregroundColor(theme.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)

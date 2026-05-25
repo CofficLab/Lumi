@@ -20,7 +20,17 @@ actor ThemeSpringPlugin: SuperPlugin {
                 appTheme: SpringTheme(),
                 editorThemeId: "spring",
                 editorThemeContributor: SpringSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.spring()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "spring-file-icons",
+                    displayName: "Spring File Icons",
+                    defaultFile: .systemImage("leaf"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.plus", "folder.fill.badge.plus"),
+                    extraExtensions: [
+                        "md": .systemImage("leaf"),
+                        "markdown": .systemImage("leaf"),
+                        "txt": .systemImage("doc.text"),
+                    ]
+                )
             )
         ]
     }

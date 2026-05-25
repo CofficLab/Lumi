@@ -84,7 +84,7 @@ final class AppChatHistoryVM: ObservableObject {
     @discardableResult
     func createConversation(
         projectId: String? = nil,
-        title: String = "新对话",
+        title: String = "",
         chatMode: String? = nil
     ) -> Conversation {
         chatHistoryService.createConversation(
@@ -140,6 +140,11 @@ final class AppChatHistoryVM: ObservableObject {
     /// 更新对话的聊天模式偏好
     func updateChatMode(_ conversation: Conversation, chatMode: String?) {
         chatHistoryService.updateChatMode(conversation, chatMode: chatMode)
+    }
+
+    /// 更新对话的响应详细程度偏好
+    func updateVerbosity(_ conversation: Conversation, verbosity: String?) {
+        chatHistoryService.updateVerbosity(conversation, verbosity: verbosity)
     }
 
     /// 删除对话

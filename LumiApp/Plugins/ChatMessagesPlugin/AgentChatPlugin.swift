@@ -37,7 +37,7 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section：消息列表
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(ChatMessagesView())]
     }
 }

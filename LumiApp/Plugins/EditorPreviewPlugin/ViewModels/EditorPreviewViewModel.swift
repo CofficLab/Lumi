@@ -171,6 +171,8 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     @Published private(set) var entryDebugState: String?
     @Published private(set) var isRequestingEntryDebugState = false
     @Published private(set) var cursorShape: LumiPreviewFacade.PreviewCursorShape = .arrow
+    /// 最近一次构建失败时写入的日志文件 URL，用于在 UI 上提供「查看日志文件」入口。
+    @Published private(set) var lastBuildLogURL: URL?
 
     // MARK: - 私有
 
@@ -186,6 +188,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     private var didWireEditorService = false
     private var warmupTask: Task<Void, Never>?
     private var pendingCanvasResizeTask: Task<Void, Never>?
+    private var cacheSummaryTask: Task<Void, Never>?
     private var lastFrameSeq: UInt64?
     private var receivedFrameCount: UInt64 = 0
     /// 每次切换文件或启动一次新的 build 都递增，用于丢弃旧文件/旧构建的异步回调。
@@ -213,6 +216,10 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         wireSessionCallbacks()
         refreshCacheSummary()
         warmupSessionIfPossible()
+    }
+
+    deinit {
+        cacheSummaryTask?.cancel()
     }
 
     /// 订阅 EditorService 的状态变化，直接感知文件切换/保存/内容变化。
@@ -438,6 +445,11 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         autoBuildIfPossible()
     }
 
+    /// 手动重试预览构建（由 UI 重试按钮触发）。
+    func retryBuild() {
+        autoBuildIfPossible()
+    }
+
     func purgeBuildCaches() {
         if Self.verbose {
             Self.logger.info("\(self.t)🧹 清理 Inline Preview 构建缓存")
@@ -534,6 +546,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         previewGeneration &+= 1
         let generation = previewGeneration
         clearRenderedPreview()
+        lastBuildLogURL = nil
         entryStatus = .building(file: displayName)
         Self.logger.info("\(self.t)📝 autoBuild start: file=\(url.path, privacy: .public) previewIndex=\(self.selectedPreviewIndex, privacy: .public) sourceLength=\(source.count, privacy: .public) frameCountBeforeBuild=\(self.receivedFrameCount, privacy: .public) seqBeforeBuild=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
         if Self.verbose {
@@ -729,6 +742,56 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         clearRenderedPreview()
         lastLoadedFingerprint = nil
         entryStatus = .failed(EntryFailure(kind: kind, message: message))
+
+        // 将完整错误日志写入插件专属日志目录
+        let logURL = Self.writeBuildLog(
+            kind: kind,
+            message: message,
+            activeFileURL: activeFileURL
+        )
+        lastBuildLogURL = logURL
+    }
+
+    /// 将构建错误日志写入 `build-logs` 目录，返回日志文件 URL。
+    private static func writeBuildLog(
+        kind: EntryFailureKind,
+        message: String,
+        activeFileURL: URL?
+    ) -> URL? {
+        let logsDir = EditorPreviewStorage.buildLogsDirectory
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = formatter.string(from: Date())
+        let fileName = activeFileURL?
+            .deletingPathExtension()
+            .lastPathComponent
+            .addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "unknown"
+        let logFileName = "\(fileName)_\(timestamp).log"
+        let logURL = logsDir.appendingPathComponent(logFileName)
+
+        let fullLog = """
+        # Inline Preview Build Log
+        # Time: \(Date().description)
+        # File: \(activeFileURL?.path ?? "nil")
+        # Error Kind: \(kind.rawValue)
+        # ---
+        \(message)
+        """
+
+        do {
+            try FileManager.default.createDirectory(
+                at: logsDir,
+                withIntermediateDirectories: true
+            )
+            try fullLog.write(to: logURL, atomically: true, encoding: .utf8)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📝 构建日志已写入：\(logURL.path)")
+            }
+            return logURL
+        } catch {
+            Self.logger.error("\(Self.t)❌ 写入构建日志失败：\(error.localizedDescription)")
+            return nil
+        }
     }
 
     private func isCurrentPreviewGeneration(_ generation: UInt64, fileURL: URL) -> Bool {
@@ -800,7 +863,16 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     private func refreshCacheSummary() {
-        cacheSummary = EditorPreviewStorage.cacheSummary()
+        cacheSummaryTask?.cancel()
+        cacheSummaryTask = Task { [weak self] in
+            let summary = await Task.detached(priority: .utility) {
+                EditorPreviewStorage.refreshCacheSummary()
+            }.value
+
+            guard !Task.isCancelled else { return }
+            self?.cacheSummary = summary
+            self?.cacheSummaryTask = nil
+        }
     }
 
     private func wireSessionCallbacks() {
@@ -1090,6 +1162,53 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
             ),
             currentCleanedSource: currentCleanedSource
         )
+    }
+
+    // MARK: - 截图
+
+    /// 从当前 canvas 的 surfaceView 中截取图像。
+    /// 返回截取的 NSImage，调用方负责保存或复制到剪贴板。
+    func takeScreenshot(from nsView: NSView?) -> NSImage? {
+        guard let nsView else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)📸 takeScreenshot: nsView 为 nil")
+            }
+            return nil
+        }
+
+        // 尝试找到 PreviewSurfaceView
+        guard let surfaceView = findPreviewSurfaceView(in: nsView) else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)📸 takeScreenshot: 未找到 PreviewSurfaceView")
+            }
+            return nil
+        }
+
+        let bounds = surfaceView.bounds
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+
+        // 使用 bitmapImageRepForCachingDisplay 截取视图内容
+        guard let bitmapRep = surfaceView.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+        surfaceView.cacheDisplay(in: bounds, to: bitmapRep)
+        let image = NSImage()
+        image.addRepresentation(bitmapRep)
+        image.size = bounds.size
+        return image
+    }
+
+    /// 递归查找 PreviewSurfaceView。
+    private func findPreviewSurfaceView(in view: NSView) -> LumiPreviewFacade.PreviewSurfaceView? {
+        if let surfaceView = view as? LumiPreviewFacade.PreviewSurfaceView {
+            return surfaceView
+        }
+        for subview in view.subviews {
+            if let found = findPreviewSurfaceView(in: subview) {
+                return found
+            }
+        }
+        return nil
     }
 
     private static let imageExtensions: Set<String> = [

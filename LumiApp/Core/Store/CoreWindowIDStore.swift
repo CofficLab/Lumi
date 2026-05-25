@@ -20,12 +20,14 @@ enum CoreWindowIDStore {
         return LumiWindowRoute(id: id)
     }
 
-    static func consumeAdditionalWindowRoutes() -> [LumiWindowRoute] {
+    /// 返回尚未打开的主窗口路由（通常为 `consumeDefaultWindowRoute` 已分配的首个 ID 之外的条目）。
+    static func consumeAdditionalWindowRoutes(excluding openIds: Set<UUID> = []) -> [LumiWindowRoute] {
         guard !didConsumeAdditionalWindowRoutes else { return [] }
         didConsumeAdditionalWindowRoutes = true
 
         return loadLaunchWindowIds()
             .dropFirst()
+            .filter { !openIds.contains($0) }
             .map { LumiWindowRoute(id: $0) }
     }
 

@@ -20,7 +20,17 @@ actor ThemeLumiPlugin: SuperPlugin {
                 appTheme: LumiTheme(),
                 editorThemeId: "lumi-dark",
                 editorThemeContributor: LumiDarkEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.lumi()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "lumi-file-icons",
+                    displayName: "Lumi File Icons",
+                    defaultFile: .systemImage("doc.text"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraExtensions: [
+                        "swift": .systemImage("swift"),
+                        "md": .systemImage("text.alignleft"),
+                        "json": .systemImage("curlybraces"),
+                    ]
+                )
             ),
         ]
     }

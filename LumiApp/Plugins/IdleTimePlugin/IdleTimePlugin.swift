@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 actor IdleTimePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌙"

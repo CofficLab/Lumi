@@ -92,7 +92,7 @@ final class CodeActionProvider: ObservableObject, SuperEditorCodeActionProvider 
                     )
                 }
                 let lspItems = codeActions.compactMap(Self.codeActionItem(from:))
-                let merged = sortCodeActionItems(lspItems + pluginItems)
+                let merged = self.sortCodeActionItems(lspItems + pluginItems)
                 actions = merged
                 isVisible = !merged.isEmpty
             }

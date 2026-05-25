@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 import Foundation
 
 /// 历史数据库插件：在 Agent 模式底部状态栏显示历史入口，点击后以 Tab 形式浏览消息/对话历史

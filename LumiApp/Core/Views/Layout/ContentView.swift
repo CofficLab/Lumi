@@ -77,9 +77,10 @@ struct ContentView: View, SuperLog {
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
         .toolbar {
-            let leadingViews = pluginProvider.getToolbarLeadingViews()
-            let centerViews = pluginProvider.getToolbarCenterViews()
-            let trailingViews = pluginProvider.getToolbarTrailingViews()
+            let activeIcon = layoutVM.activePanelIcon
+            let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
+            let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
+            let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
 
             ToolbarItemGroup(placement: .navigation) {
                 ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
@@ -98,7 +99,7 @@ struct ContentView: View, SuperLog {
                 }
             }
 
-            ToolbarItemGroup(placement: .cancellationAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
                     view
                 }
@@ -126,14 +127,16 @@ struct ContentView: View, SuperLog {
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
-                let sidebarSections = pluginProvider.getSidebarSections()
-                let hasRail = pluginProvider.hasRailTabs()
+                let activeIcon = layoutVM.activePanelIcon
+                let sidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)
+                let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible
 
-                let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
+                let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
 
-                if !sidebarSections.isEmpty && hasRail {
+                if !sidebarSections.isEmpty && showRail {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)
@@ -171,7 +174,7 @@ struct ContentView: View, SuperLog {
                             ))
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else if hasRail {
+                } else if showRail {
                     HSplitView {
                         ActivityBar()
                             .frame(maxHeight: .infinity)

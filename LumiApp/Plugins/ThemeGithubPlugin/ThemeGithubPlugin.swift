@@ -20,7 +20,20 @@ actor ThemeGithubPlugin: SuperPlugin {
                 appTheme: GitHubTheme(),
                 editorThemeId: "github",
                 editorThemeContributor: GithubSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.github()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "github-file-icons",
+                    displayName: "GitHub File Icons",
+                    defaultFile: .systemImage("doc"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraFolders: [
+                        ".github": LumiFileIconThemeBuilder.folder("point.3.connected.trianglepath.dotted", "point.3.connected.trianglepath.dotted"),
+                    ],
+                    extraFileNames: [
+                        ".gitignore": .systemImage("arrow.triangle.branch"),
+                        ".gitattributes": .systemImage("arrow.triangle.branch"),
+                        ".gitmodules": .systemImage("arrow.triangle.branch"),
+                    ]
+                )
             )
         ]
     }

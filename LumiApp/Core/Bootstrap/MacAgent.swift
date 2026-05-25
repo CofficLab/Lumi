@@ -42,6 +42,14 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
     // MARK: - Application Lifecycle
 
+    /// 启动早期配置：关闭 macOS 在退出时保存/恢复 NSWindow 几何与窗口集合的行为。
+    ///
+    /// 与主 `WindowGroup` 的 `.restorationBehavior(.disabled)` 配合，窗口数量与 ID 仅由
+    /// `CoreWindowIDStore` 与 `WindowPersistencePlugin` 控制。
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
+    }
+
     /// 应用启动完成
     ///
     /// 在应用完成所有初始化后调用。

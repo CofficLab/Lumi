@@ -22,7 +22,10 @@ struct ConversationListView: View, SuperLog {
     
     /// 项目管理 ViewModel（全局）
     @EnvironmentObject var projectVM: WindowProjectVM
-    
+
+    /// 会话状态 ViewModel（用于检测哪些对话正在处理中）
+    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
+
     private let selectionStore = ConversationListLocalStore.shared
 
     /// 当前页已加载的会话
@@ -74,6 +77,10 @@ struct ConversationListView: View, SuperLog {
             .onAgentConversationCreated { conversationId in
                 handleAgentConversationCreated(conversationId: conversationId, proxy: proxy)
             }
+            // 监听会话状态变化（驱动活跃状态 UI）
+            .onReceive(conversationSendStatusVM.$statusMessageByConversationId) { _ in
+                // Published 字典变化时自动刷新 UI
+            }
         }
     }
 }
@@ -101,7 +108,8 @@ extension ConversationListView {
                 ForEach(conversations, id: \.id) { conversation in
                     ConversationItemView(
                         conversation: conversation,
-                        onDelete: { handleDelete(conversation) }
+                        onDelete: { handleDelete(conversation) },
+                        isProcessing: isConversationProcessing(conversation.id)
                     )
                     .id(conversation.id)
                     .tag(conversation.id)
@@ -117,6 +125,11 @@ extension ConversationListView {
                 loadingIndicator
             }
         }
+    }
+
+    /// 判断指定会话是否正在进行消息处理
+    private func isConversationProcessing(_ conversationId: UUID) -> Bool {
+        conversationSendStatusVM.isMessageProcessing(for: conversationId)
     }
 
     private var loadingIndicator: some View {

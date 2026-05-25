@@ -60,6 +60,10 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "提交变更"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium // 提交会修改代码库，风险中等
     }
@@ -79,8 +83,11 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         }
         
         do {
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
             let result = try await GitService.shared.commit(
-                path: path,
+                path: validatedPath,
                 message: message,
                 files: files,
                 amend: amend

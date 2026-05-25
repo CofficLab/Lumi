@@ -14,6 +14,7 @@ final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "xybbz"
     static let displayName = String(localized: "Xybbz", table: "Xybbz")
+    static let shortName = "XB"
     static let description = String(localized: "AI API Gateway by xybbz", table: "Xybbz")
 
     static let websiteURL: String? = "https://sub2api.xybbz.xyz"

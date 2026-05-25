@@ -95,6 +95,7 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "创建 Issue"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

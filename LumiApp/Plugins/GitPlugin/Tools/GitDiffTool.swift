@@ -48,6 +48,10 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看代码变更"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -62,8 +66,11 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         }
 
         do {
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
             let diff = try await GitService.shared.getDiff(
-                path: path,
+                path: validatedPath,
                 staged: staged,
                 file: file
             )

@@ -71,6 +71,21 @@ struct AutoConversationTitlePolicy {
         newConversationTitle: String,
         newChatTitlePrefix: String
     ) -> Bool {
-        title == newConversationTitle || title.hasPrefix(newChatTitlePrefix)
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+
+        let defaultConversationTitles = [
+            newConversationTitle,
+            "New Conversation",
+            "新对话",
+        ]
+        let defaultChatTitlePrefixes = [
+            newChatTitlePrefix,
+            "New Chat",
+            "新聊天",
+        ]
+
+        return defaultConversationTitles.contains(trimmed)
+            || defaultChatTitlePrefixes.contains { trimmed.hasPrefix($0) }
     }
 }

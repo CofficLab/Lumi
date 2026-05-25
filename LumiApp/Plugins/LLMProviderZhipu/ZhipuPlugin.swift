@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 import os
 
 /// 智谱 LLM 供应商插件

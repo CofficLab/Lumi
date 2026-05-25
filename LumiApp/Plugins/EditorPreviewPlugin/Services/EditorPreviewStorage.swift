@@ -5,7 +5,7 @@ import LumiPreviewKit
 ///
 /// 存储位置：`AppConfig.getPluginDBFolderURL(pluginName: "EditorPreviewPlugin")/`
 enum EditorPreviewStorage {
-    struct CacheSummary: Equatable {
+    struct CacheSummary: Equatable, Sendable {
         let fileCount: Int
         let byteCount: Int64
 
@@ -22,11 +22,20 @@ enum EditorPreviewStorage {
     }
 
     static let pluginName = "EditorPreviewPlugin"
+    static let autoCleanupPolicy = LumiPreviewFacade.PreviewStorageAutoCleaner.Policy(
+        maximumAge: 14 * 24 * 60 * 60,
+        maximumSizeBytes: 2 * 1024 * 1024 * 1024,
+        targetSizeBytes: 1024 * 1024 * 1024
+    )
     private static let installLock = NSLock()
     private nonisolated(unsafe) static var didInstall = false
+    private nonisolated(unsafe) static var lastCacheCleanupAt: Date = .distantPast
+    private static let cacheCleanupInterval: TimeInterval = 60 * 60
 
     static func installIfNeeded() {
         installLock.lock()
+        defer { installLock.unlock() }
+
         let root = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         if !didInstall {
@@ -34,7 +43,8 @@ enum EditorPreviewStorage {
             try? paths.ensureDirectoriesExist()
             for directory in [
                 root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
-                root.appendingPathComponent("DerivedData", isDirectory: true)
+                root.appendingPathComponent("DerivedData", isDirectory: true),
+                root.appendingPathComponent("build-logs", isDirectory: true)
             ] {
                 try? FileManager.default.createDirectory(
                     at: directory,
@@ -42,7 +52,6 @@ enum EditorPreviewStorage {
                 )
             }
         }
-        installLock.unlock()
 
         LumiPreviewFacade.PreviewStorage.configure(paths)
     }
@@ -60,8 +69,18 @@ enum EditorPreviewStorage {
         rootDirectory.appendingPathComponent("DerivedData", isDirectory: true)
     }
 
+    /// 构建日志目录，存放每次预览构建失败的完整日志。
+    static var buildLogsDirectory: URL {
+        rootDirectory.appendingPathComponent("build-logs", isDirectory: true)
+    }
+
     static func cacheSummary() -> CacheSummary {
         summarize(directories: cacheManagedDirectories)
+    }
+
+    static func refreshCacheSummary() -> CacheSummary {
+        cleanBuildCachesIfNeeded()
+        return cacheSummary()
     }
 
     static func purgeBuildCaches() {
@@ -71,11 +90,38 @@ enum EditorPreviewStorage {
         }
     }
 
+    @discardableResult
+    static func cleanBuildCachesIfNeeded(
+        now: Date = Date(),
+        paths: LumiPreviewFacade.PreviewStoragePaths = LumiPreviewFacade.PreviewStorage.paths
+    ) -> LumiPreviewFacade.PreviewStorageAutoCleaner.Result {
+        installLock.lock()
+        guard now.timeIntervalSince(lastCacheCleanupAt) >= cacheCleanupInterval else {
+            installLock.unlock()
+            return .empty
+        }
+        lastCacheCleanupAt = now
+        installLock.unlock()
+
+        return LumiPreviewFacade.PreviewStorageAutoCleaner.clean(
+            directories: cacheManagedDirectories(paths: paths),
+            policy: autoCleanupPolicy,
+            now: now
+        )
+    }
+
     private static var cacheManagedDirectories: [URL] {
-        let paths = LumiPreviewFacade.PreviewStorage.paths
+        cacheManagedDirectories(paths: LumiPreviewFacade.PreviewStorage.paths)
+    }
+
+    private static func cacheManagedDirectories(
+        paths: LumiPreviewFacade.PreviewStoragePaths
+    ) -> [URL] {
+        let root = paths.rootDirectory
         return [
-            inlineBuilderWorkspaceDirectory,
-            derivedDataDirectory,
+            root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
+            root.appendingPathComponent("DerivedData", isDirectory: true),
+            root.appendingPathComponent("build-logs", isDirectory: true),
             paths.previewEntryCacheDirectory,
             paths.entryCacheDirectory,
             paths.compileCommandCacheDirectory,

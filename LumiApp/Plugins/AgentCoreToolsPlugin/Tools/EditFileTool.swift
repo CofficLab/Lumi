@@ -82,11 +82,28 @@ Usage:
         .high
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .high
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let filePath = arguments["file_path"]?.value as? String else { return "编辑文件" }
+        let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+        return "编辑 \(fileName)"
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let filePath = arguments["file_path"]?.value as? String,
               let oldString = arguments["old_string"]?.value as? String,
               let newString = arguments["new_string"]?.value as? String else {
             return "Error: Missing required arguments (file_path, old_string, new_string)."
+        }
+
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(filePath) {
+            return "Error: Path access denied: \(filePath)\n\n此路径不在允许的文件操作范围内。"
         }
 
         let replaceAll = arguments["replace_all"]?.value as? Bool ?? false

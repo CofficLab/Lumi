@@ -1,7 +1,8 @@
+import AgentToolKit
 import Foundation
 import LLMKit
 import HttpKit
-import AgentToolKit
+import LumiCoreKit
 import ModelRouterKit
 
 // MARK: - 重试策略
@@ -169,6 +170,7 @@ final class AgentTurnService: SuperLog {
 
                         if hadUserRejection {
                             finishTurnByUserRejection(conversationId: conversationId)
+                            runTurnFinishedPipeline(conversationId: conversationId, endReason: .userRejection)
                             NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                             return
                         }
@@ -183,6 +185,7 @@ final class AgentTurnService: SuperLog {
                     ) else { return }
                 } else {
                     finishTurn(conversationId: conversationId)
+                    runTurnFinishedPipeline(conversationId: conversationId, endReason: .completed)
                     NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                     return
                 }
@@ -213,18 +216,20 @@ extension AgentTurnService {
 
         switch result {
         case let .success(assistantMessage):
-            let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage)
+            let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage, conversationId: conversationId)
             conversationVM.saveMessage(processed, to: conversationId)
             return true
 
         case .cancelled:
             finishTurnByCancellation(conversationId: conversationId)
+            runTurnFinishedPipeline(conversationId: conversationId, endReason: .cancelled)
             NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
             return false
 
         case let .failed(error):
             let providerId = currentProviderId(for: conversationId)
             finishTurnWithError(error, conversationId: conversationId, providerId: providerId)
+            runTurnFinishedPipeline(conversationId: conversationId, endReason: .failed(error.localizedDescription))
             NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
             return false
         }
@@ -674,5 +679,33 @@ extension AgentTurnService {
             content: "用户拒绝执行工具，已结束回合"
         )
         finishTurn(conversationId: conversationId)
+    }
+
+    // MARK: - Turn 结束后管线
+
+    /// 运行 Turn 结束后管线
+    ///
+    /// 在 `finishTurn` 之后调用，按 `order` 顺序执行所有中间件的 `handleTurnFinished` 方法。
+    /// 使用 `Task` 异步派发，不阻塞当前收尾流程。
+    private func runTurnFinishedPipeline(
+        conversationId: UUID,
+        endReason: TurnEndReason
+    ) {
+        let middlewares = pluginVM.getSuperSendMiddlewares()
+        let chatHistoryService = self.chatHistoryService
+        let projectVM = self.projectVM
+
+        Task {
+            let turnMessages = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+            let ctx = AppTurnFinishedContext(
+                conversationId: conversationId,
+                endReason: endReason,
+                turnMessages: turnMessages,
+                chatHistoryService: chatHistoryService,
+                projectVM: projectVM
+            )
+            let pipeline = SendPipeline(middlewares: middlewares)
+            await pipeline.runTurnFinished(ctx: ctx)
+        }
     }
 }

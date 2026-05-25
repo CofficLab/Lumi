@@ -8,6 +8,9 @@ public struct LLMProviderInfo: Identifiable, Equatable, Sendable {
     /// 显示名称
     public let displayName: String
 
+    /// 简写名称（用于工具栏等空间受限区域）
+    public let shortName: String
+
     /// 供应商描述
     public let description: String
 
@@ -32,6 +35,7 @@ public struct LLMProviderInfo: Identifiable, Equatable, Sendable {
     public init(
         id: String,
         displayName: String,
+        shortName: String,
         description: String,
         websiteURL: String?,
         availableModels: [String],
@@ -42,6 +46,7 @@ public struct LLMProviderInfo: Identifiable, Equatable, Sendable {
     ) {
         self.id = id
         self.displayName = displayName
+        self.shortName = shortName
         self.description = description
         self.websiteURL = websiteURL
         self.availableModels = availableModels

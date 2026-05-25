@@ -1,7 +1,7 @@
 import RAGKit
 import SwiftUI
 import os
-import LumiPluginKit
+import LumiCoreKit
 
 /// RAG 插件
 ///

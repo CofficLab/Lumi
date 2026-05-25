@@ -11,7 +11,6 @@ struct MessageListView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
-    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
     @EnvironmentObject var projectVM: WindowProjectVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
@@ -46,7 +45,7 @@ struct MessageListView: View {
         ScrollViewReader { proxy in
             let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.visibleMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
-            let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
+            let displayRows = buildDisplayRows(from: windowedPersistedRows)
             let lastMessageID = displayRows.last?.id
             let lastRowChangeToken = lastRowChangeToken(for: displayRows)
             let focusSpacerHeight = keepLatestUserMessageAtTop ? max(scrollViewportHeight * 0.95, 500) : 0
@@ -356,17 +355,13 @@ extension MessageListView {
             .id
     }
 
-    private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {
-        var rows = messages.map { message in
+    private func buildDisplayRows(from messages: [ChatMessage]) -> [DisplayRow] {
+        return messages.map { message in
             DisplayRow(
                 id: message.id,
                 message: message
             )
         }
-        if let statusRow = statusRow {
-            rows.append(statusRow)
-        }
-        return rows
     }
 
     private func windowedHistoryRows(from messages: [ChatMessage]) -> [ChatMessage] {
@@ -375,13 +370,6 @@ extension MessageListView {
             return messages
         }
         return Array(messages.suffix(historyWindowLimit))
-    }
-
-    private var statusDisplayRow: DisplayRow? {
-        guard let sid = timelineViewModel.selectedConversationId,
-              let vmMessage = conversationSendStatusVM.statusMessage(for: sid)
-        else { return nil }
-        return DisplayRow(id: vmMessage.id, message: vmMessage)
     }
 
     private func lastRowChangeToken(for rows: [DisplayRow]) -> LastRowChangeToken {

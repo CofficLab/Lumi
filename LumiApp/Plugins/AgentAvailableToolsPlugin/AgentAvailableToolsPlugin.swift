@@ -1,6 +1,6 @@
 import os
 import SwiftUI
-import LumiPluginKit
+import LumiCoreKit
 
 /// 可用工具插件
 ///

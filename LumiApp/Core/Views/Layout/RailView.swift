@@ -8,6 +8,7 @@ import LumiUI
 struct RailView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var selectedTabId: String?
@@ -22,7 +23,7 @@ struct RailView: View {
     private let selectedTabStorageKey = "Split.Rail.SelectedTab"
 
     var body: some View {
-        let tabs = pluginProvider.getRailTabs()
+        let tabs = pluginProvider.getRailTabs(activeIcon: layoutVM.activePanelIcon)
 
         Group {
             if !tabs.isEmpty {
@@ -83,7 +84,7 @@ struct RailView: View {
 
     private func railContent(tabs: [RailTab]) -> some View {
         let currentId = selectedTabId ?? tabs.first?.id
-        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0) }
+        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, activeIcon: layoutVM.activePanelIcon) }
 
         return Group {
             if let contentView {

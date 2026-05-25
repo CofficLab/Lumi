@@ -10,18 +10,19 @@ struct LayoutMenuButton: View {
     var body: some View {
         Menu {
             Toggle(isOn: $layoutVM.editorVisible) {
-                Label("Editor", systemImage: "rectangle.center.inset.filled")
+                Label(String(localized: "Editor"), systemImage: "rectangle.center.inset.filled")
             }
             Toggle(isOn: $layoutVM.contentPanelVisible) {
-                Label("Content Panel", systemImage: "rectangle.topthird.inset.filled")
+                Label(String(localized: "Content Panel"), systemImage: "rectangle.topthird.inset.filled")
             }
             Toggle(isOn: $layoutVM.bottomPanelVisible) {
-                Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
+                Label(String(localized: "Bottom Panel"), systemImage: "square.bottomthird.inset.filled")
+            }
+            Toggle(isOn: $layoutVM.railVisible) {
+                Label(String(localized: "Rail"), systemImage: "sidebar.right")
             }
         } label: {
             Image(systemName: "sidebar.leading")
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
 }

@@ -3,6 +3,8 @@ import LumiUI
 
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
 struct ZhipuQuotaDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let status: ZhipuQuotaStatus
     let onRefresh: (() -> Void)?
 
@@ -14,34 +16,16 @@ struct ZhipuQuotaDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 标题
-            HStack(spacing: 8) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(hex: "7C6FFF"))
-
-                Text(String(localized: "Zhipu GLM Quota", table: "Zhipu"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-
-                Spacer()
-
-                // 刷新按钮
-                Button(action: {
-                    triggerRefresh()
-                }) {
-                    Image(systemName: isRefreshing ? "arrow.clockwise" : "arrow.clockwise")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                }
-                .buttonStyle(.plain)
-                .disabled(isRefreshing)
+        StatusBarPopoverScaffold(
+            title: String(localized: "Zhipu GLM Quota", table: "Zhipu"),
+            systemImage: "chart.bar.fill"
+        ) {
+            AppIconButton(systemImage: "arrow.clockwise") {
+                triggerRefresh()
             }
-
-            GlassDivider()
-
+            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+            .disabled(isRefreshing)
+        } content: {
             switch status {
             case .loading:
                 loadingContent
@@ -62,8 +46,8 @@ struct ZhipuQuotaDetailView: View {
                 .scaleEffect(0.8)
 
             Text(String(localized: "Loading...", table: "Zhipu"))
-                .font(.system(size: 13))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -83,14 +67,14 @@ struct ZhipuQuotaDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(String(localized: "Usage Progress", table: "Zhipu"))
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
 
                     Spacer()
 
                     Text("\(data.usedPercent)%")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
                 }
 
                 ProgressView(value: Double(data.usedPercent) / 100.0)
@@ -98,14 +82,14 @@ struct ZhipuQuotaDetailView: View {
 
                 HStack {
                     Text(String(localized: "Remaining \(data.leftPercent)%", table: "Zhipu"))
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
 
                     Spacer()
 
                     Text(String(localized: "Total 5 hours", table: "Zhipu"))
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
 
@@ -119,8 +103,8 @@ struct ZhipuQuotaDetailView: View {
                     labelWidth: 70
                 )
                 Text("（\(data.resetTimeRelative)）")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
             }
 
             GlassDivider()
@@ -129,8 +113,8 @@ struct ZhipuQuotaDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(String(localized: "MCP Monthly Quota", table: "Zhipu"))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .font(.appCaptionEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
                     Spacer()
                 }
@@ -139,11 +123,11 @@ struct ZhipuQuotaDetailView: View {
                     // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(localized: "Remaining", table: "Zhipu"))
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                         Text("\(data.mcpLeftPercent)%")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "30D158"))
+                            .font(.appTitle)
+                            .foregroundColor(theme.success)
                     }
 
                     Spacer()
@@ -151,19 +135,18 @@ struct ZhipuQuotaDetailView: View {
                     // 重置时间
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(String(localized: "Reset", table: "Zhipu"))
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                         Text(data.mcpResetTime)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
                         Text("(\(data.mcpResetTimeRelative))")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .font(.appMicro)
+                            .foregroundColor(theme.textTertiary)
                     }
                 }
                 .padding(12)
-                .background(Color(white: 0.95).opacity(0.1))
-                .cornerRadius(8)
+                .appSurface(style: .subtle, cornerRadius: 8)
             }
         }
     }
@@ -189,11 +172,11 @@ struct ZhipuQuotaDetailView: View {
     /// 根据百分比返回进度条颜色
     private func progressColor(_ percent: Int) -> Color {
         if percent < 50 {
-            return .green
+            return theme.success
         } else if percent < 80 {
-            return .orange
+            return theme.warning
         } else {
-            return .red
+            return theme.error
         }
     }
 

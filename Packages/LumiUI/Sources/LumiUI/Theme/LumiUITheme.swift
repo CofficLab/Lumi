@@ -34,6 +34,10 @@ public protocol LumiUITheme {
     var glowBorderGradient: LinearGradient { get }
 
     var glowAccent: Color { get }
+
+    var statusBarItemForeground: Color { get }
+    var statusBarItemBackground: Color { get }
+    var statusBarItemPresentedBackground: Color { get }
 }
 
 public extension LumiUITheme {
@@ -87,6 +91,10 @@ public extension LumiUITheme {
     }
 
     var glowAccent: Color { primary }
+
+    var statusBarItemForeground: Color { textPrimary }
+    var statusBarItemBackground: Color { textPrimary.opacity(0.08) }
+    var statusBarItemPresentedBackground: Color { primary.opacity(0.14) }
 }
 
 public struct LumiDefaultTheme: LumiUITheme {

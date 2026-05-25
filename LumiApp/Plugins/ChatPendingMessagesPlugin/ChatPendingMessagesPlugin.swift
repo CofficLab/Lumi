@@ -27,7 +27,7 @@ actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(PendingMessagesView())]
     }
 }

@@ -14,6 +14,7 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "xiaomi"
     static let displayName = String(localized: "Xiaomi", table: "Xiaomi")
+    static let shortName = "XM"
     static let description = String(localized: "Xiaomi AI Models", table: "Xiaomi")
 
     static let websiteURL: String? = "https://xiaomi.com"
