@@ -29,6 +29,12 @@ final class AgentChatPluginTests: XCTestCase {
         XCTAssertEqual(sections.count, 1)
     }
 
+    func testAutoTaskSidebarSectionsAreAvailableForChatPanelIcon() async {
+        let sections = await AutoTaskPlugin.shared.addSidebarSections(activeIcon: ChatPanelPlugin.iconName)
+        XCTAssertFalse(sections.isEmpty)
+        XCTAssertEqual(sections.count, 1)
+    }
+
     func testChatPanelPluginProvidesNavigationEntry() async {
         XCTAssertEqual(ChatPanelPlugin.id, "ChatPanel")
         XCTAssertEqual(ChatPanelPlugin.iconName, "bubble.left.and.bubble.right.fill")

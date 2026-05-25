@@ -69,7 +69,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section 视图：任务列表
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(AutoTaskSidebarView())]
     }
 }
