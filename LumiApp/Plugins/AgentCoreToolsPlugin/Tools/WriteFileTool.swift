@@ -74,6 +74,15 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
             )
         }
 
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(path) {
+            throw NSError(
+                domain: "WriteFileTool",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)\n\n此路径不在允许的文件操作范围内。"]
+            )
+        }
+
         let fileName = path.components(separatedBy: "/").last ?? path
         if Self.verbose {
             AgentCoreToolsPlugin.logger.info("\(self.t)写入文件：\(fileName)（\(content.count) 字符）")

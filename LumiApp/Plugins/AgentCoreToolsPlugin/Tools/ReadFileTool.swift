@@ -77,6 +77,15 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
             )
         }
 
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(path) {
+            throw NSError(
+                domain: "ReadFileTool",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)\n\n此路径不在允许的文件操作范围内。"]
+            )
+        }
+
         if Self.verbose {
             AgentCoreToolsPlugin.logger.info("\(self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
         }

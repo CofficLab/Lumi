@@ -101,6 +101,11 @@ Usage:
             return "Error: Missing required arguments (file_path, old_string, new_string)."
         }
 
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(filePath) {
+            return "Error: Path access denied: \(filePath)\n\n此路径不在允许的文件操作范围内。"
+        }
+
         let replaceAll = arguments["replace_all"]?.value as? Bool ?? false
 
         if Self.verbose {

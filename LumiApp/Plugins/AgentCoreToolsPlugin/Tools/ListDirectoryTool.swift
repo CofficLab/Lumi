@@ -66,6 +66,15 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
             throw NSError(domain: "ListDirectoryTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
 
+        // 验证路径是否在允许的范围内
+        if !context.isPathAllowed(path) {
+            throw NSError(
+                domain: "ListDirectoryTool",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)\n\n此路径不在允许的文件操作范围内。"]
+            )
+        }
+
         let recursive = arguments["recursive"]?.value as? Bool ?? false
 
         if Self.verbose {
