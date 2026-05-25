@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 import AgentToolKit
 import os
 
@@ -84,12 +83,5 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(MemoryContextSuperSendMiddleware())]
-    }
-
-    // MARK: - Settings View
-
-    @MainActor
-    func addSettingsView() -> AnyView? {
-        AnyView(MemorySettingsView())
     }
 }
