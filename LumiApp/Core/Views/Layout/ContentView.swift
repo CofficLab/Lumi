@@ -87,26 +87,20 @@ struct ContentView: View, SuperLog {
                 }
             }
 
-            if !centerViews.isEmpty || !trailingViews.isEmpty {
+            if !centerViews.isEmpty {
                 ToolbarItemGroup(placement: .principal) {
-                    ZStack {
-                        if !centerViews.isEmpty {
-                            HStack(spacing: 8) {
-                                ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
-                                    view
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-
-                        HStack(spacing: 8) {
-                            Spacer(minLength: 0)
-                            ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
-                                view
-                            }
+                    HStack(spacing: 8) {
+                        ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
+                            view
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+
+            ToolbarItemGroup(placement: .primaryAction) {
+                ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
+                    view
                 }
             }
         }
