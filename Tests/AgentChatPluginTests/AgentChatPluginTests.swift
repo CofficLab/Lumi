@@ -37,6 +37,12 @@ final class AgentChatPluginTests: XCTestCase {
         XCTAssertNil(await ChatPanelPlugin.shared.addPanelView(activeIcon: EditorPlugin.iconName))
     }
 
+    func testLayoutMenuIsAvailableForChatPanel() async {
+        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: EditorPlugin.iconName))
+        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: ChatPanelPlugin.iconName))
+        XCTAssertNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: "not-supported"))
+    }
+
     func testModelSelectorTabBuiltInTitlesRemainStable() {
         XCTAssertEqual(
             ModelSelectorTab.current.displayTitle,

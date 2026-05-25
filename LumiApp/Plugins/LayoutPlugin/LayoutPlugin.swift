@@ -38,10 +38,10 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Toolbar Views
 
-    /// 工具栏右侧：布局菜单（仅在编辑器激活时显示）
+    /// 工具栏右侧：布局菜单（在支持布局调整的工作区显示）
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+        guard activeIcon == EditorPlugin.iconName || activeIcon == ChatPanelPlugin.iconName else { return nil }
         return AnyView(LayoutMenuButton())
     }
 
