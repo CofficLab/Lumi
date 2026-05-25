@@ -22,6 +22,11 @@ enum EditorPreviewStorage {
     }
 
     static let pluginName = "EditorPreviewPlugin"
+    static let autoCleanupPolicy = LumiPreviewFacade.PreviewStorageAutoCleaner.Policy(
+        maximumAge: 14 * 24 * 60 * 60,
+        maximumSizeBytes: 2 * 1024 * 1024 * 1024,
+        targetSizeBytes: 1024 * 1024 * 1024
+    )
     private static let installLock = NSLock()
     private nonisolated(unsafe) static var didInstall = false
 
@@ -42,6 +47,7 @@ enum EditorPreviewStorage {
                     withIntermediateDirectories: true
                 )
             }
+            cleanBuildCachesIfNeeded(paths: paths)
         }
         installLock.unlock()
 
@@ -77,11 +83,30 @@ enum EditorPreviewStorage {
         }
     }
 
+    @discardableResult
+    static func cleanBuildCachesIfNeeded(
+        now: Date = Date(),
+        paths: LumiPreviewFacade.PreviewStoragePaths = LumiPreviewFacade.PreviewStorage.paths
+    ) -> LumiPreviewFacade.PreviewStorageAutoCleaner.Result {
+        LumiPreviewFacade.PreviewStorageAutoCleaner.clean(
+            directories: cacheManagedDirectories(paths: paths),
+            policy: autoCleanupPolicy,
+            now: now
+        )
+    }
+
     private static var cacheManagedDirectories: [URL] {
-        let paths = LumiPreviewFacade.PreviewStorage.paths
+        cacheManagedDirectories(paths: LumiPreviewFacade.PreviewStorage.paths)
+    }
+
+    private static func cacheManagedDirectories(
+        paths: LumiPreviewFacade.PreviewStoragePaths
+    ) -> [URL] {
+        let root = paths.rootDirectory
         return [
-            inlineBuilderWorkspaceDirectory,
-            derivedDataDirectory,
+            root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
+            root.appendingPathComponent("DerivedData", isDirectory: true),
+            root.appendingPathComponent("build-logs", isDirectory: true),
             paths.previewEntryCacheDirectory,
             paths.entryCacheDirectory,
             paths.compileCommandCacheDirectory,
