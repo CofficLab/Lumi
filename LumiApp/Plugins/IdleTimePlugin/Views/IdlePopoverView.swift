@@ -1,28 +1,30 @@
 import SwiftUI
+import LumiUI
 
 struct IdlePopoverView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let snapshot: IdleInferenceSnapshot?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        StatusBarPopoverScaffold(
+            title: String(localized: "Idle Time", table: "IdleTime"),
+            systemImage: "moon.zzz",
+            showsHeaderDivider: false
+        ) {
             header
-            Divider()
+            GlassDivider()
             metrics
             ActivityHeatStripView(scores: snapshot?.bucketScores ?? [])
         }
-        .padding(16)
-        .frame(width: 480, alignment: .leading)
     }
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "Idle Time", table: "IdleTime"))
-                    .font(.headline)
-                    .foregroundColor(primaryTextColor)
                 Text(windowText)
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .foregroundColor(primaryTextColor)
+                    .foregroundColor(theme.textPrimary)
                     .monospacedDigit()
             }
             Spacer()
@@ -44,15 +46,15 @@ struct IdlePopoverView: View {
             metricRow(String(localized: "Source", table: "IdleTime"), sourceText)
             metricRow(String(localized: "Confidence", table: "IdleTime"), confidencePercentText)
         }
-        .font(.system(size: 12))
+        .font(.appCaption)
     }
 
     private func metricRow(_ title: String, _ value: String) -> some View {
         GridRow {
             Text(title)
-                .foregroundColor(secondaryTextColor)
+                .foregroundColor(theme.textSecondary)
             Text(value)
-                .foregroundColor(primaryTextColor)
+                .foregroundColor(theme.textPrimary)
                 .monospacedDigit()
         }
     }
@@ -79,14 +81,14 @@ struct IdlePopoverView: View {
     }
 
     private var confidenceColor: Color {
-        guard let window = snapshot?.restWindow else { return secondaryTextColor }
+        guard let window = snapshot?.restWindow else { return theme.textSecondary }
         switch IdleConfidenceLabel.label(for: window.confidence, source: window.source) {
         case .learning:
-            return secondaryTextColor
+            return theme.textSecondary
         case .medium:
-            return .orange
+            return theme.warning
         case .high:
-            return .green
+            return theme.success
         }
     }
 
@@ -123,14 +125,6 @@ struct IdlePopoverView: View {
         let hour = minuteOfDay / 60
         let minute = minuteOfDay % 60
         return String(format: "%02d:%02d", hour, minute)
-    }
-
-    private var primaryTextColor: Color {
-        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-    }
-
-    private var secondaryTextColor: Color {
-        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
     }
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {

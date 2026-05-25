@@ -25,15 +25,15 @@ struct ConversationTimelineView: View, SuperLog {
                 ) {
                     HStack(spacing: 6) {
                         Image(systemName: "timeline.selection")
-                            .font(.system(size: 10))
+                            .font(.appMicroEmphasized)
 
                         Text("\(messageCount)")
-                            .font(.system(size: 11))
+                            .font(.appMicro)
 
                         if currentContextTokens > 0 {
                             Divider().frame(height: 12)
                             Text(contextTokenLabel)
-                                .font(.system(size: 11))
+                                .font(.appMicro)
                         }
                     }
                     .padding(.horizontal, 8)

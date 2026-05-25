@@ -53,10 +53,10 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
         ) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 10))
+                    .font(.appMicroEmphasized)
 
                 Text(String(localized: "加载中...", table: "Zhipu"))
-                    .font(.system(size: 11))
+                    .font(.appMicro)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -73,10 +73,10 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
         ) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 10))
+                    .font(.appMicroEmphasized)
 
                 Text(data.statusText)
-                    .font(.system(size: 11))
+                    .font(.appMicro)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -93,12 +93,10 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
         ) {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.orange)
+                    .font(.appMicroEmphasized)
 
                 Text(message)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .font(.appMicro)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

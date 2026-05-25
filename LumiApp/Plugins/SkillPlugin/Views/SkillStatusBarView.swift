@@ -108,37 +108,22 @@ struct SkillListPopover: View {
     let skills: [SkillMetadata]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 标题
-            HStack(spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-
-                Text(String(localized: "^[\(skills.count) Available Skill](inflect: true)", table: "Skill"))
-                    .font(.appCallout)
-                    .foregroundColor(theme.textPrimary)
-
+        StatusBarPopoverScaffold(
+            title: String(localized: "^[\(skills.count) Available Skill](inflect: true)", table: "Skill"),
+            systemImage: "sparkles"
+        ) {
+            HStack {
                 Spacer()
-
                 Text(String(localized: "Skills are loaded from .agent/skills/", table: "Skill"))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }
-
-            settingsDivider
-
+        } content: {
             // Skill 列表
             ForEach(skills) { skill in
                 SkillRow(skill: skill)
             }
         }
-    }
-
-    private var settingsDivider: some View {
-        Rectangle()
-            .fill(theme.appDivider)
-            .frame(height: 1)
     }
 }
 
