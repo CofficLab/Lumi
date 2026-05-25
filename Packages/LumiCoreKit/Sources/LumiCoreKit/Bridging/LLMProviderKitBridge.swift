@@ -8,6 +8,10 @@ import AgentToolKit
 public struct SuperAgentToolBridge: LLMToolSchemaProviding {
     public let tool: any SuperAgentTool
 
+    public init(tool: any SuperAgentTool) {
+        self.tool = tool
+    }
+
     public var name: String { tool.name }
     public var toolDescription: String { tool.description(for: .english) }
     public var inputSchema: [String: Any] { tool.inputSchema(for: .english) }
