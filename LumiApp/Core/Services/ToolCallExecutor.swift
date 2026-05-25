@@ -340,7 +340,7 @@ final class ToolCallExecutor: SuperLog {
         }
 
         // 最近项目路径
-        let store = RecentProjectsStore()
+        let store = ProjectsStore()
         let recentProjects = store.loadProjects()
         for project in recentProjects {
             let resolved = ToolExecutionContext.resolvePath(project.path)

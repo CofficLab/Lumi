@@ -10,7 +10,7 @@ struct RAGSettingsView: View, SuperLog {
     nonisolated static var verbose: Bool { true }
 
     @EnvironmentObject private var projectVM: WindowProjectVM
-    private let recentProjectsStore = RecentProjectsStore()
+    private let recentProjectsStore = ProjectsStore()
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?

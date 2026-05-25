@@ -12,7 +12,7 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     @State private var autoEnsureTask: Task<Void, Never>?
     @State private var lastAutoEnsureKey = ""
 
-    private let recentProjectsStore = RecentProjectsStore()
+    private let recentProjectsStore = ProjectsStore()
 
     let content: Content
 

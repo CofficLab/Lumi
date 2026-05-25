@@ -8,7 +8,7 @@ struct RAGSettingsPopoverView: View, SuperLog {
 
     @EnvironmentObject private var projectVM: WindowProjectVM
     @Environment(\.dismiss) private var dismiss
-    private let recentProjectsStore = RecentProjectsStore()
+    private let recentProjectsStore = ProjectsStore()
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
