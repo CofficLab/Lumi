@@ -94,7 +94,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     private var baseContent: some View {
         let view = content
             .font(.appMicro)
-            .foregroundColor(theme.textPrimary)
+            .foregroundColor(statusItemForeground)
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .background(hoverBackground)
             .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering || isPresented)
@@ -138,10 +138,11 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     }
 
     private var statusItemBackground: Color {
-        if isPresented {
-            return theme.primary.opacity(0.14)
-        }
-        return theme.textPrimary.opacity(0.08)
+        isPresented ? theme.statusBarItemPresentedBackground : theme.statusBarItemBackground
+    }
+
+    private var statusItemForeground: Color {
+        theme.statusBarItemForeground
     }
 
     @ViewBuilder

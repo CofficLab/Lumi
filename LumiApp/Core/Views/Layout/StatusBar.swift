@@ -81,17 +81,14 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
-        let theme = themeVM.activeChromeTheme
-        return theme.effectiveIsDarkTheme
-            ? theme.atmosphereColors().deep
-            : theme.atmosphereColors().medium
+        themeVM.activeChromeTheme.statusBarBackgroundColor()
     }
 
     private var statusBarForegroundColor: Color {
-        themeVM.activeChromeTheme.workspaceTextColor()
+        themeVM.activeChromeTheme.statusBarForegroundColor()
     }
 
     private var statusBarDividerColor: Color {
-        themeVM.activeChromeTheme.workspaceTertiaryTextColor().opacity(0.18)
+        themeVM.activeChromeTheme.statusBarDividerColor()
     }
 }
