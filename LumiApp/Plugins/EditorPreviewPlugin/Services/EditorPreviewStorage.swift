@@ -5,7 +5,7 @@ import LumiPreviewKit
 ///
 /// 存储位置：`AppConfig.getPluginDBFolderURL(pluginName: "EditorPreviewPlugin")/`
 enum EditorPreviewStorage {
-    struct CacheSummary: Equatable {
+    struct CacheSummary: Equatable, Sendable {
         let fileCount: Int
         let byteCount: Int64
 
@@ -29,9 +29,13 @@ enum EditorPreviewStorage {
     )
     private static let installLock = NSLock()
     private nonisolated(unsafe) static var didInstall = false
+    private nonisolated(unsafe) static var lastCacheCleanupAt: Date = .distantPast
+    private static let cacheCleanupInterval: TimeInterval = 60 * 60
 
     static func installIfNeeded() {
         installLock.lock()
+        defer { installLock.unlock() }
+
         let root = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         if !didInstall {
@@ -47,9 +51,7 @@ enum EditorPreviewStorage {
                     withIntermediateDirectories: true
                 )
             }
-            cleanBuildCachesIfNeeded(paths: paths)
         }
-        installLock.unlock()
 
         LumiPreviewFacade.PreviewStorage.configure(paths)
     }
@@ -76,6 +78,11 @@ enum EditorPreviewStorage {
         summarize(directories: cacheManagedDirectories)
     }
 
+    static func refreshCacheSummary() -> CacheSummary {
+        cleanBuildCachesIfNeeded()
+        return cacheSummary()
+    }
+
     static func purgeBuildCaches() {
         for directory in cacheManagedDirectories {
             try? FileManager.default.removeItem(at: directory)
@@ -88,6 +95,14 @@ enum EditorPreviewStorage {
         now: Date = Date(),
         paths: LumiPreviewFacade.PreviewStoragePaths = LumiPreviewFacade.PreviewStorage.paths
     ) -> LumiPreviewFacade.PreviewStorageAutoCleaner.Result {
+        installLock.lock()
+        guard now.timeIntervalSince(lastCacheCleanupAt) >= cacheCleanupInterval else {
+            installLock.unlock()
+            return .empty
+        }
+        lastCacheCleanupAt = now
+        installLock.unlock()
+
         LumiPreviewFacade.PreviewStorageAutoCleaner.clean(
             directories: cacheManagedDirectories(paths: paths),
             policy: autoCleanupPolicy,

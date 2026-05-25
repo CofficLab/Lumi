@@ -188,9 +188,9 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     private var didWireEditorService = false
     private var warmupTask: Task<Void, Never>?
     private var pendingCanvasResizeTask: Task<Void, Never>?
+    private var cacheSummaryTask: Task<Void, Never>?
     private var lastFrameSeq: UInt64?
     private var receivedFrameCount: UInt64 = 0
-    private var lastCacheCleanupAt: Date = .distantPast
     /// 每次切换文件或启动一次新的 build 都递增，用于丢弃旧文件/旧构建的异步回调。
     private var previewGeneration: UInt64 = 0
 
@@ -216,6 +216,10 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         wireSessionCallbacks()
         refreshCacheSummary()
         warmupSessionIfPossible()
+    }
+
+    deinit {
+        cacheSummaryTask?.cancel()
     }
 
     /// 订阅 EditorService 的状态变化，直接感知文件切换/保存/内容变化。
@@ -859,14 +863,16 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     private func refreshCacheSummary() {
-        cleanBuildCachesIfNeeded()
-        cacheSummary = EditorPreviewStorage.cacheSummary()
-    }
+        cacheSummaryTask?.cancel()
+        cacheSummaryTask = Task { [weak self] in
+            let summary = await Task.detached(priority: .utility) {
+                EditorPreviewStorage.refreshCacheSummary()
+            }.value
 
-    private func cleanBuildCachesIfNeeded(now: Date = Date()) {
-        guard now.timeIntervalSince(lastCacheCleanupAt) >= 60 * 60 else { return }
-        lastCacheCleanupAt = now
-        EditorPreviewStorage.cleanBuildCachesIfNeeded(now: now)
+            guard !Task.isCancelled else { return }
+            self?.cacheSummary = summary
+            self?.cacheSummaryTask = nil
+        }
     }
 
     private func wireSessionCallbacks() {
