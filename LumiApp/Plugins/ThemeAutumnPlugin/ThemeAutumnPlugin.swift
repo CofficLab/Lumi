@@ -20,7 +20,17 @@ actor ThemeAutumnPlugin: SuperPlugin {
                 appTheme: AutumnTheme(),
                 editorThemeId: "autumn",
                 editorThemeContributor: AutumnSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.autumn()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "autumn-file-icons",
+                    displayName: "Autumn File Icons",
+                    defaultFile: .systemImage("doc.text.image"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.gearshape", "folder.fill.badge.gearshape"),
+                    extraExtensions: [
+                        "yaml": .systemImage("list.bullet.rectangle"),
+                        "yml": .systemImage("list.bullet.rectangle"),
+                        "plist": .systemImage("gearshape.2"),
+                    ]
+                )
             )
         ]
     }

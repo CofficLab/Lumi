@@ -20,7 +20,21 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
                 appTheme: VscodeDarkTheme(),
                 editorThemeId: "vscode-dark",
                 editorThemeContributor: VscodeDarkSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeDark()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "vscode-dark-file-icons",
+                    displayName: "VS Code Dark File Icons",
+                    defaultFile: .systemImage("doc.text"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraFileNames: [
+                        "package.json": .systemImage("shippingbox.fill"),
+                        "package.swift": .systemImage("swift"),
+                    ],
+                    extraExtensions: [
+                        "json": .systemImage("curlybraces.square.fill"),
+                        "md": .systemImage("doc.richtext"),
+                        "markdown": .systemImage("doc.richtext"),
+                    ]
+                )
             )
         ]
     }

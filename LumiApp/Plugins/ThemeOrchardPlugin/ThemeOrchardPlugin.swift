@@ -20,7 +20,16 @@ actor ThemeOrchardPlugin: SuperPlugin {
                 appTheme: OrchardTheme(),
                 editorThemeId: "orchard",
                 editorThemeContributor: OrchardSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.orchard()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "orchard-file-icons",
+                    displayName: "Orchard File Icons",
+                    defaultFile: .systemImage("apple.logo"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("tray", "tray.fill"),
+                    extraExtensions: [
+                        "swift": .systemImage("swift"),
+                        "h": .systemImage("h.square"),
+                    ]
+                )
             )
         ]
     }

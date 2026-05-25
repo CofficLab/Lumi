@@ -20,7 +20,17 @@ actor ThemeDraculaPlugin: SuperPlugin {
                 appTheme: DraculaTheme(),
                 editorThemeId: "dracula",
                 editorThemeContributor: DraculaSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.dracula()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "dracula-file-icons",
+                    displayName: "Dracula File Icons",
+                    defaultFile: .systemImage("doc.fill"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.gearshape", "folder.fill.badge.gearshape"),
+                    extraFileNames: [
+                        "license": .systemImage("checkmark.seal.fill"),
+                        "license.md": .systemImage("checkmark.seal.fill"),
+                        "license.txt": .systemImage("checkmark.seal.fill"),
+                    ]
+                )
             )
         ]
     }

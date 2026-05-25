@@ -20,7 +20,21 @@ actor ThemeSkyPlugin: SuperPlugin {
                 appTheme: SkyTheme(),
                 editorThemeId: "sky-dark",
                 editorThemeContributor: SkyDarkEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.sky()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "sky-file-icons",
+                    displayName: "Sky File Icons",
+                    defaultFile: .systemImage("doc.text"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
+                    extraExtensions: [
+                        "swift": .systemImage("swift"),
+                        "md": .systemImage("cloud"),
+                        "markdown": .systemImage("cloud"),
+                        "json": .systemImage("curlybraces"),
+                        "png": .systemImage("photo"),
+                        "jpg": .systemImage("photo"),
+                        "jpeg": .systemImage("photo"),
+                    ]
+                )
             ),
         ]
     }

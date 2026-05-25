@@ -20,7 +20,15 @@ actor ThemeMountainPlugin: SuperPlugin {
                 appTheme: MountainTheme(),
                 editorThemeId: "mountain",
                 editorThemeContributor: MountainSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.mountain()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "mountain-file-icons",
+                    displayName: "Mountain File Icons",
+                    defaultFile: .systemImage("mountain.2"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.minus", "folder.fill.badge.minus"),
+                    extraFileNames: [
+                        "makefile": .systemImage("hammer.fill"),
+                    ]
+                )
             )
         ]
     }

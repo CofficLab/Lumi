@@ -20,7 +20,16 @@ actor ThemeOneDarkPlugin: SuperPlugin {
                 appTheme: OneDarkTheme(),
                 editorThemeId: "one-dark",
                 editorThemeContributor: OneDarkSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.oneDark()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "one-dark-file-icons",
+                    displayName: "One Dark File Icons",
+                    defaultFile: .systemImage("doc.circle"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.circle", "folder.circle.fill"),
+                    extraExtensions: [
+                        "swift": .systemImage("swift"),
+                        "json": .systemImage("curlybraces"),
+                    ]
+                )
             )
         ]
     }

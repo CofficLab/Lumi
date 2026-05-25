@@ -20,7 +20,17 @@ actor ThemeVoidPlugin: SuperPlugin {
                 appTheme: VoidTheme(),
                 editorThemeId: "void",
                 editorThemeContributor: VoidSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.void()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "void-file-icons",
+                    displayName: "Void File Icons",
+                    defaultFile: .systemImage("doc.fill"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("archivebox", "archivebox.fill"),
+                    extraFileNames: [
+                        "readme": .systemImage("doc.text.fill"),
+                        "readme.md": .systemImage("doc.text.fill"),
+                        "readme.markdown": .systemImage("doc.text.fill"),
+                    ]
+                )
             )
         ]
     }

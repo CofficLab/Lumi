@@ -20,7 +20,18 @@ actor ThemeAuroraPlugin: SuperPlugin {
                 appTheme: AuroraTheme(),
                 editorThemeId: "aurora",
                 editorThemeContributor: AuroraSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.aurora()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "aurora-file-icons",
+                    displayName: "Aurora File Icons",
+                    defaultFile: .systemImage("sparkles"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.plus", "folder.fill.badge.plus"),
+                    extraExtensions: [
+                        "png": .systemImage("photo.on.rectangle"),
+                        "jpg": .systemImage("photo.on.rectangle"),
+                        "jpeg": .systemImage("photo.on.rectangle"),
+                        "svg": .systemImage("camera.filters"),
+                    ]
+                )
             )
         ]
     }

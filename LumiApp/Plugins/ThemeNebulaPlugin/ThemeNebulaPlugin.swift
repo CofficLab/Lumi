@@ -20,7 +20,16 @@ actor ThemeNebulaPlugin: SuperPlugin {
                 appTheme: NebulaTheme(),
                 editorThemeId: "nebula",
                 editorThemeContributor: NebulaSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeCatalog.nebula()
+                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
+                    id: "nebula-file-icons",
+                    displayName: "Nebula File Icons",
+                    defaultFile: .systemImage("circle.hexagongrid"),
+                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.questionmark", "folder.fill.badge.questionmark"),
+                    extraExtensions: [
+                        "swift": .systemImage("atom"),
+                        "json": .systemImage("circle.hexagongrid.fill"),
+                    ]
+                )
             )
         ]
     }
