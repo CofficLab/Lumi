@@ -135,7 +135,7 @@ final class HistoryDBBrowserViewModel: ObservableObject {
             let count = (chatHistoryVM.loadMessagesAsync(forConversationId: conversation.id) ?? []).count
             return HistoryConversationRow(
                 id: conversation.id,
-                title: conversation.title,
+                title: conversation.displayTitle,
                 projectId: conversation.projectId ?? "-",
                 createdAt: conversation.createdAt,
                 updatedAt: conversation.updatedAt,

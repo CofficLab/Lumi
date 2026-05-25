@@ -21,7 +21,7 @@ final class Conversation {
 
     @Relationship(deleteRule: .cascade) var messages: [ChatMessageEntity]
 
-    init(id: UUID = UUID(), projectId: String? = nil, title: String = "新对话", createdAt: Date = Date(), updatedAt: Date = Date(), chatMode: String? = nil, verbosity: String? = nil, messages: [ChatMessageEntity] = []) {
+    init(id: UUID = UUID(), projectId: String? = nil, title: String = "", createdAt: Date = Date(), updatedAt: Date = Date(), chatMode: String? = nil, verbosity: String? = nil, messages: [ChatMessageEntity] = []) {
         self.id = id
         self.projectId = projectId
         self.title = title
@@ -30,5 +30,20 @@ final class Conversation {
         self.chatMode = chatMode
         self.verbosity = verbosity
         self.messages = messages
+    }
+}
+
+extension Conversation {
+    var hasStoredTitle: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var displayTitle: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty else { return trimmed }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return "对话-" + formatter.string(from: createdAt)
     }
 }

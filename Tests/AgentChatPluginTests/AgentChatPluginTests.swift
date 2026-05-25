@@ -68,5 +68,52 @@ final class AgentChatPluginTests: XCTestCase {
         )
         XCTAssertEqual(ModelSelectorTab.provider("openai").displayTitle, "")
     }
+
+    func testAutoConversationTitleAllowsEmptyStoredTitle() {
+        let result = AutoConversationTitlePolicy().evaluate(
+            AutoConversationTitlePolicy.Input(
+                role: .user,
+                userText: "帮我分析一下这个项目结构",
+                currentTitle: "",
+                userMessageCount: 1,
+                newConversationTitle: "New Conversation",
+                newChatTitlePrefix: "New Chat"
+            )
+        )
+
+        XCTAssertTrue(result.shouldGenerate)
+        XCTAssertEqual(result.trimmedUserText, "帮我分析一下这个项目结构")
+    }
+
+    func testAutoConversationTitleAllowsLegacyChineseDefaultConversationTitle() {
+        let result = AutoConversationTitlePolicy().evaluate(
+            AutoConversationTitlePolicy.Input(
+                role: .user,
+                userText: "帮我分析一下这个项目结构",
+                currentTitle: "新对话",
+                userMessageCount: 1,
+                newConversationTitle: "New Conversation",
+                newChatTitlePrefix: "New Chat"
+            )
+        )
+
+        XCTAssertTrue(result.shouldGenerate)
+    }
+
+    func testAutoConversationTitleSkipsNonDefaultTitle() {
+        let result = AutoConversationTitlePolicy().evaluate(
+            AutoConversationTitlePolicy.Input(
+                role: .user,
+                userText: "继续",
+                currentTitle: "已有标题",
+                userMessageCount: 1,
+                newConversationTitle: "New Conversation",
+                newChatTitlePrefix: "New Chat"
+            )
+        )
+
+        XCTAssertFalse(result.shouldGenerate)
+        XCTAssertNil(result.trimmedUserText)
+    }
 }
 #endif

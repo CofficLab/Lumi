@@ -102,7 +102,7 @@ final class ChatHistoryService: SuperLog, Sendable {
 extension ChatHistoryService {
 
     /// 创建新对话
-    func createConversation(projectId: String? = nil, title: String = "新对话", chatMode: String? = nil) -> Conversation {
+    func createConversation(projectId: String? = nil, title: String = "", chatMode: String? = nil) -> Conversation {
         let conversation = Conversation(
             projectId: projectId,
             title: title,

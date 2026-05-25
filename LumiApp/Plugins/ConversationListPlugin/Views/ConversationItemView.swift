@@ -21,7 +21,11 @@ struct ConversationItemView: View {
         guard !title.isEmpty else { return false }
         let newConversation = String(localized: "New Conversation", table: "ConversationList")
         let newChat = String(localized: "New Chat", table: "ConversationList")
-        return title != newConversation && !title.hasPrefix(newChat)
+        let defaultConversationTitles = [newConversation, "New Conversation", "新对话"]
+        let defaultChatTitlePrefixes = [newChat, "New Chat", "新聊天"]
+
+        return !defaultConversationTitles.contains(title)
+            && !defaultChatTitlePrefixes.contains { title.hasPrefix($0) }
     }
 
     var body: some View {
@@ -36,7 +40,7 @@ struct ConversationItemView: View {
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
                 // 标题
-                Text(conversation.title)
+                Text(conversation.displayTitle)
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
@@ -62,7 +66,7 @@ struct ConversationItemView: View {
             }
         } message: {
             let format = String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", table: "ConversationList")
-            Text(String(format: format, conversation.title))
+            Text(String(format: format, conversation.displayTitle))
         }
     }
 }

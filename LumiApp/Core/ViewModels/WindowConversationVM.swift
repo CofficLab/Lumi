@@ -339,12 +339,8 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         projectPath: String? = nil,
         languagePreference: LanguagePreference = .chinese
     ) async {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-
         let conversation = chatHistoryService.createConversation(
             projectId: projectPath,
-            title: "新会话 " + formatter.string(from: Date()),
             chatMode: agentSessionConfig.chatMode.rawValue
         )
 

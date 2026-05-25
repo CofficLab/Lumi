@@ -84,7 +84,7 @@ final class AppChatHistoryVM: ObservableObject {
     @discardableResult
     func createConversation(
         projectId: String? = nil,
-        title: String = "新对话",
+        title: String = "",
         chatMode: String? = nil
     ) -> Conversation {
         chatHistoryService.createConversation(

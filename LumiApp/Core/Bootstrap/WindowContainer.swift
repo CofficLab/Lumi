@@ -354,7 +354,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     func updateTitle() {
         if let conversationId = conversationVM.selectedConversationId,
            let conversation = conversationVM.fetchConversation(id: conversationId) {
-            title = conversation.title
+            title = conversation.displayTitle
         } else if let _ = projectPath {
             title = "Lumi - \(projectVM.currentProjectName)"
         } else {
