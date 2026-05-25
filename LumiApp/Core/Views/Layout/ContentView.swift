@@ -98,7 +98,7 @@ struct ContentView: View, SuperLog {
                 }
             }
 
-            ToolbarItemGroup(placement: .cancellationAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
                     view
                 }
