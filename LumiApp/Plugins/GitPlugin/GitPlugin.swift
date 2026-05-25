@@ -40,6 +40,13 @@ actor GitPlugin: SuperPlugin, SuperLog {
         ]
     }
 
+    @MainActor
+    func subAgentDefinitions() -> [any SubAgentDefinitionProtocol] {
+        [
+            GitCommitSubAgentDefinition(),
+        ]
+    }
+
     // MARK: - UI Contributions
 
     /// 包裹 RootView，确保 commit 选择时自动激活 Git 面板

@@ -35,7 +35,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     private let llmService: LLMService?
 
     /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
-    weak var llmVM: AppLLMVM?
+    weak var llmVM: AppLLMVM? {
+        didSet {
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
 
     /// 对话管理 ViewModel（可选，由 WindowContainer 注入）
     weak var conversationVM: WindowConversationVM?
@@ -91,7 +97,24 @@ class ToolService: SuperLog, @unchecked Sendable {
     private func refreshAllTools() {
         let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
-        allTools = pluginTools
+        allTools = coreAgentTools() + pluginTools
+
+        let definitions = AppPluginVM.shared.collectSubAgentDefinitions()
+        Task {
+            await SubAgentScheduler.shared.registerDefinitions(definitions)
+        }
+    }
+
+    @MainActor
+    private func coreAgentTools() -> [SuperAgentTool] {
+        guard let llmService, let llmVM else {
+            return []
+        }
+
+        return [
+            SpawnSubAgentTool(llmService: llmService, llmVM: llmVM, toolService: self),
+            CollectSubAgentTool(),
+        ]
     }
 
     // MARK: - Public API

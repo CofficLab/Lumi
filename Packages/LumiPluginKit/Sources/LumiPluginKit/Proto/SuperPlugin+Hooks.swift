@@ -7,6 +7,9 @@ extension SuperPlugin {
     /// 默认实现：不提供 Agent 工具
     @MainActor public func agentTools(context: ToolContext) -> [SuperAgentTool] { [] }
 
+    /// 默认实现：不提供内核级子 Agent 定义
+    @MainActor public func subAgentDefinitions() -> [any SubAgentDefinitionProtocol] { [] }
+
     /// 默认实现：不提供发送中间件
     @MainActor public func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 

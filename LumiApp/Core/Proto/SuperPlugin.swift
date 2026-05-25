@@ -342,6 +342,9 @@ protocol SuperPlugin: Actor {
     /// 提供 Agent 工具列表（可按需使用 `context` 注入依赖）。
     @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool]
 
+    /// 提供内核级子 Agent 定义列表。
+    @MainActor func subAgentDefinitions() -> [any SubAgentDefinitionProtocol]
+
     // MARK: - Send Pipeline
 
     /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。

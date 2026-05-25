@@ -205,6 +205,23 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }.map(\.tool)
     }
 
+    func collectSubAgentDefinitions() -> [any SubAgentDefinitionProtocol] {
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var definitions: [(pluginOrder: Int, definition: any SubAgentDefinitionProtocol)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            for definition in plugin.subAgentDefinitions() {
+                definitions.append((pluginOrder: pluginOrder, definition: definition))
+            }
+        }
+
+        return definitions.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            return a.definition.id < b.definition.id
+        }.map(\.definition)
+    }
+
     // MARK: - Send Middleware
 
     func getSuperSendMiddlewares() -> [SuperSendMiddleware] {
