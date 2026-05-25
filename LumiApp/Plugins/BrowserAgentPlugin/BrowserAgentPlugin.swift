@@ -1,11 +1,13 @@
 import Foundation
 import AgentToolKit
+import PluginBrowserAgent
 import os
 
-/// Browser Agent 插件
+/// Browser Agent 插件 App 侧注册适配器。
 ///
-/// 提供浏览器自动化功能，基于 agent-browser CLI 工具。
-/// 支持网页导航、元素交互、截图、快照等浏览器操作。
+/// 当前 App 仍通过 ObjC runtime 扫描 `Lumi.*Plugin` 类注册插件；
+/// package 中的 `PluginBrowserAgent.BrowserAgentPlugin` 不在 `Lumi` 命名空间内，
+/// 因此这里保留一个薄适配器，实际实现转发给 package 插件。
 actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser-agent")
@@ -16,23 +18,21 @@ actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     /// 是否启用详细日志
     nonisolated static let verbose: Bool = true
 
-    static let id: String = "BrowserAgent"
-    static let displayName: String = String(localized: "Browser Agent", table: "BrowserAgent")
-    static let description: String = String(localized: "Browser automation powered by agent-browser CLI", table: "BrowserAgent")
-    static let iconName: String = "globe"
-    static let isConfigurable: Bool = false
+    static let id: String = PluginBrowserAgent.BrowserAgentPlugin.id
+    static let displayName: String = PluginBrowserAgent.BrowserAgentPlugin.displayName
+    static let description: String = PluginBrowserAgent.BrowserAgentPlugin.description
+    static let iconName: String = PluginBrowserAgent.BrowserAgentPlugin.iconName
+    static let isConfigurable: Bool = PluginBrowserAgent.BrowserAgentPlugin.isConfigurable
+    static let enable: Bool = PluginBrowserAgent.BrowserAgentPlugin.enable
     static var category: PluginCategory { .general }
-    static let enable: Bool = true
-    static var order: Int { 103 }
+    static var order: Int { PluginBrowserAgent.BrowserAgentPlugin.order }
 
     static let shared = BrowserAgentPlugin()
 
     private init() {}
 
-    func onEnable() async {}
-
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [BrowserAgentTool()]
+        [PluginBrowserAgent.BrowserAgentTool()]
     }
 }

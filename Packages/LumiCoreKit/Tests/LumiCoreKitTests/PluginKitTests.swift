@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import HttpKit
 import Testing
 @testable import LumiCoreKit
 
@@ -144,6 +145,54 @@ struct LumiCoreKitActorTests {
         #expect(order[0] == "m2") // order=1 先执行
         #expect(order[1] == "m1") // order=2 后执行
     }
+
+    @Test("OrderedMiddlewarePipeline 支持自定义 Context")
+    func orderedMiddlewarePipelineCustomContext() async {
+        let executionOrder = LockedArray<String>()
+        let ctx = PipelineProbeContext()
+
+        let pipeline = OrderedMiddlewarePipeline<PipelineProbeContext, String>(
+            middlewares: [
+                AnyOrderedMiddleware(
+                    id: "late",
+                    order: 2,
+                    handle: { ctx, next in
+                        executionOrder.append("pre-late")
+                        ctx.value += "B"
+                        await next(ctx)
+                    },
+                    handlePost: { _, response in
+                        executionOrder.append("post-late-\(response)")
+                    }
+                ),
+                AnyOrderedMiddleware(
+                    id: "early",
+                    order: 1,
+                    handle: { ctx, next in
+                        executionOrder.append("pre-early")
+                        ctx.value += "A"
+                        await next(ctx)
+                    },
+                    handlePost: { _, response in
+                        executionOrder.append("post-early-\(response)")
+                    }
+                ),
+            ]
+        )
+
+        await pipeline.run(ctx: ctx) { ctx in
+            executionOrder.append("terminal-\(ctx.value)")
+        }
+        await pipeline.runPost(metadata: makeMetadata(), response: "ok")
+
+        #expect(executionOrder.all == [
+            "pre-early",
+            "pre-late",
+            "terminal-AB",
+            "post-early-ok",
+            "post-late-ok",
+        ])
+    }
 }
 
 // MARK: - Test Helpers
@@ -177,4 +226,21 @@ struct PipelineTestMiddleware: SuperSendMiddleware {
         executionOrder.append(id)
         await next(ctx)
     }
+}
+
+@MainActor
+final class PipelineProbeContext {
+    var value = ""
+}
+
+private func makeMetadata() -> HTTPRequestMetadata {
+    HTTPRequestMetadata(
+        requestId: UUID(),
+        method: "POST",
+        url: "https://example.com",
+        requestHeaders: [:],
+        requestBodySizeBytes: 0,
+        requestBodyPreview: nil,
+        sentAt: Date()
+    )
 }

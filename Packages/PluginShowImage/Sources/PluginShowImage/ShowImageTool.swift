@@ -1,0 +1,163 @@
+import AgentToolKit
+import AppKit
+import Foundation
+import SuperLogKit
+import os
+import SwiftUI
+
+// MARK: - Image Source
+
+/// 图片来源
+public enum ShowImageSource: Equatable, Sendable {
+    case local(String)
+    case remote(String)
+
+    public var stringValue: String {
+        switch self {
+        case .local(let path): return path
+        case .remote(let url): return url
+        }
+    }
+
+    public var isRemote: Bool {
+        if case .remote = self { return true }
+        return false
+    }
+}
+
+// MARK: - Show Image State
+
+/// 图片显示状态（@MainActor 单例）
+///
+/// 工具通过此单例触发图片显示，RootView 通过观察此单例来渲染图片。
+@MainActor
+public final class ShowImageState: ObservableObject {
+    public static let shared = ShowImageState()
+
+    public struct DisplayItem: Identifiable, Equatable {
+        public let id = UUID()
+        public let source: ShowImageSource
+        public let title: String?
+        public let caption: String?
+        public let maxWidth: Int
+
+        public static func == (lhs: DisplayItem, rhs: DisplayItem) -> Bool {
+            lhs.id == rhs.id
+        }
+    }
+
+    @Published public var displayItem: DisplayItem?
+
+    public func showImage(source: ShowImageSource, title: String? = nil, caption: String? = nil, maxWidth: Int = 400) {
+        displayItem = DisplayItem(source: source, title: title, caption: caption, maxWidth: maxWidth)
+    }
+
+    public func clear() {
+        displayItem = nil
+    }
+}
+
+// MARK: - Tool
+
+/// 图片显示工具。
+///
+/// 在 Lumi 的 UI 中显示指定图片。
+/// 支持两种图片源：
+/// 1. **本地文件路径**：以 `/` 开头的绝对路径
+/// 2. **远程 URL**：有效的 HTTP/HTTPS URL
+public struct ShowImageTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "🖼️"
+    public nonisolated static let verbose: Bool = true
+    private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")
+
+    public let name = "show_image"
+
+    public init() {}
+
+    public func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在聊天 UI 中显示图片。接受本地文件路径或远程 URL。支持 PNG、JPEG、GIF 等常见图片格式。图片将内联显示在对话中，可附带可选的标题和说明。"
+        case .english:
+            return "Display an image in the chat UI. Accepts a local file path or a remote URL. Supports PNG, JPEG, GIF, and other common image formats. The image will be shown inline in the conversation with an optional title and caption."
+        }
+    }
+
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "source": [
+                    "type": "string",
+                    "description": "The image source. Can be either a local file path (e.g., /Users/name/photo.png) or a remote URL (e.g., https://example.com/image.png)",
+                ],
+                "title": [
+                    "type": "string",
+                    "description": "Optional title for the image, displayed above the image",
+                ],
+                "caption": [
+                    "type": "string",
+                    "description": "Optional caption/description for the image, displayed below the image",
+                ],
+                "maxWidth": [
+                    "type": "number",
+                    "description": "Optional maximum width of the displayed image in pixels (default: 400, range: 100-800)",
+                ],
+            ],
+            "required": ["source"],
+        ]
+    }
+
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "显示图片"
+    }
+
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
+    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        guard let source = arguments["source"]?.value as? String, !source.isEmpty else {
+            return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
+        }
+
+        let title = (arguments["title"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let caption = (arguments["caption"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        var maxWidth = arguments["maxWidth"]?.value as? Int ?? 400
+        maxWidth = max(100, min(800, maxWidth))
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🖼️ 显示图片：\(source)")
+        }
+
+        let imageSource: ShowImageSource
+        if source.hasPrefix("http://") || source.hasPrefix("https://") {
+            imageSource = .remote(source)
+        } else {
+            imageSource = .local(source)
+        }
+
+        if case .local(let path) = imageSource {
+            let fileURL = URL(fileURLWithPath: path)
+            guard FileManager.default.fileExists(atPath: path) else {
+                return "Error: File not found: \(path)"
+            }
+            let ext = fileURL.pathExtension.lowercased()
+            let supportedExtensions = ["png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "heic", "heif", "webp", "ico", "icns", "svg"]
+            guard supportedExtensions.contains(ext) else {
+                return "Error: Unsupported image format '\(ext)'. Supported formats: \(supportedExtensions.joined(separator: ", "))"
+            }
+        }
+
+        await MainActor.run {
+            ShowImageState.shared.showImage(
+                source: imageSource,
+                title: title.isEmpty ? nil : title,
+                caption: caption.isEmpty ? nil : caption,
+                maxWidth: maxWidth
+            )
+        }
+
+        return "Image displayed successfully. Source: \(source)"
+    }
+}

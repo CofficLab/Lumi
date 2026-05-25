@@ -1,42 +1,28 @@
 import Foundation
 import AgentToolKit
+import PluginShowImage
 import SwiftUI
 import os
 
-/// 图片显示插件
+/// Show Image 插件 App 侧注册适配器。
 ///
-/// 提供一个 `show_image` 工具，允许 LLM 在 UI 中展示图片。
-/// 支持本地文件路径和远程 URL 两种图片源。
-///
-/// ## 架构
-///
-/// - `ShowImageState`（@MainActor 单例）：存储从 Environment 同步来的消息队列 VM 引用
-/// - `ShowImagePlugin`（Actor）：插件主体，提供 `addRootView` 和工具
-/// - `ShowImageOverlay`（View）：通过 `addRootView` 挂载，监听图片显示状态变化
-/// - `ShowImageTool`：接收图片路径/URL，触发图片显示
-///
-/// ## 数据流
-///
-/// ```
-/// EnvironmentObject (messageQueueVM)
-///         ↓  (ShowImageOverlay 同步)
-/// ShowImageState (@MainActor 单例)
-///         ↓  (工具触发)
-/// ShowImageTool → ShowImageState → ShowImageOverlay → 图片显示
-/// ```
+/// 当前 App 仍通过 ObjC runtime 扫描 `Lumi.*Plugin` 类注册插件；
+/// package 中的 `PluginShowImage.ShowImagePlugin` 不在 `Lumi` 命名空间内，
+/// 因此这里保留一个薄适配器，实际实现转发给 package 插件。
 actor ShowImagePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
 
     nonisolated static let emoji = "🖼️"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
-    static let id: String = "ShowImage"
-    static let displayName: String = String(localized: "Show Image", table: "ShowImage")
-    static let description: String = String(localized: "Display images in the UI with support for local paths and remote URLs.", table: "ShowImage")
-    static let iconName: String = "photo.on.rectangle"
-    static let isConfigurable: Bool = false
+
+    static let id: String = PluginShowImage.ShowImagePlugin.id
+    static let displayName: String = PluginShowImage.ShowImagePlugin.displayName
+    static let description: String = PluginShowImage.ShowImagePlugin.description
+    static let iconName: String = PluginShowImage.ShowImagePlugin.iconName
+    static let isConfigurable: Bool = PluginShowImage.ShowImagePlugin.isConfigurable
     static var category: PluginCategory { .integration }
-    static var order: Int { 97 }
+    static var order: Int { PluginShowImage.ShowImagePlugin.order }
 
     nonisolated var instanceLabel: String { Self.id }
 
@@ -44,35 +30,29 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)📝 已注册")
-            }
+            Self.logger.info("\(Self.t)📝 已注册")
         }
     }
 
     nonisolated func onEnable() {
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)✅ 已启用")
-            }
+            Self.logger.info("\(Self.t)✅ 已启用")
         }
     }
 
     nonisolated func onDisable() {
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)⛔️ 已禁用")
-            }
+            Self.logger.info("\(Self.t)⛔️ 已禁用")
         }
     }
 
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(ShowImageOverlay(content: content()))
+        AnyView(PluginShowImage.ShowImageOverlay { content() })
     }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [ShowImageTool()]
+        [PluginShowImage.ShowImageTool()]
     }
 }

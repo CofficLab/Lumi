@@ -103,7 +103,7 @@ enum EditorPreviewStorage {
         lastCacheCleanupAt = now
         installLock.unlock()
 
-        LumiPreviewFacade.PreviewStorageAutoCleaner.clean(
+        return LumiPreviewFacade.PreviewStorageAutoCleaner.clean(
             directories: cacheManagedDirectories(paths: paths),
             policy: autoCleanupPolicy,
             now: now

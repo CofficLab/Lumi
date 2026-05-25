@@ -1,11 +1,13 @@
 import Foundation
 import AgentToolKit
+import PluginBrowser
 import os
 
-/// Browser 插件
+/// Browser 插件 App 侧注册适配器。
 ///
-/// 提供网页截图功能。
-/// 使用 WKWebView 渲染网页并截图，截图保存到系统临时目录返回文件路径。
+/// 当前 App 仍通过 ObjC runtime 扫描 `Lumi.*Plugin` 类注册插件；
+/// package 中的 `PluginBrowser.BrowserPlugin` 不在 `Lumi` 命名空间内，
+/// 因此这里保留一个薄适配器，实际实现转发给 package 插件。
 actor BrowserPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser")
@@ -16,14 +18,14 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     /// 是否启用详细日志
     nonisolated static let verbose: Bool = true
 
-    static let id: String = "Browser"
-    static let displayName: String = "Browser"
-    static let description: String = "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。"
-    static let iconName: String = "safari"
-    static let isConfigurable: Bool = false
+    static let id: String = PluginBrowser.BrowserPlugin.id
+    static let displayName: String = PluginBrowser.BrowserPlugin.displayName
+    static let description: String = PluginBrowser.BrowserPlugin.description
+    static let iconName: String = PluginBrowser.BrowserPlugin.iconName
+    static let isConfigurable: Bool = PluginBrowser.BrowserPlugin.isConfigurable
+    static let enable: Bool = PluginBrowser.BrowserPlugin.enable
     static var category: PluginCategory { .general }
-    static let enable: Bool = true
-    static var order: Int { 102 }
+    static var order: Int { PluginBrowser.BrowserPlugin.order }
 
     static let shared = BrowserPlugin()
 
@@ -31,6 +33,6 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [BrowserScreenshotTool()]
+        [PluginBrowser.BrowserScreenshotTool()]
     }
 }

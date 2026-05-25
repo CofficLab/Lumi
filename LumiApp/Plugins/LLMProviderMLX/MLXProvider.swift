@@ -53,25 +53,25 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
     // MARK: - SuperLLMProvider 桩实现（本地供应商不走 HTTP）
 
-    var baseURL: String { "" }
+    public var baseURL: String { "" }
 
-    func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
         URLRequest(url: url)
     }
 
-    func buildRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
+    public func buildRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
+    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+    public func parseStreamChunk(data: Data) throws -> StreamChunk? {
         nil
     }
 
-    func buildStreamingRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
+    public func buildStreamingRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
@@ -212,7 +212,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
     // MARK: - SuperLocalLLMProvider
 
-    func streamChat(
+    public func streamChat(
         messages: [ChatMessage],
         model: String,
         tools: [SuperAgentTool]?,
@@ -254,16 +254,16 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         )
     }
 
-    func getAvailableModels() async -> [LocalModelInfo] {
+    public func getAvailableModels() async -> [LocalModelInfo] {
         modelManager?.availableModels() ?? MLXModels.availableModels(for: nil)
     }
 
-    func getCachedModels() async -> Set<String> {
+    public func getCachedModels() async -> Set<String> {
         await ensureServices()
         return modelManager?.cachedModelIds ?? []
     }
 
-    func getDownloadStatus() -> LocalDownloadStatus {
+    public func getDownloadStatus() -> LocalDownloadStatus {
         let status = downloadManager?.status ?? .idle
         let progress = downloadManager?.progress ?? DownloadProgress()
         switch status {
@@ -276,7 +276,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
     }
 
-    func getModelState() async -> LocalLLMState {
+    public func getModelState() async -> LocalLLMState {
         let state = await MainActor.run { self.inferenceService?.state ?? .idle }
         switch state {
         case .idle: return .idle
@@ -287,7 +287,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
     }
 
-    func getLoadedModelId() async -> String? {
+    public func getLoadedModelId() async -> String? {
         await MainActor.run { self.currentModelId }
     }
 

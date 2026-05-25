@@ -1,0 +1,52 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Web Search": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
+          }
+        }
+      }
+    },
+    "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides web search functionality to support Function Calling requirements for models like Qwen."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -46,34 +46,32 @@ public struct AnySuperSendMiddleware: SuperSendMiddleware {
 /// 2. **发送后管线**: 通过 `runPost()` 执行，处理响应
 @MainActor
 public final class SendPipeline {
-    private let middlewares: [SuperSendMiddleware]
+    private let pipeline: OrderedMiddlewarePipeline<SendMessageContext, ChatMessage?>
 
     public init(middlewares: [SuperSendMiddleware]) {
-        self.middlewares = middlewares.sorted { $0.order < $1.order }
+        self.pipeline = OrderedMiddlewarePipeline(
+            middlewares: middlewares.map { middleware in
+                AnyOrderedMiddleware(
+                    id: middleware.id,
+                    order: middleware.order,
+                    handle: { ctx, next in
+                        await middleware.handle(ctx: ctx, next: next)
+                    },
+                    handlePost: { metadata, response in
+                        await middleware.handlePost(metadata: metadata, response: response)
+                    }
+                )
+            }
+        )
     }
 
     /// 运行发送前管线
     public func run(ctx: SendMessageContext, terminal: @escaping SendPipelineNext) async {
-        func makeNext(_ index: Int) -> SendPipelineNext {
-            { @MainActor ctx in
-                if index < self.middlewares.count {
-                    await self.middlewares[index].handle(
-                        ctx: ctx,
-                        next: makeNext(index + 1)
-                    )
-                } else {
-                    await terminal(ctx)
-                }
-            }
-        }
-
-        await makeNext(0)(ctx)
+        await pipeline.run(ctx: ctx, terminal: terminal)
     }
 
     /// 运行发送后管线
     public func runPost(metadata: HTTPRequestMetadata, response: ChatMessage?) async {
-        for middleware in middlewares {
-            await middleware.handlePost(metadata: metadata, response: response)
-        }
+        await pipeline.runPost(metadata: metadata, response: response)
     }
 }

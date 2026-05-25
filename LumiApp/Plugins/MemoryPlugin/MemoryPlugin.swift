@@ -1,46 +1,46 @@
-import Foundation
 import AgentToolKit
+import Foundation
+import PluginMemory
 import os
 
-/// Memory Plugin: 持久化记忆系统
+/// Memory 插件 App 侧注册适配器。
 ///
-/// 参考 Claude Code 的 memdir 系统设计，让 Lumi 能跨会话记住：
-/// - 用户角色、偏好和知识水平
-/// - 用户对 Lumi 行为的反馈和指导
-/// - 项目级上下文（目标、决策、非代码可得信息）
-/// - 外部系统指针（Linear/Grafana/文档链接等）
-///
-/// ## 核心组件
-/// - **MemoryStorageService**: 文件 CRUD + 索引维护
-/// - **MemoryRetrievalService**: 本地关键词匹配检索
-/// - **MemoryContextSuperSendMiddleware**: 发送时注入记忆提示词
-/// - **4 个 Agent Tools**: save/recall/list/delete memory
+/// 当前 App 仍通过 ObjC runtime 扫描 `Lumi.*Plugin` 类注册插件；
+/// package 中的 `PluginMemory.MemoryPlugin` 不在 `Lumi` 命名空间内，
+/// 因此这里保留一个薄适配器，实际实现转发给 package 插件。
 actor MemoryPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.memory")
 
-    // MARK: - Plugin Properties
-
     nonisolated static let emoji = "🧠"
     nonisolated static let verbose: Bool = true
-    static let id: String = "Memory"
-    static let displayName: String = String(localized: "Memory", table: "Memory")
-    static let description: String = String(
-        localized: "Persistent memory system for cross-session context", table: "Memory")
-    static let iconName: String = "brain.head.profile"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .agent }
-    static var order: Int { 15 }
 
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
+    static let id: String = PluginMemory.MemoryPlugin.id
+    static let displayName: String = PluginMemory.MemoryPlugin.displayName
+    static let description: String = PluginMemory.MemoryPlugin.description
+    static let iconName: String = PluginMemory.MemoryPlugin.iconName
+    static let isConfigurable: Bool = PluginMemory.MemoryPlugin.isConfigurable
+    static let enable: Bool = PluginMemory.MemoryPlugin.enable
+    static var category: PluginCategory { .agent }
+    static var order: Int { PluginMemory.MemoryPlugin.order }
+
+    nonisolated var instanceLabel: String { Self.id }
 
     static let shared = MemoryPlugin()
 
     init() {
+        // 注入 App 层的存储路径到 PluginMemory 的配置
+        PluginMemory.MemoryPlugin.config = PluginMemory.MemoryPluginConfig(
+            memoryRootURL: AppConfig.getDBFolderURL()
+                .appendingPathComponent("Memory", isDirectory: true),
+            maxRelevantMemories: MemoryPluginLocalStore.shared.maxRelevantMemories,
+            staleThresholdDays: MemoryPluginLocalStore.shared.staleThresholdDays,
+            halfLifeDays: MemoryPluginLocalStore.shared.halfLifeDays,
+            injectGlobalIndex: MemoryPluginLocalStore.shared.shouldInjectGlobalIndex,
+            injectProjectIndex: MemoryPluginLocalStore.shared.shouldInjectProjectIndex
+        )
+
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ MemoryPlugin 初始化完成")
         }
@@ -71,10 +71,10 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
-            SaveMemoryTool(),
-            RecallMemoryTool(),
-            ListMemoriesTool(),
-            DeleteMemoryTool(),
+            PluginMemory.SaveMemoryTool(),
+            PluginMemory.RecallMemoryTool(),
+            PluginMemory.ListMemoriesTool(),
+            PluginMemory.DeleteMemoryTool(),
         ]
     }
 

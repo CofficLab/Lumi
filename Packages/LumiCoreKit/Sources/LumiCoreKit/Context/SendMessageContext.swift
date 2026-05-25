@@ -12,7 +12,7 @@ import Foundation
 /// ## 生命周期
 /// 每次用户发送消息时创建一个新实例，随本轮发送完成而销毁。
 @MainActor
-public class SendMessageContext {
+open class SendMessageContext {
 
     // MARK: - Immutable Properties
 
