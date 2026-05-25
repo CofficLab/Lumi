@@ -16,6 +16,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
 
     static let id = "zhipu"
     static let displayName = String(localized: "Zhipu AI CodingPlan", table: "Zhipu")
+    static let shortName = "ZhiPu"
     static let description = String(localized: "智谱 AI (GLM)", table: "Zhipu")
 
     static let websiteURL: String? = "https://open.bigmodel.cn"

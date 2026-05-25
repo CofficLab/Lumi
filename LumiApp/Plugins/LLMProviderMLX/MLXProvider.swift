@@ -27,6 +27,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     /// 显示名称
     public static var displayName: String { "MLX" }
 
+    /// 简写名称
+    public static var shortName: String { "MLX" }
+
     /// 图标名称（SF Symbols）
     public static var iconName: String { "cpu" }
 

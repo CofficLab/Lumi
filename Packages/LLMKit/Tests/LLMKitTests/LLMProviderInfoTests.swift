@@ -10,6 +10,7 @@ struct LLMProviderInfoTests {
         let info = LLMProviderInfo(
             id: "openai",
             displayName: "OpenAI",
+            shortName: "OA",
             description: "GPT models",
             websiteURL: "https://openai.com",
             availableModels: ["gpt-4o", "gpt-4o-mini"],
@@ -20,6 +21,7 @@ struct LLMProviderInfoTests {
         )
         #expect(info.id == "openai")
         #expect(info.displayName == "OpenAI")
+        #expect(info.shortName == "OA")
         #expect(info.description == "GPT models")
         #expect(info.websiteURL == "https://openai.com")
         #expect(info.availableModels == ["gpt-4o", "gpt-4o-mini"])
@@ -54,6 +56,7 @@ struct LLMProviderInfoTests {
         let info = LLMProviderInfo(
             id: "local",
             displayName: "Local",
+            shortName: "LC",
             description: "",
             websiteURL: nil,
             availableModels: [],
@@ -72,6 +75,7 @@ struct LLMProviderInfoTests {
         LLMProviderInfo(
             id: id,
             displayName: "Test",
+            shortName: "TT",
             description: "Desc",
             websiteURL: nil,
             availableModels: ["m1"],

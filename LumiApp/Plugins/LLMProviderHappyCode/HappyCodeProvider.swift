@@ -14,6 +14,7 @@ final class HappyCodeProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "happycode"
     static let displayName = String(localized: "HappyCode", table: "HappyCode")
+    static let shortName = "HC"
     static let description = String(localized: "AI API Gateway by HappyCode", table: "HappyCode")
 
     static let websiteURL: String? = "https://happycode.vip"

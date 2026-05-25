@@ -14,6 +14,7 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "flymux"
     static let displayName = String(localized: "FlyMux", table: "FlyMux")
+    static let shortName = "FMX"
     static let description = String(localized: "AI API Gateway by flymux.com", table: "FlyMux")
 
     static let websiteURL: String? = "https://flymux.com"

@@ -60,6 +60,6 @@ struct ModelSelectorToolbarButton: View {
         guard let providerType = llmVM.providerType(forId: providerId) else {
             return displayModel
         }
-        return "\(providerType.displayName) · \(displayModel)"
+        return "\(providerType.shortName) · \(displayModel)"
     }
 }

@@ -14,6 +14,7 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "megallm"
     static let displayName = String(localized: "MegaLLM", table: "MegaLLM")
+    static let shortName = "ML"
     static let description = String(localized: "MegaLLM AI", table: "MegaLLM")
 
     static let websiteURL: String? = "https://megallm.com"

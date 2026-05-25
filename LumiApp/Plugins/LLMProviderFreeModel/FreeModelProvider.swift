@@ -14,6 +14,7 @@ final class FreeModelProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "freemodel"
     static let displayName = String(localized: "FreeModel", table: "FreeModel")
+    static let shortName = "FM"
     static let description = String(localized: "Free LLM Gateway by freemodel.dev", table: "FreeModel")
 
     static let websiteURL: String? = "https://freemodel.dev"

@@ -91,6 +91,13 @@ protocol SuperLLMProvider: Sendable {
     /// 用于 UI 显示，如设置面板中的下拉选项。
     static var displayName: String { get }
 
+    /// 供应商简写名称
+    ///
+    /// 用于工具栏等空间受限的 UI 区域显示。
+    /// 如 "OpenAI" → "OA", "DeepSeek" → "DS"。
+    /// 默认返回 displayName。
+    static var shortName: String { get }
+
     /// 供应商描述
     ///
     /// 简短描述供应商的特点和优势。
@@ -244,6 +251,11 @@ protocol SuperLLMProvider: Sendable {
 // MARK: - Default Implementation
 
 extension SuperLLMProvider {
+    /// 默认实现：简写名称返回完整显示名称
+    static var shortName: String {
+        displayName
+    }
+
     /// 默认实现：供应商默认启用
     static var isEnabled: Bool {
         true
