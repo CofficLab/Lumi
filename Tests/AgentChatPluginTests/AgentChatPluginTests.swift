@@ -23,6 +23,20 @@ final class AgentChatPluginTests: XCTestCase {
         XCTAssertEqual(sections.count, 1)
     }
 
+    func testSidebarSectionsAreAvailableForChatPanelIcon() async {
+        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: ChatPanelPlugin.iconName)
+        XCTAssertFalse(sections.isEmpty)
+        XCTAssertEqual(sections.count, 1)
+    }
+
+    func testChatPanelPluginProvidesNavigationEntry() async {
+        XCTAssertEqual(ChatPanelPlugin.id, "ChatPanel")
+        XCTAssertEqual(ChatPanelPlugin.iconName, "bubble.left.and.bubble.right.fill")
+        XCTAssertEqual(ChatPanelPlugin.shared.addPanelIcon(), ChatPanelPlugin.iconName)
+        XCTAssertNotNil(await ChatPanelPlugin.shared.addPanelView(activeIcon: ChatPanelPlugin.iconName))
+        XCTAssertNil(await ChatPanelPlugin.shared.addPanelView(activeIcon: EditorPlugin.iconName))
+    }
+
     func testModelSelectorTabBuiltInTitlesRemainStable() {
         XCTAssertEqual(
             ModelSelectorTab.current.displayTitle,

@@ -29,7 +29,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     // MARK: - Sidebar Toolbar
 
     @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [
             SidebarToolbarItem(
                 id: "chat-submit",

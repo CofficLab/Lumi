@@ -29,7 +29,7 @@ actor ConversationNewHeaderPlugin: SuperPlugin {
     /// 工具栏右侧：新建对话按钮
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return nil }
         return AnyView(NewChatButton())
     }
 }

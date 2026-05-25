@@ -20,19 +20,19 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     static let shared = ChatAttachmentPlugin()
 
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(ChatAttachmentSectionView())]
     }
 
     @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView {
-        guard activeIcon == EditorPlugin.iconName else { return content }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return content }
         return AnyView(ChatAttachmentDropRootView(content: content))
     }
 
     // MARK: - Sidebar Toolbar
 
     @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [
             SidebarToolbarItem(
                 id: "image-upload",

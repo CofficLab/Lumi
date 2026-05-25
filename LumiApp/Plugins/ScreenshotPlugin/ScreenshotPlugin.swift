@@ -31,7 +31,7 @@ actor ScreenshotPlugin: SuperPlugin, SuperLog {
     // MARK: - Sidebar Toolbar
 
     @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [
             SidebarToolbarItem(
                 id: "screenshot",
