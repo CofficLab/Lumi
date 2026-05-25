@@ -28,4 +28,10 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(ConversationTimelineView())
     }
+
+    /// 右侧栏 Section：对话摘要交接入口。
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [AnyView(ConversationHandoffSidebarSection())]
+    }
 }
