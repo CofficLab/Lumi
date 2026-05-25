@@ -11,7 +11,7 @@ struct NoProjectOverlay: View {
     @State private var isFileImporterPresented = false
     @State private var isFolderDropTargeted = false
 
-    private let store = RecentProjectsStore()
+    private let store = ProjectsStore()
 
     var body: some View {
         ZStack {
@@ -64,7 +64,7 @@ struct NoProjectOverlay: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Release to add project", table: "RecentProjects"))
+                Text(String(localized: "Release to add project", table: "Projects"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -150,22 +150,22 @@ struct NoProjectOverlay: View {
                     )
             }
 
-            Text(String(localized: "No Project Selected", table: "RecentProjects"))
+            Text(String(localized: "No Project Selected", table: "Projects"))
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
 
-            Text(String(localized: "Select a project to get started", table: "RecentProjects"))
+            Text(String(localized: "Select a project to get started", table: "Projects"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
     }
 
-    // MARK: - Recent Projects Section
+    // MARK: - Projects Section
 
     private var recentProjectsSection: some View {
         VStack(spacing: 4) {
-            Text(String(localized: "Recent Projects", table: "RecentProjects"))
+            Text(String(localized: "Projects", table: "Projects"))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -231,7 +231,7 @@ struct NoProjectOverlay: View {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 13))
-                    Text(String(localized: "Add New Project", table: "RecentProjects"))
+                    Text(String(localized: "Add New Project", table: "Projects"))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -251,7 +251,7 @@ struct NoProjectOverlay: View {
             .buttonStyle(.plain)
 
             // 提示文字
-            Text(String(localized: "Or drag a folder here", table: "RecentProjects"))
+            Text(String(localized: "Or drag a folder here", table: "Projects"))
                 .font(.system(size: 11))
                 .foregroundStyle(.quaternary)
         }
@@ -319,8 +319,8 @@ struct NoProjectOverlay: View {
                 folderURL.stopAccessingSecurityScopedResource()
             }
         case let .failure(error):
-            if RecentProjectsPlugin.verbose {
-                RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
             }
         }
     }

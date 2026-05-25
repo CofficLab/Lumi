@@ -12,7 +12,7 @@ struct ProjectDropdownMenu: View {
 
     @State private var isFileImporterPresented = false
 
-    private let store = RecentProjectsStore()
+    private let store = ProjectsStore()
 
     private var recentProjects: [Project] {
         Array(recentProjectsVM.recentProjects
@@ -54,7 +54,7 @@ struct ProjectDropdownMenu: View {
 
             // 浏览按钮
             if recentProjects.isEmpty && projectVM.currentProjectPath.isEmpty {
-                Text(String(localized: "No recent projects", table: "RecentProjects"))
+                Text(String(localized: "No projects", table: "Projects"))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color(hex: "98989E"))
                     .padding()
@@ -98,8 +98,8 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
                 }
             }
         case .failure(let error):
-            if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if ProjectsPlugin.verbose {
+                            ProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
             }
         }
     }

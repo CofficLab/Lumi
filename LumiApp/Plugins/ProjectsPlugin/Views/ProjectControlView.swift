@@ -46,7 +46,7 @@ struct ProjectControlView: View {
             isPopoverPresented = true
         }
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            RecentProjectsSidebarView()
+            ProjectsSidebarView()
                 .frame(width: 300, height: 400)
         }
         .onAppear {
@@ -64,7 +64,7 @@ struct ProjectControlView: View {
 
     // MARK: - Git Branch Badge
 
-    /// 紧凑的分支药丸标签，与 RecentProjectsSidebarView 中的风格一致
+    /// 紧凑的分支药丸标签，与 ProjectsSidebarView 中的风格一致
     private func gitBranchBadge(_ branch: String) -> some View {
         HStack(spacing: 3) {
             Image(systemName: "arrow.triangle.branch")

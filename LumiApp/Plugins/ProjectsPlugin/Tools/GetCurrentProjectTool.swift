@@ -29,8 +29,8 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         if Self.verbose {
-            if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
+            if ProjectsPlugin.verbose {
+                            ProjectsPlugin.logger.info("\(Self.t)Getting current project")
             }
         }
 

@@ -1,17 +1,17 @@
 import Foundation
 import AgentToolKit
 
-/// 添加项目到最近列表工具
+/// 添加项目到列表工具
 struct AddProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
-    let name = "add_recent_project"
+    let name = "add_project"
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "将指定项目添加到最近项目列表。添加后会更新 projectVM 中的最近项目数据。"
+            return "将指定项目添加到项目列表。添加后会更新 projectVM 中的项目数据。"
         case .english:
-            return "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
+            return "Add the specified project to the projects list. Updates the projectVM's projects after adding."
         }
     }
 
@@ -28,7 +28,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         ]
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "添加最近项目"    }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "添加项目"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -39,8 +39,8 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.info("\(Self.t)Adding project to recent list: \(path)")
+            if ProjectsPlugin.verbose {
+                            ProjectsPlugin.logger.info("\(Self.t)Adding project to list: \(path)")
             }
         }
 
@@ -58,24 +58,24 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
 
-        // 1. 使用 store 添加项目到最近列表
-        let store = RecentProjectsStore()
+        // 1. 使用 store 添加项目到列表
+        let store = ProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 发送通知，RecentProjectsOverlay 会自动更新 projectVM
+        // 2. 发送通知，ProjectsOverlay 会自动更新 projectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
-        // 3. 加载更新后的最近项目列表
-        let recentProjects = store.loadProjects()
+        // 3. 加载更新后的项目列表
+        let projects = store.loadProjects()
 
         // 构建返回消息
-        var output = "✅ Successfully added project to recent list\n\n"
+        var output = "✅ Successfully added project to list\n\n"
         output += "**Project Name**: \(projectName)\n\n"
         output += "**Project Path**: \(path)\n\n"
 
-        // 显示更新后的最近项目列表
-        output += "## Recent Projects (\(recentProjects.count) total)\n\n"
-        for (index, project) in recentProjects.prefix(5).enumerated() {
+        // 显示更新后的项目列表
+        output += "## Projects (\(projects.count) total)\n\n"
+        for (index, project) in projects.prefix(5).enumerated() {
             output += "\(index + 1). **\(project.name)**\n"
             output += "   Path: `\(project.path)`\n\n"
         }

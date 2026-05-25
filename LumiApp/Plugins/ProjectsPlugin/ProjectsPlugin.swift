@@ -7,23 +7,23 @@ import os
 ///
 /// 管理全局最近项目列表，以及项目管理相关的 Agent 工具。
 /// 各窗口的当前项目快照由 `WindowPersistencePlugin` 负责保存。
-actor RecentProjectsPlugin: SuperPlugin, SuperLog {
+actor ProjectsPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
 
     nonisolated static let emoji = "📋"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
-    static let id: String = "RecentProjects"
-    static let displayName: String = String(localized: "Recent Projects", table: "RecentProjects")
-    static let description: String = String(localized: "Manage the global recent projects list", table: "RecentProjects")
+    static let id: String = "Projects"
+    static let displayName: String = String(localized: "Projects", table: "Projects")
+    static let description: String = String(localized: "Manage the global projects list", table: "Projects")
     static let iconName: String = "folder"
     static var isConfigurable: Bool { false }
     static var category: PluginCategory { .general }
     static var order: Int { 10 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = RecentProjectsPlugin()
+    static let shared = ProjectsPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
@@ -42,7 +42,7 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     /// 根视图包裹：用于恢复最近项目列表，并在未选项目时显示引导
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(RecentProjectsOverlay(content: content()))
+        AnyView(ProjectsOverlay(content: content()))
     }
 
     // MARK: - Agent Tools
@@ -50,7 +50,7 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
-            ListRecentProjectsTool(),
+            ListProjectsTool(),
             GetCurrentProjectTool(),
             AddProjectTool(),
         ]
@@ -58,8 +58,8 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Agent Middlewares
 
-    /// 提供最近项目上下文注入中间件
+    /// 提供项目上下文注入中间件
     nonisolated func sendMiddlewares() -> [any SuperSendMiddleware.Type]? {
-        [RecentProjectsSendMiddleware.self]
+        [CurrentProjectSendMiddleware.self, ProjectsSendMiddleware.self]
     }
 }

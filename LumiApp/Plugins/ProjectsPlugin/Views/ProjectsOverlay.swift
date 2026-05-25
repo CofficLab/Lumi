@@ -5,7 +5,7 @@ import SwiftUI
 /// 项目切换时自动联动切换到关联的对话。
 ///
 /// 各窗口当前项目的磁盘快照由 `WindowPersistencePlugin` 负责保存。
-struct RecentProjectsOverlay<Content: View>: View, SuperLog {
+struct ProjectsOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
@@ -19,7 +19,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
     @State private var restoreTask: Task<Void, Never>?
 
-    private let store = RecentProjectsStore()
+    private let store = ProjectsStore()
 
     var body: some View {
         ZStack {
@@ -55,7 +55,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
 
 // MARK: - Action
 
-extension RecentProjectsOverlay {
+extension ProjectsOverlay {
     private func restoreIfNeeded() {
         guard restoreTask == nil else { return }
 
@@ -89,7 +89,7 @@ extension RecentProjectsOverlay {
 
 // MARK: - Event Handler
 
-extension RecentProjectsOverlay {
+extension ProjectsOverlay {
     @MainActor
     private func handleOnAppear() {
         restoreIfNeeded()
@@ -124,7 +124,7 @@ extension RecentProjectsOverlay {
 
 // MARK: - Project-Conversation Sync
 
-extension RecentProjectsOverlay {
+extension ProjectsOverlay {
     /// 项目切换时，自动切换到该项目最近使用的对话
     /// 如果该项目没有关联对话，则新建一个
     private func switchConversationForProject(_ projectPath: String) {
@@ -132,16 +132,16 @@ extension RecentProjectsOverlay {
 
         if switched {
             if Self.verbose {
-                if RecentProjectsPlugin.verbose {
-                    RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
                 }
             }
             return
         }
 
         if Self.verbose {
-            if RecentProjectsPlugin.verbose {
-                RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
             }
         }
 
@@ -158,6 +158,6 @@ extension RecentProjectsOverlay {
 // MARK: - Preview
 
 #Preview("Recent Projects Persistence Overlay") {
-    RecentProjectsOverlay(content: Text("Content"))
+    ProjectsOverlay(content: Text("Content"))
         .inRootView()
 }

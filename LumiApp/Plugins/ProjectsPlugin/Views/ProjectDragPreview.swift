@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 最近项目拖拽预览视图
-struct RecentProjectDragPreview: View {
+/// 项目拖拽预览视图
+struct ProjectDragPreview: View {
     let fileURL: URL
 
     var body: some View {

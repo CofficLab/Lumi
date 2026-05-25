@@ -2,13 +2,13 @@ import LumiUI
 import SwiftUI
 
 /// 最近项目侧边栏视图
-struct RecentProjectsSidebarView: View {
+struct ProjectsSidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var recentProjectsVM: AppProjectsVM
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
-    private let store = RecentProjectsStore()
+    private let store = ProjectsStore()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -106,7 +106,7 @@ struct RecentProjectsSidebarView: View {
             // 拖到输入框时 EditorTextView 会自动识别绝对路径并插入
             NSItemProvider(object: project.path as NSString)
         } preview: {
-            RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
+            ProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
     }
 
@@ -142,7 +142,7 @@ struct RecentProjectsSidebarView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No Recent Projects", table: "RecentProjects"))
+            Text(String(localized: "No Projects", table: "Projects"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -161,7 +161,7 @@ struct RecentProjectsSidebarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 11))
-                Text(String(localized: "Add New Project", table: "RecentProjects"))
+                Text(String(localized: "Add New Project", table: "Projects"))
                     .font(.system(size: 11, weight: .medium))
             }
             .frame(maxWidth: .infinity)
@@ -194,8 +194,8 @@ struct RecentProjectsSidebarView: View {
             guard let folderURL = urls.first else { return }
             addProjectAndSwitch(to: folderURL.standardizedFileURL)
         case .failure(let error):
-            if RecentProjectsPlugin.verbose {
-                            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
+            if ProjectsPlugin.verbose {
+                            ProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
             }
         }
     }
@@ -221,7 +221,7 @@ struct RecentProjectsSidebarView: View {
 }
 
 #Preview {
-    RecentProjectsSidebarView()
+    ProjectsSidebarView()
         .inRootView()
         .frame(width: 250, height: 400)
 }

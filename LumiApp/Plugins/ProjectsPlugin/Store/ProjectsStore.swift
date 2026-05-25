@@ -1,17 +1,17 @@
 import Foundation
 
-/// 最近项目存储
-/// 负责全局最近项目列表的持久化。
-final class RecentProjectsStore: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "RecentProjectsStore.queue", qos: .userInitiated)
+/// 项目存储
+/// 负责全局项目列表的持久化。
+final class ProjectsStore: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "ProjectsStore.queue", qos: .userInitiated)
 
-    private static let legacyKey = "Agent_RecentProjects"
+    private static let legacyKey = "Agent_Projects"
 
-    // Store file: <dbRoot>/RecentProjects/settings/recent_projects.json
-    private static let pluginDirName = "RecentProjects"
+    // Store file: <dbRoot>/Projects/settings/projects.json
+    private static let pluginDirName = "Projects"
     private static let settingsDirName = "settings"
-    private static let stateFileName = "recent_projects.json"
-    private static let tmpFileName = "recent_projects.tmp"
+    private static let stateFileName = "projects.json"
+    private static let tmpFileName = "projects.tmp"
 
     /// 最大保存项目数量
     private static let maxProjectsCount = 500

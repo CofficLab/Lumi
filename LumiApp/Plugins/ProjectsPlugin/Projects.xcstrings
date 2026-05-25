@@ -115,7 +115,11 @@
         }
       }
     },
+    "Manage the global projects list" : {
+
+    },
     "Manage the global recent projects list" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -159,7 +163,14 @@
         }
       }
     },
+    "No projects" : {
+
+    },
+    "No Projects" : {
+
+    },
     "No recent projects" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -182,6 +193,7 @@
       }
     },
     "No Recent Projects" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -248,6 +260,32 @@
         }
       }
     },
+    "Projects" : {
+
+    },
+    "Recent Projects" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent Projects"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近項目"
+          }
+        }
+      }
+    },
     "Release to add project" : {
       "localizations" : {
         "en" : {
@@ -266,28 +304,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "鬆開以添加項目"
-          }
-        }
-      }
-    },
-    "Recent Projects" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recent Projects"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近项目"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近項目"
           }
         }
       }
