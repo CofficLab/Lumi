@@ -15,12 +15,14 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = "" {
         didSet {
             guard selectedProviderId != oldValue else { return }
+            AppSettingStore.saveLastSelectedProviderId(selectedProviderId)
             ensureProviderAndModelSelection()
         }
     }
     @Published var currentModel: String = "" {
         didSet {
             guard currentModel != oldValue else { return }
+            AppSettingStore.saveLastSelectedModel(currentModel)
             if currentModel.isEmpty {
                 ensureProviderAndModelSelection()
             }
@@ -39,6 +41,15 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     init(llmService: LLMService) {
         self.llmService = llmService
+
+        // 从持久化存储恢复上次选择的供应商和模型
+        if let lastProviderId = AppSettingStore.loadLastSelectedProviderId() {
+            selectedProviderId = lastProviderId
+        }
+        if let lastModel = AppSettingStore.loadLastSelectedModel() {
+            currentModel = lastModel
+        }
+
         ensureProviderAndModelSelection()
     }
 

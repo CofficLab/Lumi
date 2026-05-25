@@ -386,6 +386,10 @@ extension ModelSelectorView {
     private func selectModel(providerId: String, model: String) {
         llmVM.isAutoMode = false
 
+        // 同步更新 AppLLMVM 的全局选择（会自动持久化）
+        llmVM.selectedProviderId = providerId
+        llmVM.currentModel = model
+
         // 直接保存到当前对话的模型偏好
         conversationVM.saveModelPreference(providerId: providerId, model: model)
 

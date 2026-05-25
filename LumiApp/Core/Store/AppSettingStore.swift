@@ -221,4 +221,33 @@ enum AppSettingStore {
 
         set(modelsDict, forKey: remoteProviderModelsKey)
     }
+
+    // MARK: - Last Selected Model
+
+    private static let lastSelectedProviderIdKey = "App_LastSelectedProviderId"
+    private static let lastSelectedModelKey = "App_LastSelectedModel"
+
+    /// 加载上次选择的供应商 ID
+    /// - Returns: 供应商 ID，如果没有记录则返回 nil
+    static func loadLastSelectedProviderId() -> String? {
+        object(forKey: lastSelectedProviderIdKey) as? String
+    }
+
+    /// 保存上次选择的供应商 ID
+    /// - Parameter providerId: 供应商 ID，为 nil 时清除
+    static func saveLastSelectedProviderId(_ providerId: String?) {
+        set(providerId, forKey: lastSelectedProviderIdKey)
+    }
+
+    /// 加载上次选择的模型 ID
+    /// - Returns: 模型 ID，如果没有记录则返回 nil
+    static func loadLastSelectedModel() -> String? {
+        object(forKey: lastSelectedModelKey) as? String
+    }
+
+    /// 保存上次选择的模型 ID
+    /// - Parameter model: 模型 ID，为 nil 时清除
+    static func saveLastSelectedModel(_ model: String?) {
+        set(model, forKey: lastSelectedModelKey)
+    }
 }
