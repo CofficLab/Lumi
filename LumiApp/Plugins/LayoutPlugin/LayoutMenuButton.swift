@@ -24,7 +24,5 @@ struct LayoutMenuButton: View {
         } label: {
             Image(systemName: "sidebar.leading")
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
 }
