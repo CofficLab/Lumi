@@ -213,7 +213,7 @@ extension AgentTurnService {
 
         switch result {
         case let .success(assistantMessage):
-            let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage)
+            let processed = toolCallExecutor.evaluatePermissions(for: assistantMessage, conversationId: conversationId)
             conversationVM.saveMessage(processed, to: conversationId)
             return true
 

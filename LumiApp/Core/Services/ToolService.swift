@@ -240,12 +240,54 @@ class ToolService: SuperLog, @unchecked Sendable {
         return .high
     }
 
+    /// 带上下文的风险评估；路径不在沙箱内时自动提升风险等级。
+    func evaluateRisk(toolName: String, argumentsJSON: String, context: ToolExecutionContext) -> CommandRiskLevel {
+        let parsed = Self.parseToolArgumentsDict(from: argumentsJSON) ?? [:]
+        let toolArgs = parsed.mapValues { ToolArgument($0) }
+        guard let tool = tool(named: toolName) else { return .high }
+
+        let baseRisk = tool.permissionRiskLevel(arguments: toolArgs, context: context)
+
+        // 如果路径不在沙箱内，提升风险等级
+        return Self.elevatedRiskIfPathOutOfBounds(arguments: toolArgs, baseRisk: baseRisk, context: context)
+    }
+
     /// 获取工具定义声明的风险等级；工具未注册时返回 `nil`。
     func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
         guard let tool = tool(named: toolName) else { return nil }
         let rawArgs = arguments ?? [:]
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
+    }
+
+    // MARK: - Sandbox Risk Elevation
+
+    /// 如果操作涉及的文件路径不在允许的目录范围内，则提升风险等级。
+    static func elevatedRiskIfPathOutOfBounds(
+        arguments: [String: ToolArgument],
+        baseRisk: CommandRiskLevel,
+        context: ToolExecutionContext
+    ) -> CommandRiskLevel {
+        guard !context.allowedDirectories.isEmpty else { return baseRisk }
+
+        // 提取路径参数
+        let filePath = (arguments["file_path"]?.value as? String) ??
+                        (arguments["path"]?.value as? String) ??
+                        (arguments["directory"]?.value as? String)
+
+        guard let path = filePath else { return baseRisk }
+
+        if context.isPathAllowed(path) {
+            return baseRisk
+        }
+
+        // 路径不在沙箱内，提升至少一级风险
+        switch baseRisk {
+        case .safe:  return .low
+        case .low:   return .medium
+        case .medium: return .high
+        case .high:  return .high
+        }
     }
 
     /// 将工具参数字符串尽量解析为对象；失败时返回 nil。

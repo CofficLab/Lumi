@@ -52,6 +52,12 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         .high
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .high
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
     func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let path = arguments["path"]?.value as? String else { return "写入文件" }
         let fileName = URL(fileURLWithPath: path).lastPathComponent

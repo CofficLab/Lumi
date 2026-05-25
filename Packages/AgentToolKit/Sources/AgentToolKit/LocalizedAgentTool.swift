@@ -31,6 +31,10 @@ public struct LocalizedAgentTool: SuperAgentTool, Sendable {
         underlying.permissionRiskLevel(arguments: arguments)
     }
 
+    public func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        underlying.permissionRiskLevel(arguments: arguments, context: context)
+    }
+
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         underlying.displayDescription(for: arguments)
     }

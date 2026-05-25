@@ -56,6 +56,12 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
         .low
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .low
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
     func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let path = arguments["path"]?.value as? String else { return "读取文件" }
         let fileName = URL(fileURLWithPath: path).lastPathComponent

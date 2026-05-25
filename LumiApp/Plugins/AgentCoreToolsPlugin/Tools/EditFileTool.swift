@@ -82,6 +82,12 @@ Usage:
         .high
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
+        let baseRisk: CommandRiskLevel = .high
+        guard let context else { return baseRisk }
+        return ToolService.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+    }
+
     func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let filePath = arguments["file_path"]?.value as? String else { return "编辑文件" }
         let fileName = URL(fileURLWithPath: filePath).lastPathComponent
