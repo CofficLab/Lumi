@@ -173,6 +173,24 @@ enum LumiFileIconThemeCatalog {
         )
     }
 
+    static func sky() -> any LumiFileIconThemeContributor {
+        make(
+            id: "sky-file-icons",
+            displayName: "Sky File Icons",
+            defaultFile: .systemImage("doc.text"),
+            defaultFolder: folder("folder", "folder.fill"),
+            extraExtensions: [
+                "swift": .systemImage("swift"),
+                "md": .systemImage("cloud"),
+                "markdown": .systemImage("cloud"),
+                "json": .systemImage("curlybraces"),
+                "png": .systemImage("photo"),
+                "jpg": .systemImage("photo"),
+                "jpeg": .systemImage("photo"),
+            ]
+        )
+    }
+
     static func midnight() -> any LumiFileIconThemeContributor {
         make(
             id: "midnight-file-icons",
