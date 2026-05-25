@@ -3,18 +3,18 @@ import MagicAlert
 
 /// 详细程度切换工具栏按钮
 ///
-/// 显示当前详细程度图标和名称，点击循环切换 Brief / Normal / Detailed。
+/// 显示当前详细程度图标和名称，点击在简洁 / 详细之间切换。
 struct VerbosityToolbarButton: View {
     @EnvironmentObject private var llmVM: AppLLMVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 循环顺序
-    private static let levelOrder: [ResponseVerbosity] = [.brief, .normal, .detailed]
+    private static let levelOrder: [ResponseVerbosity] = [.brief, .detailed]
 
     var body: some View {
         Button(action: {
-            let currentIndex = Self.levelOrder.firstIndex(of: llmVM.verbosity) ?? 1
+            let currentIndex = Self.levelOrder.firstIndex(of: llmVM.verbosity) ?? 0
             let nextIndex = (currentIndex + 1) % Self.levelOrder.count
             let newLevel = Self.levelOrder[nextIndex]
             withAnimation {
@@ -52,8 +52,6 @@ struct VerbosityToolbarButton: View {
         switch llmVM.verbosity {
         case .brief:
             return Color.blue
-        case .normal:
-            return themeVM.activeChromeTheme.workspaceSecondaryTextColor()
         case .detailed:
             return Color.purple
         }
@@ -63,8 +61,6 @@ struct VerbosityToolbarButton: View {
         switch llmVM.verbosity {
         case .brief:
             return Color.blue.opacity(0.1)
-        case .normal:
-            return themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06)
         case .detailed:
             return Color.purple.opacity(0.1)
         }
@@ -74,8 +70,6 @@ struct VerbosityToolbarButton: View {
         switch llmVM.verbosity {
         case .brief:
             return String(localized: "Brief Verbosity Description", table: "Verbosity")
-        case .normal:
-            return String(localized: "Normal Verbosity Description", table: "Verbosity")
         case .detailed:
             return String(localized: "Detailed Verbosity Description", table: "Verbosity")
         }

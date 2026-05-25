@@ -47,48 +47,25 @@
         }
       }
     },
-    "Normal Verbosity Description" : {
+    "Switch between Brief and Detailed response styles" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Normal mode: balanced detail level"
+            "value" : "Switch between Brief and Detailed response styles"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正常模式：平衡详细度"
+            "value" : "在简洁和详细风格之间切换"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正常模式：平衡詳細度"
-          }
-        }
-      }
-    },
-    "Switch between Brief, Normal, and Detailed response styles" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Switch between Brief, Normal, and Detailed response styles"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在简洁、正常和详细风格之间切换"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在簡潔、正常和詳細風格之間切換"
+            "value" : "在簡潔和詳細風格之間切換"
           }
         }
       }
@@ -125,19 +102,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Switch between brief, normal, and detailed response styles"
+            "value" : "Switch between brief and detailed response styles"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切换简洁、正常或详细回复风格"
+            "value" : "切换简洁或详细回复风格"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切換簡潔、正常或詳細回覆風格"
+            "value" : "切換簡潔或詳細回覆風格"
           }
         }
       }
