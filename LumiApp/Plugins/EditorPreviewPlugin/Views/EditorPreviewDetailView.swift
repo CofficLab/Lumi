@@ -28,6 +28,7 @@ struct EditorPreviewDetailView: View, SuperLog {
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
     @State private var isConfirmingProjectStringCatalogClean = false
+    @State private var isTakingScreenshot = false
 
     private var sourceText: String? {
         editorVM.service.content?.string
@@ -139,6 +140,8 @@ struct EditorPreviewDetailView: View, SuperLog {
             }
 
             Spacer()
+
+            screenshotButton
 
             if viewModel.previewMode == .swift {
                 buildInfoBadge
@@ -371,6 +374,145 @@ struct EditorPreviewDetailView: View, SuperLog {
             return true
         }
         return false
+    }
+
+    // MARK: - Screenshot
+
+    @ViewBuilder
+    private var screenshotButton: some View {
+        Button {
+            takeScreenshot()
+        } label: {
+            if isTakingScreenshot {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Image(systemName: "camera.viewfinder")
+            }
+        }
+        .buttonStyle(.borderless)
+        .disabled(canTakeScreenshot == false)
+        .help(String(localized: "Screenshot preview canvas", table: "EditorPreview"))
+    }
+
+    /// 当前是否可以截图：swift 预览正在运行且已加载 entry，或非 swift 静态预览（image、markdown 等）。
+    private var canTakeScreenshot: Bool {
+        switch viewModel.previewMode {
+        case .swift:
+            return viewModel.status == .running && viewModel.currentFrame != nil
+        case .unsupported:
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func takeScreenshot() {
+        guard !isTakingScreenshot else { return }
+        isTakingScreenshot = true
+
+        switch viewModel.previewMode {
+        case .swift:
+            takeSwiftScreenshot()
+        default:
+            takeStaticScreenshot()
+        }
+    }
+
+    private func takeSwiftScreenshot() {
+        // 获取当前 window 的 contentView，从中找到 PreviewSurfaceView
+        guard let window = NSApp.keyWindow else {
+            isTakingScreenshot = false
+            return
+        }
+
+        let image = viewModel.takeScreenshot(from: window.contentView)
+        isTakingScreenshot = false
+
+        guard let image else {
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        saveScreenshotToDesktop(image)
+    }
+
+    private func takeStaticScreenshot() {
+        // 对于非 Swift 预览（图片、Markdown 等），使用 NSView 截图
+        guard let window = NSApp.keyWindow else {
+            isTakingScreenshot = false
+            return
+        }
+
+        guard let contentView = window.contentView else {
+            isTakingScreenshot = false
+            return
+        }
+
+        let bounds = contentView.bounds
+        guard bounds.width > 0, bounds.height > 0 else {
+            isTakingScreenshot = false
+            return
+        }
+
+        guard let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: bounds) else {
+            isTakingScreenshot = false
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        contentView.cacheDisplay(in: bounds, to: bitmapRep)
+        let image = NSImage()
+        image.addRepresentation(bitmapRep)
+        image.size = bounds.size
+
+        isTakingScreenshot = false
+        saveScreenshotToDesktop(image)
+    }
+
+    private func saveScreenshotToDesktop(_ image: NSImage) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = formatter.string(from: Date())
+
+        let fileName = "Preview_\(timestamp).png"
+        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+        let fileURL = desktopURL?.appendingPathComponent(fileName)
+
+        guard let fileURL,
+              let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
+
+        do {
+            try pngData.write(to: fileURL)
+
+            // 同时复制到剪贴板
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.writeObjects([image])
+
+            alert_success(
+                String(
+                    format: String(localized: "Screenshot saved to Desktop and copied to clipboard: %@", table: "EditorPreview"),
+                    fileName
+                )
+            )
+
+            if Self.verbose {
+                Self.logger.info("\(self.t)📸 截图已保存至：\(fileURL.path)")
+            }
+        } catch {
+            alert_error(
+                String(
+                    format: String(localized: "Failed to save screenshot: %@", table: "EditorPreview"),
+                    error.localizedDescription
+                )
+            )
+        }
     }
 
     private static let buildTimeFormatter: DateFormatter = {

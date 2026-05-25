@@ -1158,6 +1158,53 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         )
     }
 
+    // MARK: - 截图
+
+    /// 从当前 canvas 的 surfaceView 中截取图像。
+    /// 返回截取的 NSImage，调用方负责保存或复制到剪贴板。
+    func takeScreenshot(from nsView: NSView?) -> NSImage? {
+        guard let nsView else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)📸 takeScreenshot: nsView 为 nil")
+            }
+            return nil
+        }
+
+        // 尝试找到 PreviewSurfaceView
+        guard let surfaceView = findPreviewSurfaceView(in: nsView) else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)📸 takeScreenshot: 未找到 PreviewSurfaceView")
+            }
+            return nil
+        }
+
+        let bounds = surfaceView.bounds
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+
+        // 使用 bitmapImageRepForCachingDisplay 截取视图内容
+        guard let bitmapRep = surfaceView.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+        surfaceView.cacheDisplay(in: bounds, to: bitmapRep)
+        let image = NSImage()
+        image.addRepresentation(bitmapRep)
+        image.size = bounds.size
+        return image
+    }
+
+    /// 递归查找 PreviewSurfaceView。
+    private func findPreviewSurfaceView(in view: NSView) -> LumiPreviewFacade.PreviewSurfaceView? {
+        if let surfaceView = view as? LumiPreviewFacade.PreviewSurfaceView {
+            return surfaceView
+        }
+        for subview in view.subviews {
+            if let found = findPreviewSurfaceView(in: subview) {
+                return found
+            }
+        }
+        return nil
+    }
+
     private static let imageExtensions: Set<String> = [
         "png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "webp",
         "svg", "icns", "ico", "heic", "heif"
