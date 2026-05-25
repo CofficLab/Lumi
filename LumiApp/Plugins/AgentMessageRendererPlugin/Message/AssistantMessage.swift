@@ -5,6 +5,7 @@ import LumiUI
 /// 负责完整渲染一条助手消息（包含头部、思考过程、工具调用与正文）
 struct AssistantMessage: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var llmVM: AppLLMVM
 
     let message: ChatMessage
     let isLastMessage: Bool
@@ -42,7 +43,9 @@ struct AssistantMessage: View {
                 ToolOutputView(message: message)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
-                    headerSection
+                    if llmVM.verbosity == .detailed {
+                        headerSection
+                    }
 
 //                    if shouldShowThinkingProcess {
 //                        ThinkingProcessView(thinkingText: thinkingText)
