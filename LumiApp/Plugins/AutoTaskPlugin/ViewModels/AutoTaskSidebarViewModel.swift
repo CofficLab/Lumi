@@ -1,4 +1,5 @@
 import Foundation
+import PluginAutoTask
 import SwiftUI
 
 private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
@@ -65,23 +66,15 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
         // 首次绑定通知（仅一次）
         if !notificationObserverHolder.hasObserver {
-            if AutoTaskPlugin.verbose {
-                            AutoTaskPlugin.logger.info("\(Self.t)Registering autoTaskDidChange observer")
-            }
+            Self.logger.info("\(Self.t)Registering autoTaskDidChange observer")
             let observer = NotificationCenter.default.addObserver(
                 forName: .autoTaskDidChange,
                 object: nil,
                 queue: .main
             ) { [weak self] notification in
                 let changedCid = notification.userInfo?["conversationId"] as? String
-                if AutoTaskPlugin.verbose {
-                                    AutoTaskPlugin.logger.info("📋 Received autoTaskDidChange notification, changedCid=\(changedCid?.prefix(8) ?? "nil")")
-                }
                 Task { @MainActor [weak self] in
                     guard let self else { return }
-                    if AutoTaskPlugin.verbose {
-                                            AutoTaskPlugin.logger.info("\(Self.t)Notification callback: currentCid=\(self.currentConversationId?.prefix(8) ?? "nil"), changedCid=\(changedCid?.prefix(8) ?? "nil")")
-                    }
                     if let changedCid, changedCid == self.currentConversationId {
                         await self.reloadFromDB()
                     }
@@ -109,29 +102,20 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
     private func reloadFromDB() async {
         guard let cid = currentConversationId else {
-            if AutoTaskPlugin.verbose {
-                            AutoTaskPlugin.logger.warning("\(Self.t)reloadFromDB: currentConversationId is nil, skip")
-            }
+            Self.logger.warning("\(Self.t)reloadFromDB: currentConversationId is nil, skip")
             return
         }
         let manager = TaskStateManager.shared
         let fetchedTasks = await manager.fetchTasks(conversationId: cid)
         let fetchedSummary = await manager.getProgressSummary(conversationId: cid)
 
-        if AutoTaskPlugin.verbose {
-                    AutoTaskPlugin.logger.info("\(Self.t)reloadFromDB: cid=\(cid.prefix(8)), tasks=\(fetchedTasks.count), summary=\(fetchedSummary.total) total, isEmpty=\(fetchedSummary.isEmpty), isAllDone=\(fetchedSummary.isAllDone)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)reloadFromDB: cid=\(cid.prefix(8)), tasks=\(fetchedTasks.count), summary=\(fetchedSummary.total) total")
         }
 
         tasks = fetchedTasks.map { TaskDisplayItem(from: $0) }
         summary = fetchedSummary
     }
-}
-
-// MARK: - Notification Name
-
-extension Notification.Name {
-    /// 任务数据变更通知
-    static let autoTaskDidChange = Notification.Name("autoTaskDidChange")
 }
 
 /// 任务展示用模型
