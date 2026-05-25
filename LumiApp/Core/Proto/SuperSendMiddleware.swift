@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import HttpKit
 
 /// 消息发送中间件协议

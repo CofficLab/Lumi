@@ -35,6 +35,8 @@
 		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
 		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
 		0BA8A7362FC08EB9004C2B71 /* AgentToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4712F70000100AAA109 /* AgentToolKit */; };
+		0BB994802FC492FC003720A4 /* PluginProjectOverview in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9947F2FC492FC003720A4 /* PluginProjectOverview */; };
+		0BB9F7702FC48DF6003720A4 /* PluginAutoTask in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
@@ -334,6 +336,7 @@
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
 				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
+				0BB994802FC492FC003720A4 /* PluginProjectOverview in Frameworks */,
 				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
 				0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */,
 				0B13A1022FD2000000A13A10 /* PluginGitHubCLIDetect in Frameworks */,
@@ -359,6 +362,7 @@
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				0B1A4F8B2F662D8500F15618 /* MLXRandom in Frameworks */,
+				0BB9F7702FC48DF6003720A4 /* PluginAutoTask in Frameworks */,
 				0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */,
 				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
 				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
@@ -929,6 +933,8 @@
 				0B13B1212FD3000000A13B12 /* PluginWebSearch */,
 				0B13B1312FD3000000A13B13 /* PluginShowImage */,
 				0B13B1412FD3000000A13B14 /* PluginMemory */,
+				0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */,
+				0BB9947F2FC492FC003720A4 /* PluginProjectOverview */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1047,6 +1053,8 @@
 				0B13B1202FD3000000A13B12 /* XCLocalSwiftPackageReference "Packages/PluginWebSearch" */,
 				0B13B1302FD3000000A13B13 /* XCLocalSwiftPackageReference "Packages/PluginShowImage" */,
 				0B13B1402FD3000000A13B14 /* XCLocalSwiftPackageReference "Packages/PluginMemory" */,
+				0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Packages/PluginAutoTask" */,
+				0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Packages/PluginProjectOverview" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1966,6 +1974,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ChatInputEditorKit;
 		};
+		0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Packages/PluginProjectOverview" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginProjectOverview;
+		};
+		0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Packages/PluginAutoTask" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAutoTask;
+		};
 		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMProviderKit;
@@ -2309,6 +2325,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */;
 			productName = ChatInputEditorKit;
+		};
+		0BB9947F2FC492FC003720A4 /* PluginProjectOverview */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PluginProjectOverview;
+		};
+		0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PluginAutoTask;
 		};
 		0BBB11DF2F85467D00F53902 /* SwiftTerm */ = {
 			isa = XCSwiftPackageProductDependency;

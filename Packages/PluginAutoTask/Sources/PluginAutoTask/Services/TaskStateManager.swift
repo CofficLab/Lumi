@@ -10,6 +10,7 @@ import os
 actor TaskStateManager: SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.state-manager")
 
     // MARK: - Singleton
 
@@ -27,8 +28,10 @@ actor TaskStateManager: SuperLog {
     private init() {
         let schema = Schema([TaskItem.self])
 
+        // Use plugin configuration for database directory
         let dbDir = AutoTaskPlugin.configuration.databaseDirectory()
             .appendingPathComponent("AutoTaskPlugin", isDirectory: true)
+
         try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("tasks.sqlite")
 

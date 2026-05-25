@@ -6,11 +6,13 @@ import SuperLogKit
 ///
 /// 用于创建单个任务或批量创建任务列表。
 /// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
-struct CreateTaskTool: SuperAgentTool, SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+public struct CreateTaskTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose: Bool = true
 
     public let name = "create_task"
+
+    public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         switch language {

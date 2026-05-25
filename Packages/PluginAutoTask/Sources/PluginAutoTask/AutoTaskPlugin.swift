@@ -1,5 +1,6 @@
 import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import os
 
@@ -9,7 +10,7 @@ import os
 /// 和任务上下文中间件。
 ///
 /// App 侧通过薄适配器注册此插件，实际实现转发给 package。
-public final class AutoTaskPlugin: SuperLog {
+public actor AutoTaskPlugin: SuperPlugin, SuperLog {
     nonisolated public static let emoji = "📋"
     nonisolated public static let verbose: Bool = true
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
@@ -23,18 +24,22 @@ public final class AutoTaskPlugin: SuperLog {
     public static let isConfigurable: Bool = false
     public static let enable: Bool = true
     public static var order: Int { 90 }
+    public static var category: PluginCategory { .agent }
 
     // MARK: - Configuration
 
     /// 插件配置（由 App 侧注册文件注入）
-    public static var configuration: AutoTaskConfiguration = DefaultAutoTaskConfiguration()
+    nonisolated(unsafe) public static var configuration: any AutoTaskConfiguration = DefaultAutoTaskConfiguration()
+
+    public static let shared = AutoTaskPlugin()
 
     private init() {}
 
     // MARK: - Agent Tools
 
-    public func agentTools() -> [any SuperAgentTool] {
-        return [
+    @MainActor
+    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [
             CreateTaskTool(),
             AppendTaskTool(),
             UpdateTaskTool(),
@@ -45,6 +50,7 @@ public final class AutoTaskPlugin: SuperLog {
 
     // MARK: - Send Middlewares
 
+    @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(TaskContextMiddleware())]
     }

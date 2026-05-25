@@ -73,7 +73,8 @@ public struct AutoTaskSidebarView: View {
             }
         }
         .task(id: conversationIdProvider()) {
-            await viewModel.refresh(conversationId: conversationIdProvider())
+            let cid = conversationIdProvider()?.uuidString
+            await viewModel.refresh(conversationId: cid)
         }
         .onDisappear {
             viewModel.removeObserver()

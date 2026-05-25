@@ -32,7 +32,7 @@ final public class TaskItem: @unchecked Sendable {
     public var updatedAt: TimeInterval
 
     /// 任务状态枚举
-    public enum TaskStatus: String, Codable {
+    public enum TaskStatus: String, Codable, Sendable {
         case pending
         case inProgress = "in_progress"
         case completed

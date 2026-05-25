@@ -6,11 +6,13 @@ import SuperLogKit
 ///
 /// 用于标记任务为进行中、已完成或跳过。
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
-struct UpdateTaskTool: SuperAgentTool, SuperLog {
-    nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = true
+public struct UpdateTaskTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "✅"
+    public nonisolated static let verbose: Bool = true
 
     public let name = "update_task"
+
+    public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         switch language {

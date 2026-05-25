@@ -1,5 +1,6 @@
 import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
 /// AutoTask 进度注入中间件
@@ -35,8 +36,7 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
 
         let prompt = buildProgressPrompt(
             tasks: tasks,
-            summary: summary,
-            languagePreference: ctx.projectVM.languagePreference
+            summary: summary
         )
         ctx.transientSystemPrompts.append(prompt)
 
@@ -49,18 +49,12 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
 
     // MARK: - Private
 
-    /// 构建进度注入 Prompt
+    /// 构建进度注入 Prompt（默认中文）
     private func buildProgressPrompt(
         tasks: [TaskItem],
-        summary: TaskProgressSummary,
-        languagePreference: LanguagePreference
+        summary: TaskProgressSummary
     ) -> String {
-        switch languagePreference {
-        case .chinese:
-            return buildChineseProgressPrompt(tasks: tasks, summary: summary)
-        case .english:
-            return buildEnglishProgressPrompt(tasks: tasks, summary: summary)
-        }
+        buildChineseProgressPrompt(tasks: tasks, summary: summary)
     }
 
     private func buildEnglishProgressPrompt(tasks: [TaskItem], summary: TaskProgressSummary) -> String {

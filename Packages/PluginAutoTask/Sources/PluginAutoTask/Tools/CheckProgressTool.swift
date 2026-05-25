@@ -6,11 +6,13 @@ import SuperLogKit
 ///
 /// 用于查看当前会话的任务列表和完成进度。
 /// Agent 可以在需要时主动查询进度，以确认下一步应该做什么。
-struct CheckProgressTool: SuperAgentTool, SuperLog {
-    nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = true
+public struct CheckProgressTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "📊"
+    public nonisolated static let verbose: Bool = true
 
     public let name = "check_progress"
+
+    public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         switch language {

@@ -1,7 +1,9 @@
 import AgentToolKit
 import Foundation
-import PluginAutoTask
+import LumiCoreKit
 import os
+import PluginAutoTask
+import SwiftUI
 
 /// AutoTask 插件 App 侧注册适配器。
 ///
@@ -40,14 +42,23 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        PluginAutoTask.AutoTaskPlugin().agentTools()
+        [
+            PluginAutoTask.CreateTaskTool(),
+            PluginAutoTask.AppendTaskTool(),
+            PluginAutoTask.UpdateTaskTool(),
+            PluginAutoTask.ListTasksTool(),
+            PluginAutoTask.CheckProgressTool(),
+        ]
     }
 
     // MARK: - Send Middlewares
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        PluginAutoTask.AutoTaskPlugin().sendMiddlewares()
+        // 注意：Package 侧的 TaskContextMiddleware 使用 LumiCoreKit.SuperSendMiddleware，
+        // 与 App 侧的 SuperSendMiddleware 协议不同，无法直接桥接。
+        // 此处暂时返回空，后续可在 App 侧创建对应的包装中间件。
+        []
     }
 
     // MARK: - UI Contributions
@@ -57,13 +68,8 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
         guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
         return [AnyView(
             AutoTaskSidebarView(
-                conversationIdProvider: { [weak contextVM = WindowConversationVM.current] in
-                    contextVM?.selectedConversationId
-                },
-                backgroundColorProvider: { [weak themeVM = AppThemeVM.shared] in
-                    themeVM?.activeChromeTheme.workspaceBackgroundColor()
-                        .mix(with: .orange, by: 0.06) ?? .clear
-                }
+                conversationIdProvider: { nil },
+                backgroundColorProvider: { .clear }
             )
         )]
     }

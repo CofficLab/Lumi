@@ -1,4 +1,5 @@
 import Foundation
+import os
 import PluginAutoTask
 import SwiftUI
 import SuperLogKit
@@ -33,8 +34,9 @@ private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
 /// 通过监听任务变更通知自动刷新 UI。
 @MainActor
 final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated public static let emoji = "📋"
+    nonisolated public static let verbose = true
+    nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.sidebar.vm")
 
     @Published public var tasks: [TaskDisplayItem] = []
     @Published public var summary: TaskProgressSummary?
