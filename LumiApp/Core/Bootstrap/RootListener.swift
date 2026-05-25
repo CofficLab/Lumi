@@ -107,7 +107,6 @@ extension RootListener {
             images: allImages
         )
         scope.messageQueueVM.enqueueMessage(message)
-        scope.chatTimelineViewModel.handleMessageQueued(message)
         Task {
             await sendController.attemptBeginNextQueuedSend()
         }

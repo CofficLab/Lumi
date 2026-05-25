@@ -249,7 +249,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             images: allImages
         )
         messageQueueVM.enqueueMessage(message)
-        chatTimelineViewModel.handleMessageQueued(message)
 
         Task { [weak self] in
             guard let self, !self.hasCleanedUp else { return }
