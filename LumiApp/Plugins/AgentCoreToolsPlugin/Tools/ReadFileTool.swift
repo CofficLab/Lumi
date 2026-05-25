@@ -56,8 +56,8 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
-        guard let path = arguments["path"]?.value as? String else { return nil }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let path = arguments["path"]?.value as? String else { return "读取文件" }
         let fileName = URL(fileURLWithPath: path).lastPathComponent
         return "读取 \(fileName)"
     }

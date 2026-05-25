@@ -67,6 +67,7 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "添加 Issue 评论"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

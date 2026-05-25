@@ -136,7 +136,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 根据工具名称和参数 JSON 获取面向用户的操作描述
     ///
     /// 通过工具的 `displayDescription(for:)` 方法获取描述，
-    /// 工具未注册或未提供描述时返回 `nil`。
+    /// 工具未注册时返回 `nil`。
     func displayDescription(toolName: String, argumentsJSON: String) -> String? {
         guard let tool = tool(named: toolName),
               let dict = Self.parseToolArgumentsDict(from: argumentsJSON) else {

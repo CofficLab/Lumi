@@ -51,6 +51,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "创建任务"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

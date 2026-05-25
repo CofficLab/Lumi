@@ -43,6 +43,7 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查看 GitHub 趋势"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

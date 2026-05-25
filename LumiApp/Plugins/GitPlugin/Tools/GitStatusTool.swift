@@ -35,6 +35,10 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看 Git 状态"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

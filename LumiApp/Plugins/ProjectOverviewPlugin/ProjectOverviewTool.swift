@@ -27,6 +27,10 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "查看项目概览"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

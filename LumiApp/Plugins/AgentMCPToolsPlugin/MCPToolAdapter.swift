@@ -145,6 +145,10 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "MCP \(mcpTool.name)"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .high
     }

@@ -70,7 +70,7 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
         return format(results: results)
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
         "收集子 Agent 结果"
     }
 

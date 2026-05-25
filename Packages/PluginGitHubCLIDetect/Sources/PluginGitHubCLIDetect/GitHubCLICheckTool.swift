@@ -28,6 +28,10 @@ public struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "检测 GitHub CLI"
+    }
+
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

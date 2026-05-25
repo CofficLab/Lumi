@@ -52,8 +52,8 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         .high
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
-        guard let path = arguments["path"]?.value as? String else { return nil }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let path = arguments["path"]?.value as? String else { return "写入文件" }
         let fileName = URL(fileURLWithPath: path).lastPathComponent
         return "写入 \(fileName)"
     }

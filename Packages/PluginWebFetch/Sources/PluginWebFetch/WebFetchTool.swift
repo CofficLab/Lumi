@@ -62,7 +62,12 @@ Supported content types:
         ]
     }
 
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "抓取网页内容"
+    }
+
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
         .medium
     }
 

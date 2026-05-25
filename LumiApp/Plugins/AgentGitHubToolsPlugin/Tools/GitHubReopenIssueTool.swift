@@ -59,6 +59,7 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         }
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "重新打开 Issue"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

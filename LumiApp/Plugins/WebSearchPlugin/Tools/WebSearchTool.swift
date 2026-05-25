@@ -45,6 +45,7 @@ Note: This tool is often required to be used alongside web_fetch or web_extracto
         ]
     }
     
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "搜索网页"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

@@ -49,8 +49,8 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
-        guard let path = arguments["path"]?.value as? String else { return nil }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        guard let path = arguments["path"]?.value as? String else { return "列出目录" }
         let dirName = URL(fileURLWithPath: path).lastPathComponent
         return "列出 \(dirName) 目录"
     }

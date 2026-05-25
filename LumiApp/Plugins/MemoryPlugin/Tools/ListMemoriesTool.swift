@@ -42,6 +42,7 @@ struct ListMemoriesTool: SuperAgentTool {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "列出记忆"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

@@ -46,6 +46,7 @@ struct DeleteMemoryTool: SuperAgentTool {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "删除记忆"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

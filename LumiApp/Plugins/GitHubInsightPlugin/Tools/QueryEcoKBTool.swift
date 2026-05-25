@@ -41,6 +41,7 @@ struct QueryEcoKBTool: SuperAgentTool {
     }
 
     /// 声明该工具为低风险，因为它只读取本地缓存数据。
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查询生态知识库"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

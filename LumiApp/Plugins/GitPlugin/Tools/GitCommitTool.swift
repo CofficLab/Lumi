@@ -60,6 +60,10 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "提交变更"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium // 提交会修改代码库，风险中等
     }

@@ -72,6 +72,7 @@ struct SaveMemoryTool: SuperAgentTool {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "保存记忆"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }

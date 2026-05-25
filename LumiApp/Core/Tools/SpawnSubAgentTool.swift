@@ -91,9 +91,9 @@ struct SpawnSubAgentTool: SuperAgentTool, SuperLog {
         """
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String? {
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let type = arguments["type"]?.value as? String, !type.isEmpty else {
-            return nil
+            return "启动子 Agent"
         }
         return "启动子 Agent \(type)"
     }

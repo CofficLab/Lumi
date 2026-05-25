@@ -59,6 +59,15 @@ struct GitBranchTool: SuperAgentTool, SuperLog {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        let action = arguments["action"]?.value as? String ?? "list"
+        switch action {
+        case "create": return "创建分支"
+        case "checkout": return "切换分支"
+        default: return "查看分支"
+        }
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         guard let action = arguments["action"]?.value as? String else { return .low }
         switch action {

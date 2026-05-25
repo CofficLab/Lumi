@@ -54,6 +54,7 @@ Returns the file path of the saved screenshot image (PNG format).
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "网页截图"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

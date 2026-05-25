@@ -40,6 +40,7 @@ struct CreateAgentRuleTool: SuperAgentTool {
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "创建规则"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         // 文件创建操作需要中等权限
         .medium

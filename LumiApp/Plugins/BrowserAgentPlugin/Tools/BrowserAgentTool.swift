@@ -77,6 +77,7 @@ Note: Requires agent-browser CLI to be installed.
         ]
     }
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "浏览器自动化"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }

@@ -74,6 +74,10 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
 
     init() {}
 
+    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "显示图片"
+    }
+
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
