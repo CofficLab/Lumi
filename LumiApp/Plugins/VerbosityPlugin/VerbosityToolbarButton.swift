@@ -4,6 +4,7 @@ import MagicAlert
 /// 详细程度切换工具栏按钮
 ///
 /// 显示当前详细程度图标和名称，点击在简洁 / 详细之间切换。
+/// 切换对话时自动从数据库恢复该对话的详细程度偏好。
 struct VerbosityToolbarButton: View {
     @EnvironmentObject private var llmVM: AppLLMVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
@@ -44,6 +45,13 @@ struct VerbosityToolbarButton: View {
         .help(helpText)
         .accessibilityLabel(String(localized: "Verbosity", table: "Verbosity"))
         .accessibilityHint(String(localized: "Verbosity Hint", table: "Verbosity"))
+        .onChange(of: conversationVM.selectedConversationId) { _, _ in
+            if let preference = conversationVM.getVerbosityPreference() {
+                llmVM.setVerbosity(preference)
+            } else {
+                llmVM.setVerbosity(.brief)
+            }
+        }
     }
 
     // MARK: - 计算属性
