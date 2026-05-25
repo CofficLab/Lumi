@@ -6,6 +6,7 @@ public struct LumiFileIconContext {
     public let fileExtension: String
     public let isDirectory: Bool
     public let isExpanded: Bool
+    public let isSwiftPackageDirectory: Bool
     public let projectRootPath: String
 
     public init(
@@ -14,6 +15,7 @@ public struct LumiFileIconContext {
         fileExtension: String,
         isDirectory: Bool,
         isExpanded: Bool,
+        isSwiftPackageDirectory: Bool = false,
         projectRootPath: String
     ) {
         self.url = url
@@ -21,6 +23,7 @@ public struct LumiFileIconContext {
         self.fileExtension = fileExtension
         self.isDirectory = isDirectory
         self.isExpanded = isExpanded
+        self.isSwiftPackageDirectory = isSwiftPackageDirectory
         self.projectRootPath = projectRootPath
     }
 }
@@ -85,6 +88,10 @@ public final class LumiRuleBasedFileIconThemeContributor: LumiFileIconThemeContr
 
     public func icon(for context: LumiFileIconContext) -> LumiFileIcon? {
         if context.isDirectory {
+            if context.isSwiftPackageDirectory {
+                return context.isExpanded ? .systemImage("shippingbox.fill") : .systemImage("shippingbox")
+            }
+
             let name = context.fileName.lowercased()
             return folderIcons[name]?.icon(isExpanded: context.isExpanded)
         }
