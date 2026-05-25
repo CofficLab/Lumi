@@ -10,16 +10,16 @@ struct LayoutMenuButton: View {
     var body: some View {
         Menu {
             Toggle(isOn: $layoutVM.editorVisible) {
-                Label("Editor", systemImage: "rectangle.center.inset.filled")
+                Label(String(localized: "Editor", bundle: .module), systemImage: "rectangle.center.inset.filled")
             }
             Toggle(isOn: $layoutVM.contentPanelVisible) {
-                Label("Content Panel", systemImage: "rectangle.topthird.inset.filled")
+                Label(String(localized: "Content Panel", bundle: .module), systemImage: "rectangle.topthird.inset.filled")
             }
             Toggle(isOn: $layoutVM.bottomPanelVisible) {
-                Label("Bottom Panel", systemImage: "square.bottomthird.inset.filled")
+                Label(String(localized: "Bottom Panel", bundle: .module), systemImage: "square.bottomthird.inset.filled")
             }
             Toggle(isOn: $layoutVM.railVisible) {
-                Label("Rail", systemImage: "sidebar.right")
+                Label(String(localized: "Rail", bundle: .module), systemImage: "sidebar.right")
             }
         } label: {
             Image(systemName: "sidebar.leading")
