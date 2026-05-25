@@ -11,17 +11,18 @@ struct MessageListView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
+    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
     @EnvironmentObject var projectVM: WindowProjectVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
+    @State private var shouldPinLatestUserMessageToTop = false
+    @State private var keepLatestUserMessageAtTop = false
+    @State private var scrollViewportHeight: CGFloat = 0
     @State private var followNewMessages = true
-    @State private var suppressAutoScrollUntil = Date.distantPast
-    @State private var listScrollView: NSScrollView?
     @State private var isProgrammaticScrolling = false
     @State private var forceScrollToBottomOnNextChange = false
     @State private var lastRowChangeScheduler = LastRowChangeScheduler()
-    @State private var documentHeightBeforePrepend: CGFloat?
     private struct DisplayRow: Identifiable {
         let id: UUID
         let message: ChatMessage
@@ -34,18 +35,10 @@ struct MessageListView: View {
         let contentLength: Int
         let contentTail: Unicode.Scalar?
 
-        /// 同一行仅正文变长（如底部状态行刷新）；列表不展示助手流式逐字输出。
-        func isSameRowContentUpdate(from previous: LastRowChangeToken) -> Bool {
+        func isStreamingContentUpdate(from previous: LastRowChangeToken) -> Bool {
             rowCount == previous.rowCount &&
                 id == previous.id &&
                 contentLength != previous.contentLength
-        }
-
-        /// 在顶部插入更早消息（加载更多 / 展开已加载历史）时，最后一行不变、行数增加。
-        func isPrependUpdate(from previous: LastRowChangeToken) -> Bool {
-            rowCount > previous.rowCount &&
-                id == previous.id &&
-                id != nil
         }
     }
 
@@ -53,9 +46,10 @@ struct MessageListView: View {
         ScrollViewReader { proxy in
             let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.visibleMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
-            let displayRows = buildDisplayRows(from: windowedPersistedRows)
+            let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
             let lastMessageID = displayRows.last?.id
             let lastRowChangeToken = lastRowChangeToken(for: displayRows)
+            let focusSpacerHeight = keepLatestUserMessageAtTop ? max(scrollViewportHeight * 0.95, 500) : 0
 
             Group {
                 if displayRows.isEmpty {
@@ -68,13 +62,15 @@ struct MessageListView: View {
                     messageScrollView(
                         displayRows: displayRows,
                         lastMessageID: lastMessageID,
-                        hiddenLoadedHistoryCount: hiddenLoadedHistoryCount
+                        hiddenLoadedHistoryCount: hiddenLoadedHistoryCount,
+                        focusSpacerHeight: focusSpacerHeight
                     )
                 }
             }
             .onAppear {
                 historyWindowLimit = Self.defaultHistoryWindowLimit
-                suppressAutoScrollUntil = .distantPast
+                shouldPinLatestUserMessageToTop = false
+                keepLatestUserMessageAtTop = false
                 setFollowNewMessages(true)
                 timelineViewModel.handleOnAppear()
                 DispatchQueue.main.async {
@@ -84,7 +80,8 @@ struct MessageListView: View {
             .onChange(of: timelineViewModel.selectedConversationId) { _, _ in
                 lastRowChangeScheduler.cancel()
                 historyWindowLimit = Self.defaultHistoryWindowLimit
-                suppressAutoScrollUntil = .distantPast
+                shouldPinLatestUserMessageToTop = false
+                keepLatestUserMessageAtTop = false
                 forceScrollToBottomOnNextChange = false
                 setFollowNewMessages(true)
             }
@@ -95,8 +92,7 @@ struct MessageListView: View {
                 lastRowChangeScheduler.schedule {
                     handleLastMessageChanged(
                         proxy: proxy,
-                        isSameRowContentUpdate: newToken.isSameRowContentUpdate(from: oldToken),
-                        isPrependUpdate: newToken.isPrependUpdate(from: oldToken)
+                        isStreamingContentUpdate: newToken.isStreamingContentUpdate(from: oldToken)
                     )
                 }
             }
@@ -106,7 +102,8 @@ struct MessageListView: View {
                 guard message.role == .user, message.shouldDisplayInChatList() else { return }
 
                 forceScrollToBottomOnNextChange = true
-                suppressAutoScrollUntil = .distantPast
+                shouldPinLatestUserMessageToTop = false
+                keepLatestUserMessageAtTop = false
                 setFollowNewMessages(true)
 
                 DispatchQueue.main.async {
@@ -146,7 +143,8 @@ extension MessageListView {
     private func messageScrollView(
         displayRows: [DisplayRow],
         lastMessageID: UUID?,
-        hiddenLoadedHistoryCount: Int
+        hiddenLoadedHistoryCount: Int,
+        focusSpacerHeight: CGFloat
     ) -> some View {
         return List {
             if hiddenLoadedHistoryCount > 0 {
@@ -181,6 +179,12 @@ extension MessageListView {
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
 
+            if focusSpacerHeight > 0 {
+                Color.clear
+                    .frame(height: focusSpacerHeight)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -189,17 +193,22 @@ extension MessageListView {
         .accessibilityLabel(String(localized: "Message List", table: "AgentChat"))
         .accessibilityHint(String(localized: "Message List Hint", table: "AgentChat"))
         .overlay(alignment: .topLeading) {
-            ScrollPositionObserver(
-                onMetricsChanged: { atBottom, userInitiated in
-                    handleScrollPositionChanged(atBottom: atBottom, userInitiated: userInitiated)
-                },
-                onUserScrollActivity: noteUserScrollActivity,
-                onScrollViewResolved: { scrollView in
-                    listScrollView = scrollView
-                }
-            )
+            ScrollPositionObserver { atBottom, userInitiated in
+                handleScrollPositionChanged(atBottom: atBottom, userInitiated: userInitiated)
+            }
             .frame(width: 0, height: 0)
         }
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        scrollViewportHeight = geometry.size.height
+                    }
+                    .onChange(of: geometry.size.height) { _, newHeight in
+                        scrollViewportHeight = newHeight
+                    }
+            }
+        )
     }
 
     private func showEarlierLoadedButton(hiddenCount: Int) -> some View {
@@ -214,7 +223,6 @@ extension MessageListView {
                 style: .tonal,
                 size: .small
             ) {
-                beginBrowsingOlderMessages()
                 historyWindowLimit += Self.historyWindowStep
             }
             .accessibilityLabel(String(localized: "Expand Earlier Messages", table: "AgentChat"))
@@ -256,7 +264,6 @@ extension MessageListView {
                     style: .tonal,
                     size: .small
                 ) {
-                    beginBrowsingOlderMessages()
                     timelineViewModel.handleLoadMore()
                 }
                 .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentChat"))
@@ -285,30 +292,28 @@ extension MessageListView {
 extension MessageListView {
     private func handleUserDidSendMessageEvent(proxy: ScrollViewProxy) {
         timelineViewModel.handleUserDidSendMessage()
-        suppressAutoScrollUntil = .distantPast
+        shouldPinLatestUserMessageToTop = false
+        keepLatestUserMessageAtTop = false
         setFollowNewMessages(true)
         DispatchQueue.main.async {
             scrollToBottom(proxy: proxy, animated: true)
         }
     }
 
-    private func handleLastMessageChanged(
-        proxy: ScrollViewProxy,
-        isSameRowContentUpdate: Bool,
-        isPrependUpdate: Bool
-    ) {
+    private func handleLastMessageChanged(proxy: ScrollViewProxy, isStreamingContentUpdate: Bool) {
         guard !windowedHistoryRows(from: timelineViewModel.visibleMessages).isEmpty else { return }
-
-        if isPrependUpdate {
-            compensateScrollPositionAfterPrepend()
-            return
-        }
-
-        guard shouldPerformAutoScrollNow() else { return }
 
         if forceScrollToBottomOnNextChange {
             forceScrollToBottomOnNextChange = false
             scrollToBottom(proxy: proxy, animated: false)
+            return
+        }
+
+        if shouldPinLatestUserMessageToTop {
+            scrollLatestUserMessageToTop(proxy: proxy, animated: false)
+            shouldPinLatestUserMessageToTop = false
+            keepLatestUserMessageAtTop = true
+            setFollowNewMessages(false)
             return
         }
 
@@ -317,53 +322,13 @@ extension MessageListView {
             return
         }
 
-        guard followNewMessages else { return }
-
-        // 状态行随 SSE 高频刷新，但列表不展示助手流式正文；不应抢滚动条。
-        if isSameRowContentUpdate {
-            return
+        if followNewMessages {
+            scrollToBottom(proxy: proxy, animated: !isStreamingContentUpdate)
         }
-
-        scrollToBottom(proxy: proxy, animated: true)
-    }
-
-    /// 用户主动查看更早消息：暂停跟到底，并记录插入前的文档高度以便补偿滚动位置。
-    private func beginBrowsingOlderMessages() {
-        documentHeightBeforePrepend = listScrollView?.documentView?.bounds.height
-        suppressAutoScrollUntil = Date().addingTimeInterval(1)
-        setFollowNewMessages(false)
-    }
-
-    private func compensateScrollPositionAfterPrepend() {
-        defer { documentHeightBeforePrepend = nil }
-        guard let scrollView = listScrollView,
-              let documentView = scrollView.documentView,
-              let oldHeight = documentHeightBeforePrepend else { return }
-
-        documentView.layoutSubtreeIfNeeded()
-        let delta = documentView.bounds.height - oldHeight
-        guard delta > 0.5 else { return }
-
-        let clipView = scrollView.contentView
-        clipView.scroll(to: NSPoint(x: 0, y: clipView.bounds.origin.y + delta))
-        scrollView.reflectScrolledClipView(clipView)
-    }
-
-    private func shouldPerformAutoScrollNow() -> Bool {
-        !isProgrammaticScrolling && Date() >= suppressAutoScrollUntil
-    }
-
-    private func noteUserScrollActivity() {
-        guard !isProgrammaticScrolling else { return }
-        suppressAutoScrollUntil = Date().addingTimeInterval(0.45)
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
         beginProgrammaticScrolling()
-        if !animated, let listScrollView {
-            listScrollView.scrollToDocumentBottom()
-            return
-        }
         if animated {
             LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
                 proxy.scrollTo(bottomAnchorId, anchor: .bottom)
@@ -373,13 +338,35 @@ extension MessageListView {
         }
     }
 
-    private func buildDisplayRows(from messages: [ChatMessage]) -> [DisplayRow] {
-        return messages.map { message in
+    private func scrollLatestUserMessageToTop(proxy: ScrollViewProxy, animated: Bool) {
+        guard let latestUserMessageId = latestVisibleUserMessageId() else { return }
+        beginProgrammaticScrolling()
+        if animated {
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.scroll, preference: motionPreference)) {
+                proxy.scrollTo(latestUserMessageId, anchor: .top)
+            }
+        } else {
+            proxy.scrollTo(latestUserMessageId, anchor: .top)
+        }
+    }
+
+    private func latestVisibleUserMessageId() -> UUID? {
+        windowedHistoryRows(from: timelineViewModel.visibleMessages)
+            .last(where: { $0.role == .user })?
+            .id
+    }
+
+    private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {
+        var rows = messages.map { message in
             DisplayRow(
                 id: message.id,
                 message: message
             )
         }
+        if let statusRow = statusRow {
+            rows.append(statusRow)
+        }
+        return rows
     }
 
     private func windowedHistoryRows(from messages: [ChatMessage]) -> [ChatMessage] {
@@ -388,6 +375,13 @@ extension MessageListView {
             return messages
         }
         return Array(messages.suffix(historyWindowLimit))
+    }
+
+    private var statusDisplayRow: DisplayRow? {
+        guard let sid = timelineViewModel.selectedConversationId,
+              let vmMessage = conversationSendStatusVM.statusMessage(for: sid)
+        else { return nil }
+        return DisplayRow(id: vmMessage.id, message: vmMessage)
     }
 
     private func lastRowChangeToken(for rows: [DisplayRow]) -> LastRowChangeToken {
@@ -419,7 +413,7 @@ extension MessageListView {
         // 只有用户主动滚到最底部时，才恢复自动跟随，避免内容更新误判导致“抢滚动条”。
         if userInitiated && atBottom {
             setFollowNewMessages(true)
-            suppressAutoScrollUntil = .distantPast
+            keepLatestUserMessageAtTop = false
         }
     }
 
@@ -443,15 +437,9 @@ extension MessageListView {
 
 private struct ScrollPositionObserver: NSViewRepresentable {
     let onMetricsChanged: (_ atBottom: Bool, _ userInitiated: Bool) -> Void
-    let onUserScrollActivity: () -> Void
-    let onScrollViewResolved: (NSScrollView) -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(
-            onMetricsChanged: onMetricsChanged,
-            onUserScrollActivity: onUserScrollActivity,
-            onScrollViewResolved: onScrollViewResolved
-        )
+        Coordinator(onMetricsChanged: onMetricsChanged)
     }
 
     func makeNSView(context: Context) -> ProbeView {
@@ -462,8 +450,6 @@ private struct ScrollPositionObserver: NSViewRepresentable {
 
     func updateNSView(_ nsView: ProbeView, context: Context) {
         context.coordinator.onMetricsChanged = onMetricsChanged
-        context.coordinator.onUserScrollActivity = onUserScrollActivity
-        context.coordinator.onScrollViewResolved = onScrollViewResolved
         context.coordinator.attachIfNeeded(from: nsView)
     }
 
@@ -482,11 +468,9 @@ private struct ScrollPositionObserver: NSViewRepresentable {
     }
 
     final class Coordinator: @unchecked Sendable {
-        private static let bottomEpsilon: CGFloat = 28
+        private static let bottomEpsilon: CGFloat = 6
 
         var onMetricsChanged: (_ atBottom: Bool, _ userInitiated: Bool) -> Void
-        var onUserScrollActivity: () -> Void
-        var onScrollViewResolved: (NSScrollView) -> Void
 
         private weak var scrollView: NSScrollView?
         private weak var documentView: NSView?
@@ -495,14 +479,8 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         private var lastAtBottom: Bool?
         private var lastUserInitiated: Bool?
 
-        init(
-            onMetricsChanged: @escaping (_ atBottom: Bool, _ userInitiated: Bool) -> Void,
-            onUserScrollActivity: @escaping () -> Void,
-            onScrollViewResolved: @escaping (NSScrollView) -> Void
-        ) {
+        init(onMetricsChanged: @escaping (_ atBottom: Bool, _ userInitiated: Bool) -> Void) {
             self.onMetricsChanged = onMetricsChanged
-            self.onUserScrollActivity = onUserScrollActivity
-            self.onScrollViewResolved = onScrollViewResolved
         }
 
         deinit {
@@ -521,7 +499,6 @@ private struct ScrollPositionObserver: NSViewRepresentable {
 
             removeObservers()
             scrollView = enclosing
-            onScrollViewResolved(enclosing)
             bindObservers(to: enclosing)
             emitMetrics(userInitiated: false)
         }
@@ -530,20 +507,18 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         private func findEnclosingScrollView(from view: NSView) -> NSScrollView? {
             var node: NSView? = view
             while let current = node {
-                if let tableView = current as? NSTableView {
-                    return tableView.enclosingScrollView
+                if let sv = current as? NSScrollView {
+                    return sv
                 }
                 node = current.superview
             }
 
-            if let tableView = findFirstTableView(in: view) {
-                return tableView.enclosingScrollView
-            }
-
+            // 对于 SwiftUI 的 overlay 场景，探针可能不在 NSScrollView 子树内。
+            // 退化为从祖先节点向下查找最近的 NSScrollView。
             var ancestor: NSView? = view.superview
             while let current = ancestor {
-                if let tableView = findFirstTableView(in: current) {
-                    return tableView.enclosingScrollView
+                if let found = findFirstScrollView(in: current) {
+                    return found
                 }
                 ancestor = current.superview
             }
@@ -551,12 +526,12 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         }
 
         @MainActor
-        private func findFirstTableView(in root: NSView) -> NSTableView? {
-            if let tableView = root as? NSTableView {
-                return tableView
+        private func findFirstScrollView(in root: NSView) -> NSScrollView? {
+            if let sv = root as? NSScrollView {
+                return sv
             }
             for child in root.subviews {
-                if let found = findFirstTableView(in: child) {
+                if let found = findFirstScrollView(in: child) {
                     return found
                 }
             }
@@ -573,11 +548,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             ) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     guard let self else { return }
-                    let userInitiated = self.isLikelyUserScroll()
-                    if userInitiated {
-                        self.onUserScrollActivity()
-                    }
-                    self.emitMetrics(userInitiated: userInitiated)
+                    self.emitMetrics(userInitiated: self.isLikelyUserScroll())
                 }
             }
             observers.append(boundsObs)
@@ -588,9 +559,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    self.isLiveScrolling = true
-                    self.onUserScrollActivity()
+                    self?.isLiveScrolling = true
                 }
             }
             observers.append(startObs)
@@ -603,7 +572,6 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     self.isLiveScrolling = false
-                    self.onUserScrollActivity()
                     self.emitMetrics(userInitiated: true)
                 }
             }
@@ -672,19 +640,6 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             lastAtBottom = nil
             lastUserInitiated = nil
         }
-    }
-}
-
-
-private extension NSScrollView {
-    func scrollToDocumentBottom() {
-        guard let documentView else { return }
-        documentView.layoutSubtreeIfNeeded()
-        let clipView = contentView
-        let maxY = max(0, documentView.bounds.height - clipView.bounds.height)
-        guard abs(clipView.bounds.origin.y - maxY) > 0.5 else { return }
-        clipView.scroll(to: NSPoint(x: 0, y: maxY))
-        reflectScrolledClipView(clipView)
     }
 }
 
