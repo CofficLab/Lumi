@@ -15,7 +15,7 @@ import os
 ///
 /// ## 观察的数据
 ///
-/// - `AppPluginVM.activePanelIcon`：活动栏选中的图标
+/// - `WindowLayoutVM.activePanelIcon`：活动栏选中的图标
 /// - `WindowLayoutVM.selectedAgentSidebarTabId`：Agent 模式侧边栏 Tab
 /// - `WindowLayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
 /// - `WindowLayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
@@ -136,7 +136,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                                     LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复活动栏图标: \(savedIcon)")
                 }
             }
-            pluginVM.activePanelIcon = savedIcon
+            layoutVM.restoreFromPlugin(activePanelIcon: savedIcon)
         }
 
         // 恢复侧边栏 Tab
@@ -210,7 +210,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
         guard cancellables.isEmpty else { return }
 
         // 观察 activePanelIcon（不在视图层级中直接绑定，用 Combine）
-        pluginVM.$activePanelIcon
+        layoutVM.$activePanelIcon
             .dropFirst()
             .sink { newValue in
                 guard hasRestored else { return }

@@ -12,9 +12,10 @@ struct PanelContentView: View {
     @EnvironmentObject var layoutVM: WindowLayoutVM
 
     var body: some View {
-        let activeItem = pluginProvider.getActivePanelItem()
-        let headerViews = pluginProvider.getActivePanelHeaderViews()
-        let hasBottomTabs = pluginProvider.hasBottomPanelTabs()
+        let activeIcon = layoutVM.activePanelIcon
+        let activeItem = pluginProvider.getActivePanelItem(activeIcon: activeIcon)
+        let headerViews = pluginProvider.getActivePanelHeaderViews(activeIcon: activeIcon)
+        let hasBottomTabs = pluginProvider.hasBottomPanelTabs(activeIcon: activeIcon)
         let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
         let showContentPanel = layoutVM.contentPanelVisible
 

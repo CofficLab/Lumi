@@ -220,7 +220,7 @@ final class AutomationController: SuperLog {
 
     /// 确保编辑器面板处于活动状态
     private func ensureEditorPanelActive() {
-        AppPluginVM.shared.activePanelIcon = EditorPlugin.iconName
+        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activePanelIcon = EditorPlugin.iconName
         Self.logger.info("🤖 Activated editor panel")
     }
 
@@ -237,7 +237,7 @@ final class AutomationController: SuperLog {
     /// 确保 Agent 面板处于活动状态
     private func ensureAgentPanelActive() {
         // Agent 面板通常是默认面板
-        AppPluginVM.shared.activePanelIcon = nil
+        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activePanelIcon = nil
     }
 }
 

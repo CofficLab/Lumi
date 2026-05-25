@@ -4,7 +4,7 @@ import SwiftUI
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
 ///
 /// 聚合所有提供 `addPanelIcon()` 的插件图标，
-/// 点击后更新 `AppPluginVM.activePanelIcon`，驱动内容面板切换。
+/// 点击后更新 `WindowLayoutVM.activePanelIcon`，驱动面板内容区切换。
 ///
 /// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
@@ -17,7 +17,7 @@ struct ActivityBar: View {
 
     var body: some View {
         let iconItems = pluginProvider.getPanelIconItems()
-        let activeIcon = pluginProvider.activePanelIcon
+        let activeIcon = layoutVM.activePanelIcon
         let theme = themeVM.activeChromeTheme
 
         VStack(spacing: 0) {
@@ -29,7 +29,7 @@ struct ActivityBar: View {
                             title: item.title,
                             isSelected: item.icon == activeIcon
                         ) {
-                            pluginProvider.activePanelIcon = item.icon
+                            layoutVM.activePanelIcon = item.icon
                             layoutVM.selectAgentSidebarTab(item.id, reason: "Activity bar clicked")
                         }
                     }
@@ -54,9 +54,9 @@ struct ActivityBar: View {
             let items = pluginProvider.getPanelIconItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
             // 如果 LayoutPlugin 尚未恢复图标（或恢复的图标已失效），回退到第一个
-            if pluginProvider.activePanelIcon == nil {
+            if layoutVM.activePanelIcon == nil {
                 if let first = items.first {
-                    pluginProvider.activePanelIcon = first.icon
+                    layoutVM.activePanelIcon = first.icon
                 }
             }
         }

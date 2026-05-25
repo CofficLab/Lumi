@@ -17,7 +17,7 @@ struct StatusBar: View {
 
     var body: some View {
         let context = PluginContext(
-            activeIcon: pluginProvider.activePanelIcon,
+            activeIcon: layoutVM.activePanelIcon,
             isEditorVisible: layoutVM.editorVisible,
             activeProviderId: activeProviderId
         )

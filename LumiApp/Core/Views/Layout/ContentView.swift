@@ -77,9 +77,10 @@ struct ContentView: View, SuperLog {
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
         .toolbar {
-            let leadingViews = pluginProvider.getToolbarLeadingViews()
-            let centerViews = pluginProvider.getToolbarCenterViews()
-            let trailingViews = pluginProvider.getToolbarTrailingViews()
+            let activeIcon = layoutVM.activePanelIcon
+            let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
+            let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
+            let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
 
             ToolbarItemGroup(placement: .navigation) {
                 ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
@@ -126,8 +127,9 @@ struct ContentView: View, SuperLog {
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
-                let sidebarSections = pluginProvider.getSidebarSections()
-                let hasRailTabs = pluginProvider.hasRailTabs()
+                let activeIcon = layoutVM.activePanelIcon
+                let sidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)
                 let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible
 
