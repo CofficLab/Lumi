@@ -1,30 +1,40 @@
 import Foundation
 import ShellKit
+import SuperLogKit
 
 /// GitHub CLI 检测服务
 ///
 /// 检测用户是否安装了 GitHub CLI (gh) 命令行工具
-final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
-    nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
-    static let shared = GitHubCLIDetectService()
+public final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = true
+    public static let shared = GitHubCLIDetectService()
 
-    private init() {}
+    typealias CommandRunner = @Sendable (String) -> ShellResult?
+    private let commandRunner: CommandRunner
+
+    public convenience init() {
+        self.init(commandRunner: Self.runShellCommand)
+    }
+
+    init(commandRunner: @escaping CommandRunner) {
+        self.commandRunner = commandRunner
+    }
 
     // MARK: - 公开方法
 
     /// 检测是否安装了 gh 命令行工具
     /// - Returns: 如果已安装返回 true
-    func isInstalled() -> Bool {
+    public func isInstalled() -> Bool {
         if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
-                            GitHubCLIDetectPlugin.logger.info("\(self.t)开始检查 gh 安装...")
+                GitHubCLIDetectPlugin.logger.info("\(self.t)开始检查 gh 安装...")
             }
         }
         let installed = checkGHInstallation()
         if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
-                            GitHubCLIDetectPlugin.logger.info("\(self.t)gh 安装状态：\(installed ? "已安装" : "未安装")")
+                GitHubCLIDetectPlugin.logger.info("\(self.t)gh 安装状态：\(installed ? "已安装" : "未安装")")
             }
         }
         return installed
@@ -32,21 +42,21 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
 
     /// 获取 gh 版本信息
     /// - Returns: 版本号，如果未安装则返回 nil
-    func getVersion() -> String? {
+    public func getVersion() -> String? {
         guard isInstalled() else { return nil }
         return getGHVersion()
     }
 
     /// 获取 gh 安装路径
     /// - Returns: 安装路径，如果未安装则返回 nil
-    func getInstallationPath() -> String? {
+    public func getInstallationPath() -> String? {
         guard isInstalled() else { return nil }
         return findGHPath()
     }
 
     /// 获取检测详情
     /// - Returns: 包含安装状态、版本、路径的详情信息
-    func getDetectionDetails() -> GitHubCLIDetectionResult {
+    public func getDetectionDetails() -> GitHubCLIDetectionResult {
         let installed = isInstalled()
         let version = installed ? getVersion() : nil
         let path = installed ? getInstallationPath() : nil
@@ -64,7 +74,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     private func checkGHInstallation() -> Bool {
         if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
-                            GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
+                GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
             }
         }
 
@@ -72,7 +82,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         if let result {
             if Self.verbose {
                 if GitHubCLIDetectPlugin.verbose {
-                                    GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(result.exitCode)")
+                    GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(result.exitCode)")
                 }
             }
 
@@ -82,12 +92,12 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
             let errorOutput = result.stderr.isEmpty ? result.stdout : result.stderr
             if Self.verbose {
                 if GitHubCLIDetectPlugin.verbose {
-                                    GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput.isEmpty ? "无输出" : errorOutput)")
+                    GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput.isEmpty ? "无输出" : errorOutput)")
                 }
             }
         } else if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
-                            GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败")
+                GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败")
             }
         }
 
@@ -119,6 +129,10 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     }
 
     private func runGHCommand(_ command: String) -> ShellResult? {
+        commandRunner(command)
+    }
+
+    private static func runShellCommand(_ command: String) -> ShellResult? {
         let semaphore = DispatchSemaphore(value: 0)
         let box = GitHubCLILockedResultBox()
         Task {
@@ -159,16 +173,22 @@ private final class GitHubCLILockedResultBox: @unchecked Sendable {
 }
 
 /// GitHub CLI 检测结果
-struct GitHubCLIDetectionResult: Sendable {
+public struct GitHubCLIDetectionResult: Sendable {
     /// 是否已安装
-    let installed: Bool
+    public let installed: Bool
     /// 版本号
-    let version: String?
+    public let version: String?
     /// 安装路径
-    let path: String?
+    public let path: String?
+
+    public init(installed: Bool, version: String?, path: String?) {
+        self.installed = installed
+        self.version = version
+        self.path = path
+    }
 
     /// 获取用户友好的描述
-    var description: String {
+    public var description: String {
         if installed {
             var desc = "✅ GitHub CLI (gh) 已安装"
             if let version = version {

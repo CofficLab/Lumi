@@ -1,14 +1,18 @@
 import Foundation
 import AgentToolKit
+import SuperLogKit
 
 /// GitHub CLI 安装检测工具
 ///
 /// 检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
-struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
-    nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
-    let name = "github_cli_check"
-    func description(for language: LanguagePreference) -> String {
+public struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = true
+    public let name = "github_cli_check"
+
+    public init() {}
+
+    public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
             return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
@@ -17,21 +21,21 @@ struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
         }
     }
 
-    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:]
         ]
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         if Self.verbose {
             if GitHubCLIDetectPlugin.verbose {
-                            GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")
+                GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")
             }
         }
 

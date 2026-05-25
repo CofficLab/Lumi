@@ -10,6 +10,7 @@
 		0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */ = {isa = PBXBuildFile; productRef = MRK100000000000000001 /* ModelRouterKit */; };
 		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
 		0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9192FC3111D00F7DC5D /* PluginWebFetch */; };
+		0B13A1022FD2000000A13A10 /* PluginGitHubCLIDetect in Frameworks */ = {isa = PBXBuildFile; productRef = 0B13A1012FD2000000A13A10 /* PluginGitHubCLIDetect */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
 		0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F822F662D8500F15618 /* MLXFast */; };
@@ -330,6 +331,7 @@
 				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
 				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
 				0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */,
+				0B13A1022FD2000000A13A10 /* PluginGitHubCLIDetect in Frameworks */,
 				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
 				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
@@ -911,6 +913,7 @@
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
 				0B12E9192FC3111D00F7DC5D /* PluginWebFetch */,
+				0B13A1012FD2000000A13A10 /* PluginGitHubCLIDetect */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1023,6 +1026,7 @@
 				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				0B12E91B2FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/PluginWebFetch" */,
+				0B13A1002FD2000000A13A10 /* XCLocalSwiftPackageReference "Packages/PluginGitHubCLIDetect" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1902,6 +1906,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginWebFetch;
 		};
+		0B13A1002FD2000000A13A10 /* XCLocalSwiftPackageReference "Packages/PluginGitHubCLIDetect" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginGitHubCLIDetect;
+		};
 		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/RAGKit;
@@ -2152,6 +2160,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B12E91B2FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/PluginWebFetch" */;
 			productName = PluginWebFetch;
+		};
+		0B13A1012FD2000000A13A10 /* PluginGitHubCLIDetect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B13A1002FD2000000A13A10 /* XCLocalSwiftPackageReference "Packages/PluginGitHubCLIDetect" */;
+			productName = PluginGitHubCLIDetect;
 		};
 		0B1A4F7E2F662D8500F15618 /* MLX */ = {
 			isa = XCSwiftPackageProductDependency;
