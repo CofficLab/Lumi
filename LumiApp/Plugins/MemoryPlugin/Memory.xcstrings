@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Memory" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24,6 +25,7 @@
       }
     },
     "Persistent memory system for cross-session context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
