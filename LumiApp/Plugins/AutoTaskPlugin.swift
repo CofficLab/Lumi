@@ -55,7 +55,17 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     /// 右侧栏 Section 视图：任务列表
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
         guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
-        return [AnyView(AutoTaskSidebarView())]
+        return [AnyView(
+            AutoTaskSidebarView(
+                conversationIdProvider: { [weak contextVM = WindowConversationVM.current] in
+                    contextVM?.selectedConversationId
+                },
+                backgroundColorProvider: { [weak themeVM = AppThemeVM.shared] in
+                    themeVM?.activeChromeTheme.workspaceBackgroundColor()
+                        .mix(with: .orange, by: 0.06) ?? .clear
+                }
+            )
+        )]
     }
 }
 

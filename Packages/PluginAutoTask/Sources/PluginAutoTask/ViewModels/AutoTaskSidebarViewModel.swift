@@ -1,6 +1,7 @@
 import Foundation
 import PluginAutoTask
 import SwiftUI
+import SuperLogKit
 
 private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?
@@ -29,30 +30,29 @@ private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
 /// AutoTask 右侧栏视图模型
 ///
 /// 负责获取并展示当前会话的任务列表。
-/// 通过观察 WindowConversationVM 的变化来切换显示的任务，
-/// 并监听任务变更通知自动刷新 UI。
+/// 通过监听任务变更通知自动刷新 UI。
 @MainActor
-final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
+final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
 
-    @Published var tasks: [TaskDisplayItem] = []
-    @Published var summary: TaskProgressSummary?
-    @Published var isLoading: Bool = false
+    @Published public var tasks: [TaskDisplayItem] = []
+    @Published public var summary: TaskProgressSummary?
+    @Published public var isLoading: Bool = false
 
-    private var currentConversationId: String?
+    public var currentConversationId: String?
     private nonisolated let notificationObserverHolder = AutoTaskNotificationObserverHolder()
 
     deinit {
         notificationObserverHolder.remove()
     }
 
-    func removeObserver() {
+    public func removeObserver() {
         notificationObserverHolder.remove()
     }
 
     /// 刷新当前会话的任务列表
-    func refresh(conversationId: UUID?) async {
+    public func refresh(conversationId: String?) async {
         guard let conversationId else {
             tasks = []
             summary = nil
@@ -60,7 +60,7 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
             return
         }
 
-        let cid = conversationId.uuidString
+        let cid = conversationId
         let conversationChanged = currentConversationId != cid
         currentConversationId = cid
 
@@ -94,7 +94,7 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     }
 
     /// 手动刷新（用于外部事件触发）
-    func forceRefresh() async {
+    public func forceRefresh() async {
         await reloadFromDB()
     }
 
@@ -119,14 +119,14 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 }
 
 /// 任务展示用模型
-struct TaskDisplayItem: Identifiable, Equatable {
-    let id: String
-    let title: String
-    let detail: String?
-    let status: TaskItem.TaskStatus
-    let order: Int
+public struct TaskDisplayItem: Identifiable, Equatable {
+    public let id: String
+    public let title: String
+    public let detail: String?
+    public let status: TaskItem.TaskStatus
+    public let order: Int
 
-    var statusSystemImage: String {
+    public var statusSystemImage: String {
         switch status {
         case .pending: "circle"
         case .inProgress: "arrow.triangle.2.circlepath"
@@ -135,7 +135,7 @@ struct TaskDisplayItem: Identifiable, Equatable {
         }
     }
 
-    var statusColor: Color {
+    public var statusColor: Color {
         switch status {
         case .pending: .secondary
         case .inProgress: .blue
@@ -144,7 +144,7 @@ struct TaskDisplayItem: Identifiable, Equatable {
         }
     }
 
-    var statusText: String {
+    public var statusText: String {
         switch status {
         case .pending: String(localized: "Pending", table: "AutoTask")
         case .inProgress: String(localized: "In Progress", table: "AutoTask")
@@ -155,7 +155,7 @@ struct TaskDisplayItem: Identifiable, Equatable {
 }
 
 extension TaskDisplayItem {
-    init(from task: TaskItem) {
+    public init(from task: TaskItem) {
         self.id = task.id
         self.title = task.title
         self.detail = task.detail

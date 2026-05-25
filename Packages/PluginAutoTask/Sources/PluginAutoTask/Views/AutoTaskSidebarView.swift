@@ -1,14 +1,19 @@
-import PluginAutoTask
 import SwiftUI
+import SuperLogKit
 
 /// AutoTask 右侧栏视图
 ///
 /// 展示当前会话的任务列表，由 AutoTaskPlugin 通过 `addSidebarSections()` 注册。
-struct AutoTaskSidebarView: View {
-    @EnvironmentObject var conversationVM: WindowConversationVM
-    @EnvironmentObject private var themeVM: AppThemeVM
+/// 通过闭包参数获取当前会话 ID 和背景色，避免对 App 侧类型的直接依赖。
+public struct AutoTaskSidebarView: View {
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
     @State private var isCollapsed = false
+
+    /// 获取当前会话 ID 的闭包
+    private let conversationIdProvider: () -> UUID?
+
+    /// 获取背景色的闭包
+    private let backgroundColorProvider: () -> Color
 
     private static let headerHeight: CGFloat = 44
     private static let maxTaskListHeight: CGFloat = 160
@@ -20,7 +25,15 @@ struct AutoTaskSidebarView: View {
         return !summary.isAllDone
     }
 
-    var body: some View {
+    public init(
+        conversationIdProvider: @escaping () -> UUID?,
+        backgroundColorProvider: @escaping () -> Color = { Color.clear }
+    ) {
+        self.conversationIdProvider = conversationIdProvider
+        self.backgroundColorProvider = backgroundColorProvider
+    }
+
+    public var body: some View {
         VStack(spacing: 0) {
             if hasVisibleTasks {
                 headerView
@@ -42,7 +55,8 @@ struct AutoTaskSidebarView: View {
         .frame(minWidth: hasVisibleTasks ? 240 : 0, idealWidth: hasVisibleTasks ? 320 : 0)
         .background {
             if hasVisibleTasks {
-                taskPanelBackground
+                backgroundColorProvider()
+                    .opacity(0.82)
             }
         }
         .overlay {
@@ -58,8 +72,8 @@ struct AutoTaskSidebarView: View {
                 }
             }
         }
-        .task(id: conversationVM.selectedConversationId) {
-            await viewModel.refresh(conversationId: conversationVM.selectedConversationId)
+        .task(id: conversationIdProvider()) {
+            await viewModel.refresh(conversationId: conversationIdProvider())
         }
         .onDisappear {
             viewModel.removeObserver()
@@ -143,12 +157,6 @@ struct AutoTaskSidebarView: View {
         }
         return Self.headerHeight + taskListHeight
     }
-
-    private var taskPanelBackground: Color {
-        themeVM.activeChromeTheme.workspaceBackgroundColor()
-            .mix(with: .orange, by: 0.06)
-            .opacity(0.82)
-    }
 }
 
 // MARK: - Task Row
@@ -179,18 +187,4 @@ private struct TaskRowView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
-}
-
-// MARK: - Preview
-
-#Preview("AutoTask Sidebar - With Tasks") {
-    AutoTaskSidebarView()
-        .inRootView()
-        .frame(width: 350, height: 600)
-}
-
-#Preview("AutoTask Sidebar - Empty") {
-    AutoTaskSidebarView()
-        .inRootView()
-        .frame(width: 350, height: 600)
 }
