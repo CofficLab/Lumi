@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -37,6 +38,12 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
         guard icons.contains(activeIcon ?? "") else { return nil }
         
         return AnyView(ProjectControlView())
+    }
+
+    /// 在状态栏左侧显示项目图标（ChatPanel 激活时）
+    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
+        guard ChatSurfaceActivation.isActive(context.activeIcon) else { return nil }
+        return AnyView(ProjectStatusBarView())
     }
 
     /// 根视图包裹：用于恢复最近项目列表，并在未选项目时显示引导
