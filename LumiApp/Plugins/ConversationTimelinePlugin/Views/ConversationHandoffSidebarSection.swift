@@ -11,57 +11,95 @@ struct ConversationHandoffSidebarSection: View {
     @State private var isSummarizing = false
     @State private var statusText: String?
     @State private var errorText: String?
+    @State private var currentContextTokens = 0
+    @State private var refreshTask: Task<Void, Never>?
 
     private let service = ConversationHandoffSummaryService()
+    private let timelineService = ConversationTimelineService()
+    private let visibilityThreshold = 0.8
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.appCaptionEmphasized)
-                    .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+        Group {
+            if shouldShowHandoff {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.branch")
+                            .font(.appCaptionEmphasized)
+                            .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
-                Text("上下文交接")
-                    .font(.appCaptionEmphasized)
-                    .foregroundStyle(themeVM.activeChromeTheme.workspaceTextColor())
+                        Text("上下文交接")
+                            .font(.appCaptionEmphasized)
+                            .foregroundStyle(themeVM.activeChromeTheme.workspaceTextColor())
 
-                Spacer(minLength: 0)
+                        Spacer(minLength: 0)
 
-                if isSummarizing {
-                    ProgressView()
-                        .controlSize(.small)
+                        if isSummarizing {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+
+                    AppButton(
+                        isSummarizing ? "正在总结..." : "总结并开启新对话",
+                        systemImage: "sparkles",
+                        style: .secondary,
+                        size: .small,
+                        fillsWidth: true
+                    ) {
+                        startHandoff()
+                    }
+                    .disabled(isSummarizing || conversationVM.selectedConversationId == nil)
+
+                    if let statusText {
+                        Text(statusText)
+                            .font(.appCaption)
+                            .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let errorText {
+                        Text(errorText)
+                            .font(.appCaption)
+                            .foregroundStyle(Color.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-            }
-
-            AppButton(
-                isSummarizing ? "正在总结..." : "总结并开启新对话",
-                systemImage: "sparkles",
-                style: .secondary,
-                size: .small,
-                fillsWidth: true
-            ) {
-                startHandoff()
-            }
-            .disabled(isSummarizing || conversationVM.selectedConversationId == nil)
-
-            if let statusText {
-                Text(statusText)
-                    .font(.appCaption)
-                    .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let errorText {
-                Text(errorText)
-                    .font(.appCaption)
-                    .foregroundStyle(Color.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
+        .onAppear {
+            refreshContextUsage()
+        }
+        .onDisappear {
+            refreshTask?.cancel()
+            refreshTask = nil
+        }
+        .onChange(of: conversationVM.selectedConversationId) { _, _ in
+            refreshContextUsage()
+        }
+        .onMessageSaved { _, conversationId in
+            guard conversationId == conversationVM.selectedConversationId else { return }
+            scheduleContextUsageRefresh(for: conversationId)
+        }
+    }
+
+    private var shouldShowHandoff: Bool {
+        timelineService.contextUsageRatio(
+            currentTokens: currentContextTokens,
+            limit: currentModelContextLimit
+        ) >= visibilityThreshold
+    }
+
+    private var currentModelContextLimit: Int {
+        let preference = conversationVM.getModelPreference()
+        return timelineService.contextLimit(
+            providerId: preference?.providerId ?? llmVM.selectedProviderId,
+            model: preference?.model ?? llmVM.currentModel,
+            providers: llmVM.availableProviders
+        )
     }
 
     private func startHandoff() {
@@ -134,6 +172,31 @@ struct ConversationHandoffSidebarSection: View {
         } catch {
             errorText = error.localizedDescription
             statusText = nil
+        }
+    }
+
+    private func refreshContextUsage() {
+        refreshTask?.cancel()
+        refreshTask = nil
+
+        guard let conversationId = conversationVM.selectedConversationId else {
+            currentContextTokens = 0
+            return
+        }
+
+        let summary = chatHistoryVM.getConversationTimelineSummary(forConversationId: conversationId)
+        currentContextTokens = summary.currentContextTokens
+    }
+
+    private func scheduleContextUsageRefresh(for conversationId: UUID) {
+        refreshTask?.cancel()
+        refreshTask = Task {
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard conversationVM.selectedConversationId == conversationId else { return }
+                refreshContextUsage()
+            }
         }
     }
 }
