@@ -190,7 +190,8 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         self.projectContextRequestVM = WindowProjectContextRequestVM()
         self.chatTimelineViewModel = WindowChatTimelineViewModel(
             chatHistoryService: container.chatHistoryService,
-            conversationVM: conversationVM
+            conversationVM: conversationVM,
+            conversationSendStatusVM: conversationSendStatusVM
         )
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())

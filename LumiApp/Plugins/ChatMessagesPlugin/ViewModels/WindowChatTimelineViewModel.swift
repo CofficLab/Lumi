@@ -10,14 +10,17 @@ final class WindowChatTimelineViewModel: ObservableObject {
 
     private let chatHistoryService: ChatHistoryService
     private let conversationVM: WindowConversationVM
+    private let conversationSendStatusVM: WindowConversationStatusVM
     private var cancellables = Set<AnyCancellable>()
 
     init(
         chatHistoryService: ChatHistoryService,
-        conversationVM: WindowConversationVM
+        conversationVM: WindowConversationVM,
+        conversationSendStatusVM: WindowConversationStatusVM
     ) {
         self.chatHistoryService = chatHistoryService
         self.conversationVM = conversationVM
+        self.conversationSendStatusVM = conversationSendStatusVM
         self.state.selectedConversationId = conversationVM.selectedConversationId
         setupBindings()
     }
@@ -182,6 +185,13 @@ guard message.shouldDisplayInChatList() else {
                 self.handleMessageSaved(message, conversationId: conversationId)
             }
             .store(in: &cancellables)
+
+        // 状态消息变化时触发 UI 刷新（status 行内容由 conversationSendStatusVM 驱动）
+        conversationSendStatusVM.$statusMessageByConversationId
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     private func didSelectConversation(_ conversationId: UUID?) async {
@@ -234,6 +244,13 @@ guard message.shouldDisplayInChatList() else {
                 rows.append(message)
             }
         }
+
+        // 内核自动注入当前会话的状态消息（如发送/流式/工具执行状态）
+        if let conversationId = state.selectedConversationId,
+           let statusMessage = conversationSendStatusVM.statusMessage(for: conversationId) {
+            rows.append(statusMessage)
+        }
+
         return rows
     }
 
