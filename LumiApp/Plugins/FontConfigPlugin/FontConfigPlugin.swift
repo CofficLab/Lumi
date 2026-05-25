@@ -24,7 +24,8 @@ actor FontConfigPlugin: SuperPlugin, SuperLog {
 
     /// 在状态栏右侧显示字体配置入口
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.isEditorVisible else { return nil }
+        // 字体设置在编辑器可见或 ChatPanel 激活时显示
+        guard context.isEditorVisible || context.activeIcon == ChatPanelPlugin.iconName else { return nil }
         return AnyView(FontStatusBarView())
     }
 }
