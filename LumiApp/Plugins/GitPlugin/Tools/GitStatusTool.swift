@@ -51,7 +51,10 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
         }
 
         do {
-            let status = try await GitService.shared.getStatus(path: path)
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
+            let status = try await GitService.shared.getStatus(path: validatedPath)
             return formatStatus(status)
         } catch {
             if Self.verbose {

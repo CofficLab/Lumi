@@ -62,8 +62,11 @@ struct GitShowTool: SuperAgentTool, SuperLog {
         }
 
         do {
-            let detail = try await GitService.shared.getCommitDetail(path: path, hash: hash)
-            let changedFiles = try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
+            let detail = try await GitService.shared.getCommitDetail(path: validatedPath, hash: hash)
+            let changedFiles = try GitService.shared.getCommitChangedFiles(path: validatedPath, hash: hash)
             return formatDetail(detail, changedFiles: changedFiles)
         } catch {
             if Self.verbose {

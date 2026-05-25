@@ -83,8 +83,11 @@ struct GitCommitTool: SuperAgentTool, SuperLog {
         }
         
         do {
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
             let result = try await GitService.shared.commit(
-                path: path,
+                path: validatedPath,
                 message: message,
                 files: files,
                 amend: amend

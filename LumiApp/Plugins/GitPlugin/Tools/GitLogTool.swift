@@ -73,8 +73,11 @@ struct GitLogTool: SuperAgentTool, SuperLog {
         }
 
         do {
+            // 验证路径是否在允许的范围内
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            
             let logs = try await GitService.shared.getLog(
-                path: path,
+                path: validatedPath,
                 count: min(count, 50),
                 branch: branch,
                 file: file
