@@ -1,8 +1,10 @@
 import Foundation
 import ShellKit
 
-enum GitSection {
-    static func render(at root: URL) -> String {
+/// Git 信息检测
+public enum GitSection {
+    /// 渲染 Git 仓库信息
+    public static func render(at root: URL) -> String {
         let gitDir = root.appendingPathComponent(".git", isDirectory: true)
         // .git can be a directory (normal repo) or a file (submodule with gitdir pointer)
         guard FileManager.default.fileExists(atPath: gitDir.path) else {
@@ -44,6 +46,7 @@ enum GitSection {
     }
 }
 
+/// 线程安全的 String Box
 private final class GitSectionLockedStringBox: @unchecked Sendable {
     private let lock = NSLock()
     private var value: String?

@@ -1,7 +1,12 @@
 import Foundation
 
-enum ProjectTypeSection {
-    static func render(at root: URL) -> String {
+/// 项目类型检测
+public enum ProjectTypeSection {
+    private static let maxRootItems = 25
+    private static let maxChildrenPerDir = 30
+
+    /// 根据项目根目录文件推断项目类型
+    public static func render(at root: URL) -> String {
         let fm = FileManager.default
         guard let names = try? fm.contentsOfDirectory(atPath: root.path) else { return "Unknown" }
 

@@ -1,7 +1,9 @@
 import Foundation
 
-enum KeyFilesSection {
-    static func render(at root: URL) -> String {
+/// 关键文件检测
+public enum KeyFilesSection {
+    /// 检测关键文件是否存在
+    public static func render(at root: URL) -> String {
         let fm = FileManager.default
         func exists(_ name: String) -> Bool {
             fm.fileExists(atPath: root.appendingPathComponent(name).path)

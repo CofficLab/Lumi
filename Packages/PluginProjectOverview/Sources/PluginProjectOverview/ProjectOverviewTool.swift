@@ -1,12 +1,19 @@
-import Foundation
 import AgentToolKit
+import Foundation
+import SuperLogKit
 
-/// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
-struct ProjectOverviewTool: SuperAgentTool, SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
-    let name = "project_overview"
-    func description(for language: LanguagePreference) -> String {
+/// 项目概览工具。
+///
+/// 返回项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。
+public struct ProjectOverviewTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose: Bool = true
+
+    public let name = "project_overview"
+
+    public init() {}
+
+    public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
             return "获取项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。"
@@ -15,7 +22,7 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
         }
     }
 
-    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -27,21 +34,21 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
         ]
     }
 
-    func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         "查看项目概览"
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: path).standardizedFileURL
 
         if Self.verbose {
             if ProjectOverviewPlugin.verbose {
-                            ProjectOverviewPlugin.logger.info("\(self.t)Project overview: \(root.path)")
+                ProjectOverviewPlugin.logger.info("\(Self.t)Project overview: \(root.path)")
             }
         }
 

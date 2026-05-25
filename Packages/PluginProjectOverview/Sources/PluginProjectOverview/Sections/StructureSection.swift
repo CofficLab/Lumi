@@ -1,10 +1,12 @@
 import Foundation
 
-enum StructureSection {
+/// 目录结构渲染
+public enum StructureSection {
     private static let maxRootItems = 25
     private static let maxChildrenPerDir = 30
 
-    static func render(at root: URL) -> String {
+    /// 渲染两级目录结构
+    public static func render(at root: URL) -> String {
         let fm = FileManager.default
         guard let contents = try? fm.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
             return "(Unable to list directory)"

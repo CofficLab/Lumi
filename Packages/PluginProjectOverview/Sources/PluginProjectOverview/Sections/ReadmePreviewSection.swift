@@ -1,11 +1,13 @@
 import Foundation
 
-enum ReadmePreviewSection {
+/// README 预览
+public enum ReadmePreviewSection {
     private static let maxChars = 500
     private static let maxBytes = maxChars * 4
     private static let candidates = ["README.md", "README.markdown", "README"]
 
-    static func render(at root: URL) -> String {
+    /// 读取并预览 README 文件
+    public static func render(at root: URL) -> String {
         let fm = FileManager.default
         for name in candidates {
             let url = root.appendingPathComponent(name)
