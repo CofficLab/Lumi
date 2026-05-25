@@ -722,12 +722,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarLeadingView(context: context) }
 
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getStatusBarLeadingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏左侧视图数量=\(views.count)")
-        }
-
         return views
     }
 

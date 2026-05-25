@@ -70,6 +70,9 @@
         }
       }
     },
+    "Switch between Brief, Normal, and Detailed response styles" : {
+
+    },
     "Switched to %@ Verbosity" : {
 
     },

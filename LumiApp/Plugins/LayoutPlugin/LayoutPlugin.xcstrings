@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Bottom Panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24,6 +25,7 @@
       }
     },
     "Content Panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -46,6 +48,7 @@
       }
     },
     "Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -68,6 +71,7 @@
       }
     },
     "Layout Persistence" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -90,6 +94,7 @@
       }
     },
     "Persist and restore layout state across app launches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -112,6 +117,7 @@
       }
     },
     "Rail" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
