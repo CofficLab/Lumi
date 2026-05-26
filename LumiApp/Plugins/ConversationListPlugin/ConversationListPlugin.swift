@@ -71,6 +71,7 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
                 projectPath: projectPath,
                 languagePreference: context.languagePreference
             ),
+            SetConversationProjectTool(conversationVM: conversationVM),
         ]
     }
 }

@@ -356,6 +356,28 @@ extension ChatHistoryService {
             }
         }
     }
+
+    /// 更新对话关联的项目
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - projectPath: 项目路径，nil 表示解除项目关联
+    func updateProjectAssociation(_ conversation: Conversation, projectPath: String?) {
+        conversation.projectId = projectPath
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+        notifyConversationChanged(type: .updated, conversationId: conversation.id)
+        NotificationCenter.postConversationUpdated(conversationId: conversation.id)
+
+        if Self.verbose {
+            if let projectPath {
+                let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+                AppLogger.core.info("\(Self.t)📁 已将对话 '\(conversation.title)' 关联到项目：\(projectName)")
+            } else {
+                AppLogger.core.info("\(Self.t)📁 已清除对话 '\(conversation.title)' 的项目关联")
+            }
+        }
+    }
 }
 
 // MARK: - 对话存储与删除
