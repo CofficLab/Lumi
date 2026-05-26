@@ -62,6 +62,10 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
                 projectPath: projectPath,
                 languagePreference: context.languagePreference
             ),
+            DeleteConversationTool(
+                conversationVM: conversationVM,
+                languagePreference: context.languagePreference
+            ),
             SetConversationProjectTool(conversationVM: conversationVM),
         ]
     }
