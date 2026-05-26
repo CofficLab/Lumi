@@ -476,8 +476,8 @@ struct EditorPreviewDetailView: View, SuperLog {
         let timestamp = formatter.string(from: Date())
 
         let fileName = "Preview_\(timestamp).png"
-        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
-        let fileURL = desktopURL?.appendingPathComponent(fileName)
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        let fileURL = downloadsURL?.appendingPathComponent(fileName)
 
         guard let fileURL,
               let tiffData = image.tiffRepresentation,
@@ -497,7 +497,7 @@ struct EditorPreviewDetailView: View, SuperLog {
 
             alert_success(
                 String(
-                    format: String(localized: "Screenshot saved to Desktop and copied to clipboard: %@", table: "EditorPreview"),
+                    format: String(localized: "Screenshot saved to Downloads and copied to clipboard: %@", table: "EditorPreview"),
                     fileName
                 )
             )
