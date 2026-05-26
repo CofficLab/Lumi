@@ -1,18 +1,21 @@
 import SwiftUI
+import LumiUI
 
-struct MountainTheme: LumiAppChromeTheme {
-    let identifier = "mountain"
-    let displayName = "山岚灰"
-    let compactName = "山"
-    let description = "石色沉稳，松影清远"
-    let iconName = "mountain.2.fill"
-    let appearanceKind: ThemeAppearanceKind = .dark
+public struct MountainTheme: LumiAppChromeTheme {
+    public let identifier = "mountain"
+    public let displayName = "山岚灰"
+    public let compactName = "山"
+    public let description = "石色沉稳，松影清远"
+    public let iconName = "mountain.2.fill"
+    public let appearanceKind: ThemeAppearanceKind = .dark
 
-    var iconColor: SwiftUI.Color {
+    public init() {}
+
+    public var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "475569", dark: "64748B")
     }
 
-    func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
+    public func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
             primary: SwiftUI.Color.adaptive(light: "475569", dark: "64748B"),  // 山岚灰 (浅色更深)
             secondary: SwiftUI.Color.adaptive(light: "64748B", dark: "94A3B8"), // 雾凇白 (浅色转深灰)
@@ -20,7 +23,7 @@ struct MountainTheme: LumiAppChromeTheme {
         )
     }
 
-    func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
+    public func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
             deep: SwiftUI.Color.adaptive(light: "F1F5F9", dark: "0A0C10"),     // 浅色背景：云雾白
             medium: SwiftUI.Color.adaptive(light: "E2E8F0", dark: "12161D"),
@@ -28,7 +31,7 @@ struct MountainTheme: LumiAppChromeTheme {
         )
     }
 
-    func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
+    public func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
             subtle: SwiftUI.Color.adaptive(light: "475569", dark: "64748B").opacity(0.3),
             medium: SwiftUI.Color.adaptive(light: "64748B", dark: "94A3B8").opacity(0.5),
@@ -36,7 +39,7 @@ struct MountainTheme: LumiAppChromeTheme {
         )
     }
 
-    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+    public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {
                 backgroundGradient()

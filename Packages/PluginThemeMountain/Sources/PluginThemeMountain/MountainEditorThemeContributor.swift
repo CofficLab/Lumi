@@ -1,17 +1,20 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Mountain 编辑器主题配色方案
 /// 山岩灰风格：灰色调 + 冷石青点缀 + 雪山白高亮
 @MainActor
-final class MountainSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "mountain"
-    let displayName: String = "Mountain"
-    let icon: String? = "mountain.2.fill"
-    let isDark: Bool = true
+public final class MountainSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "mountain"
+    public let displayName: String = "Mountain"
+    public let icon: String? = "mountain.2.fill"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(0.831, 0.863, 0.898),
             insertionPoint: color(0.376, 0.651, 0.965),
