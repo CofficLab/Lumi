@@ -1,18 +1,21 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// One Dark Pro 编辑器主题配色方案
 /// 严格遵循 Atom One Dark (One Dark Pro) 默认主题
 /// 参考: https://github.com/atom/atom-dark-syntax
 @MainActor
-final class OneDarkSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "one-dark"
-    let displayName: String = "One Dark"
-    let icon: String? = "circle.hexagongrid"
-    let isDark: Bool = true
+public final class OneDarkSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "one-dark"
+    public let displayName: String = "One Dark"
+    public let icon: String? = "circle.hexagongrid"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             // 文字颜色: #ABB2BF -> (0.671, 0.698, 0.749)
             text: attr(0.671, 0.698, 0.749),

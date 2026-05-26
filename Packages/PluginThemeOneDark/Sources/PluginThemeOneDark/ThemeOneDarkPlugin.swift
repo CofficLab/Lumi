@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeOneDarkPlugin: SuperPlugin {
-    static let shared = ThemeOneDarkPlugin()
-    static let id: String = "one-dark"
-    static let displayName: String = "One Dark"
-    static let description: String = "Atom One Dark classic dark theme"
-    static let iconName: String = "circle.hexagongrid"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 131 }
+public actor ThemeOneDarkPlugin: SuperPlugin {
+    public static let shared = ThemeOneDarkPlugin()
+    public static let id: String = "one-dark"
+    public static let displayName: String = "One Dark"
+    public static let description: String = "Atom One Dark classic dark theme"
+    public static let iconName: String = "circle.hexagongrid"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 131 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    public nonisolated var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: OneDarkTheme(),
@@ -35,8 +40,11 @@ actor ThemeOneDarkPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(OneDarkSuperEditorThemeContributor())
     }
+}
 
+public enum PluginThemeOneDarkResources {
+    public static let bundle = Bundle.module
 }
