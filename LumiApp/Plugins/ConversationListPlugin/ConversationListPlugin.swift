@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import os
 import SwiftUI
@@ -46,5 +47,16 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
+    }
+
+    // MARK: - Agent Tools
+
+    /// 提供对话管理相关的 Agent 工具
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [
+            GetConversationCountTool(),
+            GetRecentConversationsTool(),
+        ]
     }
 }
