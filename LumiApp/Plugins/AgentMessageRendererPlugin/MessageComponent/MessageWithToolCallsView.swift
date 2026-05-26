@@ -135,7 +135,7 @@ private struct ToolCallRow: View {
             .help(String(localized: "调用参数", table: "CoreMessageRenderer"))
             .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
-                    title: String(localized: "调用参数", table: "CoreMessageRenderer"),
+                    title: "\(toolCall.displayName ?? toolCall.name) · 调用参数",
                     systemImage: "slider.horizontal.3"
                 ) {
                     ToolCallContentSectionView(toolCall: toolCall)
