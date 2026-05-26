@@ -82,15 +82,10 @@ struct EditorSettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerCard
-                .padding(24)
-                .background(Color.clear)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    searchCard
-                    scopedOverridesCard
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                searchCard
+                scopedOverridesCard
 
                     ForEach(allSections) { section in
                         sectionCard(section)
@@ -114,12 +109,6 @@ struct EditorSettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
             applyPendingSearchQuery()
-        }
-    }
-
-    private var headerCard: some View {
-        AppCard {
-            AppSettingsSection(title: "编辑器设置", subtitle: "集中管理字体、缩进、显示和扩展贡献的 editor 偏好项。") {}
         }
     }
 
