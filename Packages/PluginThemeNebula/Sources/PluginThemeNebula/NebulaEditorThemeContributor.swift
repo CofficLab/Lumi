@@ -1,17 +1,20 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Nebula 编辑器主题配色方案
 /// 星云粉风格：粉紫色调 + 玫瑰红点缀 + 星云紫高亮
 @MainActor
-final class NebulaSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "nebula"
-    let displayName: String = "Nebula"
-    let icon: String? = "cloud.moon.fill"
-    let isDark: Bool = true
+public final class NebulaSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "nebula"
+    public let displayName: String = "Nebula"
+    public let icon: String? = "cloud.moon.fill"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(0.886, 0.855, 0.898),
             insertionPoint: color(0.957, 0.447, 0.714),

@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeNebulaPlugin: SuperPlugin {
-    static let shared = ThemeNebulaPlugin()
-    static let id: String = "nebula"
-    static let displayName: String = "星云粉"
-    static let description: String = "浪漫的星云粉，柔和而温暖"
-    static let iconName: String = "cloud.moon.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 122 }
+public actor ThemeNebulaPlugin: SuperPlugin {
+    public static let shared = ThemeNebulaPlugin()
+    public static let id: String = "nebula"
+    public static let displayName: String = "星云粉"
+    public static let description: String = "浪漫的星云粉，柔和而温暖"
+    public static let iconName: String = "cloud.moon.fill"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 122 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    public nonisolated var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: NebulaTheme(),
@@ -35,8 +40,11 @@ actor ThemeNebulaPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(NebulaSuperEditorThemeContributor())
     }
+}
 
+public enum PluginThemeNebulaResources {
+    public static let bundle = Bundle.module
 }
