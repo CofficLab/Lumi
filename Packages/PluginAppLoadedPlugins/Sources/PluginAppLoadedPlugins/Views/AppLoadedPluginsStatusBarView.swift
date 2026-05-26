@@ -1,13 +1,12 @@
 import LumiUI
 import SwiftUI
 
-/// App 插件状态栏悬浮按钮视图
-///
-/// 点击后展示已加载 App 插件的详情弹窗。
 struct AppLoadedPluginsStatusBarView: View {
+    let pluginProvider: @MainActor () -> [LoadedPluginInfo]
+
     var body: some View {
         StatusBarHoverContainer(
-            detailView: AppLoadedPluginsDetailView(),
+            detailView: AppLoadedPluginsDetailView(pluginProvider: pluginProvider),
             popoverWidth: 460,
             id: "lumi-app-loaded-plugins"
         ) {

@@ -1,15 +1,18 @@
 import LumiUI
 import SwiftUI
 
-/// App 插件详情弹窗视图
 struct AppLoadedPluginsDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var viewModel = AppLoadedPluginsViewModel()
+    @StateObject private var viewModel: AppLoadedPluginsViewModel
+
+    init(pluginProvider: @escaping @MainActor () -> [LoadedPluginInfo]) {
+        _viewModel = StateObject(wrappedValue: AppLoadedPluginsViewModel(pluginProvider: pluginProvider))
+    }
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "App Plugins", table: "AppLoadedPlugins"),
+            title: PluginAppLoadedPluginsLocalization.string("App Plugins"),
             systemImage: "puzzlepiece.extension",
             subtitle: countText
         ) {
@@ -17,7 +20,7 @@ struct AppLoadedPluginsDetailView: View {
                 systemImage: "arrow.clockwise",
                 action: viewModel.refresh
             )
-            .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
+            .help(PluginAppLoadedPluginsLocalization.string("Refresh"))
         } content: {
             if viewModel.enabledPlugins.isEmpty {
                 emptyView
@@ -30,11 +33,9 @@ struct AppLoadedPluginsDetailView: View {
         }
     }
 
-    // MARK: - Subviews
-
     private var countText: String {
         String(
-            format: String(localized: "Loaded %lld plugin(s)", table: "AppLoadedPlugins"),
+            format: PluginAppLoadedPluginsLocalization.string("Loaded %lld plugin(s)"),
             Int64(viewModel.enabledPlugins.count)
         )
     }
@@ -42,7 +43,7 @@ struct AppLoadedPluginsDetailView: View {
     private var emptyView: some View {
         AppEmptyState(
             icon: "puzzlepiece.extension",
-            title: LocalizedStringKey(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
+            title: LocalizedStringKey(PluginAppLoadedPluginsLocalization.string("No app plugins loaded"))
         )
         .frame(minHeight: 220)
     }
@@ -59,11 +60,10 @@ struct AppLoadedPluginsDetailView: View {
     }
 }
 
-/// 单个已加载插件的行视图
 private struct AppLoadedPluginRowView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    let plugin: AppLoadedPluginsViewModel.PluginInfo
+    let plugin: LoadedPluginInfo
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
