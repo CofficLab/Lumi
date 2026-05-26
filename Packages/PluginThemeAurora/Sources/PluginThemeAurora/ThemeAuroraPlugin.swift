@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeAuroraPlugin: SuperPlugin {
-    static let shared = ThemeAuroraPlugin()
-    static let id: String = "aurora"
-    static let displayName: String = "Aurora"
-    static let description: String = "Aurora purple app theme"
-    static let iconName: String = "sparkles"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 121 }
+public actor ThemeAuroraPlugin: SuperPlugin {
+    public static let shared = ThemeAuroraPlugin()
+    public static let id: String = "aurora"
+    public static let displayName: String = "Aurora"
+    public static let description: String = "Aurora purple app theme"
+    public static let iconName: String = "sparkles"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 121 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    nonisolated public var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: AuroraTheme(),
@@ -37,7 +42,7 @@ actor ThemeAuroraPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(AuroraSuperEditorThemeContributor())
     }
 

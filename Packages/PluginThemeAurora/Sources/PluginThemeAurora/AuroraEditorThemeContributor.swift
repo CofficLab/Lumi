@@ -1,17 +1,20 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Aurora 编辑器主题配色方案
 /// 极光紫风格：紫色调 + 天空蓝点缀 + 极光绿高亮
 @MainActor
-final class AuroraSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "aurora"
-    let displayName: String = "Aurora"
-    let icon: String? = "sparkles"
-    let isDark: Bool = true
+public final class AuroraSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "aurora"
+    public let displayName: String = "Aurora"
+    public let icon: String? = "sparkles"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(0.886, 0.867, 0.933),
             insertionPoint: color(0.886, 0.867, 0.933),
