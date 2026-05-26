@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Lumi — Built-In Tools</title>
+<link rel="stylesheet" href="components.css">
+<style>
+  body{margin:0;display:flex;justify-content:center;background:#000;}
+  .metric-card { width:330px; }
+  .metric-card .card { height:100%; }
+  .metric-header { display:flex; align-items:center; justify-content:space-between; }
+  .metric-header .label { display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600; color:var(--c-text); }
+  .metric-header .value { font:17px var(--c-mono); font-weight:600; }
+  .spark-wrap { height:112px; background:rgba(0,0,0,0.16); border-radius:8px; margin-top:14px; position:relative; overflow:hidden; }
+  .spark-wrap svg { width:100%; height:100%; }
+  .spark-wrap svg polyline { fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .disk-ring-wrap { display:flex; align-items:center; gap:18px; }
+  .disk-ring { width:150px; height:150px; position:relative; }
+  .disk-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .disk-ring .track { fill:none; stroke:rgba(255,255,255,0.10); stroke-width:18; }
+  .disk-ring .fill  { fill:none; stroke:var(--c-accent); stroke-width:18; stroke-linecap:round; }
+  .disk-ring .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .disk-ring .center .pct { font-size:28px; font-weight:700; color:#fff; }
+  .disk-ring .center .lbl { font-size:12px; color:var(--c-secondary); }
+  .mode-row { display:flex; align-items:center; gap:8px; height:34px; padding:0 10px; border-radius:7px; font-size:12px; font-weight:500; color:rgba(255,255,255,0.72); }
+  .mode-row.selected { background:rgba(124,111,255,0.26); color:#fff; }
+  .mode-row:not(.selected) { background:rgba(255,255,255,0.035); }
+  .mode-row svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .mode-row .val { margin-left:auto; color:var(--c-secondary); }
+  .file-row { display:flex; align-items:center; gap:8px; height:32px; padding:0 10px; border-radius:6px; font-size:12px; font-weight:500; color:rgba(255,255,255,0.86); background:rgba(0,0,0,0.12); }
+  .file-row svg { width:14px; height:14px; fill:var(--c-secondary); stroke:none; }
+  .file-row .size { margin-left:auto; color:var(--c-secondary); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-eyebrow">Built-In Tools</div>
+    <div class="stage-title">Monitor your Mac and clean project clutter</div>
+    <div class="stage-subtitle">Static dashboards mirror Lumi's device and disk utility plugins for everyday developer maintenance.</div>
+  </div>
+
+  <div class="mac-window">
+    <div class="window-titlebar">
+      <span class="traffic-light tl-red"></span>
+      <span class="traffic-light tl-orange"></span>
+      <span class="traffic-light tl-green"></span>
+      <span class="window-title">Lumi</span>
+      <span class="window-trailing">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+      </span>
+    </div>
+    <div class="window-body flex-row flex-1">
+      <!-- Activity Bar (Device selected) -->
+      <div class="activity-bar">
+        <div class="ab-item"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <div class="ab-item"><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+        <div class="ab-item"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
+        <div class="ab-item"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="18" y2="12"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="18" y2="16"/></svg></div>
+        <div class="ab-item selected"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <div class="ab-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="ab-spacer"></div>
+        <div class="ab-bottom"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+
+      <!-- Main Content -->
+      <div style="flex:1;display:flex;flex-direction:column;background:var(--c-window)">
+        <!-- Device Info header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:rgba(255,255,255,0.035)">
+          <span style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:#fff">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Device Info
+          </span>
+          <span style="font-size:12px;font-weight:500;color:var(--c-secondary)">Live sample</span>
+        </div>
+
+        <!-- Metrics grid -->
+        <div style="flex:1;display:flex;align-items:flex-start;gap:18px;padding:20px;background:var(--c-panel)">
+          <!-- CPU -->
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="metric-card">
+              <div class="card">
+                <div class="metric-header">
+                  <span class="label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                    CPU
+                  </span>
+                  <span class="value" style="color:#30d158">38%</span>
+                </div>
+                <div class="spark-wrap">
+                  <svg viewBox="0 0 330 112" preserveAspectRatio="none">
+                    <polyline points="0,74.7 41.25,59.7 82.5,65.3 123.75,43.3 165,50 206.25,26.7 247.5,48 288.75,39.3 330,45" stroke="#30d158"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <!-- Memory -->
+            <div class="metric-card">
+              <div class="card">
+                <div class="metric-header">
+                  <span class="label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1"/><rect x="6" y="6" width="16" height="14" rx="2"/></svg>
+                    Memory
+                  </span>
+                  <span class="value" style="color:#7c6fff">12.4 GB</span>
+                </div>
+                <div class="spark-wrap">
+                  <svg viewBox="0 0 330 112" preserveAspectRatio="none">
+                    <polyline points="0,56 41.25,46.7 82.5,42.7 123.75,39.3 165,34 206.25,37.3 247.5,32 288.75,28.7 330,25.3" stroke="#7c6fff"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Network / Disk IO -->
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="metric-card">
+              <div class="card">
+                <div class="metric-header">
+                  <span class="label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                    Network
+                  </span>
+                  <span class="value" style="color:#0a84ff">42 MB/s</span>
+                </div>
+                <div class="spark-wrap">
+                  <svg viewBox="0 0 330 112" preserveAspectRatio="none">
+                    <polyline points="0,86 41.25,74.7 82.5,56 123.75,65.3 165,34 206.25,50 247.5,28.7 288.75,42.7 330,32" stroke="#0a84ff"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="card">
+                <div class="metric-header">
+                  <span class="label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                    Disk I/O
+                  </span>
+                  <span class="value" style="color:#ff9f0a">128 MB/s</span>
+                </div>
+                <div class="spark-wrap">
+                  <svg viewBox="0 0 330 112" preserveAspectRatio="none">
+                    <polyline points="0,93.3 41.25,86 82.5,78.7 123.75,59.7 165,70 206.25,46.7 247.5,56 288.75,28.7 330,50" stroke="#ff9f0a"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disk Manager -->
+          <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:#fff">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                Disk Manager
+              </span>
+              <span style="font-size:13px;font-weight:500;color:#30d158">312 GB free</span>
+            </div>
+            <div class="disk-ring-wrap">
+              <div class="disk-ring">
+                <svg viewBox="0 0 150 150">
+                  <circle class="track" cx="75" cy="75" r="57"/>
+                  <circle class="fill" cx="75" cy="75" r="57" stroke-dasharray="358" stroke-dashoffset="115"/>
+                </svg>
+                <div class="center">
+                  <span class="pct">68%</span>
+                  <span class="lbl">used</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+                <div class="mode-row selected">
+                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Large Files <span class="val">24 items</span>
+                </div>
+                <div class="mode-row">
+                  <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  Directory Analysis <span class="val">Scanning</span>
+                </div>
+                <div class="mode-row">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg>
+                  System Cleanup <span class="val">8.6 GB</span>
+                </div>
+                <div class="mode-row">
+                  <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  Xcode Cleanup <span class="val">14.2 GB</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="file-row">
+                <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                DerivedData <span class="size">8.4 GB</span>
+              </div>
+              <div class="file-row">
+                <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Simulator Caches <span class="size">5.1 GB</span>
+              </div>
+              <div class="file-row">
+                <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Build Archives <span class="size">3.7 GB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <svg viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="12" r="3"/><path d="M18 9a9 9 0 0 0-9 9"/></svg>
+          <span>main</span>
+          <span>LumiApp/Core/Views</span>
+          <span class="spacer"></span>
+          <span>Swift</span>
+          <span>Line 42, Col 18</span>
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Ready</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
