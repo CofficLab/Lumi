@@ -115,6 +115,7 @@
       }
     },
     "Docker" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -229,6 +230,7 @@
 
     },
     "Local Docker image management and monitoring" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

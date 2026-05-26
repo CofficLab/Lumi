@@ -25,6 +25,7 @@
       }
     },
     "Are you sure you want to clean %@ of Xcode cache? This action cannot be undone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47,6 +48,7 @@
       }
     },
     "Are you sure you want to clean the selected %@ files? This action cannot be undone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -69,6 +71,7 @@
       }
     },
     "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)? This will free up space but require rebuilding projects." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -91,6 +94,7 @@
       }
     },
     "Are you sure you want to delete this file?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -107,6 +111,7 @@
       }
     },
     "Cancel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -129,6 +134,7 @@
       }
     },
     "Clean" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -151,6 +157,7 @@
       }
     },
     "Cleanup Complete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -173,6 +180,7 @@
       }
     },
     "Confirm Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -241,6 +249,7 @@
       }
     },
     "File \"%@\" will be permanently deleted." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -257,6 +266,7 @@
       }
     },
     "Macintosh HD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -279,6 +289,7 @@
       }
     },
     "OK" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -301,6 +312,7 @@
       }
     },
     "Successfully freed %@ space." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -323,6 +335,7 @@
       }
     },
     "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -345,6 +358,7 @@
       }
     },
     "Xcode 环境很干净！" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -367,6 +381,7 @@
       }
     },
     "个项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -383,6 +398,7 @@
       }
     },
     "你可以扫描用户主目录，找到占用空间较大的文件。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -405,6 +421,7 @@
       }
     },
     "停止分析" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -427,6 +444,7 @@
       }
     },
     "停止扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -449,6 +467,7 @@
       }
     },
     "准备就绪" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -471,6 +490,7 @@
       }
     },
     "分析目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -493,6 +513,7 @@
       }
     },
     "分类" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -515,6 +536,7 @@
       }
     },
     "删除" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -537,6 +559,7 @@
       }
     },
     "删除文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -559,6 +582,7 @@
       }
     },
     "取消" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -581,6 +605,7 @@
       }
     },
     "可用：" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -626,6 +651,7 @@
       }
     },
     "在访达中显示" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -648,6 +674,7 @@
       }
     },
     "已扫描：Code、Projects、Developer 等目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -670,6 +697,7 @@
       }
     },
     "已用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -692,6 +720,7 @@
       }
     },
     "已用：" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -737,6 +766,7 @@
       }
     },
     "已选择：" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -782,6 +812,7 @@
       }
     },
     "已选择清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -850,6 +881,7 @@
       }
     },
     "总计：" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -895,6 +927,7 @@
       }
     },
     "打开系统设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -917,6 +950,7 @@
       }
     },
     "扫描 Xcode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -939,6 +973,7 @@
       }
     },
     "扫描大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -961,6 +996,7 @@
       }
     },
     "扫描目录：用户主目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -983,6 +1019,7 @@
       }
     },
     "扫描缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1005,6 +1042,7 @@
       }
     },
     "扫描范围：Code、Projects、Developer 等目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1027,6 +1065,7 @@
       }
     },
     "扫描范围：Xcode 相关缓存目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1049,6 +1088,7 @@
       }
     },
     "扫描范围：用户主目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1071,6 +1111,7 @@
       }
     },
     "扫描项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1116,6 +1157,7 @@
       }
     },
     "暂无大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1138,6 +1180,7 @@
       }
     },
     "暂无目录数据" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1160,6 +1203,7 @@
       }
     },
     "未发现可清理的项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1182,6 +1226,7 @@
       }
     },
     "正在分析目录结构" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1204,6 +1249,7 @@
       }
     },
     "正在扫描 Xcode 缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1226,6 +1272,7 @@
       }
     },
     "正在扫描大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1248,6 +1295,7 @@
       }
     },
     "正在扫描系统缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1270,6 +1318,7 @@
       }
     },
     "正在扫描项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1292,6 +1341,7 @@
       }
     },
     "没有发现可清理的缓存文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1314,6 +1364,7 @@
       }
     },
     "清理中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1336,6 +1387,7 @@
       }
     },
     "点击开始分析，查看目录占用与结构。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1358,6 +1410,7 @@
       }
     },
     "点击开始扫描，分析系统缓存并可一键清理。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1403,6 +1456,7 @@
       }
     },
     "立即清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1425,6 +1479,7 @@
       }
     },
     "重新扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -186,6 +186,7 @@
       }
     },
     "Collecting..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -208,6 +209,7 @@
       }
     },
     "CPU %.0f%%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -230,6 +232,7 @@
       }
     },
     "CPU %.0f%% · %d Cores" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -252,6 +255,7 @@
       }
     },
     "CPU Load Trend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -274,6 +278,7 @@
       }
     },
     "CPU Usage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -296,6 +301,7 @@
       }
     },
     "Device Info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -318,6 +324,7 @@
       }
     },
     "Last 60 Seconds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -340,6 +347,7 @@
       }
     },
     "Memory" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -362,6 +370,7 @@
       }
     },
     "Memory Usage Trend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -384,6 +393,7 @@
       }
     },
     "R: %@ W: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -406,6 +416,7 @@
       }
     },
     "Real-time Monitor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -428,6 +439,7 @@
       }
     },
     "Show system status like CPU, Memory, Disk, Battery, etc." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -450,6 +462,7 @@
       }
     },
     "Top Processes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -472,6 +485,7 @@
       }
     },
     "Uptime" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -494,6 +508,7 @@
       }
     },
     "Usage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -516,6 +531,7 @@
       }
     },
     "used" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
