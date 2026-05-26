@@ -1,26 +1,29 @@
 import SwiftUI
+import LumiUI
 
 // MARK: - Dracula 主题
 ///
 /// 严格遵循 Dracula Official 配色方案。
 /// 特点：深邃的紫红色背景，高对比度的鲜艳色彩
 ///
-struct DraculaTheme: LumiAppChromeTheme {
+public struct DraculaTheme: LumiAppChromeTheme {
     // MARK: - 主题信息
-    let identifier = "dracula"
-    let displayName = "Dracula"
-    let compactName = "Dracula"
-    let description = "Dracula Official 经典深色配色，高对比度且醒目"
-    let iconName = "moon.stars.fill"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    public let identifier = "dracula"
+    public let displayName = "Dracula"
+    public let compactName = "Dracula"
+    public let description = "Dracula Official 经典深色配色，高对比度且醒目"
+    public let iconName = "moon.stars.fill"
+    public let appearanceKind: ThemeAppearanceKind = .dark
 
-    var iconColor: SwiftUI.Color {
+    public init() {}
+
+    public var iconColor: SwiftUI.Color {
         SwiftUI.Color(hex: "BD93F9")
     }
 
     // MARK: - 颜色配置
 
-    func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
+    public func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
             primary: SwiftUI.Color(hex: "BD93F9"),       // Dracula 标志性紫罗兰
             secondary: SwiftUI.Color(hex: "FF79C6"),      // Dracula 亮粉色
@@ -28,7 +31,7 @@ struct DraculaTheme: LumiAppChromeTheme {
         )
     }
 
-    func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
+    public func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
             deep: SwiftUI.Color(hex: "282A36"),          // Dracula 核心背景色
             medium: SwiftUI.Color(hex: "343746"),         // Dracula 侧边栏/面板背景
@@ -36,7 +39,7 @@ struct DraculaTheme: LumiAppChromeTheme {
         )
     }
 
-    func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
+    public func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
             subtle: SwiftUI.Color(hex: "BD93F9").opacity(0.2),
             medium: SwiftUI.Color(hex: "FF79C6").opacity(0.3),
@@ -44,7 +47,7 @@ struct DraculaTheme: LumiAppChromeTheme {
         )
     }
 
-    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+    public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {
                 atmosphereColors().deep

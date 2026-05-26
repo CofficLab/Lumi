@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeDraculaPlugin: SuperPlugin {
-    static let shared = ThemeDraculaPlugin()
-    static let id: String = "dracula"
-    static let displayName: String = "Dracula"
-    static let description: String = "Dracula Official dark theme"
-    static let iconName: String = "moon.stars.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 132 }
+public actor ThemeDraculaPlugin: SuperPlugin {
+    public static let shared = ThemeDraculaPlugin()
+    public static let id: String = "dracula"
+    public static let displayName: String = "Dracula"
+    public static let description: String = "Dracula Official dark theme"
+    public static let iconName: String = "moon.stars.fill"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 132 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    nonisolated public var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: DraculaTheme(),
@@ -36,8 +41,12 @@ actor ThemeDraculaPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(DraculaSuperEditorThemeContributor())
     }
 
+}
+
+enum PluginThemeDraculaResources {
+    static let bundle = Bundle.module
 }

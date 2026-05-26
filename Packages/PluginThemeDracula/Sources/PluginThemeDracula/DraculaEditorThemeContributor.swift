@@ -1,18 +1,21 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Dracula Official 编辑器主题配色方案
 /// 严格遵循 Dracula Theme 官方配色标准
 /// 参考: https://draculatheme.com/contribute
 @MainActor
-final class DraculaSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "dracula"
-    let displayName: String = "Dracula"
-    let icon: String? = "moon.stars.fill"
-    let isDark: Bool = true
+public final class DraculaSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "dracula"
+    public let displayName: String = "Dracula"
+    public let icon: String? = "moon.stars.fill"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             // 当前行: #343746 -> (0.204, 0.216, 0.275)
             text: attr(0.671, 0.698, 0.749),
