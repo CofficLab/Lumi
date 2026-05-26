@@ -75,7 +75,7 @@ final class FileLogCoordinator: @unchecked Sendable {
     private var logsDirectory: URL {
         // 遵循插件数据存储规范，存放到插件专属子目录：
         // ~/Library/Application Support/com.coffic.Lumi/db_debug_v1/FileLog/
-        DBConfig.getPluginDBFolderURL(pluginName: "FileLog")
+        FileLogPlugin.configuration.logsDirectory()
     }
 
     // MARK: - Public Lifecycle
