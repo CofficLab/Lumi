@@ -28,10 +28,4 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(ConversationTimelineView())
     }
-
-    /// 右侧栏 Section：对话摘要交接入口（始终显示在最上方）。
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
-        return [AnyView(ConversationHandoffSidebarSection())]
-    }
 }
