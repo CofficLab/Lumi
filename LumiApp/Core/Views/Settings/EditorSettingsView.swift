@@ -87,22 +87,21 @@ struct EditorSettingsView: View {
                 searchCard
                 scopedOverridesCard
 
-                    ForEach(allSections) { section in
-                        sectionCard(section)
-                    }
-
-                    if normalizedQuery.isEmpty && extensionSections.isEmpty {
-                        extensionEmptyStateCard
-                    }
-
-                    if allSections.isEmpty {
-                        emptySearchCard
-                    }
-
-                    Spacer()
+                ForEach(allSections) { section in
+                    sectionCard(section)
                 }
-                .padding(.horizontal, 24)
+
+                if normalizedQuery.isEmpty && extensionSections.isEmpty {
+                    extensionEmptyStateCard
+                }
+
+                if allSections.isEmpty {
+                    emptySearchCard
+                }
+
+                Spacer()
             }
+            .padding(.horizontal, 24)
         }
         .onAppear {
             applyPendingSearchQuery()
