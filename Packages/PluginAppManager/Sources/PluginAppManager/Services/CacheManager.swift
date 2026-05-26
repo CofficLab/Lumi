@@ -1,6 +1,6 @@
 import Foundation
+import SuperLogKit
 import SwiftData
-import SwiftUI
 
 /// 缓存统计信息
 struct CacheStats {
@@ -26,7 +26,7 @@ actor CacheManager: SuperLog {
     private init() {
         let schema = Schema([AppCacheItem.self])
 
-        let dbDir = AppConfig.getDBFolderURL().appendingPathComponent("AppManagerPlugin", isDirectory: true)
+        let dbDir = AppManagerPlugin.databaseRootURLProvider().appendingPathComponent("AppManagerPlugin", isDirectory: true)
         try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("AppCache.sqlite")
 
@@ -175,12 +175,4 @@ actor CacheManager: SuperLog {
     func getStats() async -> CacheStats {
         stats
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

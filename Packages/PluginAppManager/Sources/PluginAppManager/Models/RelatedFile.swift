@@ -36,10 +36,3 @@ struct RelatedFile: Identifiable, Hashable, Sendable {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
-}

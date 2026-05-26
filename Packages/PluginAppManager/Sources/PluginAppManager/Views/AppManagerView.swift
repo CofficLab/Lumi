@@ -35,7 +35,7 @@ struct AppManagerView: View {
         }
         .frame(maxHeight: .infinity)
         .frame(maxWidth: .infinity)
-        .navigationTitle(String(localized: "App Manager", table: "AppManager"))
+        .navigationTitle(PluginAppManagerLocalization.string("App Manager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
@@ -55,19 +55,19 @@ struct AppManagerView: View {
                 }
             }
         }
-        .alert(String(localized: "Confirm Uninstall", table: "AppManager"), isPresented: $viewModel.showUninstallConfirmation) {
-            Button(String(localized: "Cancel", table: "AppManager"), role: .cancel) { }
-            Button(String(localized: "Uninstall", table: "AppManager"), role: .destructive) {
+        .alert(PluginAppManagerLocalization.string("Confirm Uninstall"), isPresented: $viewModel.showUninstallConfirmation) {
+            Button(PluginAppManagerLocalization.string("Cancel"), role: .cancel) { }
+            Button(PluginAppManagerLocalization.string("Uninstall"), role: .destructive) {
                 viewModel.deleteSelectedFiles()
             }
         } message: {
-            Text(String(localized: "Are you sure you want to delete the selected files? This action cannot be undone."))
+            Text(PluginAppManagerLocalization.string("Are you sure you want to delete the selected files? This action cannot be undone."))
         }
-        .alert(String(localized: "Error", table: "AppManager"), isPresented: Binding<Bool>(
+        .alert(PluginAppManagerLocalization.string("Error"), isPresented: Binding<Bool>(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button(String(localized: "OK", table: "AppManager")) {
+            Button(PluginAppManagerLocalization.string("OK")) {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -84,7 +84,7 @@ struct AppManagerView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(theme.textSecondary)
                 TextField(
-                    String(localized: "Search Apps", table: "AppManager"),
+                    PluginAppManagerLocalization.string("Search Apps"),
                     text: $viewModel.searchText
                 )
                 .textFieldStyle(.roundedBorder)
@@ -93,18 +93,18 @@ struct AppManagerView: View {
             // 第二行：统计 + 刷新
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
+                    Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
                         .font(.appCallout)
                         .foregroundColor(theme.textSecondary)
 
-                    Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
+                    Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
 
                 Spacer()
 
-                AppButton(LocalizedStringKey("Refresh"), style: .secondary, fillsWidth: true, action: { viewModel.refresh() })
+                AppButton(PluginAppManagerLocalization.string("Refresh"), style: .secondary, fillsWidth: true, action: { viewModel.refresh() })
                 .disabled(viewModel.isLoading)
             }
         }
@@ -132,12 +132,4 @@ struct AppManagerView: View {
     private var detailView: some View {
         AppManagerDetailView(viewModel: viewModel)
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SuperLogKit
 import SwiftUI
 
 /// 应用管理器视图模型
@@ -282,12 +283,4 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         scanTask?.cancel()
         relatedFilesTask?.cancel()
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

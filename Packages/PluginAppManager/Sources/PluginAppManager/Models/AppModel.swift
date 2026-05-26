@@ -111,10 +111,3 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
-}

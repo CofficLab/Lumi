@@ -30,7 +30,7 @@ struct AppManagerDetailView: View {
                             Text(app.displayName)
                                 .font(.appTitle)
                                 .foregroundColor(theme.textPrimary)
-                            Text(app.bundleIdentifier ?? String(localized: "Unknown Bundle ID", table: "AppManager"))
+                            Text(app.bundleIdentifier ?? PluginAppManagerLocalization.string("Unknown Bundle ID"))
                                 .font(.appCaption)
                                 .foregroundColor(theme.textSecondary)
                             Text(app.bundleURL.path)
@@ -83,20 +83,20 @@ struct AppManagerDetailView: View {
 
                     // Footer Action
                     HStack {
-                        Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
+                        Text(PluginAppManagerLocalization.format("Selected: %@", formatBytes(viewModel.totalSelectedSize)))
                             .font(.appBodyEmphasized)
                             .foregroundColor(theme.textPrimary)
 
                         Spacer()
 
-                        AppButton(localized: "Uninstall Selected", table: "AppManager", style: .destructive, fillsWidth: true, action: { viewModel.showUninstallConfirmation = true })
+                        AppButton(PluginAppManagerLocalization.string("Uninstall Selected"), style: .destructive, fillsWidth: true, action: { viewModel.showUninstallConfirmation = true })
                         .controlSize(.mini)
                         .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }
                     .padding()
                 }
             } else {
-                ContentUnavailableView(String(localized: "Select an App", table: "AppManager"), systemImage: "hand.tap")
+                ContentUnavailableView(PluginAppManagerLocalization.string("Select an App"), systemImage: "hand.tap")
             }
         }
     }

@@ -1,5 +1,5 @@
 import Foundation
-import SwiftUI
+import SuperLogKit
 
 /// 应用清理助手，用于扫描和清理应用的关联文件
 class AppCleanerHelper: SuperLog {
@@ -107,12 +107,4 @@ class AppCleanerHelper: SuperLog {
         }
         return true
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

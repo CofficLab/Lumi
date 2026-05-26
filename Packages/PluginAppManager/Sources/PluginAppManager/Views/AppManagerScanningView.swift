@@ -18,7 +18,7 @@ struct AppManagerScanningView: View {
                 ProgressView()
                     .scaleEffect(1.2)
                 
-                Text(String(localized: "Scanning related files...", table: "AppManager"))
+                Text(PluginAppManagerLocalization.string("Scanning related files..."))
                     .font(.appBody)
                     .foregroundColor(theme.textSecondary)
             }
@@ -27,11 +27,4 @@ struct AppManagerScanningView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }
-}
-
-// MARK: - Preview
-
-#Preview("AppManagerScanningView") {
-    AppManagerScanningView()
-        .frame(width: 400, height: 300)
 }

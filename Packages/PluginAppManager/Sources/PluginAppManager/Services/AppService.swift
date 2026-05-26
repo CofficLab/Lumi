@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SuperLogKit
 import SwiftUI
 
 /// 应用服务
@@ -382,12 +383,4 @@ enum AppError: LocalizedError {
             return "Uninstall failed: \(reason)"
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

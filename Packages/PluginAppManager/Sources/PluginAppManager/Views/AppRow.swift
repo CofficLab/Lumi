@@ -58,21 +58,13 @@ struct AppRow: View {
             Spacer()
         }
         .contextMenu {
-            Button(String(localized: "Show in Finder", table: "AppManager")) {
+            Button(PluginAppManagerLocalization.string("Show in Finder")) {
                 viewModel.revealInFinder(app)
             }
 
-            Button(String(localized: "Open", table: "AppManager")) {
+            Button(PluginAppManagerLocalization.string("Open")) {
                 viewModel.openApp(app)
             }
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }
