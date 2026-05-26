@@ -47,3 +47,7 @@ public actor ThemeAuroraPlugin: SuperPlugin {
     }
 
 }
+
+enum PluginThemeAuroraResources {
+    static let bundle = Bundle.module
+}

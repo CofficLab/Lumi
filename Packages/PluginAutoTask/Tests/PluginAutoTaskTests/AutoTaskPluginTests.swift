@@ -1,5 +1,37 @@
+import AgentToolKit
+import LumiCoreKit
 import Testing
 @testable import PluginAutoTask
+
+@Suite("PluginAutoTask")
+struct AutoTaskPluginTests {
+    @Test("plugin metadata is stable")
+    func pluginMetadata() {
+        #expect(AutoTaskPlugin.id == "AutoTask")
+        #expect(AutoTaskPlugin.displayName == "Auto Task")
+        #expect(AutoTaskPlugin.description.isEmpty == false)
+        #expect(AutoTaskPlugin.iconName == "checklist")
+        #expect(AutoTaskPlugin.isConfigurable == false)
+        #expect(AutoTaskPlugin.category == .agent)
+        #expect(AutoTaskPlugin.order == 90)
+        #expect(AutoTaskPlugin.enable == true)
+    }
+
+    @MainActor
+    @Test("plugin registers task tools and middleware")
+    func pluginContributions() {
+        let tools = AutoTaskPlugin.shared.agentTools(context: ToolContext())
+
+        #expect(tools.map(\.name) == [
+            "create_task",
+            "append_task",
+            "update_task",
+            "list_tasks",
+            "check_progress",
+        ])
+        #expect(AutoTaskPlugin.shared.sendMiddlewares().count == 1)
+    }
+}
 
 @Test func testTaskItemCreation() async throws {
     let task = TaskItem(conversationId: "test-conv", title: "Test Task", detail: "A detail")
@@ -28,4 +60,21 @@ import Testing
 
     let empty = TaskProgressSummary(total: 0, completed: 0, inProgress: 0, pending: 0, skipped: 0)
     #expect(empty.isEmpty)
+}
+
+@Test func testToolSchemasAndRiskLevels() throws {
+    let createSchema = CreateTaskTool().inputSchema(for: .english)
+    #expect(try #require(createSchema["required"] as? [String]) == ["tasks"])
+
+    let appendSchema = AppendTaskTool().inputSchema(for: .english)
+    #expect(try #require(appendSchema["required"] as? [String]) == ["tasks"])
+
+    let updateSchema = UpdateTaskTool().inputSchema(for: .english)
+    #expect(try #require(updateSchema["required"] as? [String]) == ["task_id", "status"])
+
+    #expect(CreateTaskTool().permissionRiskLevel(arguments: [:]) == .low)
+    #expect(AppendTaskTool().permissionRiskLevel(arguments: [:]) == .low)
+    #expect(UpdateTaskTool().permissionRiskLevel(arguments: [:]) == .low)
+    #expect(ListTasksTool().permissionRiskLevel(arguments: [:]) == .low)
+    #expect(CheckProgressTool().permissionRiskLevel(arguments: [:]) == .low)
 }
