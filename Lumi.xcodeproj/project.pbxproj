@@ -98,6 +98,7 @@
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
 		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
+		HPK1000000000000000001 /* HTMLPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = HPK2000000000000000001 /* HTMLPreviewKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -424,6 +425,7 @@
 				C0FF6F012FCF000000000001 /* GoEditorCore in Frameworks */,
 				C0FF7A012FD0000000000001 /* MCPKit in Frameworks */,
 				C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */,
+				HPK1000000000000000001 /* HTMLPreviewKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1013,6 +1015,7 @@
 				0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */,
 				0BB9F76F2FC48DF7003720A5 /* PluginAskUser */,
 				0BB9947F2FC492FC003720A4 /* PluginProjectOverview */,
+				HPK2000000000000000001 /* HTMLPreviewKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -1151,6 +1154,7 @@
 				0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Packages/PluginAutoTask" */,
 				0BB9F76E2FC48DF7003720A5 /* XCLocalSwiftPackageReference "Packages/PluginAskUser" */,
 				0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Packages/PluginProjectOverview" */,
+				HPK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/HTMLPreviewKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -2274,6 +2278,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/GitBranchMonitorKit;
 		};
+		HPK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/HTMLPreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/HTMLPreviewKit;
+		};
 		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ModelRouterKit;
@@ -2806,6 +2814,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */;
 			productName = GitBranchMonitorKit;
+		};
+		HPK2000000000000000001 /* HTMLPreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = HPK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/HTMLPreviewKit" */;
+			productName = HTMLPreviewKit;
 		};
 		MRK100000000000000001 /* ModelRouterKit */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,10 +1,12 @@
 import AppKit
+import HTMLPreviewKit
 import LumiPreviewKit
 import MagicAlert
 import MarkdownKit
 import os
 import SwiftUI
 import StringCatalogKit
+import WebKit
 
 /// 预览插件的底部面板内容视图。
 ///
@@ -29,6 +31,8 @@ struct EditorPreviewDetailView: View, SuperLog {
     @State private var isCleaningProjectStringCatalogs = false
     @State private var isConfirmingProjectStringCatalogClean = false
     @State private var isTakingScreenshot = false
+    @State private var previewCanvasView: NSView?
+    @State private var htmlPreviewWebView: WKWebView?
 
     private var sourceText: String? {
         editorVM.service.content?.string
@@ -438,36 +442,56 @@ struct EditorPreviewDetailView: View, SuperLog {
     }
 
     private func takeStaticScreenshot() {
-        // 对于非 Swift 预览（图片、Markdown 等），使用 NSView 截图
-        guard let window = NSApp.keyWindow else {
-            isTakingScreenshot = false
+        if case .html = viewModel.previewMode,
+           let webView = htmlPreviewWebView {
+            takeHTMLScreenshot(webView)
             return
         }
 
-        guard let contentView = window.contentView else {
-            isTakingScreenshot = false
-            return
-        }
-
-        let bounds = contentView.bounds
-        guard bounds.width > 0, bounds.height > 0 else {
-            isTakingScreenshot = false
-            return
-        }
-
-        guard let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: bounds) else {
+        guard let canvasView = previewCanvasView else {
             isTakingScreenshot = false
             alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
             return
         }
 
-        contentView.cacheDisplay(in: bounds, to: bitmapRep)
-        let image = NSImage()
-        image.addRepresentation(bitmapRep)
-        image.size = bounds.size
+        guard let image = renderImage(from: canvasView) else {
+            isTakingScreenshot = false
+            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            return
+        }
 
         isTakingScreenshot = false
         saveScreenshotToDesktop(image)
+    }
+
+    @MainActor
+    private func takeHTMLScreenshot(_ webView: WKWebView) {
+        Task {
+            do {
+                let image = try await HTMLScreenshotter.capture(webView)
+                isTakingScreenshot = false
+                saveScreenshotToDesktop(image)
+            } catch {
+                isTakingScreenshot = false
+                Self.logger.error("\(Self.t)📸 HTML 截图失败：\(error.localizedDescription)")
+                alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            }
+        }
+    }
+
+    private func renderImage(from view: NSView) -> NSImage? {
+        let bounds = view.bounds
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+
+        guard let bitmapRep = view.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+
+        view.cacheDisplay(in: bounds, to: bitmapRep)
+        let image = NSImage()
+        image.addRepresentation(bitmapRep)
+        image.size = bounds.size
+        return image
     }
 
     private func saveScreenshotToDesktop(_ image: NSImage) {
@@ -628,35 +652,47 @@ struct EditorPreviewDetailView: View, SuperLog {
 
     @ViewBuilder
     private var canvasArea: some View {
-        switch viewModel.previewMode {
-        case .swift:
-            swiftPreviewCanvas
-        case let .image(url):
-            EditorPreviewImageView(fileURL: url)
-        case .markdown:
-            EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorVM.service)
-                .environmentObject(themeVM)
-        case .stringCatalog:
-            EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
-                .environmentObject(themeVM)
-        case let .json(url):
-            EditorPreviewJSONView(jsonText: sourceText ?? "")
-                .environmentObject(themeVM)
-        case let .plist(url):
-            EditorPreviewPlistView(plistText: sourceText ?? "")
-                .environmentObject(themeVM)
-        case let .csv(url):
-            EditorPreviewCSVView(csvText: sourceText ?? "", fileURL: url)
-                .environmentObject(themeVM)
-        case let .html(url):
-            EditorPreviewHTMLView(htmlText: sourceText ?? "", fileURL: url)
-                .environmentObject(themeVM)
-        case let .pdf(url):
-            EditorPreviewPDFView(fileURL: url)
-                .environmentObject(themeVM)
-        case let .unsupported(url):
-            unsupportedPreview(url: url)
+        Group {
+            switch viewModel.previewMode {
+            case .swift:
+                swiftPreviewCanvas
+            case let .image(url):
+                EditorPreviewImageView(fileURL: url)
+            case .markdown:
+                EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorVM.service)
+                    .environmentObject(themeVM)
+            case .stringCatalog:
+                EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
+                    .environmentObject(themeVM)
+            case let .json(url):
+                EditorPreviewJSONView(jsonText: sourceText ?? "")
+                    .environmentObject(themeVM)
+            case let .plist(url):
+                EditorPreviewPlistView(plistText: sourceText ?? "")
+                    .environmentObject(themeVM)
+            case let .csv(url):
+                EditorPreviewCSVView(csvText: sourceText ?? "", fileURL: url)
+                    .environmentObject(themeVM)
+            case let .html(url):
+                HTMLPreviewView(
+                    htmlText: sourceText ?? "",
+                    fileURL: url,
+                    onWebViewResolved: { webView in
+                        htmlPreviewWebView = webView
+                    }
+                )
+            case let .pdf(url):
+                EditorPreviewPDFView(fileURL: url)
+                    .environmentObject(themeVM)
+            case let .unsupported(url):
+                unsupportedPreview(url: url)
+            }
         }
+        .background(
+            EditorPreviewCanvasAccessor { view in
+                previewCanvasView = view
+            }
+        )
     }
 
     @ViewBuilder
@@ -765,6 +801,25 @@ struct EditorPreviewDetailView: View, SuperLog {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
+        }
+    }
+}
+
+private struct EditorPreviewCanvasAccessor: NSViewRepresentable {
+    let onResolve: (NSView) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        DispatchQueue.main.async {
+            onResolve(view.superview ?? view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            onResolve(nsView.superview ?? nsView)
         }
     }
 }

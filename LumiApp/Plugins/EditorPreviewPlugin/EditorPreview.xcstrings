@@ -898,6 +898,7 @@
       }
     },
     "No HTML content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
