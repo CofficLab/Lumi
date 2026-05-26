@@ -1,17 +1,20 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// GitHub 编辑器主题配色方案
 /// 参照 VS Code GitHub Dark Default 主题配色
 @MainActor
-final class GithubSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "github"
-    let displayName: String = "GitHub Dark"
-    let icon: String? = "chevron.left.forwardslash.chevron.right"
-    let isDark: Bool = true
+public final class GithubSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "github"
+    public let displayName: String = "GitHub Dark"
+    public let icon: String? = "chevron.left.forwardslash.chevron.right"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             // 文字颜色: #c9d1d9 -> (0.788, 0.820, 0.851)
             text: attr(0.788, 0.820, 0.851),

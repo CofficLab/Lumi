@@ -1,27 +1,30 @@
 import SwiftUI
+import LumiUI
 
 // MARK: - GitHub 主题
 ///
 /// 灵感来源于 GitHub 的深色主题设计。
 /// 特点：GitHub 蓝绿调，代码风格的深邃质感
 ///
-struct GitHubTheme: LumiAppChromeTheme {
+public struct GitHubTheme: LumiAppChromeTheme {
     // MARK: - 主题信息
 
-    let identifier = "github"
-    let displayName = "GitHub"
-    let compactName = "GitHub"
-    let description = "灵感来源于 GitHub 的深色主题，深邃而专业"
-    let iconName = "chevron.left.forwardslash.chevron.right"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    public let identifier = "github"
+    public let displayName = "GitHub"
+    public let compactName = "GitHub"
+    public let description = "灵感来源于 GitHub 的深色主题，深邃而专业"
+    public let iconName = "chevron.left.forwardslash.chevron.right"
+    public let appearanceKind: ThemeAppearanceKind = .dark
 
-    var iconColor: SwiftUI.Color {
+    public init() {}
+
+    public var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "24292E", dark: "58A6FF")
     }
 
     // MARK: - 颜色配置
 
-    func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
+    public func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
             primary: SwiftUI.Color.adaptive(light: "1F6FEB", dark: "58A6FF"),    // GitHub 蓝
             secondary: SwiftUI.Color.adaptive(light: "238636", dark: "3FB950"),  // GitHub 绿
@@ -29,7 +32,7 @@ struct GitHubTheme: LumiAppChromeTheme {
         )
     }
 
-    func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
+    public func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
             deep: SwiftUI.Color.adaptive(light: "F6F8FA", dark: "0D1117"),      // 背景：GitHub 浅灰 vs GitHub Dark BG
             medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "161B22"),     // 卡片：GitHub box BG
@@ -37,7 +40,7 @@ struct GitHubTheme: LumiAppChromeTheme {
         )
     }
 
-    func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
+    public func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
             subtle: SwiftUI.Color.adaptive(light: "238636", dark: "3FB950").opacity(0.2),
             medium: SwiftUI.Color.adaptive(light: "1F6FEB", dark: "58A6FF").opacity(0.35),
@@ -45,7 +48,7 @@ struct GitHubTheme: LumiAppChromeTheme {
         )
     }
 
-    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+    public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {
                 // 主背景

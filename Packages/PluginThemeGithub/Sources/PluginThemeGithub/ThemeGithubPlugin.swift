@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeGithubPlugin: SuperPlugin {
-    static let shared = ThemeGithubPlugin()
-    static let id: String = "github"
-    static let displayName: String = "GitHub"
-    static let description: String = "GitHub style app theme"
-    static let iconName: String = "chevron.left.forwardslash.chevron.right"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 128 }
+public actor ThemeGithubPlugin: SuperPlugin {
+    public static let shared = ThemeGithubPlugin()
+    public static let id: String = "github"
+    public static let displayName: String = "GitHub"
+    public static let description: String = "GitHub style app theme"
+    public static let iconName: String = "chevron.left.forwardslash.chevron.right"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 128 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    nonisolated public var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: GitHubTheme(),
@@ -39,8 +44,12 @@ actor ThemeGithubPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(GithubSuperEditorThemeContributor())
     }
 
+}
+
+enum PluginThemeGithubResources {
+    static let bundle = Bundle.module
 }
