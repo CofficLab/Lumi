@@ -55,10 +55,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        // 注意：Package 侧的 TaskContextMiddleware 使用 LumiCoreKit.SuperSendMiddleware，
-        // 与 App 侧的 SuperSendMiddleware 协议不同，无法直接桥接。
-        // 此处暂时返回空，后续可在 App 侧创建对应的包装中间件。
-        []
+        [AnySuperSendMiddleware(AutoTaskTurnCheckMiddleware())]
     }
 
     // MARK: - UI Contributions

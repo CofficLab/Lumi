@@ -694,6 +694,8 @@ extension AgentTurnService {
         let middlewares = pluginVM.getSuperSendMiddlewares()
         let chatHistoryService = self.chatHistoryService
         let projectVM = self.projectVM
+        let messageQueueVM = self.messageQueueVM
+        let conversationVM = self.conversationVM
 
         Task {
             let turnMessages = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
@@ -702,7 +704,9 @@ extension AgentTurnService {
                 endReason: endReason,
                 turnMessages: turnMessages,
                 chatHistoryService: chatHistoryService,
-                projectVM: projectVM
+                projectVM: projectVM,
+                messageQueueVM: messageQueueVM,
+                conversationVM: conversationVM
             )
             let pipeline = SendPipeline(middlewares: middlewares)
             await pipeline.runTurnFinished(ctx: ctx)
