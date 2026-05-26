@@ -40,6 +40,14 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
         return AnyView(ConversationListPopoverButton())
     }
 
+    // MARK: - Send Middlewares
+
+    /// 发送管线中间件：项目切换对话引导
+    @MainActor
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(ProjectSwitchSendMiddleware())]
+    }
+
     // MARK: - Agent Tools
 
     /// 提供对话管理相关的 Agent 工具
