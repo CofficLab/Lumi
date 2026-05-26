@@ -2,6 +2,7 @@ import os
 import SwiftUI
 import LumiUI
 import BrewKit
+import SuperLogKit
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()
@@ -236,12 +237,4 @@ struct BrewPackageRow: View {
             .padding(.vertical, 4)
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

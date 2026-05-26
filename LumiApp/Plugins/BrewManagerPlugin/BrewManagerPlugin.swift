@@ -1,3 +1,4 @@
+import PluginBrewManager
 import SwiftUI
 import os
 
@@ -8,14 +9,14 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "🍺"
-    nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
-    
-    static let id = "BrewManager"
-    static let navigationId = "brew_manager"
-    static let displayName = String(localized: "Package Management", table: "BrewManager")
-    static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
-    static let iconName = "mug.fill"
+    nonisolated static let enable: Bool = PluginBrewManager.BrewManagerPlugin.enable
+    nonisolated static let verbose: Bool = PluginBrewManager.BrewManagerPlugin.verbose
+
+    static let id = PluginBrewManager.BrewManagerPlugin.id
+    static let navigationId = PluginBrewManager.BrewManagerPlugin.navigationId
+    static let displayName = PluginBrewManager.BrewManagerPlugin.displayName
+    static let description = PluginBrewManager.BrewManagerPlugin.description
+    static let iconName = PluginBrewManager.BrewManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 60 }
     nonisolated var instanceLabel: String { Self.id }
@@ -25,15 +26,10 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(BrewManagerView())
+        PluginBrewManager.BrewManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
     }
 
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
-}
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
+    nonisolated func addPanelIcon() -> String? {
+        PluginBrewManager.BrewManagerPlugin.shared.addPanelIcon()
+    }
 }
