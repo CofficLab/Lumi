@@ -54,6 +54,7 @@
 		0BA8A7362FC08EB9004C2B71 /* AgentToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4712F70000100AAA109 /* AgentToolKit */; };
 		0BB994802FC492FC003720A4 /* PluginProjectOverview in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9947F2FC492FC003720A4 /* PluginProjectOverview */; };
 		0BB9F7702FC48DF6003720A4 /* PluginAutoTask in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */; };
+		0BB9F7712FC48DF7003720A5 /* PluginAskUser in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF7003720A5 /* PluginAskUser */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
@@ -224,11 +225,10 @@
 		F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F5C1170A2FC554C1005D7D00 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
-		F5C119692FC554C7005D7D00 /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = iOSTerminal.xcodeproj; sourceTree = "<group>"; };
 		F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MacTerminal.xcodeproj; sourceTree = "<group>"; };
+		F5EA98E72FC5841000181A09 /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		F5FA20142FC540120046F3B9 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5FA20332FC540130046F3B9 /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -401,6 +401,7 @@
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				0B1A4F8B2F662D8500F15618 /* MLXRandom in Frameworks */,
 				0BB9F7702FC48DF6003720A4 /* PluginAutoTask in Frameworks */,
+				0BB9F7712FC48DF7003720A5 /* PluginAskUser in Frameworks */,
 				0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */,
 				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
 				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
@@ -804,20 +805,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		F5C117102FC554C1005D7D00 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5C119A12FC554C7005D7D00 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		F5CA2F3D2FADB75E00F67747 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -833,6 +820,13 @@
 			sourceTree = "<group>";
 		};
 		F5E2115B2FAEF3440005256B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5EA991F2FC5841000181A09 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -1017,6 +1011,7 @@
 				0B14A1F12FD4000000A14A1F /* PluginThemeNebula */,
 				0B14A2012FD4000000A14A20 /* PluginThemeOneDark */,
 				0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */,
+				0BB9F76F2FC48DF7003720A5 /* PluginAskUser */,
 				0BB9947F2FC492FC003720A4 /* PluginProjectOverview */,
 			);
 			productName = Lumi;
@@ -1154,6 +1149,7 @@
 				0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Packages/PluginThemeNebula" */,
 				0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Packages/PluginThemeOneDark" */,
 				0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Packages/PluginAutoTask" */,
+				0BB9F76E2FC48DF7003720A5 /* XCLocalSwiftPackageReference "Packages/PluginAskUser" */,
 				0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Packages/PluginProjectOverview" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1199,10 +1195,6 @@
 				{
 					ProductGroup = F5FA201A2FC540120046F3B9 /* Products */;
 					ProjectRef = F5FA20142FC540120046F3B9 /* Collections.xcodeproj */;
-				},
-				{
-					ProductGroup = F5C117102FC554C1005D7D00 /* Products */;
-					ProjectRef = F5C1170A2FC554C1005D7D00 /* Collections.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;
@@ -1345,12 +1337,12 @@
 					ProjectRef = F5FA20332FC540130046F3B9 /* SwiftTreeSitterExample.xcodeproj */;
 				},
 				{
-					ProductGroup = F5C119A12FC554C7005D7D00 /* Products */;
-					ProjectRef = F5C119692FC554C7005D7D00 /* SwiftTreeSitterExample.xcodeproj */;
-				},
-				{
 					ProductGroup = 0BC9FE082FAD5B49003651CA /* Products */;
 					ProjectRef = 0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */;
+				},
+				{
+					ProductGroup = F5EA991F2FC5841000181A09 /* Products */;
+					ProjectRef = F5EA98E72FC5841000181A09 /* SwiftTreeSitterExample.xcodeproj */;
 				},
 				{
 					ProductGroup = F567011D2FAF42620054AB4B /* Products */;
@@ -2166,6 +2158,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAutoTask;
 		};
+		0BB9F76E2FC48DF7003720A5 /* XCLocalSwiftPackageReference "Packages/PluginAskUser" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAskUser;
+		};
 		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMProviderKit;
@@ -2602,6 +2598,10 @@
 		0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PluginAutoTask;
+		};
+		0BB9F76F2FC48DF7003720A5 /* PluginAskUser */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PluginAskUser;
 		};
 		0BBB11DF2F85467D00F53902 /* SwiftTerm */ = {
 			isa = XCSwiftPackageProductDependency;
