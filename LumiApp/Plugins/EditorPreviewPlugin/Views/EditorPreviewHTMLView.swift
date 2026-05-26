@@ -57,6 +57,10 @@ private struct WKWebViewWrapper: NSViewRepresentable {
     let fileURL: URL?
     let containerSize: CGSize
 
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         let webView = WKWebView(frame: CGRect(origin: .zero, size: containerSize), configuration: config)
@@ -71,16 +75,49 @@ private struct WKWebViewWrapper: NSViewRepresentable {
             webView.frame = CGRect(origin: .zero, size: containerSize)
         }
 
-        // 加载内容
-        if let fileURL {
-            let baseURL = fileURL.deletingLastPathComponent()
+        let loadKey = LoadKey(html: html, fileURL: fileURL)
+        guard context.coordinator.lastLoadKey != loadKey else { return }
+        context.coordinator.lastLoadKey = loadKey
+
+        if let fileURL, isHTMLInSyncWithFile(at: fileURL) {
+            let readAccessURL = fileURL.deletingLastPathComponent()
+            webView.loadFileURL(fileURL, allowingReadAccessTo: readAccessURL)
+        } else if let fileURL {
+            let baseURL = fileURL.deletingLastPathComponent().absoluteDirectoryURL
             webView.loadHTMLString(html, baseURL: baseURL)
         } else {
             webView.loadHTMLString(html, baseURL: nil)
         }
     }
 
-    static func dismantleNSView(_ nsView: WKWebView, coordinator: ()) {
+    static func dismantleNSView(_ nsView: WKWebView, coordinator: Coordinator) {
         // 清理
+    }
+
+    private func isHTMLInSyncWithFile(at url: URL) -> Bool {
+        guard let data = try? Data(contentsOf: url),
+              let fileText = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16) else {
+            return false
+        }
+        return fileText == html
+    }
+
+    fileprivate final class Coordinator {
+        var lastLoadKey: LoadKey?
+    }
+
+    fileprivate struct LoadKey: Equatable {
+        let html: String
+        let fileURL: URL?
+    }
+}
+
+private extension URL {
+    var absoluteDirectoryURL: URL {
+        var absoluteString = absoluteString
+        if !absoluteString.hasSuffix("/") {
+            absoluteString += "/"
+        }
+        return URL(string: absoluteString) ?? self
     }
 }
