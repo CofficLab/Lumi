@@ -94,18 +94,3 @@ extension NSColor {
     }
 }
 
-// MARK: - Preview
-
-#Preview("Memory Menu Bar Chart Renderer - Normal") {
-    let image = MemoryMenuBarChartRenderer.makeImage(usage: 45)
-    return Image(nsImage: image)
-        .interpolation(.none)
-        .padding()
-}
-
-#Preview("Memory Menu Bar Chart Renderer - Warning") {
-    let image = MemoryMenuBarChartRenderer.makeImage(usage: 85)
-    return Image(nsImage: image)
-        .interpolation(.none)
-        .padding()
-}

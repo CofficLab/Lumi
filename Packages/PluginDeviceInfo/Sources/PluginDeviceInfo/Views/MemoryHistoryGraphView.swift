@@ -40,7 +40,7 @@ struct MemoryHistoryGraphView: View {
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
                                 .stroke(Color(hex: "7C6FFF"), lineWidth: 1.5)
                         } else {
-                            Text(String(localized: "Collecting...", table: "DeviceInfo"))
+                            Text(PluginDeviceInfoLocalization.string("Collecting..."))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -249,11 +249,3 @@ struct MemoryTooltipView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    MemoryMenuBarPopupView()
-        .inRootView()
-        .frame(width: 400)
-        .frame(height: 400)
-}

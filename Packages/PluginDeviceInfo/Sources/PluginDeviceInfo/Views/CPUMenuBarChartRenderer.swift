@@ -55,11 +55,3 @@ struct CPUMenuBarChartRenderer {
     }
 }
 
-// MARK: - Preview
-
-#Preview("CPU Menu Bar Chart Renderer") {
-    let image = CPUMenuBarChartRenderer.makeImage(from: [12, 28, 44, 76, 55, 18, 91, 63, 35, 47, 22, 68])
-    return Image(nsImage: image)
-        .interpolation(.none)
-        .padding()
-}

@@ -141,7 +141,7 @@ class DeviceData: ObservableObject {
                 self.diskUsed = Int64(total - available)
             }
         } catch {
-            AppLogger.core.error("Error retrieving disk usage: \(error)")
+            DeviceInfoPlugin.logger.error("Error retrieving disk usage: \(error)")
         }
     }
 
@@ -162,12 +162,4 @@ class DeviceData: ObservableObject {
             }
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

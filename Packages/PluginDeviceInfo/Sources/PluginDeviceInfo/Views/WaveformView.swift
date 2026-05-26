@@ -55,10 +55,3 @@ struct WaveformView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
-}

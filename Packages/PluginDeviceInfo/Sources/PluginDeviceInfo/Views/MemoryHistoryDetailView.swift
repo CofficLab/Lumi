@@ -2,22 +2,21 @@ import SwiftUI
 import LumiUI
 import DeviceMonitorKit
 
-struct CPUHistoryDetailView: View {
-    @ObservedObject private var historyService = CPUHistoryService.shared
-    @State private var selectedRange: CPUTimeRange = .hour1
+struct MemoryHistoryDetailView: View {
+    @ObservedObject private var historyService = MemoryHistoryService.shared
+    @State private var selectedRange: MemoryTimeRange = .hour1
 
     var body: some View {
         VStack(spacing: 12) {
-            // Header with Picker
             HStack {
-                Text(String(localized: "CPU Load Trend", table: "DeviceInfo"))
+                Text(PluginDeviceInfoLocalization.string("Memory Usage Trend"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
                 Picker("Time Range", selection: $selectedRange) {
-                    ForEach(CPUTimeRange.allCases) { range in
+                    ForEach(MemoryTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }
                 }
@@ -29,9 +28,8 @@ struct CPUHistoryDetailView: View {
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
-            // Graph
-            AppCard(cornerRadius: 0, padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0), showShadow: false) {
-                CPUHistoryGraphView(
+            AppCard(cornerRadius: 0, padding: EdgeInsets(), showShadow: false) {
+                MemoryHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange
                 )
@@ -41,11 +39,3 @@ struct CPUHistoryDetailView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    DeviceInfoMenuBarPopupView()
-        .inRootView()
-        .frame(width: 300)
-        .frame(height: 300)
-}

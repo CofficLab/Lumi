@@ -42,7 +42,7 @@ struct CPUHistoryGraphView: View {
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .stroke(Color(hex: "0A84FF"), lineWidth: 1.5)
                         } else {
-                            Text(String(localized: "Collecting...", table: "DeviceInfo"))
+                            Text(PluginDeviceInfoLocalization.string("Collecting..."))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -283,11 +283,3 @@ struct CPUTooltipView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    DeviceInfoMenuBarPopupView()
-        .inRootView()
-        .frame(width: 300)
-        .frame(height: 300)
-}

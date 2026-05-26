@@ -83,7 +83,7 @@ struct DeviceInfoView: View {
                                 let used = ByteCountFormatter.string(fromByteCount: data.diskUsed, countStyle: .file)
                                 let total = ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
 
-                                Text("\(used) \(String(localized: "used", table: "DeviceInfo"))")
+                                Text("\(used) \(PluginDeviceInfoLocalization.string("used"))")
                                     .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
 
@@ -118,7 +118,7 @@ struct DeviceInfoView: View {
                     HStack {
                         Image(systemName: "clock")
                         .foregroundColor(theme.textSecondary)
-                        Text("\(String(localized: "Uptime", table: "DeviceInfo")): \(formatUptime(data.uptime))")
+                        Text("\(PluginDeviceInfoLocalization.string("Uptime")): \(formatUptime(data.uptime))")
                             .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                         Spacer()
@@ -130,7 +130,7 @@ struct DeviceInfoView: View {
 
                 // Section 2: Real-time Monitor
                 VStack(alignment: .leading, spacing: 16) {
-                    Label(String(localized: "Real-time Monitor", table: "DeviceInfo"), systemImage: "chart.xyaxis.line")
+                    Label(PluginDeviceInfoLocalization.string("Real-time Monitor"), systemImage: "chart.xyaxis.line")
                         .font(.appBody)
                         .padding(.horizontal)
                     
@@ -193,10 +193,3 @@ struct DeviceInfoCard<Content: View>: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
-}

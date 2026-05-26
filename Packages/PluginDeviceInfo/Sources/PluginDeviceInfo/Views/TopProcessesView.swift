@@ -45,7 +45,7 @@ struct TopProcessesView: View {
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(String(localized: "Top Processes", table: "DeviceInfo"))
+                Text(PluginDeviceInfoLocalization.string("Top Processes"))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
             }
@@ -53,7 +53,7 @@ struct TopProcessesView: View {
             .padding(.bottom, 6)
 
             if processes.isEmpty {
-                Text(String(localized: "Collecting...", table: "DeviceInfo"))
+                Text(PluginDeviceInfoLocalization.string("Collecting..."))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
                     .frame(maxWidth: .infinity, alignment: .center)

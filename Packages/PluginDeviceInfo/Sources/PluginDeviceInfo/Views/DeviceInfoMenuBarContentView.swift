@@ -31,26 +31,14 @@ struct DeviceInfoMenuBarContentView: View {
     private var cpuHelpText: String {
         let coreCount = cpuViewModel.perCoreUsage.count
         if coreCount > 0 {
-            return String(format: String(localized: "CPU %.0f%% · %d Cores", table: "DeviceInfo"), cpuViewModel.cpuUsage, coreCount)
+            return String(format: PluginDeviceInfoLocalization.string("CPU %.0f%% · %d Cores"), cpuViewModel.cpuUsage, coreCount)
         } else {
-            return String(format: String(localized: "CPU %.0f%%", table: "DeviceInfo"), cpuViewModel.cpuUsage)
+            return String(format: PluginDeviceInfoLocalization.string("CPU %.0f%%"), cpuViewModel.cpuUsage)
         }
     }
 
     private var memoryHelpText: String {
-        String(localized: "Memory", table: "DeviceInfo") + " \(Int(memoryViewModel.memoryUsagePercentage))% · \(memoryViewModel.usedMemory) / \(memoryViewModel.totalMemory)"
+        PluginDeviceInfoLocalization.string("Memory") + " \(Int(memoryViewModel.memoryUsagePercentage))% · \(memoryViewModel.usedMemory) / \(memoryViewModel.totalMemory)"
     }
 }
 
-// MARK: - Preview
-
-#Preview("Device Info Menu Bar Content") {
-    HStack(spacing: 4) {
-        Circle()
-            .fill(Color(hex: "0A84FF"))
-            .frame(width: 16, height: 16)
-        
-        DeviceInfoMenuBarContentView()
-    }
-    .padding()
-}
