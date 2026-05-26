@@ -7,14 +7,14 @@ import os
 ///
 /// 通过 SwiftData 管理任务的增删改查。
 /// 使用 Actor 模式确保线程安全，参考 `CacheManager` 模板。
-actor TaskStateManager: SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+public actor TaskStateManager: SuperLog {
+    nonisolated public static let emoji = "📋"
+    nonisolated public static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.state-manager")
 
     // MARK: - Singleton
 
-    static let shared = TaskStateManager()
+    public static let shared = TaskStateManager()
 
     // MARK: - Properties
 
@@ -140,7 +140,7 @@ actor TaskStateManager: SuperLog {
     // MARK: - Read
 
     /// 获取指定会话的所有任务（按 order 排序）
-    func fetchTasks(conversationId: String) -> [TaskItem] {
+    public func fetchTasks(conversationId: String) -> [TaskItem] {
         let context = ModelContext(container)
 
         var descriptor = FetchDescriptor<TaskItem>(
