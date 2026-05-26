@@ -9,8 +9,8 @@ public struct AutoTaskSidebarView: View {
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
     @State private var isCollapsed = false
 
-    /// 获取当前会话 ID 的闭包
-    private let conversationIdProvider: () -> UUID?
+    /// 获取当前会话 ID 的闭包（内部统一为 String?）
+    private let conversationIdProvider: () -> String?
 
     /// 获取背景色的闭包
     private let backgroundColorProvider: () -> Color
@@ -29,7 +29,7 @@ public struct AutoTaskSidebarView: View {
         conversationIdProvider: @escaping () -> UUID?,
         backgroundColorProvider: @escaping () -> Color = { Color.clear }
     ) {
-        self.conversationIdProvider = conversationIdProvider
+        self.conversationIdProvider = { conversationIdProvider()?.uuidString }
         self.backgroundColorProvider = backgroundColorProvider
     }
 
@@ -73,8 +73,7 @@ public struct AutoTaskSidebarView: View {
             }
         }
         .task(id: conversationIdProvider()) {
-            let cid = conversationIdProvider()?.uuidString
-            await viewModel.refresh(conversationId: cid)
+            await viewModel.refresh(conversationId: conversationIdProvider())
         }
         .onDisappear {
             viewModel.removeObserver()
