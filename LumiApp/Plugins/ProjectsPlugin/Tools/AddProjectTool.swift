@@ -33,6 +33,14 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         .low
     }
 
+    // MARK: - Dependencies
+
+    private weak var recentProjectsVM: AppProjectsVM?
+
+    init(recentProjectsVM: AppProjectsVM? = nil) {
+        self.recentProjectsVM = recentProjectsVM
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
             return "❌ Error: Missing required parameter 'path'"
@@ -57,12 +65,18 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
+        let newProject = Project(name: projectName, path: path, lastUsed: Date())
 
-        // 1. 使用 store 添加项目到列表（不触发切换）
+        // 1. 使用 store 持久化项目到磁盘
         let store = ProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 加载更新后的项目列表
+        // 2. 同步更新内存中的 AppProjectsVM，使 UI 立即刷新
+        await MainActor.run { [weak recentProjectsVM] in
+            recentProjectsVM?.addProject(newProject)
+        }
+
+        // 3. 加载更新后的项目列表
         let projects = store.loadProjects()
 
         // 构建返回消息

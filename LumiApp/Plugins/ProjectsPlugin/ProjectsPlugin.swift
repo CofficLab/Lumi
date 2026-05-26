@@ -59,7 +59,7 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
         [
             ListProjectsTool(),
             GetCurrentProjectTool(),
-            AddProjectTool(),
+            AddProjectTool(recentProjectsVM: context.recentProjectsVM),
         ]
     }
 

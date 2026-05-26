@@ -13,6 +13,7 @@ struct ToolContext: ToolContextProviding {
     let llmService: LLMService?
     let llmVM: AppLLMVM?
     let conversationVM: WindowConversationVM?
+    let recentProjectsVM: AppProjectsVM?
 
     var languagePreference: LanguagePreference {
         toolService.languagePreference

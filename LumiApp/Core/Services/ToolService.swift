@@ -46,6 +46,9 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 对话管理 ViewModel（可选，由 WindowContainer 注入）
     weak var conversationVM: WindowConversationVM?
 
+    /// 最近项目 ViewModel（可选，由 RootContainer 注入）
+    weak var recentProjectsVM: AppProjectsVM?
+
     /// Combine 订阅集合
     private var cancellables = Set<AnyCancellable>()
 
@@ -95,7 +98,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 刷新所有工具列表
     @MainActor
     private func refreshAllTools() {
-        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM)
+        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM, recentProjectsVM: recentProjectsVM)
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
         allTools = coreAgentTools() + pluginTools
 
