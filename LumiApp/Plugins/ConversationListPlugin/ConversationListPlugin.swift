@@ -54,9 +54,23 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 提供对话管理相关的 Agent 工具
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [
-            GetConversationCountTool(),
-            GetRecentConversationsTool(),
+        guard let conversationVM = context.conversationVM else { return [] }
+
+        let projectName = RootContainer.shared.windowManagerVM.activeWindowContainer?.projectVM.currentProject?.name
+        let projectPath = RootContainer.shared.windowManagerVM.activeWindowContainer?.projectVM.currentProject?.path
+
+        return [
+            GetConversationCountTool(conversationVM: conversationVM),
+            GetRecentConversationsTool(
+                conversationVM: conversationVM,
+                currentProjectPath: projectPath
+            ),
+            CreateNewConversationTool(
+                conversationVM: conversationVM,
+                projectName: projectName,
+                projectPath: projectPath,
+                languagePreference: context.languagePreference
+            ),
         ]
     }
 }

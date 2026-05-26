@@ -1,6 +1,5 @@
 import Foundation
 import AgentToolKit
-import os
 
 /// 获取对话总数工具
 ///
@@ -9,6 +8,13 @@ struct GetConversationCountTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔢"
     nonisolated static let verbose: Bool = true
     let name = "get_conversation_count"
+
+    /// 通过构造器注入的依赖
+    private let conversationVM: WindowConversationVM
+
+    init(conversationVM: WindowConversationVM) {
+        self.conversationVM = conversationVM
+    }
     
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -35,35 +41,29 @@ struct GetConversationCountTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        // 从 ToolContext 获取当前窗口的 conversationVM
-        guard let conversationVM = context.conversationVM else {
-            return """
-            ## Conversation Count
+        // 获取当前活跃窗口的项目路径（从 context 中获取）
+        let projectPath = context.currentProjectPath
 
-            **Status**: No active window
+        // 通过注入的 conversationVM 获取所有对话（在主线程上执行）
+        let totalCount: Int
+        let projectCount: Int
+        let projectName: String?
 
-            Please ensure a window is open.
-            """
+        (totalCount, projectCount, projectName) = await MainActor.run { () -> (Int, Int, String?) in
+            let allConversations = conversationVM.fetchAllConversations()
+            let totalCount = allConversations.count
+
+            if let projectPath {
+                let projectConversations = allConversations.filter { $0.projectId == projectPath }
+                let projectCount = projectConversations.count
+                let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+                return (totalCount, projectCount, projectName)
+            } else {
+                return (totalCount, 0, nil)
+            }
         }
 
-        // 获取当前活跃窗口的项目路径
-        let projectPath = await MainActor.run {
-            RootContainer.shared.windowManagerVM.activeWindowContainer?.projectPath
-        }
-
-        // 通过 conversationVM 获取所有对话
-        let allConversations = await MainActor.run {
-            conversationVM.fetchAllConversations()
-        }
-
-        let totalCount = allConversations.count
-
-        if let projectPath {
-            // 按项目过滤统计（可选信息）
-            let projectConversations = allConversations.filter { $0.projectId == projectPath }
-            let projectCount = projectConversations.count
-            let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-
+        if let projectName {
             return """
             ## Conversation Count
 

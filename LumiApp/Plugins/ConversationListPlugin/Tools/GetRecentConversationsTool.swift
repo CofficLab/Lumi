@@ -1,6 +1,5 @@
 import Foundation
 import AgentToolKit
-import os
 
 /// 获取最近对话列表工具
 ///
@@ -9,6 +8,15 @@ struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📜"
     nonisolated static let verbose: Bool = true
     let name = "get_recent_conversations"
+
+    /// 通过构造器注入的依赖
+    private let conversationVM: WindowConversationVM
+    private let currentProjectPath: String?
+
+    init(conversationVM: WindowConversationVM, currentProjectPath: String?) {
+        self.conversationVM = conversationVM
+        self.currentProjectPath = currentProjectPath
+    }
     
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -63,34 +71,45 @@ struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
         .low
     }
 
+    struct ConversationInfo: Sendable {
+        let id: String
+        let title: String
+        let project: String
+        let created: String
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         // 解析 limit 参数
         let limit = arguments["limit"]?.value as? Int ?? 5
         let clampedLimit = min(max(limit, 1), 20)
 
-        // 从 ToolContext 获取当前窗口的 conversationVM
-        guard let conversationVM = context.conversationVM else {
-            return """
-            ## Recent Conversations
+        // 获取所有对话（在主线程上执行，提取 Sendable 信息）
+        let (allCount, recentConversations) = await MainActor.run {
+            let allConversations = conversationVM.fetchAllConversations()
+            let recentConversations = Array(allConversations.prefix(clampedLimit))
 
-            **Status**: No active window
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-            Please ensure a window is open.
-            """
+            let infos = recentConversations.map { conversation -> ConversationInfo in
+                let projectName: String
+                if let projectId = conversation.projectId {
+                    let name = URL(fileURLWithPath: projectId).lastPathComponent
+                    let isCurrent = projectId == currentProjectPath ? " (current)" : ""
+                    projectName = name + isCurrent
+                } else {
+                    projectName = "-"
+                }
+                let created = dateFormatter.string(from: conversation.createdAt)
+                return ConversationInfo(
+                    id: conversation.id.uuidString,
+                    title: conversation.title,
+                    project: projectName,
+                    created: created
+                )
+            }
+            return (allConversations.count, infos)
         }
-
-        // 获取当前项目路径（用于标记当前项目的对话）
-        let currentProjectPath = await MainActor.run {
-            RootContainer.shared.windowManagerVM.activeWindowContainer?.projectVM.currentProject?.path
-        }
-
-        // 获取所有对话（已按时间倒序）
-        let allConversations = await MainActor.run {
-            conversationVM.fetchAllConversations()
-        }
-
-        // 取前 N 个
-        let recentConversations = Array(allConversations.prefix(clampedLimit))
 
         if recentConversations.isEmpty {
             return """
@@ -103,27 +122,12 @@ struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
         }
 
         // 格式化输出
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-
-        var result = "## Recent Conversations (showing \(recentConversations.count) of \(allConversations.count) total)\n\n"
+        var result = "## Recent Conversations (showing \(recentConversations.count) of \(allCount) total)\n\n"
         result += "| # | Conversation ID | Title | Project | Created |\n"
         result += "|---|----------------|-------|---------|---------|\n"
 
-        for (index, conversation) in recentConversations.enumerated() {
-            let projectName: String
-            if let projectId = conversation.projectId {
-                let name = URL(fileURLWithPath: projectId).lastPathComponent
-                let isCurrent = projectId == currentProjectPath ? " (current)" : ""
-                projectName = name + isCurrent
-            } else {
-                projectName = "-"
-            }
-
-            let created = dateFormatter.string(from: conversation.createdAt)
-            let idShort = conversation.id.uuidString.prefix(8)
-
-            result += "| \(index + 1) | `\(conversation.id.uuidString)` | \(conversation.title.escapedForTable()) | \(projectName) | \(created) |\n"
+        for (index, info) in recentConversations.enumerated() {
+            result += "| \(index + 1) | `\(info.id)` | \(info.title.escapedForTable()) | \(info.project) | \(info.created) |\n"
         }
 
         return result
