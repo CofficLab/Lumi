@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LPgpt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LPgpt"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LPgpt"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LPgpt"
+          }
+        }
+      }
+    },
+    "Free LLM Gateway by lpgpt.us": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free LLM Gateway by lpgpt.us"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+          }
+        },
+        "zh-Hk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lpgpt.us 提供的免費 LLM 網關服務"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
