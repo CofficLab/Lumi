@@ -23,9 +23,16 @@ struct EditorPreviewHTMLView: View, SuperLog {
             if htmlText.isEmpty {
                 emptyView
             } else {
-                WKWebViewWrapper(html: htmlText, fileURL: fileURL)
+                GeometryReader { geometry in
+                    WKWebViewWrapper(
+                        html: htmlText,
+                        fileURL: fileURL,
+                        containerSize: geometry.size
+                    )
+                }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
@@ -48,20 +55,32 @@ struct EditorPreviewHTMLView: View, SuperLog {
 private struct WKWebViewWrapper: NSViewRepresentable {
     let html: String
     let fileURL: URL?
+    let containerSize: CGSize
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: CGRect(origin: .zero, size: containerSize), configuration: config)
         webView.allowsMagnification = true
+        webView.translatesAutoresizingMaskIntoConstraints = false
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        // 更新 frame 以匹配容器尺寸
+        if webView.frame.size != containerSize {
+            webView.frame = CGRect(origin: .zero, size: containerSize)
+        }
+
+        // 加载内容
         if let fileURL {
             let baseURL = fileURL.deletingLastPathComponent()
             webView.loadHTMLString(html, baseURL: baseURL)
         } else {
             webView.loadHTMLString(html, baseURL: nil)
         }
+    }
+
+    static func dismantleNSView(_ nsView: WKWebView, coordinator: ()) {
+        // 清理
     }
 }
