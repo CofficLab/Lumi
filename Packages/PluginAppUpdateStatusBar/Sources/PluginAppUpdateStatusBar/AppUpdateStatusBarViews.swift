@@ -1,5 +1,5 @@
-import SwiftUI
 import LumiUI
+import SwiftUI
 
 struct AppUpdateStatusBarContentView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -11,7 +11,7 @@ struct AppUpdateStatusBarContentView: View {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.appMicroEmphasized)
-                Text(String(localized: "Update", table: "AppUpdateStatusBar"))
+                Text(PluginAppUpdateStatusBarLocalization.string("Update"))
                     .font(.appMicroEmphasized)
             }
             .foregroundColor(theme.info)
@@ -37,11 +37,11 @@ struct AppUpdateStatusBarPopupView: View {
                         .frame(width: 22)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "New version is ready", table: "AppUpdateStatusBar"))
+                        Text(PluginAppUpdateStatusBarLocalization.string("New version is ready"))
                             .font(.appCallout)
                             .foregroundColor(theme.textPrimary)
 
-                        Text(String(format: String(localized: "Lumi %@ downloaded", table: "AppUpdateStatusBar"), version))
+                        Text(String(format: PluginAppUpdateStatusBarLocalization.string("Lumi %@ downloaded"), version))
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
                     }
@@ -49,7 +49,7 @@ struct AppUpdateStatusBarPopupView: View {
                     Spacer(minLength: 8)
 
                     Button(action: store.installPreparedUpdate) {
-                        Text(String(localized: "Restart to Update", table: "AppUpdateStatusBar"))
+                        Text(PluginAppUpdateStatusBarLocalization.string("Restart to Update"))
                             .font(.appCaptionEmphasized)
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)
@@ -63,13 +63,4 @@ struct AppUpdateStatusBarPopupView: View {
             }
         }
     }
-}
-
-#Preview("App Update Status Bar") {
-    VStack(spacing: 12) {
-        AppUpdateStatusBarContentView(store: .shared)
-        AppUpdateStatusBarPopupView(store: .shared)
-            .frame(width: 300)
-    }
-    .padding()
 }
