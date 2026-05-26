@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeAutumnPlugin: SuperPlugin {
-    static let shared = ThemeAutumnPlugin()
-    static let id: String = "autumn"
-    static let displayName: String = "Autumn"
-    static let description: String = "Autumn orange app theme"
-    static let iconName: String = "leaf"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 126 }
+public actor ThemeAutumnPlugin: SuperPlugin {
+    public static let shared = ThemeAutumnPlugin()
+    public static let id: String = "autumn"
+    public static let displayName: String = "Autumn"
+    public static let description: String = "Autumn orange app theme"
+    public static let iconName: String = "leaf"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 126 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    nonisolated public var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: AutumnTheme(),
@@ -36,8 +41,12 @@ actor ThemeAutumnPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(AutumnSuperEditorThemeContributor())
     }
 
+}
+
+enum PluginThemeAutumnResources {
+    static let bundle = Bundle.module
 }

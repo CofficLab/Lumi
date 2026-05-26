@@ -1,17 +1,20 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Autumn 编辑器主题配色方案
 /// 秋日橙风格：橙色调 + 枫叶红点缀 + 秋叶金高亮
 @MainActor
-final class AutumnSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "autumn"
-    let displayName: String = "Autumn"
-    let icon: String? = "leaf"
-    let isDark: Bool = true
+public final class AutumnSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "autumn"
+    public let displayName: String = "Autumn"
+    public let icon: String? = "leaf"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(0.906, 0.878, 0.839),
             insertionPoint: color(0.918, 0.545, 0.161),
