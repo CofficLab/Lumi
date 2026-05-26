@@ -127,11 +127,11 @@ extension ChatHistoryService {
 
 extension ChatHistoryService {
 
-    /// 获取所有对话（按创建时间倒序）
+    /// 获取所有对话（按更新时间倒序）
     func fetchAllConversations() -> [Conversation] {
         let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
 
         do {
@@ -161,11 +161,11 @@ extension ChatHistoryService {
         if let projectId {
             descriptor = FetchDescriptor<Conversation>(
                 predicate: #Predicate { $0.projectId == projectId },
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         } else {
             descriptor = FetchDescriptor<Conversation>(
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         }
 
