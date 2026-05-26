@@ -257,16 +257,6 @@
         }
       }
     },
-    "%@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@%2$@"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -987,6 +977,7 @@
 
     },
     "Cleanup error: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1003,6 +994,7 @@
       }
     },
     "Cleanup failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1266,6 +1258,7 @@
       }
     },
     "Delete failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2628,6 +2621,9 @@
           }
         }
       }
+    },
+    "Right Sidebar" : {
+
     },
     "Run" : {
       "localizations" : {

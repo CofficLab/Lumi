@@ -33,6 +33,22 @@
         }
       }
     },
+    "New Chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
+          }
+        },
+        "zh" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新聊天"
+          }
+        }
+      }
+    },
     "New Conversation" : {
       "localizations" : {
         "en" : {
@@ -49,21 +65,8 @@
         }
       }
     },
-    "New Chat" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Chat"
-          }
-        },
-        "zh" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新聊天"
-          }
-        }
-      }
+    "更新对话标题: %@" : {
+
     }
   },
   "version" : "1.0"
