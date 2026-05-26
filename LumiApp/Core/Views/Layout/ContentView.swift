@@ -128,7 +128,8 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let activeIcon = layoutVM.activePanelIcon
-                let sidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let rawSidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
                 let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)
                 let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible

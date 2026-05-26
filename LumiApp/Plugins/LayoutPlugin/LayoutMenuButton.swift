@@ -21,6 +21,10 @@ struct LayoutMenuButton: View {
             Toggle(isOn: $layoutVM.railVisible) {
                 Label(String(localized: "Rail"), systemImage: "sidebar.right")
             }
+            Divider()
+            Toggle(isOn: $layoutVM.rightSidebarVisible) {
+                Label(String(localized: "Right Sidebar"), systemImage: "rectangle.rightthird.inset.filled")
+            }
         } label: {
             Image(systemName: "sidebar.leading")
         }

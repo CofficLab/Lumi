@@ -201,6 +201,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             }
             layoutVM.restoreFromPlugin(railVisible: savedRailVisible)
         }
+
+        // 恢复右侧栏可见性
+        if let savedRightSidebarVisible = store.loadRightSidebarVisible() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复右侧栏可见性: \(savedRightSidebarVisible)")
+            }
+            layoutVM.restoreFromPlugin(rightSidebarVisible: savedRightSidebarVisible)
+        }
     }
 
     // MARK: - Observe
@@ -265,6 +273,15 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .sink { newValue in
                 guard hasRestored else { return }
                 LayoutPluginLocalStore.shared.saveRailVisible(newValue)
+            }
+            .store(in: &cancellables)
+
+        // 观察 rightSidebarVisible
+        layoutVM.$rightSidebarVisible
+            .dropFirst()
+            .sink { newValue in
+                guard hasRestored else { return }
+                LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
             }
             .store(in: &cancellables)
     }

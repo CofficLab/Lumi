@@ -35,6 +35,9 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// Rail 区域是否可见（位于活动栏与面板内容区之间的辅助栏）
     @Published var railVisible: Bool = true
 
+    /// 右侧栏是否可见（Chat 等面板的右侧区域）
+    @Published var rightSidebarVisible: Bool = true
+
     /// 当前激活的 ActivityBar 图标（SF Symbol 名称）
     ///
     /// 窗口级状态：每个窗口可以激活不同的面板。
@@ -174,6 +177,11 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 由 LayoutPlugin 调用，从本地存储恢复 Rail 区域可见性
     func restoreFromPlugin(railVisible: Bool) {
         self.railVisible = railVisible
+    }
+
+    /// 由 LayoutPlugin 调用，从本地存储恢复右侧栏可见性
+    func restoreFromPlugin(rightSidebarVisible: Bool) {
+        self.rightSidebarVisible = rightSidebarVisible
     }
 
     /// 更新指定分栏的宽度比例。
