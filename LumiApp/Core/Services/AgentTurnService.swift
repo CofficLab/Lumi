@@ -532,8 +532,14 @@ extension AgentTurnService {
         mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
         if let error {
             mutableMetadata.error = error
-            if let apiError = error as? HTTPClientError,
-               case let .httpError(statusCode, _) = apiError {
+            // 从 LLMServiceError.requestFailed 中提取 HTTP 状态码
+            if let llmError = error as? LLMServiceError,
+               case let .requestFailed(_, statusCode) = llmError {
+                mutableMetadata.responseStatusCode = statusCode
+            }
+            // 兜底：如果是 HTTPClientError（某些路径可能直接抛出）
+            else if let apiError = error as? HTTPClientError,
+                    case let .httpError(statusCode, _) = apiError {
                 mutableMetadata.responseStatusCode = statusCode
             }
         } else {
@@ -659,6 +665,11 @@ extension AgentTurnService {
 
     /// 从 Error 中提取原始 HTTP 错误详情（状态码 + 响应体），用于 UI 折叠展示。
     private static func extractRawErrorDetail(from error: Error) -> String? {
+        if let llmError = error as? LLMServiceError,
+           case let .requestFailed(message, statusCode) = llmError,
+           let statusCode {
+            return "HTTP \(statusCode)"
+        }
         if let apiError = error as? HTTPClientError,
            case let .httpError(statusCode, message) = apiError {
             return "HTTP \(statusCode)\n\(message)"
@@ -694,6 +705,8 @@ extension AgentTurnService {
         let middlewares = pluginVM.getSuperSendMiddlewares()
         let chatHistoryService = self.chatHistoryService
         let projectVM = self.projectVM
+        let messageQueueVM = self.messageQueueVM
+        let conversationVM = self.conversationVM
 
         Task {
             let turnMessages = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
@@ -702,7 +715,9 @@ extension AgentTurnService {
                 endReason: endReason,
                 turnMessages: turnMessages,
                 chatHistoryService: chatHistoryService,
-                projectVM: projectVM
+                projectVM: projectVM,
+                messageQueueVM: messageQueueVM,
+                conversationVM: conversationVM
             )
             let pipeline = SendPipeline(middlewares: middlewares)
             await pipeline.runTurnFinished(ctx: ctx)

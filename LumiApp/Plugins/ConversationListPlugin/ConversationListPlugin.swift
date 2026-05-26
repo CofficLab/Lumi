@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import os
 import SwiftUI
@@ -5,7 +6,6 @@ import SwiftUI
 /// Conversation List Plugin: 对话历史列表
 ///
 /// 在工具栏右侧提供会话列表入口（ConversationListPopoverButton）。
-/// 同时在首条用户消息发送后自动生成会话标题。
 actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
@@ -42,9 +42,39 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Send Middlewares
 
-    /// 发送管线中间件：首条消息后自动生成标题
+    /// 发送管线中间件：项目切换对话引导
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
+        [AnySuperSendMiddleware(ProjectSwitchSendMiddleware())]
+    }
+
+    // MARK: - Agent Tools
+
+    /// 提供对话管理相关的 Agent 工具
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        guard let conversationVM = context.conversationVM else { return [] }
+
+        let projectName = RootContainer.shared.windowManagerVM.activeWindowContainer?.projectVM.currentProject?.name
+        let projectPath = RootContainer.shared.windowManagerVM.activeWindowContainer?.projectVM.currentProject?.path
+
+        return [
+            GetConversationCountTool(conversationVM: conversationVM),
+            GetRecentConversationsTool(
+                conversationVM: conversationVM,
+                currentProjectPath: projectPath
+            ),
+            CreateNewConversationTool(
+                conversationVM: conversationVM,
+                projectName: projectName,
+                projectPath: projectPath,
+                languagePreference: context.languagePreference
+            ),
+            DeleteConversationTool(
+                conversationVM: conversationVM,
+                languagePreference: context.languagePreference
+            ),
+            SetConversationProjectTool(conversationVM: conversationVM),
+        ]
     }
 }

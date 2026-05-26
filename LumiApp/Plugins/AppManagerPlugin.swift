@@ -1,0 +1,43 @@
+import PluginAppManager
+import SwiftUI
+import os
+
+/// 应用管理插件 App 侧注册适配器。
+actor AppManagerPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
+
+    // MARK: - Plugin Properties
+
+    nonisolated static let emoji = "📱"
+    nonisolated static let enable: Bool = PluginAppManager.AppManagerPlugin.enable
+    nonisolated static let verbose: Bool = PluginAppManager.AppManagerPlugin.verbose
+
+    static let id = PluginAppManager.AppManagerPlugin.id
+    static let navigationId = PluginAppManager.AppManagerPlugin.navigationId
+    static let displayName = PluginAppManager.AppManagerPlugin.displayName
+    static let description = PluginAppManager.AppManagerPlugin.description
+    static let iconName = PluginAppManager.AppManagerPlugin.iconName
+    static var category: PluginCategory { .system }
+    static var order: Int { PluginAppManager.AppManagerPlugin.order }
+
+    nonisolated var instanceLabel: String { Self.id }
+    static let shared = AppManagerPlugin()
+
+    nonisolated func onRegister() {
+        PluginAppManager.AppManagerPlugin.databaseRootURLProvider = {
+            AppConfig.getDBFolderURL()
+        }
+    }
+
+    // MARK: - UI Contributions
+
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        PluginAppManager.AppManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
+    }
+
+    nonisolated func addPanelIcon() -> String? {
+        PluginAppManager.AppManagerPlugin.shared.addPanelIcon()
+    }
+}

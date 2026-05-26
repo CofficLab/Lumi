@@ -9,38 +9,24 @@ struct GeneralSettingView: View {
     @State private var launchAtLogin = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部说明卡片（固定）
-            headerCard
-                .padding(24)
-                .background(Color.clear)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // 启动选项
+                startupSection
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // 启动选项
-                    startupSection
+                // 新手引导
+                onboardingSection
 
-                    // 新手引导
-                    onboardingSection
+                // 反馈与支持
+                supportSection
 
-                    // 反馈与支持
-                    supportSection
-
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
+                Spacer()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
         }
         .onAppear {
             checkLaunchAtLoginStatus()
-        }
-    }
-
-    // MARK: - Header Card
-
-    private var headerCard: some View {
-        AppCard {
-            AppSettingsSection(title: "通用设置", subtitle: "管理应用的基本行为和偏好设置") {}
         }
     }
 

@@ -55,10 +55,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        // 注意：Package 侧的 TaskContextMiddleware 使用 LumiCoreKit.SuperSendMiddleware，
-        // 与 App 侧的 SuperSendMiddleware 协议不同，无法直接桥接。
-        // 此处暂时返回空，后续可在 App 侧创建对应的包装中间件。
-        []
+        [AnySuperSendMiddleware(AutoTaskTurnCheckMiddleware())]
     }
 
     // MARK: - UI Contributions
@@ -66,12 +63,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     /// 右侧栏 Section 视图：任务列表
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
         guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
-        return [AnyView(
-            AutoTaskSidebarView(
-                conversationIdProvider: { nil },
-                backgroundColorProvider: { .clear }
-            )
-        )]
+        return [AnyView(AutoTaskSidebarViewWrapper())]
     }
 }
 
@@ -81,5 +73,27 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 private struct AppAutoTaskConfiguration: AutoTaskConfiguration {
     func databaseDirectory() -> URL {
         AppConfig.getDBFolderURL()
+    }
+}
+
+// MARK: - Sidebar View Wrapper
+
+/// 包装视图：通过 @EnvironmentObject 获取当前会话 ID，转发给 package 中的 AutoTaskSidebarView
+///
+/// package 中的 AutoTaskSidebarView 不应直接依赖 App 侧的 WindowConversationVM，
+/// 因此在 App 侧创建此包装视图来桥接。
+@MainActor
+private struct AutoTaskSidebarViewWrapper: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+
+    var body: some View {
+        AutoTaskSidebarView(
+            conversationIdProvider: { conversationVM.selectedConversationId },
+            backgroundColorProvider: {
+                themeVM.activeChromeTheme.workspaceBackgroundColor()
+                    .mix(with: .orange, by: 0.06)
+            }
+        )
     }
 }

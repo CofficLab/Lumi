@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Lumi — Model Settings</title>
+<link rel="stylesheet" href="components.css">
+<style>
+  body{margin:0;display:flex;justify-content:center;background:#000;}
+  .settings-sidebar{width:240px;display:flex;flex-direction:column;background:var(--c-rail);flex-shrink:0}
+  .settings-logo{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0}
+  .settings-logo svg{width:30px;height:30px;fill:none;stroke:var(--c-accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .settings-logo span{font-size:18px;font-weight:700;color:#fff}
+  .settings-nav{display:flex;flex-direction:column;gap:4px;padding:12px}
+  .settings-nav-item{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:7px;font-size:12px;font-weight:500;color:rgba(255,255,255,0.68)}
+  .settings-nav-item.selected{background:rgba(124,111,255,0.26);color:#fff}
+  .settings-nav-item svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .provider-row{display:flex;align-items:center;gap:10px;height:44px;padding:0 10px;border-radius:7px;font-size:12px;font-weight:600;color:#fff}
+  .provider-row.selected{background:rgba(124,111,255,0.20)}
+  .provider-row:not(.selected){background:rgba(0,0,0,0.08)}
+  .provider-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+  .provider-row.selected .provider-avatar{background:var(--c-accent)}
+  .provider-row:not(.selected) .provider-avatar{background:rgba(255,255,255,0.14)}
+  .provider-info{display:flex;flex-direction:column;gap:3px}
+  .provider-info .detail{font-size:11px;font-weight:400;color:var(--c-secondary)}
+  .api-key-row{display:flex;align-items:center;gap:10px;padding:0 12px;height:42px;background:rgba(0,0,0,0.15);border-radius:7px;font-size:13px;font-family:var(--c-mono);color:rgba(255,255,255,0.82)}
+  .api-key-row svg{width:16px;height:16px;fill:var(--c-orange);stroke:none;flex-shrink:0}
+  .api-key-row .check{margin-left:auto;color:var(--c-green)}
+  .model-row{display:flex;align-items:center;gap:12px;height:48px;padding:0 10px;border-radius:7px}
+  .model-row.selected{background:rgba(124,111,255,0.18)}
+  .model-row:not(.selected){background:rgba(0,0,0,0.08)}
+  .model-row svg.check{width:18px;height:18px;fill:none;stroke-width:2}
+  .model-row.selected svg.check{stroke:var(--c-green)}
+  .model-row:not(.selected) svg.check{stroke:var(--c-secondary)}
+  .model-info{display:flex;flex-direction:column;gap:3px}
+  .model-info .name{font-size:13px;font-weight:600;color:#fff;font-family:var(--c-mono)}
+  .model-info .desc{font-size:11px;color:var(--c-secondary)}
+  .pill{font-size:10px;font-weight:600;color:var(--c-accent);padding:0 8px;height:22px;display:flex;align-items:center;background:rgba(124,111,255,0.16);border-radius:11px;margin-left:auto;flex-shrink:0}
+  .plugin-strip{display:flex;align-items:center;gap:14px;padding:16px}
+  .plugin-strip .label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#fff;flex-shrink:0}
+  .plugin-strip .label svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .plugin-pill{font-size:11px;font-weight:600;color:rgba(255,255,255,0.84);padding:0 10px;height:26px;display:flex;align-items:center;background:rgba(255,255,255,0.08);border-radius:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-eyebrow">Model Settings</div>
+    <div class="stage-title">Bring your preferred AI providers</div>
+    <div class="stage-subtitle">Configure remote models, local providers and plugin behavior from Lumi's dedicated settings window.</div>
+  </div>
+
+  <div class="mac-window" style="max-height:655px">
+    <div class="window-titlebar">
+      <span class="traffic-light tl-red"></span>
+      <span class="traffic-light tl-orange"></span>
+      <span class="traffic-light tl-green"></span>
+      <span class="window-title">Settings</span>
+      <span class="window-trailing">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+      </span>
+    </div>
+    <div class="window-body flex-row flex-1">
+      <!-- Settings Sidebar -->
+      <div class="settings-sidebar">
+        <div class="settings-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <span>Lumi</span>
+        </div>
+        <div style="height:1px;background:var(--c-line)"></div>
+        <div class="settings-nav">
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> About</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg> General</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> Editor</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="18" y2="12"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="18" y2="16"/></svg> Keyboard Shortcuts</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg> Local Models</div>
+          <div class="settings-nav-item selected"><svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Remote Providers</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Plugins</div>
+          <div class="settings-nav-item"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17.5 10.5a2.5 2.5 0 1 0-2-1"/><path d="M6 18.5a2.5 2.5 0 1 0 1.8-.8"/><path d="M12 12.5a2.5 2.5 0 1 0 2-.8"/></svg> Theme</div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding:28px;background:var(--c-panel);overflow-y:auto">
+        <!-- Title -->
+        <div>
+          <h1 style="font-size:26px;font-weight:700;color:#fff;margin-bottom:5px">Remote Providers</h1>
+          <p style="font-size:13px;color:var(--c-secondary)">Choose a cloud provider and set your default model.</p>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:18px">
+          <!-- Providers card -->
+          <div class="card" style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#fff">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              Cloud LLM Providers
+            </div>
+            <div class="provider-row selected"><div class="provider-avatar">O</div><div class="provider-info"><span>OpenAI</span><span class="detail">GPT-5.5, GPT-5.4</span></div></div>
+            <div class="provider-row"><div class="provider-avatar">A</div><div class="provider-info"><span>Anthropic</span><span class="detail">Claude Opus, Sonnet</span></div></div>
+            <div class="provider-row"><div class="provider-avatar">G</div><div class="provider-info"><span>Google</span><span class="detail">Gemini Pro</span></div></div>
+            <div class="provider-row"><div class="provider-avatar">X</div><div class="provider-info"><span>xAI</span><span class="detail">Grok</span></div></div>
+            <div class="provider-row"><div class="provider-avatar">D</div><div class="provider-info"><span>DeepSeek</span><span class="detail">Reasoning models</span></div></div>
+          </div>
+
+          <!-- Right column -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:18px;min-width:0">
+            <!-- API Key -->
+            <div class="card" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#fff">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                API Key
+              </div>
+              <div class="api-key-row">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                sk-proj-••••••••••••••••••••••••
+                <span class="check">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+              </div>
+            </div>
+
+            <!-- Available Models -->
+            <div class="card" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#fff">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/></svg>
+                Available Models
+              </div>
+              <div class="model-row selected">
+                <svg class="check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <div class="model-info"><span class="name">gpt-5.5</span><span class="desc">Best for complex coding and long-running work</span></div>
+                <span class="pill">Tools</span><span class="pill">Vision</span>
+              </div>
+              <div class="model-row">
+                <svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                <div class="model-info"><span class="name">gpt-5.4</span><span class="desc">Strong everyday coding model</span></div>
+                <span class="pill">Tools</span><span class="pill">Vision</span>
+              </div>
+              <div class="model-row">
+                <svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                <div class="model-info"><span class="name">gpt-5.4-mini</span><span class="desc">Fast and cost-efficient</span></div>
+                <span class="pill">Tools</span>
+              </div>
+              <div class="model-row">
+                <svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                <div class="model-info"><span class="name">gpt-5.3-codex</span><span class="desc">Coding-optimized model</span></div>
+                <span class="pill">Tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plugin Strip -->
+        <div class="card plugin-strip">
+          <span class="label">
+            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            Enabled Plugins
+          </span>
+          <span class="plugin-pill">Editor</span>
+          <span class="plugin-pill">Agent Chat</span>
+          <span class="plugin-pill">Terminal</span>
+          <span class="plugin-pill">Database</span>
+          <span class="plugin-pill">Disk</span>
+          <span class="plugin-pill">Device</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

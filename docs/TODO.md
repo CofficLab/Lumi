@@ -638,7 +638,108 @@ case undoManagerSize = "undoManager.size"
 
 ---
 
-## 18. 多窗口作用域重构 — 收尾
+## 18. EditFileTool 改进
+
+> 目标：借鉴 Claude Code 的 FileEditTool 实现，提升 Lumi 的文件编辑工具的安全性和用户体验。
+> 分析来源：Claude Code 源码研究 (`claude-code/src/tools/FileEditTool/`)
+
+### Priority 0: 安全性改进（必须）
+
+- [ ] **先读后写强制校验**：维护 `ReadFileState` 字典，记录哪些文件已被读取、时间戳和内容。`edit` 方法强制检查文件是否已读取，未读取则拒绝编辑。
+- [ ] **并发修改检测（乐观锁）**：编辑前比对文件修改时间戳，如果文件在读取后被外部修改（用户手动编辑、linter、cloud sync），拒绝编辑并提示重新读取。
+- [ ] **文件大小保护**：限制编辑文件不超过 1GB，防止 OOM。检查 `FileManager.attributesOfItem(.size)`。
+
+### Priority 1: 用户体验改进（重要）
+
+- [ ] **引号风格保留（`preserveQuoteStyle`）**：匹配时做了引号标准化（弯引号→直引号），替换时应自动将 `new_string` 中的引号也转换为弯引号，保持文件风格一致。需正确处理缩写（如 `don't`）。
+- [ ] **Diff 生成质量**：当前手写的逐行比较存在逻辑问题（`+`/`-` 和空格标记混合不正确）。建议：
+  - 方案 A：调用系统 `/usr/bin/diff -u` 生成 unified diff
+  - 方案 B：引入 Swift diff 库（DifferenceKit / SwiftDiff）
+  - 方案 C：使用 LCS 算法重写
+- [ ] **编辑器/LSP 通知**：编辑完成后通知 `EditorKernel`，触发编辑器状态更新和 LSP 诊断（didChange + didSave）。
+
+### Priority 2: 边缘场景支持（可选）
+
+- [ ] **编码检测**：当前只支持 UTF-8。读取文件时检测 BOM，支持 UTF-16LE 编码。保留原文件编码和换行符风格（LF/CRLF）写入。
+- [ ] **相似文件提示**：文件不存在时，自动搜索相近文件名（不同扩展名），给出 "Did you mean xxx?" 建议。例如 `Foo.swift` 不存在时提示 `FooTests.swift`。
+- [ ] **反标准化机制**：处理 LLM API 对特殊 XML 标签的清理（如 `<function_results>` → `<fnr>`）。建立反标准化映射表，匹配前还原。
+
+### 实现参考
+
+Claude Code `FileEditTool` 核心文件结构：
+```
+FileEditTool/
+├── FileEditTool.ts    # 主入口：validateInput + call
+├── prompt.ts          # 工具描述/Prompt
+├── types.ts           # Zod Schema + TS 类型
+├── utils.ts           # findActualString + preserveQuoteStyle + getPatchForEdit
+├── constants.ts       # 错误常量
+└── UI.tsx             # 结果渲染
+```
+
+关键实现要点：
+1. `validateInput` 中有 10+ 种校验（errorCode 0-10），包括文件是否已读、是否被外部修改
+2. `readFileState` 存储已读文件的内容和时间戳，用于乐观并发控制
+3. `findActualString` 先精确匹配，失败后做引号标准化再匹配，返回文件中实际字符串
+4. `preserveQuoteStyle` 根据匹配结果将新字符串的引号风格转换为文件原有风格
+5. `call` 方法在 `await fs.stat()` 和 `writeTextContent()` 之间避免任何异步操作，保证原子性
+
+### 成功标准
+
+- [ ] LLM 不读取文件直接编辑会被拒绝，错误信息清晰
+- [ ] 用户在 Lumi 读取后手动修改文件，Lumi 会提示重新读取而非覆盖
+- [ ] 编辑包含弯引号的文件后，文件保持弯引号风格
+- [ ] Diff 输出格式正确，显示删除行（`-`）和新增行（`+`）
+- [ ] 编辑后编辑器 UI 立即更新，LSP 诊断刷新
+- [ ] 👤 需要用户参与：验证并发编辑场景（同时用外部编辑器修改）
+
+---
+
+## 19. 插件 Panel API 重构
+
+> 目标：将 `addPanelIcon()` 和 `addPanelView()` 合并为 VS Code 风格的 `addViewContainer()`，统一命名，简化插件开发。
+
+### 任务 1: 合并 API
+
+- [ ] 将 `SuperPlugin` 协议中的 `addPanelIcon()` 和 `addPanelView(activeIcon:)` 合并成一个 `addViewContainer()` 方法
+- [ ] 定义 `ViewContainerItem` 结构体：
+  ```swift
+  struct ViewContainerItem: Identifiable {
+      let id: String
+      let title: String
+      let icon: String
+      let makeView: @MainActor () -> AnyView  // 闭包，延迟创建视图
+  }
+  ```
+- [ ] 消除手动匹配 `activeIcon` 的样板代码
+- [ ] 更新 `AppPluginVM` 中的聚合逻辑：
+  - `getPanelIconItems()` → `getViewContainerItems()`
+  - `getActivePanelItem()` → `getActiveViewContainer()`
+
+### 任务 2: 统一 VS Code 风格命名
+
+- [ ] 将 `PanelIconItem` 重命名为 `ViewContainerItem`
+- [ ] 将 `PanelItem` 重命名为 `ViewContainerItem`（合并后只有一个类型）
+- [ ] 更新所有相关变量名和方法名
+- [ ] 保持与 VS Code 扩展 API 术语一致：
+  | VS Code | Lumi |
+  |---------|------|
+  | Activity Bar | ActivityBar |
+  | View Container | ViewContainerItem |
+  | `viewsContainers.activitybar` | `addViewContainer()` |
+
+### 影响范围
+
+- `SuperPlugin.swift` — 协议定义和默认实现
+- `AppPluginVM.swift` — 类型定义、聚合方法、缓存逻辑
+- `ActivityBar.swift` (LeftBar.swift) — 图标渲染
+- `PanelContentView.swift` — 面板视图展示
+- `WindowLayoutVM.swift` — `activePanelIcon` → `activeViewContainerIcon`
+- 所有已实现 `addPanelIcon()` 和 `addPanelView()` 的插件
+
+---
+
+## 20. 多窗口作用域重构 — 收尾
 
 > WindowContainer 架构已全部落地。剩余少量代码清理和集成验证。
 

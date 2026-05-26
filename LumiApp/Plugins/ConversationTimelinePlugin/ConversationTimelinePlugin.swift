@@ -17,7 +17,7 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     static let description: String = String(localized: "Display conversation message timeline in status bar", table: "ConversationTimeline")
     static let iconName: String = "timeline.selection"
     static let isConfigurable: Bool = false
-    static var order: Int { 97 }
+    static var order: Int { 74 }
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = ConversationTimelinePlugin()
@@ -27,11 +27,5 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     /// 添加状态栏尾部视图
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
         return AnyView(ConversationTimelineView())
-    }
-
-    /// 右侧栏 Section：对话摘要交接入口。
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [AnyView(ConversationHandoffSidebarSection())]
     }
 }

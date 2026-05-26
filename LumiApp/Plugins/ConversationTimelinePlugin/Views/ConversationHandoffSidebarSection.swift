@@ -16,11 +16,10 @@ struct ConversationHandoffSidebarSection: View {
 
     private let service = ConversationHandoffSummaryService()
     private let timelineService = ConversationTimelineService()
-    private let visibilityThreshold = 0.8
 
     var body: some View {
         Group {
-            if shouldShowHandoff {
+            if hasMessages {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.branch")
@@ -86,11 +85,8 @@ struct ConversationHandoffSidebarSection: View {
         }
     }
 
-    private var shouldShowHandoff: Bool {
-        timelineService.contextUsageRatio(
-            currentTokens: currentContextTokens,
-            limit: currentModelContextLimit
-        ) >= visibilityThreshold
+    private var hasMessages: Bool {
+        currentContextTokens > 0
     }
 
     private var currentModelContextLimit: Int {

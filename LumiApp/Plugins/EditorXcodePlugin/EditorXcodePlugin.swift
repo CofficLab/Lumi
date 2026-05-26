@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import XcodeKit
+import AgentToolKit
 import os
 
 /// Xcode 插件日志辅助（插件内共享）
@@ -105,6 +106,11 @@ actor EditorXcodePlugin: SuperPlugin, SuperLog {
     }
 
     /// 不再在工具栏/状态栏提供 UI
+
+    /// 注册此插件暴露给 Agent 的工具。
+    @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [AddSwiftPackageTool(), ListSwiftPackagesTool()]
+    }
 
     /// 添加根视图包裹器
     @MainActor func addRootView<Content: View>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {

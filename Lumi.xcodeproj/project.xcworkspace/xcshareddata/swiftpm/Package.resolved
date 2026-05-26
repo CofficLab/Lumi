@@ -11,15 +11,6 @@
         }
       },
       {
-        "package": "async-http-client",
-        "repositoryURL": "https://github.com/swift-server/async-http-client",
-        "state": {
-          "branch": null,
-          "revision": "2fc4652fb4689eb24af10e55cabaa61d8ba774fd",
-          "version": "1.32.0"
-        }
-      },
-      {
         "package": "BeautifulMermaidSwift",
         "repositoryURL": "https://github.com/lukilabs/beautiful-mermaid-swift",
         "state": {
@@ -263,15 +254,6 @@
         }
       },
       {
-        "package": "swift-certificates",
-        "repositoryURL": "https://github.com/apple/swift-certificates.git",
-        "state": {
-          "branch": null,
-          "revision": "24ccdeeeed4dfaae7955fcac9dbf5489ed4f1a25",
-          "version": "1.18.0"
-        }
-      },
-      {
         "package": "cmark-gfm",
         "repositoryURL": "https://github.com/swiftlang/swift-cmark",
         "state": {
@@ -290,30 +272,12 @@
         }
       },
       {
-        "package": "swift-configuration",
-        "repositoryURL": "https://github.com/apple/swift-configuration.git",
-        "state": {
-          "branch": null,
-          "revision": "be76c4ad929eb6c4bcaf3351799f2adf9e6848a9",
-          "version": "1.2.0"
-        }
-      },
-      {
         "package": "swift-crypto",
         "repositoryURL": "https://github.com/apple/swift-crypto.git",
         "state": {
           "branch": null,
           "revision": "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
           "version": "3.15.1"
-        }
-      },
-      {
-        "package": "swift-distributed-tracing",
-        "repositoryURL": "https://github.com/apple/swift-distributed-tracing.git",
-        "state": {
-          "branch": null,
-          "revision": "dc4030184203ffafbb2ec614352487235d747fe0",
-          "version": "1.4.1"
         }
       },
       {
@@ -326,30 +290,12 @@
         }
       },
       {
-        "package": "swift-http-structured-headers",
-        "repositoryURL": "https://github.com/apple/swift-http-structured-headers.git",
-        "state": {
-          "branch": null,
-          "revision": "76d7627bd88b47bf5a0f8497dd244885960dde0b",
-          "version": "1.6.0"
-        }
-      },
-      {
-        "package": "swift-http-types",
-        "repositoryURL": "https://github.com/apple/swift-http-types.git",
-        "state": {
-          "branch": null,
-          "revision": "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
-          "version": "1.5.1"
-        }
-      },
-      {
         "package": "swift-huggingface",
         "repositoryURL": "https://github.com/huggingface/swift-huggingface.git",
         "state": {
           "branch": null,
-          "revision": "de01c0ab8fd537bbd8216cea7f774275178501a2",
-          "version": "0.8.1"
+          "revision": "b721959445b617d0bf03910b2b4aced345fd93bf",
+          "version": "0.9.0"
         }
       },
       {
@@ -398,24 +344,6 @@
         }
       },
       {
-        "package": "swift-nio-extras",
-        "repositoryURL": "https://github.com/apple/swift-nio-extras.git",
-        "state": {
-          "branch": null,
-          "revision": "3df009d563dc9f21a5c85b33d8c2e34d2e4f8c3b",
-          "version": "1.32.1"
-        }
-      },
-      {
-        "package": "swift-nio-http2",
-        "repositoryURL": "https://github.com/apple/swift-nio-http2.git",
-        "state": {
-          "branch": null,
-          "revision": "b6571f3db40799df5a7fc0e92c399aa71c883edd",
-          "version": "1.40.0"
-        }
-      },
-      {
         "package": "swift-nio-ssl",
         "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
         "state": {
@@ -452,15 +380,6 @@
         }
       },
       {
-        "package": "swift-service-context",
-        "repositoryURL": "https://github.com/apple/swift-service-context.git",
-        "state": {
-          "branch": null,
-          "revision": "d0997351b0c7779017f88e7a93bc30a1878d7f29",
-          "version": "1.3.0"
-        }
-      },
-      {
         "package": "swift-service-lifecycle",
         "repositoryURL": "https://github.com/swift-server/swift-service-lifecycle.git",
         "state": {
@@ -485,15 +404,6 @@
           "branch": null,
           "revision": "eed7264ac5e4ec5dfa6165c6e5c5577364344fe4",
           "version": "1.2.0"
-        }
-      },
-      {
-        "package": "Xet",
-        "repositoryURL": "https://github.com/mattt/swift-xet.git",
-        "state": {
-          "branch": null,
-          "revision": "341bfd4172f6a57119bfd49bafa11cf5d21fab75",
-          "version": "0.2.3"
         }
       },
       {

@@ -60,6 +60,11 @@ struct ShellTool: SuperAgentTool, SuperLog {
     }
 
     func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        // 优先使用 display_name 参数
+        if let displayName = arguments["display_name"]?.value as? String, !displayName.isEmpty {
+            return displayName
+        }
+        // 回退到命令预览
         guard let command = arguments["command"]?.value as? String else { return "执行命令" }
         let preview = command.count > 40 ? String(command.prefix(40)) + "…" : command
         return "执行 \(preview)"

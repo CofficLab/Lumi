@@ -127,11 +127,11 @@ extension ChatHistoryService {
 
 extension ChatHistoryService {
 
-    /// 获取所有对话（按创建时间倒序）
+    /// 获取所有对话（按更新时间倒序）
     func fetchAllConversations() -> [Conversation] {
         let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
 
         do {
@@ -161,11 +161,11 @@ extension ChatHistoryService {
         if let projectId {
             descriptor = FetchDescriptor<Conversation>(
                 predicate: #Predicate { $0.projectId == projectId },
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         } else {
             descriptor = FetchDescriptor<Conversation>(
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         }
 
@@ -353,6 +353,28 @@ extension ChatHistoryService {
                 AppLogger.core.info("\(Self.t)📝 已保存对话 '\(conversation.title)' 的详细程度：\(verbosity)")
             } else {
                 AppLogger.core.info("\(Self.t)📝 已清除对话 '\(conversation.title)' 的详细程度")
+            }
+        }
+    }
+
+    /// 更新对话关联的项目
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - projectPath: 项目路径，nil 表示解除项目关联
+    func updateProjectAssociation(_ conversation: Conversation, projectPath: String?) {
+        conversation.projectId = projectPath
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+        notifyConversationChanged(type: .updated, conversationId: conversation.id)
+        NotificationCenter.postConversationUpdated(conversationId: conversation.id)
+
+        if Self.verbose {
+            if let projectPath {
+                let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+                AppLogger.core.info("\(Self.t)📁 已将对话 '\(conversation.title)' 关联到项目：\(projectName)")
+            } else {
+                AppLogger.core.info("\(Self.t)📁 已清除对话 '\(conversation.title)' 的项目关联")
             }
         }
     }

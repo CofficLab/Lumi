@@ -25,11 +25,12 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-    static let defaultModel = "qwen3.6-plus"
+    static let defaultModel = "qwen3.7-max"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "qwen3.5-plus", description: "通义千问 3.5 Plus，阿里云旗舰大模型，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "qwen3.6-plus", description: "通义千问 3.6 Plus，最新一代阿里云大模型，性能更强", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen3.7-max", description: "通义千问 3.7 Max，最新旗舰大模型，性能最强，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "glm-4.7", description: "智谱 GLM 4.7，通用语言模型，支持长上下文和工具调用", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
         .init(id: "glm-5", description: "智谱 GLM 5，最新一代通用语言模型，推理能力大幅提升", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
         .init(id: "MiniMax-M2.5", description: "MiniMax M2.5，高性价比中文大模型，擅长对话和创作", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),

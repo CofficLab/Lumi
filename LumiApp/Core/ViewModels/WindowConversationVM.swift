@@ -229,6 +229,14 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         }
     }
 
+    /// 更新对话关联的项目
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - projectPath: 项目路径，nil 表示解除项目关联
+    func updateProjectAssociation(for conversation: Conversation, projectPath: String?) {
+        chatHistoryService.updateProjectAssociation(conversation, projectPath: projectPath)
+    }
+
     /// 更新对话标题
     ///
     /// - Parameters:

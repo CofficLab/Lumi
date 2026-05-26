@@ -19,7 +19,8 @@ public enum LLMServiceError: Error, LocalizedError, Equatable {
     /// 任务被取消（如 `Task` 取消）。
     case cancelled
     /// 远程 API、流式解析、本地模型加载/就绪、或构建请求体失败等（使用用户可读文案）。
-    case requestFailed(String)
+    /// statusCode 为可选的 HTTP 状态码，仅在 HTTP 请求失败时提供。
+    case requestFailed(String, statusCode: Int? = nil)
 
     public var errorDescription: String? {
         switch self {
@@ -39,7 +40,7 @@ public enum LLMServiceError: Error, LocalizedError, Equatable {
             return "Invalid Base URL: \(string)"
         case .cancelled:
             return "Cancelled"
-        case let .requestFailed(message):
+        case let .requestFailed(message, _):
             return message
         }
     }

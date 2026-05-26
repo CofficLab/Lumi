@@ -1,0 +1,37 @@
+import PluginDiskManager
+import SwiftUI
+import os
+
+actor DiskManagerPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
+
+    // MARK: - Plugin Properties
+
+    nonisolated static let emoji = "💿"
+    nonisolated static let enable: Bool = PluginDiskManager.DiskManagerPlugin.enable
+    nonisolated static let verbose: Bool = PluginDiskManager.DiskManagerPlugin.verbose
+
+    static let id = PluginDiskManager.DiskManagerPlugin.id
+    static let navigationId = PluginDiskManager.DiskManagerPlugin.navigationId
+    static let displayName = PluginDiskManager.DiskManagerPlugin.displayName
+    static let description = PluginDiskManager.DiskManagerPlugin.description
+    static let iconName = PluginDiskManager.DiskManagerPlugin.iconName
+    static var category: PluginCategory { .system }
+    static var order: Int { PluginDiskManager.DiskManagerPlugin.order }
+
+    nonisolated var instanceLabel: String { Self.id }
+
+    static let shared = DiskManagerPlugin()
+
+    // MARK: - UI Contributions
+
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        PluginDiskManager.DiskManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
+    }
+
+    nonisolated func addPanelIcon() -> String? {
+        PluginDiskManager.DiskManagerPlugin.shared.addPanelIcon()
+    }
+}

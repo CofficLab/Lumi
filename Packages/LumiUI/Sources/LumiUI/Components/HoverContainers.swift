@@ -52,6 +52,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     let detailView: Detail?
     let content: Content
     let popoverWidth: CGFloat
+    let popoverMinHeight: CGFloat
     let id: String
     let arrowEdge: Edge
 
@@ -64,6 +65,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     public init(
         detailView: Detail,
         popoverWidth: CGFloat = 480,
+        popoverMinHeight: CGFloat = 0,
         id: String = UUID().uuidString,
         arrowEdge: Edge = .top,
         @ViewBuilder content: () -> Content
@@ -71,6 +73,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         self.detailView = detailView
         self.content = content()
         self.popoverWidth = popoverWidth
+        self.popoverMinHeight = popoverMinHeight
         self.id = id
         self.arrowEdge = arrowEdge
     }
@@ -82,6 +85,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         self.detailView = nil
         self.content = content()
         self.popoverWidth = 480
+        self.popoverMinHeight = 0
         self.id = id
         self.arrowEdge = .top
     }
@@ -155,7 +159,11 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
                     }
                 }
                 .padding(24)
-                .frame(width: popoverWidth)
+                .frame(
+                    minWidth: popoverWidth,
+                    maxWidth: popoverWidth,
+                    minHeight: popoverMinHeight > 0 ? popoverMinHeight : nil
+                )
                 .appSurface(style: .custom(theme.elevatedSurface), cornerRadius: 12)
         }
     }

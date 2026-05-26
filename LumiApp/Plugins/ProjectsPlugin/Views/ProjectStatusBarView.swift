@@ -13,6 +13,7 @@ struct ProjectStatusBarView: View {
             StatusBarHoverContainer(
                 detailView: ProjectsSidebarView(),
                 popoverWidth: 320,
+                popoverMinHeight: 400,
                 id: "projects-status"
             ) {
                 HStack(spacing: 4) {

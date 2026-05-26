@@ -215,14 +215,12 @@ class LLMService: SuperLog, @unchecked Sendable {
         } catch let e as LLMServiceError {
             throw e
         } catch let apiError as HTTPClientError {
-            // 确保 HTTP 错误包含状态码信息
-            let errorMessage: String
+            // 传递 HTTP 状态码到 LLMServiceError
             if case let .httpError(statusCode, message) = apiError {
-                errorMessage = "[HTTP \(statusCode)] \(message)"
+                throw LLMServiceError.requestFailed("[HTTP \(statusCode)] \(message)", statusCode: statusCode)
             } else {
-                errorMessage = apiError.localizedDescription
+                throw LLMServiceError.requestFailed(apiError.localizedDescription)
             }
-            throw LLMServiceError.requestFailed(errorMessage)
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
@@ -396,14 +394,12 @@ class LLMService: SuperLog, @unchecked Sendable {
         } catch let e as LLMServiceError {
             throw e
         } catch let apiError as HTTPClientError {
-            // 确保 HTTP 错误包含状态码信息
-            let errorMessage: String
+            // 传递 HTTP 状态码到 LLMServiceError
             if case let .httpError(statusCode, message) = apiError {
-                errorMessage = "[HTTP \(statusCode)] \(message)"
+                throw LLMServiceError.requestFailed("[HTTP \(statusCode)] \(message)", statusCode: statusCode)
             } else {
-                errorMessage = apiError.localizedDescription
+                throw LLMServiceError.requestFailed(apiError.localizedDescription)
             }
-            throw LLMServiceError.requestFailed(errorMessage)
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
@@ -499,7 +495,7 @@ extension LLMServiceError {
             return ChatMessage.llmInvalidBaseURLMessage(baseURL: urlString, conversationId: conversationId)
         case .cancelled:
             return ChatMessage.cancelledMessage(conversationId: conversationId)
-        case let .requestFailed(message):
+        case let .requestFailed(message, _):
             return ChatMessage.llmRequestFailedMessage(message: message, conversationId: conversationId)
         }
     }

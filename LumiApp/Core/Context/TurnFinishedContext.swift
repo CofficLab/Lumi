@@ -23,15 +23,25 @@ final class AppTurnFinishedContext: TurnFinishedContext {
     /// 当前项目视图模型
     let projectVM: WindowProjectVM
 
+    /// 消息队列 VM，用于入队消息触发新 Turn
+    let messageQueueVM: WindowMessageQueueVM
+
+    /// 对话 VM，用于保存消息到会话
+    let conversationVM: WindowConversationVM
+
     init(
         conversationId: UUID,
         endReason: TurnEndReason,
         turnMessages: [ChatMessage],
         chatHistoryService: ChatHistoryService,
-        projectVM: WindowProjectVM
+        projectVM: WindowProjectVM,
+        messageQueueVM: WindowMessageQueueVM,
+        conversationVM: WindowConversationVM
     ) {
         self.chatHistoryService = chatHistoryService
         self.projectVM = projectVM
+        self.messageQueueVM = messageQueueVM
+        self.conversationVM = conversationVM
         super.init(
             conversationId: conversationId,
             endReason: endReason,

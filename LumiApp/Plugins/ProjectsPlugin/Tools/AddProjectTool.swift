@@ -9,9 +9,9 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "将指定项目添加到项目列表。添加后会更新 projectVM 中的项目数据。"
+            return "将指定项目添加到项目列表。仅更新列表，不会切换当前项目。"
         case .english:
-            return "Add the specified project to the projects list. Updates the projectVM's projects after adding."
+            return "Add the specified project to the projects list. Only updates the list without switching the current project."
         }
     }
 
@@ -31,6 +31,14 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     func displayDescription(for arguments: [String: ToolArgument]) -> String {        "添加项目"    }
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
+    }
+
+    // MARK: - Dependencies
+
+    private weak var recentProjectsVM: AppProjectsVM?
+
+    init(recentProjectsVM: AppProjectsVM? = nil) {
+        self.recentProjectsVM = recentProjectsVM
     }
 
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
@@ -57,13 +65,16 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
+        let newProject = Project(name: projectName, path: path, lastUsed: Date())
 
-        // 1. 使用 store 添加项目到列表
+        // 1. 使用 store 持久化项目到磁盘
         let store = ProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 发送通知，ProjectsOverlay 会自动更新 projectVM
-        NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
+        // 2. 同步更新内存中的 AppProjectsVM，使 UI 立即刷新
+        await MainActor.run { [weak recentProjectsVM] in
+            recentProjectsVM?.addProject(newProject)
+        }
 
         // 3. 加载更新后的项目列表
         let projects = store.loadProjects()

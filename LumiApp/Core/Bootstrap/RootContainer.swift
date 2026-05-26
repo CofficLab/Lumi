@@ -136,6 +136,7 @@ final class RootContainer: ObservableObject, SuperLog {
         self.gitVM = AppGitVM()
         self.agentSessionConfig = AppLLMVM(llmService: llmService)
         toolService.llmVM = agentSessionConfig
+        toolService.recentProjectsVM = recentProjectsVM
         self.captureThinkingContent = true
         
         // ========================================
