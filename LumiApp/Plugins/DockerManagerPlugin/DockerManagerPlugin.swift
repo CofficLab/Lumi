@@ -1,3 +1,4 @@
+import PluginDockerManager
 import SwiftUI
 import os
 
@@ -8,14 +9,14 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🐳"
-    nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
+    nonisolated static let enable: Bool = PluginDockerManager.DockerManagerPlugin.enable
+    nonisolated static let verbose: Bool = PluginDockerManager.DockerManagerPlugin.verbose
 
-    static let id = "DockerManager"
-    static let navigationId = "docker_manager"
-    static let displayName = String(localized: "Docker", table: "DockerManager")
-    static let description = String(localized: "Local Docker image management and monitoring", table: "DockerManager")
-    static let iconName = "shippingbox"
+    static let id = PluginDockerManager.DockerManagerPlugin.id
+    static let navigationId = PluginDockerManager.DockerManagerPlugin.navigationId
+    static let displayName = PluginDockerManager.DockerManagerPlugin.displayName
+    static let description = PluginDockerManager.DockerManagerPlugin.description
+    static let iconName = PluginDockerManager.DockerManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 50 }
 
@@ -23,7 +24,7 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     static let shared = DockerManagerPlugin()
 
-    init() {}
+    private init() {}
 
     // MARK: - UI Contributions
 
@@ -31,17 +32,10 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(DockerImagesView())
+        PluginDockerManager.DockerManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
     }
 
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
+    nonisolated func addPanelIcon() -> String? {
+        PluginDockerManager.DockerManagerPlugin.shared.addPanelIcon()
+    }
 }

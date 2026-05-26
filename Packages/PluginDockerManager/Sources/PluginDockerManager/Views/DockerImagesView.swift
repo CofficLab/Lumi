@@ -1,6 +1,7 @@
 import LumiUI
 import SwiftUI
 import DockerKit
+import SuperLogKit
 
 struct DockerImagesView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -416,10 +417,4 @@ struct InfoRow: View {
     var body: some View {
         GlassKeyValueRow(label: title, value: value)
     }
-}
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

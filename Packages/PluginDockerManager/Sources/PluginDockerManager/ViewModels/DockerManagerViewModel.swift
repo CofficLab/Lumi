@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import DockerKit
+import SuperLogKit
 
 @MainActor
 class DockerManagerViewModel: ObservableObject, SuperLog {
