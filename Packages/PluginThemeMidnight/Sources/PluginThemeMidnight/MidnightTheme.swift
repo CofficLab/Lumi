@@ -7,29 +7,32 @@
 //
 
 import SwiftUI
+import LumiUI
 
 // MARK: - 午夜幽蓝主题
 ///
 /// 深邃的午夜蓝调，神秘而宁静。
 /// 特点：蓝紫色调，赛博朋克风格
 ///
-struct MidnightTheme: LumiAppChromeTheme {
+public struct MidnightTheme: LumiAppChromeTheme {
     // MARK: - 主题信息
 
-    let identifier = "midnight"
-    let displayName = "午夜幽蓝"
-    let compactName = "午夜"
-    let description = "深邃的午夜蓝调，神秘而宁静"
-    let iconName = "moon.stars.fill"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    public let identifier = "midnight"
+    public let displayName = "午夜幽蓝"
+    public let compactName = "午夜"
+    public let description = "深邃的午夜蓝调，神秘而宁静"
+    public let iconName = "moon.stars.fill"
+    public let appearanceKind: ThemeAppearanceKind = .dark
 
-    var iconColor: SwiftUI.Color {
+    public init() {}
+
+    public var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "5B4FCF", dark: "5B4FCF")
     }
 
     // MARK: - 颜色配置
 
-    func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
+    public func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
             primary: SwiftUI.Color.adaptive(light: "5B4FCF", dark: "5B4FCF"),  // 午夜蓝紫
             secondary: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF"), // 紫罗兰
@@ -37,7 +40,7 @@ struct MidnightTheme: LumiAppChromeTheme {
         )
     }
 
-    func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
+    public func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
             deep: SwiftUI.Color.adaptive(light: "F5F5FA", dark: "050510"),     // 背景：浅色 vs 深色
             medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "0A0A1F"),    // 卡片：纯白 vs 深蓝
@@ -45,7 +48,7 @@ struct MidnightTheme: LumiAppChromeTheme {
         )
     }
 
-    func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
+    public func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
             subtle: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF").opacity(0.3),
             medium: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF").opacity(0.5),
@@ -53,7 +56,7 @@ struct MidnightTheme: LumiAppChromeTheme {
         )
     }
 
-    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+    public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {
                 // 深邃背景

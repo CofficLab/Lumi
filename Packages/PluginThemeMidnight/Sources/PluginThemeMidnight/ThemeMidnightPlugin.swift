@@ -1,20 +1,25 @@
 import Foundation
+import EditorService
+import LumiCoreKit
+import LumiUI
 
-actor ThemeMidnightPlugin: SuperPlugin {
-    static let shared = ThemeMidnightPlugin()
-    static let id: String = "midnight"
-    static let displayName: String = "Midnight"
-    static let description: String = "Deep dark blue color scheme"
-    static let iconName: String = "moon.stars.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
-    static var category: PluginCategory { .theme }
-    static var order: Int { 120 }
+public actor ThemeMidnightPlugin: SuperPlugin {
+    public static let shared = ThemeMidnightPlugin()
+    public static let id: String = "midnight"
+    public static let displayName: String = "Midnight"
+    public static let description: String = "Deep dark blue color scheme"
+    public static let iconName: String = "moon.stars.fill"
+    public static let isConfigurable: Bool = false
+    public static let enable: Bool = true
+    public static var category: PluginCategory { .theme }
+    public static var order: Int { 120 }
 
-    nonisolated var instanceLabel: String { Self.id }
+    nonisolated public var instanceLabel: String { Self.id }
+
+    private init() {}
 
     @MainActor
-    func addThemeContributions() -> [LumiUIThemeContribution] {
+    public func addThemeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: MidnightTheme(),
@@ -36,8 +41,12 @@ actor ThemeMidnightPlugin: SuperPlugin {
     }
 
     @MainActor
-    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerThemeContributor(MidnightSuperEditorThemeContributor())
     }
 
+}
+
+enum PluginThemeMidnightResources {
+    static let bundle = Bundle.module
 }

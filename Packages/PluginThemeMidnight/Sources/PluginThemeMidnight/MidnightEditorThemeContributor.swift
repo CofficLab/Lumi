@@ -1,16 +1,19 @@
 import Foundation
 import CodeEditSourceEditor
 import AppKit
+import EditorService
 
 /// Midnight 编辑器主题配色方案
 @MainActor
-final class MidnightSuperEditorThemeContributor: SuperEditorThemeContributor {
-    let id: String = "midnight"
-    let displayName: String = "Midnight"
-    let icon: String? = "moon.stars.fill"
-    let isDark: Bool = true
+public final class MidnightSuperEditorThemeContributor: SuperEditorThemeContributor {
+    public let id: String = "midnight"
+    public let displayName: String = "Midnight"
+    public let icon: String? = "moon.stars.fill"
+    public let isDark: Bool = true
 
-    func createTheme() -> EditorTheme {
+    public init() {}
+
+    public func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(0.933, 0.933, 0.933),
             insertionPoint: color(0.933, 0.933, 0.933),
