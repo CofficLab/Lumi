@@ -6,7 +6,6 @@ import SwiftUI
 /// Conversation List Plugin: 对话历史列表
 ///
 /// 在工具栏右侧提供会话列表入口（ConversationListPopoverButton）。
-/// 同时在首条用户消息发送后自动生成会话标题。
 actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
@@ -39,14 +38,6 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
         }
         
         return AnyView(ConversationListPopoverButton())
-    }
-
-    // MARK: - Send Middlewares
-
-    /// 发送管线中间件：首条消息后自动生成标题
-    @MainActor
-    func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
     }
 
     // MARK: - Agent Tools
