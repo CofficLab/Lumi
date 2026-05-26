@@ -30,10 +30,13 @@ actor ConversationTitlePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Send Middlewares
 
-    /// 发送管线中间件：首条消息后自动生成标题
+    /// 发送管线中间件：首条消息后自动生成标题 + 注入标题漂移提示
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
+        [
+            AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware()),
+            AnySuperSendMiddleware(ConversationTitleHintSendMiddleware()),
+        ]
     }
 
     // MARK: - Agent Tools
