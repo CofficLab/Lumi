@@ -1,11 +1,12 @@
 import Foundation
 import IOKit.pwr_mgt
 import Observation
+import SuperLogKit
 
 /// Caffeinate Manager: Responsible for managing system power state
 @MainActor
 @Observable
-class CaffeinateManager: SuperLog {
+final class CaffeinateManager: SuperLog {
     nonisolated static let emoji = "🍽️"
     nonisolated static let verbose: Bool = true
 
@@ -275,11 +276,11 @@ extension CaffeinateManager {
         var displayName: String {
             switch self {
             case .indefinite:
-                return "Indefinite"
+                return PluginCaffeinateLocalization.string("Indefinite")
             case let .minutes(m):
-                return "\(m) Minutes"
+                return "\(m) \(PluginCaffeinateLocalization.string("Minutes"))"
             case let .hours(h):
-                return "\(h) Hours"
+                return "\(h) \(PluginCaffeinateLocalization.string("Hours"))"
             }
         }
 

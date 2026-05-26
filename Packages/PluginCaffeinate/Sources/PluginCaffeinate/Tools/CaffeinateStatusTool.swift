@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import SuperLogKit
 
 /// 查询防休眠状态工具
 ///

@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import SuperLogKit
 
 /// 防休眠并立即关闭屏幕工具
 ///

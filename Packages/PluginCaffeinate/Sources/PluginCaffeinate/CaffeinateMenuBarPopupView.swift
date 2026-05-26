@@ -16,11 +16,11 @@ struct CaffeinateMenuBarPopupView: View {
     @State private var activeAction: QuickActionType? = nil
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        (String(localized: "Indefinite", table: "Caffeinate"), 0),
-        (String(localized: "10 Min", table: "Caffeinate"), 600),
-        (String(localized: "1 Hour", table: "Caffeinate"), 3600),
-        (String(localized: "2 Hours", table: "Caffeinate"), 7200),
-        (String(localized: "5 Hours", table: "Caffeinate"), 18000),
+        (PluginCaffeinateLocalization.string("Indefinite"), 0),
+        (PluginCaffeinateLocalization.string("10 Min"), 600),
+        (PluginCaffeinateLocalization.string("1 Hour"), 3600),
+        (PluginCaffeinateLocalization.string("2 Hours"), 7200),
+        (PluginCaffeinateLocalization.string("5 Hours"), 18000),
     ]
 
     var body: some View {
@@ -70,7 +70,7 @@ struct CaffeinateMenuBarPopupView: View {
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Keep screen on", table: "Caffeinate"),
+                title: PluginCaffeinateLocalization.string("Prevent sleep & Keep screen on"),
                 icon: "sun.max.fill",
                 color: Color(hex: "FF9F0A"),
                 isSelected: activeAction == .systemAndDisplay,
@@ -83,7 +83,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Allow screen off", table: "Caffeinate"),
+                title: PluginCaffeinateLocalization.string("Prevent sleep & Allow screen off"),
                 icon: "moon.fill",
                 color: Color(hex: "0A84FF"),
                 isSelected: activeAction == .systemOnly,
@@ -96,7 +96,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Turn off screen", table: "Caffeinate"),
+                title: PluginCaffeinateLocalization.string("Prevent sleep & Turn off screen"),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
                 showCheckmark: false, // 瞬时操作，不显示对号
@@ -155,12 +155,6 @@ private struct DurationButton: View {
         }
         .buttonStyle(.plain)
     }
-}
-
-#Preview("Caffeinate Menu Bar Popup") {
-    CaffeinateMenuBarPopupView()
-        .frame(width: 280)
-        .padding()
 }
 
 // MARK: - 快捷菜单项

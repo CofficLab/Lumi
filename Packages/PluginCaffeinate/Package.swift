@@ -1,0 +1,42 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginCaffeinate",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "PluginCaffeinate",
+            targets: ["PluginCaffeinate"]
+        )
+    ],
+    dependencies: [
+        .package(path: "../AgentToolKit"),
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiUI"),
+        .package(path: "../SuperLogKit"),
+    ],
+    targets: [
+        .target(
+            name: "PluginCaffeinate",
+            dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
+            path: "Sources/PluginCaffeinate",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "PluginCaffeinateTests",
+            dependencies: ["PluginCaffeinate"],
+            path: "Tests/PluginCaffeinateTests"
+        )
+    ]
+)
