@@ -9,9 +9,9 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "将指定项目添加到项目列表。添加后会更新 projectVM 中的项目数据。"
+            return "将指定项目添加到项目列表。仅更新列表，不会切换当前项目。"
         case .english:
-            return "Add the specified project to the projects list. Updates the projectVM's projects after adding."
+            return "Add the specified project to the projects list. Only updates the list without switching the current project."
         }
     }
 
@@ -58,14 +58,11 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
 
-        // 1. 使用 store 添加项目到列表
+        // 1. 使用 store 添加项目到列表（不触发切换）
         let store = ProjectsStore()
         store.addProject(name: projectName, path: path)
 
-        // 2. 发送通知，ProjectsOverlay 会自动更新 projectVM
-        NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
-
-        // 3. 加载更新后的项目列表
+        // 2. 加载更新后的项目列表
         let projects = store.loadProjects()
 
         // 构建返回消息
