@@ -66,21 +66,18 @@ public struct HTMLScreenshotter {
 
         let cgContext = context.cgContext
 
-        // 关键：CGContext 默认原点在左下，Y 向上
-        // 我们需要将原点移到左上，Y 向下（匹配 PDF 的 CSS 坐标系）
-        cgContext.translateBy(x: 0, y: CGFloat(ceil(totalHeight)))
-        cgContext.scaleBy(x: 1, y: -1)
-
+        // NSImage.lockFocus() 创建的 CGContext 原点位于左下角，Y 轴向上，
+        // 与 PDF 坐标系一致。PDFPage.draw() 内部会自行处理坐标映射，
+        // 所以不需要额外翻转。
+        // 但页面需要反向绘制：先画最后一页到图像底部，再画第一页到图像顶部。
+        // 这样用户在左上角原点的图像中看到的就是正确从上到下的 HTML 内容。
         var currentY: CGFloat = 0
-        for (index, bounds) in pageBounds.enumerated() {
+        for (index, bounds) in pageBounds.enumerated().reversed() {
             guard let page = pdfDocument.page(at: index) else { continue }
 
-            // 在翻转后的坐标系中（原点左上，Y 向下），直接将页面画在正确位置
             cgContext.saveGState()
             cgContext.translateBy(x: 0, y: currentY)
 
-            // draw 方法会再次翻转 Y 轴（因为它认为 CGContext 是 Y 向上）
-            // 但我们已经翻转了，所以最终方向正确
             page.draw(with: .mediaBox, to: cgContext)
 
             cgContext.restoreGState()
