@@ -35,4 +35,15 @@ actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
     }
+
+    // MARK: - Agent Tools
+
+    /// 提供对话标题相关的 Agent 工具
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        guard let conversationVM = context.conversationVM else { return [] }
+        return [
+            UpdateConversationTitleTool(conversationVM: conversationVM),
+        ]
+    }
 }
