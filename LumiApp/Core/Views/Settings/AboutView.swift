@@ -14,38 +14,23 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部说明卡片（固定）
-            headerCard
-                .padding(24)
-                .background(Color.clear)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // 应用信息卡片
+                appInfoCard
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // 应用信息卡片
-                    appInfoCard
+                // 版本信息卡片
+                versionInfoCard
 
-                    // 版本信息卡片
-                    versionInfoCard
+                // 构建历史卡片
+                buildHistoryCard
 
-                    // 构建历史卡片
-                    buildHistoryCard
+                // 系统信息卡片
+                systemInfoCard
 
-                    // 系统信息卡片
-                    systemInfoCard
-
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
+                Spacer()
             }
-        }
-    }
-
-    // MARK: - Header Card
-
-    private var headerCard: some View {
-        AppCard {
-            AppSettingsSection(title: "关于 Lumi", subtitle: "了解应用的版本和系统信息") {}
+            .padding(24)
         }
     }
 
