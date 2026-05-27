@@ -25,7 +25,7 @@ actor ChatPanelPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true) {
             AnyView(ChatPanelView())
         }
     }
