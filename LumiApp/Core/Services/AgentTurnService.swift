@@ -207,9 +207,19 @@ extension AgentTurnService {
         remainingSystemPrompts: inout [String]
     ) async -> Bool {
         let llmMessages = chatHistoryService.expandMessagesForLLM(storageMessages)
+
+        // 上下文裁剪：防止长时运行对话超出 token 限制
+        let contextWindowSize = resolveContextWindowSize(for: conversationId)
+        let lastInputTokens = resolveLastInputTokens(for: conversationId)
+        let pruneResult = ContextPruner.prune(
+            llmMessages,
+            lastInputTokens: lastInputTokens,
+            contextWindowSize: contextWindowSize
+        )
+
         let result = await performLLMRequest(
             conversationId: conversationId,
-            messages: llmMessages,
+            messages: pruneResult.messages,
             additionalSystemPrompts: remainingSystemPrompts
         )
         remainingSystemPrompts = []
@@ -555,6 +565,27 @@ extension AgentTurnService {
             for: conversationId,
             fallbackConfigProvider: agentSessionConfig
         ).providerId
+    }
+
+    // MARK: - 上下文裁剪辅助
+
+    /// 获取当前会话使用的模型的上下文窗口大小
+    private func resolveContextWindowSize(for conversationId: UUID) -> Int? {
+        let config = conversationVM.resolveModelConfig(
+            for: conversationId,
+            fallbackConfigProvider: agentSessionConfig
+        )
+        return llmService.allProviders()
+            .first(where: { $0.id == config.providerId })?
+            .contextWindowSizes[config.model]
+    }
+
+    /// 从最近一条 assistant 消息中提取 inputTokens，用于自适应裁剪
+    private func resolveLastInputTokens(for conversationId: UUID) -> Int? {
+        guard let messages = chatHistoryService.loadMessages(forConversationId: conversationId) else {
+            return nil
+        }
+        return messages.last(where: { $0.role == .assistant })?.inputTokens
     }
 
     // MARK: - 重试判断（纯函数，无状态）
