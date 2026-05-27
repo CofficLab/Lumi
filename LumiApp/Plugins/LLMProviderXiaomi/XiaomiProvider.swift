@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// Xiaomi AI 供应商实现
 ///
@@ -17,7 +18,7 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let shortName = "XM"
     static let description = String(localized: "Xiaomi AI Models", table: "Xiaomi")
 
-    static let websiteURL: String? = "https://xiaomi.com"
+    static let websiteURL: String? = "https://platform.xiaomimimo.com/token-plan"
 
     // MARK: - 配置相关
 
