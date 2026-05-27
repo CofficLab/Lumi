@@ -57,12 +57,11 @@ actor GitPlugin: SuperPlugin, SuperLog {
 
     /// 左侧活动栏 Git 面板：提交历史 + commit 详情 + 工作区 diff
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(GitCommitPanelView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(GitCommitPanelView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     /// 底部状态栏 Git 入口：当前分支 + 快捷 Git 弹窗
     @MainActor

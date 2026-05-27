@@ -63,6 +63,25 @@ struct BottomPanelTab: Identifiable, Equatable {
     }
 }
 
+/// Activity Bar 视图容器定义
+///
+/// 插件通过 `addViewContainer()` 返回此结构体，由内核渲染 Activity Bar 入口，
+/// 并在入口激活时延迟创建对应的面板视图。
+struct ViewContainerItem: Identifiable, Equatable {
+    /// 唯一标识
+    let id: String
+    /// 显示标题
+    let title: String
+    /// SF Symbol 图标名
+    let icon: String
+    /// 延迟创建视图
+    let makeView: @MainActor () -> AnyView
+
+    static func == (lhs: ViewContainerItem, rhs: ViewContainerItem) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 插件协议，定义插件的基本接口和 UI 贡献方法
 ///
 /// SuperPlugin 是 Lumi 插件系统的核心协议，所有插件都必须实现此协议。
@@ -193,29 +212,12 @@ protocol SuperPlugin: Actor {
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
 
-    /// 提供面板图标（SF Symbol 名称）
+    /// 添加 Activity Bar 视图容器
     ///
-    /// 用于在左侧活动栏中显示该插件的面板入口图标。
-    /// 只有同时提供 `addPanelView()` 的插件才需要实现此方法。
-    /// 返回 nil 表示使用插件默认的 `iconName`。
-    ///
-    /// ## 注意
-    ///
-    /// 此方法与 `addPanelView()` 配对使用：
-    /// - `addPanelIcon()` 提供活动栏图标
-    /// - `addPanelView()` 提供面板内容视图
-    nonisolated func addPanelIcon() -> String?
-
-    /// 添加面板视图
-    ///
-    /// 提供一个在左侧活动栏中注册的视图入口。插件自行决定视图的布局方式，
+    /// 提供一个在左侧活动栏中注册的入口及其对应面板视图。插件自行决定视图的布局方式，
     /// 例如只读列表、可交互的管理界面、或者编辑器等。
-    /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
-    ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件应将其与自己的 `addPanelIcon()` 返回值比较，匹配时才提供面板视图。
-    ///   如果为 `nil`，表示没有任何图标被激活。
-    @MainActor func addPanelView(activeIcon: String?) -> AnyView?
+    /// 点击活动栏图标后，该容器视图会在左侧面板或中间栏中展示。
+    @MainActor func addViewContainer() -> ViewContainerItem?
 
     /// 提供 Panel Header 视图
     ///
@@ -225,7 +227,7 @@ protocol SuperPlugin: Actor {
     /// 典型用例：编辑器的 Tab Strip、面包屑导航等。
     ///
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   插件应将其与目标 view container 的 `icon` 比较，
     ///   仅在匹配时提供 header 视图。
     @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
 

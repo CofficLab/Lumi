@@ -25,12 +25,11 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(RegistryManagerView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(RegistryManagerView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

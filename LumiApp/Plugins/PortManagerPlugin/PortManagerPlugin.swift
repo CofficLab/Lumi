@@ -28,12 +28,11 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(PortManagerView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(PortManagerView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

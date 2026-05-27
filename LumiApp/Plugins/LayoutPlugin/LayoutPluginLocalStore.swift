@@ -64,14 +64,14 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
 
     // MARK: - Convenience API
 
-    /// 加载已保存的活动栏图标名称
-    func loadActivePanelIcon() -> String? {
-        string(forKey: Keys.activePanelIcon)
+    /// 加载已保存的视图容器图标名称
+    func loadActiveViewContainerIcon() -> String? {
+        string(forKey: Keys.activeViewContainerIcon) ?? string(forKey: Keys.legacyActivePanelIcon)
     }
 
-    /// 保存活动栏图标名称
-    func saveActivePanelIcon(_ icon: String?) {
-        set(icon, forKey: Keys.activePanelIcon)
+    /// 保存视图容器图标名称
+    func saveActiveViewContainerIcon(_ icon: String?) {
+        set(icon, forKey: Keys.activeViewContainerIcon)
     }
 
     /// 加载已保存的侧边栏 Tab ID
@@ -205,7 +205,8 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
     // MARK: - Keys
 
     private enum Keys {
-        static let activePanelIcon = "activePanelIcon"
+        static let activeViewContainerIcon = "activeViewContainerIcon"
+        static let legacyActivePanelIcon = "activePanelIcon"
         static let selectedAgentSidebarTabId = "selectedAgentSidebarTabId"
         static let selectedAgentDetailId = "selectedAgentDetailId"
         static let layoutRatios = "layoutRatios"

@@ -33,12 +33,11 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     
 
     @MainActor
-    public func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(DiskManagerView())
+    public func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(DiskManagerView())
+        }
     }
-
-    public nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 enum PluginDiskManagerLocalization {

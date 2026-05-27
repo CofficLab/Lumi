@@ -75,6 +75,32 @@ public struct BottomPanelTab: Identifiable, Equatable {
     }
 }
 
+/// Activity Bar 视图容器定义
+///
+/// 插件通过 `addViewContainer()` 返回此结构体，由内核渲染 Activity Bar 入口，
+/// 并在入口激活时延迟创建对应的面板视图。
+public struct ViewContainerItem: Identifiable, Equatable {
+    /// 唯一标识
+    public let id: String
+    /// 显示标题
+    public let title: String
+    /// SF Symbol 图标名
+    public let icon: String
+    /// 延迟创建视图
+    public let makeView: @MainActor () -> AnyView
+
+    public init(id: String, title: String, icon: String, makeView: @escaping @MainActor () -> AnyView) {
+        self.id = id
+        self.title = title
+        self.icon = icon
+        self.makeView = makeView
+    }
+
+    public static func == (lhs: ViewContainerItem, rhs: ViewContainerItem) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 插件协议，定义插件的基本接口和 UI 贡献方法
 ///
 /// SuperPlugin 是 Lumi 插件系统的核心协议，所有插件都必须实现此协议。
@@ -142,11 +168,8 @@ public protocol SuperPlugin: Actor {
     /// 添加工具栏右侧视图
     @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
 
-    /// 提供面板图标（SF Symbol 名称）
-    nonisolated func addPanelIcon() -> String?
-
-    /// 添加面板视图
-    @MainActor func addPanelView(activeIcon: String?) -> AnyView?
+    /// 添加 Activity Bar 视图容器
+    @MainActor func addViewContainer() -> ViewContainerItem?
 
     /// 提供 Panel Header 视图
     @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?

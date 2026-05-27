@@ -38,12 +38,11 @@ public actor AppManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
 
     @MainActor
-    public func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(AppManagerView())
+    public func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(AppManagerView())
+        }
     }
-
-    public nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 enum PluginAppManagerLocalization {

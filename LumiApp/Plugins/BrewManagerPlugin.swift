@@ -25,11 +25,10 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        PluginBrewManager.BrewManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
-    }
-
-    nonisolated func addPanelIcon() -> String? {
-        PluginBrewManager.BrewManagerPlugin.shared.addPanelIcon()
+    func addViewContainer() -> ViewContainerItem? {
+        guard let item = PluginBrewManager.BrewManagerPlugin.shared.addViewContainer() else {
+            return nil
+        }
+        return ViewContainerItem(id: item.id, title: item.title, icon: item.icon, makeView: item.makeView)
     }
 }

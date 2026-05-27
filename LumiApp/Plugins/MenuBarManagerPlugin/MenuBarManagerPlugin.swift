@@ -47,12 +47,11 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(MenuBarSettingsView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(MenuBarSettingsView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     /// 添加菜单栏弹窗视图
     /// 我们可以在这里放一个开关，或者一个"Thaw"按钮来显示隐藏的项目

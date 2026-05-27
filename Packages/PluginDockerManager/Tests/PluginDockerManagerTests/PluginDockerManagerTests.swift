@@ -18,10 +18,11 @@ struct PluginDockerManagerTests {
     }
 
     @Test
-    func panelContributionMatchesActiveIcon() {
-        #expect(DockerManagerPlugin.shared.addPanelIcon() == DockerManagerPlugin.iconName)
-        #expect(DockerManagerPlugin.shared.addPanelView(activeIcon: "other") == nil)
-        #expect(DockerManagerPlugin.shared.addPanelView(activeIcon: DockerManagerPlugin.iconName) != nil)
+    func viewContainerContributionIsAvailable() {
+        let item = DockerManagerPlugin.shared.addViewContainer()
+        #expect(item?.id == DockerManagerPlugin.id)
+        #expect(item?.title == DockerManagerPlugin.displayName)
+        #expect(item?.icon == DockerManagerPlugin.iconName)
     }
 
     @Test

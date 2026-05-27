@@ -50,7 +50,7 @@ struct ProjectsOverlay<Content: View>: View, SuperLog {
 
     private var shouldShowNoProjectOverlay: Bool {
         !projectVM.isProjectSelected
-            && pluginVM.isActivePanelIcon(layoutVM.activePanelIcon, in: [EditorPlugin.iconName, GitPlugin.iconName])
+            && pluginVM.isActiveViewContainerIcon(layoutVM.activeViewContainerIcon, in: [EditorPlugin.iconName, GitPlugin.iconName])
     }
 }
 

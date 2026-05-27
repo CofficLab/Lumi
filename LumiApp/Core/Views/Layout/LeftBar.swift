@@ -3,8 +3,8 @@ import SwiftUI
 
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
 ///
-/// 聚合所有提供 `addPanelIcon()` 的插件图标，
-/// 点击后更新 `WindowLayoutVM.activePanelIcon`，驱动面板内容区切换。
+/// 聚合所有提供 `addViewContainer()` 的插件图标，
+/// 点击后更新 `WindowLayoutVM.activeViewContainerIcon`，驱动面板内容区切换。
 ///
 /// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
@@ -16,8 +16,8 @@ struct ActivityBar: View {
     static let width: CGFloat = 48
 
     var body: some View {
-        let iconItems = pluginProvider.getPanelIconItems()
-        let activeIcon = layoutVM.activePanelIcon
+        let iconItems = pluginProvider.getViewContainerItems()
+        let activeIcon = layoutVM.activeViewContainerIcon
         let theme = themeVM.activeChromeTheme
 
         VStack(spacing: 0) {
@@ -29,7 +29,7 @@ struct ActivityBar: View {
                             title: item.title,
                             isSelected: item.icon == activeIcon
                         ) {
-                            layoutVM.activePanelIcon = item.icon
+                            layoutVM.activeViewContainerIcon = item.icon
                             layoutVM.selectAgentSidebarTab(item.id, reason: "Activity bar clicked")
                         }
                     }
@@ -51,16 +51,16 @@ struct ActivityBar: View {
         .frame(width: Self.width)
         .background(theme.sidebarBackgroundColor())
         .onAppear {
-            let items = pluginProvider.getPanelIconItems()
+            let items = pluginProvider.getViewContainerItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
             // 如果 LayoutPlugin 尚未恢复图标（或恢复的图标已失效），回退到第一个
-            if layoutVM.activePanelIcon == nil {
+            if layoutVM.activeViewContainerIcon == nil {
                 if let first = items.first {
-                    layoutVM.activePanelIcon = first.icon
+                    layoutVM.activeViewContainerIcon = first.icon
                 }
             }
         }
-        .onChange(of: pluginProvider.getPanelIconItems()) { _, newItems in
+        .onChange(of: pluginProvider.getViewContainerItems()) { _, newItems in
             layoutVM.restoreSelectedTab(from: newItems.map(\.id))
         }
     }
@@ -68,7 +68,7 @@ struct ActivityBar: View {
 
 // MARK: - Activity Bar Button
 
-/// VS Code 风格的活动栏图标按钮
+/// VS Code 风格的视图容器图标按钮
 ///
 /// 主题适配：选中指示条和图标颜色均跟随当前主题。
 struct ActivityBarButton: View {

@@ -701,8 +701,8 @@ FileEditTool/
 
 ### 任务 1: 合并 API
 
-- [ ] 将 `SuperPlugin` 协议中的 `addPanelIcon()` 和 `addPanelView(activeIcon:)` 合并成一个 `addViewContainer()` 方法
-- [ ] 定义 `ViewContainerItem` 结构体：
+- [x] 将 `SuperPlugin` 协议中的 `addPanelIcon()` 和 `addPanelView(activeIcon:)` 合并成一个 `addViewContainer()` 方法
+- [x] 定义 `ViewContainerItem` 结构体：
   ```swift
   struct ViewContainerItem: Identifiable {
       let id: String
@@ -711,17 +711,17 @@ FileEditTool/
       let makeView: @MainActor () -> AnyView  // 闭包，延迟创建视图
   }
   ```
-- [ ] 消除手动匹配 `activeIcon` 的样板代码
-- [ ] 更新 `AppPluginVM` 中的聚合逻辑：
+- [x] 消除手动匹配 `activeIcon` 的样板代码
+- [x] 更新 `AppPluginVM` 中的聚合逻辑：
   - `getPanelIconItems()` → `getViewContainerItems()`
   - `getActivePanelItem()` → `getActiveViewContainer()`
 
 ### 任务 2: 统一 VS Code 风格命名
 
-- [ ] 将 `PanelIconItem` 重命名为 `ViewContainerItem`
-- [ ] 将 `PanelItem` 重命名为 `ViewContainerItem`（合并后只有一个类型）
-- [ ] 更新所有相关变量名和方法名
-- [ ] 保持与 VS Code 扩展 API 术语一致：
+- [x] 将 `PanelIconItem` 重命名为 `ViewContainerItem`
+- [x] 将 `PanelItem` 重命名为 `ViewContainerItem`（合并后只有一个类型）
+- [x] 更新所有相关变量名和方法名
+- [x] 保持与 VS Code 扩展 API 术语一致：
   | VS Code | Lumi |
   |---------|------|
   | Activity Bar | ActivityBar |

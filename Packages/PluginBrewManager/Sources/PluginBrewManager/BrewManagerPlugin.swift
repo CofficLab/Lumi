@@ -25,12 +25,11 @@ public actor BrewManagerPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    public func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(BrewManagerView())
+    public func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(BrewManagerView())
+        }
     }
-
-    public nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 enum PluginBrewManagerLocalization {

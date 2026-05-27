@@ -18,10 +18,11 @@ struct PluginDiskManagerTests {
     }
 
     @Test
-    func panelContributionMatchesActiveIcon() {
-        #expect(DiskManagerPlugin.shared.addPanelIcon() == DiskManagerPlugin.iconName)
-        #expect(DiskManagerPlugin.shared.addPanelView(activeIcon: "other") == nil)
-        #expect(DiskManagerPlugin.shared.addPanelView(activeIcon: DiskManagerPlugin.iconName) != nil)
+    func viewContainerContributionIsAvailable() {
+        let item = DiskManagerPlugin.shared.addViewContainer()
+        #expect(item?.id == DiskManagerPlugin.id)
+        #expect(item?.title == DiskManagerPlugin.displayName)
+        #expect(item?.icon == DiskManagerPlugin.iconName)
     }
 
     @Test
