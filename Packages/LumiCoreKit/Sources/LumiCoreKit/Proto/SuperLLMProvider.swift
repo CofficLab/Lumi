@@ -193,13 +193,4 @@ extension SuperLLMProvider {
         let result = try parseResponse(data: data)
         return LLMProviderResponse(content: result.content, toolCalls: result.toolCalls)
     }
-
-    public func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
-        // TTS 模型不支持对话，仅验证 API Key
-        if let caps = Self.modelCapabilities[modelId], caps.supportsTTS {
-            return .apiKeyOnly
-        }
-        // 默认：标准聊天 ping
-        return .chatPing()
-    }
 }

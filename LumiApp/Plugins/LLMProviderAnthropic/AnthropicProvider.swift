@@ -476,4 +476,10 @@ private struct AnthropicAnySendable: Decodable {
             value = ""
         }
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }

@@ -454,6 +454,12 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
         return totalSize >= minValidSize
     }
+
+    // MARK: - Availability
+
+    public func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }
 
 // MARK: - MLX Error

@@ -469,3 +469,11 @@ enum CodexError: LocalizedError {
         }
     }
 }
+
+extension CodexProvider {
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
+}

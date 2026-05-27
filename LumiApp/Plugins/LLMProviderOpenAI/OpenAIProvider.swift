@@ -99,4 +99,10 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         }
         return StreamChunk(kit: kitChunk)
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }

@@ -98,4 +98,10 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
         }
         return StreamChunk(kit: kitChunk)
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }

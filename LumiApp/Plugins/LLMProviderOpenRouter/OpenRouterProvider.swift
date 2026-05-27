@@ -122,4 +122,10 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         }
         return StreamChunk(kit: kitChunk)
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }

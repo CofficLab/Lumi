@@ -93,4 +93,10 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
         guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
         return StreamChunk(kit: kitChunk)
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
+    }
 }

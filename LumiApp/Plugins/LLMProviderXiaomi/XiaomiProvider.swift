@@ -102,4 +102,15 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
         return StreamChunk(kit: kitChunk)
     }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        // TTS 模型不支持对话 API，仅验证 API Key 即可
+        if Self.modelCapabilities[modelId]?.supportsTTS == true {
+            return .apiKeyOnly
+        }
+        // 对话模型使用标准 chat ping
+        return .chatPing()
+    }
 }
