@@ -5,7 +5,6 @@ import SwiftUI
 /// 提供下拉菜单，控制各面板区域的显示/隐藏。
 struct LayoutMenuButton: View {
     @EnvironmentObject private var layoutVM: WindowLayoutVM
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         Menu {
@@ -28,5 +27,7 @@ struct LayoutMenuButton: View {
         } label: {
             Image(systemName: "sidebar.leading")
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
     }
 }
