@@ -463,12 +463,6 @@
     "24" : {
 
     },
-    "50 rows" : {
-
-    },
-    "68%" : {
-
-    },
     "100" : {
       "localizations" : {
         "zh-Hans" : {
@@ -501,9 +495,6 @@
           }
         }
       }
-    },
-    "312 GB free" : {
-
     },
     "500" : {
       "localizations" : {
@@ -625,6 +616,7 @@
       }
     },
     "Add Connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -672,9 +664,6 @@
           }
         }
       }
-    },
-    "Agent Chat" : {
-
     },
     "Agent 回合已结束" : {
 
@@ -728,9 +717,6 @@
           }
         }
       }
-    },
-    "API Key" : {
-
     },
     "API 密钥" : {
       "extractionState" : "stale",
@@ -871,9 +857,6 @@
         }
       }
     },
-    "Ask Lumi to inspect, edit, or run tools" : {
-
-    },
     "Auto" : {
       "localizations" : {
         "zh-Hans" : {
@@ -891,9 +874,6 @@
       }
     },
     "Auto (自动选择)" : {
-
-    },
-    "Available Models" : {
 
     },
     "Battery" : {
@@ -969,9 +949,6 @@
           }
         }
       }
-    },
-    "Choose a cloud provider and set your default model." : {
-
     },
     "Clean working tree" : {
 
@@ -1061,9 +1038,6 @@
         }
       }
     },
-    "Cloud LLM Providers" : {
-
-    },
     "Collecting..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1114,9 +1088,6 @@
         }
       }
     },
-    "Connected" : {
-
-    },
     "Connection Name" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1135,6 +1106,7 @@
       }
     },
     "Connections" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1547,9 +1519,6 @@
         }
       }
     },
-    "Enabled Plugins" : {
-
-    },
     "Error" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1567,9 +1536,6 @@
       }
     },
     "Esc" : {
-
-    },
-    "Explain the active selection and suggest tests" : {
 
     },
     "Extension (e.g. py)" : {
@@ -1656,9 +1622,6 @@
       }
     },
     "GitHub" : {
-
-    },
-    "GPT-5.5" : {
 
     },
     "Group" : {
@@ -1945,12 +1908,6 @@
         }
       }
     },
-    "Line 42, Col 18" : {
-
-    },
-    "Live sample" : {
-
-    },
     "Load" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1969,9 +1926,6 @@
       }
     },
     "Loading..." : {
-
-    },
-    "Local App Store" : {
 
     },
     "Local IP" : {
@@ -2007,12 +1961,6 @@
       }
     },
     "Lumi Agent" : {
-
-    },
-    "LumiApp/Core/Views" : {
-
-    },
-    "main" : {
 
     },
     "Markdown" : {
@@ -2520,16 +2468,10 @@
         }
       }
     },
-    "Query" : {
-
-    },
     "RAG" : {
 
     },
     "Rail" : {
-
-    },
-    "Ready" : {
 
     },
     "Real-time Monitor" : {
@@ -2565,9 +2507,6 @@
         }
       }
     },
-    "Remote Providers" : {
-
-    },
     "Reset" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2584,9 +2523,6 @@
           }
         }
       }
-    },
-    "Results" : {
-
     },
     "Retry" : {
       "extractionState" : "stale",
@@ -2626,6 +2562,7 @@
 
     },
     "Run" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2897,9 +2834,6 @@
         }
       }
     },
-    "sk-proj-••••••••••••••••••••••••" : {
-
-    },
     "Sort" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2949,9 +2883,6 @@
         }
       }
     },
-    "Swift" : {
-
-    },
     "Switch Source" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2969,6 +2900,7 @@
       }
     },
     "Tables" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3250,9 +3182,6 @@
           }
         }
       }
-    },
-    "used" : {
-
     },
     "user" : {
       "extractionState" : "stale",

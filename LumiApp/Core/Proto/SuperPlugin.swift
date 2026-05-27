@@ -76,6 +76,30 @@ struct ViewContainerItem: Identifiable, Equatable {
     let icon: String
     /// 延迟创建视图
     let makeView: @MainActor () -> AnyView
+    /// 是否在工具栏显示项目管理控件
+    let showsProjectToolbar: Bool
+    /// 是否支持 AI 聊天
+    ///
+    /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
+    /// 会在右侧栏贡献各自的 Section 视图。
+    /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
+    let supportsAIChat: Bool
+
+    init(
+        id: String,
+        title: String,
+        icon: String,
+        showsProjectToolbar: Bool = false,
+        supportsAIChat: Bool = false,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
+        self.id = id
+        self.title = title
+        self.icon = icon
+        self.showsProjectToolbar = showsProjectToolbar
+        self.supportsAIChat = supportsAIChat
+        self.makeView = makeView
+    }
 
     static func == (lhs: ViewContainerItem, rhs: ViewContainerItem) -> Bool {
         lhs.id == rhs.id
@@ -196,21 +220,21 @@ protocol SuperPlugin: Actor {
     ///
     /// - Parameters:
     ///   - content: 右侧栏原始内容。
-    ///   - activeIcon: 当前被激活的 ActivityBar 图标名称。
+    ///   - context: 插件视图构建上下文，包含当前激活 ViewContainer 的能力信息。
     /// - Returns: 包裹后的右侧栏内容。
-    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView
 
     /// 添加工具栏前导视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addToolBarLeadingView(context: PluginContext) -> AnyView?
 
     /// 添加工具栏中间视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addToolBarCenterView(context: PluginContext) -> AnyView?
 
     /// 添加工具栏右侧视图
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
-    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文
+    @MainActor func addToolBarTrailingView(context: PluginContext) -> AnyView?
 
     /// 添加 Activity Bar 视图容器
     ///
@@ -226,10 +250,10 @@ protocol SuperPlugin: Actor {
     ///
     /// 典型用例：编辑器的 Tab Strip、面包屑导航等。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件应将其与目标 view container 的 `icon` 比较，
+    /// - Parameter context: 插件视图构建上下文。
+    ///   插件应将其 `activeIcon` 与目标 view container 的 `icon` 比较，
     ///   仅在匹配时提供 header 视图。
-    @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
+    @MainActor func addPanelHeaderView(context: PluginContext) -> AnyView?
 
     /// 提供底部面板标签页列表
     ///
@@ -237,32 +261,32 @@ protocol SuperPlugin: Actor {
     /// 每个 tab 包含 id、标题、图标和排序优先级。
     /// 内核负责 Tab 栏渲染和切换，插件只需提供 Tab 入口。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab]
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab]
 
     /// 提供指定底部面板 Tab 对应的内容视图
     ///
     /// 内核在用户选中某个 Tab 时调用此方法获取对应的内容视图。
     ///
     /// - Parameter tabId: 选中的 tab id，与 `addBottomPanelTabs()` 返回的 `BottomPanelTab.id` 对应。
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView?
 
     /// 提供 Rail 标签页列表
     ///
     /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。
     /// 每个 tab 包含 id、标题、图标和排序优先级。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab]
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addRailTabs(context: PluginContext) -> [RailTab]
 
     /// 提供指定 Rail tab 对应的内容视图
     ///
     /// 内核在用户选中某个 tab 时调用此方法获取对应的内容视图。
     ///
     /// - Parameter tabId: 选中的 tab id，与 `addRailTabs()` 返回的 `RailTab.id` 对应。
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView?
 
     /// 添加右侧栏 Section 视图
     ///
@@ -272,11 +296,12 @@ protocol SuperPlugin: Actor {
     /// 多个插件的 Sections 按插件 `order` 升序排列（order 小的在上，大的在下）；
     /// 同一插件内的多个 Sections 按数组顺序排列。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件可据此判断是否提供侧边栏 Section（例如仅在特定插件激活时显示）。
+    /// - Parameter context: 插件视图构建上下文。
+    ///   插件可从 context 中读取当前 ViewContainer 的能力声明
+    ///   （如 `supportsAIChat`、`showsProjectToolbar`），决定是否贡献右侧栏 Section。
     ///
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]
 
 
     /// 提供右侧栏底部工具栏左侧项列表
@@ -284,17 +309,16 @@ protocol SuperPlugin: Actor {
     /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏左侧。
     /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），按 `priority` 升序排列。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件可据此判断是否提供工具栏项（例如仅在 Editor 模式激活时注入）。
-    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
 
     /// 提供右侧栏底部工具栏右侧项列表
     ///
     /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏右侧。
     /// 每个工具栏项按 `priority` 升序排列。
     ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
 
     /// 提供指定右侧栏工具栏项对应的自定义按钮视图
     ///
@@ -302,8 +326,8 @@ protocol SuperPlugin: Actor {
     /// 如果返回 nil，内核会使用 `SidebarToolbarItem` 的 `systemImage` 渲染默认图标按钮。
     ///
     /// - Parameter itemId: 工具栏项 id，与 leading/trailing toolbar items 返回的 `SidebarToolbarItem.id` 对应。
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView?
+    /// - Parameter context: 插件视图构建上下文。
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?

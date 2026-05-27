@@ -87,7 +87,7 @@ struct LocalModelRow: View {
                             .lineLimit(2)
                     }
                     // 功能特性：工具调用、视觉等，便于用户理解模型能力
-                    if model.supportsTools || model.supportsVision {
+                    if model.supportsTools || model.supportsVision || model.supportsTTS {
                         HStack(spacing: 6) {
                             Text("功能特性：")
                                 .font(.appMicro)
@@ -97,6 +97,9 @@ struct LocalModelRow: View {
                             }
                             if model.supportsVision {
                                 capabilityTag("视觉", systemImage: "eye")
+                            }
+                            if model.supportsTTS {
+                                capabilityTag("TTS", systemImage: "waveform")
                             }
                         }
                     }

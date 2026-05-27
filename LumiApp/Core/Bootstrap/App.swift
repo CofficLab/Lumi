@@ -47,7 +47,7 @@ struct CoreApp: App {
             MainWindowSceneContent(route: route)
         }
         .restorationBehavior(.disabled)
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 1000, height: 800)
         .commands {

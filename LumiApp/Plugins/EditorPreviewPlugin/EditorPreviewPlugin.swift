@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import LumiPreviewKit
 import SwiftUI
@@ -30,8 +31,8 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     // MARK: - 底部面板
 
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-inline-preview",
             title: String(localized: "Inline Preview", table: "EditorPreview"),
@@ -40,9 +41,9 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
         )]
     }
 
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
         guard tabId == "editor-bottom-inline-preview",
-              activeIcon == EditorPlugin.iconName else {
+              context.activeIcon == EditorPlugin.iconName else {
             return nil
         }
         return AnyView(EditorPreviewDetailView())

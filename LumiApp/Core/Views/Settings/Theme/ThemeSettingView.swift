@@ -7,29 +7,14 @@ struct ThemeSettingView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部说明卡片（固定）
-            headerCard
-                .padding(24)
-                .background(Color.clear)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // 主题选择器卡片
+                themeSelectorCard
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // 主题选择器卡片
-                    themeSelectorCard
-
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
+                Spacer()
             }
-        }
-    }
-
-    // MARK: - Header Card
-
-    private var headerCard: some View {
-        AppCard {
-            AppSettingsSection(title: "主题风格", subtitle: "选择你喜欢的视觉体验") {}
+            .padding(24)
         }
     }
 

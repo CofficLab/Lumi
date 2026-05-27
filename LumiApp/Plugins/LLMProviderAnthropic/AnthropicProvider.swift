@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 import os
 
 // MARK: - Anthropic Provider
@@ -475,5 +476,13 @@ private struct AnthropicAnySendable: Decodable {
         } else {
             value = ""
         }
+    }
+}
+
+// MARK: - Availability
+
+extension AnthropicProvider {
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }

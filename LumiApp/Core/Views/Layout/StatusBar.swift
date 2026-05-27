@@ -16,10 +16,14 @@ struct StatusBar: View {
     }
 
     var body: some View {
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
         let context = PluginContext(
-            activeIcon: layoutVM.activeViewContainerIcon,
+            activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
-            activeProviderId: activeProviderId
+            activeProviderId: activeProviderId,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
         )
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)

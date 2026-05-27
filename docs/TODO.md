@@ -756,3 +756,67 @@ FileEditTool/
 - [ ] 👤 需要用户参与：窗口 A 取消任务不影响窗口 B
 - [ ] 👤 需要用户参与：关闭窗口后 VM 和 Controller 自动释放（Instruments 内存验证）
 - [ ] 👤 需要用户参与：重启 App 后窗口状态正确恢复（会话、项目、布局）
+
+---
+
+## 21. 插件注册策略重构
+
+> 目标：将当前 `enable` 属性身兼两职（扫描门槛 + 默认开关状态）的问题，拆分为语义清晰的三层策略，让每个插件精确控制「是否注册 → 是否可配置 → 默认开关」。
+
+### 当前问题
+
+`enable` 同时承担两个职责：
+1. **扫描门槛**：`enable=false` 的插件在 `autoDiscoverAndRegisterPlugins()` 中直接被跳过，不会进入 `plugins` 列表
+2. **默认开关**：`isConfigurable=true` 时，`enable` 作为用户未配置过时的默认启用状态
+
+这导致 `enable=false` + `isConfigurable=true` 自相矛盾——插件根本不会被加载，用户连设置页面都看不到它。
+
+### 新的三层策略
+
+| 属性 | 类型 | 默认值 | 含义 |
+|------|------|--------|------|
+| `shouldRegister` | `Bool` | `true` | **第一关**：是否注册插件。`false` = 完全不存在，扫描阶段直接跳过 |
+| `isConfigurable` | `Bool` | `false` | **第二关**：是否允许用户配置。`false` = 注册后直接启用，用户无权切换 |
+| `enabledByDefault` | `Bool` | `true` | **第三关**：仅当 `isConfigurable=true` 时有意义，控制用户未配置时的初始开关状态 |
+
+典型组合：
+
+| shouldRegister | isConfigurable | enabledByDefault | 效果 | 适用场景 |
+|---|---|---|---|---|
+| `false` | — | — | 完全不加载 | 开发中/废弃的插件 |
+| `true` | `false` | — | 始终启用，用户看不到开关 | 核心插件（Editor、Chat） |
+| `true` | `true` | `true` | 可配置，默认启用 | 大多数功能插件 |
+| `true` | `true` | `false` | 可配置，默认不启用 | 可选插件（AppStore、Docker） |
+
+### 任务
+
+#### Phase 1: 核心协议改造
+
+- [ ] 在 `SuperPlugin+Defaults.swift` 中添加 `shouldRegister` 和 `enabledByDefault` 默认实现，均返回 `true`
+- [ ] 在 `SuperPlugin.swift` 协议中声明 `shouldRegister` 和 `enabledByDefault` 属性
+- [ ] 保留 `enable` 属性，标记 `@available(*, deprecated, message: "Use enabledByDefault")`，默认实现转发到 `enabledByDefault`
+
+#### Phase 2: 加载逻辑升级
+
+- [ ] 更新 `AppPluginVM.autoDiscoverAndRegisterPlugins()`：用 `shouldRegister` 替代 `enable` 作为扫描门槛
+- [ ] 更新 `AppPluginVM.isPluginEnabled()`：用 `enabledByDefault` 替代 `enable` 作为用户未配置时的默认值
+- [ ] 更新设置页中读取默认值的逻辑（`PluginSettingsView`、`PluginCategorySettingsView`）
+
+#### Phase 3: 插件迁移
+
+- [ ] 搜索所有插件的 `enable` 属性，按语义迁移到 `shouldRegister` 或 `enabledByDefault`
+- [ ] `AppStoreConnectPlugin`：`shouldRegister=true, isConfigurable=true, enabledByDefault=false`（默认不启用，用户可在设置中开启）
+- [ ] 其他当前 `enable=false` 的插件（`HostsManagerPlugin`、`MenuBarManagerPlugin`、`NettoPlugin`、`DatabaseManagerPlugin`、`EditorStickySymbolBarPlugin`）：确认为"开发中"还是"可选功能"，分别设置 `shouldRegister=false` 或 `enabledByDefault=false`
+- [ ] 清理所有插件中对旧 `enable` 属性的引用
+
+#### Phase 4: 清理
+
+- [ ] 确认所有插件迁移完毕后，移除 `enable` 属性（或保留 deprecated 默认实现一个版本周期）
+- [ ] 更新插件开发文档
+
+### 成功标准
+
+- [ ] 插件属性语义清晰：`shouldRegister` 控制注册，`enabledByDefault` 控制默认开关
+- [ ] `AppStoreConnectPlugin` 默认不启用，但用户可在设置中看到并开启
+- [ ] 所有原有 `enable=false` 的插件行为不变
+- [ ] 不存在 `shouldRegister=false` + `isConfigurable=true` 的矛盾组合

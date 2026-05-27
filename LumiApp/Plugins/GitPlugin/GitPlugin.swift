@@ -58,7 +58,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     /// 左侧活动栏 Git 面板：提交历史 + commit 详情 + 工作区 diff
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true) {
             AnyView(GitCommitPanelView())
         }
     }

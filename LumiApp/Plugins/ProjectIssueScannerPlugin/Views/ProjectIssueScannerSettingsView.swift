@@ -12,7 +12,8 @@ struct ProjectIssueScannerSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: "Project Issue Scanner 设置",
-            subtitle: "选择用于深度分析的 LLM 模型。自动模式将根据可用性和成本自动选择最优模型。"
+            subtitle: "选择用于深度分析的 LLM 模型。自动模式将根据可用性和成本自动选择最优模型。",
+            showHeader: false
         ) {
             AppCard {
                 AppSettingsSection(

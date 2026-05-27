@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 // MARK: - DeepSeek Provider
 
@@ -97,5 +98,11 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
             return nil
         }
         return StreamChunk(kit: kitChunk)
+    }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }

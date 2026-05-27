@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import LumiUI
 
@@ -23,7 +24,15 @@ struct RailView: View {
     private let selectedTabStorageKey = "Split.Rail.SelectedTab"
 
     var body: some View {
-        let tabs = pluginProvider.getRailTabs(activeIcon: layoutVM.activeViewContainerIcon)
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let pluginContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+        let tabs = pluginProvider.getRailTabs(context: pluginContext)
 
         Group {
             if !tabs.isEmpty {
@@ -84,7 +93,15 @@ struct RailView: View {
 
     private func railContent(tabs: [RailTab]) -> some View {
         let currentId = selectedTabId ?? tabs.first?.id
-        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, activeIcon: layoutVM.activeViewContainerIcon) }
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let railContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }
 
         return Group {
             if let contentView {

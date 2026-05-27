@@ -8,7 +8,8 @@ struct InputSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: String(localized: "Input Source", table: "Input"),
-            subtitle: String(localized: "Automatically switch input sources per application.", table: "Input")
+            subtitle: String(localized: "Automatically switch input sources per application.", table: "Input"),
+            showHeader: false
         ) {
             AppCard {
                 AppSettingsSection(spacing: 12) {

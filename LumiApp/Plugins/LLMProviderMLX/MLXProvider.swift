@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import Combine
+import LumiCoreKit
 import os
 
 /// MLX 本地模型 Provider
@@ -453,6 +454,12 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
 
         return totalSize >= minValidSize
+    }
+
+    // MARK: - Availability
+
+    public func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }
 

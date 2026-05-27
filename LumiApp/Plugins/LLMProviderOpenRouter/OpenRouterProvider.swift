@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 // MARK: - OpenRouter Provider
 
@@ -121,5 +122,11 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
             return nil
         }
         return StreamChunk(kit: kitChunk)
+    }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }

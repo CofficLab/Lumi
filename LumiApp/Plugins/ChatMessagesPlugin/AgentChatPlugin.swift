@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -36,8 +37,8 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 右侧栏 Section：消息列表
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] {
+        guard context.supportsAIChat else { return [] }
         return [AnyView(ChatMessagesView())]
     }
 }

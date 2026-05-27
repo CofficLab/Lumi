@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import AppKit
 import SwiftUI
@@ -30,8 +31,8 @@ actor AgentOpenInFinderPlugin: SuperPlugin {
 
     /// 添加状态栏左侧视图
     @MainActor
-    func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(OpenInFinderStatusBarView())
     }
 }

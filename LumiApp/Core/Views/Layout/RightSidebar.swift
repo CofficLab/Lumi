@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -19,7 +20,16 @@ struct RightSidebarContainerView: View {
             return AnyView(Color.clear)
         }
 
-        return pluginProvider.getRightSidebarRootWrapper(activeIcon: layoutVM.activeViewContainerIcon) {
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let pluginContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+
+        return pluginProvider.getRightSidebarRootWrapper(context: pluginContext) {
             VStack(spacing: 0) {
                 // ── 上半部分：Section 视图区 ──
                 ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
@@ -32,9 +42,8 @@ struct RightSidebarContainerView: View {
                 }
 
                 // ── 下半部分：底部工具栏 ──
-                let activeIcon = layoutVM.activeViewContainerIcon
-                let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems(activeIcon: activeIcon)
-                let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems(activeIcon: activeIcon)
+                let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems(context: pluginContext)
+                let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems(context: pluginContext)
                 if !leadingToolbarItems.isEmpty || !trailingToolbarItems.isEmpty {
                     GlassDivider()
                     SidebarToolbarBar(
@@ -85,7 +94,15 @@ private struct SidebarToolbarBar: View {
     @ViewBuilder
     private func toolbarButton(for item: SidebarToolbarItem) -> some View {
         // 优先使用插件提供的自定义视图
-        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, activeIcon: layoutVM.activeViewContainerIcon) {
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let toolbarContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, context: toolbarContext) {
             customView
                 .help(item.title)
                 .accessibilityLabel(item.title)

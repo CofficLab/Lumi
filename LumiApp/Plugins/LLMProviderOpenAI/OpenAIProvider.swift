@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// OpenAI API 供应商实现
 ///
@@ -98,5 +99,11 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         }
         return StreamChunk(kit: kitChunk)
+    }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }

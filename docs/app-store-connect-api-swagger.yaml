@@ -1,0 +1,2210 @@
+openapi: "3.0.0"
+info:
+  title: "App Store Connect API - Lumi Plugin Integration"
+  description: |
+    App Store Connect API 规范文档，用于 Lumi IDE 插件开发。
+    基于 Apple 官方 API 文档整理，包含应用管理、版本控制、审核提交、截图管理等核心功能。
+    
+    ## 认证方式
+    - 使用 JWT (JSON Web Token) 进行身份验证
+    - 需要 App Store Connect API 密钥
+    
+    ## 基础 URL
+    `https://api.appstoreconnect.apple.com`
+    
+    ## 主要功能模块
+    1. **应用管理** - 管理应用基本信息
+    2. **版本管理** - 管理 App Store 版本
+    3. **本地化管理** - 管理多语言元数据
+    4. **截图管理** - 上传和管理应用截图
+    5. **预览管理** - 上传和管理应用预览视频
+    6. **审核提交** - 提交应用审核
+    7. **定价管理** - 管理应用价格
+    8. **可用性管理** - 管理应用在各地区的可用性
+    
+    ## 开发指南
+    ### 截图上传流程
+    1. 创建 App Screenshot Set
+    2. 创建 App Screenshot 资源
+    3. 获取上传 URL
+    4. 上传图片到 Apple 服务器
+    5. 确认上传完成
+    
+    ### 预览视频上传流程
+    1. 创建 App Preview Set
+    2. 创建 App Preview 资源
+    3. 获取上传 URL
+    4. 上传视频到 Apple 服务器
+    5. 确认上传完成
+    
+    ### 审核提交流程
+    1. 创建 Review Submission
+    2. 添加 Review Submission Items
+    3. 提交审核
+    4. 等待审核结果
+  version: "1.0.0"
+  contact:
+    name: "Lumi Plugin Development"
+  license:
+    name: "Apple Developer Documentation"
+
+servers:
+  - url: "https://api.appstoreconnect.apple.com"
+    description: "App Store Connect API 生产环境"
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==================== 应用管理 ====================
+  /v1/apps:
+    get:
+      tags:
+        - "Apps - 应用管理"
+      summary: "获取应用列表"
+      description: "查找和列出 App Store Connect 中的所有应用"
+      operationId: "listApps"
+      parameters:
+        - name: "filter[name]"
+          in: "query"
+          description: "按应用名称过滤"
+          schema:
+            type: "string"
+        - name: "filter[bundleId]"
+          in: "query"
+          description: "按 Bundle ID 过滤"
+          schema:
+            type: "string"
+        - name: "limit"
+          in: "query"
+          description: "返回结果数量限制（最大 200）"
+          schema:
+            type: "integer"
+            maximum: 200
+            default: 50
+        - name: "sort"
+          in: "query"
+          description: "排序字段"
+          schema:
+            type: "string"
+            enum: ["name", "-name", "bundleId", "-bundleId"]
+        - name: "fields[apps]"
+          in: "query"
+          description: "指定返回的字段"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "name", "bundleId", "sku", "primaryLocale", "isOrEverWasMadeForKids",
+                "contentRightsDeclaration", "streamlinedPurchasingEnabled"
+              ]
+        - name: "include"
+          in: "query"
+          description: "包含的关联资源"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "appInfos", "appStoreVersions", "preReleaseVersions", "builds",
+                "betaGroups", "betaAppLocalizations", "betaLicenseAgreement",
+                "betaAppReviewDetail", "appClips", "endUserLicenseAgreement",
+                "inAppPurchases", "subscriptionGroups", "appCustomProductPages",
+                "appStoreVersionExperimentsV2", "alternativeDistributionKey"
+              ]
+      responses:
+        "200":
+          description: "成功返回应用列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/apps/{id}:
+    get:
+      tags:
+        - "Apps - 应用管理"
+      summary: "获取单个应用详情"
+      description: "获取特定应用的详细信息"
+      operationId: "readAppInformation"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "应用的唯一标识符"
+          schema:
+            type: "string"
+        - name: "fields[apps]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+      responses:
+        "200":
+          description: "成功返回应用详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Apps - 应用管理"
+      summary: "更新应用信息"
+      description: "更新应用的 Bundle ID、主要语言等信息"
+      operationId: "modifyApp"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppUpdateRequest"
+      responses:
+        "200":
+          description: "应用更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppResponse"
+
+  # ==================== 应用版本管理 ====================
+  /v1/apps/{id}/appStoreVersions:
+    get:
+      tags:
+        - "App Store Versions - 版本管理"
+      summary: "获取应用的所有版本"
+      description: "获取特定应用的所有 App Store 版本列表"
+      operationId: "listAppStoreVersions"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "filter[appStoreState]"
+          in: "query"
+          description: "按版本状态过滤"
+          schema:
+            type: "string"
+            enum: [
+              "ACCEPTED", "DEVELOPER_REJECTED", "IN_REVIEW",
+              "INVALID_BINARY", "METADATA_REJECTED", "PREPARE_FOR_SUBMISSION",
+              "READY_FOR_DISTRIBUTION", "READY_FOR_REVIEW", "REJECTED",
+              "WAITING_FOR_REVIEW"
+            ]
+        - name: "filter[platform]"
+          in: "query"
+          schema:
+            type: "string"
+            enum: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+        - name: "filter[versionString]"
+          in: "query"
+          schema:
+            type: "string"
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回版本列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionsResponse"
+
+  /v1/appStoreVersions/{id}:
+    get:
+      tags:
+        - "App Store Versions - 版本管理"
+      summary: "获取版本详情"
+      description: "获取特定 App Store 版本的详细信息"
+      operationId: "readAppStoreVersion"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[appStoreVersions]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "platform", "versionString", "appStoreState", "appVersionState",
+                "copyright", "reviewType", "releaseType", "earliestReleaseDate",
+                "usesIdfa", "downloadable", "createdDate"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "app", "appStoreVersionLocalizations", "build", "appStoreVersionPhasedRelease",
+                "gameCenterAppVersion", "routingAppCoverage", "appStoreReviewDetail",
+                "appStoreVersionSubmissions", "appClipDefaultExperience",
+                "appStoreVersionExperiments", "appStoreVersionExperimentsV2",
+                "alternativeDistributionPackage", "appStoreVersionAttachments"
+              ]
+      responses:
+        "200":
+          description: "成功返回版本详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionResponse"
+
+    patch:
+      tags:
+        - "App Store Versions - 版本管理"
+      summary: "更新版本信息"
+      description: "更新 App Store 版本的元数据"
+      operationId: "modifyAppStoreVersion"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreVersionUpdateRequest"
+      responses:
+        "200":
+          description: "版本更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionResponse"
+
+  # ==================== 版本本地化 ====================
+  /v1/appStoreVersions/{id}/appStoreVersionLocalizations:
+    get:
+      tags:
+        - "App Store Version Localizations - 本地化管理"
+      summary: "获取版本本地化信息"
+      description: "获取特定版本的所有本地化信息"
+      operationId: "listAppStoreVersionLocalizations"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[appStoreVersionLocalizations]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "description", "keywords", "marketingUrl", "promotionalText",
+                "supportUrl", "whatsNew", "locale"
+              ]
+      responses:
+        "200":
+          description: "成功返回本地化信息"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionLocalizationsResponse"
+
+  /v1/appStoreVersionLocalizations:
+    post:
+      tags:
+        - "App Store Version Localizations - 本地化管理"
+      summary: "创建版本本地化"
+      description: "为应用版本创建新的本地化信息"
+      operationId: "createAppStoreVersionLocalization"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreVersionLocalizationCreateRequest"
+      responses:
+        "201":
+          description: "本地化创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionLocalizationResponse"
+
+  /v1/appStoreVersionLocalizations/{id}:
+    get:
+      tags:
+        - "App Store Version Localizations - 本地化管理"
+      summary: "获取单个本地化信息"
+      operationId: "readAppStoreVersionLocalization"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回本地化信息"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionLocalizationResponse"
+
+    patch:
+      tags:
+        - "App Store Version Localizations - 本地化管理"
+      summary: "更新本地化信息"
+      description: "更新应用版本的本地化元数据（描述、关键词、更新说明等）"
+      operationId: "modifyAppStoreVersionLocalization"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreVersionLocalizationUpdateRequest"
+      responses:
+        "200":
+          description: "本地化信息更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionLocalizationResponse"
+
+  # ==================== 截图集管理 ====================
+  /v1/appStoreVersionLocalizations/{id}/appScreenshotSets:
+    get:
+      tags:
+        - "App Screenshot Sets - 截图集管理"
+      summary: "获取本地化的截图集"
+      description: "获取特定本地化的所有截图集"
+      operationId: "listAppScreenshotSets"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "filter[appScreenshotSetType]"
+          in: "query"
+          description: "按截图集类型过滤"
+          schema:
+            type: "string"
+            enum: [
+              "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+              "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+              "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+              "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+            ]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回截图集列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotSetsResponse"
+
+  /v1/appScreenshotSets:
+    post:
+      tags:
+        - "App Screenshot Sets - 截图集管理"
+      summary: "创建截图集"
+      description: "为本地化创建新的截图集"
+      operationId: "createAppScreenshotSet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppScreenshotSetCreateRequest"
+      responses:
+        "201":
+          description: "截图集创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotSetResponse"
+
+  /v1/appScreenshotSets/{id}:
+    get:
+      tags:
+        - "App Screenshot Sets - 截图集管理"
+      summary: "获取截图集详情"
+      operationId: "readAppScreenshotSet"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回截图集详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotSetResponse"
+
+    delete:
+      tags:
+        - "App Screenshot Sets - 截图集管理"
+      summary: "删除截图集"
+      operationId: "deleteAppScreenshotSet"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "截图集删除成功"
+
+  # ==================== 截图管理 ====================
+  /v1/appScreenshotSets/{id}/appScreenshots:
+    get:
+      tags:
+        - "App Screenshots - 截图管理"
+      summary: "获取截图集中的所有截图"
+      description: "获取特定截图集中的所有截图"
+      operationId: "listAppScreenshots"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[appScreenshots]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "fileName", "fileSize", "sourceFileChecksum", "imageAsset",
+                "assetToken", "assetType", "uploadOperations", "uploaded"
+              ]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回截图列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotsResponse"
+
+  /v1/appScreenshots:
+    post:
+      tags:
+        - "App Screenshots - 截图管理"
+      summary: "创建截图资源"
+      description: "为截图集创建新的截图资源，获取上传 URL"
+      operationId: "createAppScreenshot"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppScreenshotCreateRequest"
+      responses:
+        "201":
+          description: "截图资源创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotResponse"
+
+  /v1/appScreenshots/{id}:
+    get:
+      tags:
+        - "App Screenshots - 截图管理"
+      summary: "获取截图详情"
+      operationId: "readAppScreenshot"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回截图详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotResponse"
+
+    patch:
+      tags:
+        - "App Screenshots - 截图管理"
+      summary: "确认截图上传完成"
+      description: "截图上传到 Apple 服务器后，调用此接口确认上传完成"
+      operationId: "modifyAppScreenshot"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppScreenshotUpdateRequest"
+      responses:
+        "200":
+          description: "截图更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppScreenshotResponse"
+
+    delete:
+      tags:
+        - "App Screenshots - 截图管理"
+      summary: "删除截图"
+      operationId: "deleteAppScreenshot"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "截图删除成功"
+
+  # ==================== 预览集管理 ====================
+  /v1/appStoreVersionLocalizations/{id}/appPreviewSets:
+    get:
+      tags:
+        - "App Preview Sets - 预览集管理"
+      summary: "获取本地化的预览集"
+      description: "获取特定本地化的所有预览集"
+      operationId: "listAppPreviewSets"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "filter[appPreviewSetType]"
+          in: "query"
+          schema:
+            type: "string"
+            enum: [
+              "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+              "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+              "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+              "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+            ]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回预览集列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewSetsResponse"
+
+  /v1/appPreviewSets:
+    post:
+      tags:
+        - "App Preview Sets - 预览集管理"
+      summary: "创建预览集"
+      description: "为本地化创建新的预览集"
+      operationId: "createAppPreviewSet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppPreviewSetCreateRequest"
+      responses:
+        "201":
+          description: "预览集创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewSetResponse"
+
+  /v1/appPreviewSets/{id}:
+    get:
+      tags:
+        - "App Preview Sets - 预览集管理"
+      summary: "获取预览集详情"
+      operationId: "readAppPreviewSet"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回预览集详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewSetResponse"
+
+    delete:
+      tags:
+        - "App Preview Sets - 预览集管理"
+      summary: "删除预览集"
+      operationId: "deleteAppPreviewSet"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "预览集删除成功"
+
+  # ==================== 预览管理 ====================
+  /v1/appPreviewSets/{id}/appPreviews:
+    get:
+      tags:
+        - "App Previews - 预览管理"
+      summary: "获取预览集中的所有预览"
+      description: "获取特定预览集中的所有预览视频"
+      operationId: "listAppPreviews"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[appPreviews]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "fileName", "fileSize", "sourceFileChecksum", "videoAsset",
+                "previewFrameTimeCode", "previewImage", "uploadOperations", "uploaded"
+              ]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回预览列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewsResponse"
+
+  /v1/appPreviews:
+    post:
+      tags:
+        - "App Previews - 预览管理"
+      summary: "创建预览资源"
+      description: "为预览集创建新的预览资源，获取上传 URL"
+      operationId: "createAppPreview"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppPreviewCreateRequest"
+      responses:
+        "201":
+          description: "预览资源创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewResponse"
+
+  /v1/appPreviews/{id}:
+    get:
+      tags:
+        - "App Previews - 预览管理"
+      summary: "获取预览详情"
+      operationId: "readAppPreview"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回预览详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewResponse"
+
+    patch:
+      tags:
+        - "App Previews - 预览管理"
+      summary: "确认预览上传完成"
+      description: "预览视频上传到 Apple 服务器后，调用此接口确认上传完成"
+      operationId: "modifyAppPreview"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppPreviewUpdateRequest"
+      responses:
+        "200":
+          description: "预览更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPreviewResponse"
+
+    delete:
+      tags:
+        - "App Previews - 预览管理"
+      summary: "删除预览"
+      operationId: "deleteAppPreview"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "预览删除成功"
+
+  # ==================== 审核提交 ====================
+  /v1/appStoreVersionSubmissions:
+    post:
+      tags:
+        - "Review Submissions - 审核提交"
+      summary: "提交版本审核"
+      description: "将 App Store 版本提交给 Apple 审核"
+      operationId: "createAppStoreVersionSubmission"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreVersionSubmissionCreateRequest"
+      responses:
+        "201":
+          description: "审核提交成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreVersionSubmissionResponse"
+
+  /v1/reviewSubmissions:
+    post:
+      tags:
+        - "Review Submissions - 审核提交"
+      summary: "创建审核提交"
+      description: "创建新的审核提交，可包含版本、实验、自定义产品页面等"
+      operationId: "createReviewSubmission"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewSubmissionCreateRequest"
+      responses:
+        "201":
+          description: "审核提交创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewSubmissionResponse"
+
+  /v1/reviewSubmissions/{id}:
+    patch:
+      tags:
+        - "Review Submissions - 审核提交"
+      summary: "更新审核提交状态"
+      description: "提交审核或取消审核提交"
+      operationId: "modifyReviewSubmission"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewSubmissionUpdateRequest"
+      responses:
+        "200":
+          description: "审核提交更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewSubmissionResponse"
+
+  # ==================== 应用信息 ====================
+  /v1/apps/{id}/appInfos:
+    get:
+      tags:
+        - "App Infos - 应用信息"
+      summary: "获取应用信息列表"
+      description: "获取应用当前在 App Store 上的信息或下一个版本的信息"
+      operationId: "listAppInfos"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回应用信息"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInfosResponse"
+
+  # ==================== App Store Review Details ====================
+  /v1/appStoreVersions/{id}/appStoreReviewDetail:
+    get:
+      tags:
+        - "App Store Review Details - 审核详情"
+      summary: "获取版本审核详情"
+      description: "获取为 App Review 提供的必要信息"
+      operationId: "readAppStoreReviewDetail"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回审核详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreReviewDetailResponse"
+
+  /v1/appStoreReviewDetails:
+    post:
+      tags:
+        - "App Store Review Details - 审核详情"
+      summary: "创建审核详情"
+      description: "为版本创建审核详情信息"
+      operationId: "createAppStoreReviewDetail"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreReviewDetailCreateRequest"
+      responses:
+        "201":
+          description: "审核详情创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreReviewDetailResponse"
+
+  /v1/appStoreReviewDetails/{id}:
+    patch:
+      tags:
+        - "App Store Review Details - 审核详情"
+      summary: "更新审核详情"
+      description: "更新版本的审核详情信息"
+      operationId: "modifyAppStoreReviewDetail"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreReviewDetailUpdateRequest"
+      responses:
+        "200":
+          description: "审核详情更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppStoreReviewDetailResponse"
+
+  # ==================== 应用可用性 ====================
+  /v1/apps/{id}/appAvailabilityV2:
+    get:
+      tags:
+        - "App Availability - 应用可用性"
+      summary: "获取应用可用性信息"
+      description: "获取应用在各地区的可用性设置"
+      operationId: "listAppAvailability"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回可用性信息"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppAvailabilityResponse"
+
+  # ==================== 应用价格计划 ====================
+  /v1/apps/{id}/appPriceSchedule:
+    get:
+      tags:
+        - "App Pricing - 应用定价"
+      summary: "获取应用价格计划"
+      description: "获取特定应用的价格计划详情"
+      operationId: "readAppPriceSchedule"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回价格计划"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppPriceScheduleResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: "http"
+      scheme: "bearer"
+      bearerFormat: "JWT"
+      description: |
+        使用 App Store Connect API 密钥生成的 JWT 令牌。
+        
+        ## 生成 JWT 令牌
+        1. 从 App Store Connect 下载 API 密钥 (.p8 文件)
+        2. 使用 ES256 算法签名 JWT
+        3. JWT Header: {"alg": "ES256", "kid": "API_KEY_ID"}
+        4. JWT Payload: {"iss": "ISSUER_ID", "iat": timestamp, "exp": timestamp, "aud": "appstoreconnect-v1"}
+        
+        ## 令牌有效期
+        - 最长有效期: 20 分钟
+        - 建议每 15 分钟刷新一次
+
+  schemas:
+    # ==================== 应用相关 ====================
+    App:
+      type: "object"
+      description: "应用资源对象"
+      properties:
+        id:
+          type: "string"
+          description: "应用唯一标识符"
+        type:
+          type: "string"
+          enum: ["apps"]
+        attributes:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "应用名称"
+            bundleId:
+              type: "string"
+              description: "应用 Bundle ID"
+            sku:
+              type: "string"
+              description: "应用 SKU"
+            primaryLocale:
+              type: "string"
+              description: "主要语言"
+            isOrEverWasMadeForKids:
+              type: "boolean"
+              description: "是否为儿童应用"
+            contentRightsDeclaration:
+              type: "string"
+              enum: ["DOES_NOT_USE_THIRD_PARTY_CONTENT", "USES_THIRD_PARTY_CONTENT"]
+            streamlinedPurchasingEnabled:
+              type: "boolean"
+        relationships:
+          type: "object"
+          description: "关联资源"
+
+    AppsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/App"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+        meta:
+          $ref: "#/components/schemas/PagingInformation"
+
+    AppResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/App"
+        links:
+          type: "object"
+
+    AppUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["apps"]
+            attributes:
+              type: "object"
+              properties:
+                primaryLocale:
+                  type: "string"
+                contentRightsDeclaration:
+                  type: "string"
+                subscriptionStatusUrl:
+                  type: "string"
+
+    # ==================== 版本相关 ====================
+    AppStoreVersion:
+      type: "object"
+      description: "App Store 版本资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appStoreVersions"]
+        attributes:
+          type: "object"
+          properties:
+            platform:
+              type: "string"
+              enum: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+            versionString:
+              type: "string"
+              description: "版本号（如 1.0.0）"
+            appStoreState:
+              type: "string"
+              description: "App Store 状态"
+            appVersionState:
+              type: "string"
+            copyright:
+              type: "string"
+              description: "版权信息"
+            releaseType:
+              type: "string"
+              enum: ["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]
+            earliestReleaseDate:
+              type: "string"
+              format: "date-time"
+            createdDate:
+              type: "string"
+              format: "date-time"
+
+    AppStoreVersionsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppStoreVersion"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    AppStoreVersionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppStoreVersion"
+
+    AppStoreVersionUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["appStoreVersions"]
+            attributes:
+              type: "object"
+              properties:
+                copyright:
+                  type: "string"
+                releaseType:
+                  type: "string"
+                  enum: ["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]
+                earliestReleaseDate:
+                  type: "string"
+                  format: "date-time"
+                usesIdfa:
+                  type: "boolean"
+                reviewType:
+                  type: "string"
+                  enum: ["APP_STORE", "NOTIFICATIONS"]
+
+    # ==================== 本地化相关 ====================
+    AppStoreVersionLocalization:
+      type: "object"
+      description: "版本本地化资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appStoreVersionLocalizations"]
+        attributes:
+          type: "object"
+          properties:
+            description:
+              type: "string"
+              description: "应用描述"
+            keywords:
+              type: "string"
+              description: "关键词"
+            marketingUrl:
+              type: "string"
+              description: "营销 URL"
+            promotionalText:
+              type: "string"
+              description: "推广文本"
+            supportUrl:
+              type: "string"
+              description: "支持 URL"
+            whatsNew:
+              type: "string"
+              description: "版本更新说明"
+            locale:
+              type: "string"
+              description: "语言代码"
+
+    AppStoreVersionLocalizationsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppStoreVersionLocalization"
+
+    AppStoreVersionLocalizationResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppStoreVersionLocalization"
+
+    AppStoreVersionLocalizationCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appStoreVersionLocalizations"]
+            attributes:
+              type: "object"
+              required: ["locale"]
+              properties:
+                description:
+                  type: "string"
+                  maxLength: 4000
+                keywords:
+                  type: "string"
+                  maxLength: 100
+                marketingUrl:
+                  type: "string"
+                promotionalText:
+                  type: "string"
+                  maxLength: 170
+                supportUrl:
+                  type: "string"
+                whatsNew:
+                  type: "string"
+                  maxLength: 4000
+                locale:
+                  type: "string"
+            relationships:
+              type: "object"
+              required: ["appStoreVersion"]
+              properties:
+                appStoreVersion:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appStoreVersions"]
+                        id:
+                          type: "string"
+
+    AppStoreVersionLocalizationUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["appStoreVersionLocalizations"]
+            attributes:
+              type: "object"
+              properties:
+                description:
+                  type: "string"
+                  maxLength: 4000
+                keywords:
+                  type: "string"
+                  maxLength: 100
+                marketingUrl:
+                  type: "string"
+                promotionalText:
+                  type: "string"
+                  maxLength: 170
+                supportUrl:
+                  type: "string"
+                whatsNew:
+                  type: "string"
+                  maxLength: 4000
+
+    # ==================== 截图集相关 ====================
+    AppScreenshotSet:
+      type: "object"
+      description: "截图集资源，包含同一类型的多张截图"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appScreenshotSets"]
+        attributes:
+          type: "object"
+          properties:
+            screenshotDisplayType:
+              type: "string"
+              description: "截图显示类型"
+              enum: [
+                "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+                "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+                "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+                "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+              ]
+
+    AppScreenshotSetsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppScreenshotSet"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    AppScreenshotSetResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppScreenshotSet"
+
+    AppScreenshotSetCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appScreenshotSets"]
+            attributes:
+              type: "object"
+              required: ["screenshotDisplayType"]
+              properties:
+                screenshotDisplayType:
+                  type: "string"
+                  enum: [
+                    "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+                    "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+                    "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+                    "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+                  ]
+            relationships:
+              type: "object"
+              required: ["appStoreVersionLocalization"]
+              properties:
+                appStoreVersionLocalization:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appStoreVersionLocalizations"]
+                        id:
+                          type: "string"
+
+    # ==================== 截图相关 ====================
+    AppScreenshot:
+      type: "object"
+      description: "截图资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appScreenshots"]
+        attributes:
+          type: "object"
+          properties:
+            fileName:
+              type: "string"
+              description: "文件名"
+            fileSize:
+              type: "integer"
+              description: "文件大小（字节）"
+            sourceFileChecksum:
+              type: "string"
+              description: "源文件校验和"
+            imageAsset:
+              $ref: "#/components/schemas/ImageAsset"
+            assetToken:
+              type: "string"
+            assetType:
+              type: "string"
+              description: "截图类型"
+            uploadOperations:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/UploadOperation"
+            uploaded:
+              type: "boolean"
+              description: "是否已上传"
+
+    AppScreenshotsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppScreenshot"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    AppScreenshotResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppScreenshot"
+
+    AppScreenshotCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appScreenshots"]
+            attributes:
+              type: "object"
+              required: ["fileName", "fileSize"]
+              properties:
+                fileName:
+                  type: "string"
+                  description: "文件名（包含扩展名，如 screenshot.png）"
+                fileSize:
+                  type: "integer"
+                  description: "文件大小（字节）"
+            relationships:
+              type: "object"
+              required: ["appScreenshotSet"]
+              properties:
+                appScreenshotSet:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appScreenshotSets"]
+                        id:
+                          type: "string"
+
+    AppScreenshotUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["appScreenshots"]
+            attributes:
+              type: "object"
+              properties:
+                sourceFileChecksum:
+                  type: "string"
+                  description: "上传文件的校验和"
+                uploaded:
+                  type: "boolean"
+                  description: "设置为 true 确认上传完成"
+
+    # ==================== 预览集相关 ====================
+    AppPreviewSet:
+      type: "object"
+      description: "预览集资源，包含同一类型的多个预览视频"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appPreviewSets"]
+        attributes:
+          type: "object"
+          properties:
+            previewDisplayType:
+              type: "string"
+              description: "预览显示类型"
+              enum: [
+                "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+                "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+                "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+                "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+              ]
+
+    AppPreviewSetsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppPreviewSet"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    AppPreviewSetResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppPreviewSet"
+
+    AppPreviewSetCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appPreviewSets"]
+            attributes:
+              type: "object"
+              required: ["previewDisplayType"]
+              properties:
+                previewDisplayType:
+                  type: "string"
+                  enum: [
+                    "APP_IPHONE_67", "APP_IPHONE_65", "APP_IPHONE_58",
+                    "APP_IPHONE_55", "APP_IPHONE_47", "APP_IPAD_PRO_129",
+                    "APP_IPAD_PRO_11", "APP_IPAD_105", "APP_DESKTOP",
+                    "APP_WATCH_SERIES_9", "APP_WATCH_ULTRA", "APP_APPLE_TV_4K"
+                  ]
+            relationships:
+              type: "object"
+              required: ["appStoreVersionLocalization"]
+              properties:
+                appStoreVersionLocalization:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appStoreVersionLocalizations"]
+                        id:
+                          type: "string"
+
+    # ==================== 预览相关 ====================
+    AppPreview:
+      type: "object"
+      description: "预览视频资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appPreviews"]
+        attributes:
+          type: "object"
+          properties:
+            fileName:
+              type: "string"
+              description: "文件名"
+            fileSize:
+              type: "integer"
+              description: "文件大小（字节）"
+            sourceFileChecksum:
+              type: "string"
+              description: "源文件校验和"
+            videoAsset:
+              $ref: "#/components/schemas/VideoAsset"
+            previewFrameTimeCode:
+              type: "string"
+              description: "预览帧时间码"
+            previewImage:
+              $ref: "#/components/schemas/ImageAsset"
+            uploadOperations:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/UploadOperation"
+            uploaded:
+              type: "boolean"
+              description: "是否已上传"
+
+    AppPreviewsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppPreview"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    AppPreviewResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppPreview"
+
+    AppPreviewCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appPreviews"]
+            attributes:
+              type: "object"
+              required: ["fileName", "fileSize"]
+              properties:
+                fileName:
+                  type: "string"
+                  description: "文件名（包含扩展名，如 preview.mp4）"
+                fileSize:
+                  type: "integer"
+                  description: "文件大小（字节）"
+            relationships:
+              type: "object"
+              required: ["appPreviewSet"]
+              properties:
+                appPreviewSet:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appPreviewSets"]
+                        id:
+                          type: "string"
+
+    AppPreviewUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["appPreviews"]
+            attributes:
+              type: "object"
+              properties:
+                sourceFileChecksum:
+                  type: "string"
+                  description: "上传文件的校验和"
+                uploaded:
+                  type: "boolean"
+                  description: "设置为 true 确认上传完成"
+                previewFrameTimeCode:
+                  type: "string"
+                  description: "预览帧时间码（格式：HH:MM:SS.sss）"
+
+    # ==================== 审核提交相关 ====================
+    AppStoreVersionSubmission:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appStoreVersionSubmissions"]
+
+    AppStoreVersionSubmissionCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appStoreVersionSubmissions"]
+            relationships:
+              type: "object"
+              required: ["appStoreVersion"]
+              properties:
+                appStoreVersion:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appStoreVersions"]
+                        id:
+                          type: "string"
+
+    AppStoreVersionSubmissionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppStoreVersionSubmission"
+
+    ReviewSubmission:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["reviewSubmissions"]
+        attributes:
+          type: "object"
+          properties:
+            state:
+              type: "string"
+              enum: ["OPEN", "WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES", "CANCELING", "COMPLETING", "COMPLETE"]
+            submittedDate:
+              type: "string"
+              format: "date-time"
+
+    ReviewSubmissionCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["reviewSubmissions"]
+            relationships:
+              type: "object"
+              required: ["app"]
+              properties:
+                app:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["apps"]
+                        id:
+                          type: "string"
+
+    ReviewSubmissionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ReviewSubmission"
+
+    ReviewSubmissionUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["reviewSubmissions"]
+            attributes:
+              type: "object"
+              properties:
+                submitted:
+                  type: "boolean"
+                  description: "设置为 true 提交审核，设置为 false 取消审核"
+
+    # ==================== 应用信息相关 ====================
+    AppInfo:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appInfos"]
+        attributes:
+          type: "object"
+          properties:
+            appStoreState:
+              type: "string"
+            state:
+              type: "string"
+            appStoreAgeRating:
+              type: "string"
+            primaryCategory:
+              type: "string"
+            secondaryCategory:
+              type: "string"
+
+    AppInfosResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AppInfo"
+
+    # ==================== 审核详情相关 ====================
+    AppStoreReviewDetail:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appStoreReviewDetails"]
+        attributes:
+          type: "object"
+          properties:
+            contactFirstName:
+              type: "string"
+            contactLastName:
+              type: "string"
+            contactPhone:
+              type: "string"
+            contactEmail:
+              type: "string"
+            demoAccountName:
+              type: "string"
+            demoAccountPassword:
+              type: "string"
+            demoAccountRequired:
+              type: "boolean"
+            notes:
+              type: "string"
+
+    AppStoreReviewDetailResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppStoreReviewDetail"
+
+    AppStoreReviewDetailCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["appStoreReviewDetails"]
+            attributes:
+              type: "object"
+              properties:
+                contactFirstName:
+                  type: "string"
+                contactLastName:
+                  type: "string"
+                contactPhone:
+                  type: "string"
+                contactEmail:
+                  type: "string"
+                demoAccountName:
+                  type: "string"
+                demoAccountPassword:
+                  type: "string"
+                demoAccountRequired:
+                  type: "boolean"
+                notes:
+                  type: "string"
+            relationships:
+              type: "object"
+              required: ["appStoreVersion"]
+              properties:
+                appStoreVersion:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["appStoreVersions"]
+                        id:
+                          type: "string"
+
+    AppStoreReviewDetailUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["appStoreReviewDetails"]
+            attributes:
+              type: "object"
+              properties:
+                contactFirstName:
+                  type: "string"
+                contactLastName:
+                  type: "string"
+                contactPhone:
+                  type: "string"
+                contactEmail:
+                  type: "string"
+                demoAccountName:
+                  type: "string"
+                demoAccountPassword:
+                  type: "string"
+                demoAccountRequired:
+                  type: "boolean"
+                notes:
+                  type: "string"
+
+    # ==================== 可用性相关 ====================
+    AppAvailability:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appAvailabilities"]
+        attributes:
+          type: "object"
+          properties:
+            availableInNewTerritories:
+              type: "boolean"
+            territoryAvailabilities:
+              type: "array"
+              items:
+                type: "object"
+                properties:
+                  territory:
+                    type: "string"
+                  available:
+                    type: "boolean"
+                  preOrderEnabled:
+                    type: "boolean"
+
+    AppAvailabilityResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppAvailability"
+
+    # ==================== 价格计划相关 ====================
+    AppPriceSchedule:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["appPriceSchedules"]
+
+    AppPriceScheduleResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/AppPriceSchedule"
+
+    # ==================== 通用类型 ====================
+    ImageAsset:
+      type: "object"
+      properties:
+        templateUrl:
+          type: "string"
+          description: "图片 URL 模板，{w} 和 {h} 替换为宽度和高度"
+        width:
+          type: "integer"
+        height:
+          type: "integer"
+
+    VideoAsset:
+      type: "object"
+      properties:
+        templateUrl:
+          type: "string"
+          description: "视频 URL 模板"
+        width:
+          type: "integer"
+        height:
+          type: "integer"
+        duration:
+          type: "number"
+          description: "视频时长（秒）"
+
+    UploadOperation:
+      type: "object"
+      description: "上传操作信息，用于指导文件上传"
+      properties:
+        method:
+          type: "string"
+          enum: ["POST", "PUT"]
+        url:
+          type: "string"
+          description: "上传 URL"
+        length:
+          type: "integer"
+          description: "上传数据长度"
+        offset:
+          type: "integer"
+          description: "上传偏移量"
+        requestHeaders:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              value:
+                type: "string"
+
+    PagingLinks:
+      type: "object"
+      properties:
+        self:
+          type: "string"
+        next:
+          type: "string"
+        first:
+          type: "string"
+
+    PagingInformation:
+      type: "object"
+      properties:
+        paging:
+          type: "object"
+          properties:
+            total:
+              type: "integer"
+            limit:
+              type: "integer"
+
+    # ==================== 错误响应 ====================
+    ErrorResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              id:
+                type: "string"
+              status:
+                type: "string"
+              code:
+                type: "string"
+              title:
+                type: "string"
+              detail:
+                type: "string"
+              source:
+                type: "object"
+                properties:
+                  pointer:
+                    type: "string"
+
+  responses:
+    BadRequest:
+      description: "请求参数错误"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: "认证失败"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Forbidden:
+      description: "权限不足"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: "资源不存在"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+tags:
+  - name: "Apps - 应用管理"
+    description: "管理 App Store Connect 中的应用"
+  - name: "App Store Versions - 版本管理"
+    description: "管理应用的 App Store 版本"
+  - name: "App Store Version Localizations - 本地化管理"
+    description: "管理版本的本地化信息（描述、关键词等）"
+  - name: "App Screenshot Sets - 截图集管理"
+    description: "管理截图集（按设备类型分组）"
+  - name: "App Screenshots - 截图管理"
+    description: "上传和管理应用截图"
+  - name: "App Preview Sets - 预览集管理"
+    description: "管理预览视频集"
+  - name: "App Previews - 预览管理"
+    description: "上传和管理应用预览视频"
+  - name: "Review Submissions - 审核提交"
+    description: "管理应用审核提交流程"
+  - name: "App Infos - 应用信息"
+    description: "获取应用的 App Store 信息"
+  - name: "App Store Review Details - 审核详情"
+    description: "管理 App Review 所需信息"
+  - name: "App Pricing - 应用定价"
+    description: "管理应用价格计划"
+  - name: "App Availability - 应用可用性"
+    description: "管理应用在各地区的可用性"

@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import TerminalCoreKit
@@ -32,9 +33,9 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Bottom Panel Tabs
 
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
         // Terminal Tab 仅在编辑器激活时显示
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-terminal",
             title: String(localized: "Terminal", table: "EditorBottomTerminal"),
@@ -43,8 +44,8 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
         )]
     }
 
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "editor-bottom-terminal", activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
+        guard tabId == "editor-bottom-terminal", context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorBottomTerminalContentView())
     }
 }

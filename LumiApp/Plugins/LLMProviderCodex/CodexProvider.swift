@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 import os
 
 /// Codex CLI 供应商实现
@@ -467,5 +468,13 @@ enum CodexError: LocalizedError {
         case .emptyResponse:
             return "Codex 返回了空响应"
         }
+    }
+}
+
+extension CodexProvider {
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }

@@ -33,6 +33,8 @@
 		0B14A1E22FD4000000A14A1E /* PluginThemeMountain in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1E12FD4000000A14A1E /* PluginThemeMountain */; };
 		0B14A1F22FD4000000A14A1F /* PluginThemeNebula in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1F12FD4000000A14A1F /* PluginThemeNebula */; };
 		0B14A2022FD4000000A14A20 /* PluginThemeOneDark in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2012FD4000000A14A20 /* PluginThemeOneDark */; };
+		0B14A2122FD4000000A14A21 /* PluginAppStoreConnect in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */; };
+		0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = 0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
 		0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F822F662D8500F15618 /* MLXFast */; };
@@ -367,12 +369,14 @@
 				0B13B1222FD3000000A13B12 /* PluginWebSearch in Frameworks */,
 				0B13B1322FD3000000A13B13 /* PluginShowImage in Frameworks */,
 				0B13B1422FD3000000A13B14 /* PluginMemory in Frameworks */,
+				0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */,
 				0B14A1022FD4000000A14A10 /* PluginAppLoadedPlugins in Frameworks */,
 				0B14A1122FD4000000A14A11 /* PluginAppUpdateStatusBar in Frameworks */,
 				0B14A1222FD4000000A14A12 /* PluginDockerManager in Frameworks */,
 				0B14A1322FD4000000A14A13 /* PluginBrewManager in Frameworks */,
 				0B14A1422FD4000000A14A14 /* PluginAppManager in Frameworks */,
 				0B14A1522FD4000000A14A15 /* PluginDeviceInfo in Frameworks */,
+				0B14A2122FD4000000A14A21 /* PluginAppStoreConnect in Frameworks */,
 				0B14A1622FD4000000A14A16 /* PluginDiskManager in Frameworks */,
 				0B14A1722FD4000000A14A17 /* PluginCaffeinate in Frameworks */,
 				0B14A1822FD4000000A14A18 /* PluginFileLog in Frameworks */,
@@ -995,12 +999,14 @@
 				0B13B1212FD3000000A13B12 /* PluginWebSearch */,
 				0B13B1312FD3000000A13B13 /* PluginShowImage */,
 				0B13B1412FD3000000A13B14 /* PluginMemory */,
+				0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */,
 				0B14A1012FD4000000A14A10 /* PluginAppLoadedPlugins */,
 				0B14A1112FD4000000A14A11 /* PluginAppUpdateStatusBar */,
 				0B14A1212FD4000000A14A12 /* PluginDockerManager */,
 				0B14A1312FD4000000A14A13 /* PluginBrewManager */,
 				0B14A1412FD4000000A14A14 /* PluginAppManager */,
 				0B14A1512FD4000000A14A15 /* PluginDeviceInfo */,
+				0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */,
 				0B14A1612FD4000000A14A16 /* PluginDiskManager */,
 				0B14A1712FD4000000A14A17 /* PluginCaffeinate */,
 				0B14A1812FD4000000A14A18 /* PluginFileLog */,
@@ -1134,12 +1140,14 @@
 				0B13B1202FD3000000A13B12 /* XCLocalSwiftPackageReference "Packages/PluginWebSearch" */,
 				0B13B1302FD3000000A13B13 /* XCLocalSwiftPackageReference "Packages/PluginShowImage" */,
 				0B13B1402FD3000000A13B14 /* XCLocalSwiftPackageReference "Packages/PluginMemory" */,
+				0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */,
 				0B14A1002FD4000000A14A10 /* XCLocalSwiftPackageReference "Packages/PluginAppLoadedPlugins" */,
 				0B14A1102FD4000000A14A11 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdateStatusBar" */,
 				0B14A1202FD4000000A14A12 /* XCLocalSwiftPackageReference "Packages/PluginDockerManager" */,
 				0B14A1302FD4000000A14A13 /* XCLocalSwiftPackageReference "Packages/PluginBrewManager" */,
 				0B14A1402FD4000000A14A14 /* XCLocalSwiftPackageReference "Packages/PluginAppManager" */,
 				0B14A1502FD4000000A14A15 /* XCLocalSwiftPackageReference "Packages/PluginDeviceInfo" */,
+				0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Packages/PluginAppStoreConnect" */,
 				0B14A1602FD4000000A14A16 /* XCLocalSwiftPackageReference "Packages/PluginDiskManager" */,
 				0B14A1702FD4000000A14A17 /* XCLocalSwiftPackageReference "Packages/PluginCaffeinate" */,
 				0B14A1802FD4000000A14A18 /* XCLocalSwiftPackageReference "Packages/PluginFileLog" */,
@@ -2138,6 +2146,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginThemeOneDark;
 		};
+		0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Packages/PluginAppStoreConnect" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAppStoreConnect;
+		};
+		0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAppIconDesigner;
+		};
 		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/RAGKit;
@@ -2519,6 +2535,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Packages/PluginThemeOneDark" */;
 			productName = PluginThemeOneDark;
+		};
+		0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Packages/PluginAppStoreConnect" */;
+			productName = PluginAppStoreConnect;
+		};
+		0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */;
+			productName = PluginAppIconDesigner;
 		};
 		0B1A4F7E2F662D8500F15618 /* MLX */ = {
 			isa = XCSwiftPackageProductDependency;

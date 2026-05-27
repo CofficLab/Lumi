@@ -22,7 +22,8 @@ struct RAGSettingsView: View, SuperLog {
     var body: some View {
         PluginSettingsScaffold(
             title: String(localized: "RAG 索引状态", table: "RAG"),
-            subtitle: String(localized: "Manage semantic indexes for tracked projects.", table: "RAG")
+            subtitle: String(localized: "Manage semantic indexes for tracked projects.", table: "RAG"),
+            showHeader: false
         ) {
             actionsCard
 

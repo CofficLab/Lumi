@@ -1,0 +1,42 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginAppIconDesigner",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "PluginAppIconDesigner",
+            targets: ["PluginAppIconDesigner"]
+        )
+    ],
+    dependencies: [
+        .package(path: "../AgentToolKit"),
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiUI"),
+        .package(path: "../SuperLogKit"),
+    ],
+    targets: [
+        .target(
+            name: "PluginAppIconDesigner",
+            dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
+            path: "Sources/PluginAppIconDesigner",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "PluginAppIconDesignerTests",
+            dependencies: ["PluginAppIconDesigner"],
+            path: "Tests/PluginAppIconDesignerTests"
+        )
+    ]
+)

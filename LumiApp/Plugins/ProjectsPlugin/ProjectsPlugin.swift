@@ -33,17 +33,12 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在工具栏中间位置显示当前项目选择器
-    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        let icons = [EditorPlugin.iconName, GitPlugin.iconName]
-        guard icons.contains(activeIcon ?? "") else { return nil }
-        
-        return AnyView(ProjectControlView())
-    }
+    ///
+    /// 当激活的视图容器声明了 `showsProjectToolbar` 时显示。
+    @MainActor func addToolBarCenterView(context: PluginContext) -> AnyView? {
+        guard context.showsProjectToolbar else { return nil }
 
-    /// 在状态栏左侧显示项目图标（ChatPanel 激活时）
-    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard ChatSurfaceActivation.isActive(context.activeIcon) else { return nil }
-        return AnyView(ProjectStatusBarView())
+        return AnyView(ProjectControlView())
     }
 
     /// 根视图包裹：用于恢复最近项目列表，并在未选项目时显示引导

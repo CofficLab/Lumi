@@ -8,10 +8,17 @@ public struct LLMModelCapabilities: Sendable, Equatable {
     public let supportsVision: Bool
     /// 是否支持工具调用
     public let supportsTools: Bool
+    /// 是否支持文本转语音（TTS）
+    public let supportsTTS: Bool
 
-    public init(supportsVision: Bool, supportsTools: Bool) {
+    public init(
+        supportsVision: Bool,
+        supportsTools: Bool,
+        supportsTTS: Bool = false
+    ) {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
+        self.supportsTTS = supportsTTS
     }
 }
 
@@ -25,12 +32,14 @@ public struct LLMModelSpec: Sendable, Equatable {
     public init(
         contextWindowSize: Int? = nil,
         supportsVision: Bool,
-        supportsTools: Bool
+        supportsTools: Bool,
+        supportsTTS: Bool = false
     ) {
         self.contextWindowSize = contextWindowSize
         self.capabilities = .init(
             supportsVision: supportsVision,
-            supportsTools: supportsTools
+            supportsTools: supportsTools,
+            supportsTTS: supportsTTS
         )
     }
 }
@@ -58,6 +67,29 @@ public struct LLMProviderResponse: Sendable, Equatable {
         self.toolCalls = toolCalls
         self.thinkingContent = thinkingContent
     }
+}
+
+/// 模型可用性检测策略
+///
+/// 供应商通过此枚举告诉检测器如何检测指定模型的可用性。
+public enum AvailabilityCheckStrategy: Sendable {
+    /// 使用标准对话 ping 检测（发送一条简短消息验证连通性）
+    ///
+    /// 适用于绝大多数对话类模型。
+    /// - Parameter maxTokens: 可选，限制 ping 请求的最大 token 数以节省开销
+    case chatPing(maxTokens: Int? = nil)
+
+    /// 跳过网络请求，仅验证 API Key 已配置即视为可用
+    ///
+    /// 适用于非对话类模型（如 TTS、Embedding 等），这些模型的 API
+    /// 不是 chat/completions 格式，无法通过发送聊天消息来检测。
+    case apiKeyOnly
+
+    /// 使用自定义检测逻辑
+    ///
+    /// 供应商可自行决定检测方式，如发送特定的 HTTP 请求。
+    /// - Parameter check: 自定义异步检测闭包，返回是否可用及可选的原因
+    case custom(check: @Sendable (String, String) async -> (isAvailable: Bool, reason: String?))
 }
 
 /// LLM 供应商协议
@@ -113,6 +145,21 @@ public protocol SuperLLMProvider: Sendable {
         tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any]
+
+    // MARK: - Availability
+
+    /// 返回指定模型的可用性检测策略
+    ///
+    /// 检测器会根据返回的策略决定如何检测该模型。
+    /// 默认实现根据 `supportsTTS` 能力标志自动选择策略：
+    /// - TTS 模型 → `.apiKeyOnly`（仅验证 API Key）
+    /// - 其他模型 → `.chatPing()`（发送聊天 ping）
+    ///
+    /// 供应商可覆盖此方法提供更精细的控制。
+    ///
+    /// - Parameter modelId: 模型 ID
+    /// - Returns: 该模型的检测策略
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy
 }
 
 // MARK: - Default Implementation

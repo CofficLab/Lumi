@@ -1,3 +1,4 @@
+import LumiCoreKit
 import AppKit
 import Combine
 import LumiUI
@@ -67,6 +68,7 @@ struct ContentView: View, SuperLog {
             themeVM: themeVM,
             content: {
                 VStack(spacing: 0) {
+                    AppTitleToolbar()
                     mainContent
                     StatusBar()
                 }
@@ -76,39 +78,11 @@ struct ContentView: View, SuperLog {
             onAppear: { onAppear(container: container) },
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
-        .toolbar {
-            let activeIcon = layoutVM.activeViewContainerIcon
-            let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
-            let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
-            let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
-
-            ToolbarItemGroup(placement: .navigation) {
-                ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
-                    view
-                }
-            }
-
-            if !centerViews.isEmpty {
-                ToolbarItemGroup(placement: .principal) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
-                            view
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
-
-            ToolbarItemGroup(placement: .primaryAction) {
-                ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
-                    view
-                }
-            }
-        }
         .environment(\.windowContainer, container)
         .background {
             WindowAccessor { window in
                 RootContainer.shared.windowManagerVM.associateWindow(window, with: container.id)
+                window.configureForLumiMainChrome()
                 window.title = container.title
             }
         }
@@ -128,9 +102,16 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let activeIcon = layoutVM.activeViewContainerIcon
-                let rawSidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+                let pluginContext = PluginContext(
+                    activeIcon: activeIcon,
+                    isEditorVisible: layoutVM.editorVisible,
+                    supportsAIChat: activeContainer?.supportsAIChat ?? false,
+                    showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+                )
+                let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
                 let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
-                let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)
+                let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
                 let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible
 
@@ -269,6 +250,7 @@ struct ContentViewBody<Content: View>: View {
             .preferredColorScheme(preferredColorScheme)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
+            .ignoresSafeArea()
             .background {
                 GeometryReader { proxy in
                     themeVM.activeChromeTheme.makeGlobalBackground(proxy: proxy)

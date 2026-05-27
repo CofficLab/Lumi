@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -27,8 +28,8 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Sidebar Toolbar
 
-    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        guard context.supportsAIChat else { return [] }
         return [
             SidebarToolbarItem(
                 id: "chat-mode-toggle",
@@ -39,7 +40,7 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
         ]
     }
 
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "chat-mode-toggle" else { return nil }
         return AnyView(ChatModeToolbarButton())
     }

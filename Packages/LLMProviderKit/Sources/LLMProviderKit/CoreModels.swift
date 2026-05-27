@@ -3,10 +3,16 @@ import Foundation
 public struct LLMModelCapabilities: Sendable, Equatable {
     public let supportsVision: Bool
     public let supportsTools: Bool
+    public let supportsTTS: Bool  // 是否支持文本转语音（TTS）
 
-    public init(supportsVision: Bool, supportsTools: Bool) {
+    public init(
+        supportsVision: Bool,
+        supportsTools: Bool,
+        supportsTTS: Bool = false
+    ) {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
+        self.supportsTTS = supportsTTS
     }
 }
 
@@ -17,12 +23,14 @@ public struct LLMModelSpec: Sendable, Equatable {
     public init(
         contextWindowSize: Int? = nil,
         supportsVision: Bool,
-        supportsTools: Bool
+        supportsTools: Bool,
+        supportsTTS: Bool = false
     ) {
         self.contextWindowSize = contextWindowSize
         self.capabilities = .init(
             supportsVision: supportsVision,
-            supportsTools: supportsTools
+            supportsTools: supportsTools,
+            supportsTTS: supportsTTS
         )
     }
 }

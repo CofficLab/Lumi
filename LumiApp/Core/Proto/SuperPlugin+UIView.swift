@@ -1,4 +1,5 @@
 import AppKit
+import LumiCoreKit
 import SwiftUI
 
 // MARK: - UI View Default Implementation
@@ -31,48 +32,48 @@ extension SuperPlugin {
     }
 
     /// 默认实现：不包裹右侧栏根视图
-    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView {
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
         content
     }
 
     /// 默认实现：不提供工具栏前导视图
-    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addToolBarLeadingView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供工具栏中间视图
-    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addToolBarCenterView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供工具栏右侧视图
-    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addToolBarTrailingView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供 Activity Bar 视图容器
     @MainActor func addViewContainer() -> ViewContainerItem? { nil }
 
     /// 默认实现：不提供 Panel Header 视图
-    @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addPanelHeaderView(context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供底部面板标签页
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] { [] }
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] { [] }
 
     /// 默认实现：不提供底部面板内容视图
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供 Rail 标签页
-    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] { [] }
+    @MainActor func addRailTabs(context: PluginContext) -> [RailTab] { [] }
 
     /// 默认实现：不提供 Rail 内容视图
-    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供右侧栏 Section 视图
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] { [] }
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] { [] }
 
     /// 默认实现：不提供右侧栏底部工具栏左侧项
-    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
+    @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] { [] }
 
     /// 默认实现：不提供右侧栏底部工具栏右侧项
-    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
+    @MainActor func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] { [] }
 
     /// 默认实现：不提供右侧栏工具栏项的自定义按钮视图
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? { nil }
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? { nil }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }

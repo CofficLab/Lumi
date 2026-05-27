@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// Xiaomi AI 供应商实现
 ///
@@ -17,7 +18,7 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let shortName = "XM"
     static let description = String(localized: "Xiaomi AI Models", table: "Xiaomi")
 
-    static let websiteURL: String? = "https://xiaomi.com"
+    static let websiteURL: String? = "https://platform.xiaomimimo.com/token-plan"
 
     // MARK: - 配置相关
 
@@ -29,10 +30,10 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         .init(id: "mimo-v2.5", description: "MiMo V2.5，小米通用语言模型，综合能力强", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "mimo-v2-pro", description: "MiMo V2 Pro，小米专业版模型，适合复杂任务", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "mimo-v2-omni", description: "MiMo V2 Omni，小米多模态模型，支持视觉理解", spec: .init(contextWindowSize: 256_000, supportsVision: true, supportsTools: true)),
-        .init(id: "mimo-v2.5-tts", description: "MiMo V2.5 TTS，小米语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voiceclone", description: "MiMo V2.5 TTS VoiceClone，支持声音克隆的语音合成", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voicedesign", description: "MiMo V2.5 TTS VoiceDesign，支持自定义音色设计", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2-tts", description: "MiMo V2 TTS，小米基础语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-tts", description: "MiMo V2.5 TTS，小米语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false, supportsTTS: true)),
+        .init(id: "mimo-v2.5-tts-voiceclone", description: "MiMo V2.5 TTS VoiceClone，支持声音克隆的语音合成", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false, supportsTTS: true)),
+        .init(id: "mimo-v2.5-tts-voicedesign", description: "MiMo V2.5 TTS VoiceDesign，支持自定义音色设计", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false, supportsTTS: true)),
+        .init(id: "mimo-v2-tts", description: "MiMo V2 TTS，小米基础语音合成模型", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false, supportsTTS: true)),
     ]
 
     // MARK: - Adapter
@@ -101,5 +102,16 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
         return StreamChunk(kit: kitChunk)
+    }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        // TTS 模型不支持对话 API，仅验证 API Key 即可
+        if Self.modelCapabilities[modelId]?.supportsTTS == true {
+            return .apiKeyOnly
+        }
+        // 对话模型使用标准 chat ping
+        return .chatPing()
     }
 }

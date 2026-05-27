@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// FlyMux API 供应商实现
 ///
@@ -98,5 +99,11 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
         return StreamChunk(kit: kitChunk)
+    }
+
+    // MARK: - Availability
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .chatPing()
     }
 }
