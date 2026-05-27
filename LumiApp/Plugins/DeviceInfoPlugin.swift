@@ -47,11 +47,10 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        PluginDeviceInfo.DeviceInfoPlugin.shared.addPanelView(activeIcon: activeIcon)
-    }
-
-    nonisolated func addPanelIcon() -> String? {
-        PluginDeviceInfo.DeviceInfoPlugin.shared.addPanelIcon()
+    func addViewContainer() -> ViewContainerItem? {
+        guard let item = PluginDeviceInfo.DeviceInfoPlugin.shared.addViewContainer() else {
+            return nil
+        }
+        return ViewContainerItem(id: item.id, title: item.title, icon: item.icon, makeView: item.makeView)
     }
 }

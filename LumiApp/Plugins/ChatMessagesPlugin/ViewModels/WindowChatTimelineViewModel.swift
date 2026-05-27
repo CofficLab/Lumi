@@ -41,7 +41,6 @@ final class WindowChatTimelineViewModel: ObservableObject {
     var hasMoreMessages: Bool { state.hasMoreMessages }
     var isLoadingMore: Bool { state.isLoadingMore }
     var totalMessageCount: Int { state.totalMessageCount }
-    var shouldAutoFollow: Bool { state.shouldAutoFollow }
 
     func handleOnAppear() {
         Task { await loadMessagesForSelection() }
@@ -144,24 +143,7 @@ guard message.shouldDisplayInChatList() else {
     }
 
     func handleUserDidSendMessage() {
-        state.shouldAutoFollow = true
-    }
-
-    func shouldPerformInitialScrollAfterMessageChange() -> Bool {
-        guard !messages.isEmpty else { return false }
-        if !state.hasPerformedInitialScroll {
-            state.hasPerformedInitialScroll = true
-            return true
-        }
-        return false
-    }
-
-    func enableAutoFollow() {
-        state.shouldAutoFollow = true
-    }
-
-    func disableAutoFollow() {
-        state.shouldAutoFollow = false
+        // User sent a message; ViewModel state update handled by callers.
     }
 
     private func setupBindings() {
@@ -196,8 +178,6 @@ guard message.shouldDisplayInChatList() else {
 
     private func didSelectConversation(_ conversationId: UUID?) async {
         state.selectedConversationId = conversationId
-        state.hasPerformedInitialScroll = false
-        state.shouldAutoFollow = true
         await loadMessagesForSelection()
     }
 

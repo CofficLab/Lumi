@@ -28,10 +28,9 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     /// 面板视图：编辑器
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(EditorPanelView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(EditorPanelView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }

@@ -27,11 +27,10 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        PluginDiskManager.DiskManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
-    }
-
-    nonisolated func addPanelIcon() -> String? {
-        PluginDiskManager.DiskManagerPlugin.shared.addPanelIcon()
+    func addViewContainer() -> ViewContainerItem? {
+        guard let item = PluginDiskManager.DiskManagerPlugin.shared.addViewContainer() else {
+            return nil
+        }
+        return ViewContainerItem(id: item.id, title: item.title, icon: item.icon, makeView: item.makeView)
     }
 }

@@ -24,12 +24,11 @@ actor ChatPanelPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(ChatPanelView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(ChatPanelView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 struct ChatPanelView: View {

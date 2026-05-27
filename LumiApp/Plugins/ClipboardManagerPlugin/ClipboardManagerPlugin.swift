@@ -48,12 +48,11 @@ actor ClipboardManagerPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(ClipboardHistoryView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(ClipboardHistoryView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

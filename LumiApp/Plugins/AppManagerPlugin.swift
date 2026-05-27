@@ -33,11 +33,10 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        PluginAppManager.AppManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
-    }
-
-    nonisolated func addPanelIcon() -> String? {
-        PluginAppManager.AppManagerPlugin.shared.addPanelIcon()
+    func addViewContainer() -> ViewContainerItem? {
+        guard let item = PluginAppManager.AppManagerPlugin.shared.addViewContainer() else {
+            return nil
+        }
+        return ViewContainerItem(id: item.id, title: item.title, icon: item.icon, makeView: item.makeView)
     }
 }

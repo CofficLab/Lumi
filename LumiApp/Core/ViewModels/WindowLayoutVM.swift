@@ -43,7 +43,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 窗口级状态：每个窗口可以激活不同的面板。
     /// 点击 ActivityBar 图标时更新，驱动面板内容区切换。
     /// 持久化由 LayoutPlugin 负责。
-    @Published var activePanelIcon: String?
+    @Published var activeViewContainerIcon: String?
 
     /// 当前选中的 Agent 模式侧边栏 Tab ID
     @Published var selectedAgentSidebarTabId: String = ""
@@ -139,9 +139,9 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     
     // MARK: - Plugin Restore
     
-    /// 由 LayoutPlugin 调用，从本地存储恢复活动栏图标
-    func restoreFromPlugin(activePanelIcon: String?) {
-        self.activePanelIcon = activePanelIcon
+    /// 由 LayoutPlugin 调用，从本地存储恢复视图容器图标
+    func restoreFromPlugin(activeViewContainerIcon: String?) {
+        self.activeViewContainerIcon = activeViewContainerIcon
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID

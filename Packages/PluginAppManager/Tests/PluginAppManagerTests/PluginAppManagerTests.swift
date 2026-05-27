@@ -18,10 +18,11 @@ struct PluginAppManagerTests {
     }
 
     @Test
-    func panelContributionMatchesActiveIcon() {
-        #expect(AppManagerPlugin.shared.addPanelIcon() == AppManagerPlugin.iconName)
-        #expect(AppManagerPlugin.shared.addPanelView(activeIcon: "other") == nil)
-        #expect(AppManagerPlugin.shared.addPanelView(activeIcon: AppManagerPlugin.iconName) != nil)
+    func viewContainerContributionIsAvailable() {
+        let item = AppManagerPlugin.shared.addViewContainer()
+        #expect(item?.id == AppManagerPlugin.id)
+        #expect(item?.title == AppManagerPlugin.displayName)
+        #expect(item?.icon == AppManagerPlugin.iconName)
     }
 
     @Test

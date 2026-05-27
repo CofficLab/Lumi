@@ -32,31 +32,6 @@ import os
 /// View 通过 `@EnvironmentObject var pluginVM: AppPluginVM` 访问。
 @MainActor
 final class AppPluginVM: ObservableObject, SuperLog {
-    /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
-    struct PanelIconItem: Identifiable, Equatable {
-        let id: String
-        let title: String
-        let icon: String
-
-        static func == (lhs: PanelIconItem, rhs: PanelIconItem) -> Bool {
-            lhs.id == rhs.id
-        }
-    }
-
-    /// 面板视图项（用于左侧活动栏注册的统一入口）
-    struct PanelItem: Identifiable, Equatable {
-        let id: String
-        let title: String
-        let icon: String
-        let view: AnyView
-        
-        static func == (lhs: PanelItem, rhs: PanelItem) -> Bool {
-            lhs.id == rhs.id
-        }
-    }
-
-
-
     /// 全局单例
     ///
     /// 整个应用共享同一个 AppPluginVM 实例。
@@ -92,7 +67,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 存储所有 Combine 订阅，用于在 deinit 时取消。
     /// 防止内存泄漏。
     private var cancellables = Set<AnyCancellable>()
-    private var panelIconItemsCache: [PanelIconItem]?
+    private var viewContainerItemsCache: [ViewContainerItem]?
     private var bottomPanelTabsCache: (key: String, tabs: [BottomPanelTab])?
     private var railTabsCache: (key: String, tabs: [RailTab])?
     private var sidebarLeadingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
@@ -133,7 +108,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     }
 
     private func clearPluginMetadataCaches() {
-        panelIconItemsCache = nil
+        viewContainerItemsCache = nil
         bottomPanelTabsCache = nil
         railTabsCache = nil
         sidebarLeadingToolbarItemsCache = nil
@@ -444,71 +419,51 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addToolBarTrailingView(activeIcon: activeIcon) }
     }
 
-    /// 获取所有面板图标项（用于左侧活动栏）
+    /// 获取所有视图容器项（用于左侧活动栏）
     ///
-    /// 仅收集各插件通过 `addPanelIcon()` 提供的图标信息，
-    /// 不触发 `addPanelView(activeIcon:)`。用于渲染活动栏图标按钮。
+    /// 仅收集各插件通过 `addViewContainer()` 提供的入口信息，
+    /// 不触发 `makeView()`。用于渲染活动栏图标按钮。
     ///
     /// 如果发现两个插件提供了相同的 icon，会触发 fatalError。
-    func getPanelIconItems() -> [PanelIconItem] {
-        if let panelIconItemsCache {
-            return panelIconItemsCache
+    func getViewContainerItems() -> [ViewContainerItem] {
+        if let viewContainerItemsCache {
+            return viewContainerItemsCache
         }
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [PanelIconItem] = []
+        var items: [ViewContainerItem] = []
         var seenIcons: [String: String] = [:]  // icon -> plugin id
 
         for plugin in enabledPlugins {
-            guard let icon = plugin.addPanelIcon() else { continue }
-            let pluginType = type(of: plugin)
+            guard let item = plugin.addViewContainer() else { continue }
             let pluginId = plugin.instanceLabel
+            let icon = item.icon
 
             if let existingPluginId = seenIcons[icon] {
                 fatalError(
-                    "[AppPluginVM] Duplicate panel icon \"\(icon)\" detected: " +
+                    "[AppPluginVM] Duplicate view container icon \"\(icon)\" detected: " +
                     "\(existingPluginId) and \(pluginId) both provide the same icon. " +
-                    "Each plugin must provide a unique icon via addPanelIcon()."
+                    "Each plugin must provide a unique icon via addViewContainer()."
                 )
             }
             seenIcons[icon] = pluginId
-            items.append(PanelIconItem(
-                id: pluginId,
-                title: pluginType.displayName,
-                icon: icon
-            ))
+            items.append(item)
         }
-        panelIconItemsCache = items
+        viewContainerItemsCache = items
         return items
     }
 
     /// 当前激活的活动栏图标是否在 `allowedIcons` 中。
-    func isActivePanelIcon(_ activeIcon: String?, in allowedIcons: [String]) -> Bool {
+    func isActiveViewContainerIcon(_ activeIcon: String?, in allowedIcons: [String]) -> Bool {
         guard let activeIcon else { return false }
         return allowedIcons.contains(activeIcon)
     }
 
-    /// 获取当前激活插件的 PanelItem
+    /// 获取当前激活的视图容器
     ///
-    /// 根据 activeIcon 查找匹配的插件，调用其 `addPanelView(activeIcon:)` 获取视图。
-    /// 只会有一个插件匹配并返回面板视图。
-    func getActivePanelItem(activeIcon: String?) -> PanelItem? {
+    /// 根据 activeIcon 查找匹配的插件容器。只会有一个插件匹配。
+    func getActiveViewContainer(activeIcon: String?) -> ViewContainerItem? {
         guard let activeIcon else { return nil }
-        
-        for plugin in plugins where isPluginEnabled(plugin) {
-            guard let pluginIcon = plugin.addPanelIcon() else { continue }
-            guard pluginIcon == activeIcon else { continue }
-            
-            guard let view = plugin.addPanelView(activeIcon: activeIcon) else { continue }
-            let pluginType = type(of: plugin)
-            let item = PanelItem(
-                id: plugin.instanceLabel,
-                title: pluginType.displayName,
-                icon: pluginIcon,
-                view: view
-            )
-            return item
-        }
-        return nil
+        return getViewContainerItems().first { $0.icon == activeIcon }
     }
 
     /// 获取当前激活插件的所有 Panel Header 视图
@@ -559,10 +514,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     func hasPanels() -> Bool {
         plugins
             .filter { isPluginEnabled($0) }
-            .contains { plugin -> Bool in
-                guard let icon = plugin.addPanelIcon() else { return false }
-                return plugin.addPanelView(activeIcon: icon) != nil
-            }
+            .contains { $0.addViewContainer() != nil }
     }
 
     /// 聚合所有插件提供的 Rail 标签页

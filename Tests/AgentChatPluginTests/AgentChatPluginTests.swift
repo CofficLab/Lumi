@@ -38,9 +38,10 @@ final class AgentChatPluginTests: XCTestCase {
     func testChatPanelPluginProvidesNavigationEntry() async {
         XCTAssertEqual(ChatPanelPlugin.id, "ChatPanel")
         XCTAssertEqual(ChatPanelPlugin.iconName, "bubble.left.and.bubble.right.fill")
-        XCTAssertEqual(ChatPanelPlugin.shared.addPanelIcon(), ChatPanelPlugin.iconName)
-        XCTAssertNotNil(await ChatPanelPlugin.shared.addPanelView(activeIcon: ChatPanelPlugin.iconName))
-        XCTAssertNil(await ChatPanelPlugin.shared.addPanelView(activeIcon: EditorPlugin.iconName))
+        let item = await ChatPanelPlugin.shared.addViewContainer()
+        XCTAssertEqual(item?.id, ChatPanelPlugin.id)
+        XCTAssertEqual(item?.title, ChatPanelPlugin.displayName)
+        XCTAssertEqual(item?.icon, ChatPanelPlugin.iconName)
     }
 
     func testLayoutMenuIsAvailableForChatPanel() async {

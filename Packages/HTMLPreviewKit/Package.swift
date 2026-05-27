@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+    // swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -16,6 +16,11 @@ let package = Package(
         .target(
             name: "HTMLPreviewKit",
             path: "Sources/HTMLPreviewKit"
+        ),
+        .testTarget(
+            name: "HTMLPreviewKitTests",
+            dependencies: ["HTMLPreviewKit"],
+            path: "Tests/HTMLPreviewKitTests"
         )
     ]
 )

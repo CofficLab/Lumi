@@ -26,12 +26,11 @@ public actor DockerManagerPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    public func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(DockerImagesView())
+    public func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(DockerImagesView())
+        }
     }
-
-    public nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 enum PluginDockerManagerLocalization {

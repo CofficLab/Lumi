@@ -12,8 +12,8 @@ struct PanelContentView: View {
     @EnvironmentObject var layoutVM: WindowLayoutVM
 
     var body: some View {
-        let activeIcon = layoutVM.activePanelIcon
-        let activeItem = pluginProvider.getActivePanelItem(activeIcon: activeIcon)
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeItem = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
         let headerViews = pluginProvider.getActivePanelHeaderViews(activeIcon: activeIcon)
         let hasBottomTabs = pluginProvider.hasBottomPanelTabs(activeIcon: activeIcon)
         let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
@@ -50,7 +50,7 @@ struct PanelContentView: View {
     }
 
     // ── 上半部分：Header + 主内容 ──
-    private func contentPanel(activeItem: AppPluginVM.PanelItem, headerViews: [AnyView]) -> some View {
+    private func contentPanel(activeItem: ViewContainerItem, headerViews: [AnyView]) -> some View {
         VStack(spacing: 0) {
             ForEach(headerViews.indices, id: \.self) { index in
                 headerViews[index]
@@ -58,7 +58,7 @@ struct PanelContentView: View {
                     .id("header-\(activeItem.id)-\(index)")
             }
 
-            activeItem.view
+            activeItem.makeView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 // Panel 内容切换时平滑过渡
                 .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))

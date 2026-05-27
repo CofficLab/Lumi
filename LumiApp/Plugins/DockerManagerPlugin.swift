@@ -31,11 +31,10 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        PluginDockerManager.DockerManagerPlugin.shared.addPanelView(activeIcon: activeIcon)
-    }
-
-    nonisolated func addPanelIcon() -> String? {
-        PluginDockerManager.DockerManagerPlugin.shared.addPanelIcon()
+    func addViewContainer() -> ViewContainerItem? {
+        guard let item = PluginDockerManager.DockerManagerPlugin.shared.addViewContainer() else {
+            return nil
+        }
+        return ViewContainerItem(id: item.id, title: item.title, icon: item.icon, makeView: item.makeView)
     }
 }

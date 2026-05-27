@@ -23,7 +23,7 @@ struct RailView: View {
     private let selectedTabStorageKey = "Split.Rail.SelectedTab"
 
     var body: some View {
-        let tabs = pluginProvider.getRailTabs(activeIcon: layoutVM.activePanelIcon)
+        let tabs = pluginProvider.getRailTabs(activeIcon: layoutVM.activeViewContainerIcon)
 
         Group {
             if !tabs.isEmpty {
@@ -84,7 +84,7 @@ struct RailView: View {
 
     private func railContent(tabs: [RailTab]) -> some View {
         let currentId = selectedTabId ?? tabs.first?.id
-        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, activeIcon: layoutVM.activePanelIcon) }
+        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, activeIcon: layoutVM.activeViewContainerIcon) }
 
         return Group {
             if let contentView {

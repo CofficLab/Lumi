@@ -20,9 +20,10 @@ struct PluginDeviceInfoTests {
 
     @Test
     func uiContributionsAreProvided() {
-        #expect(DeviceInfoPlugin.shared.addPanelIcon() == DeviceInfoPlugin.iconName)
-        #expect(DeviceInfoPlugin.shared.addPanelView(activeIcon: "other") == nil)
-        #expect(DeviceInfoPlugin.shared.addPanelView(activeIcon: DeviceInfoPlugin.iconName) != nil)
+        let item = DeviceInfoPlugin.shared.addViewContainer()
+        #expect(item?.id == DeviceInfoPlugin.id)
+        #expect(item?.title == DeviceInfoPlugin.displayName)
+        #expect(item?.icon == DeviceInfoPlugin.iconName)
         #expect(DeviceInfoPlugin.shared.addMenuBarContentView() != nil)
         #expect(DeviceInfoPlugin.shared.addMenuBarPopupViews().count == 2)
     }

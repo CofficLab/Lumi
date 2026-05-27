@@ -60,12 +60,11 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    public func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(DeviceInfoView())
+    public func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(DeviceInfoView())
+        }
     }
-
-    public nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 enum PluginDeviceInfoLocalization {

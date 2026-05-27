@@ -53,12 +53,11 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
-        return AnyView(NetworkDashboardView())
+    func addViewContainer() -> ViewContainerItem? {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+            AnyView(NetworkDashboardView())
+        }
     }
-
-    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 #Preview("App") {

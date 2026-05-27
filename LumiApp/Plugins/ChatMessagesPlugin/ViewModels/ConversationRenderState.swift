@@ -18,7 +18,4 @@ struct ConversationRenderState {
     var oldestLoadedTimestamp: Date?
     var loadedToolCallIDs = Set<String>()
     var loadingToolCallIDs = Set<String>()
-
-    var shouldAutoFollow: Bool = true
-    var hasPerformedInitialScroll: Bool = false
 }

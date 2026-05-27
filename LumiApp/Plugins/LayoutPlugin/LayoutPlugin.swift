@@ -15,7 +15,7 @@ import os
 ///
 /// ## 观察的数据
 ///
-/// - `WindowLayoutVM.activePanelIcon`：活动栏选中的图标
+/// - `WindowLayoutVM.activeViewContainerIcon`：活动栏选中的图标
 /// - `WindowLayoutVM.selectedAgentSidebarTabId`：Agent 模式侧边栏 Tab
 /// - `WindowLayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
 /// - `WindowLayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
@@ -129,14 +129,14 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
 
         let store = LayoutPluginLocalStore.shared
 
-        // 恢复活动栏图标
-        if let savedIcon = store.loadActivePanelIcon() {
+        // 恢复视图容器图标
+        if let savedIcon = store.loadActiveViewContainerIcon() {
             if LayoutPlugin.verbose {
                 if LayoutPlugin.verbose {
-                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复活动栏图标: \(savedIcon)")
+                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复视图容器图标: \(savedIcon)")
                 }
             }
-            layoutVM.restoreFromPlugin(activePanelIcon: savedIcon)
+            layoutVM.restoreFromPlugin(activeViewContainerIcon: savedIcon)
         }
 
         // 恢复侧边栏 Tab
@@ -217,17 +217,17 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
     private func startObserving() {
         guard cancellables.isEmpty else { return }
 
-        // 观察 activePanelIcon（不在视图层级中直接绑定，用 Combine）
-        layoutVM.$activePanelIcon
+        // 观察 activeViewContainerIcon（不在视图层级中直接绑定，用 Combine）
+        layoutVM.$activeViewContainerIcon
             .dropFirst()
             .sink { newValue in
                 guard hasRestored else { return }
                 if LayoutPlugin.verbose {
                     if LayoutPlugin.verbose {
-                                            LayoutPlugin.logger.info("\(LayoutPlugin.t)活动栏图标变更: \(newValue ?? "nil")")
+                                            LayoutPlugin.logger.info("\(LayoutPlugin.t)视图容器图标变更: \(newValue ?? "nil")")
                     }
                 }
-                LayoutPluginLocalStore.shared.saveActivePanelIcon(newValue)
+                LayoutPluginLocalStore.shared.saveActiveViewContainerIcon(newValue)
             }
             .store(in: &cancellables)
 

@@ -44,11 +44,8 @@ extension SuperPlugin {
     /// 默认实现：不提供工具栏右侧视图
     @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView? { nil }
 
-    /// 默认实现：不提供面板图标（使用插件默认 iconName）
-    nonisolated func addPanelIcon() -> String? { nil }
-
-    /// 默认实现：不提供面板视图
-    @MainActor func addPanelView(activeIcon: String?) -> AnyView? { nil }
+    /// 默认实现：不提供 Activity Bar 视图容器
+    @MainActor func addViewContainer() -> ViewContainerItem? { nil }
 
     /// 默认实现：不提供 Panel Header 视图
     @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView? { nil }

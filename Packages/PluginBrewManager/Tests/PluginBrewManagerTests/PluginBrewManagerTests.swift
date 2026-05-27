@@ -18,10 +18,11 @@ struct PluginBrewManagerTests {
     }
 
     @Test
-    func panelContributionMatchesActiveIcon() {
-        #expect(BrewManagerPlugin.shared.addPanelIcon() == BrewManagerPlugin.iconName)
-        #expect(BrewManagerPlugin.shared.addPanelView(activeIcon: "other") == nil)
-        #expect(BrewManagerPlugin.shared.addPanelView(activeIcon: BrewManagerPlugin.iconName) != nil)
+    func viewContainerContributionIsAvailable() {
+        let item = BrewManagerPlugin.shared.addViewContainer()
+        #expect(item?.id == BrewManagerPlugin.id)
+        #expect(item?.title == BrewManagerPlugin.displayName)
+        #expect(item?.icon == BrewManagerPlugin.iconName)
     }
 
     @Test

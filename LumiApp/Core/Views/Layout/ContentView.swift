@@ -77,7 +77,7 @@ struct ContentView: View, SuperLog {
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
         .toolbar {
-            let activeIcon = layoutVM.activePanelIcon
+            let activeIcon = layoutVM.activeViewContainerIcon
             let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
             let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
             let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
@@ -127,7 +127,7 @@ struct ContentView: View, SuperLog {
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
-                let activeIcon = layoutVM.activePanelIcon
+                let activeIcon = layoutVM.activeViewContainerIcon
                 let rawSidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
                 let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
                 let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)

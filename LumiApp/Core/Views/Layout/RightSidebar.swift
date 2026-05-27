@@ -19,7 +19,7 @@ struct RightSidebarContainerView: View {
             return AnyView(Color.clear)
         }
 
-        return pluginProvider.getRightSidebarRootWrapper(activeIcon: layoutVM.activePanelIcon) {
+        return pluginProvider.getRightSidebarRootWrapper(activeIcon: layoutVM.activeViewContainerIcon) {
             VStack(spacing: 0) {
                 // ── 上半部分：Section 视图区 ──
                 ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
@@ -32,7 +32,7 @@ struct RightSidebarContainerView: View {
                 }
 
                 // ── 下半部分：底部工具栏 ──
-                let activeIcon = layoutVM.activePanelIcon
+                let activeIcon = layoutVM.activeViewContainerIcon
                 let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems(activeIcon: activeIcon)
                 let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems(activeIcon: activeIcon)
                 if !leadingToolbarItems.isEmpty || !trailingToolbarItems.isEmpty {
@@ -85,7 +85,7 @@ private struct SidebarToolbarBar: View {
     @ViewBuilder
     private func toolbarButton(for item: SidebarToolbarItem) -> some View {
         // 优先使用插件提供的自定义视图
-        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, activeIcon: layoutVM.activePanelIcon) {
+        if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, activeIcon: layoutVM.activeViewContainerIcon) {
             customView
                 .help(item.title)
                 .accessibilityLabel(item.title)

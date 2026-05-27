@@ -17,14 +17,14 @@ struct PanelBottomView: View {
     @State private var activeTabId: String?
 
     var body: some View {
-        let tabs = pluginProvider.getBottomPanelTabs(activeIcon: layoutVM.activePanelIcon)
+        let tabs = pluginProvider.getBottomPanelTabs(activeIcon: layoutVM.activeViewContainerIcon)
 
         VStack(spacing: 0) {
             // Tab 栏（始终显示）
             tabBar(tabs: tabs)
 
             // 内容区（有选中 Tab 时显示）
-            if let activeTabId, let content = pluginProvider.getBottomPanelContentView(tabId: activeTabId, activeIcon: layoutVM.activePanelIcon) {
+            if let activeTabId, let content = pluginProvider.getBottomPanelContentView(tabId: activeTabId, activeIcon: layoutVM.activeViewContainerIcon) {
                 Divider()
                 content
                     .frame(maxWidth: .infinity)
