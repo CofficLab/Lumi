@@ -30,9 +30,10 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
 
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
     ///
-    /// 仅在当前活跃供应商为智谱时返回视图，避免非智谱场景下不必要的 UI 和网络请求。
+    /// 仅在当前活跃供应商为智谱且 ViewContainer 支持 AI 聊天时返回视图，
+    /// 避免非智谱场景或非 AI 聊天场景下不必要的 UI 和网络请求。
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeProviderId == "zhipu" else {
+        guard context.activeProviderId == ZhipuProvider.id, context.supportsAIChat else {
             return nil
         }
         return AnyView(ZhipuQuotaStatusBarView())
