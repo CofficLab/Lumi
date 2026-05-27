@@ -327,6 +327,23 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
     
+    /// 获取插件的准入资格
+    ///
+    /// 将三道关卡的判断逻辑封装为 `PluginEligibility`，
+    /// 外部通过 `eligibility.isEligible` / `eligibility.shouldRegister` 等属性即可完成判断。
+    ///
+    /// - Parameter plugin: 要检查的插件
+    /// - Returns: 封装了完整准入判断的资格对象
+    func eligibility(for plugin: any SuperPlugin) -> PluginEligibility {
+        let pluginType = type(of: plugin)
+        return PluginEligibility(
+            shouldRegister: pluginType.shouldRegister,
+            isConfigurable: pluginType.isConfigurable,
+            enabledByDefault: pluginType.enabledByDefault,
+            userEnabled: settingsStore.isPluginEnabled(plugin.instanceLabel, defaultEnabled: pluginType.enabledByDefault)
+        )
+    }
+
     /// 检查插件是否被用户启用
     ///
     /// 判断逻辑：
@@ -337,16 +354,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 如果插件被启用则返回 true
     func isPluginEnabled(_ plugin: any SuperPlugin) -> Bool {
-        let pluginType = type(of: plugin)
-        
-        // 如果不允许用户切换，则始终启用
-        if !pluginType.isConfigurable {
-            return true
-        }
-        
-        // 检查用户配置；未配置时使用插件的 enabledByDefault 静态属性作为默认值
-        let pluginId = plugin.instanceLabel
-        return settingsStore.isPluginEnabled(pluginId, defaultEnabled: pluginType.enabledByDefault)
+        eligibility(for: plugin).isEligible
     }
 
     /// 获取所有插件的根视图包裹
