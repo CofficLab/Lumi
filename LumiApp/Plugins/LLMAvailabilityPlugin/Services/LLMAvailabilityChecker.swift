@@ -147,6 +147,27 @@ final class LLMAvailabilityChecker {
     private func performCheck(providerId: String, modelId: String, apiKey: String) async -> ModelCheckResult {
         store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
 
+        // 检查该模型是否为 TTS 模型（不支持对话，无法通过 sendMessage 检测）
+        let isTTSModel = isTTSOnlyModel(providerId: providerId, modelId: modelId)
+        if isTTSModel {
+            // TTS 模型：仅验证 API Key 已配置即可，不发送聊天请求
+            if apiKey.isEmpty {
+                let isLocal = llmService.allProviders().first(where: { $0.id == providerId })?.isLocal ?? false
+                if !isLocal {
+                    let msg = "未配置 API Key"
+                    store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
+                    return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+                }
+            }
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ TTS 模型可用（跳过对话检测）: \(providerId) / \(modelId)")
+                }
+            }
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+        }
+
         let config = LLMConfig(
             apiKey: apiKey,
             model: modelId,
@@ -204,5 +225,20 @@ final class LLMAvailabilityChecker {
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
         }
+    }
+
+    // MARK: - TTS Detection
+
+    /// 判断模型是否为纯 TTS 模型（不支持对话，不应通过 sendMessage 检测）
+    ///
+    /// 通过 `LLMModelCapabilities.supportsTTS` 来判断：
+    /// 声明了 supportsTTS=true 的模型意味着它主要用于语音合成，
+    /// 不是对话模型，发送 chat 请求既不合理也浪费资源。
+    private func isTTSOnlyModel(providerId: String, modelId: String) -> Bool {
+        guard let providerType = llmService.providerType(forId: providerId),
+              let caps = providerType.modelCapabilities[modelId] else {
+            return false
+        }
+        return caps.supportsTTS
     }
 }
