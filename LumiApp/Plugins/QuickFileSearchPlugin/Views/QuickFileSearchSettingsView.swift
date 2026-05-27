@@ -10,7 +10,8 @@ struct QuickFileSearchSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: String(localized: "Quick File Search", table: "QuickFileSearch"),
-            subtitle: String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch")
+            subtitle: String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch"),
+            showHeader: false
         ) {
             statusCard
             instructionsCard

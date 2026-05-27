@@ -9,7 +9,8 @@ struct MenuBarSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: String(localized: "Menu Bar Manager", table: "MenuBarManager"),
-            subtitle: String(localized: "Manage your menu bar items", table: "MenuBarManager")
+            subtitle: String(localized: "Manage your menu bar items", table: "MenuBarManager"),
+            showHeader: false
         ) {
             if !service.isPermissionGranted {
                 AppCard {

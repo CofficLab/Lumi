@@ -15,7 +15,8 @@ struct ClipboardSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: String(localized: "Clipboard Manager", table: "ClipboardManager"),
-            subtitle: String(localized: "Monitor clipboard history locally on this device.", table: "ClipboardManager")
+            subtitle: String(localized: "Monitor clipboard history locally on this device.", table: "ClipboardManager"),
+            showHeader: false
         ) {
             generalSection
             dataSection
