@@ -90,23 +90,12 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         guard context.coordinator.lastLoadKey != loadKey else { return }
         context.coordinator.lastLoadKey = loadKey
 
-        if let fileURL, isHTMLInSyncWithFile(at: fileURL) {
-            let readAccessURL = fileURL.deletingLastPathComponent()
+        switch HTMLPreviewLoadPlanner().loadRequest(html: html, fileURL: fileURL) {
+        case .file(let fileURL, let readAccessURL):
             webView.loadFileURL(fileURL, allowingReadAccessTo: readAccessURL)
-        } else if let fileURL {
-            let baseURL = fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        case .html(let html, let baseURL):
             webView.loadHTMLString(html, baseURL: baseURL)
-        } else {
-            webView.loadHTMLString(html, baseURL: nil)
         }
-    }
-
-    private func isHTMLInSyncWithFile(at url: URL) -> Bool {
-        guard let data = try? Data(contentsOf: url),
-              let fileText = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16) else {
-            return false
-        }
-        return fileText == html
     }
 
     fileprivate final class Coordinator {
@@ -116,15 +105,5 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     fileprivate struct LoadKey: Equatable {
         let html: String
         let fileURL: URL?
-    }
-}
-
-private extension URL {
-    var absoluteDirectoryURL: URL {
-        var absoluteString = absoluteString
-        if !absoluteString.hasSuffix("/") {
-            absoluteString += "/"
-        }
-        return URL(string: absoluteString) ?? self
     }
 }

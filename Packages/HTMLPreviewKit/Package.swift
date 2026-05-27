@@ -16,6 +16,11 @@ let package = Package(
         .target(
             name: "HTMLPreviewKit",
             path: "Sources/HTMLPreviewKit"
+        ),
+        .testTarget(
+            name: "HTMLPreviewKitTests",
+            dependencies: ["HTMLPreviewKit"],
+            path: "Tests/HTMLPreviewKitTests"
         )
     ]
 )
