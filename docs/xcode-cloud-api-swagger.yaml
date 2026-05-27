@@ -1,0 +1,1963 @@
+openapi: "3.0.0"
+info:
+  title: "App Store Connect API - Xcode Cloud"
+  description: |
+    App Store Connect API 中 Xcode Cloud 相关的 API 端点。
+    用于自动化 Xcode Cloud 的使用和集成到现有的后端系统。
+    
+    ## 主要功能
+    1. **读取 Xcode Cloud 数据** - 产品、工作流、构建信息
+    2. **管理工作流** - 创建、更新、删除工作流
+    3. **启动新构建** - 通过 API 自动启动构建
+    
+    ## 使用场景
+    - 为决策者提供自定义仪表板或报告中的工作流和构建数据
+    - 与其他 CI/CD 系统集成，验证后端服务和跨平台应用的更改
+    - 为多个应用创建和管理大量工作流
+    
+    ## 工作流程
+    ### 读取 Xcode Cloud 数据
+    1. 使用 `List All Xcode Cloud Products` 获取产品列表
+    2. 选择目标产品，使用其 `id` 调用 `List All Workflows for an Xcode Cloud Product`
+    3. 使用工作流 `id` 调用 `Read Xcode Cloud Workflow Information` 获取详细信息
+    
+    ### 启动新构建
+    1. 读取必要的数据（工作流信息等）
+    2. 创建 `Ci Build Run Create Request` 并调用 `Start a Build`
+    
+    ### 管理工作流
+    1. 读取 Xcode Cloud 数据（Products、Repositories、Xcode Versions）
+    2. 创建 `Ci Workflow Create Request` 并调用相应操作
+  version: "1.0.0"
+  contact:
+    name: "Lumi Plugin Development"
+  license:
+    name: "Apple Developer Documentation"
+
+servers:
+  - url: "https://api.appstoreconnect.apple.com"
+    description: "App Store Connect API 生产环境"
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==================== Xcode Cloud 产品 ====================
+  /v1/ciProducts:
+    get:
+      tags:
+        - "Xcode Cloud Products - 产品管理"
+      summary: "获取所有 Xcode Cloud 产品"
+      description: "读取 Xcode Cloud 检测到的所有产品列表"
+      operationId: "listCiProducts"
+      parameters:
+        - name: "fields[ciProducts]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "name", "createdDate", "productType", "app", "bundleId",
+                "primaryApp", "workflows"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["app", "workflows", "primaryApp"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回产品列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiProductsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/ciProducts/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Products - 产品管理"
+      summary: "获取单个产品详情"
+      description: "读取特定 Xcode Cloud 产品的详细信息"
+      operationId: "readCiProduct"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "产品唯一标识符"
+          schema:
+            type: "string"
+        - name: "fields[ciProducts]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+      responses:
+        "200":
+          description: "成功返回产品详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiProductResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Xcode Cloud Products - 产品管理"
+      summary: "删除产品"
+      description: "删除产品及其所有关联信息"
+      operationId: "deleteCiProduct"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "产品删除成功"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/ciProducts/{id}/workflows:
+    get:
+      tags:
+        - "Xcode Cloud Products - 产品管理"
+      summary: "获取产品的工作流列表"
+      description: "读取特定 Xcode Cloud 产品的所有工作流"
+      operationId: "listWorkflowsForCiProduct"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciWorkflows]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "name", "description", "isEnabled", "clean", "containerFilePath",
+                "platformType", "pullRequestStartCondition", "scheduleStartCondition",
+                "manualBranchStartCondition", "manualTagStartCondition",
+                "actions", "product", "xcodeVersion", "macOsVersion",
+                "repository", "createdDate"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["product", "xcodeVersion", "macOsVersion", "repository", "actions"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回工作流列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiWorkflowsResponse"
+
+  # ==================== 工作流管理 ====================
+  /v1/ciWorkflows:
+    get:
+      tags:
+        - "Xcode Cloud Workflows - 工作流管理"
+      summary: "获取所有工作流"
+      description: "读取所有 Xcode Cloud 工作流列表"
+      operationId: "listCiWorkflows"
+      parameters:
+        - name: "filter[name]"
+          in: "query"
+          description: "按工作流名称过滤"
+          schema:
+            type: "string"
+        - name: "filter[isEnabled]"
+          in: "query"
+          description: "按启用状态过滤"
+          schema:
+            type: "boolean"
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回工作流列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiWorkflowsResponse"
+
+    post:
+      tags:
+        - "Xcode Cloud Workflows - 工作流管理"
+      summary: "创建新工作流"
+      description: "创建新的 Xcode Cloud 工作流"
+      operationId: "createCiWorkflow"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CiWorkflowCreateRequest"
+      responses:
+        "201":
+          description: "工作流创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiWorkflowResponse"
+
+  /v1/ciWorkflows/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Workflows - 工作流管理"
+      summary: "获取工作流详情"
+      description: "读取特定 Xcode Cloud 工作流的详细信息"
+      operationId: "readCiWorkflow"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciWorkflows]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+      responses:
+        "200":
+          description: "成功返回工作流详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiWorkflowResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Xcode Cloud Workflows - 工作流管理"
+      summary: "更新工作流"
+      description: "更新现有 Xcode Cloud 工作流的配置"
+      operationId: "modifyCiWorkflow"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CiWorkflowUpdateRequest"
+      responses:
+        "200":
+          description: "工作流更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiWorkflowResponse"
+
+    delete:
+      tags:
+        - "Xcode Cloud Workflows - 工作流管理"
+      summary: "删除工作流"
+      description: "删除现有的 Xcode Cloud 工作流"
+      operationId: "deleteCiWorkflow"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "204":
+          description: "工作流删除成功"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== 构建运行 ====================
+  /v1/ciBuildRuns:
+    get:
+      tags:
+        - "Xcode Cloud Builds - 构建管理"
+      summary: "获取所有构建运行"
+      description: "读取所有 Xcode Cloud 构建运行列表"
+      operationId: "listCiBuildRuns"
+      parameters:
+        - name: "filter[number]"
+          in: "query"
+          description: "按构建号过滤"
+          schema:
+            type: "integer"
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回构建运行列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiBuildRunsResponse"
+
+    post:
+      tags:
+        - "Xcode Cloud Builds - 构建管理"
+      summary: "启动新构建"
+      description: "通过 API 启动新的 Xcode Cloud 构建"
+      operationId: "createCiBuildRun"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CiBuildRunCreateRequest"
+      responses:
+        "201":
+          description: "构建启动成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiBuildRunResponse"
+
+  /v1/ciBuildRuns/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Builds - 构建管理"
+      summary: "获取构建运行详情"
+      description: "读取特定构建运行的详细信息"
+      operationId: "readCiBuildRun"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciBuildRuns]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "number", "createdDate", "startedDate", "finishedDate",
+                "sourceCommit", "destinationCommit", "isPullRequestBuild",
+                "issueCounts", "executionProgress", "completionStatus",
+                "workflow", "builds", "actions"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["workflow", "builds", "actions", "sourceCommit", "destinationCommit"]
+      responses:
+        "200":
+          description: "成功返回构建运行详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiBuildRunResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== 构建操作 ====================
+  /v1/ciBuildActions:
+    get:
+      tags:
+        - "Xcode Cloud Build Actions - 构建操作"
+      summary: "获取所有构建操作"
+      description: "读取所有构建操作信息"
+      operationId: "listCiBuildActions"
+      parameters:
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回构建操作列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiBuildActionsResponse"
+
+  /v1/ciBuildActions/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Build Actions - 构建操作"
+      summary: "获取构建操作详情"
+      description: "读取特定构建操作的详细信息"
+      operationId: "readCiBuildAction"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciBuildActions]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "name", "actionType", "startedDate", "finishedDate",
+                "issueCounts", "executionProgress", "completionStatus",
+                "buildRun", "artifacts", "issues", "testResults"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["buildRun", "artifacts", "issues", "testResults"]
+      responses:
+        "200":
+          description: "成功返回构建操作详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiBuildActionResponse"
+
+  # ==================== 工件 ====================
+  /v1/ciArtifacts:
+    get:
+      tags:
+        - "Xcode Cloud Artifacts - 工件管理"
+      summary: "获取所有工件"
+      description: "读取 Xcode Cloud 创建的所有工件信息"
+      operationId: "listCiArtifacts"
+      parameters:
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回工件列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiArtifactsResponse"
+
+  /v1/ciArtifacts/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Artifacts - 工件管理"
+      summary: "获取工件详情"
+      description: "读取特定工件的详细信息"
+      operationId: "readCiArtifact"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciArtifacts]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "fileName", "fileSize", "fileType", "downloadUrl",
+                "archiving", "sourceDeviceDestination", "buildRun"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["buildRun"]
+      responses:
+        "200":
+          description: "成功返回工件详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiArtifactResponse"
+
+  # ==================== 问题 ====================
+  /v1/ciIssues:
+    get:
+      tags:
+        - "Xcode Cloud Issues - 问题管理"
+      summary: "获取所有问题"
+      description: "读取 Xcode Cloud 执行构建时发生的所有问题"
+      operationId: "listCiIssues"
+      parameters:
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回问题列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiIssuesResponse"
+
+  /v1/ciIssues/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Issues - 问题管理"
+      summary: "获取问题详情"
+      description: "读取特定问题的详细信息"
+      operationId: "readCiIssue"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciIssues]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "issueType", "message", "fileSource", "lineNumber",
+                "buildRun"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["buildRun"]
+      responses:
+        "200":
+          description: "成功返回问题详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiIssueResponse"
+
+  # ==================== 测试结果 ====================
+  /v1/ciTestResults:
+    get:
+      tags:
+        - "Xcode Cloud Test Results - 测试结果"
+      summary: "获取所有测试结果"
+      description: "读取 Xcode Cloud 执行的测试操作的所有测试结果"
+      operationId: "listCiTestResults"
+      parameters:
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回测试结果列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiTestResultsResponse"
+
+  /v1/ciTestResults/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Test Results - 测试结果"
+      summary: "获取测试结果详情"
+      description: "读取特定测试结果的详细信息"
+      operationId: "readCiTestResult"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[ciTestResults]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "className", "name", "status", "fileSource",
+                "message", "duration", "buildRun"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["buildRun"]
+      responses:
+        "200":
+          description: "成功返回测试结果详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiTestResultResponse"
+
+  # ==================== 源代码管理提供者 ====================
+  /v1/scmProviders:
+    get:
+      tags:
+        - "SCM Providers - 源代码管理提供者"
+      summary: "获取所有 SCM 提供者"
+      description: "读取连接到 Xcode Cloud 的所有源代码管理提供者"
+      operationId: "listScmProviders"
+      parameters:
+        - name: "fields[scmProviders]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "scmProviderType", "url", "repositories"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["repositories"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回 SCM 提供者列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmProvidersResponse"
+
+  /v1/scmProviders/{id}:
+    get:
+      tags:
+        - "SCM Providers - 源代码管理提供者"
+      summary: "获取 SCM 提供者详情"
+      description: "读取特定 SCM 提供者的详细信息"
+      operationId: "readScmProvider"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回 SCM 提供者详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmProviderResponse"
+
+  # ==================== 仓库 ====================
+  /v1/scmRepositories:
+    get:
+      tags:
+        - "SCM Repositories - 仓库管理"
+      summary: "获取所有仓库"
+      description: "读取 Xcode Cloud 可以访问的所有仓库"
+      operationId: "listScmRepositories"
+      parameters:
+        - name: "filter[repositoryName]"
+          in: "query"
+          description: "按仓库名称过滤"
+          schema:
+            type: "string"
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回仓库列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmRepositoriesResponse"
+
+  /v1/scmRepositories/{id}:
+    get:
+      tags:
+        - "SCM Repositories - 仓库管理"
+      summary: "获取仓库详情"
+      description: "读取特定仓库的详细信息，包括 Git 引用和拉取请求"
+      operationId: "readScmRepository"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[scmRepositories]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "lastAccessedDate", "httpCloneUrl", "sshCloneUrl",
+                "ownerName", "repositoryName", "scmProvider",
+                "gitReferences", "pullRequests"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["scmProvider", "gitReferences", "pullRequests"]
+      responses:
+        "200":
+          description: "成功返回仓库详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmRepositoryResponse"
+
+  # ==================== 拉取请求 ====================
+  /v1/scmPullRequests:
+    get:
+      tags:
+        - "SCM Pull Requests - 拉取请求"
+      summary: "获取所有拉取请求"
+      description: "读取所有拉取请求信息"
+      operationId: "listScmPullRequests"
+      parameters:
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回拉取请求列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmPullRequestsResponse"
+
+  /v1/scmPullRequests/{id}:
+    get:
+      tags:
+        - "SCM Pull Requests - 拉取请求"
+      summary: "获取拉取请求详情"
+      description: "读取特定拉取请求的详细信息，如源分支和目标分支"
+      operationId: "readScmPullRequest"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[scmPullRequests]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "title", "number", "sourceBranchName", "destinationBranchName",
+                "sourceRepositoryOwnerName", "sourceRepositoryName",
+                "destinationRepositoryOwnerName", "destinationRepositoryName",
+                "isClosed", "isCrossRepository", "repository"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["repository"]
+      responses:
+        "200":
+          description: "成功返回拉取请求详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmPullRequestResponse"
+
+  # ==================== Git 引用 ====================
+  /v1/scmGitReferences:
+    get:
+      tags:
+        - "SCM Git References - Git 引用"
+      summary: "获取所有 Git 引用"
+      description: "读取所有 Git 分支或标签的规范引用"
+      operationId: "listScmGitReferences"
+      parameters:
+        - name: "filter[refType]"
+          in: "query"
+          description: "按引用类型过滤"
+          schema:
+            type: "string"
+            enum: ["BRANCH", "TAG"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回 Git 引用列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmGitReferencesResponse"
+
+  /v1/scmGitReferences/{id}:
+    get:
+      tags:
+        - "SCM Git References - Git 引用"
+      summary: "获取 Git 引用详情"
+      description: "读取特定 Git 引用的详细信息"
+      operationId: "readScmGitReference"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "fields[scmGitReferences]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: [
+                "name", "canonicalName", "kind", "isDeleted",
+                "repository"
+              ]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["repository"]
+      responses:
+        "200":
+          description: "成功返回 Git 引用详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScmGitReferenceResponse"
+
+  # ==================== macOS 版本 ====================
+  /v1/ciMacOsVersions:
+    get:
+      tags:
+        - "Xcode Cloud macOS Versions - macOS 版本"
+      summary: "获取所有 macOS 版本"
+      description: "读取可用于 Xcode Cloud 工作流的所有 macOS 版本"
+      operationId: "listCiMacOsVersions"
+      parameters:
+        - name: "fields[ciMacOsVersions]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["version", "name"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回 macOS 版本列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiMacOsVersionsResponse"
+
+  /v1/ciMacOsVersions/{id}:
+    get:
+      tags:
+        - "Xcode Cloud macOS Versions - macOS 版本"
+      summary: "获取 macOS 版本详情"
+      operationId: "readCiMacOsVersion"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回 macOS 版本详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiMacOsVersionResponse"
+
+  # ==================== Xcode 版本 ====================
+  /v1/ciXcodeVersions:
+    get:
+      tags:
+        - "Xcode Cloud Xcode Versions - Xcode 版本"
+      summary: "获取所有 Xcode 版本"
+      description: "读取可用于 Xcode Cloud 工作流的所有 Xcode 版本"
+      operationId: "listCiXcodeVersions"
+      parameters:
+        - name: "fields[ciXcodeVersions]"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["version", "name", "macOsVersions", "xcodePlatforms"]
+        - name: "include"
+          in: "query"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum: ["macOsVersions", "xcodePlatforms"]
+        - name: "limit"
+          in: "query"
+          schema:
+            type: "integer"
+            maximum: 200
+      responses:
+        "200":
+          description: "成功返回 Xcode 版本列表"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiXcodeVersionsResponse"
+
+  /v1/ciXcodeVersions/{id}:
+    get:
+      tags:
+        - "Xcode Cloud Xcode Versions - Xcode 版本"
+      summary: "获取 Xcode 版本详情"
+      operationId: "readCiXcodeVersion"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "成功返回 Xcode 版本详情"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CiXcodeVersionResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: "http"
+      scheme: "bearer"
+      bearerFormat: "JWT"
+      description: |
+        使用 App Store Connect API 密钥生成的 JWT 令牌。
+
+  schemas:
+    # ==================== Xcode Cloud 产品 ====================
+    CiProduct:
+      type: "object"
+      description: "Xcode Cloud 产品资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciProducts"]
+        attributes:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "产品名称"
+            createdDate:
+              type: "string"
+              format: "date-time"
+              description: "创建日期"
+            productType:
+              type: "string"
+              enum: ["APP", "FRAMEWORK"]
+              description: "产品类型"
+            bundleId:
+              type: "string"
+              description: "Bundle ID"
+        relationships:
+          type: "object"
+          properties:
+            app:
+              type: "object"
+            workflows:
+              type: "object"
+            primaryApp:
+              type: "object"
+
+    CiProductsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiProduct"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiProductResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiProduct"
+
+    # ==================== 工作流 ====================
+    CiWorkflow:
+      type: "object"
+      description: "Xcode Cloud 工作流资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciWorkflows"]
+        attributes:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "工作流名称"
+            description:
+              type: "string"
+              description: "工作流描述"
+            isEnabled:
+              type: "boolean"
+              description: "是否启用"
+            clean:
+              type: "boolean"
+              description: "是否执行清理构建"
+            containerFilePath:
+              type: "string"
+              description: "容器文件路径"
+            platformType:
+              type: "string"
+              enum: ["IOS", "MAC_OS", "TV_OS", "WATCH_OS"]
+              description: "平台类型"
+            createdDate:
+              type: "string"
+              format: "date-time"
+              description: "创建日期"
+        relationships:
+          type: "object"
+          properties:
+            product:
+              type: "object"
+            xcodeVersion:
+              type: "object"
+            macOsVersion:
+              type: "object"
+            repository:
+              type: "object"
+            actions:
+              type: "object"
+
+    CiWorkflowsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiWorkflow"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiWorkflowResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiWorkflow"
+
+    CiWorkflowCreateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["type", "attributes", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["ciWorkflows"]
+            attributes:
+              type: "object"
+              required: ["name", "isEnabled", "clean", "containerFilePath", "platformType"]
+              properties:
+                name:
+                  type: "string"
+                  description: "工作流名称"
+                description:
+                  type: "string"
+                  description: "工作流描述"
+                isEnabled:
+                  type: "boolean"
+                  description: "是否启用"
+                clean:
+                  type: "boolean"
+                  description: "是否执行清理构建"
+                containerFilePath:
+                  type: "string"
+                  description: "容器文件路径（如 ios/MyApp.xcworkspace）"
+                platformType:
+                  type: "string"
+                  enum: ["IOS", "MAC_OS", "TV_OS", "WATCH_OS"]
+                  description: "平台类型"
+                actions:
+                  type: "array"
+                  items:
+                    $ref: "#/components/schemas/CiAction"
+            relationships:
+              type: "object"
+              required: ["product", "repository"]
+              properties:
+                product:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["ciProducts"]
+                        id:
+                          type: "string"
+                repository:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["scmRepositories"]
+                        id:
+                          type: "string"
+                xcodeVersion:
+                  type: "object"
+                  properties:
+                    data:
+                      type: "object"
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["ciXcodeVersions"]
+                        id:
+                          type: "string"
+                macOsVersion:
+                  type: "object"
+                  properties:
+                    data:
+                      type: "object"
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["ciMacOsVersions"]
+                        id:
+                          type: "string"
+
+    CiWorkflowUpdateRequest:
+      type: "object"
+      required: ["data"]
+      properties:
+        data:
+          type: "object"
+          required: ["id", "type"]
+          properties:
+            id:
+              type: "string"
+            type:
+              type: "string"
+              enum: ["ciWorkflows"]
+            attributes:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                description:
+                  type: "string"
+                isEnabled:
+                  type: "boolean"
+                clean:
+                  type: "boolean"
+                containerFilePath:
+                  type: "string"
+                platformType:
+                  type: "string"
+                  enum: ["IOS", "MAC_OS", "TV_OS", "WATCH_OS"]
+
+    CiAction:
+      type: "object"
+      description: "Xcode Cloud 工作流操作"
+      properties:
+        name:
+          type: "string"
+          description: "操作名称"
+        actionType:
+          type: "string"
+          enum: ["BUILD", "ANALYZE", "TEST", "ARCHIVE"]
+          description: "操作类型"
+        destination:
+          type: "string"
+          description: "构建目标（如 'platform=iOS Simulator,name=iPhone 15'）"
+        buildDistributionAudience:
+          type: "string"
+          enum: ["INTERNAL_ONLY", "APP_STORE_TESTERS"]
+          description: "构建分发受众"
+        testDestination:
+          type: "string"
+          description: "测试目标"
+        scheme:
+          type: "string"
+          description: "Xcode scheme 名称"
+        isRequiredToPass:
+          type: "boolean"
+          description: "是否必须通过"
+
+    # ==================== 构建运行 ====================
+    CiBuildRun:
+      type: "object"
+      description: "Xcode Cloud 构建运行资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciBuildRuns"]
+        attributes:
+          type: "object"
+          properties:
+            number:
+              type: "integer"
+              description: "构建号"
+            createdDate:
+              type: "string"
+              format: "date-time"
+              description: "创建日期"
+            startedDate:
+              type: "string"
+              format: "date-time"
+              description: "开始日期"
+            finishedDate:
+              type: "string"
+              format: "date-time"
+              description: "完成日期"
+            isPullRequestBuild:
+              type: "boolean"
+              description: "是否为拉取请求构建"
+            executionProgress:
+              type: "string"
+              enum: ["PENDING", "RUNNING", "COMPLETE"]
+              description: "执行进度"
+            completionStatus:
+              type: "string"
+              enum: ["SUCCEEDED", "FAILED", "ERRORED", "CANCELED"]
+              description: "完成状态"
+        relationships:
+          type: "object"
+          properties:
+            workflow:
+              type: "object"
+            builds:
+              type: "object"
+            actions:
+              type: "object"
+
+    CiBuildRunsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiBuildRun"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiBuildRunResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiBuildRun"
+
+    CiBuildRunCreateRequest:
+      type: "object"
+      required: ["data"]
+      description: "启动新构建的请求"
+      properties:
+        data:
+          type: "object"
+          required: ["type", "relationships"]
+          properties:
+            type:
+              type: "string"
+              enum: ["ciBuildRuns"]
+            attributes:
+              type: "object"
+              properties:
+                clean:
+                  type: "boolean"
+                  description: "是否执行清理构建"
+                sourceBranchOrTag:
+                  type: "string"
+                  description: "源分支或标签名称"
+                destinationBranch:
+                  type: "string"
+                  description: "目标分支"
+                pullRequest:
+                  type: "string"
+                  description: "拉取请求"
+            relationships:
+              type: "object"
+              required: ["workflow"]
+              properties:
+                workflow:
+                  type: "object"
+                  required: ["data"]
+                  properties:
+                    data:
+                      type: "object"
+                      required: ["type", "id"]
+                      properties:
+                        type:
+                          type: "string"
+                          enum: ["ciWorkflows"]
+                        id:
+                          type: "string"
+
+    # ==================== 构建操作 ====================
+    CiBuildAction:
+      type: "object"
+      description: "Xcode Cloud 构建操作资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciBuildActions"]
+        attributes:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "操作名称"
+            actionType:
+              type: "string"
+              enum: ["BUILD", "ANALYZE", "TEST", "ARCHIVE"]
+              description: "操作类型"
+            startedDate:
+              type: "string"
+              format: "date-time"
+              description: "开始日期"
+            finishedDate:
+              type: "string"
+              format: "date-time"
+              description: "完成日期"
+            executionProgress:
+              type: "string"
+              enum: ["PENDING", "RUNNING", "COMPLETE"]
+              description: "执行进度"
+            completionStatus:
+              type: "string"
+              enum: ["SUCCEEDED", "FAILED", "ERRORED", "CANCELED"]
+              description: "完成状态"
+        relationships:
+          type: "object"
+          properties:
+            buildRun:
+              type: "object"
+            artifacts:
+              type: "object"
+            issues:
+              type: "object"
+            testResults:
+              type: "object"
+
+    CiBuildActionsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiBuildAction"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiBuildActionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiBuildAction"
+
+    # ==================== 工件 ====================
+    CiArtifact:
+      type: "object"
+      description: "Xcode Cloud 工件资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciArtifacts"]
+        attributes:
+          type: "object"
+          properties:
+            fileName:
+              type: "string"
+              description: "文件名"
+            fileSize:
+              type: "integer"
+              description: "文件大小（字节）"
+            fileType:
+              type: "string"
+              enum: ["ARCHIVE", "DIAGNOSTIC", "LOGFILE", "RESULT_BUNDLE"]
+              description: "文件类型"
+            downloadUrl:
+              type: "string"
+              format: "uri"
+              description: "下载 URL"
+            archiving:
+              type: "string"
+              enum: ["SINGLE_FILE", "DIRECTORY"]
+              description: "归档方式"
+
+    CiArtifactsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiArtifact"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiArtifactResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiArtifact"
+
+    # ==================== 问题 ====================
+    CiIssue:
+      type: "object"
+      description: "Xcode Cloud 问题资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciIssues"]
+        attributes:
+          type: "object"
+          properties:
+            issueType:
+              type: "string"
+              enum: ["ANALYZE_WARNING", "ERROR", "TEST_FAILURE", "WARNING"]
+              description: "问题类型"
+            message:
+              type: "string"
+              description: "问题消息"
+            fileSource:
+              type: "string"
+              description: "源文件路径"
+            lineNumber:
+              type: "integer"
+              description: "行号"
+
+    CiIssuesResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiIssue"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiIssueResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiIssue"
+
+    # ==================== 测试结果 ====================
+    CiTestResult:
+      type: "object"
+      description: "Xcode Cloud 测试结果资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciTestResults"]
+        attributes:
+          type: "object"
+          properties:
+            className:
+              type: "string"
+              description: "测试类名"
+            name:
+              type: "string"
+              description: "测试名称"
+            status:
+              type: "string"
+              enum: ["SUCCESS", "FAILURE", "EXPECTED_FAILURE", "SKIPPED"]
+              description: "测试状态"
+            fileSource:
+              type: "string"
+              description: "源文件路径"
+            message:
+              type: "string"
+              description: "测试消息"
+            duration:
+              type: "number"
+              format: "float"
+              description: "测试时长（秒）"
+
+    CiTestResultsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiTestResult"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiTestResultResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiTestResult"
+
+    # ==================== SCM 提供者 ====================
+    ScmProvider:
+      type: "object"
+      description: "源代码管理提供者资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["scmProviders"]
+        attributes:
+          type: "object"
+          properties:
+            scmProviderType:
+              type: "string"
+              enum: ["GITHUB", "GITLAB", "BITBUCKET"]
+              description: "提供者类型"
+            url:
+              type: "string"
+              format: "uri"
+              description: "提供者 URL"
+
+    ScmProvidersResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ScmProvider"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    ScmProviderResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ScmProvider"
+
+    # ==================== 仓库 ====================
+    ScmRepository:
+      type: "object"
+      description: "源代码管理仓库资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["scmRepositories"]
+        attributes:
+          type: "object"
+          properties:
+            lastAccessedDate:
+              type: "string"
+              format: "date-time"
+              description: "最后访问日期"
+            httpCloneUrl:
+              type: "string"
+              format: "uri"
+              description: "HTTP 克隆 URL"
+            sshCloneUrl:
+              type: "string"
+              description: "SSH 克隆 URL"
+            ownerName:
+              type: "string"
+              description: "所有者名称"
+            repositoryName:
+              type: "string"
+              description: "仓库名称"
+
+    ScmRepositoriesResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ScmRepository"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    ScmRepositoryResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ScmRepository"
+
+    # ==================== 拉取请求 ====================
+    ScmPullRequest:
+      type: "object"
+      description: "拉取请求资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["scmPullRequests"]
+        attributes:
+          type: "object"
+          properties:
+            title:
+              type: "string"
+              description: "标题"
+            number:
+              type: "integer"
+              description: "编号"
+            sourceBranchName:
+              type: "string"
+              description: "源分支名称"
+            destinationBranchName:
+              type: "string"
+              description: "目标分支名称"
+            isClosed:
+              type: "boolean"
+              description: "是否已关闭"
+            isCrossRepository:
+              type: "boolean"
+              description: "是否跨仓库"
+
+    ScmPullRequestsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ScmPullRequest"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    ScmPullRequestResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ScmPullRequest"
+
+    # ==================== Git 引用 ====================
+    ScmGitReference:
+      type: "object"
+      description: "Git 引用资源（分支或标签）"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["scmGitReferences"]
+        attributes:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "引用名称"
+            canonicalName:
+              type: "string"
+              description: "规范名称（如 refs/heads/main）"
+            kind:
+              type: "string"
+              enum: ["BRANCH", "TAG"]
+              description: "引用类型"
+            isDeleted:
+              type: "boolean"
+              description: "是否已删除"
+
+    ScmGitReferencesResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ScmGitReference"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    ScmGitReferenceResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ScmGitReference"
+
+    # ==================== macOS 版本 ====================
+    CiMacOsVersion:
+      type: "object"
+      description: "macOS 版本资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciMacOsVersions"]
+        attributes:
+          type: "object"
+          properties:
+            version:
+              type: "string"
+              description: "版本号（如 14.0）"
+            name:
+              type: "string"
+              description: "版本名称（如 Sonoma）"
+
+    CiMacOsVersionsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiMacOsVersion"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiMacOsVersionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiMacOsVersion"
+
+    # ==================== Xcode 版本 ====================
+    CiXcodeVersion:
+      type: "object"
+      description: "Xcode 版本资源"
+      properties:
+        id:
+          type: "string"
+        type:
+          type: "string"
+          enum: ["ciXcodeVersions"]
+        attributes:
+          type: "object"
+          properties:
+            version:
+              type: "string"
+              description: "版本号（如 15.0）"
+            name:
+              type: "string"
+              description: "版本名称"
+            macOsVersions:
+              type: "array"
+              items:
+                type: "string"
+              description: "支持的 macOS 版本列表"
+            xcodePlatforms:
+              type: "array"
+              items:
+                type: "string"
+                enum: ["IOS", "MAC_OS", "TV_OS", "WATCH_OS"]
+              description: "支持的平台列表"
+
+    CiXcodeVersionsResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CiXcodeVersion"
+        links:
+          $ref: "#/components/schemas/PagingLinks"
+
+    CiXcodeVersionResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/CiXcodeVersion"
+
+    # ==================== 通用类型 ====================
+    PagingLinks:
+      type: "object"
+      properties:
+        self:
+          type: "string"
+          format: "uri"
+        next:
+          type: "string"
+          format: "uri"
+        first:
+          type: "string"
+          format: "uri"
+
+    PagingInformation:
+      type: "object"
+      properties:
+        paging:
+          type: "object"
+          properties:
+            total:
+              type: "integer"
+            limit:
+              type: "integer"
+
+    ErrorResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              id:
+                type: "string"
+              status:
+                type: "string"
+              code:
+                type: "string"
+              title:
+                type: "string"
+              detail:
+                type: "string"
+              source:
+                type: "object"
+                properties:
+                  pointer:
+                    type: "string"
+
+  responses:
+    BadRequest:
+      description: "请求参数错误"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: "认证失败"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Forbidden:
+      description: "权限不足"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: "资源不存在"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+tags:
+  - name: "Xcode Cloud Products - 产品管理"
+    description: "管理 Xcode Cloud 检测到的产品"
+  - name: "Xcode Cloud Workflows - 工作流管理"
+    description: "创建、更新、删除 Xcode Cloud 工作流"
+  - name: "Xcode Cloud Builds - 构建管理"
+    description: "启动和管理 Xcode Cloud 构建"
+  - name: "Xcode Cloud Build Actions - 构建操作"
+    description: "查看构建操作详情"
+  - name: "Xcode Cloud Artifacts - 工件管理"
+    description: "查看构建工件"
+  - name: "Xcode Cloud Issues - 问题管理"
+    description: "查看构建问题"
+  - name: "Xcode Cloud Test Results - 测试结果"
+    description: "查看测试结果"
+  - name: "SCM Providers - 源代码管理提供者"
+    description: "管理源代码管理提供者连接"
+  - name: "SCM Repositories - 仓库管理"
+    description: "查看仓库信息"
+  - name: "SCM Pull Requests - 拉取请求"
+    description: "查看拉取请求信息"
+  - name: "SCM Git References - Git 引用"
+    description: "查看 Git 分支和标签"
+  - name: "Xcode Cloud macOS Versions - macOS 版本"
+    description: "查看可用的 macOS 版本"
+  - name: "Xcode Cloud Xcode Versions - Xcode 版本"
+    description: "查看可用的 Xcode 版本"
