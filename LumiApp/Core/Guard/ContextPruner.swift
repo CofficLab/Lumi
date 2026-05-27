@@ -125,9 +125,12 @@ struct ContextPruner: SuperLog {
         // 从尾部取最近的消息
         let kept = Array(messages.suffix(maxKeep))
 
-        // 确保裁剪后的消息序列结构完整：
-        // - 如果开头是孤立的 tool 消息（没有对应的 assistant 消息），需要跳过
-        let trimmed = trimLeadingOrphanedToolMessages(kept)
+        // 修复裁剪后的消息序列，使其符合 LLM API 要求：
+        // 1. 跳过开头的孤立 tool 消息
+        // 2. 确保首条非 system 消息是 user
+        // 3. 确保角色交替（不能连续 user 或连续 assistant）
+        // 4. 确保 tool 消息与 assistant.tool_calls 配对
+        let fixed = fixMessageSequence(kept)
 
         // 在头部插入摘要占位
         let summaryMessage = ChatMessage(
@@ -136,21 +139,29 @@ struct ContextPruner: SuperLog {
             content: config.summaryPlaceholder
         )
 
-        let result = [summaryMessage] + trimmed
-        let prunedCount = messages.count - trimmed.count
+        let result = [summaryMessage] + fixed
+        let prunedCount = messages.count - fixed.count
 
         if let convId = messages.first?.conversationId {
-            AppLogger.core.info("\(t)[\(convId)] 裁剪完成：\(messages.count) → \(result.count) 条消息（保留 \(trimmed.count) + 1 摘要占位）")
+            AppLogger.core.info("\(t)[\(convId)] 裁剪完成：\(messages.count) → \(result.count) 条消息（保留 \(fixed.count) + 1 摘要占位）")
         }
 
         return PruneResult(messages: result, prunedCount: prunedCount, reason: reason)
     }
 
-    /// 跳过开头的孤立 tool 消息
+    /// 修复消息序列，使其符合 Anthropic/Zhipu API 的结构要求
     ///
-    /// 裁剪后如果开头是 tool 消息但没有对应的 assistant 消息，
-    /// LLM API 会报错。需要跳过这些孤立消息，直到找到第一条非 tool 消息。
-    private static func trimLeadingOrphanedToolMessages(_ messages: [ChatMessage]) -> [ChatMessage] {
+    /// 修复以下问题：
+    /// 1. 开头不能有 tool 消息（孤立 tool）
+    /// 2. 首条非 system 消息必须是 user
+    /// 3. 不能出现连续的相同角色（user→user 或 assistant→assistant）
+    /// 4. assistant 的 tool_calls 必须有对应的 tool 结果消息
+    private static func fixMessageSequence(_ messages: [ChatMessage]) -> [ChatMessage] {
+        guard !messages.isEmpty else { return messages }
+
+        var result: [ChatMessage] = []
+
+        // Phase 1: 跳过开头的孤立 tool 消息
         var startIndex = 0
         for (index, message) in messages.enumerated() {
             if message.role == .tool {
@@ -159,6 +170,104 @@ struct ContextPruner: SuperLog {
                 break
             }
         }
-        return startIndex > 0 ? Array(messages.dropFirst(startIndex)) : messages
+        var working = Array(messages.dropFirst(startIndex))
+        guard !working.isEmpty else { return [] }
+
+        // Phase 2: 如果第一条不是 user，插入一个空的 user 消息
+        // （Anthropic/Zhipu 要求首条非 system 消息必须是 user）
+        if working[0].role != .user {
+            let placeholder = ChatMessage(
+                role: .user,
+                conversationId: working[0].conversationId,
+                content: "(Previous conversation was summarized. Continue from here.)"
+            )
+            working.insert(placeholder, at: 0)
+        }
+
+        // Phase 3: 遍历消息，修复角色交替和 tool 配对
+        var i = 0
+        while i < working.count {
+            let current = working[i]
+
+            if result.isEmpty {
+                // 第一条消息，Phase 2 已确保是 user，直接添加
+                result.append(current)
+                i += 1
+                continue
+            }
+
+            let lastRole = result.last!.role
+
+            switch current.role {
+            case .user:
+                if lastRole == .user {
+                    // 连续 user → 合并内容到上一条
+                    var merged = result.removeLast()
+                    merged.content += "\n\n" + current.content
+                    result.append(merged)
+                } else if lastRole == .tool {
+                    // tool 后面不能直接跟 user（缺少 assistant 过渡）
+                    // 插入一个空的 assistant 消息
+                    let bridge = ChatMessage(
+                        role: .assistant,
+                        conversationId: current.conversationId,
+                        content: ""
+                    )
+                    result.append(bridge)
+                    result.append(current)
+                } else {
+                    result.append(current)
+                }
+
+            case .assistant:
+                if lastRole == .assistant {
+                    // 连续 assistant → 合并内容到上一条
+                    var merged = result.removeLast()
+                    if !current.content.isEmpty {
+                        if !merged.content.isEmpty {
+                            merged.content += "\n\n" + current.content
+                        } else {
+                            merged.content = current.content
+                        }
+                    }
+                    // 合并 toolCalls
+                    if let newCalls = current.toolCalls, !newCalls.isEmpty {
+                        if merged.toolCalls == nil {
+                            merged.toolCalls = newCalls
+                        } else {
+                            merged.toolCalls?.append(contentsOf: newCalls)
+                        }
+                    }
+                    result.append(merged)
+                } else {
+                    result.append(current)
+                }
+
+            case .tool:
+                // tool 消息必须紧跟在 assistant（带有 tool_calls）之后
+                if lastRole != .assistant {
+                    // 孤立的 tool 消息，跳过
+                    i += 1
+                    continue
+                }
+                // 检查上一条 assistant 是否有对应的 tool_call
+                let lastAssistant = result.last!
+                let hasMatchingToolCall = lastAssistant.toolCalls?.contains { $0.id == current.toolCallID } ?? false
+                if !hasMatchingToolCall {
+                    // 没有匹配的 tool_call，跳过这个孤立的 tool 消息
+                    i += 1
+                    continue
+                }
+                result.append(current)
+
+            default:
+                // system/status/error/unknown 消息，正常添加
+                result.append(current)
+            }
+
+            i += 1
+        }
+
+        return result
     }
 }
