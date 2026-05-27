@@ -4,46 +4,53 @@ import SwiftUI
 public struct PluginSettingsScaffold<Content: View>: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
+    let showHeader: Bool
     let content: Content
 
     public init(
         _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
+        showHeader: Bool = true,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.showHeader = showHeader
         self.content = content()
     }
 
     public init(
         title: String,
         subtitle: String? = nil,
+        showHeader: Bool = true,
         @ViewBuilder content: () -> Content
     ) {
         self.title = LocalizedStringKey(title)
         self.subtitle = subtitle.map { LocalizedStringKey($0) }
+        self.showHeader = showHeader
         self.content = content()
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            AppCard {
-                if let subtitle {
-                    AppSettingsSection(title, subtitle: subtitle) {}
-                } else {
-                    AppSettingsSection(title) {}
+            if showHeader {
+                AppCard {
+                    if let subtitle {
+                        AppSettingsSection(title, subtitle: subtitle) {}
+                    } else {
+                        AppSettingsSection(title) {}
+                    }
                 }
+                .padding(24)
+                .background(Color.clear)
             }
-            .padding(24)
-            .background(Color.clear)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     content
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 24)
+                .padding(24)
             }
         }
     }
