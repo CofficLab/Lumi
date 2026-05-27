@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "A private key is stored in Keychain. Saving replaces it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24,6 +25,7 @@
       }
     },
     "Account" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -46,6 +48,7 @@
       }
     },
     "Add Screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -68,6 +71,7 @@
       }
     },
     "App Store" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -90,6 +94,7 @@
       }
     },
     "App Store Connect API Key Setup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -112,6 +117,7 @@
       }
     },
     "App Store Connect credentials are incomplete." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -134,6 +140,7 @@
       }
     },
     "App Store Connect request failed with HTTP %d." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -156,6 +163,7 @@
       }
     },
     "App Store Connect returned an invalid response." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -178,6 +186,7 @@
       }
     },
     "App Store versions for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -200,6 +209,7 @@
       }
     },
     "Choose an App Store Connect app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -222,6 +232,7 @@
       }
     },
     "Click Save Credentials, then Test Connection. Lumi stores the values in Keychain and uses them to generate short-lived JWT tokens." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -244,6 +255,7 @@
       }
     },
     "Connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -266,6 +278,7 @@
       }
     },
     "Copy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -288,6 +301,7 @@
       }
     },
     "Copy Issuer ID and Key ID" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -310,6 +324,7 @@
       }
     },
     "Create an API key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -332,6 +347,7 @@
       }
     },
     "Create one user-level API key, then paste the values into the Account page." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -354,6 +370,7 @@
       }
     },
     "Credentials configured" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -376,6 +393,7 @@
       }
     },
     "Credentials incomplete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -398,6 +416,7 @@
       }
     },
     "Current App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -420,6 +439,7 @@
       }
     },
     "Description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -442,6 +462,7 @@
       }
     },
     "Disconnect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -464,6 +485,7 @@
       }
     },
     "Display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -486,6 +508,7 @@
       }
     },
     "Do not commit the .p8 key to source control or paste it into project files." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -508,6 +531,7 @@
       }
     },
     "Download the .p8 private key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -530,6 +554,7 @@
       }
     },
     "Download the private key immediately. Apple only lets you download it once. Open the .p8 file and paste the full contents into the Private Key field." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -552,6 +577,7 @@
       }
     },
     "Edit App Store version localization fields" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -574,6 +600,7 @@
       }
     },
     "Ensure Screenshot Set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -596,6 +623,7 @@
       }
     },
     "General" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -618,6 +646,7 @@
       }
     },
     "Global API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -640,6 +669,7 @@
       }
     },
     "Go to the Keys tab, create a new key, choose the minimum role needed for app metadata and screenshot management, then save it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -662,6 +692,7 @@
       }
     },
     "If a key is exposed, revoke it in App Store Connect and create a replacement." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -684,6 +715,7 @@
       }
     },
     "Image has no pixel size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -706,6 +738,7 @@
       }
     },
     "Image is too small" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -728,6 +761,7 @@
       }
     },
     "Issuer ID" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -750,6 +784,7 @@
       }
     },
     "Issuer ID is shown on the Keys page. Key ID is shown next to the key you created. Paste both into Lumi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -772,6 +807,7 @@
       }
     },
     "Key ID" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -794,6 +830,7 @@
       }
     },
     "Keywords" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -816,6 +853,7 @@
       }
     },
     "Load Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -838,6 +876,7 @@
       }
     },
     "Load apps from App Store Connect or adjust your search." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -860,6 +899,7 @@
       }
     },
     "Locale" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -882,6 +922,7 @@
       }
     },
     "Manage App Store Connect apps, metadata, and screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -904,6 +945,7 @@
       }
     },
     "Marketing URL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -926,6 +968,7 @@
       }
     },
     "Metadata" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -971,6 +1014,7 @@
       }
     },
     "Need an App Store Connect API key?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -993,6 +1037,7 @@
       }
     },
     "No Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1015,6 +1060,7 @@
       }
     },
     "No Locale" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1037,6 +1083,7 @@
       }
     },
     "No Localizations" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1059,6 +1106,7 @@
       }
     },
     "No screenshot sets loaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1081,6 +1129,7 @@
       }
     },
     "No Version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1103,6 +1152,7 @@
       }
     },
     "Not a readable image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1125,6 +1175,7 @@
       }
     },
     "Not connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1147,6 +1198,7 @@
       }
     },
     "Open App Store Connect API Keys" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1169,6 +1221,7 @@
       }
     },
     "Open the setup guide for where to find Issuer ID, Key ID, and the .p8 private key." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1191,6 +1244,7 @@
       }
     },
     "Open Users and Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1213,6 +1267,7 @@
       }
     },
     "Private Key (.p8)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1235,6 +1290,7 @@
       }
     },
     "Promotional Text" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1257,6 +1313,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1279,6 +1336,7 @@
       }
     },
     "Refresh" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1301,6 +1359,7 @@
       }
     },
     "Reload" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1323,6 +1382,7 @@
       }
     },
     "Save and test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1345,6 +1405,7 @@
       }
     },
     "Save Credentials" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1367,6 +1428,7 @@
       }
     },
     "Save Metadata" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1389,6 +1451,7 @@
       }
     },
     "Screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1411,6 +1474,7 @@
       }
     },
     "Search apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1433,6 +1497,7 @@
       }
     },
     "Search by name, bundle ID, or SKU" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1455,6 +1520,7 @@
       }
     },
     "Security notes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1477,6 +1543,7 @@
       }
     },
     "Select a version and refresh metadata to load localizations." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1499,6 +1566,7 @@
       }
     },
     "Select an app first" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1521,6 +1589,7 @@
       }
     },
     "Select App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1543,6 +1612,7 @@
       }
     },
     "Setup Guide" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1565,6 +1635,7 @@
       }
     },
     "Sign in to App Store Connect with an account that can manage API keys, then open Users and Access." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1587,6 +1658,7 @@
       }
     },
     "Subtitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1609,6 +1681,7 @@
       }
     },
     "Support URL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1631,6 +1704,7 @@
       }
     },
     "Test Connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1653,6 +1727,7 @@
       }
     },
     "The App Store Connect URL is invalid." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1675,6 +1750,7 @@
       }
     },
     "The private key could not be parsed. Use the .p8 key downloaded from App Store Connect." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1697,6 +1773,7 @@
       }
     },
     "Unsaved changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1719,6 +1796,7 @@
       }
     },
     "Untitled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1741,6 +1819,7 @@
       }
     },
     "Uploaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1763,6 +1842,7 @@
       }
     },
     "Uploading" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1785,6 +1865,7 @@
       }
     },
     "Use the least privileged App Store Connect role that still allows the workflow you need." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1807,6 +1888,7 @@
       }
     },
     "Validate and prepare screenshots for the selected localization" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1829,6 +1911,7 @@
       }
     },
     "Versions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1851,6 +1934,7 @@
       }
     },
     "What's New" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
