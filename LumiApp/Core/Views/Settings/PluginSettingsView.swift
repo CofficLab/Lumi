@@ -182,7 +182,7 @@ struct PluginSettingsView: View {
         var states: [String: Bool] = [:]
         for plugin in pluginProvider.plugins.filter({ type(of: $0).isConfigurable }) {
             let pluginType = type(of: plugin)
-            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
+            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enabledByDefault)
         }
         pluginStates = states
     }

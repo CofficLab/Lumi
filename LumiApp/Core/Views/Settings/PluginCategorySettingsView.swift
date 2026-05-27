@@ -115,7 +115,7 @@ struct PluginCategorySettingsView: View {
         var states: [String: Bool] = [:]
         for plugin in plugins {
             let pluginType = type(of: plugin)
-            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
+            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enabledByDefault)
         }
         pluginStates = states
     }

@@ -7,7 +7,6 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     nonisolated static let emoji = "🛡️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
 
     static let id = "Netto"
@@ -16,6 +15,10 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Manage network permissions for macOS applications.", table: "Netto")
     static let iconName = "shield.lefthalf.filled"
     static var order: Int { 99 }
+    
+    /// 插件注册策略：可配置，默认不启用（可选功能）
+    nonisolated static let shouldRegister: Bool = true
+    nonisolated static let enabledByDefault: Bool = false
     
     nonisolated var instanceLabel: String { Self.id }
     static let shared = NettoPlugin()

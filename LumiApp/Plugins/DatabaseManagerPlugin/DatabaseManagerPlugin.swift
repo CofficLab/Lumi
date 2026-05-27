@@ -10,7 +10,6 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🗄️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
 
     static let id = "DatabaseManager"
@@ -21,6 +20,10 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     static var order: Int { 50 }
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DatabaseManagerPlugin()
+    
+    /// 插件注册策略：可配置，默认不启用（可选功能）
+    nonisolated static let shouldRegister: Bool = true
+    nonisolated static let enabledByDefault: Bool = false
 
     // MARK: - UI Contributions
 

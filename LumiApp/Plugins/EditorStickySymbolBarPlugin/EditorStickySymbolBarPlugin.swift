@@ -10,7 +10,6 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar")
 
     nonisolated static let emoji = "🧩"
-    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorStickySymbolBar"
     static let displayName: String = String(
@@ -22,6 +21,9 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
     static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 89 }
+
+    /// 插件注册策略：开发中，暂不注册
+    nonisolated static let shouldRegister: Bool = false
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = EditorStickySymbolBarPlugin()

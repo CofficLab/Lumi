@@ -167,7 +167,30 @@ public protocol SuperPlugin: Actor {
     static var isConfigurable: Bool { get }
 
     /// 是否启用此插件
+    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
     static var enable: Bool { get }
+
+    /// 是否应该注册此插件（第一关：扫描门槛）
+    ///
+    /// - `false`: 插件完全不会被加载，在扫描阶段直接跳过
+    /// - `true`: 插件会被注册到系统，但最终是否启用取决于 `isConfigurable` 和 `enabledByDefault`
+    ///
+    /// 适用场景：
+    /// - 开发中的插件设置为 `false` 避免被加载
+    /// - 已废弃的插件设置为 `false` 静默禁用
+    static var shouldRegister: Bool { get }
+
+    /// 默认启用状态（第三关：用户未配置时的默认值）
+    ///
+    /// 仅当 `isConfigurable = true` 时有意义，控制用户未配置过时的初始开关状态。
+    ///
+    /// - `true`: 用户首次安装时默认启用
+    /// - `false`: 用户首次安装时默认禁用，但可在设置中手动开启
+    ///
+    /// 适用场景：
+    /// - 核心插件（Editor、Chat）通常设为 `true`
+    /// - 可选插件（AppStore、Docker）可设为 `false` 减少干扰
+    static var enabledByDefault: Bool { get }
 
     /// 插件实例标签（用于识别唯一实例）
     nonisolated var instanceLabel: String { get }

@@ -8,7 +8,6 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "📝"
-    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
 
     static let id = "HostsManager"
@@ -18,6 +17,10 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "list.bullet.rectangle"
     static var category: PluginCategory { .system }
     static var order: Int { 21 }
+    
+    /// 插件注册策略：可配置，默认不启用（可选功能）
+    nonisolated static let shouldRegister: Bool = true
+    nonisolated static let enabledByDefault: Bool = false
 
     nonisolated var instanceLabel: String { Self.id }
 

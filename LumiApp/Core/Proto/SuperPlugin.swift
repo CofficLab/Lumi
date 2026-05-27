@@ -137,7 +137,7 @@ struct ViewContainerItem: Identifiable, Equatable {
 ///     static let id = "MyPlugin"
 ///     static let displayName = "我的插件"
 ///     static let iconName = "star.fill"
-///     static let enable = true
+///     static let enabledByDefault = true
 ///     static let order = 100
 ///     static var isConfigurable: Bool { true }
 /// }
@@ -180,13 +180,23 @@ protocol SuperPlugin: Actor {
     /// 如果为 false，插件始终处于启用状态。
     static var isConfigurable: Bool { get }
 
-    /// 是否启用此插件
-    ///
-    /// 静态属性，控制插件的默认启用状态。
-    /// 配合 `isConfigurable` 使用：
-    /// - `isConfigurable = false`: 始终启用，忽略此值
-    /// - `isConfigurable = true`: 使用此值作为默认值
+    /// 是否启用此插件（已废弃，使用 enabledByDefault 替代）
+    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
     static var enable: Bool { get }
+
+    /// 插件是否应该被注册到插件系统
+    ///
+    /// 第一关卡：控制插件是否被系统扫描和注册。
+    /// - `true`：插件会被注册，出现在设置页面中（如果 isConfigurable = true）
+    /// - `false`：插件完全不注册，用户看不到，适用于开发中的插件
+    static var shouldRegister: Bool { get }
+
+    /// 插件默认是否启用
+    ///
+    /// 第二关卡：定义插件的默认启用状态。仅当 `shouldRegister = true` 时有意义。
+    /// - `true`：默认启用（用户首次安装时默认打开）
+    /// - `false`：默认关闭（用户需要手动在设置中开启）
+    static var enabledByDefault: Bool { get }
 
     /// 插件实例标签（用于识别唯一实例）
     ///
@@ -455,5 +465,10 @@ extension SuperPlugin {
 
     static var isConfigurable: Bool { false }
 
-    static var enable: Bool { true }
+    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    static var enable: Bool { enabledByDefault }
+
+    static var shouldRegister: Bool { true }
+
+    static var enabledByDefault: Bool { true }
 }

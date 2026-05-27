@@ -19,5 +19,10 @@ extension SuperPlugin {
 
     public static var isConfigurable: Bool { false }
 
-    public static var enable: Bool { true }
+    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    public static var enable: Bool { enabledByDefault }
+
+    public static var shouldRegister: Bool { true }
+
+    public static var enabledByDefault: Bool { true }
 }
