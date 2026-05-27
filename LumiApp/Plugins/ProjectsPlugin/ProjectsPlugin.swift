@@ -41,12 +41,6 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
         return AnyView(ProjectControlView())
     }
 
-    /// 在状态栏左侧显示项目图标（AI 聊天激活时）
-    @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.supportsAIChat else { return nil }
-        return AnyView(ProjectStatusBarView())
-    }
-
     /// 根视图包裹：用于恢复最近项目列表，并在未选项目时显示引导
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
