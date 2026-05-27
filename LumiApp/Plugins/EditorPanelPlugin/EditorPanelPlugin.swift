@@ -29,7 +29,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     /// 面板视图：编辑器
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true) {
             AnyView(EditorPanelView())
         }
     }

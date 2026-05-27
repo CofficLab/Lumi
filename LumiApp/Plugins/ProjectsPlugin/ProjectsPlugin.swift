@@ -33,10 +33,14 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在工具栏中间位置显示当前项目选择器
+    ///
+    /// 当激活的视图容器声明了 `showsProjectToolbar` 时显示。
     @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        let icons = [EditorPlugin.iconName, GitPlugin.iconName]
-        guard icons.contains(activeIcon ?? "") else { return nil }
-        
+        guard let activeIcon,
+              let container = AppPluginVM.shared.getActiveViewContainer(activeIcon: activeIcon),
+              container.showsProjectToolbar
+        else { return nil }
+
         return AnyView(ProjectControlView())
     }
 

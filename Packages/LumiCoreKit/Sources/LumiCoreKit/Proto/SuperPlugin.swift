@@ -88,11 +88,23 @@ public struct ViewContainerItem: Identifiable, Equatable {
     public let icon: String
     /// 延迟创建视图
     public let makeView: @MainActor () -> AnyView
+    /// 是否在工具栏显示项目管理控件
+    ///
+    /// 当此容器处于激活状态时，ProjectsPlugin 会在工具栏中间显示项目选择器。
+    /// 设为 `true` 的容器（如编辑器、Git）表示其工作流与项目上下文紧密相关。
+    public let showsProjectToolbar: Bool
 
-    public init(id: String, title: String, icon: String, makeView: @escaping @MainActor () -> AnyView) {
+    public init(
+        id: String,
+        title: String,
+        icon: String,
+        showsProjectToolbar: Bool = false,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
         self.id = id
         self.title = title
         self.icon = icon
+        self.showsProjectToolbar = showsProjectToolbar
         self.makeView = makeView
     }
 

@@ -76,6 +76,22 @@ struct ViewContainerItem: Identifiable, Equatable {
     let icon: String
     /// 延迟创建视图
     let makeView: @MainActor () -> AnyView
+    /// 是否在工具栏显示项目管理控件
+    let showsProjectToolbar: Bool
+
+    init(
+        id: String,
+        title: String,
+        icon: String,
+        showsProjectToolbar: Bool = false,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
+        self.id = id
+        self.title = title
+        self.icon = icon
+        self.showsProjectToolbar = showsProjectToolbar
+        self.makeView = makeView
+    }
 
     static func == (lhs: ViewContainerItem, rhs: ViewContainerItem) -> Bool {
         lhs.id == rhs.id

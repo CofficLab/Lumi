@@ -20,6 +20,8 @@ final class RecentProjectsPluginTests: XCTestCase {
     }
 
     func testPluginProvidesToolbarViewForEditorIcon() async {
+        // EditorPlugin 的 ViewContainerItem 声明了 showsProjectToolbar: true，
+        // 因此当其 activeIcon 激活时，工具栏中间应显示项目管理视图。
         let view = await RecentProjectsPlugin.shared.addToolBarCenterView(activeIcon: EditorPlugin.iconName)
         XCTAssertNotNil(view)
     }
