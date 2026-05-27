@@ -13,6 +13,7 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
     public let expectedBytes: Int64
     public let supportsVision: Bool
     public let supportsTools: Bool
+    public let supportsTTS: Bool
     public let priority: Int
     public let series: String?
 
@@ -25,6 +26,7 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
         expectedBytes: Int64,
         supportsVision: Bool = false,
         supportsTools: Bool = true,
+        supportsTTS: Bool = false,
         priority: Int = 0,
         series: String? = nil
     ) {
@@ -36,6 +38,7 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
         self.expectedBytes = expectedBytes
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
+        self.supportsTTS = supportsTTS
         self.priority = priority
         self.series = series
     }

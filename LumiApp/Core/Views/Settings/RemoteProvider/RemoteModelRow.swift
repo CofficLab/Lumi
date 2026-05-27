@@ -9,6 +9,7 @@ struct RemoteModelRow: View {
     let isDefault: Bool
     let supportsVision: Bool?
     let supportsTools: Bool?
+    let supportsTTS: Bool?
     let onTap: () -> Void
 
     var body: some View {
@@ -42,6 +43,13 @@ struct RemoteModelRow: View {
                         capabilityBadge(
                             title: String(localized: "Tools", table: "AgentInput"),
                             systemImage: "wrench.and.screwdriver"
+                        )
+                    }
+
+                    if let supportsTTS, supportsTTS {
+                        capabilityBadge(
+                            title: "TTS",
+                            systemImage: "waveform"
                         )
                     }
                 }

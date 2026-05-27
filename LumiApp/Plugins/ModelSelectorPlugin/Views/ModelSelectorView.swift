@@ -315,7 +315,8 @@ struct ModelSelectorView: View, SuperLog {
                     provider: provider,
                     model: model,
                     supportsVision: caps.supportsVision,
-                    supportsTools: caps.supportsTools
+                    supportsTools: caps.supportsTools,
+                    supportsTTS: caps.supportsTTS
                 )
             }
         }
@@ -328,7 +329,8 @@ struct ModelSelectorView: View, SuperLog {
         displayName: String? = nil,
         providerDisplayName: String? = nil,
         supportsVision: Bool? = nil,
-        supportsTools: Bool? = nil
+        supportsTools: Bool? = nil,
+        supportsTTS: Bool? = nil
     ) -> some View {
         let hoverKey = "\(provider.id)|\(model)"
         return ModelSelectorModelRow(
@@ -338,6 +340,7 @@ struct ModelSelectorView: View, SuperLog {
             providerDisplayName: providerDisplayName,
             supportsVision: supportsVision,
             supportsTools: supportsTools,
+            supportsTTS: supportsTTS,
             isSelected: isSelected(providerId: provider.id, model: model),
             isHovering: hoveringModelId == hoverKey,
             stat: findDetailedStat(providerId: provider.id, modelName: model),

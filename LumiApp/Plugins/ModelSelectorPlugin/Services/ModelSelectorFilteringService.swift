@@ -126,9 +126,9 @@ enum ModelSelectorFilteringService {
         provider: LLMProviderInfo,
         model: String,
         providerType: (any SuperLLMProvider.Type)?
-    ) -> (supportsVision: Bool?, supportsTools: Bool?) {
+    ) -> (supportsVision: Bool?, supportsTools: Bool?, supportsTTS: Bool?) {
         if provider.isLocal {
-            return (nil, nil)
+            return (nil, nil, nil)
         }
 
         guard let providerType,
@@ -136,9 +136,9 @@ enum ModelSelectorFilteringService {
             if ChatInputPlugin.verbose {
                 ChatInputPlugin.logger.error("🌐 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
             }
-            return (nil, nil)
+            return (nil, nil, nil)
         }
 
-        return (caps.supportsVision, caps.supportsTools)
+        return (caps.supportsVision, caps.supportsTools, caps.supportsTTS)
     }
 }

@@ -18,6 +18,8 @@ struct ModelSelectorModelRow: View {
     let supportsVision: Bool?
     /// 是否支持工具
     let supportsTools: Bool?
+    /// 是否支持文本转语音（TTS）
+    let supportsTTS: Bool?
     /// 是否为当前选中模型
     let isSelected: Bool
     /// 是否为 hover 状态
@@ -71,6 +73,13 @@ struct ModelSelectorModelRow: View {
                                     capabilityBadge(
                                         title: String(localized: "Tools", table: "AgentChat"),
                                         systemImage: "wrench.and.screwdriver"
+                                    )
+                                }
+
+                                if let supportsTTS, supportsTTS {
+                                    capabilityBadge(
+                                        title: String(localized: "TTS", table: "AgentChat"),
+                                        systemImage: "waveform"
                                     )
                                 }
 

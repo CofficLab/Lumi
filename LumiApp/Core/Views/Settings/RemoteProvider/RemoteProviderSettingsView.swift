@@ -173,6 +173,7 @@ extension RemoteProviderSettingsView {
                         isDefault: selectedModel == model,
                         supportsVision: capabilities?.supportsVision,
                         supportsTools: capabilities?.supportsTools,
+                        supportsTTS: capabilities?.supportsTTS,
                         onTap: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedModel = model
