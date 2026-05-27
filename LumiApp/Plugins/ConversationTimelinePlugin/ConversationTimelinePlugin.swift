@@ -25,7 +25,10 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图
+    ///
+    /// 仅在当前 ViewContainer 支持 AI 聊天时显示，避免在非 AI 聊天场景（如 Git、Docker 等）显示不相关的对话时间线。
     @MainActor func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.supportsAIChat else { return nil }
         return AnyView(ConversationTimelineView())
     }
 }
