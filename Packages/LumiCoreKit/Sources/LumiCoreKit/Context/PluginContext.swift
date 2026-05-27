@@ -27,13 +27,29 @@ public struct PluginContext {
     /// 供应商插件可据此决定是否展示供应商专属 UI（如配额状态栏）。
     public let activeProviderId: String?
 
+    /// 当前激活的 ViewContainer 是否支持 AI 聊天
+    ///
+    /// 由 ViewContainerItem 的 `supportsAIChat` 属性投影而来。
+    /// 聊天相关插件（消息列表、输入框、附件等）可据此决定是否贡献右侧栏 Section。
+    public let supportsAIChat: Bool
+
+    /// 当前激活的 ViewContainer 是否显示项目工具栏
+    ///
+    /// 由 ViewContainerItem 的 `showsProjectToolbar` 属性投影而来。
+    /// 项目相关插件可据此决定是否贡献工具栏视图。
+    public let showsProjectToolbar: Bool
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
-        activeProviderId: String? = nil
+        activeProviderId: String? = nil,
+        supportsAIChat: Bool = false,
+        showsProjectToolbar: Bool = false
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
         self.activeProviderId = activeProviderId
+        self.supportsAIChat = supportsAIChat
+        self.showsProjectToolbar = showsProjectToolbar
     }
 }

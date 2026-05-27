@@ -12,25 +12,29 @@ final class AgentChatPluginTests: XCTestCase {
         XCTAssertEqual(AgentChatPlugin.order, 82)
     }
 
-    func testSidebarSectionsAreEmptyForNonEditorIcon() async {
-        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: "not-editor")
+    func testSidebarSectionsAreEmptyForNonAIChatIcon() async {
+        let context = PluginContext(activeIcon: "not-editor")
+        let sections = await AgentChatPlugin.shared.addSidebarSections(context: context)
         XCTAssertTrue(sections.isEmpty)
     }
 
     func testSidebarSectionsAreAvailableForEditorIcon() async {
-        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: EditorPlugin.iconName)
+        let context = PluginContext(activeIcon: EditorPlugin.iconName, supportsAIChat: true)
+        let sections = await AgentChatPlugin.shared.addSidebarSections(context: context)
         XCTAssertFalse(sections.isEmpty)
         XCTAssertEqual(sections.count, 1)
     }
 
     func testSidebarSectionsAreAvailableForChatPanelIcon() async {
-        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: ChatPanelPlugin.iconName)
+        let context = PluginContext(activeIcon: ChatPanelPlugin.iconName, supportsAIChat: true)
+        let sections = await AgentChatPlugin.shared.addSidebarSections(context: context)
         XCTAssertFalse(sections.isEmpty)
         XCTAssertEqual(sections.count, 1)
     }
 
     func testAutoTaskSidebarSectionsAreAvailableForChatPanelIcon() async {
-        let sections = await AutoTaskPlugin.shared.addSidebarSections(activeIcon: ChatPanelPlugin.iconName)
+        let context = PluginContext(activeIcon: ChatPanelPlugin.iconName, supportsAIChat: true)
+        let sections = await AutoTaskPlugin.shared.addSidebarSections(context: context)
         XCTAssertFalse(sections.isEmpty)
         XCTAssertEqual(sections.count, 1)
     }
@@ -45,9 +49,12 @@ final class AgentChatPluginTests: XCTestCase {
     }
 
     func testLayoutMenuIsAvailableForChatPanel() async {
-        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: EditorPlugin.iconName))
-        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: ChatPanelPlugin.iconName))
-        XCTAssertNil(await LayoutPlugin.shared.addToolBarTrailingView(activeIcon: "not-supported"))
+        let editorContext = PluginContext(activeIcon: EditorPlugin.iconName)
+        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(context: editorContext))
+        let chatContext = PluginContext(activeIcon: ChatPanelPlugin.iconName)
+        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(context: chatContext))
+        let otherContext = PluginContext(activeIcon: "not-supported")
+        XCTAssertNil(await LayoutPlugin.shared.addToolBarTrailingView(context: otherContext))
     }
 
     func testModelSelectorTabBuiltInTitlesRemainStable() {

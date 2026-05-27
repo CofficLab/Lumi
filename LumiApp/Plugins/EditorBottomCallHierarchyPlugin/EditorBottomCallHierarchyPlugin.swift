@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import os
@@ -29,8 +30,8 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Bottom Panel Tabs
 
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-call-hierarchy",
             title: String(localized: "Call Hierarchy", table: "EditorBottomCallHierarchy"),
@@ -39,8 +40,8 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
         )]
     }
 
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "editor-bottom-call-hierarchy", activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
+        guard tabId == "editor-bottom-call-hierarchy", context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorBottomCallHierarchyContentView())
     }
 }

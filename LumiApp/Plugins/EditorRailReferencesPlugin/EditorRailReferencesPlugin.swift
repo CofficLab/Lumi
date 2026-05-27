@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import os
@@ -30,13 +31,13 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+    @MainActor func addRailTabs(context: PluginContext) -> [RailTab] {
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [RailTab(id: "references", title: String(localized: "References", table: "EditorRailReferences"), systemImage: "arrow.triangle.branch", priority: 12)]
     }
 
-    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "references", activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
+        guard tabId == "references", context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorReferencesRailContentView())
     }
 }

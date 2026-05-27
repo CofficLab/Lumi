@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import os
@@ -31,9 +32,9 @@ actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
 
     /// 在编辑器面板头部显示面包屑导航（Tab 栏下方）
     @MainActor
-    func addPanelHeaderView(activeIcon: String?) -> AnyView? {
+    func addPanelHeaderView(context: PluginContext) -> AnyView? {
         // 仅在编辑器面板激活时提供
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(BreadcrumbNavHeaderView())
     }
 }

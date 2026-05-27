@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -14,8 +15,14 @@ struct PanelContentView: View {
     var body: some View {
         let activeIcon = layoutVM.activeViewContainerIcon
         let activeItem = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
-        let headerViews = pluginProvider.getActivePanelHeaderViews(activeIcon: activeIcon)
-        let hasBottomTabs = pluginProvider.hasBottomPanelTabs(activeIcon: activeIcon)
+        let pluginContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeItem?.supportsAIChat ?? false,
+            showsProjectToolbar: activeItem?.showsProjectToolbar ?? false
+        )
+        let headerViews = pluginProvider.getActivePanelHeaderViews(context: pluginContext)
+        let hasBottomTabs = pluginProvider.hasBottomPanelTabs(context: pluginContext)
         let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
         let showContentPanel = layoutVM.contentPanelVisible
 

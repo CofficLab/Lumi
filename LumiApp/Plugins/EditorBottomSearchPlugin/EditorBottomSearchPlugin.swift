@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import os
@@ -29,8 +30,8 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Bottom Panel Tabs
 
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-search",
             title: String(localized: "Search", table: "EditorBottomSearch"),
@@ -39,8 +40,8 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
         )]
     }
 
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "editor-bottom-search", activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
+        guard tabId == "editor-bottom-search", context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorBottomSearchContentView())
     }
 }

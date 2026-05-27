@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -26,8 +27,8 @@ actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] {
+        guard context.supportsAIChat else { return [] }
         return [AnyView(PendingMessagesView())]
     }
 }

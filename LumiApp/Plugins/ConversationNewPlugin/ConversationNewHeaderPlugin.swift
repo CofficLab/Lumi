@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 
 /// 新建对话头部插件
@@ -28,8 +29,8 @@ actor ConversationNewHeaderPlugin: SuperPlugin {
 
     /// 工具栏右侧：新建对话按钮
     @MainActor
-    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return nil }
+    func addToolBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.supportsAIChat else { return nil }
         return AnyView(NewChatButton())
     }
 }

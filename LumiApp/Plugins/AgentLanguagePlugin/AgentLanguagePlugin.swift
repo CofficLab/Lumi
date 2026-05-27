@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 
 /// 语言切换插件
@@ -37,8 +38,8 @@ actor AgentLanguagePlugin: SuperPlugin {
 
     /// 右侧栏底部工具栏左侧：语言切换按钮（在 ChatMode 按钮左侧）
     @MainActor
-    func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        guard context.supportsAIChat else { return [] }
         return [
             SidebarToolbarItem(
                 id: "language-toggle",
@@ -51,7 +52,7 @@ actor AgentLanguagePlugin: SuperPlugin {
 
     /// 语言切换按钮的自定义视图
     @MainActor
-    func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+    func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "language-toggle" else { return nil }
         return AnyView(LanguageToggleButton())
     }

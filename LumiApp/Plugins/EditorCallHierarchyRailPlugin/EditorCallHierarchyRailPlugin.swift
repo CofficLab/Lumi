@@ -1,3 +1,4 @@
+import LumiCoreKit
 import Foundation
 import SwiftUI
 import os
@@ -30,13 +31,13 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
-        guard activeIcon == EditorPlugin.iconName else { return [] }
+    @MainActor func addRailTabs(context: PluginContext) -> [RailTab] {
+        guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [RailTab(id: "callHierarchy", title: String(localized: "Calls", table: "EditorCallHierarchyRail"), systemImage: "point.3.connected.trianglepath.dotted", priority: 14)]
     }
 
-    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "callHierarchy", activeIcon == EditorPlugin.iconName else { return nil }
+    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
+        guard tabId == "callHierarchy", context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorCallHierarchyRailContentView())
     }
 }

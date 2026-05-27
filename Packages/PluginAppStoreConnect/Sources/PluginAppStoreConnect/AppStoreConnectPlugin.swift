@@ -31,8 +31,8 @@ public actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    public func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == Self.iconName else { return nil }
+    public func addToolBarCenterView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == Self.iconName else { return nil }
         return AnyView(AppStoreConnectToolbarAppPicker())
     }
 }

@@ -61,8 +61,8 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 右侧栏 Section 视图：任务列表
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] {
+        guard context.supportsAIChat else { return [] }
         return [AnyView(AutoTaskSidebarViewWrapper())]
     }
 }

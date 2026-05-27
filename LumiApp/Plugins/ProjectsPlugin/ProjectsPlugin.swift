@@ -35,18 +35,15 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     /// 在工具栏中间位置显示当前项目选择器
     ///
     /// 当激活的视图容器声明了 `showsProjectToolbar` 时显示。
-    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        guard let activeIcon,
-              let container = AppPluginVM.shared.getActiveViewContainer(activeIcon: activeIcon),
-              container.showsProjectToolbar
-        else { return nil }
+    @MainActor func addToolBarCenterView(context: PluginContext) -> AnyView? {
+        guard context.showsProjectToolbar else { return nil }
 
         return AnyView(ProjectControlView())
     }
 
-    /// 在状态栏左侧显示项目图标（ChatPanel 激活时）
+    /// 在状态栏左侧显示项目图标（AI 聊天激活时）
     @MainActor func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard ChatSurfaceActivation.isActive(context.activeIcon) else { return nil }
+        guard context.supportsAIChat else { return nil }
         return AnyView(ProjectStatusBarView())
     }
 

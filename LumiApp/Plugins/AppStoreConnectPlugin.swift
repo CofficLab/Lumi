@@ -1,3 +1,4 @@
+import LumiCoreKit
 import PluginAppStoreConnect
 import SwiftUI
 import os
@@ -30,7 +31,7 @@ actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        PluginAppStoreConnect.AppStoreConnectPlugin.shared.addToolBarCenterView(activeIcon: activeIcon)
+    func addToolBarCenterView(context: PluginContext) -> AnyView? {
+        PluginAppStoreConnect.AppStoreConnectPlugin.shared.addToolBarCenterView(context: context)
     }
 }

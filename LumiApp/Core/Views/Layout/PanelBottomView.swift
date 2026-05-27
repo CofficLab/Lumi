@@ -1,3 +1,4 @@
+import LumiCoreKit
 import MagicAlert
 import LumiUI
 import SwiftUI
@@ -17,14 +18,22 @@ struct PanelBottomView: View {
     @State private var activeTabId: String?
 
     var body: some View {
-        let tabs = pluginProvider.getBottomPanelTabs(activeIcon: layoutVM.activeViewContainerIcon)
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let pluginContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+        let tabs = pluginProvider.getBottomPanelTabs(context: pluginContext)
 
         VStack(spacing: 0) {
             // Tab 栏（始终显示）
             tabBar(tabs: tabs)
 
             // 内容区（有选中 Tab 时显示）
-            if let activeTabId, let content = pluginProvider.getBottomPanelContentView(tabId: activeTabId, activeIcon: layoutVM.activeViewContainerIcon) {
+            if let activeTabId, let content = pluginProvider.getBottomPanelContentView(tabId: activeTabId, context: pluginContext) {
                 Divider()
                 content
                     .frame(maxWidth: .infinity)

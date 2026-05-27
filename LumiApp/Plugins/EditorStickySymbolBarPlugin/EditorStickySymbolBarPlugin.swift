@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -26,8 +27,8 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
     static let shared = EditorStickySymbolBarPlugin()
 
     @MainActor
-    func addPanelHeaderView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+    func addPanelHeaderView(context: PluginContext) -> AnyView? {
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorStickySymbolBarHeaderView())
     }
 }

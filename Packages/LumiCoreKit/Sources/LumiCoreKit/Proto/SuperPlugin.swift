@@ -94,17 +94,26 @@ public struct ViewContainerItem: Identifiable, Equatable {
     /// 设为 `true` 的容器（如编辑器、Git）表示其工作流与项目上下文紧密相关。
     public let showsProjectToolbar: Bool
 
+    /// 是否支持 AI 聊天
+    ///
+    /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
+    /// 会在右侧栏贡献各自的 Section 视图。
+    /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
+    public let supportsAIChat: Bool
+
     public init(
         id: String,
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
+        supportsAIChat: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
     ) {
         self.id = id
         self.title = title
         self.icon = icon
         self.showsProjectToolbar = showsProjectToolbar
+        self.supportsAIChat = supportsAIChat
         self.makeView = makeView
     }
 
@@ -169,46 +178,46 @@ public protocol SuperPlugin: Actor {
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
 
     /// 包裹右侧栏根视图
-    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView
 
     /// 添加工具栏前导视图
-    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView?
+    @MainActor func addToolBarLeadingView(context: PluginContext) -> AnyView?
 
     /// 添加工具栏中间视图
-    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView?
+    @MainActor func addToolBarCenterView(context: PluginContext) -> AnyView?
 
     /// 添加工具栏右侧视图
-    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
+    @MainActor func addToolBarTrailingView(context: PluginContext) -> AnyView?
 
     /// 添加 Activity Bar 视图容器
     @MainActor func addViewContainer() -> ViewContainerItem?
 
     /// 提供 Panel Header 视图
-    @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
+    @MainActor func addPanelHeaderView(context: PluginContext) -> AnyView?
 
     /// 提供底部面板标签页列表
-    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab]
+    @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab]
 
     /// 提供指定底部面板 Tab 对应的内容视图
-    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView?
+    @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView?
 
     /// 提供 Rail 标签页列表
-    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab]
+    @MainActor func addRailTabs(context: PluginContext) -> [RailTab]
 
     /// 提供指定 Rail tab 对应的内容视图
-    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
+    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView?
 
     /// 添加右侧栏 Section 视图
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]
 
     /// 提供右侧栏底部工具栏左侧项列表
-    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+    @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
 
     /// 提供右侧栏底部工具栏右侧项列表
-    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+    @MainActor func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
 
     /// 提供指定右侧栏工具栏项对应的自定义按钮视图
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView?
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?

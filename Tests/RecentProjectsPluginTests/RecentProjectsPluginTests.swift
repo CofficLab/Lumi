@@ -14,15 +14,17 @@ final class RecentProjectsPluginTests: XCTestCase {
         XCTAssertFalse(RecentProjectsPlugin.isConfigurable)
     }
 
-    func testToolbarCenterViewIsHiddenForNonEditorIcon() async {
-        let view = await RecentProjectsPlugin.shared.addToolBarCenterView(activeIcon: "not-editor")
+    func testToolbarCenterViewIsHiddenForNonProjectIcon() async {
+        let context = PluginContext(activeIcon: "not-editor", showsProjectToolbar: false)
+        let view = await RecentProjectsPlugin.shared.addToolBarCenterView(context: context)
         XCTAssertNil(view)
     }
 
-    func testPluginProvidesToolbarViewForEditorIcon() async {
+    func testPluginProvidesToolbarViewForProjectIcon() async {
         // EditorPlugin 的 ViewContainerItem 声明了 showsProjectToolbar: true，
-        // 因此当其 activeIcon 激活时，工具栏中间应显示项目管理视图。
-        let view = await RecentProjectsPlugin.shared.addToolBarCenterView(activeIcon: EditorPlugin.iconName)
+        // 因此当其 showsProjectToolbar 为 true 时，工具栏中间应显示项目管理视图。
+        let context = PluginContext(activeIcon: EditorPlugin.iconName, showsProjectToolbar: true)
+        let view = await RecentProjectsPlugin.shared.addToolBarCenterView(context: context)
         XCTAssertNotNil(view)
     }
 

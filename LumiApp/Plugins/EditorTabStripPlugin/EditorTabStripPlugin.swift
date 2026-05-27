@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 import AgentToolKit
 
@@ -24,9 +25,9 @@ actor EditorTabStripPlugin: SuperPlugin {
 
     /// 当编辑器面板激活时，提供 Panel Header 视图
     @MainActor
-    func addPanelHeaderView(activeIcon: String?) -> AnyView? {
+    func addPanelHeaderView(context: PluginContext) -> AnyView? {
         // 仅在编辑器面板激活时提供 header
-        guard activeIcon == EditorPlugin.iconName else { return nil }
+        guard context.activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorTabHeaderView())
     }
 

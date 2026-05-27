@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 import os
@@ -28,8 +29,8 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Sidebar Toolbar
 
-    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        guard context.supportsAIChat else { return [] }
         return [
             SidebarToolbarItem(
                 id: "chat-submit",
@@ -40,7 +41,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
         ]
     }
 
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "chat-submit" else { return nil }
         return AnyView(ChatSubmitToolbarButton())
     }

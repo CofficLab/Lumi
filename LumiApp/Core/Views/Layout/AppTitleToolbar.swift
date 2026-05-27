@@ -1,3 +1,4 @@
+import LumiCoreKit
 import AppKit
 import LumiUI
 import SwiftUI
@@ -16,9 +17,16 @@ struct AppTitleToolbar: View {
 
     var body: some View {
         let activeIcon = layoutVM.activeViewContainerIcon
-        let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
-        let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
-        let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
+        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let pluginContext = PluginContext(
+            activeIcon: activeIcon,
+            isEditorVisible: layoutVM.editorVisible,
+            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+        )
+        let leadingViews = pluginProvider.getToolbarLeadingViews(context: pluginContext)
+        let centerViews = pluginProvider.getToolbarCenterViews(context: pluginContext)
+        let trailingViews = pluginProvider.getToolbarTrailingViews(context: pluginContext)
         let theme = themeVM.activeChromeTheme
 
         ZStack {

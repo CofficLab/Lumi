@@ -1,3 +1,4 @@
+import LumiCoreKit
 import AppKit
 import Combine
 import LumiUI
@@ -101,9 +102,16 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let activeIcon = layoutVM.activeViewContainerIcon
-                let rawSidebarSections = pluginProvider.getSidebarSections(activeIcon: activeIcon)
+                let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+                let pluginContext = PluginContext(
+                    activeIcon: activeIcon,
+                    isEditorVisible: layoutVM.editorVisible,
+                    supportsAIChat: activeContainer?.supportsAIChat ?? false,
+                    showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+                )
+                let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
                 let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
-                let hasRailTabs = pluginProvider.hasRailTabs(activeIcon: activeIcon)
+                let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
                 let showRail = hasRailTabs && layoutVM.railVisible
                 let showEditor = layoutVM.editorVisible
 

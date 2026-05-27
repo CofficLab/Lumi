@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 import os
@@ -19,20 +20,20 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     static let shared = ChatAttachmentPlugin()
 
-    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] {
+        guard context.supportsAIChat else { return [] }
         return [AnyView(ChatAttachmentSectionView())]
     }
 
-    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return content }
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
+        guard context.supportsAIChat else { return content }
         return AnyView(ChatAttachmentDropRootView(content: content))
     }
 
     // MARK: - Sidebar Toolbar
 
-    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
-        guard ChatSurfaceActivation.isActive(activeIcon) else { return [] }
+    @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        guard context.supportsAIChat else { return [] }
         return [
             SidebarToolbarItem(
                 id: "image-upload",
@@ -43,7 +44,7 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
         ]
     }
 
-    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
+    @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "image-upload" else { return nil }
         return AnyView(ImageUploadToolbarButton())
     }
