@@ -15,6 +15,12 @@ enum AppConfig {
     /// 统一的头部高度（侧边栏顶部和详情栏头部）
     static let headerHeight: CGFloat = 44
 
+    /// 主窗口是否使用 Lumi 自绘标题工具栏。
+    ///
+    /// `true`：隐藏系统标题栏，使用 `AppTitleToolbar` 完全控制顶部工具栏布局。
+    /// `false`：恢复 macOS/SwiftUI 系统控制的 title bar + toolbar。
+    static let useCustomMainWindowToolbar = false
+
     // MARK: - Database Container (通过 DBConfig)
 
     /// 获取配置好的 SwiftData 模型容器

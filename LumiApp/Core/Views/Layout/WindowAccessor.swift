@@ -27,3 +27,12 @@ struct WindowAccessor: NSViewRepresentable {
         }
     }
 }
+
+extension NSWindow {
+    func configureForLumiMainChrome() {
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
+        toolbar = nil
+        styleMask.insert(.fullSizeContentView)
+    }
+}

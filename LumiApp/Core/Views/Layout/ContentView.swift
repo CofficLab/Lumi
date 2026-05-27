@@ -67,6 +67,9 @@ struct ContentView: View, SuperLog {
             themeVM: themeVM,
             content: {
                 VStack(spacing: 0) {
+                    if AppConfig.useCustomMainWindowToolbar {
+                        AppTitleToolbar()
+                    }
                     mainContent
                     StatusBar()
                 }
@@ -76,40 +79,50 @@ struct ContentView: View, SuperLog {
             onAppear: { onAppear(container: container) },
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
-        .toolbar {
-            let activeIcon = layoutVM.activeViewContainerIcon
-            let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
-            let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
-            let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
-
-            ToolbarItemGroup(placement: .navigation) {
-                ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
-                    view
-                }
-            }
-
-            if !centerViews.isEmpty {
-                ToolbarItemGroup(placement: .principal) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
-                            view
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
-
-            ToolbarItemGroup(placement: .primaryAction) {
-                ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
-                    view
-                }
-            }
-        }
         .environment(\.windowContainer, container)
         .background {
             WindowAccessor { window in
                 RootContainer.shared.windowManagerVM.associateWindow(window, with: container.id)
+                if AppConfig.useCustomMainWindowToolbar {
+                    window.configureForLumiMainChrome()
+                }
                 window.title = container.title
+            }
+        }
+        .toolbar {
+            if !AppConfig.useCustomMainWindowToolbar {
+                systemToolbarContent
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var systemToolbarContent: some ToolbarContent {
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let leadingViews = pluginProvider.getToolbarLeadingViews(activeIcon: activeIcon)
+        let centerViews = pluginProvider.getToolbarCenterViews(activeIcon: activeIcon)
+        let trailingViews = pluginProvider.getToolbarTrailingViews(activeIcon: activeIcon)
+
+        ToolbarItemGroup(placement: .navigation) {
+            ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
+                view
+            }
+        }
+
+        if !centerViews.isEmpty {
+            ToolbarItemGroup(placement: .principal) {
+                HStack(spacing: 8) {
+                    ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+
+        ToolbarItemGroup(placement: .primaryAction) {
+            ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
+                view
             }
         }
     }
