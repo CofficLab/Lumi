@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// FreeModel API 供应商实现
 ///

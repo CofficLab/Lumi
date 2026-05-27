@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 import os
 
 // MARK: - Zhipu AI 供应商
@@ -432,9 +433,11 @@ private struct ZhipuAnySendable: Decodable {
             value = ""
         }
     }
+}
 
-    // MARK: - Availability
+// MARK: - Availability
 
+extension ZhipuProvider {
     func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
         .chatPing()
     }

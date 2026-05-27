@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// Xybbz API 供应商实现
 ///

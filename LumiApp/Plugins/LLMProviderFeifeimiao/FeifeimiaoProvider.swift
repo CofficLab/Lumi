@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import LumiCoreKit
 
 /// Feifeimiao API 供应商实现
 ///

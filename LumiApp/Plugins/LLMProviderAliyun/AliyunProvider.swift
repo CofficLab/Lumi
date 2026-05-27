@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 import os
 
 // MARK: - 阿里云供应商
@@ -419,9 +420,11 @@ private struct AliyunAnySendable: Decodable {
             value = ""
         }
     }
+}
 
-    // MARK: - Availability
+// MARK: - Availability
 
+extension AliyunProvider {
     func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
         .chatPing()
     }

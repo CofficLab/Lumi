@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import Combine
+import LumiCoreKit
 import os
 
 /// MLX 本地模型 Provider
