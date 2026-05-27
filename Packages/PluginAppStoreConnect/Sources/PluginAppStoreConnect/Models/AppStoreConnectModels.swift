@@ -144,8 +144,6 @@ struct AppStoreVersion: Identifiable, Equatable, Decodable {
 struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
     let id: String
     var locale: String
-    var name: String
-    var subtitle: String
     var promotionalText: String
     var description: String
     var keywords: String
@@ -160,8 +158,6 @@ struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
 
     enum AttributeKeys: String, CodingKey {
         case locale
-        case name
-        case subtitle
         case promotionalText
         case description
         case keywords
@@ -173,8 +169,6 @@ struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
     init(
         id: String,
         locale: String,
-        name: String = "",
-        subtitle: String = "",
         promotionalText: String = "",
         description: String = "",
         keywords: String = "",
@@ -184,8 +178,6 @@ struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
     ) {
         self.id = id
         self.locale = locale
-        self.name = name
-        self.subtitle = subtitle
         self.promotionalText = promotionalText
         self.description = description
         self.keywords = keywords
@@ -199,8 +191,6 @@ struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
         id = try container.decode(String.self, forKey: .id)
         let attributes = try container.nestedContainer(keyedBy: AttributeKeys.self, forKey: .attributes)
         locale = try attributes.decodeIfPresent(String.self, forKey: .locale) ?? "en-US"
-        name = try attributes.decodeIfPresent(String.self, forKey: .name) ?? ""
-        subtitle = try attributes.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
         promotionalText = try attributes.decodeIfPresent(String.self, forKey: .promotionalText) ?? ""
         description = try attributes.decodeIfPresent(String.self, forKey: .description) ?? ""
         keywords = try attributes.decodeIfPresent(String.self, forKey: .keywords) ?? ""

@@ -637,7 +637,6 @@ private struct MetadataEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                field(AppStoreConnectLocalization.string("Subtitle"), limit: 30, text: binding(\.subtitle))
                 field(AppStoreConnectLocalization.string("Promotional Text"), limit: 170, text: binding(\.promotionalText), axis: .vertical)
                 field(AppStoreConnectLocalization.string("Description"), limit: 4000, text: binding(\.description), axis: .vertical, height: 160)
                 field(AppStoreConnectLocalization.string("Keywords"), limit: 100, text: binding(\.keywords))

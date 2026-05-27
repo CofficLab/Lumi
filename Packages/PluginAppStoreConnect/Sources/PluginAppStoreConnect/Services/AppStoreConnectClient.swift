@@ -86,7 +86,7 @@ final class AppStoreConnectClient: @unchecked Sendable {
             URLQueryItem(name: "limit", value: "100"),
             URLQueryItem(
                 name: "fields[appStoreVersionLocalizations]",
-                value: "locale,subtitle,promotionalText,description,keywords,whatsNew,supportUrl,marketingUrl"
+                value: "locale,promotionalText,description,keywords,whatsNew,supportUrl,marketingUrl"
             )
         ]
         let response: AppStoreConnectListResponse<AppStoreVersionLocalization> = try await request(
@@ -102,7 +102,6 @@ final class AppStoreConnectClient: @unchecked Sendable {
                 "type": "appStoreVersionLocalizations",
                 "id": localization.id,
                 "attributes": [
-                    "subtitle": localization.subtitle,
                     "promotionalText": localization.promotionalText,
                     "description": localization.description,
                     "keywords": localization.keywords,
