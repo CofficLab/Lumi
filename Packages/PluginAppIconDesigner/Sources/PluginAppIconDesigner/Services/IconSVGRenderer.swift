@@ -41,6 +41,10 @@ public struct IconSVGRenderer {
             return """
               <circle id="\(escape(layer.id))" cx="\(number(cx))" cy="\(number(cy))" r="\(number(radius))" \(common)/>
             """
+        case .capsule(let x, let y, let width, let height):
+            return """
+              <rect id="\(escape(layer.id))" x="\(number(x))" y="\(number(y))" width="\(number(width))" height="\(number(height))" rx="\(number(height / 2))" \(common)/>
+            """
         case .triangle(let x, let y, let width, let height):
             let p1 = "\(number(x + width / 2)),\(number(y))"
             let p2 = "\(number(x + width)),\(number(y + height))"
@@ -53,6 +57,14 @@ public struct IconSVGRenderer {
             return """
               <line id="\(escape(layer.id))" x1="\(number(x1))" y1="\(number(y1))" x2="\(number(x2))" y2="\(number(y2))" fill="none" opacity="\(number(opacity))"\(strokeAttributes(lineStroke))\(transform) stroke-linecap="round"/>
             """
+        case .symbol(let name, let x, let y, let size, _):
+            return """
+              <text id="\(escape(layer.id))" x="\(number(x))" y="\(number(y))" text-anchor="middle" dominant-baseline="middle" font-size="\(number(size))" \(common)>\(escape(name))</text>
+            """
+        case .text(let value, let x, let y, let size, _):
+            return """
+              <text id="\(escape(layer.id))" x="\(number(x))" y="\(number(y))" text-anchor="middle" dominant-baseline="middle" font-size="\(number(size))" \(common)>\(escape(value))</text>
+            """
         }
     }
 
@@ -60,6 +72,8 @@ public struct IconSVGRenderer {
         switch paint {
         case .color(let value):
             return value
+        case .linearGradient(let colors, _, _), .radialGradient(let colors, _, _, _):
+            return colors.first
         }
     }
 

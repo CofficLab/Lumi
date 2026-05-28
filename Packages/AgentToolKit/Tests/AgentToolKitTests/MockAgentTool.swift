@@ -9,6 +9,7 @@ struct MockAgentTool: SuperAgentTool {
     let risk: CommandRiskLevel
     var executeDelayNanoseconds: UInt64 = 0
     var failure: Error?
+    var resultFromArguments: (@Sendable ([String: ToolArgument]) -> String)?
 
     init(
         name: String = "mock_tool",
@@ -17,7 +18,8 @@ struct MockAgentTool: SuperAgentTool {
         result: String = "ok",
         risk: CommandRiskLevel = .safe,
         executeDelayNanoseconds: UInt64 = 0,
-        failure: Error? = nil
+        failure: Error? = nil,
+        resultFromArguments: (@Sendable ([String: ToolArgument]) -> String)? = nil
     ) {
         self.name = name
         self.englishDescription = englishDescription
@@ -26,6 +28,7 @@ struct MockAgentTool: SuperAgentTool {
         self.risk = risk
         self.executeDelayNanoseconds = executeDelayNanoseconds
         self.failure = failure
+        self.resultFromArguments = resultFromArguments
     }
 
     func description(for language: LanguagePreference) -> String {
@@ -53,7 +56,7 @@ struct MockAgentTool: SuperAgentTool {
             try await Task.sleep(nanoseconds: executeDelayNanoseconds)
         }
         try context.checkCancellation()
-        return result
+        return resultFromArguments?(arguments) ?? result
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

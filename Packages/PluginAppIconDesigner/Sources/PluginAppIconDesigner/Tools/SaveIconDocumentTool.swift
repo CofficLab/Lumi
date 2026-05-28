@@ -1,17 +1,17 @@
 import AgentToolKit
 import Foundation
 
-public struct ExportIconSVGTool: SuperAgentTool {
-    public let name = "export_icon_svg"
+public struct SaveIconDocumentTool: SuperAgentTool {
+    public let name = "save_icon_document"
 
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "把当前可编辑图标文档导出为 SVG 文件。"
+            return "把当前可编辑图标文档保存为 JSON 文件。"
         case .english:
-            return "Export the current editable icon document as an SVG file."
+            return "Save the current editable icon document as a JSON file."
         }
     }
 
@@ -19,13 +19,13 @@ public struct ExportIconSVGTool: SuperAgentTool {
         [
             "type": "object",
             "properties": [
-                "outputPath": ["type": "string", "description": IconToolSupport.description(language, en: "Absolute SVG output path. If omitted, a file is written to the temporary directory.", zh: "SVG 输出绝对路径。省略时会写入临时目录。")],
+                "outputPath": ["type": "string", "description": IconToolSupport.description(language, en: "Absolute JSON output path. If omitted, a file is written to the temporary directory.", zh: "JSON 输出绝对路径。省略时会写入临时目录。")],
             ],
         ]
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "Export icon SVG"
+        "Save icon document"
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -47,9 +47,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
                 at: outputURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-
-            let svg = IconSVGRenderer().render(document: document)
-            try svg.write(to: outputURL, atomically: true, encoding: .utf8)
+            try IconDocumentFileService().save(document: document, to: outputURL)
 
             await MainActor.run {
                 IconDocumentStore.shared.setExportURL(outputURL)
@@ -58,12 +56,12 @@ public struct ExportIconSVGTool: SuperAgentTool {
             return IconToolSupport.localized(
                 language,
                 en: """
-                Exported icon SVG.
+                Saved icon document.
                 documentId: \(document.id)
                 path: \(outputURL.path)
                 """,
                 zh: """
-                已导出图标 SVG。
+                已保存图标文档。
                 文档ID: \(document.id)
                 路径: \(outputURL.path)
                 """
@@ -85,7 +83,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
             .lowercased()
             .replacingOccurrences(of: #"[^a-z0-9_-]+"#, with: "-", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-        let fileName = (safeTitle.isEmpty ? "icon" : safeTitle) + "-\(document.id.prefix(8)).svg"
+        let fileName = (safeTitle.isEmpty ? "icon" : safeTitle) + "-\(document.id.prefix(8)).json"
         return FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiAppIconDesigner", isDirectory: true)
             .appendingPathComponent(fileName)

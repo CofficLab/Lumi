@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import AgentToolKit
 
 /// 插件分类设置视图：展示指定分类下所有可配置插件的开关列表
 struct PluginCategorySettingsView: View {
@@ -60,7 +61,7 @@ struct PluginCategorySettingsView: View {
 
                     AppSettingsPluginToggleRow(
                         name: pluginType.displayName,
-                        description: pluginType.description,
+                        description: pluginType.description(for: .current),
                         icon: pluginType.iconName,
                         isEnabled: Binding(
                             get: { pluginStates[pluginId, default: true] },

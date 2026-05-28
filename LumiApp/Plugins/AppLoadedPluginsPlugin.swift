@@ -24,7 +24,7 @@ actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
                 return LoadedPluginInfo(
                     id: pluginType.id,
                     displayName: pluginType.displayName,
-                    description: pluginType.description,
+                    description: pluginType.description(for: .current),
                     order: pluginType.order
                 )
             }

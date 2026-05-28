@@ -1,5 +1,6 @@
 import SwiftUI
 import os
+import LumiCoreKit
 
 actor HostsManagerPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger

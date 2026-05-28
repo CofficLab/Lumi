@@ -19,10 +19,10 @@ public struct CreateIconDocumentTool: SuperAgentTool {
         [
             "type": "object",
             "properties": [
-                "title": ["type": "string", "description": "Document title."],
-                "width": ["type": "number", "description": "Canvas width. Defaults to 1024."],
-                "height": ["type": "number", "description": "Canvas height. Defaults to 1024."],
-                "background": ["type": "string", "description": "Background color, for example #111827 or #00000000."],
+                "title": ["type": "string", "description": IconToolSupport.description(language, en: "Document title.", zh: "文档标题。")],
+                "width": ["type": "number", "description": IconToolSupport.description(language, en: "Canvas width. Defaults to 1024.", zh: "画布宽度，默认 1024。")],
+                "height": ["type": "number", "description": IconToolSupport.description(language, en: "Canvas height. Defaults to 1024.", zh: "画布高度，默认 1024。")],
+                "background": ["type": "string", "description": IconToolSupport.description(language, en: "Background color, for example #111827 or #00000000.", zh: "背景颜色，例如 #111827 或 #00000000。")],
             ],
         ]
     }
@@ -36,6 +36,7 @@ public struct CreateIconDocumentTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(arguments)
         let title = IconToolSupport.string(arguments, "title")
         let width = IconToolSupport.double(arguments, "width", default: 1024)
         let height = IconToolSupport.double(arguments, "height", default: 1024)
@@ -50,11 +51,21 @@ public struct CreateIconDocumentTool: SuperAgentTool {
             )
         }
 
-        return """
-        Created icon document.
-        documentId: \(document.id)
-        title: \(document.title)
-        size: \(Int(document.width))x\(Int(document.height))
-        """
+        switch language {
+        case .chinese:
+            return """
+            已创建图标文档。
+            文档ID: \(document.id)
+            标题: \(document.title)
+            尺寸: \(Int(document.width))x\(Int(document.height))
+            """
+        case .english:
+            return """
+            Created icon document.
+            documentId: \(document.id)
+            title: \(document.title)
+            size: \(Int(document.width))x\(Int(document.height))
+            """
+        }
     }
 }

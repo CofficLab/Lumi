@@ -3,6 +3,7 @@ import AppKit
 import Combine
 import Foundation
 import os
+import LumiCoreKit
 
 /// 菜单栏管理插件：管理菜单栏图标的显示与隐藏
 actor MenuBarManagerPlugin: SuperPlugin, SuperLog {

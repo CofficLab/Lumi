@@ -160,6 +160,12 @@ public protocol SuperPlugin: Actor {
     /// 插件描述
     static var description: String { get }
 
+    /// 插件描述（按语言偏好）
+    ///
+    /// 新插件应优先实现该方法以提供多语言描述；旧插件会通过默认实现回退到
+    /// ``description``，从而保持源码兼容。
+    static func description(for language: LanguagePreference) -> String
+
     /// 插件图标名称（SF Symbols）
     static var iconName: String { get }
 

@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 
 // MARK: - Core Property Default Implementation
@@ -14,6 +15,10 @@ extension SuperPlugin {
     public static var displayName: String { id }
 
     public static var description: String { "" }
+
+    public static func description(for language: LanguagePreference) -> String {
+        description
+    }
 
     public static var iconName: String { "puzzlepiece" }
 

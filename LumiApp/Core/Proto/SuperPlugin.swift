@@ -168,6 +168,12 @@ protocol SuperPlugin: Actor {
     /// 简短描述插件的功能，用于设置面板中的插件说明。
     static var description: String { get }
 
+    /// 插件描述（按语言偏好）
+    ///
+    /// 新插件应优先实现该方法以提供多语言描述；旧插件会通过默认实现回退到
+    /// ``description``，从而保持源码兼容。
+    static func description(for language: LanguagePreference) -> String
+
     /// 插件图标名称
     ///
     /// SF Symbols 图标名称，将显示在导航栏、设置面板等位置。
@@ -450,6 +456,10 @@ extension SuperPlugin {
     static var displayName: String { id }
 
     static var description: String { "" }
+
+    static func description(for language: LanguagePreference) -> String {
+        description
+    }
 
     static var iconName: String { "puzzlepiece" }
 
