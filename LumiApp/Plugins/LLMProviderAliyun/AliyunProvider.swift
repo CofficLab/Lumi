@@ -26,7 +26,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-    static let defaultModel = "qwen3.7-max"
+    static let defaultModel = "qwen3.6-plus"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "qwen3.5-plus", description: "通义千问 3.5 Plus，阿里云旗舰大模型，支持百万级上下文", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
