@@ -1,4 +1,5 @@
 import Foundation
+import PluginLLMProviderCodex
 
 /// Codex CLI 供应商插件
 ///
@@ -7,15 +8,15 @@ import Foundation
 /// 使用 ChatGPT 账号认证（无需 API Key）。
 actor CodexPlugin: SuperPlugin {
     static let shared = CodexPlugin()
-    static let id = "LLMProviderCodex"
-    static let displayName = "Codex CLI"
-    static let description = "通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）"
-    static let iconName = "terminal"
+    static let id = PluginLLMProviderCodex.CodexPlugin.id
+    static let displayName = PluginLLMProviderCodex.CodexPlugin.displayName
+    static let description = PluginLLMProviderCodex.CodexPlugin.description
+    static let iconName = PluginLLMProviderCodex.CodexPlugin.iconName
     static var category: PluginCategory { .llmProvider }
-    static var order: Int { 11 }
+    static var order: Int { PluginLLMProviderCodex.CodexPlugin.order }
     static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        CodexProvider.self
+        PluginLLMProviderCodex.CodexProvider.self
     }
 }
