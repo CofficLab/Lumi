@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 import Testing
 @testable import RAGKit
 
@@ -37,6 +38,19 @@ import Testing
     #expect(decision.score == 0.8)
     #expect(decision.threshold == 0.5)
     #expect(decision.reasons == ["path"])
+}
+
+@Test func testAppleNativeEmbeddingSkipsUnsupportedDetectedLanguage() {
+    let candidates = AppleNativeEmbeddingProvider.nativeEmbeddingCandidates(detected: .dutch)
+
+    #expect(!candidates.contains(.dutch))
+    #expect(candidates == [.english, .simplifiedChinese, .traditionalChinese])
+}
+
+@Test func testAppleNativeEmbeddingKeepsSupportedDetectedLanguageFirst() {
+    let candidates = AppleNativeEmbeddingProvider.nativeEmbeddingCandidates(detected: .simplifiedChinese)
+
+    #expect(candidates == [.simplifiedChinese, .english, .traditionalChinese])
 }
 
 @Test func testRAGErrorDescriptions() {
