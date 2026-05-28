@@ -73,9 +73,6 @@
     "Switch between Brief, Normal, and Detailed response styles" : {
 
     },
-    "Switched to %@ Verbosity" : {
-
-    },
     "Verbosity" : {
       "extractionState" : "manual",
       "localizations" : {
