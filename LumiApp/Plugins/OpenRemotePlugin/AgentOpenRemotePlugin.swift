@@ -21,7 +21,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
     static let iconName: String = "safari"
     static var category: PluginCategory { .general }
     static var order: Int { 90 }
-    static let policy: PluginPolicy = .optOut
+    static let policy: PluginPolicy = .optIn
 
     // MARK: - Instance
 

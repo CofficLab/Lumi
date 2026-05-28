@@ -15,7 +15,7 @@ actor AgentOpenInFinderPlugin: SuperPlugin {
     static let iconName = "folder"
     static var category: PluginCategory { .integration }
     static var order: Int { 96 }
-    static let policy: PluginPolicy = .optOut
+    static let policy: PluginPolicy = .optIn
 
     /// 用户可在设置中启用/禁用此插件
 

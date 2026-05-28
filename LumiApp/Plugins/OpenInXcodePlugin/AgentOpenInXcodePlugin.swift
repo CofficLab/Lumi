@@ -20,7 +20,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     static let iconName: String = "hammer"
     static var category: PluginCategory { .integration }
     static var order: Int { 95 }
-    static let policy: PluginPolicy = .optOut
+    static let policy: PluginPolicy = .optIn
 
     // MARK: - Instance
 
