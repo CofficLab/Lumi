@@ -18,6 +18,7 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     static let description: String = PluginDeviceInfo.DeviceInfoPlugin.description
     static let iconName = PluginDeviceInfo.DeviceInfoPlugin.iconName
     static var order: Int { PluginDeviceInfo.DeviceInfoPlugin.order }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     // MARK: - Instance
 

@@ -18,6 +18,7 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginDiskManager.DiskManagerPlugin.iconName
     static var category: PluginCategory { .system }
     static var order: Int { PluginDiskManager.DiskManagerPlugin.order }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 

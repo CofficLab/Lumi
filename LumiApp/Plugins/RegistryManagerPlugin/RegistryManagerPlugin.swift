@@ -14,6 +14,7 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "arrow.triangle.2.circlepath"
     static var category: PluginCategory { .system }
     static var order: Int { 80 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RegistryManagerPlugin()

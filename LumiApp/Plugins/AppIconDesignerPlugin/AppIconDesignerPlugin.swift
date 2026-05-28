@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import PluginAppIconDesigner
 import SwiftUI
 import os
@@ -15,6 +16,7 @@ actor AppIconDesignerPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginAppIconDesigner.AppIconDesignerPlugin.iconName
     static var category: PluginCategory { .general }
     static var order: Int { PluginAppIconDesigner.AppIconDesignerPlugin.order }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 
@@ -31,5 +33,23 @@ actor AppIconDesignerPlugin: SuperPlugin, SuperLog {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
             AnyView(PluginAppIconDesigner.AppIconDesignerView())
         }
+    }
+
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [
+            PluginAppIconDesigner.ApplyIconPresetTool(),
+            PluginAppIconDesigner.CreateIconDocumentTool(),
+            PluginAppIconDesigner.SetIconBackgroundTool(),
+            PluginAppIconDesigner.AddIconShapeTool(),
+            PluginAppIconDesigner.UpdateIconLayerTool(),
+            PluginAppIconDesigner.UpdateIconShapeTool(),
+            PluginAppIconDesigner.LintIconDocumentTool(),
+            PluginAppIconDesigner.SaveIconDocumentTool(),
+            PluginAppIconDesigner.LoadIconDocumentTool(),
+            PluginAppIconDesigner.ExportIconSVGTool(),
+            PluginAppIconDesigner.RegisterAppIconArtifactTool(),
+            PluginAppIconDesigner.ExportAppIconTool(),
+        ]
     }
 }

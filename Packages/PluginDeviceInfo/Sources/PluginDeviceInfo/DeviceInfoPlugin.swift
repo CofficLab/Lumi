@@ -20,6 +20,7 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     public static let description: String = PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.")
     public static let iconName = "macbook.and.iphone"
     public static var order: Int { 10 }
+    public nonisolated static let policy: PluginPolicy = .optIn
 
     // MARK: - Instance
 

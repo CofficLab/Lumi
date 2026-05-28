@@ -17,6 +17,7 @@ actor GitPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "arrow.triangle.branch"
     static var category: PluginCategory { .developerTool }
     static var order: Int { 11 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = GitPlugin()

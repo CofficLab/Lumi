@@ -17,6 +17,7 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
     static let iconName = "cursorarrow.click.2"
     static var order: Int { 50 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RClickPlugin()

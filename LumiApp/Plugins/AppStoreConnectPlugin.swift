@@ -16,6 +16,7 @@ actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginAppStoreConnect.AppStoreConnectPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { PluginAppStoreConnect.AppStoreConnectPlugin.order }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = AppStoreConnectPlugin()

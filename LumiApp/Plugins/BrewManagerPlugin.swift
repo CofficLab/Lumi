@@ -18,6 +18,7 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginBrewManager.BrewManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 60 }
+    nonisolated static let policy: PluginPolicy = .optIn
     nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()
     

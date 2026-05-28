@@ -18,6 +18,7 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginDockerManager.DockerManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 50 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 

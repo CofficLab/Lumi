@@ -1,5 +1,6 @@
 import os
 import SwiftUI
+import LumiCoreKit
 
 actor ClipboardManagerPlugin: SuperPlugin {
     /// 插件专用 Logger
@@ -14,7 +15,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     static let iconName = "doc.on.clipboard"
     static var category: PluginCategory { .general }
     static var order: Int { 70 }
-    static let policy: PluginPolicy = .optOut
+    static let policy: PluginPolicy = .optIn
 
     static let shared = ClipboardManagerPlugin()
     private nonisolated static let settingsStore = ClipboardManagerPluginLocalStore.shared

@@ -13,6 +13,7 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let iconName = "text.cursor"
     static var category: PluginCategory { .editor }
     static var order: Int { 60 }
+    nonisolated static let policy: PluginPolicy = .optIn
     
     nonisolated var instanceLabel: String { Self.id }
     static let shared = TextActionsPlugin()

@@ -17,6 +17,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "network"
     static var category: PluginCategory { .system }
     static var order: Int { 30 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 

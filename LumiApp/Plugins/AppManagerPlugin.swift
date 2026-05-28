@@ -19,6 +19,7 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = PluginAppManager.AppManagerPlugin.iconName
     static var category: PluginCategory { .system }
     static var order: Int { PluginAppManager.AppManagerPlugin.order }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = AppManagerPlugin()

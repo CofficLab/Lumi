@@ -18,6 +18,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     static let iconName = "chevron.left.forwardslash.chevron.right"
     static var category: PluginCategory { .editor }
     static var order: Int { 77 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = EditorPlugin()
