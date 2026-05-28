@@ -219,9 +219,8 @@ final class RootContainer: ObservableObject, SuperLog {
             registry.recordInstalledPlugins(records)
         }
         
-        EditorSettingsLifecycle.onQuickOpenSettingSelected = { searchQuery in
-            AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.editor.rawValue)
-            AppSettingStore.savePendingEditorSettingsSearchQuery(searchQuery)
+        EditorSettingsLifecycle.onQuickOpenSettingSelected = { _ in
+            AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.general.rawValue)
             NotificationCenter.postOpenSettings()
         }
         

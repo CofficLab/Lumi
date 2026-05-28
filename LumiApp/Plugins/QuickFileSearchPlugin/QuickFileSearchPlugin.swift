@@ -71,12 +71,6 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
         AnyView(FileSearchOverlay(content: content()))
     }
 
-    /// 提供设置视图
-    @MainActor
-    func addSettingsView() -> AnyView? {
-        AnyView(QuickFileSearchSettingsView())
-    }
-
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] { [] }
 
