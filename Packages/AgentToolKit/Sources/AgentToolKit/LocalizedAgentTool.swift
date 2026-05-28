@@ -24,7 +24,9 @@ public struct LocalizedAgentTool: SuperAgentTool, Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try await underlying.execute(arguments: arguments, context: context)
+        var localizedArguments = arguments
+        localizedArguments["__lumi_language"] = ToolArgument(language.rawValue)
+        return try await underlying.execute(arguments: localizedArguments, context: context)
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

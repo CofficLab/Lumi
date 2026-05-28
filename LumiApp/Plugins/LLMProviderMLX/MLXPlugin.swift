@@ -8,7 +8,6 @@ actor MLXPlugin: SuperPlugin {
     static let description = "Local LLM via Apple MLX"
     static let iconName = "desktopcomputer"
     static var order: Int { 10 }
-    static let enable: Bool = true
     static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {

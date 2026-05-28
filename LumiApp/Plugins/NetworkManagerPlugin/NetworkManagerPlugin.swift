@@ -8,7 +8,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🛜"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "NetworkManager"
@@ -18,6 +17,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "network"
     static var category: PluginCategory { .system }
     static var order: Int { 30 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 
@@ -42,7 +42,23 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "网络实时监控",
+                subtitle: "在菜单栏和仪表盘查看网速、流量和连接状态。",
+                icon: Self.iconName,
+                accent: .cyan,
+                metrics: [
+                    PluginPosterSupport.metric("Up", "上传"),
+                    PluginPosterSupport.metric("Down", "下载"),
+                ],
+                rows: ["实时网速", "流量历史", "连接状态"],
+                chips: ["系统", "网络", "菜单栏"]
+            ),
+        ]
+    }
 
     @MainActor func addMenuBarPopupView() -> AnyView? {
         AnyView(NetworkMenuBarPopupView())

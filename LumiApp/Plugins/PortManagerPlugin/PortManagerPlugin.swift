@@ -6,7 +6,6 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🔌"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "PortManager"
@@ -16,6 +15,7 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "arrow.up.arrow.down.circle"
     static var category: PluginCategory { .system }
     static var order: Int { 20 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
 
@@ -25,7 +25,23 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "端口占用管理",
+                subtitle: "查看本机端口监听和进程占用，定位开发服务冲突。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric(":3000", "端口"),
+                    PluginPosterSupport.metric("PID", "进程"),
+                ],
+                rows: ["监听端口", "占用进程", "终止操作"],
+                chips: ["系统", "端口", "开发"]
+            ),
+        ]
+    }
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

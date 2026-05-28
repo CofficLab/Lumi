@@ -9,7 +9,6 @@ actor LPgptPlugin: SuperPlugin {
     static let iconName = "globe"
     static var category: PluginCategory { .llmProvider }
     static var order: Int { 12 }
-    static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         LPgptProvider.self

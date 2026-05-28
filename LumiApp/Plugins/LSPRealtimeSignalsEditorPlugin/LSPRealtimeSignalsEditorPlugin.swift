@@ -14,8 +14,6 @@ actor LSPRealtimeSignalsEditorPlugin: SuperPlugin {
     static let description = String(localized: "Triggers realtime LSP updates for highlights, hints, and signature help.", table: "LSPRealtimeSignalsEditor")
     static let iconName = "wifi"
     static let order = 18
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

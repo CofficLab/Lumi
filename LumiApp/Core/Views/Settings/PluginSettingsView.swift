@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import AgentToolKit
 
 /// 插件管理视图：顶部分类 Tab 切换，下方展示对应分类的插件列表
 struct PluginSettingsView: View {
@@ -28,10 +29,11 @@ struct PluginSettingsView: View {
             // 插件列表
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    pluginListCard
+                    pluginList
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
 
             // 底部统计
@@ -101,36 +103,43 @@ struct PluginSettingsView: View {
 
     // MARK: - Plugin List
 
-    private var pluginListCard: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(filteredPlugins.enumerated()), id: \.element.instanceLabel) { index, plugin in
-                    let pluginType = type(of: plugin)
-                    let pluginId = plugin.instanceLabel
+    private var pluginList: some View {
+        LazyVGrid(columns: pluginGridColumns, alignment: .leading, spacing: 16) {
+            ForEach(filteredPlugins, id: \.instanceLabel) { plugin in
+                let pluginType = type(of: plugin)
+                let pluginId = plugin.instanceLabel
 
-                    AppSettingsPluginToggleRow(
-                        name: pluginType.displayName,
-                        description: pluginType.description,
-                        icon: pluginType.iconName,
-                        isEnabled: Binding(
-                            get: { pluginStates[pluginId, default: true] },
-                            set: { newValue in
-                                pluginStates[pluginId] = newValue
-                                settingsStore.setPluginEnabled(pluginId, enabled: newValue)
-                            }
-                        )
+                AppSettingsPluginToggleRow(
+                    name: pluginType.displayName,
+                    description: pluginType.description(for: .current),
+                    icon: pluginType.iconName,
+                    posterViews: plugin.addPosterViews(),
+                    isEnabled: Binding(
+                        get: { pluginStates[pluginId, default: true] },
+                        set: { newValue in
+                            pluginStates[pluginId] = newValue
+                            settingsStore.setPluginEnabled(pluginId, enabled: newValue)
+                        }
                     )
+                )
+            }
 
-                    if index < filteredPlugins.count - 1 {
-                        AppSettingsDivider()
-                    }
-                }
-
-                if filteredPlugins.isEmpty {
+            if filteredPlugins.isEmpty {
+                AppCard {
                     emptyStateContent
                 }
             }
         }
+    }
+
+    private var pluginGridColumns: [GridItem] {
+        [
+            GridItem(
+                .adaptive(minimum: 360, maximum: 620),
+                spacing: 16,
+                alignment: .top
+            )
+        ]
     }
 
     // MARK: - Empty State
@@ -182,7 +191,7 @@ struct PluginSettingsView: View {
         var states: [String: Bool] = [:]
         for plugin in pluginProvider.plugins.filter({ type(of: $0).isConfigurable }) {
             let pluginType = type(of: plugin)
-            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
+            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enabledByDefault)
         }
         pluginStates = states
     }

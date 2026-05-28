@@ -259,9 +259,9 @@ final class AppPluginVM: ObservableObject, SuperLog {
             // 绕过 actor 初始化语义，也避免给 actor 引入额外的同步初始化要求。
             let instance = pluginClass.shared
             
-            // 检查插件是否启用
+            // 检查插件是否应该注册（第一关：扫描门槛）
             let pluginType = type(of: instance)
-            if pluginType.enable {
+            if pluginType.shouldRegister {
                 discoveredItems.append((instance, className, pluginType.order))
                 pluginClassNames.append(className)
                 if Self.verbose {
@@ -327,26 +327,32 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
     }
     
+    /// 获取插件的准入资格
+    ///
+    /// 将三道关卡的判断逻辑封装为 `PluginEligibility`，
+    /// 外部通过 `eligibility.isEligible` / `eligibility.shouldRegister` 等属性即可完成判断。
+    ///
+    /// - Parameter plugin: 要检查的插件
+    /// - Returns: 封装了完整准入判断的资格对象
+    func eligibility(for plugin: any SuperPlugin) -> PluginEligibility {
+        let pluginType = type(of: plugin)
+        return PluginEligibility(
+            policy: pluginType.policy,
+            userEnabled: settingsStore.isPluginEnabled(plugin.instanceLabel, defaultEnabled: pluginType.enabledByDefault)
+        )
+    }
+
     /// 检查插件是否被用户启用
     ///
     /// 判断逻辑：
     /// 1. 如果插件不可配置（`isConfigurable = false`），始终返回 true
     /// 2. 如果插件可配置，从用户设置中读取启用状态；
-    ///    若用户未手动配置过，则回退到插件的 `enable` 静态属性作为默认值
+    ///    若用户未手动配置过，则回退到插件的 `enabledByDefault` 静态属性作为默认值
     ///
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 如果插件被启用则返回 true
     func isPluginEnabled(_ plugin: any SuperPlugin) -> Bool {
-        let pluginType = type(of: plugin)
-        
-        // 如果不允许用户切换，则始终启用
-        if !pluginType.isConfigurable {
-            return true
-        }
-        
-        // 检查用户配置；未配置时使用插件的 enable 静态属性作为默认值
-        let pluginId = plugin.instanceLabel
-        return settingsStore.isPluginEnabled(pluginId, defaultEnabled: pluginType.enable)
+        eligibility(for: plugin).isEligible
     }
 
     /// 获取所有插件的根视图包裹

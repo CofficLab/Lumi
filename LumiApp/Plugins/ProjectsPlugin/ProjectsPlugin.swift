@@ -13,13 +13,11 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
 
     nonisolated static let emoji = "📋"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "Projects"
     static let displayName: String = String(localized: "Projects", table: "Projects")
     static let description: String = String(localized: "Manage the global projects list", table: "Projects")
     static let iconName: String = "folder"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .general }
     static var order: Int { 10 }
 
@@ -31,6 +29,24 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     nonisolated func onDisable() {}
 
     // MARK: - UI Contributions
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "项目切换中心",
+                subtitle: "维护最近项目列表，并把当前项目上下文提供给工具和助手。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Recent", "最近项目"),
+                    PluginPosterSupport.metric("Context", "上下文"),
+                ],
+                rows: ["工具栏项目选择器", "无项目引导", "Agent 项目工具"],
+                chips: ["项目", "上下文", "工具栏"]
+            ),
+        ]
+    }
 
     /// 在工具栏中间位置显示当前项目选择器
     ///

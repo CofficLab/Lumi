@@ -3,6 +3,7 @@ import AppKit
 import Combine
 import Foundation
 import os
+import LumiCoreKit
 
 /// 菜单栏管理插件：管理菜单栏图标的显示与隐藏
 actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
@@ -14,7 +15,6 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧊"
 
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
 
     static let id: String = "MenuBarManager"
@@ -22,8 +22,11 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Menu Bar Manager", table: "MenuBarManager")
     static let description: String = String(localized: "Manage your menu bar items", table: "MenuBarManager")
     static let iconName = "menubar.rectangle"
-    static let isConfigurable: Bool = false
     static var order: Int { 20 }
+
+    nonisolated static let policy: PluginPolicy = .optIn
+    
+    /// 插件注册策略：可配置，默认不启用（可选功能）
 
     // MARK: - Instance
 

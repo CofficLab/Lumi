@@ -8,6 +8,11 @@ public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider {
     public let modelVersion: String
     public let dimension: Int
     private let hashFallback: HashEmbeddingProvider
+    static let supportedNativeEmbeddingLanguages: Set<NLLanguage> = [
+        .english,
+        .simplifiedChinese,
+        .traditionalChinese,
+    ]
 
     public init(modelID: String = "apple-nl-proj", modelVersion: String = "v1", dimension: Int = 384) {
         let dim = max(dimension, 8)
@@ -38,16 +43,10 @@ public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider {
         recognizer.processString(text)
         let detected = recognizer.dominantLanguage
 
-        // 候选语言列表
-        var candidates: [NLLanguage] = []
-        if let detected {
-            candidates.append(detected)
-        }
-        candidates.append(contentsOf: [.english, .simplifiedChinese, .traditionalChinese])
+        let candidates = Self.nativeEmbeddingCandidates(detected: detected)
 
         // 尝试使用不同语言的模型
-        var seen = Set<NLLanguage>()
-        for lang in candidates where seen.insert(lang).inserted {
+        for lang in candidates {
             // 优先使用句子级 embedding
             if let sentenceModel = NLEmbedding.sentenceEmbedding(for: lang),
                let vector = sentenceModel.vector(for: text) {
@@ -61,6 +60,17 @@ public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider {
             }
         }
         return nil
+    }
+
+    static func nativeEmbeddingCandidates(detected: NLLanguage?) -> [NLLanguage] {
+        var candidates: [NLLanguage] = []
+        if let detected, supportedNativeEmbeddingLanguages.contains(detected) {
+            candidates.append(detected)
+        }
+        candidates.append(contentsOf: [.english, .simplifiedChinese, .traditionalChinese])
+
+        var seen = Set<NLLanguage>()
+        return candidates.filter { seen.insert($0).inserted }
     }
 
     /// 投影并归一化向量到指定维度

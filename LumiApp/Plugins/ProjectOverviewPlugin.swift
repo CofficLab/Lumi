@@ -21,9 +21,11 @@ actor ProjectOverviewPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginProjectOverview.ProjectOverviewPlugin.id
     static let displayName: String = PluginProjectOverview.ProjectOverviewPlugin.displayName
     static let description: String = PluginProjectOverview.ProjectOverviewPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginProjectOverview.ProjectOverviewPlugin.description(for: language)
+    }
     static let iconName: String = PluginProjectOverview.ProjectOverviewPlugin.iconName
-    static let isConfigurable: Bool = PluginProjectOverview.ProjectOverviewPlugin.isConfigurable
-    static let enable: Bool = PluginProjectOverview.ProjectOverviewPlugin.enable
     static var category: PluginCategory { .general }
     static var order: Int { PluginProjectOverview.ProjectOverviewPlugin.order }
 

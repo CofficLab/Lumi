@@ -10,7 +10,6 @@ actor AgentToolPermissionPlugin: SuperPlugin {
     static let iconName = "lock.shield"
     static var category: PluginCategory { .agent }
     static var order: Int { 95 }
-    static let enable: Bool = true
 
     static let shared = AgentToolPermissionPlugin()
 

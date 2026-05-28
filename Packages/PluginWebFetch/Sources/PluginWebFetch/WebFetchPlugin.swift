@@ -17,9 +17,11 @@ public actor WebFetchPlugin: SuperPlugin, SuperLog {
     public static let id: String = "WebFetch"
     public static let displayName: String = PluginWebFetchLocalization.string("Web Fetch")
     public static let description: String = PluginWebFetchLocalization.string("提供网页抓取和内容提取功能，支持 HTML 转 Markdown。")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginWebFetchLocalization.string("提供网页抓取和内容提取功能，支持 HTML 转 Markdown。", for: language)
+    }
     public static let iconName: String = "globe"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .network }
     public static var order: Int { 100 }
 
@@ -39,5 +41,9 @@ enum PluginWebFetchLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

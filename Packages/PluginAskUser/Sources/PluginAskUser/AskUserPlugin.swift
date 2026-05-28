@@ -40,8 +40,6 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
     public static let iconName = "questionmark.circle.fill"
     public static var category: PluginCategory { .general }
     public static var order: Int { 100 }
-    public static let enable: Bool = true
-    public static var isConfigurable: Bool { false }
 
     public init() {}
 

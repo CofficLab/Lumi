@@ -8,8 +8,6 @@ actor MultiCursorCommandsEditorPlugin: SuperPlugin {
     static let description = String(localized: "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", table: "MultiCursorCommandsEditor")
     static let iconName = "cursorarrow.and.square.on.square.dashed"
     static let order = 13
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

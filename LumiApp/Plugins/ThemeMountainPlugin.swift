@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeMountain
@@ -7,9 +8,11 @@ actor ThemeMountainPlugin: SuperPlugin {
     static let id: String = PluginThemeMountain.ThemeMountainPlugin.id
     static let displayName: String = PluginThemeMountain.ThemeMountainPlugin.displayName
     static let description: String = PluginThemeMountain.ThemeMountainPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeMountain.ThemeMountainPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeMountain.ThemeMountainPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeMountain.ThemeMountainPlugin.isConfigurable
-    static let enable: Bool = PluginThemeMountain.ThemeMountainPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeMountain.ThemeMountainPlugin.order }
 

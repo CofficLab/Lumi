@@ -11,6 +11,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         case versions
         case metadata
         case screenshots
+        case xcodeCloud
 
         var id: String { rawValue }
 
@@ -20,6 +21,7 @@ final class AppStoreConnectViewModel: ObservableObject {
             case .versions: return AppStoreConnectLocalization.string("Versions")
             case .metadata: return AppStoreConnectLocalization.string("Metadata")
             case .screenshots: return AppStoreConnectLocalization.string("Screenshots")
+            case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
         }
 
@@ -29,12 +31,13 @@ final class AppStoreConnectViewModel: ObservableObject {
             case .versions: return "clock.arrow.circlepath"
             case .metadata: return "text.alignleft"
             case .screenshots: return "photo.on.rectangle"
+            case .xcodeCloud: return "cloud"
             }
         }
     }
 
     static let generalPages: [Page] = [.account]
-    static let appPages: [Page] = [.versions, .metadata, .screenshots]
+    static let appPages: [Page] = [.versions, .metadata, .screenshots, .xcodeCloud]
 
     @Published var page: Page = .account
     @Published var credentials: AppStoreConnectCredentials
@@ -54,6 +57,14 @@ final class AppStoreConnectViewModel: ObservableObject {
     @Published var screenshotSets: [ScreenshotSet] = []
     @Published var selectedScreenshotDisplayType = "APP_IPHONE_67"
     @Published var metadataIsDirty = false
+    @Published var ciProducts: [CiProduct] = []
+    @Published var selectedCiProduct: CiProduct?
+    @Published var ciWorkflows: [CiWorkflow] = []
+    @Published var selectedCiWorkflow: CiWorkflow?
+    @Published var selectedCiWorkflowDetail: CiWorkflow?
+    @Published var ciBuildRuns: [CiBuildRun] = []
+    @Published var ciSourceBranchOrTag = ""
+    @Published var ciWorkflowExportJSON = ""
 
     let screenshotDisplayTypes = [
         "APP_IPHONE_67",
@@ -115,6 +126,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         editedLocalization = nil
         pendingScreenshots = []
         screenshotSets = []
+        clearXcodeCloudState()
     }
 
     func testConnection() async {
@@ -142,6 +154,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         editedLocalization = nil
         pendingScreenshots = []
         screenshotSets = []
+        clearXcodeCloudSelection()
         page = .versions
         Task { await loadVersions() }
     }
@@ -257,6 +270,94 @@ final class AppStoreConnectViewModel: ObservableObject {
         }
     }
 
+    func loadCiProducts() async {
+        await runBusy {
+            ciProducts = try await client.listCiProducts()
+            selectBestCiProduct()
+            if selectedCiProduct != nil {
+                await loadCiWorkflows()
+            }
+        }
+    }
+
+    func selectCiProduct(_ product: CiProduct) {
+        selectedCiProduct = product
+        ciWorkflows = []
+        selectedCiWorkflow = nil
+        selectedCiWorkflowDetail = nil
+        ciBuildRuns = []
+        ciWorkflowExportJSON = ""
+        Task { await loadCiWorkflows() }
+    }
+
+    func loadCiWorkflows() async {
+        guard let product = selectedCiProduct else { return }
+        await runBusy {
+            ciWorkflows = try await client.listCiWorkflows(productID: product.id)
+            selectedCiWorkflow = ciWorkflows.first
+            if selectedCiWorkflow != nil {
+                await loadSelectedCiWorkflowDetail()
+            } else {
+                selectedCiWorkflowDetail = nil
+                ciBuildRuns = []
+            }
+        }
+    }
+
+    func selectCiWorkflow(_ workflow: CiWorkflow) {
+        selectedCiWorkflow = workflow
+        selectedCiWorkflowDetail = nil
+        ciBuildRuns = []
+        ciWorkflowExportJSON = ""
+        Task { await loadSelectedCiWorkflowDetail() }
+    }
+
+    func loadSelectedCiWorkflowDetail() async {
+        guard let workflow = selectedCiWorkflow else { return }
+        await runBusy {
+            selectedCiWorkflowDetail = try await client.readCiWorkflow(id: workflow.id)
+            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+            updateCiWorkflowExportJSON()
+        }
+    }
+
+    func loadCiBuildRuns() async {
+        guard let workflow = selectedCiWorkflow else { return }
+        await runBusy {
+            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+        }
+    }
+
+    func startCiBuildRun() async {
+        guard let workflow = selectedCiWorkflow else { return }
+        await runBusy {
+            let buildRun = try await client.startCiBuildRun(
+                workflowID: workflow.id,
+                branch: ciSourceBranchOrTag
+            )
+            ciBuildRuns.insert(buildRun, at: 0)
+            ciBuildRuns = try await client.listCiBuildRuns(workflowID: workflow.id)
+        }
+    }
+
+    func toggleSelectedCiWorkflowEnabled() async {
+        guard let workflow = selectedCiWorkflowDetail ?? selectedCiWorkflow else { return }
+        await runBusy {
+            let updated = try await client.updateCiWorkflowEnabled(id: workflow.id, isEnabled: !workflow.isEnabled)
+            replaceCiWorkflow(updated)
+            selectedCiWorkflow = updated
+            selectedCiWorkflowDetail = updated
+            updateCiWorkflowExportJSON()
+        }
+    }
+
+    func copySelectedCiWorkflowConfiguration() {
+        updateCiWorkflowExportJSON()
+        guard !ciWorkflowExportJSON.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ciWorkflowExportJSON, forType: .string)
+    }
+
     private func validateScreenshot(width: Int, height: Int) -> PendingScreenshot.Status {
         guard width > 0, height > 0 else {
             return .invalid(AppStoreConnectLocalization.string("Image has no pixel size"))
@@ -265,6 +366,50 @@ final class AppStoreConnectViewModel: ObservableObject {
             return .invalid(AppStoreConnectLocalization.string("Image is too small"))
         }
         return .ready
+    }
+
+    private func selectBestCiProduct() {
+        guard selectedCiProduct == nil else { return }
+        guard let selectedApp else {
+            selectedCiProduct = ciProducts.first
+            return
+        }
+        selectedCiProduct = ciProducts.first {
+            $0.appID == selectedApp.id ||
+            $0.primaryAppID == selectedApp.id ||
+            $0.bundleID == selectedApp.bundleID
+        } ?? ciProducts.first
+    }
+
+    private func clearXcodeCloudSelection() {
+        selectedCiProduct = nil
+        ciWorkflows = []
+        selectedCiWorkflow = nil
+        selectedCiWorkflowDetail = nil
+        ciBuildRuns = []
+        ciWorkflowExportJSON = ""
+    }
+
+    private func clearXcodeCloudState() {
+        ciProducts = []
+        clearXcodeCloudSelection()
+        ciSourceBranchOrTag = ""
+    }
+
+    private func replaceCiWorkflow(_ workflow: CiWorkflow) {
+        if let index = ciWorkflows.firstIndex(where: { $0.id == workflow.id }) {
+            ciWorkflows[index] = workflow
+        }
+    }
+
+    private func updateCiWorkflowExportJSON() {
+        guard let workflow = selectedCiWorkflowDetail ?? selectedCiWorkflow,
+              let data = try? JSONEncoder.xcodeCloudExport.encode(CiWorkflowExport(workflow: workflow)),
+              let value = String(data: data, encoding: .utf8) else {
+            ciWorkflowExportJSON = ""
+            return
+        }
+        ciWorkflowExportJSON = value
     }
 
     private func runBusy(_ operation: () async throws -> Void) async {
@@ -276,5 +421,13 @@ final class AppStoreConnectViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+private extension JSONEncoder {
+    static var xcodeCloudExport: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return encoder
     }
 }

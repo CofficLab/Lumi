@@ -16,8 +16,6 @@ actor LSPDocumentColorEditorPlugin: SuperPlugin {
     static let description = String(localized: "Displays color swatches for color literals from the language server.", table: "LSPDocumentColorEditor")
     static let iconName = "paintpalette"
     static let order = 28
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

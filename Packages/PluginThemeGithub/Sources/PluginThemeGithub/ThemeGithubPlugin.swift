@@ -9,8 +9,6 @@ public actor ThemeGithubPlugin: SuperPlugin {
     public static let displayName: String = "GitHub"
     public static let description: String = "GitHub style app theme"
     public static let iconName: String = "chevron.left.forwardslash.chevron.right"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 128 }
 

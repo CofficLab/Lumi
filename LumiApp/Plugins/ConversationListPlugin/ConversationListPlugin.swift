@@ -15,13 +15,11 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💬"
     static var category: PluginCategory { .agent }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "ConversationList"
     static let displayName: String = String(localized: "Conversation List", table: "ConversationList")
     static let description: String = String(localized: "Show all conversation history", table: "ConversationList")
     static let iconName: String = "message.fill"
-    static let isConfigurable: Bool = false
     static var order: Int { 76 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -30,6 +28,24 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     init() {}
 
     // MARK: - Toolbar Views
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "会话历史",
+                subtitle: "从工具栏访问会话列表，并提供会话创建、删除和项目关联工具。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("History", "历史"),
+                    PluginPosterSupport.metric("Tools", "工具"),
+                ],
+                rows: ["最近会话", "新建会话", "项目关联"],
+                chips: ["Agent", "会话", "历史"]
+            ),
+        ]
+    }
 
     /// 工具栏右侧：会话列表按钮
     @MainActor

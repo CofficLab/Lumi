@@ -8,7 +8,6 @@ import os
 actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "GitPlugin"
@@ -16,9 +15,9 @@ actor GitPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "Git"
     static let description: String = String(localized: "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。", table: "GitPlugin")
     static let iconName: String = "arrow.triangle.branch"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .developerTool }
     static var order: Int { 11 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = GitPlugin()
@@ -26,6 +25,32 @@ actor GitPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     // MARK: - Agent Tools
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Git 变更面板",
+                subtitle: "查看提交历史、当前 diff、分支状态，并提供 Agent 工具。",
+                icon: Self.iconName,
+                accent: .green,
+                metrics: [
+                    PluginPosterSupport.metric("Diff", "变更"),
+                    PluginPosterSupport.metric("Log", "历史"),
+                ],
+                rows: ["工作区 Diff", "提交历史", "分支状态栏"],
+                chips: ["开发工具", "Git", "Agent 工具"]
+            ),
+            PluginPosterSupport.poster(
+                title: "Agent 可调用 Git 工具",
+                subtitle: "让助手读取状态、查看 diff、创建 commit、检查未推送提交。",
+                icon: "wand.and.stars",
+                accent: .teal,
+                rows: ["git status", "git diff", "git commit", "git unpushed"],
+                chips: ["工具调用", "版本控制", "自动化"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

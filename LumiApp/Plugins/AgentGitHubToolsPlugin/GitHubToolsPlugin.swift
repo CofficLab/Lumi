@@ -20,8 +20,6 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "GitHub Tools", table: "GitHubTools")
     static let description: String = String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", table: "GitHubTools")
     static let iconName: String = "star.circle.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .developerTool }
     static var order: Int { 15 }
 
@@ -34,6 +32,24 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - Agent Tools
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "GitHub Agent 工具",
+                subtitle: "让助手读取仓库、搜索代码、管理 Issue 和评论。",
+                icon: Self.iconName,
+                accent: .black,
+                metrics: [
+                    PluginPosterSupport.metric("12", "工具"),
+                    PluginPosterSupport.metric("API", "GitHub"),
+                ],
+                rows: ["仓库信息", "代码搜索", "Issue 管理", "评论操作"],
+                chips: ["GitHub", "Agent 工具", "Issue"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

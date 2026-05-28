@@ -15,8 +15,6 @@ actor LSPSignatureHelpEditorPlugin: SuperPlugin {
     static let description = String(localized: "Shows function signature hints when typing parameters.", table: "LSPSignatureHelpEditor")
     static let iconName = "text.badge.plus"
     static let order = 23
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

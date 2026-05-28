@@ -16,8 +16,6 @@ actor LSPDocumentLinkEditorPlugin: SuperPlugin {
     static let description = String(localized: "Makes URLs and file paths clickable in the editor.", table: "LSPDocumentLinkEditor")
     static let iconName = "link"
     static let order = 29
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

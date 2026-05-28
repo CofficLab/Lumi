@@ -294,6 +294,18 @@ struct LocalizedAgentToolTests {
     }
 
     @Test
+    func executeInjectsWrappedLanguage() async throws {
+        let underlying = MockAgentTool { arguments in
+            arguments["__lumi_language"]?.value as? String ?? "missing"
+        }
+        let localized = LocalizedAgentTool(underlying: underlying, language: .chinese)
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: localized.name)
+
+        let result = try await localized.execute(arguments: [:], context: context)
+        #expect(result == "zh")
+    }
+
+    @Test
     func executeWithContextDelegatesToUnderlyingTool() async throws {
         let underlying = MockAgentTool(result: "payload")
         let localized = LocalizedAgentTool(underlying: underlying, language: .english)

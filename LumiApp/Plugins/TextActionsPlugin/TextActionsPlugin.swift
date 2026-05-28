@@ -11,14 +11,32 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "text.cursor"
-    nonisolated static let enable: Bool = true
     static var category: PluginCategory { .editor }
     static var order: Int { 60 }
+    nonisolated static let policy: PluginPolicy = .optIn
     
     nonisolated var instanceLabel: String { Self.id }
     static let shared = TextActionsPlugin()
     nonisolated private static let settingsStore = TextActionsPluginLocalStore()
     nonisolated private static let enabledKey = "TextActionsEnabled"
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "选中文本动作",
+                subtitle: "监听文本选择并弹出可配置动作菜单。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("Select", "文本选择"),
+                    PluginPosterSupport.metric("Menu", "动作菜单"),
+                ],
+                rows: ["动作列表", "选区监控", "菜单预览"],
+                chips: ["编辑器", "文本", "快捷动作"]
+            ),
+        ]
+    }
     
     // MARK: - Settings
     
@@ -85,8 +103,6 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI
     
-    
-
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {

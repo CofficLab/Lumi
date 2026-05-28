@@ -160,14 +160,30 @@ public protocol SuperPlugin: Actor {
     /// 插件描述
     static var description: String { get }
 
+    /// 插件描述（按语言偏好）
+    ///
+    /// 新插件应优先实现该方法以提供多语言描述；旧插件会通过默认实现回退到
+    /// ``description``，从而保持源码兼容。
+    static func description(for language: LanguagePreference) -> String
+
     /// 插件图标名称（SF Symbols）
     static var iconName: String { get }
 
-    /// 是否可配置
+    /// 插件注册策略，统一控制注册 / 启用 / 可配置行为
+    static var policy: PluginPolicy { get }
+
+    /// 是否可配置（从 policy 派生，新代码请直接使用 policy）
     static var isConfigurable: Bool { get }
 
-    /// 是否启用此插件
+    /// 是否启用此插件（已废弃，请使用 policy）
+    @available(*, deprecated, message: "Use policy instead. This property will be removed in a future version.")
     static var enable: Bool { get }
+
+    /// 是否应该注册此插件（从 policy 派生，新代码请直接使用 policy）
+    static var shouldRegister: Bool { get }
+
+    /// 默认启用状态（从 policy 派生，新代码请直接使用 policy）
+    static var enabledByDefault: Bool { get }
 
     /// 插件实例标签（用于识别唯一实例）
     nonisolated var instanceLabel: String { get }
@@ -221,6 +237,12 @@ public protocol SuperPlugin: Actor {
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
+
+    /// 添加插件海报视图列表
+    ///
+    /// 海报视图展示在「设置 - 插件管理」的插件行下方，用于说明插件功能、
+    /// 入口位置或贡献的 UI 区域。一个插件可以返回多个海报视图。
+    @MainActor func addPosterViews() -> [AnyView]
 
     /// 添加菜单栏弹窗视图列表
     @MainActor func addMenuBarPopupViews() -> [AnyView]

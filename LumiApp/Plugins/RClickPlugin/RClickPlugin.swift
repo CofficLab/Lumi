@@ -6,7 +6,6 @@ actor RClickPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🖱️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     
     /// 插件专用 Logger
@@ -17,11 +16,29 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Right Click", table: "RClick")
     static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
     static let iconName = "cursorarrow.click.2"
-    static let isConfigurable: Bool = false
     static var order: Int { 50 }
+    nonisolated static let policy: PluginPolicy = .optIn
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RClickPlugin()
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Finder 右键动作",
+                subtitle: "配置文件右键菜单模板，把常用操作放进 Finder。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Menu", "右键菜单"),
+                    PluginPosterSupport.metric("Tpl", "模板"),
+                ],
+                rows: ["动作模板", "菜单预览", "Finder 集成"],
+                chips: ["Finder", "右键", "自动化"]
+            ),
+        ]
+    }
 
     // MARK: - Lifecycle
 
@@ -32,8 +49,6 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - UI
-
-    
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

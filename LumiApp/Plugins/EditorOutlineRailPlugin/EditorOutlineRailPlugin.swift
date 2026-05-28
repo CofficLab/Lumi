@@ -9,7 +9,6 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-outline-rail")
 
     nonisolated static let emoji = "📋"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorOutlineRail"
     static let displayName: String = String(
@@ -18,7 +17,6 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
         localized: "Editor sidebar outline tab",
         table: "EditorOutlineRail")
     static let iconName: String = "list.bullet.indent"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 

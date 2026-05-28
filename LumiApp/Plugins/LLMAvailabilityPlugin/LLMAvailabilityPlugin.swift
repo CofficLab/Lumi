@@ -1,5 +1,6 @@
 import os
 import AgentToolKit
+import SwiftUI
 
 /// LLM 可用性检测插件
 /// 通过向每个供应商的每个模型发送 ping 请求，维护实际可用的供应商+模型列表
@@ -17,16 +18,32 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     static let iconName = "network"
     static var category: PluginCategory { .general }
     static var order: Int { 15 }
-    static let enable: Bool = true
 
     /// 核心基础设施插件，不允许用户禁用
-    static var isConfigurable: Bool { false }
 
     static let shared = LLMAvailabilityPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "模型可用性检测",
+                subtitle: "检测供应商和模型是否可用，并把可用模型列表提供给助手。",
+                icon: Self.iconName,
+                accent: .cyan,
+                metrics: [
+                    PluginPosterSupport.metric("Ping", "检测"),
+                    PluginPosterSupport.metric("List", "列表"),
+                ],
+                rows: ["供应商检测", "模型健康检查", "可用模型工具"],
+                chips: ["LLM", "模型", "检测"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

@@ -16,7 +16,6 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     static let iconName = "server.rack"
     static var category: PluginCategory { .agent }
     static var order: Int { 60 }
-    static let enable: Bool = true
 
     static let shared = AgentMCPToolsPlugin()
 

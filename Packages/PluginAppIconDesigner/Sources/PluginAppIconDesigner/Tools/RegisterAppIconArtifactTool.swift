@@ -21,15 +21,15 @@ public struct RegisterAppIconArtifactTool: SuperAgentTool {
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Absolute local path to the image file."
+                    "description": IconToolSupport.description(language, en: "Absolute local path to the image file.", zh: "图片文件的本地绝对路径。")
                 ],
                 "title": [
                     "type": "string",
-                    "description": "Short candidate title shown in the preview."
+                    "description": IconToolSupport.description(language, en: "Short candidate title shown in the preview.", zh: "预览中显示的候选项短标题。")
                 ],
                 "prompt": [
                     "type": "string",
-                    "description": "The prompt or design request that produced this image."
+                    "description": IconToolSupport.description(language, en: "The prompt or design request that produced this image.", zh: "生成该图片的提示词或设计需求。")
                 ],
             ],
             "required": ["path"],
@@ -45,8 +45,9 @@ public struct RegisterAppIconArtifactTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(arguments)
         guard let path = arguments["path"]?.value as? String, !path.isEmpty else {
-            return "Error: Missing required 'path' parameter."
+            return IconToolSupport.missingParameter("path", language: language)
         }
 
         let title = arguments["title"]?.value as? String
@@ -56,16 +57,24 @@ public struct RegisterAppIconArtifactTool: SuperAgentTool {
             let artifact = try await MainActor.run {
                 try AppIconArtifactStore.shared.registerImage(path: path, title: title, prompt: prompt)
             }
-            return """
-            Registered app icon artifact.
-            artifactId: \(artifact.id)
-            path: \(artifact.sourcePath)
-            """
+            return IconToolSupport.localized(
+                language,
+                en: """
+                Registered app icon artifact.
+                artifactId: \(artifact.id)
+                path: \(artifact.sourcePath)
+                """,
+                zh: """
+                已注册应用图标候选项。
+                候选项ID: \(artifact.id)
+                路径: \(artifact.sourcePath)
+                """
+            )
         } catch {
             await MainActor.run {
                 AppIconArtifactStore.shared.setError(error.localizedDescription)
             }
-            return "Error: \(error.localizedDescription)"
+            return IconToolSupport.error(error, language: language)
         }
     }
 }

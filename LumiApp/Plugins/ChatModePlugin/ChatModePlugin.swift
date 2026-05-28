@@ -17,7 +17,6 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
     static let iconName = "arrow.triangle.2.circlepath"
     static var category: PluginCategory { .agent }
     static var order: Int { 83 }
-    nonisolated static let enable: Bool = true
     static let shared = ChatModePlugin()
 
     // MARK: - Lifecycle

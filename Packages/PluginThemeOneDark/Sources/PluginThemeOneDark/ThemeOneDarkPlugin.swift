@@ -9,8 +9,6 @@ public actor ThemeOneDarkPlugin: SuperPlugin {
     public static let displayName: String = "One Dark"
     public static let description: String = "Atom One Dark classic dark theme"
     public static let iconName: String = "circle.hexagongrid"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 131 }
 

@@ -7,6 +7,32 @@ public enum LanguagePreference: String, CaseIterable, Identifiable, Codable, Sen
 
     public var id: String { rawValue }
 
+    public init(locale: Locale) {
+        let languageCode = locale.language.languageCode?.identifier ?? locale.identifier
+        if languageCode.lowercased().hasPrefix("zh") {
+            self = .chinese
+        } else {
+            self = .english
+        }
+    }
+
+    public static var current: LanguagePreference {
+        LanguagePreference(locale: .current)
+    }
+
+    public var localeIdentifier: String {
+        switch self {
+        case .chinese:
+            return "zh-Hans"
+        case .english:
+            return "en"
+        }
+    }
+
+    public var locale: Locale {
+        Locale(identifier: localeIdentifier)
+    }
+
     /// 显示名称（支持多语言）
     public var displayName: String {
         switch self {

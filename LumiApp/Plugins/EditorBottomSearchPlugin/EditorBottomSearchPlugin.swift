@@ -12,7 +12,6 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-search")
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorBottomSearch"
     static let displayName: String = String(
@@ -21,7 +20,6 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
         localized: "Search panel in the editor bottom area",
         table: "EditorBottomSearch")
     static let iconName: String = "magnifyingglass"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 

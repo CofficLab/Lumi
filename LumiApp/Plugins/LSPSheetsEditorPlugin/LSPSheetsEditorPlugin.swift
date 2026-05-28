@@ -14,8 +14,6 @@ actor LSPSheetsEditorPlugin: SuperPlugin {
     static let description = String(localized: "Presents LSP sheets such as workspace symbols and call hierarchy.", table: "LSPSheetsEditor")
     static let iconName = "square.on.square"
     static let order = 17
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

@@ -8,13 +8,11 @@ actor WindowPersistencePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🪟"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "WindowPersistence"
     static let displayName: String = String(localized: "Window Persistence", table: "WindowPersistence")
     static let description: String = String(localized: "Save window states when they change", table: "WindowPersistence")
     static let iconName: String = "macwindow"
-    static var isConfigurable: Bool { false }
     static var order: Int { 999 }
 
     nonisolated var instanceLabel: String { Self.id }

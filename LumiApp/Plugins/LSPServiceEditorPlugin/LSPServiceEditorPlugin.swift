@@ -18,8 +18,6 @@ actor LSPServiceEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides the core Language Server Protocol integration including completion, hover, and diagnostics.", table: "LSPServiceEditor")
     static let iconName = "server.rack"
     static let order = 5
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

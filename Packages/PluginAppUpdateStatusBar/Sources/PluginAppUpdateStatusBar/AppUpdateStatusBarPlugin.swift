@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -8,15 +9,17 @@ public actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-update-status-bar")
 
     public nonisolated static let emoji = "⬆️"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id = "AppUpdateStatusBar"
     public static let navigationId = "app_update_status_bar"
     public static let displayName = PluginAppUpdateStatusBarLocalization.string("App Update Status")
     public static let description = PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install.")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install.", for: language)
+    }
     public static let iconName = "arrow.down.circle"
-    public static let isConfigurable: Bool = false
     public static var category: PluginCategory { .general }
     public static var order: Int { 8 }
 
@@ -54,5 +57,9 @@ enum PluginAppUpdateStatusBarLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

@@ -19,7 +19,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
         [
             "type": "object",
             "properties": [
-                "outputPath": ["type": "string", "description": "Absolute SVG output path. If omitted, a file is written to the temporary directory."],
+                "outputPath": ["type": "string", "description": IconToolSupport.description(language, en: "Absolute SVG output path. If omitted, a file is written to the temporary directory.", zh: "SVG 输出绝对路径。省略时会写入临时目录。")],
             ],
         ]
     }
@@ -33,6 +33,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(arguments)
         do {
             let document = try await MainActor.run {
                 guard let document = IconDocumentStore.shared.selectedDocument else {
@@ -54,16 +55,24 @@ public struct ExportIconSVGTool: SuperAgentTool {
                 IconDocumentStore.shared.setExportURL(outputURL)
             }
 
-            return """
-            Exported icon SVG.
-            documentId: \(document.id)
-            path: \(outputURL.path)
-            """
+            return IconToolSupport.localized(
+                language,
+                en: """
+                Exported icon SVG.
+                documentId: \(document.id)
+                path: \(outputURL.path)
+                """,
+                zh: """
+                已导出图标 SVG。
+                文档ID: \(document.id)
+                路径: \(outputURL.path)
+                """
+            )
         } catch {
             await MainActor.run {
                 IconDocumentStore.shared.setError(error.localizedDescription)
             }
-            return "Error: \(error.localizedDescription)"
+            return IconToolSupport.error(error, language: language)
         }
     }
 

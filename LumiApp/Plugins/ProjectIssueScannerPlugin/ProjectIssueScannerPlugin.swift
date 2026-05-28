@@ -22,12 +22,29 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "Project Issue Scanner"
     static let description: String = "Scans for project issues during idle time and hints them to the LLM."
     static let iconName: String = "scope"
-    static let isConfigurable: Bool = true
-    static let enable: Bool = true
     static var category: PluginCategory { .developerTool }
     static var order: Int { 97 }
+    static let policy: PluginPolicy = .optOut
 
     static let shared = ProjectIssueScannerPlugin()
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "项目问题扫描",
+                subtitle: "空闲时扫描 TODO、FIXME 和潜在代码问题，并把结果提示给助手。",
+                icon: Self.iconName,
+                accent: .red,
+                metrics: [
+                    PluginPosterSupport.metric("Idle", "空闲扫描"),
+                    PluginPosterSupport.metric("LLM", "深度分析"),
+                ],
+                rows: ["本地规则扫描", "LLM 深度分析", "消息上下文提示"],
+                chips: ["代码质量", "Agent", "扫描"]
+            ),
+        ]
+    }
 
     // MARK: - Status Bar
 
@@ -43,13 +60,6 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(ProjectIssueScannerRoot(content: content()))
-    }
-
-    // MARK: - Settings View
-
-    @MainActor
-    func addSettingsView() -> AnyView? {
-        AnyView(ProjectIssueScannerSettingsView())
     }
 
     // MARK: - Send Middleware

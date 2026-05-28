@@ -25,11 +25,9 @@ actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     static let iconName = "desktopcomputer"
     static var category: PluginCategory { .integration }
     static var order: Int { 97 }
+    static let policy: PluginPolicy = .optIn
 
     /// 用户可在设置中启用/禁用此插件
-    static var isConfigurable: Bool { true }
-
-    static let enable: Bool = true
 
     static let shared = AgentOpenInGitHubDesktopPlugin()
 

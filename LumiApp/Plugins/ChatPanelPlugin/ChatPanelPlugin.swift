@@ -17,11 +17,28 @@ actor ChatPanelPlugin: SuperPlugin, SuperLog {
     static let iconName = "bubble.left.and.bubble.right.fill"
     static var category: PluginCategory { .agent }
     static var order: Int { 78 }
-    nonisolated static let enable: Bool = true
-    static var isConfigurable: Bool { false }
+    nonisolated static let policy: PluginPolicy = .optIn
     static let shared = ChatPanelPlugin()
 
     nonisolated var instanceLabel: String { Self.id }
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "聊天工作区",
+                subtitle: "把会话列表和 AI 聊天表面作为独立活动栏入口。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("Chat", "会话"),
+                    PluginPosterSupport.metric("AI", "工作区"),
+                ],
+                rows: ["会话列表", "项目工具栏", "AI Chat 支持"],
+                chips: ["Agent", "聊天", "工作区"]
+            ),
+        ]
+    }
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

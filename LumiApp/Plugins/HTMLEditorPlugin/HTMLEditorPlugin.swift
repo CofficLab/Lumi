@@ -15,8 +15,6 @@ actor HTMLEditorPlugin: SuperPlugin {
     static let description = String(localized: "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", table: "HTMLEditor")
     static let iconName = "curlybraces"
     static let order = 31
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

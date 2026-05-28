@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -11,16 +12,20 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "💿"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id = "DiskManager"
     public static let navigationId = "disk_manager"
     public static let displayName = PluginDiskManagerLocalization.string("Disk Manager")
     public static let description = PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning", for: language)
+    }
     public static let iconName = "internaldrive"
     public static var category: PluginCategory { .system }
     public static var order: Int { 22 }
+    public nonisolated static let policy: PluginPolicy = .optIn
 
     public nonisolated var instanceLabel: String { Self.id }
 
@@ -29,8 +34,6 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     // MARK: - UI Contributions
-
-    
 
     @MainActor
     public func addViewContainer() -> ViewContainerItem? {
@@ -46,5 +49,9 @@ enum PluginDiskManagerLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

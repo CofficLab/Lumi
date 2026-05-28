@@ -85,7 +85,7 @@ extension LanguagePreference {
     /// 工具栏按钮中显示的短名称
     var shortDisplayName: String {
         switch self {
-        case .chinese: return "中文"
+        case .chinese: return "中"
         case .english: return "EN"
         }
     }

@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeAutumn
@@ -7,9 +8,11 @@ actor ThemeAutumnPlugin: SuperPlugin {
     static let id: String = PluginThemeAutumn.ThemeAutumnPlugin.id
     static let displayName: String = PluginThemeAutumn.ThemeAutumnPlugin.displayName
     static let description: String = PluginThemeAutumn.ThemeAutumnPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeAutumn.ThemeAutumnPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeAutumn.ThemeAutumnPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeAutumn.ThemeAutumnPlugin.isConfigurable
-    static let enable: Bool = PluginThemeAutumn.ThemeAutumnPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeAutumn.ThemeAutumnPlugin.order }
 

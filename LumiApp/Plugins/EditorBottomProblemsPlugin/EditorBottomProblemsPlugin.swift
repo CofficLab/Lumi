@@ -12,7 +12,6 @@ actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-problems")
 
     nonisolated static let emoji = "⚠️"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorBottomProblems"
     static let displayName: String = String(
@@ -21,7 +20,6 @@ actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
         localized: "Problems panel in the editor bottom area",
         table: "EditorBottomProblems")
     static let iconName: String = "exclamationmark.bubble"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 

@@ -4,8 +4,6 @@ import SwiftUI
 /// 设置标签枚举
 enum SettingTab: String, CaseIterable, Hashable {
     case general = "通用"
-    case editor = "编辑器"
-    case keyboardShortcuts = "快捷键"
     case theme = "主题"
     case localProvider = "本地供应商"
     case remoteProvider = "云端供应商"
@@ -15,8 +13,6 @@ enum SettingTab: String, CaseIterable, Hashable {
     var icon: String {
         switch self {
         case .general: return "gearshape"
-        case .editor: return "chevron.left.forwardslash.chevron.right"
-        case .keyboardShortcuts: return "keyboard"
         case .theme: return "paintbrush.fill"
         case .localProvider: return "cpu"
         case .remoteProvider: return "network"
@@ -31,10 +27,6 @@ enum SettingTab: String, CaseIterable, Hashable {
         switch self {
         case .general:
             GeneralSettingView()
-        case .editor:
-            EditorSettingsView()
-        case .keyboardShortcuts:
-            KeyboardShortcutsSettingsView()
         case .theme:
             ThemeSettingView()
         case .localProvider:
@@ -54,5 +46,6 @@ enum SettingTab: String, CaseIterable, Hashable {
 /// 设置选择枚举，用于侧边栏导航状态管理
 enum SettingsSelection: Hashable {
     case core(SettingTab)
+    case pluginCategory(PluginCategory)
     case plugin(String)
 }

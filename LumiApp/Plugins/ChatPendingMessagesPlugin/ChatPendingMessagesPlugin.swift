@@ -16,7 +16,6 @@ actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     static let iconName = "clock"
     static var category: PluginCategory { .agent }
     static var order: Int { 95 }
-    nonisolated static let enable: Bool = true
     static let shared = ChatPendingMessagesPlugin()
 
     // MARK: - Lifecycle

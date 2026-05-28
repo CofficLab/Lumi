@@ -14,10 +14,8 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
     static let displayName = "智谱"
     static let description = "Zhipu AI GLM Models"
     static let iconName = "sparkles"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
-    static let enable: Bool = true
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = ZhipuPlugin()

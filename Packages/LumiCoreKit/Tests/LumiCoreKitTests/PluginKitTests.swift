@@ -52,6 +52,15 @@ struct LumiCoreKitTests {
         #expect(PluginCategory.editor.sortOrder < PluginCategory.theme.sortOrder)
     }
 
+    @Test("SuperPlugin description supports language preference")
+    func pluginDescriptionLanguagePreference() {
+        #expect(LocalizedDescriptionPlugin.description == "English description")
+        #expect(LocalizedDescriptionPlugin.description(for: .english) == "English description")
+        #expect(LocalizedDescriptionPlugin.description(for: .chinese) == "中文描述")
+        #expect(LanguagePreference(locale: Locale(identifier: "zh-Hans")).id == "zh")
+        #expect(LanguagePreference(locale: Locale(identifier: "en-US")).id == "en")
+    }
+
     @Test("StreamChunk 构造与属性")
     func streamChunkInit() {
         let chunk = StreamChunk(content: "Hi", isDone: false)
@@ -105,6 +114,22 @@ struct LumiCoreKitTests {
         let tab3 = RailTab(id: "tab2", title: "Tab 1", systemImage: "star", priority: 0)
         #expect(tab1 == tab2) // same id
         #expect(tab1 != tab3) // different id
+    }
+}
+
+private actor LocalizedDescriptionPlugin: SuperPlugin {
+    static let shared = LocalizedDescriptionPlugin()
+    static let displayName = "Localized"
+    static let description = "English description"
+    static let iconName = "puzzlepiece"
+    static var category: PluginCategory { .general }
+    static var order: Int { 0 }
+
+    static func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese: "中文描述"
+        case .english: description
+        }
     }
 }
 

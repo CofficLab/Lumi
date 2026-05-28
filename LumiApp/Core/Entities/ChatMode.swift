@@ -2,17 +2,63 @@ import Foundation
 
 /// 聊天模式
 /// 定义用户在对话中的意图和权限
-public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
-    /// 对话模式 - 只聊天，不执行任何工具或修改
-    case chat = "chat"
+public enum ChatMode: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+    /// A1 对话模式 - 只聊天，不执行任何工具或修改
+    case chat
 
-    /// 构建模式 - 可以执行工具、修改代码，高风险需要用户确认
-    case build = "build"
+    /// A2 构建模式 - 可以执行工具、修改代码，高风险需要用户确认
+    case build
 
-    /// 自主模式 - 可以执行工具、修改代码，高风险自动批准
-    case autonomous = "autonomous"
+    /// A3 自主模式 - 可以执行工具、修改代码，高风险自动批准
+    case autonomous
 
     public var id: String { rawValue }
+
+    public var rawValue: String {
+        switch self {
+        case .chat:
+            return "a1"
+        case .build:
+            return "a2"
+        case .autonomous:
+            return "a3"
+        }
+    }
+
+    public init?(rawValue: String) {
+        switch rawValue.lowercased() {
+        case "a1", "chat":
+            self = .chat
+        case "a2", "build":
+            self = .build
+        case "a3", "autonomous":
+            self = .autonomous
+        default:
+            return nil
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let value = Self(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Invalid chat mode: \(rawValue)"
+            )
+        }
+        self = value
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    /// 等级标识
+    public var levelCode: String {
+        rawValue.uppercased()
+    }
 
     /// 显示名称
     public var displayName: String {

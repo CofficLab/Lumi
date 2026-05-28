@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeGithub
@@ -7,9 +8,11 @@ actor ThemeGithubPlugin: SuperPlugin {
     static let id: String = PluginThemeGithub.ThemeGithubPlugin.id
     static let displayName: String = PluginThemeGithub.ThemeGithubPlugin.displayName
     static let description: String = PluginThemeGithub.ThemeGithubPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeGithub.ThemeGithubPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeGithub.ThemeGithubPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeGithub.ThemeGithubPlugin.isConfigurable
-    static let enable: Bool = PluginThemeGithub.ThemeGithubPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeGithub.ThemeGithubPlugin.order }
 

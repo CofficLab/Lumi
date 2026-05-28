@@ -9,7 +9,6 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-call-hierarchy-rail")
 
     nonisolated static let emoji = "📞"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorCallHierarchyRail"
     static let displayName: String = String(
@@ -18,7 +17,6 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
         localized: "Editor sidebar call hierarchy tab",
         table: "EditorCallHierarchyRail")
     static let iconName: String = "point.3.connected.trianglepath.dotted"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 

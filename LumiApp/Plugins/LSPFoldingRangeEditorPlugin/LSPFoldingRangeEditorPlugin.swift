@@ -14,8 +14,6 @@ actor LSPFoldingRangeEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides code folding ranges from the language server.", table: "LSPFoldingRangeEditor")
     static let iconName = "chevron.left.2"
     static let order = 26
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

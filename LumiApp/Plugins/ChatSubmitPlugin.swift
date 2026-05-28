@@ -18,7 +18,6 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     static let iconName = "paperplane"
     static var category: PluginCategory { .agent }
     static var order: Int { 86 }
-    nonisolated static let enable: Bool = true
     static let shared = ChatSubmitPlugin()
 
     // MARK: - Lifecycle

@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -8,13 +9,17 @@ public actor DockerManagerPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
 
     public nonisolated static let emoji = "🐳"
-    public nonisolated static let enable: Bool = false
+    public nonisolated static let policy: PluginPolicy = .optIn
     public nonisolated static let verbose: Bool = true
 
     public static let id = "DockerManager"
     public static let navigationId = "docker_manager"
     public static let displayName = PluginDockerManagerLocalization.string("Docker")
     public static let description = PluginDockerManagerLocalization.string("Local Docker image management and monitoring")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginDockerManagerLocalization.string("Local Docker image management and monitoring", for: language)
+    }
     public static let iconName = "shippingbox"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 50 }
@@ -39,5 +44,9 @@ enum PluginDockerManagerLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

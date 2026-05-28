@@ -9,8 +9,6 @@ public actor ThemeNebulaPlugin: SuperPlugin {
     public static let displayName: String = "星云粉"
     public static let description: String = "浪漫的星云粉，柔和而温暖"
     public static let iconName: String = "cloud.moon.fill"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 122 }
 

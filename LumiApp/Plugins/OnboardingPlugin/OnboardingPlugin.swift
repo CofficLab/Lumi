@@ -10,7 +10,6 @@ actor OnboardingPlugin: SuperPlugin {
     static let iconName = "hand.wave"
     static var category: PluginCategory { .agent }
     static var order: Int { 10 }
-    static let enable: Bool = true
 
     static let shared = OnboardingPlugin()
 

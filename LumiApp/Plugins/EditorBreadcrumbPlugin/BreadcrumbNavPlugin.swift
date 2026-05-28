@@ -11,13 +11,11 @@ actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.breadcrumb-nav")
 
     nonisolated static let emoji = "🧭"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "BreadcrumbNav"
     static let displayName: String = String(localized: "Breadcrumb Navigation", table: "BreadcrumbNav")
     static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", table: "BreadcrumbNav")
     static let iconName: String = "point.topleft.down.curvedto.point.bottomright.up"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 70 }
 

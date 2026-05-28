@@ -6,8 +6,6 @@ actor ThemeSkyPlugin: SuperPlugin {
     static let displayName: String = "Sky"
     static let description: String = "Sky inspired app theme that adapts to system appearance"
     static let iconName: String = "cloud.sun.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 120 }
 

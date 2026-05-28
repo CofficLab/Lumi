@@ -16,13 +16,11 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     )
 
     nonisolated static let emoji = "IP"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorPreview"
     static let displayName: String = String(localized: "Inline Preview", table: "EditorPreview")
     static let description: String = String(localized: "Embedded preview powered by LumiPreviewKit", table: "EditorPreview")
     static let iconName: String = "rectangle.inset.filled"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 84 }
 
@@ -30,6 +28,24 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     static let shared = EditorPreviewPlugin()
 
     // MARK: - 底部面板
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "内嵌预览",
+                subtitle: "在编辑器底部构建并显示 SwiftUI、HTML、JSON、PDF 等预览。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("#Preview", "SwiftUI"),
+                    PluginPosterSupport.metric("Files", "多格式"),
+                ],
+                rows: ["SwiftUI Preview", "HTML/JSON/PDF", "构建状态诊断"],
+                chips: ["编辑器", "预览", "底部面板"]
+            ),
+        ]
+    }
 
     @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
         guard context.activeIcon == EditorPlugin.iconName else { return [] }

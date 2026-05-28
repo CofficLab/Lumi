@@ -15,8 +15,6 @@ actor LSPWorkspaceSymbolEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides workspace-wide symbol search.", table: "LSPWorkspaceSymbolEditor")
     static let iconName = "magnifyingglass"
     static let order = 24
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

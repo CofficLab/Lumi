@@ -8,7 +8,6 @@ actor AliyunPlugin: SuperPlugin {
     static let description = "Aliyun Qwen Models"
     static let iconName = "cloud"
     static var order: Int { 10 }
-    static let enable: Bool = true
     static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {

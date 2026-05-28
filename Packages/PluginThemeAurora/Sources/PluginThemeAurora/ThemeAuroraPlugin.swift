@@ -9,8 +9,6 @@ public actor ThemeAuroraPlugin: SuperPlugin {
     public static let displayName: String = "Aurora"
     public static let description: String = "Aurora purple app theme"
     public static let iconName: String = "sparkles"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 121 }
 

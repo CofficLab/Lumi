@@ -6,7 +6,6 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🎯"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     /// 专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.model-preference")
@@ -26,6 +25,24 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     init() {}
 
     // MARK: - Root View
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "对话模型偏好",
+                subtitle: "为每个对话记住 provider 和模型，切换回来时自动恢复。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric("Model", "模型"),
+                    PluginPosterSupport.metric("Chat", "对话级"),
+                ],
+                rows: ["Provider 记忆", "模型记忆", "根视图监听"],
+                chips: ["模型", "偏好", "对话"]
+            ),
+        ]
+    }
 
     /// 提供根视图包裹器，自动监听对话级别模型偏好变化
     /// - Parameter content: 原始内容视图

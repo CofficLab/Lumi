@@ -15,8 +15,6 @@ actor LSPInlayHintEditorPlugin: SuperPlugin {
     static let description = String(localized: "Displays type inference and parameter name hints inline.", table: "LSPInlayHintEditor")
     static let iconName = "textformat.size"
     static let order = 22
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

@@ -16,11 +16,8 @@ actor AgentOpenInAntigravityPlugin: SuperPlugin {
     static var category: PluginCategory { .integration }
     static var order: Int { 83 }
 
-    /// 用户可在设置中启用/禁用此插件
-    static var isConfigurable: Bool { true }
-
-    /// 默认禁用（需要用户主动启用）
-    static var enable: Bool { true }
+    /// 用户可在设置中启用/禁用此插件（默认关闭，可开启）
+    static let policy: PluginPolicy = .optIn
 
     static let shared = AgentOpenInAntigravityPlugin()
 

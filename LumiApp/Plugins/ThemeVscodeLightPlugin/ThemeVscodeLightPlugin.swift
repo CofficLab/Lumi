@@ -6,8 +6,6 @@ actor ThemeVscodeLightPlugin: SuperPlugin {
     static let displayName: String = "VS Code 亮色"
     static let description: String = "Visual Studio Code Light+ IDE theme"
     static let iconName: String = "terminal"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 130 }
 

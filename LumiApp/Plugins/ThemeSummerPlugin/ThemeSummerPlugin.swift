@@ -6,8 +6,6 @@ actor ThemeSummerPlugin: SuperPlugin {
     static let displayName: String = "Summer"
     static let description: String = "Summer blue app theme"
     static let iconName: String = "sun.max.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 125 }
 

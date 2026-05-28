@@ -17,7 +17,6 @@ actor VerbosityPlugin: SuperPlugin, SuperLog {
     static let iconName = "text.alignleft"
     static var category: PluginCategory { .agent }
     static var order: Int { 84 }
-    nonisolated static let enable: Bool = true
     static let shared = VerbosityPlugin()
 
     // MARK: - Lifecycle

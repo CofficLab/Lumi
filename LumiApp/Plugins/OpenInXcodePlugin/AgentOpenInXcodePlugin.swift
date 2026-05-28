@@ -18,10 +18,9 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")
     static let description: String = String(localized: "Displays a button in the header to open the current project in Xcode", table: "AgentOpenInXcode")
     static let iconName: String = "hammer"
-    static let isConfigurable: Bool = true
     static var category: PluginCategory { .integration }
-    static let enable: Bool = true
     static var order: Int { 95 }
+    static let policy: PluginPolicy = .optIn
 
     // MARK: - Instance
 

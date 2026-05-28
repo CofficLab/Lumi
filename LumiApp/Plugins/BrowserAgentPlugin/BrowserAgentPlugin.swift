@@ -2,6 +2,7 @@ import Foundation
 import AgentToolKit
 import PluginBrowserAgent
 import os
+import SwiftUI
 
 /// Browser Agent 插件 App 侧注册适配器。
 ///
@@ -21,15 +22,35 @@ actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginBrowserAgent.BrowserAgentPlugin.id
     static let displayName: String = PluginBrowserAgent.BrowserAgentPlugin.displayName
     static let description: String = PluginBrowserAgent.BrowserAgentPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginBrowserAgent.BrowserAgentPlugin.description(for: language)
+    }
     static let iconName: String = PluginBrowserAgent.BrowserAgentPlugin.iconName
-    static let isConfigurable: Bool = PluginBrowserAgent.BrowserAgentPlugin.isConfigurable
-    static let enable: Bool = PluginBrowserAgent.BrowserAgentPlugin.enable
     static var category: PluginCategory { .general }
     static var order: Int { PluginBrowserAgent.BrowserAgentPlugin.order }
 
     static let shared = BrowserAgentPlugin()
 
     private init() {}
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "浏览器 Agent",
+                subtitle: "提供浏览器自动化工具，让助手能够打开页面、操作和检查网页。",
+                icon: Self.iconName,
+                accent: .cyan,
+                metrics: [
+                    PluginPosterSupport.metric("Web", "页面"),
+                    PluginPosterSupport.metric("Tool", "自动化"),
+                ],
+                rows: ["打开网页", "点击输入", "截图检查"],
+                chips: ["浏览器", "Agent", "自动化"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

@@ -9,7 +9,6 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-references")
 
     nonisolated static let emoji = "🔗"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorRailReferences"
     static let displayName: String = String(
@@ -18,7 +17,6 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
         localized: "Editor sidebar references tab",
         table: "EditorRailReferences")
     static let iconName: String = "arrow.triangle.branch"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 

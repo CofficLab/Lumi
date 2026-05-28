@@ -8,7 +8,6 @@ actor DeepSeekPlugin: SuperPlugin {
     static let description = "DeepSeek AI"
     static let iconName = "waveform.path"
     static var order: Int { 10 }
-    static let enable: Bool = true
     static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {

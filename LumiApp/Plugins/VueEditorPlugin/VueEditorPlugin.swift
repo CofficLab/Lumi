@@ -30,8 +30,6 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", table: "VueEditor")
     static let iconName = "curlybraces"
     static let order = 35
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

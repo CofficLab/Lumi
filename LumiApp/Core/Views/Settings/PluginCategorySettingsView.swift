@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import AgentToolKit
 
 /// 插件分类设置视图：展示指定分类下所有可配置插件的开关列表
 struct PluginCategorySettingsView: View {
@@ -19,19 +20,15 @@ struct PluginCategorySettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部说明卡片
-            headerCard
-                .padding(24)
-                .background(Color.clear)
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // 插件列表
-                    pluginListCard
+                    pluginList
 
                     Spacer()
                 }
                 .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
 
             AppSettingsStatsBar("共 \(plugins.count) 个插件 · \(enabledCount) 个已启用")
@@ -41,47 +38,46 @@ struct PluginCategorySettingsView: View {
         }
     }
 
-    // MARK: - Header Card
-
-    private var headerCard: some View {
-        AppCard {
-            AppSettingsSection(title: category.displayName, subtitle: "管理「\(category.displayName)」分类下的插件") {}
-        }
-    }
-
     // MARK: - Plugin List Card
 
-    private var pluginListCard: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(plugins.enumerated()), id: \.element.instanceLabel) { index, plugin in
-                    let pluginType = type(of: plugin)
-                    let pluginId = plugin.instanceLabel
+    private var pluginList: some View {
+        LazyVGrid(columns: pluginGridColumns, alignment: .leading, spacing: 16) {
+            ForEach(plugins, id: \.instanceLabel) { plugin in
+                let pluginType = type(of: plugin)
+                let pluginId = plugin.instanceLabel
 
-                    AppSettingsPluginToggleRow(
-                        name: pluginType.displayName,
-                        description: pluginType.description,
-                        icon: pluginType.iconName,
-                        isEnabled: Binding(
-                            get: { pluginStates[pluginId, default: true] },
-                            set: { newValue in
-                                pluginStates[pluginId] = newValue
-                                settingsStore.setPluginEnabled(pluginId, enabled: newValue)
-                                AppLogger.core.info("Plugin '\(pluginId)' is now \(newValue ? "enabled" : "disabled")")
-                            }
-                        )
+                AppSettingsPluginToggleRow(
+                    name: pluginType.displayName,
+                    description: pluginType.description(for: .current),
+                    icon: pluginType.iconName,
+                    posterViews: plugin.addPosterViews(),
+                    isEnabled: Binding(
+                        get: { pluginStates[pluginId, default: true] },
+                        set: { newValue in
+                            pluginStates[pluginId] = newValue
+                            settingsStore.setPluginEnabled(pluginId, enabled: newValue)
+                            AppLogger.core.info("Plugin '\(pluginId)' is now \(newValue ? "enabled" : "disabled")")
+                        }
                     )
+                )
+            }
 
-                    if index < plugins.count - 1 {
-                        AppSettingsDivider()
-                    }
-                }
-
-                if plugins.isEmpty {
+            if plugins.isEmpty {
+                AppCard {
                     emptyStateContent
                 }
             }
         }
+    }
+
+    private var pluginGridColumns: [GridItem] {
+        [
+            GridItem(
+                .adaptive(minimum: 360, maximum: 620),
+                spacing: 16,
+                alignment: .top
+            )
+        ]
     }
 
     // MARK: - Empty State
@@ -115,7 +111,7 @@ struct PluginCategorySettingsView: View {
         var states: [String: Bool] = [:]
         for plugin in plugins {
             let pluginType = type(of: plugin)
-            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
+            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enabledByDefault)
         }
         pluginStates = states
     }

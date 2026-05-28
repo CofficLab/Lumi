@@ -16,6 +16,7 @@
 		0B13B1222FD3000000A13B12 /* PluginWebSearch in Frameworks */ = {isa = PBXBuildFile; productRef = 0B13B1212FD3000000A13B12 /* PluginWebSearch */; };
 		0B13B1322FD3000000A13B13 /* PluginShowImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0B13B1312FD3000000A13B13 /* PluginShowImage */; };
 		0B13B1422FD3000000A13B14 /* PluginMemory in Frameworks */ = {isa = PBXBuildFile; productRef = 0B13B1412FD3000000A13B14 /* PluginMemory */; };
+		0B13B1522FD3000000A13B15 /* PluginLLMProviderCodex in Frameworks */ = {isa = PBXBuildFile; productRef = 0B13B1512FD3000000A13B15 /* PluginLLMProviderCodex */; };
 		0B14A1022FD4000000A14A10 /* PluginAppLoadedPlugins in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1012FD4000000A14A10 /* PluginAppLoadedPlugins */; };
 		0B14A1122FD4000000A14A11 /* PluginAppUpdateStatusBar in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1112FD4000000A14A11 /* PluginAppUpdateStatusBar */; };
 		0B14A1222FD4000000A14A12 /* PluginDockerManager in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1212FD4000000A14A12 /* PluginDockerManager */; };
@@ -369,6 +370,7 @@
 				0B13B1222FD3000000A13B12 /* PluginWebSearch in Frameworks */,
 				0B13B1322FD3000000A13B13 /* PluginShowImage in Frameworks */,
 				0B13B1422FD3000000A13B14 /* PluginMemory in Frameworks */,
+				0B13B1522FD3000000A13B15 /* PluginLLMProviderCodex in Frameworks */,
 				0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */,
 				0B14A1022FD4000000A14A10 /* PluginAppLoadedPlugins in Frameworks */,
 				0B14A1122FD4000000A14A11 /* PluginAppUpdateStatusBar in Frameworks */,
@@ -999,6 +1001,7 @@
 				0B13B1212FD3000000A13B12 /* PluginWebSearch */,
 				0B13B1312FD3000000A13B13 /* PluginShowImage */,
 				0B13B1412FD3000000A13B14 /* PluginMemory */,
+				0B13B1512FD3000000A13B15 /* PluginLLMProviderCodex */,
 				0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */,
 				0B14A1012FD4000000A14A10 /* PluginAppLoadedPlugins */,
 				0B14A1112FD4000000A14A11 /* PluginAppUpdateStatusBar */,
@@ -1140,6 +1143,7 @@
 				0B13B1202FD3000000A13B12 /* XCLocalSwiftPackageReference "Packages/PluginWebSearch" */,
 				0B13B1302FD3000000A13B13 /* XCLocalSwiftPackageReference "Packages/PluginShowImage" */,
 				0B13B1402FD3000000A13B14 /* XCLocalSwiftPackageReference "Packages/PluginMemory" */,
+				0B13B1502FD3000000A13B15 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */,
 				0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */,
 				0B14A1002FD4000000A14A10 /* XCLocalSwiftPackageReference "Packages/PluginAppLoadedPlugins" */,
 				0B14A1102FD4000000A14A11 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdateStatusBar" */,
@@ -2078,6 +2082,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginMemory;
 		};
+		0B13B1502FD3000000A13B15 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderCodex;
+		};
 		0B14A1002FD4000000A14A10 /* XCLocalSwiftPackageReference "Packages/PluginAppLoadedPlugins" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppLoadedPlugins;
@@ -2450,6 +2458,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B13B1402FD3000000A13B14 /* XCLocalSwiftPackageReference "Packages/PluginMemory" */;
 			productName = PluginMemory;
+		};
+		0B13B1512FD3000000A13B15 /* PluginLLMProviderCodex */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B13B1502FD3000000A13B15 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
+			productName = PluginLLMProviderCodex;
 		};
 		0B14A1012FD4000000A14A10 /* PluginAppLoadedPlugins */ = {
 			isa = XCSwiftPackageProductDependency;

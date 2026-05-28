@@ -9,8 +9,6 @@ actor CSSEditorPlugin: SuperPlugin {
     static let description = "Provides CSS completions and hover help for common properties and values."
     static let iconName = "paintpalette"
     static let order = 32
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

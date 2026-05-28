@@ -9,7 +9,6 @@ actor FeifeimiaoPlugin: SuperPlugin {
     static let iconName = "wind"
     static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
-    static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         FeifeimiaoProvider.self

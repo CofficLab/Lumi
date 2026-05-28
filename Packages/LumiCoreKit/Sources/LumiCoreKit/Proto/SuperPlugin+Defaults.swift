@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 
 // MARK: - Core Property Default Implementation
@@ -15,9 +16,31 @@ extension SuperPlugin {
 
     public static var description: String { "" }
 
+    public static func description(for language: LanguagePreference) -> String {
+        description
+    }
+
     public static var iconName: String { "puzzlepiece" }
 
-    public static var isConfigurable: Bool { false }
+    /// 默认策略：始终启用
+    public static var policy: PluginPolicy { .alwaysOn }
 
-    public static var enable: Bool { true }
+    public static var isConfigurable: Bool {
+        switch policy {
+        case .alwaysOn, .disabled: return false
+        case .optOut, .optIn: return true
+        }
+    }
+
+    @available(*, deprecated, message: "Use policy instead.")
+    public static var enable: Bool { enabledByDefault }
+
+    public static var shouldRegister: Bool { policy != .disabled }
+
+    public static var enabledByDefault: Bool {
+        switch policy {
+        case .alwaysOn, .optOut: return true
+        case .optIn, .disabled: return false
+        }
+    }
 }

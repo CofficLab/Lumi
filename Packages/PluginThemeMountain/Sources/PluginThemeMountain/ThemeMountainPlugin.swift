@@ -9,8 +9,6 @@ public actor ThemeMountainPlugin: SuperPlugin {
     public static let displayName: String = "Mountain"
     public static let description: String = "Mountain gray app theme"
     public static let iconName: String = "mountain.2.fill"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 129 }
 
