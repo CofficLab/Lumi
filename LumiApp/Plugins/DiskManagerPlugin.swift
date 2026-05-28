@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginDiskManager
 import SwiftUI
 import os
@@ -15,6 +16,10 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginDiskManager.DiskManagerPlugin.navigationId
     static let displayName = PluginDiskManager.DiskManagerPlugin.displayName
     static let description = PluginDiskManager.DiskManagerPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginDiskManager.DiskManagerPlugin.description(for: language)
+    }
     static let iconName = PluginDiskManager.DiskManagerPlugin.iconName
     static var category: PluginCategory { .system }
     static var order: Int { PluginDiskManager.DiskManagerPlugin.order }

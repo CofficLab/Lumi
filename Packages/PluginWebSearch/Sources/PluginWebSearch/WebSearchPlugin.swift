@@ -18,6 +18,10 @@ public actor WebSearchPlugin: SuperPlugin, SuperLog {
     public static let id: String = "WebSearch"
     public static let displayName: String = PluginWebSearchLocalization.string("Web Search")
     public static let description: String = PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。", for: language)
+    }
     public static let iconName: String = "magnifyingglass"
     public static var category: PluginCategory { .network }
     public static var order: Int { 101 }
@@ -38,5 +42,9 @@ enum PluginWebSearchLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

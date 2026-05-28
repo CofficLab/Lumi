@@ -26,6 +26,10 @@ public actor ShowImagePlugin: SuperPlugin, SuperLog {
     public static let id: String = "ShowImage"
     public static let displayName: String = PluginShowImageLocalization.string("Show Image")
     public static let description: String = PluginShowImageLocalization.string("Display images in the UI with support for local paths and remote URLs.")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginShowImageLocalization.string("Display images in the UI with support for local paths and remote URLs.", for: language)
+    }
     public static let iconName: String = "photo.on.rectangle"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 97 }
@@ -71,5 +75,9 @@ enum PluginShowImageLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

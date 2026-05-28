@@ -18,6 +18,10 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
     static let id: String = PluginShowImage.ShowImagePlugin.id
     static let displayName: String = PluginShowImage.ShowImagePlugin.displayName
     static let description: String = PluginShowImage.ShowImagePlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginShowImage.ShowImagePlugin.description(for: language)
+    }
     static let iconName: String = PluginShowImage.ShowImagePlugin.iconName
     static var category: PluginCategory { .integration }
     static var order: Int { PluginShowImage.ShowImagePlugin.order }

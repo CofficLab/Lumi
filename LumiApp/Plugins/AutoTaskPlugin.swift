@@ -18,6 +18,10 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     static let id = PluginAutoTask.AutoTaskPlugin.id
     static let displayName: String = PluginAutoTask.AutoTaskPlugin.displayName
     static let description: String = PluginAutoTask.AutoTaskPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAutoTask.AutoTaskPlugin.description(for: language)
+    }
     static let iconName: String = PluginAutoTask.AutoTaskPlugin.iconName
     static var category: PluginCategory { .agent }
     static var order: Int { PluginAutoTask.AutoTaskPlugin.order }

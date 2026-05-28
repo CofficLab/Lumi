@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginAppLoadedPlugins
 import LumiCoreKit
 import SwiftUI
@@ -11,6 +12,10 @@ actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginAppLoadedPlugins.AppLoadedPluginsPlugin.id
     static let displayName: String = PluginAppLoadedPlugins.AppLoadedPluginsPlugin.displayName
     static let description: String = PluginAppLoadedPlugins.AppLoadedPluginsPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAppLoadedPlugins.AppLoadedPluginsPlugin.description(for: language)
+    }
     static let iconName: String = PluginAppLoadedPlugins.AppLoadedPluginsPlugin.iconName
     static var order: Int { PluginAppLoadedPlugins.AppLoadedPluginsPlugin.order }
 

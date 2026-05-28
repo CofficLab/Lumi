@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -25,6 +26,10 @@ public actor AppManagerPlugin: SuperPlugin, SuperLog {
     public static let navigationId = "app_manager"
     public static let displayName = PluginAppManagerLocalization.string("App Manager")
     public static let description = PluginAppManagerLocalization.string("Manage installed applications")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginAppManagerLocalization.string("Manage installed applications", for: language)
+    }
     public static let iconName = "apps.ipad"
     public static var category: PluginCategory { .system }
     public static var order: Int { 40 }
@@ -51,6 +56,10 @@ enum PluginAppManagerLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {

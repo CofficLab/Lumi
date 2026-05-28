@@ -21,6 +21,10 @@ actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginBrowserAgent.BrowserAgentPlugin.id
     static let displayName: String = PluginBrowserAgent.BrowserAgentPlugin.displayName
     static let description: String = PluginBrowserAgent.BrowserAgentPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginBrowserAgent.BrowserAgentPlugin.description(for: language)
+    }
     static let iconName: String = PluginBrowserAgent.BrowserAgentPlugin.iconName
     static var category: PluginCategory { .general }
     static var order: Int { PluginBrowserAgent.BrowserAgentPlugin.order }

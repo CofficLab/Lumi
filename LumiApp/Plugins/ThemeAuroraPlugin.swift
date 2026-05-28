@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeAurora
@@ -7,6 +8,10 @@ actor ThemeAuroraPlugin: SuperPlugin {
     static let id: String = PluginThemeAurora.ThemeAuroraPlugin.id
     static let displayName: String = PluginThemeAurora.ThemeAuroraPlugin.displayName
     static let description: String = PluginThemeAurora.ThemeAuroraPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeAurora.ThemeAuroraPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeAurora.ThemeAuroraPlugin.iconName
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeAurora.ThemeAuroraPlugin.order }

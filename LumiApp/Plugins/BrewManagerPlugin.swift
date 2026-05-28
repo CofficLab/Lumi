@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginBrewManager
 import SwiftUI
 import os
@@ -15,6 +16,10 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginBrewManager.BrewManagerPlugin.navigationId
     static let displayName = PluginBrewManager.BrewManagerPlugin.displayName
     static let description = PluginBrewManager.BrewManagerPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginBrewManager.BrewManagerPlugin.description(for: language)
+    }
     static let iconName = PluginBrewManager.BrewManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 60 }

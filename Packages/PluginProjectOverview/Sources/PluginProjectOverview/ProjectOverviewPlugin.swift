@@ -16,6 +16,10 @@ public actor ProjectOverviewPlugin: SuperPlugin, SuperLog {
     public static let id: String = "ProjectOverview"
     public static let displayName: String = PluginProjectOverviewLocalization.string("Project Overview")
     public static let description: String = PluginProjectOverviewLocalization.string("Provides project overview tool, returning project type, top-level structure, Git information, and key files.")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginProjectOverviewLocalization.string("Provides project overview tool, returning project type, top-level structure, Git information, and key files.", for: language)
+    }
     public static let iconName: String = "doc.text.magnifyingglass"
     public static var category: PluginCategory { .general }
     public static var order: Int { 14 }

@@ -17,6 +17,10 @@ public actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     public static let id: String = "BrowserAgent"
     public static let displayName: String = PluginBrowserAgentLocalization.string("Browser Agent")
     public static let description: String = PluginBrowserAgentLocalization.string("Browser automation powered by agent-browser CLI")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginBrowserAgentLocalization.string("Browser automation powered by agent-browser CLI", for: language)
+    }
     public static let iconName: String = "globe"
     public static var category: PluginCategory { .general }
     public static var order: Int { 103 }
@@ -37,5 +41,9 @@ enum PluginBrowserAgentLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

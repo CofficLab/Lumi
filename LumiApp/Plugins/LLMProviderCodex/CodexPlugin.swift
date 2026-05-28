@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import PluginLLMProviderCodex
 
@@ -11,6 +12,10 @@ actor CodexPlugin: SuperPlugin {
     static let id = PluginLLMProviderCodex.CodexPlugin.id
     static let displayName = PluginLLMProviderCodex.CodexPlugin.displayName
     static let description = PluginLLMProviderCodex.CodexPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginLLMProviderCodex.CodexPlugin.description(for: language)
+    }
     static let iconName = PluginLLMProviderCodex.CodexPlugin.iconName
     static var category: PluginCategory { .llmProvider }
     static var order: Int { PluginLLMProviderCodex.CodexPlugin.order }

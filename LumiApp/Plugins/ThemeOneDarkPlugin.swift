@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeOneDark
@@ -7,6 +8,10 @@ actor ThemeOneDarkPlugin: SuperPlugin {
     static let id: String = PluginThemeOneDark.ThemeOneDarkPlugin.id
     static let displayName: String = PluginThemeOneDark.ThemeOneDarkPlugin.displayName
     static let description: String = PluginThemeOneDark.ThemeOneDarkPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeOneDark.ThemeOneDarkPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeOneDark.ThemeOneDarkPlugin.iconName
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeOneDark.ThemeOneDarkPlugin.order }

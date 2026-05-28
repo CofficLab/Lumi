@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiUI
 import PluginThemeDracula
@@ -7,6 +8,10 @@ actor ThemeDraculaPlugin: SuperPlugin {
     static let id: String = PluginThemeDracula.ThemeDraculaPlugin.id
     static let displayName: String = PluginThemeDracula.ThemeDraculaPlugin.displayName
     static let description: String = PluginThemeDracula.ThemeDraculaPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginThemeDracula.ThemeDraculaPlugin.description(for: language)
+    }
     static let iconName: String = PluginThemeDracula.ThemeDraculaPlugin.iconName
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeDracula.ThemeDraculaPlugin.order }

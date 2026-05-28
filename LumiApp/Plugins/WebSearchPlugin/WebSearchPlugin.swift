@@ -20,6 +20,10 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginWebSearch.WebSearchPlugin.id
     static let displayName: String = PluginWebSearch.WebSearchPlugin.displayName
     static let description: String = PluginWebSearch.WebSearchPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginWebSearch.WebSearchPlugin.description(for: language)
+    }
     static let iconName: String = PluginWebSearch.WebSearchPlugin.iconName
     static var category: PluginCategory { .network }
     static var order: Int { PluginWebSearch.WebSearchPlugin.order }

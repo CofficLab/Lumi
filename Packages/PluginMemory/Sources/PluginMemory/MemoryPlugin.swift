@@ -27,6 +27,10 @@ public actor MemoryPlugin: SuperPlugin, SuperLog {
     public static let id: String = "Memory"
     public static let displayName: String = PluginMemoryLocalization.string("Memory")
     public static let description: String = PluginMemoryLocalization.string("Persistent memory system for cross-session context")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginMemoryLocalization.string("Persistent memory system for cross-session context", for: language)
+    }
     public static let iconName: String = "brain.head.profile"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 15 }
@@ -83,5 +87,9 @@ enum PluginMemoryLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

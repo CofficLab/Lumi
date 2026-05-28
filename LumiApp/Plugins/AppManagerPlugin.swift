@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginAppManager
 import SwiftUI
 import os
@@ -16,6 +17,10 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginAppManager.AppManagerPlugin.navigationId
     static let displayName = PluginAppManager.AppManagerPlugin.displayName
     static let description = PluginAppManager.AppManagerPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAppManager.AppManagerPlugin.description(for: language)
+    }
     static let iconName = PluginAppManager.AppManagerPlugin.iconName
     static var category: PluginCategory { .system }
     static var order: Int { PluginAppManager.AppManagerPlugin.order }

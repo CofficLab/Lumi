@@ -22,4 +22,10 @@ struct PluginAppStoreConnectTests {
         #expect(AppStoreConnectLocalization.bundle.url(forResource: "AppStoreConnect", withExtension: "xcstrings") != nil)
         #expect(AppStoreConnectLocalization.string("App Store").isEmpty == false)
     }
+
+    @Test("plugin description resolves from package localization catalog")
+    func pluginDescriptionUsesRequestedLanguage() {
+        #expect(AppStoreConnectPlugin.description(for: .english) == "Manage App Store Connect apps, metadata, and screenshots")
+        #expect(AppStoreConnectPlugin.description(for: .chinese) == "管理 App Store Connect App、元数据和截图")
+    }
 }

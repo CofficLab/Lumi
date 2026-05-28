@@ -20,6 +20,10 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginWebFetch.WebFetchPlugin.id
     static let displayName: String = PluginWebFetch.WebFetchPlugin.displayName
     static let description: String = PluginWebFetch.WebFetchPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginWebFetch.WebFetchPlugin.description(for: language)
+    }
     static let iconName: String = PluginWebFetch.WebFetchPlugin.iconName
     static var category: PluginCategory { .network }
     static var order: Int { PluginWebFetch.WebFetchPlugin.order }

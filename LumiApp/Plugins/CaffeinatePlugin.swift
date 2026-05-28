@@ -14,6 +14,10 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginCaffeinate.CaffeinatePlugin.navigationId
     static let displayName = PluginCaffeinate.CaffeinatePlugin.displayName
     static let description = PluginCaffeinate.CaffeinatePlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginCaffeinate.CaffeinatePlugin.description(for: language)
+    }
     static let iconName = PluginCaffeinate.CaffeinatePlugin.iconName
     static var category: PluginCategory { .system }
     static var order: Int { PluginCaffeinate.CaffeinatePlugin.order }

@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -14,6 +15,10 @@ public actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     public static let navigationId = "app_store_connect"
     public static let displayName = AppStoreConnectLocalization.string("App Store")
     public static let description = AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots")
+
+    public static func description(for language: LanguagePreference) -> String {
+        AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots", for: language)
+    }
     public static let iconName = "bag"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 65 }
@@ -44,6 +49,10 @@ enum AppStoreConnectLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 
     static func string(_ key: String, _ args: CVarArg...) -> String {

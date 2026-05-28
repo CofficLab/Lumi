@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -15,6 +16,10 @@ public actor BrewManagerPlugin: SuperPlugin, SuperLog {
     public static let navigationId = "brew_manager"
     public static let displayName = PluginBrewManagerLocalization.string("Package Management")
     public static let description = PluginBrewManagerLocalization.string("Manage Homebrew packages and casks")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginBrewManagerLocalization.string("Manage Homebrew packages and casks", for: language)
+    }
     public static let iconName = "mug.fill"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 60 }
@@ -38,5 +43,9 @@ enum PluginBrewManagerLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

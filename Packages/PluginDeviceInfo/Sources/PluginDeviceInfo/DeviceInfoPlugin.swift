@@ -1,3 +1,4 @@
+import AgentToolKit
 import SwiftUI
 import os
 import DeviceMonitorKit
@@ -18,6 +19,10 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     public static let navigationId: String = "device_info"
     public static let displayName: String = PluginDeviceInfoLocalization.string("Device Info")
     public static let description: String = PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.", for: language)
+    }
     public static let iconName = "macbook.and.iphone"
     public static var order: Int { 10 }
     public nonisolated static let policy: PluginPolicy = .optIn
@@ -72,5 +77,9 @@ enum PluginDeviceInfoLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

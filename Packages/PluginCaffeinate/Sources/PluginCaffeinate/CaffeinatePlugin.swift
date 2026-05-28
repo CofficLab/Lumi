@@ -22,6 +22,10 @@ public actor CaffeinatePlugin: SuperPlugin, SuperLog {
     public static let navigationId: String = "caffeinate_settings"
     public static let displayName: String = PluginCaffeinateLocalization.string("Anti-Sleep")
     public static let description: String = PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control")
+
+    public static func description(for language: LanguagePreference) -> String {
+        PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control", for: language)
+    }
     public static let iconName: String = "bolt"
     public static var category: PluginCategory { .system }
     public static var order: Int { 7 }
@@ -60,5 +64,9 @@ enum PluginCaffeinateLocalization {
 
     static func string(_ key: String) -> String {
         NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+    }
+
+    static func string(_ key: String, for language: LanguagePreference) -> String {
+        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

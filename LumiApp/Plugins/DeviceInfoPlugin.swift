@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginDeviceInfo
 import SwiftUI
 import os
@@ -16,6 +17,10 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = PluginDeviceInfo.DeviceInfoPlugin.navigationId
     static let displayName: String = PluginDeviceInfo.DeviceInfoPlugin.displayName
     static let description: String = PluginDeviceInfo.DeviceInfoPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginDeviceInfo.DeviceInfoPlugin.description(for: language)
+    }
     static let iconName = PluginDeviceInfo.DeviceInfoPlugin.iconName
     static var order: Int { PluginDeviceInfo.DeviceInfoPlugin.order }
     nonisolated static let policy: PluginPolicy = .optIn

@@ -13,6 +13,10 @@ actor AppIconDesignerPlugin: SuperPlugin, SuperLog {
     static let id = PluginAppIconDesigner.AppIconDesignerPlugin.id
     static let displayName = PluginAppIconDesigner.AppIconDesignerPlugin.displayName
     static let description = PluginAppIconDesigner.AppIconDesignerPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAppIconDesigner.AppIconDesignerPlugin.description(for: language)
+    }
     static let iconName = PluginAppIconDesigner.AppIconDesignerPlugin.iconName
     static var category: PluginCategory { .general }
     static var order: Int { PluginAppIconDesigner.AppIconDesignerPlugin.order }

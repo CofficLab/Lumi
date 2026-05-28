@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginDockerManager
 import SwiftUI
 import os
@@ -15,6 +16,10 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginDockerManager.DockerManagerPlugin.navigationId
     static let displayName = PluginDockerManager.DockerManagerPlugin.displayName
     static let description = PluginDockerManager.DockerManagerPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginDockerManager.DockerManagerPlugin.description(for: language)
+    }
     static let iconName = PluginDockerManager.DockerManagerPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { 50 }

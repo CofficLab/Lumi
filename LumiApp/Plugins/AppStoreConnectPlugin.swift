@@ -1,3 +1,4 @@
+import AgentToolKit
 import LumiCoreKit
 import PluginAppStoreConnect
 import SwiftUI
@@ -13,6 +14,10 @@ actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginAppStoreConnect.AppStoreConnectPlugin.navigationId
     static let displayName = PluginAppStoreConnect.AppStoreConnectPlugin.displayName
     static let description = PluginAppStoreConnect.AppStoreConnectPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAppStoreConnect.AppStoreConnectPlugin.description(for: language)
+    }
     static let iconName = PluginAppStoreConnect.AppStoreConnectPlugin.iconName
     static var category: PluginCategory { .developerTool }
     static var order: Int { PluginAppStoreConnect.AppStoreConnectPlugin.order }

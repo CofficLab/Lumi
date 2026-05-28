@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import PluginFileLog
 import os
@@ -13,6 +14,10 @@ actor FileLogPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginFileLog.FileLogPlugin.navigationId
     static let displayName = PluginFileLog.FileLogPlugin.displayName
     static let description = PluginFileLog.FileLogPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginFileLog.FileLogPlugin.description(for: language)
+    }
     static let iconName = PluginFileLog.FileLogPlugin.iconName
     static var order: Int { PluginFileLog.FileLogPlugin.order }
 

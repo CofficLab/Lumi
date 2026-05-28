@@ -1,3 +1,4 @@
+import AgentToolKit
 import PluginAppUpdateStatusBar
 import SwiftUI
 import os
@@ -13,6 +14,10 @@ actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
     static let navigationId = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.navigationId
     static let displayName = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.displayName
     static let description = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.description(for: language)
+    }
     static let iconName = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.iconName
     static var order: Int { PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.order }
 

@@ -19,6 +19,10 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     static let id: String = PluginMemory.MemoryPlugin.id
     static let displayName: String = PluginMemory.MemoryPlugin.displayName
     static let description: String = PluginMemory.MemoryPlugin.description
+
+    static func description(for language: LanguagePreference) -> String {
+        PluginMemory.MemoryPlugin.description(for: language)
+    }
     static let iconName: String = PluginMemory.MemoryPlugin.iconName
     static var category: PluginCategory { .agent }
     static var order: Int { PluginMemory.MemoryPlugin.order }
