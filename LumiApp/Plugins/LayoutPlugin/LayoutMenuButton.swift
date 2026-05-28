@@ -26,8 +26,14 @@ struct LayoutMenuButton: View {
             }
         } label: {
             Image(systemName: "sidebar.leading")
+                .font(.system(size: 11, weight: .medium))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .frame(width: 22, height: 22)
+        .fixedSize()
+        .help(String(localized: "Layout"))
     }
 }

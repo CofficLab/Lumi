@@ -45,6 +45,7 @@ struct AppTitleToolbar: View {
                 toolbarGroup(trailingViews, idPrefix: "title_toolbar_trailing")
             }
             .padding(.trailing, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             toolbarGroup(centerViews, idPrefix: "title_toolbar_center")
                 .frame(maxWidth: 420)
@@ -69,6 +70,7 @@ struct AppTitleToolbar: View {
             }
         }
         .frame(height: height)
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 
