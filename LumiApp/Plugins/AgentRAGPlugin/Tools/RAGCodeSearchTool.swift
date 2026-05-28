@@ -99,9 +99,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
 
         let mode = SearchMode(rawValue: (arguments["mode"]?.value as? String)?.lowercased() ?? "") ?? .hybrid
         let topK = normalizedTopK(arguments["topK"]?.value)
-        let pathFilter = (arguments["pathFilter"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .nilIfEmpty
+        let pathFilter = trimmedNonEmpty(arguments["pathFilter"]?.value as? String)
 
         guard let projectPath = resolveProjectPath(arguments: arguments, context: context) else {
             return """
@@ -146,12 +144,8 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     }
 
     private func resolveProjectPath(arguments: [String: ToolArgument], context: ToolExecutionContext) -> String? {
-        let explicit = (arguments["projectPath"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .nilIfEmpty
-        let current = context.currentProjectPath?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .nilIfEmpty
+        let explicit = trimmedNonEmpty(arguments["projectPath"]?.value as? String)
+        let current = trimmedNonEmpty(context.currentProjectPath)
 
         guard let path = explicit ?? current else { return nil }
         return RAGPathUtils.normalizeProjectPath(path)
@@ -169,6 +163,14 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             raw = 8
         }
         return min(max(raw, 1), 20)
+    }
+
+    private func trimmedNonEmpty(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
     }
 
     private func keywordSearch(
@@ -355,12 +357,5 @@ private enum CodeSearchOrigin: String {
         case .semantic:
             return 1
         }
-    }
-}
-
-private extension Optional where Wrapped == String {
-    var nilIfEmpty: String? {
-        guard let value = self, !value.isEmpty else { return nil }
-        return value
     }
 }
