@@ -5,9 +5,9 @@ import XCTest
 /// 聊天模式（ChatMode）单元测试
 ///
 /// 验证 `ChatMode` 枚举的各项属性，该枚举决定了用户在对话中的意图和权限：
-/// - **chat（对话模式）**：只聊天，不允许执行任何工具或修改代码
-/// - **build（构建模式）**：可以执行工具、修改代码，高风险需要用户确认
-/// - **autonomous（自主模式）**：可以执行工具、修改代码，高风险自动批准
+/// - **A1（对话模式）**：只聊天，不允许执行任何工具或修改代码
+/// - **A2（构建模式）**：可以执行工具、修改代码，高风险需要用户确认
+/// - **A3（自主模式）**：可以执行工具、修改代码，高风险自动批准
 ///
 /// 测试覆盖：
 /// - 枚举完备性（CaseIterable）
@@ -34,9 +34,9 @@ final class ChatModeTests: XCTestCase {
     ///
     /// rawValue 用于持久化和网络传输，变更会导致已存储数据无法正确解析。
     func testRawValues() {
-        XCTAssertEqual(ChatMode.chat.rawValue, "chat")
-        XCTAssertEqual(ChatMode.build.rawValue, "build")
-        XCTAssertEqual(ChatMode.autonomous.rawValue, "autonomous")
+        XCTAssertEqual(ChatMode.chat.rawValue, "a1")
+        XCTAssertEqual(ChatMode.build.rawValue, "a2")
+        XCTAssertEqual(ChatMode.autonomous.rawValue, "a3")
     }
 
     // MARK: - allowsTools
@@ -112,8 +112,11 @@ final class ChatModeTests: XCTestCase {
 
     // MARK: - ChatMode from RawValue
 
-    /// 验证从 rawValue 创建 ChatMode 的正确性。
+    /// 验证从 rawValue 创建 ChatMode 的正确性，并兼容旧版字符串。
     func testInitFromRawValue() {
+        XCTAssertEqual(ChatMode(rawValue: "a1"), .chat)
+        XCTAssertEqual(ChatMode(rawValue: "a2"), .build)
+        XCTAssertEqual(ChatMode(rawValue: "a3"), .autonomous)
         XCTAssertEqual(ChatMode(rawValue: "chat"), .chat)
         XCTAssertEqual(ChatMode(rawValue: "build"), .build)
         XCTAssertEqual(ChatMode(rawValue: "autonomous"), .autonomous)
