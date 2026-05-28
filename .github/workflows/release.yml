@@ -464,7 +464,44 @@ jobs:
           ls -alh release-assets
 
       # =================================================================================================
-      # 5. 发布 Release
+      # 5.5 上传 DMG 到 Cloudflare R2
+      # =================================================================================================
+      - name: Upload DMG to Cloudflare R2
+        if: success()
+        env:
+          WEBHOOK_SECRET: ${{ secrets.LUMI_WEBHOOK_SECRET }}
+          API_URL: https://data.kuaiyizhi.cn
+        run: |
+          set -euo pipefail
+          
+          DMG_FILE=$(ls ./release-assets/*.dmg 2>/dev/null | head -n 1)
+          if [ -z "$DMG_FILE" ]; then
+            echo "⚠️  No DMG file found to upload"
+            exit 0
+          fi
+          
+          DMG_FILENAME=$(basename "$DMG_FILE")
+          R2_KEY="lumi/${DMG_FILENAME}"
+          
+          echo "📤 Uploading DMG to R2: $R2_KEY"
+          
+          RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
+            -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+            -F "file=@${DMG_FILE}" \
+            -F "key=${R2_KEY}")
+          
+          echo "Response: $RESPONSE"
+          
+          if echo "$RESPONSE" | grep -q '"success":true'; then
+            R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+            echo "✅ DMG uploaded: $R2_DMG_URL"
+          else
+            echo "❌ Failed to upload DMG to R2"
+            exit 1
+          fi
+
+      # =================================================================================================
+      # 6. 发布 Release
       # =================================================================================================
       - name: Generate Changelog
         if: success()
