@@ -26,6 +26,24 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let policy: PluginPolicy = .optIn
     nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Homebrew 管理",
+                subtitle: "集中查看 formula、cask、过期包和常用维护操作。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric("brew", "命令"),
+                    PluginPosterSupport.metric("Cask", "应用包"),
+                ],
+                rows: ["已安装包", "可更新项目", "维护操作"],
+                chips: ["开发工具", "包管理", "更新"]
+            ),
+        ]
+    }
     
     // MARK: - UI Contributions
 

@@ -31,6 +31,24 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Docker 工作台",
+                subtitle: "管理容器、镜像和运行状态，常用操作不用离开 Lumi。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Images", "镜像"),
+                    PluginPosterSupport.metric("Run", "容器"),
+                ],
+                rows: ["容器列表", "镜像管理", "资源状态"],
+                chips: ["开发工具", "Docker", "容器"]
+            ),
+        ]
+    }
+
     // MARK: - UI Contributions
 
     @MainActor

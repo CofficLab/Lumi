@@ -34,6 +34,24 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "GitHub Agent 工具",
+                subtitle: "让助手读取仓库、搜索代码、管理 Issue 和评论。",
+                icon: Self.iconName,
+                accent: .black,
+                metrics: [
+                    PluginPosterSupport.metric("12", "工具"),
+                    PluginPosterSupport.metric("API", "GitHub"),
+                ],
+                rows: ["仓库信息", "代码搜索", "Issue 管理", "评论操作"],
+                chips: ["GitHub", "Agent 工具", "Issue"]
+            ),
+        ]
+    }
+
+    @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GitHubRepoInfoTool(),

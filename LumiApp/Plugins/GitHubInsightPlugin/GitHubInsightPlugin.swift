@@ -24,6 +24,24 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "GitHub 生态知识库",
+                subtitle: "为当前项目缓存 GitHub 生态参考，并在对话中注入可检索上下文。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("KB", "本地缓存"),
+                    PluginPosterSupport.metric("Query", "检索"),
+                ],
+                rows: ["生态参考同步", "状态栏指示", "Agent 查询工具"],
+                chips: ["GitHub", "知识库", "上下文"]
+            ),
+        ]
+    }
+
     /// 在状态栏右侧添加 GitHub 生态知识库状态指示器。
     @MainActor
     func addStatusBarTrailingView(context: PluginContext) -> AnyView? {

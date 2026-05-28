@@ -51,6 +51,24 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent 工具
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Agent Rules",
+                subtitle: "管理 .agent/rules 规则文档，并在发送消息时注入规则上下文。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Rules", "规则"),
+                    PluginPosterSupport.metric("Prompt", "注入"),
+                ],
+                rows: ["列出规则", "创建规则", "上下文中间件"],
+                chips: ["Agent", "规则", "项目"]
+            ),
+        ]
+    }
+
+    @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [ListAgentRulesTool(), CreateAgentRuleTool()]
     }

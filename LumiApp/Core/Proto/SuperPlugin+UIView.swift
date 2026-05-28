@@ -78,6 +78,9 @@ extension SuperPlugin {
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }
 
+    /// 默认实现：不提供插件海报视图
+    @MainActor func addPosterViews() -> [AnyView] { [] }
+
     /// 默认实现：不提供菜单栏弹窗视图列表（兼容旧版 `addMenuBarPopupView`）
     @MainActor func addMenuBarPopupViews() -> [AnyView] {
         if let view = addMenuBarPopupView() {

@@ -29,6 +29,24 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     // MARK: - 底部面板
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "内嵌预览",
+                subtitle: "在编辑器底部构建并显示 SwiftUI、HTML、JSON、PDF 等预览。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("#Preview", "SwiftUI"),
+                    PluginPosterSupport.metric("Files", "多格式"),
+                ],
+                rows: ["SwiftUI Preview", "HTML/JSON/PDF", "构建状态诊断"],
+                chips: ["编辑器", "预览", "底部面板"]
+            ),
+        ]
+    }
+
     @MainActor func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
         guard context.activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(

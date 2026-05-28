@@ -43,6 +43,24 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "自动任务清单",
+                subtitle: "让助手创建、追加、更新和检查任务进度，并在侧栏显示。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric("Tasks", "任务"),
+                    PluginPosterSupport.metric("Check", "进度"),
+                ],
+                rows: ["创建任务", "追加步骤", "检查进展"],
+                chips: ["Agent", "任务", "侧栏"]
+            ),
+        ]
+    }
+
+    @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             PluginAutoTask.CreateTaskTool(),

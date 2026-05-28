@@ -42,6 +42,24 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "网络实时监控",
+                subtitle: "在菜单栏和仪表盘查看网速、流量和连接状态。",
+                icon: Self.iconName,
+                accent: .cyan,
+                metrics: [
+                    PluginPosterSupport.metric("Up", "上传"),
+                    PluginPosterSupport.metric("Down", "下载"),
+                ],
+                rows: ["实时网速", "流量历史", "连接状态"],
+                chips: ["系统", "网络", "菜单栏"]
+            ),
+        ]
+    }
+
     @MainActor func addMenuBarPopupView() -> AnyView? {
         AnyView(NetworkMenuBarPopupView())
     }

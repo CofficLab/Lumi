@@ -22,6 +22,24 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RClickPlugin()
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Finder 右键动作",
+                subtitle: "配置文件右键菜单模板，把常用操作放进 Finder。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Menu", "右键菜单"),
+                    PluginPosterSupport.metric("Tpl", "模板"),
+                ],
+                rows: ["动作模板", "菜单预览", "Finder 集成"],
+                chips: ["Finder", "右键", "自动化"]
+            ),
+        ]
+    }
+
     // MARK: - Lifecycle
 
     nonisolated func onRegister() {

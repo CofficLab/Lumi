@@ -29,6 +29,32 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = AppManagerPlugin()
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "应用与残留文件",
+                subtitle: "扫描已安装应用，查看缓存、偏好设置和相关文件。",
+                icon: Self.iconName,
+                accent: .indigo,
+                metrics: [
+                    PluginPosterSupport.metric("Apps", "应用列表"),
+                    PluginPosterSupport.metric("Clean", "残留清理"),
+                ],
+                rows: ["应用详情", "缓存统计", "关联文件"],
+                chips: ["系统", "应用管理", "清理"]
+            ),
+            PluginPosterSupport.poster(
+                title: "卸载前先看清",
+                subtitle: "把应用相关文件集中呈现，减少手动翻找。",
+                icon: "trash.slash",
+                accent: .purple,
+                rows: ["Application Support", "Caches", "Preferences"],
+                chips: ["扫描", "分组", "预览"]
+            ),
+        ]
+    }
+
     nonisolated func onRegister() {
         PluginAppManager.AppManagerPlugin.databaseRootURLProvider = {
             AppConfig.getDBFolderURL()

@@ -2,6 +2,7 @@ import AgentToolKit
 import Foundation
 import PluginMemory
 import os
+import SwiftUI
 
 /// Memory 插件 App 侧注册适配器。
 ///
@@ -69,6 +70,24 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - Agent Tools
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Agent 记忆",
+                subtitle: "保存、检索和注入长期记忆，让对话保持项目上下文。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("Recall", "召回"),
+                    PluginPosterSupport.metric("Store", "保存"),
+                ],
+                rows: ["保存记忆", "检索记忆", "上下文注入"],
+                chips: ["Agent", "记忆", "上下文"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

@@ -25,7 +25,23 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI Contributions
 
-    
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "应用网络权限",
+                subtitle: "查看并管理 macOS 应用的网络访问策略。",
+                icon: Self.iconName,
+                accent: .green,
+                metrics: [
+                    PluginPosterSupport.metric("Allow", "放行"),
+                    PluginPosterSupport.metric("Block", "阻止"),
+                ],
+                rows: ["应用规则", "网络事件", "权限面板"],
+                chips: ["防火墙", "网络", "权限"]
+            ),
+        ]
+    }
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

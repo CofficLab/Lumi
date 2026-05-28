@@ -27,6 +27,24 @@ actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     static let shared = AppStoreConnectPlugin()
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "App Store Connect",
+                subtitle: "在 Lumi 内查看 App Store Connect 应用、版本和发布相关信息。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("ASC", "接口"),
+                    PluginPosterSupport.metric("Apps", "应用"),
+                ],
+                rows: ["凭证配置", "应用列表", "版本状态"],
+                chips: ["Apple", "发布", "开发者"]
+            ),
+        ]
+    }
+
+    @MainActor
     func addViewContainer() -> ViewContainerItem? {
         guard let item = PluginAppStoreConnect.AppStoreConnectPlugin.shared.addViewContainer() else {
             return nil

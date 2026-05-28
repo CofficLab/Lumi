@@ -29,7 +29,23 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Hosts 文件管理",
+                subtitle: "编辑和维护系统 hosts 配置，适合本地调试与域名映射。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("127.0.0.1", "映射"),
+                    PluginPosterSupport.metric("DNS", "解析"),
+                ],
+                rows: ["Hosts 条目", "启用状态", "系统文件写入"],
+                chips: ["系统", "DNS", "配置"]
+            ),
+        ]
+    }
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

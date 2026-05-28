@@ -25,6 +25,24 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "代码编辑器",
+                subtitle: "文件树、源码编辑和 AI 聊天入口集中在同一个工作区。",
+                icon: Self.iconName,
+                accent: .indigo,
+                metrics: [
+                    PluginPosterSupport.metric("Tree", "文件树"),
+                    PluginPosterSupport.metric("AI", "聊天支持"),
+                ],
+                rows: ["项目文件树", "源码编辑", "命令面板"],
+                chips: ["编辑器", "项目", "AI"]
+            ),
+        ]
+    }
+
     /// 面板视图：编辑器
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

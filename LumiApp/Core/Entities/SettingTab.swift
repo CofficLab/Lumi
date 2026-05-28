@@ -46,5 +46,6 @@ enum SettingTab: String, CaseIterable, Hashable {
 /// 设置选择枚举，用于侧边栏导航状态管理
 enum SettingsSelection: Hashable {
     case core(SettingTab)
+    case pluginCategory(PluginCategory)
     case plugin(String)
 }

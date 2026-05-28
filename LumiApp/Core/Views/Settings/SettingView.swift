@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 设置界面视图，使用 HStack 实现左右并排布局
 struct SettingView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     /// 插件 VM
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var themeVM: AppThemeVM
@@ -26,6 +28,10 @@ struct SettingView: View {
             }
         case "plugin":
             return .plugin(saved.value)
+        case "pluginCategory":
+            if let category = PluginCategory(rawValue: saved.value) {
+                return .pluginCategory(category)
+            }
         default:
             break
         }
@@ -42,6 +48,8 @@ struct SettingView: View {
         switch selection {
         case let .core(tab):
             AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
+        case let .pluginCategory(category):
+            AppSettingStore.saveSettingsSelection(type: "pluginCategory", value: category.rawValue)
         case let .plugin(id):
             AppSettingStore.saveSettingsSelection(type: "plugin", value: id)
         }
@@ -57,6 +65,11 @@ struct SettingView: View {
     /// 插件设置视图列表（单独提供了 addSettingsView 的插件）
     private var pluginSettings: [(id: String, name: String, icon: String, view: AnyView)] {
         pluginProvider.getPluginSettingsViews()
+    }
+
+    /// 插件管理下方的分类入口
+    private var pluginCategories: [PluginCategory] {
+        pluginProvider.getConfigurablePluginsGroupedByCategory().map(\.category)
     }
 
     /// 侧边栏内容视图
@@ -76,6 +89,10 @@ struct SettingView: View {
                                 isSelected: selection == .core(tab)
                             ) {
                                 selection = .core(tab)
+                            }
+
+                            if tab == .plugins {
+                                pluginCategorySidebarItems
                             }
                         }
 
@@ -100,6 +117,39 @@ struct SettingView: View {
         }
     }
 
+    private var pluginCategorySidebarItems: some View {
+        VStack(spacing: 2) {
+            ForEach(pluginCategories, id: \.self) { category in
+                Button {
+                    selection = .pluginCategory(category)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: category.systemImage)
+                            .font(.appCaption)
+                            .frame(width: 18)
+
+                        Text(category.displayName)
+                            .font(.appCaption)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundColor(selection == .pluginCategory(category) ? theme.textPrimary : theme.textSecondary)
+                    .padding(.leading, 28)
+                    .padding(.trailing, 10)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .appSurface(
+                    style: .custom(selection == .pluginCategory(category) ? Color.secondary.opacity(0.18) : Color.clear),
+                    cornerRadius: 6
+                )
+            }
+        }
+    }
+
     /// 详情区域视图
     private var detailView: some View {
         AppSettingsDetailPane {
@@ -108,6 +158,8 @@ struct SettingView: View {
                     switch sel {
                     case let .core(tab):
                         tab.destinationView
+                    case let .pluginCategory(category):
+                        PluginCategorySettingsView(category: category)
                     case let .plugin(id):
                         if let item = pluginSettings.first(where: { $0.id == id }) {
                             item.view

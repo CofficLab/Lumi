@@ -30,6 +30,24 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DeviceInfoPlugin()
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "设备状态监控",
+                subtitle: "在菜单栏和详情页查看 CPU、内存与进程状态。",
+                icon: Self.iconName,
+                accent: .green,
+                metrics: [
+                    PluginPosterSupport.metric("CPU", "历史曲线"),
+                    PluginPosterSupport.metric("RAM", "内存占用"),
+                ],
+                rows: ["顶部进程", "CPU 走势", "内存走势"],
+                chips: ["菜单栏", "监控", "系统"]
+            ),
+        ]
+    }
+
     nonisolated func onEnable() {
         PluginDeviceInfo.DeviceInfoPlugin.shared.onEnable()
     }

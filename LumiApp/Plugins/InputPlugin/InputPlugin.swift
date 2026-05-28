@@ -29,6 +29,24 @@ actor InputPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "输入行为管理",
+                subtitle: "按应用或场景管理输入相关规则。",
+                icon: Self.iconName,
+                accent: .teal,
+                metrics: [
+                    PluginPosterSupport.metric("Rules", "规则"),
+                    PluginPosterSupport.metric("IME", "输入源"),
+                ],
+                rows: ["输入源规则", "规则列表", "空状态引导"],
+                chips: ["输入法", "规则", "系统"]
+            ),
+        ]
+    }
+
+    @MainActor
     func addViewContainer() -> ViewContainerItem? {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
             AnyView(InputSettingsView())

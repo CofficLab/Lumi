@@ -238,6 +238,12 @@ public protocol SuperPlugin: Actor {
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
 
+    /// 添加插件海报视图列表
+    ///
+    /// 海报视图展示在「设置 - 插件管理」的插件行下方，用于说明插件功能、
+    /// 入口位置或贡献的 UI 区域。一个插件可以返回多个海报视图。
+    @MainActor func addPosterViews() -> [AnyView]
+
     /// 添加菜单栏弹窗视图列表
     @MainActor func addMenuBarPopupViews() -> [AnyView]
 

@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import os
+import SwiftUI
 
 /// 多智能体插件
 ///
@@ -45,6 +46,24 @@ actor MultiAgentPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - Agent Tools
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "多 Agent 并行",
+                subtitle: "把复杂任务拆给多个子 Agent 并行执行，再统一收集结果。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("Spawn", "创建"),
+                    PluginPosterSupport.metric("Collect", "收集"),
+                ],
+                rows: ["独立模型配置", "并行子任务", "结果汇总"],
+                chips: ["Agent", "并行", "工具调用"]
+            ),
+        ]
+    }
 
     @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {

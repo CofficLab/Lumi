@@ -29,6 +29,24 @@ actor QuickLauncherPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "快速启动器",
+                subtitle: "从菜单栏快速打开系统应用和常用工具。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric("Apps", "应用"),
+                    PluginPosterSupport.metric("Menu", "菜单栏"),
+                ],
+                rows: ["系统应用", "实用工具", "菜单栏入口"],
+                chips: ["启动器", "菜单栏", "系统"]
+            ),
+        ]
+    }
+
     /// 添加菜单栏弹窗视图
     /// - Returns: 要添加到菜单栏弹窗的视图，如果不需要则返回nil
     @MainActor func addMenuBarPopupView() -> AnyView? {

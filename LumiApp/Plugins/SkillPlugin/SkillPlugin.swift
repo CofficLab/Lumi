@@ -54,6 +54,24 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     // MARK: - 发送中间件
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Skills 扩展知识",
+                subtitle: "从 .agent/skills 加载领域技能，并把摘要注入给助手。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("SKILL.md", "技能"),
+                    PluginPosterSupport.metric("Prompt", "注入"),
+                ],
+                rows: ["扫描技能目录", "状态栏数量", "上下文注入"],
+                chips: ["Agent", "Skills", "上下文"]
+            ),
+        ]
+    }
+
+    @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(SkillSendMiddleware())]
     }

@@ -30,6 +30,24 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "项目切换中心",
+                subtitle: "维护最近项目列表，并把当前项目上下文提供给工具和助手。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("Recent", "最近项目"),
+                    PluginPosterSupport.metric("Context", "上下文"),
+                ],
+                rows: ["工具栏项目选择器", "无项目引导", "Agent 项目工具"],
+                chips: ["项目", "上下文", "工具栏"]
+            ),
+        ]
+    }
+
     /// 在工具栏中间位置显示当前项目选择器
     ///
     /// 当激活的视图容器声明了 `showsProjectToolbar` 时显示。

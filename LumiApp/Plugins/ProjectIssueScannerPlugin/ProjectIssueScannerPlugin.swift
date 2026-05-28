@@ -28,6 +28,24 @@ actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
 
     static let shared = ProjectIssueScannerPlugin()
 
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "项目问题扫描",
+                subtitle: "空闲时扫描 TODO、FIXME 和潜在代码问题，并把结果提示给助手。",
+                icon: Self.iconName,
+                accent: .red,
+                metrics: [
+                    PluginPosterSupport.metric("Idle", "空闲扫描"),
+                    PluginPosterSupport.metric("LLM", "深度分析"),
+                ],
+                rows: ["本地规则扫描", "LLM 深度分析", "消息上下文提示"],
+                chips: ["代码质量", "Agent", "扫描"]
+            ),
+        ]
+    }
+
     // MARK: - Status Bar
 
     /// 在状态栏右侧添加问题扫描状态图标。

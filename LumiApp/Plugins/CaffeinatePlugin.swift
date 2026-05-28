@@ -26,6 +26,24 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     static let shared = CaffeinatePlugin()
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "保持唤醒",
+                subtitle: "从菜单栏或 Agent 工具控制系统防休眠和关闭显示器。",
+                icon: Self.iconName,
+                accent: .orange,
+                metrics: [
+                    PluginPosterSupport.metric("Awake", "防休眠"),
+                    PluginPosterSupport.metric("Display", "显示器"),
+                ],
+                rows: ["菜单栏控制", "定时保持唤醒", "关闭显示器工具"],
+                chips: ["系统", "菜单栏", "Agent 工具"]
+            ),
+        ]
+    }
+
+    @MainActor
     func addMenuBarPopupView() -> AnyView? {
         PluginCaffeinate.CaffeinatePlugin.shared.addMenuBarPopupView()
     }

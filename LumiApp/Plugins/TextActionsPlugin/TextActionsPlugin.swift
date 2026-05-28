@@ -19,6 +19,24 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let shared = TextActionsPlugin()
     nonisolated private static let settingsStore = TextActionsPluginLocalStore()
     nonisolated private static let enabledKey = "TextActionsEnabled"
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "选中文本动作",
+                subtitle: "监听文本选择并弹出可配置动作菜单。",
+                icon: Self.iconName,
+                accent: .purple,
+                metrics: [
+                    PluginPosterSupport.metric("Select", "文本选择"),
+                    PluginPosterSupport.metric("Menu", "动作菜单"),
+                ],
+                rows: ["动作列表", "选区监控", "菜单预览"],
+                chips: ["编辑器", "文本", "快捷动作"]
+            ),
+        ]
+    }
     
     // MARK: - Settings
     

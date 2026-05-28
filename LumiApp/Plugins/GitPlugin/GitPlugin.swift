@@ -27,6 +27,32 @@ actor GitPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "Git 变更面板",
+                subtitle: "查看提交历史、当前 diff、分支状态，并提供 Agent 工具。",
+                icon: Self.iconName,
+                accent: .green,
+                metrics: [
+                    PluginPosterSupport.metric("Diff", "变更"),
+                    PluginPosterSupport.metric("Log", "历史"),
+                ],
+                rows: ["工作区 Diff", "提交历史", "分支状态栏"],
+                chips: ["开发工具", "Git", "Agent 工具"]
+            ),
+            PluginPosterSupport.poster(
+                title: "Agent 可调用 Git 工具",
+                subtitle: "让助手读取状态、查看 diff、创建 commit、检查未推送提交。",
+                icon: "wand.and.stars",
+                accent: .teal,
+                rows: ["git status", "git diff", "git commit", "git unpushed"],
+                chips: ["工具调用", "版本控制", "自动化"]
+            ),
+        ]
+    }
+
+    @MainActor
     func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GitStatusTool(),

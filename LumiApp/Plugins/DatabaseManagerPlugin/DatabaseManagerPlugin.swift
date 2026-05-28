@@ -27,7 +27,23 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "数据库工作台",
+                subtitle: "管理 SQLite、MySQL、PostgreSQL 和 Redis 连接，并让助手只读查询。",
+                icon: Self.iconName,
+                accent: .teal,
+                metrics: [
+                    PluginPosterSupport.metric("SQL", "查询"),
+                    PluginPosterSupport.metric("Redis", "缓存"),
+                ],
+                rows: ["连接列表", "Schema 查看", "只读查询工具"],
+                chips: ["数据库", "开发工具", "Agent 工具"]
+            ),
+        ]
+    }
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

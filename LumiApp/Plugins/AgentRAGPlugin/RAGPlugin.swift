@@ -63,6 +63,32 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Methods
 
     @MainActor
+    func addPosterViews() -> [AnyView] {
+        [
+            PluginPosterSupport.poster(
+                title: "RAG 代码检索",
+                subtitle: "为项目建立检索索引，让助手用本地代码上下文回答问题。",
+                icon: Self.iconName,
+                accent: .teal,
+                metrics: [
+                    PluginPosterSupport.metric("Index", "索引"),
+                    PluginPosterSupport.metric("Search", "检索"),
+                ],
+                rows: ["自动索引", "代码搜索工具", "发送上下文增强"],
+                chips: ["Agent", "RAG", "代码上下文"]
+            ),
+            PluginPosterSupport.poster(
+                title: "索引进度可见",
+                subtitle: "在编辑器状态栏显示索引状态，并提供 RAG 设置入口。",
+                icon: "gauge.with.dots.needle.67percent",
+                accent: .cyan,
+                rows: ["状态栏进度", "RAG 设置", "插件数据库"],
+                chips: ["索引", "状态栏", "设置"]
+            ),
+        ]
+    }
+
+    @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         if Self.verbose {
             Self.logger.info("\(Self.t)RAG 中间件已注册")
