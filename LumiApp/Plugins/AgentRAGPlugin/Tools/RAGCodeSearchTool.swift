@@ -86,7 +86,6 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         .low
     }
 
-    @MainActor
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let rawQuery = arguments["query"]?.value as? String else {
             return "## Code Search\n\nMissing required `query` parameter."
@@ -119,26 +118,38 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             """
         }
 
+        let keywordTask: Task<[CodeSearchResult], Error>? = mode.includesKeyword
+            ? Task.detached(priority: .utility) {
+                try keywordSearch(
+                    query: query,
+                    projectPath: projectPath,
+                    pathFilter: pathFilter,
+                    limit: topK,
+                    context: context
+                )
+            }
+            : nil
+
+        let semanticTask: Task<[CodeSearchResult], Never>? = mode.includesSemantic
+            ? Task(priority: .utility) {
+                await semanticSearch(
+                    query: query,
+                    projectPath: projectPath,
+                    pathFilter: pathFilter,
+                    limit: topK
+                )
+            }
+            : nil
+
         var results: [CodeSearchResult] = []
-
-        if mode.includesKeyword {
-            results.append(contentsOf: keywordSearch(
-                query: query,
-                projectPath: projectPath,
-                pathFilter: pathFilter,
-                limit: topK
-            ))
+        if let keywordTask {
+            results.append(contentsOf: try await keywordTask.value)
+        }
+        if let semanticTask {
+            results.append(contentsOf: await semanticTask.value)
         }
 
-        if mode.includesSemantic {
-            results.append(contentsOf: await semanticSearch(
-                query: query,
-                projectPath: projectPath,
-                pathFilter: pathFilter,
-                limit: topK
-            ))
-        }
-
+        try context.checkCancellation()
         let merged = mergeResults(results, limit: topK)
         return render(results: merged, query: query, mode: mode, projectPath: projectPath)
     }
@@ -177,8 +188,9 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         query: String,
         projectPath: String,
         pathFilter: String?,
-        limit: Int
-    ) -> [CodeSearchResult] {
+        limit: Int,
+        context: ToolExecutionContext
+    ) throws -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
         let files = RAGFileScanner.discoverFiles(in: projectPath)
             .filter { filePath in
@@ -190,6 +202,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         matches.reserveCapacity(limit)
 
         for filePath in files {
+            try context.checkCancellation()
             guard matches.count < limit else { break }
             guard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else { continue }
             guard let matchRange = content.range(of: lowerQuery, options: [.caseInsensitive, .diacriticInsensitive]) else { continue }
@@ -207,14 +220,15 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         return matches
     }
 
-    @MainActor
     private func semanticSearch(
         query: String,
         projectPath: String,
         pathFilter: String?,
         limit: Int
     ) async -> [CodeSearchResult] {
-        let service = RAGPlugin.getService()
+        let service = await MainActor.run {
+            RAGPlugin.getService()
+        }
         guard service.isInitialized else { return [] }
 
         do {
