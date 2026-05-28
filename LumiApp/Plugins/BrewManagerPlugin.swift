@@ -9,7 +9,6 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "🍺"
-    nonisolated static let enable: Bool = PluginBrewManager.BrewManagerPlugin.enable
     nonisolated static let verbose: Bool = PluginBrewManager.BrewManagerPlugin.verbose
 
     static let id = PluginBrewManager.BrewManagerPlugin.id

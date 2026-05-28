@@ -13,13 +13,11 @@ actor ProjectsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
 
     nonisolated static let emoji = "📋"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "Projects"
     static let displayName: String = String(localized: "Projects", table: "Projects")
     static let description: String = String(localized: "Manage the global projects list", table: "Projects")
     static let iconName: String = "folder"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .general }
     static var order: Int { 10 }
 

@@ -20,8 +20,6 @@ actor MessageRendererPlugin: SuperPlugin {
     static let iconName = "paintbrush.fill"
     static var category: PluginCategory { .general }
     static var order: Int { 10 } // 最先加载，确保内置渲染器先注册
-    static let enable: Bool = true
-    static var isConfigurable: Bool { false } // 核心插件，不可禁用
 
     @MainActor
     func messageRenderers() -> [any SuperMessageRenderer] {

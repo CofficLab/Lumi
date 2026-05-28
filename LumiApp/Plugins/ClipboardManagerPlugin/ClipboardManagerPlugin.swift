@@ -14,8 +14,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     static let iconName = "doc.on.clipboard"
     static var category: PluginCategory { .general }
     static var order: Int { 70 }
-    nonisolated static let enable: Bool = true
-    nonisolated static let isConfigurable: Bool = true
+    static let policy: PluginPolicy = .optOut
 
     static let shared = ClipboardManagerPlugin()
     private nonisolated static let settingsStore = ClipboardManagerPluginLocalStore.shared

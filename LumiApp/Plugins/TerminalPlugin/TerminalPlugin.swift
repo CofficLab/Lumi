@@ -5,7 +5,6 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💻"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "Terminal"
@@ -13,7 +12,6 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Native interactive terminal powered by SwiftTerm", table: "Terminal")
     static let iconName = "terminal"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .developerTool }
     static var order: Int { 90 }
 

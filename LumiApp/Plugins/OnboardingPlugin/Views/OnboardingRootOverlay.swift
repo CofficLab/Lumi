@@ -234,7 +234,7 @@ private struct OnboardingSheetView: View {
                     name: pluginType.displayName,
                     description: pluginType.description,
                     icon: pluginType.iconName,
-                    defaultEnabled: pluginType.enable
+                    defaultEnabled: pluginType.enabledByDefault
                 )
             }
     }

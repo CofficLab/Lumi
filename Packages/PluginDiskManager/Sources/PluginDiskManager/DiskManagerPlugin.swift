@@ -11,7 +11,6 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "💿"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id = "DiskManager"
@@ -29,8 +28,6 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     // MARK: - UI Contributions
-
-    
 
     @MainActor
     public func addViewContainer() -> ViewContainerItem? {

@@ -25,14 +25,12 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     nonisolated static let emoji = "📐"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "Layout"
     static let displayName: String = "Layout Persistence"
     static let description: String = "Persist and restore layout state across app launches"
     static let iconName: String = "sidebar.left"
-    static let isConfigurable: Bool = false
     static var order: Int { 99 }
 
     nonisolated var instanceLabel: String { Self.id }

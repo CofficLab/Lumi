@@ -14,14 +14,12 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔍"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "QuickFileSearch"
     static let displayName = String(localized: "Quick File Search", table: "QuickFileSearch")
     static let description = String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch")
     static let iconName = "magnifyingglass"
-    nonisolated static let isConfigurable: Bool = false
     static var order: Int { 50 }
 
     nonisolated var instanceLabel: String { Self.id }

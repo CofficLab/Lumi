@@ -28,8 +28,6 @@ public actor MemoryPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginMemoryLocalization.string("Memory")
     public static let description: String = PluginMemoryLocalization.string("Persistent memory system for cross-session context")
     public static let iconName: String = "brain.head.profile"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .agent }
     public static var order: Int { 15 }
 

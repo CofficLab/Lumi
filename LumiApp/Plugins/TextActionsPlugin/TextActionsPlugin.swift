@@ -11,7 +11,6 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "text.cursor"
-    nonisolated static let enable: Bool = true
     static var category: PluginCategory { .editor }
     static var order: Int { 60 }
     
@@ -85,8 +84,6 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI
     
-    
-
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {

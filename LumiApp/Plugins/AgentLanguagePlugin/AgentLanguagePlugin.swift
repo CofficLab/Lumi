@@ -17,9 +17,6 @@ actor AgentLanguagePlugin: SuperPlugin {
     static var order: Int { 83 }
 
     /// 核心功能，禁止用户配置
-    static var isConfigurable: Bool { false }
-
-    static let enable: Bool = true
 
     static let shared = AgentLanguagePlugin()
 

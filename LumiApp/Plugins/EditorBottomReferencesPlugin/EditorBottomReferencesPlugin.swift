@@ -12,7 +12,6 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-references")
 
     nonisolated static let emoji = "🔗"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorBottomReferences"
     static let displayName: String = String(
@@ -21,7 +20,6 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
         localized: "References panel in the editor bottom area",
         table: "EditorBottomReferences")
     static let iconName: String = "arrow.triangle.branch"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 

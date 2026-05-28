@@ -9,7 +9,6 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💿"
-    nonisolated static let enable: Bool = PluginDiskManager.DiskManagerPlugin.enable
     nonisolated static let verbose: Bool = PluginDiskManager.DiskManagerPlugin.verbose
 
     static let id = PluginDiskManager.DiskManagerPlugin.id

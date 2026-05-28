@@ -9,7 +9,6 @@ actor OpenAIPlugin: SuperPlugin {
     static let iconName = "star.circle"
     static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
-    static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         OpenAIProvider.self

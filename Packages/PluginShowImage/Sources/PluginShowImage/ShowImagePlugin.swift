@@ -27,8 +27,6 @@ public actor ShowImagePlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginShowImageLocalization.string("Show Image")
     public static let description: String = PluginShowImageLocalization.string("Display images in the UI with support for local paths and remote URLs.")
     public static let iconName: String = "photo.on.rectangle"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .integration }
     public static var order: Int { 97 }
 

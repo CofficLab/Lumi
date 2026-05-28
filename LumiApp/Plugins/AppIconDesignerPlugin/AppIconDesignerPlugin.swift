@@ -8,13 +8,11 @@ actor AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🎨"
     nonisolated static let verbose = true
-    nonisolated static let enable = PluginAppIconDesigner.AppIconDesignerPlugin.enable
 
     static let id = PluginAppIconDesigner.AppIconDesignerPlugin.id
     static let displayName = PluginAppIconDesigner.AppIconDesignerPlugin.displayName
     static let description = PluginAppIconDesigner.AppIconDesignerPlugin.description
     static let iconName = PluginAppIconDesigner.AppIconDesignerPlugin.iconName
-    static let isConfigurable = PluginAppIconDesigner.AppIconDesignerPlugin.isConfigurable
     static var category: PluginCategory { .general }
     static var order: Int { PluginAppIconDesigner.AppIconDesignerPlugin.order }
 

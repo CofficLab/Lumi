@@ -26,8 +26,6 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Go language support: gopls integration, build, test, format, and module management.", table: "GoEditor")
     static let iconName = "goforward"
     static let order = 34
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

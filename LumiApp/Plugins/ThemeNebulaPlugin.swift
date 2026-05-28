@@ -8,8 +8,6 @@ actor ThemeNebulaPlugin: SuperPlugin {
     static let displayName: String = PluginThemeNebula.ThemeNebulaPlugin.displayName
     static let description: String = PluginThemeNebula.ThemeNebulaPlugin.description
     static let iconName: String = PluginThemeNebula.ThemeNebulaPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeNebula.ThemeNebulaPlugin.isConfigurable
-    static let enable: Bool = PluginThemeNebula.ThemeNebulaPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeNebula.ThemeNebulaPlugin.order }
 

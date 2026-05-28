@@ -8,8 +8,6 @@ actor ThemeDraculaPlugin: SuperPlugin {
     static let displayName: String = PluginThemeDracula.ThemeDraculaPlugin.displayName
     static let description: String = PluginThemeDracula.ThemeDraculaPlugin.description
     static let iconName: String = PluginThemeDracula.ThemeDraculaPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeDracula.ThemeDraculaPlugin.isConfigurable
-    static let enable: Bool = PluginThemeDracula.ThemeDraculaPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeDracula.ThemeDraculaPlugin.order }
 

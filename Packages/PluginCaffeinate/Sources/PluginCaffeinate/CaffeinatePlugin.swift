@@ -16,7 +16,6 @@ public actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     nonisolated public static let emoji = "☕️"
 
-    nonisolated public static let enable: Bool = true
     nonisolated public static let verbose: Bool = true
 
     public static let id: String = "Caffeinate"
@@ -24,7 +23,6 @@ public actor CaffeinatePlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginCaffeinateLocalization.string("Anti-Sleep")
     public static let description: String = PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control")
     public static let iconName: String = "bolt"
-    public static let isConfigurable: Bool = false
     public static var category: PluginCategory { .system }
     public static var order: Int { 7 }
 

@@ -8,8 +8,6 @@ actor ThemeAuroraPlugin: SuperPlugin {
     static let displayName: String = PluginThemeAurora.ThemeAuroraPlugin.displayName
     static let description: String = PluginThemeAurora.ThemeAuroraPlugin.description
     static let iconName: String = PluginThemeAurora.ThemeAuroraPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeAurora.ThemeAuroraPlugin.isConfigurable
-    static let enable: Bool = PluginThemeAurora.ThemeAuroraPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeAurora.ThemeAuroraPlugin.order }
 

@@ -29,8 +29,6 @@ actor MultiAgentPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Multi Agent", table: "MultiAgent")
     static let description = String(localized: "Spawn parallel sub-agents with independent LLM providers and models", table: "MultiAgent")
     static let iconName: String = "person.3.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .agent }
     static var order: Int { 88 }
 

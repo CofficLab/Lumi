@@ -8,7 +8,6 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-timeline")
     nonisolated static let emoji = "📅"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "ConversationTimeline"
@@ -16,7 +15,6 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Conversation Timeline", table: "ConversationTimeline")
     static let description: String = String(localized: "Display conversation message timeline in status bar", table: "ConversationTimeline")
     static let iconName: String = "timeline.selection"
-    static let isConfigurable: Bool = false
     static var order: Int { 74 }
 
     nonisolated var instanceLabel: String { Self.id }

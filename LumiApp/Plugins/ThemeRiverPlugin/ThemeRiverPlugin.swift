@@ -6,8 +6,6 @@ actor ThemeRiverPlugin: SuperPlugin {
     static let displayName: String = "River"
     static let description: String = "River cyan app theme"
     static let iconName: String = "water.waves"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 130 }
 

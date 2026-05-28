@@ -8,7 +8,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
 
     nonisolated static let emoji = "☕️"
-    nonisolated static let enable: Bool = PluginCaffeinate.CaffeinatePlugin.enable
     nonisolated static let verbose: Bool = PluginCaffeinate.CaffeinatePlugin.verbose
 
     static let id = PluginCaffeinate.CaffeinatePlugin.id
@@ -16,7 +15,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     static let displayName = PluginCaffeinate.CaffeinatePlugin.displayName
     static let description = PluginCaffeinate.CaffeinatePlugin.description
     static let iconName = PluginCaffeinate.CaffeinatePlugin.iconName
-    static let isConfigurable = PluginCaffeinate.CaffeinatePlugin.isConfigurable
     static var category: PluginCategory { .system }
     static var order: Int { PluginCaffeinate.CaffeinatePlugin.order }
 

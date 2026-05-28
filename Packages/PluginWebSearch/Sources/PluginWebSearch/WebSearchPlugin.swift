@@ -19,8 +19,6 @@ public actor WebSearchPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginWebSearchLocalization.string("Web Search")
     public static let description: String = PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。")
     public static let iconName: String = "magnifyingglass"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .network }
     public static var order: Int { 101 }
 

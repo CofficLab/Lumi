@@ -8,8 +8,6 @@ actor MarkdownEditorPlugin: SuperPlugin {
     static let description = "Provides Markdown-aware highlight ranges for headings, lists, quotes, links, and code spans."
     static let iconName = "doc.text"
     static let order = 120
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

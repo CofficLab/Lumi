@@ -27,8 +27,6 @@ actor LSPCallHierarchyEditorPlugin: SuperPlugin {
     static let description = String(localized: "Shows incoming and outgoing call hierarchy for symbols.", table: "LSPCallHierarchyEditor")
     static let iconName = "diagram"
     static let order = 25
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

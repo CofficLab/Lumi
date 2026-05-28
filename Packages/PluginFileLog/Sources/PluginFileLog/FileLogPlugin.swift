@@ -37,7 +37,6 @@ public actor FileLogPlugin: SuperPlugin, SuperLog {
 
     nonisolated public static let emoji = "📋"
     public static var category: PluginCategory { .system }
-    nonisolated public static let enable: Bool = true
     nonisolated public static let verbose: Bool = true
 
     public static let id: String = "FileLog"
@@ -45,7 +44,6 @@ public actor FileLogPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = "File Log"
     public static let description: String = "Collect OSLog entries to disk files with auto-rotation and cleanup"
     public static let iconName: String = "doc.text.below.ecg"
-    public static let isConfigurable: Bool = false
     public static var order: Int { 1 }  // 核心系统服务，需尽早启动
 
     nonisolated(unsafe) public static var configuration: FileLogConfiguration = DefaultFileLogConfiguration()

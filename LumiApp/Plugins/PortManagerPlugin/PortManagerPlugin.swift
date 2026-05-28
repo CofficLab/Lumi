@@ -6,7 +6,6 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🔌"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "PortManager"
@@ -24,8 +23,6 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     init() {}
 
     // MARK: - UI Contributions
-
-    
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

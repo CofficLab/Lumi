@@ -17,7 +17,6 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
     static let iconName = "text.bubble.fill"
     static var category: PluginCategory { .agent }
     static var order: Int { 82 }
-    nonisolated static let enable: Bool = true
     static let shared = AgentChatPlugin()
 
     // MARK: - Lifecycle

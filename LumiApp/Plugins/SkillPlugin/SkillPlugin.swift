@@ -22,8 +22,6 @@ actor SkillPlugin: SuperPlugin, SuperLog {
     static let iconName = "sparkles"
     static var category: PluginCategory { .agent }
     static var order: Int { 51 }
-    static let enable: Bool = true
-    static let isConfigurable: Bool = false
 
     static let shared = SkillPlugin()
 

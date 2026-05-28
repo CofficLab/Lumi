@@ -8,8 +8,6 @@ actor ThemeGithubPlugin: SuperPlugin {
     static let displayName: String = PluginThemeGithub.ThemeGithubPlugin.displayName
     static let description: String = PluginThemeGithub.ThemeGithubPlugin.description
     static let iconName: String = PluginThemeGithub.ThemeGithubPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeGithub.ThemeGithubPlugin.isConfigurable
-    static let enable: Bool = PluginThemeGithub.ThemeGithubPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeGithub.ThemeGithubPlugin.order }
 

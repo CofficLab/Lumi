@@ -8,7 +8,6 @@ import os
 actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "GitPlugin"
@@ -16,7 +15,6 @@ actor GitPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "Git"
     static let description: String = String(localized: "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。", table: "GitPlugin")
     static let iconName: String = "arrow.triangle.branch"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .developerTool }
     static var order: Int { 11 }
 

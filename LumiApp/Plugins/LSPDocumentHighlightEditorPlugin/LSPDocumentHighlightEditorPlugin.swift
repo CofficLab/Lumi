@@ -14,8 +14,6 @@ actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
     static let description = String(localized: "Highlights all references of the symbol at cursor position.", table: "LSPDocumentHighlightEditor")
     static let iconName = "highlighter"
     static let order = 21
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

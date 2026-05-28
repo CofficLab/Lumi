@@ -19,8 +19,6 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginAutoTask.AutoTaskPlugin.displayName
     static let description: String = PluginAutoTask.AutoTaskPlugin.description
     static let iconName: String = PluginAutoTask.AutoTaskPlugin.iconName
-    static let isConfigurable: Bool = PluginAutoTask.AutoTaskPlugin.isConfigurable
-    static let enable: Bool = PluginAutoTask.AutoTaskPlugin.enable
     static var category: PluginCategory { .agent }
     static var order: Int { PluginAutoTask.AutoTaskPlugin.order }
 

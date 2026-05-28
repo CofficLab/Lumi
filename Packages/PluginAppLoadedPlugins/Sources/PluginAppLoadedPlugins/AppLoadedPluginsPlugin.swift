@@ -6,14 +6,12 @@ import SwiftUI
 /// App 插件状态栏入口：在状态栏右侧显示已加载 App 插件数量与详情。
 public actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🧩"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id: String = "AppLoadedPlugins"
     public static let displayName: String = PluginAppLoadedPluginsLocalization.string("App Plugins")
     public static let description: String = PluginAppLoadedPluginsLocalization.string("Show loaded app plugins in status bar")
     public static let iconName: String = "puzzlepiece.extension"
-    public static var isConfigurable: Bool { false }
     public static var category: PluginCategory { .general }
     public static var order: Int { 79 }
 

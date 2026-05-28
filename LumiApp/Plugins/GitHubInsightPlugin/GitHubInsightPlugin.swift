@@ -17,10 +17,9 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "GitHub Insight", table: "GitHubInsight")
     static let description = String(localized: "Builds a local cache of GitHub ecosystem references for the current project.", table: "GitHubInsight")
     static let iconName = "network"
-    static let isConfigurable = true
     static var category: PluginCategory { .developerTool }
-    static let enable = true
     static var order: Int { 16 }
+    static let policy: PluginPolicy = .optOut
     static let shared = GitHubInsightPlugin()
 
     private init() {}

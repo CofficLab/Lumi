@@ -8,8 +8,6 @@ actor SampleInsightsEditorPlugin: SuperPlugin {
     static let description = String(localized: "Demonstrates hover, panel, and title action contributions.", table: "SampleInsights")
     static let iconName = "lightbulb.max"
     static let order = 91
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

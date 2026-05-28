@@ -1,3 +1,4 @@
+import AgentToolKit
 import RAGKit
 import SwiftUI
 import os
@@ -12,7 +13,6 @@ import LumiCoreKit
 /// - 服务在插件启用时自动初始化
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "rag"
@@ -20,7 +20,6 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "RAG")
     static let description = String(localized: "Retrieval-Augmented Generation", table: "RAG")
     static let iconName = "doc.text.magnifyingglass"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .agent }
     static var order: Int { 200 }
 
@@ -69,6 +68,11 @@ actor RAGPlugin: SuperPlugin, SuperLog {
             Self.logger.info("\(Self.t)RAG 中间件已注册")
         }
         return [AnySuperSendMiddleware(RAGSuperSendMiddleware())]
+    }
+
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [RAGCodeSearchTool()]
     }
 
     @MainActor

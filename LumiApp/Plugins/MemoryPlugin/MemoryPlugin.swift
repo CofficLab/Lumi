@@ -20,8 +20,6 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginMemory.MemoryPlugin.displayName
     static let description: String = PluginMemory.MemoryPlugin.description
     static let iconName: String = PluginMemory.MemoryPlugin.iconName
-    static let isConfigurable: Bool = PluginMemory.MemoryPlugin.isConfigurable
-    static let enable: Bool = PluginMemory.MemoryPlugin.enable
     static var category: PluginCategory { .agent }
     static var order: Int { PluginMemory.MemoryPlugin.order }
 

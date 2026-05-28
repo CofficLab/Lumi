@@ -8,7 +8,6 @@ actor HappyCodePlugin: SuperPlugin {
     static let description = "HappyCode LLM Gateway"
     static let iconName = "party.popper"
     static var order: Int { 12 }
-    static let enable: Bool = true
     static var category: PluginCategory { .llmProvider }
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {

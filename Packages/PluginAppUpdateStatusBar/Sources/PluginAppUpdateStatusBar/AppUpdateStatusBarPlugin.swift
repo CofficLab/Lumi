@@ -8,7 +8,6 @@ public actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-update-status-bar")
 
     public nonisolated static let emoji = "⬆️"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id = "AppUpdateStatusBar"
@@ -16,7 +15,6 @@ public actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
     public static let displayName = PluginAppUpdateStatusBarLocalization.string("App Update Status")
     public static let description = PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install.")
     public static let iconName = "arrow.down.circle"
-    public static let isConfigurable: Bool = false
     public static var category: PluginCategory { .general }
     public static var order: Int { 8 }
 

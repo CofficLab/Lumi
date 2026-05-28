@@ -8,8 +8,6 @@ actor SwiftSelectionCodeActionEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides selection-based Swift code actions.", table: "SwiftSelectionCodeActionEditor")
     static let iconName = "cursorarrow.click.badge.clock"
     static let order = 30
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

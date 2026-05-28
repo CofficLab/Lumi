@@ -8,7 +8,7 @@ public actor BrewManagerPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
 
     public nonisolated static let emoji = "🍺"
-    public nonisolated static let enable: Bool = false
+    public nonisolated static let policy: PluginPolicy = .optIn
     public nonisolated static let verbose: Bool = true
 
     public static let id = "BrewManager"

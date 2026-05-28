@@ -10,7 +10,6 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = PluginDeviceInfo.DeviceInfoPlugin.enable
     nonisolated static let verbose: Bool = PluginDeviceInfo.DeviceInfoPlugin.verbose
 
     static let id: String = PluginDeviceInfo.DeviceInfoPlugin.id
@@ -18,7 +17,6 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginDeviceInfo.DeviceInfoPlugin.displayName
     static let description: String = PluginDeviceInfo.DeviceInfoPlugin.description
     static let iconName = PluginDeviceInfo.DeviceInfoPlugin.iconName
-    static let isConfigurable: Bool = PluginDeviceInfo.DeviceInfoPlugin.isConfigurable
     static var order: Int { PluginDeviceInfo.DeviceInfoPlugin.order }
 
     // MARK: - Instance

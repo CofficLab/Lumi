@@ -6,8 +6,6 @@ actor ThemeVoidPlugin: SuperPlugin {
     static let displayName: String = "虚空深黑"
     static let description: String = "纯粹的虚空黑，深邃而神秘"
     static let iconName: String = "circle.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 123 }
 

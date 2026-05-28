@@ -18,12 +18,11 @@ actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
         localized: "Current symbol breadcrumb for the editor panel",
         table: "EditorStickySymbolBar")
     static let iconName = "point.topleft.down.curvedto.point.bottomright.up"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 89 }
+    nonisolated static let policy: PluginPolicy = .disabled
 
     /// 插件注册策略：开发中，暂不注册
-    nonisolated static let shouldRegister: Bool = false
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = EditorStickySymbolBarPlugin()

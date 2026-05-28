@@ -12,7 +12,6 @@ actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-symbols")
 
     nonisolated static let emoji = "🔣"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorBottomSymbols"
     static let displayName: String = String(
@@ -21,7 +20,6 @@ actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
         localized: "Workspace Symbols panel in the editor bottom area",
         table: "EditorBottomSymbols")
     static let iconName: String = "text.magnifyingglass"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 

@@ -15,10 +15,10 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Manage network permissions for macOS applications.", table: "Netto")
     static let iconName = "shield.lefthalf.filled"
     static var order: Int { 99 }
+
+    nonisolated static let policy: PluginPolicy = .optIn
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
-    nonisolated static let shouldRegister: Bool = true
-    nonisolated static let enabledByDefault: Bool = false
     
     nonisolated var instanceLabel: String { Self.id }
     static let shared = NettoPlugin()

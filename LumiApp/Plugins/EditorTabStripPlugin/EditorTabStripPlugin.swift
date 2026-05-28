@@ -8,13 +8,11 @@ import AgentToolKit
 /// 在面板内容上方渲染 Tab 栏。
 actor EditorTabStripPlugin: SuperPlugin {
     nonisolated static let emoji = "📑"
-    nonisolated static let enable: Bool = true
     static let id: String = "EditorTabStrip"
     static let displayName: String = String(localized: "Editor Tab Strip", table: "EditorTabStrip")
     static let description: String = String(
         localized: "Tab bar for the editor panel", table: "EditorTabStrip")
     static let iconName = "rectangle.topthird.inset.filled"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 88 }
 

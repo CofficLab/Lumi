@@ -19,8 +19,6 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     static let iconName = "doc.text"
     static var category: PluginCategory { .agent }
     static var order: Int { 50 }
-    static let enable: Bool = true
-    static let isConfigurable: Bool = false
 
     static let shared = AgentRulesPlugin()
 

@@ -10,14 +10,12 @@ actor EditorPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
 
     nonisolated static let emoji = "✏️"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "LumiEditor"
     static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
     static let description: String = String(
         localized: "Code editor with file tree", table: "LumiEditor")
     static let iconName = "chevron.left.forwardslash.chevron.right"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 77 }
 

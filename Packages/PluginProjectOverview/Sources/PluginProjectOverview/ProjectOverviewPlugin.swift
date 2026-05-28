@@ -17,9 +17,7 @@ public actor ProjectOverviewPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginProjectOverviewLocalization.string("Project Overview")
     public static let description: String = PluginProjectOverviewLocalization.string("Provides project overview tool, returning project type, top-level structure, Git information, and key files.")
     public static let iconName: String = "doc.text.magnifyingglass"
-    public static let isConfigurable: Bool = false
     public static var category: PluginCategory { .general }
-    public static let enable: Bool = true
     public static var order: Int { 14 }
 
     public static let shared = ProjectOverviewPlugin()

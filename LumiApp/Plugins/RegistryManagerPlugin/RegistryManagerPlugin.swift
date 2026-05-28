@@ -5,7 +5,6 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🔁"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "RegistryManager"
@@ -13,7 +12,6 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Registry Manager", table: "RegistryManager")
     static let description = String(localized: "Manage Lumi registries", table: "RegistryManager")
     static let iconName = "arrow.triangle.2.circlepath"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .system }
     static var order: Int { 80 }
 
@@ -21,8 +19,6 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     static let shared = RegistryManagerPlugin()
 
     // MARK: - UI
-
-    
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

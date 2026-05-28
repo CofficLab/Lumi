@@ -15,10 +15,7 @@ actor ConversationNewHeaderPlugin: SuperPlugin {
     static var order: Int { 60 }
     
     /// 核心功能按钮，禁止用户配置
-    static var isConfigurable: Bool { false }
     
-    static let enable: Bool = true
-
     static let shared = ConversationNewHeaderPlugin()
 
     nonisolated func onRegister() {}

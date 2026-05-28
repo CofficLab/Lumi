@@ -21,8 +21,6 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginWebFetch.WebFetchPlugin.displayName
     static let description: String = PluginWebFetch.WebFetchPlugin.description
     static let iconName: String = PluginWebFetch.WebFetchPlugin.iconName
-    static let isConfigurable: Bool = PluginWebFetch.WebFetchPlugin.isConfigurable
-    static let enable: Bool = PluginWebFetch.WebFetchPlugin.enable
     static var category: PluginCategory { .network }
     static var order: Int { PluginWebFetch.WebFetchPlugin.order }
 

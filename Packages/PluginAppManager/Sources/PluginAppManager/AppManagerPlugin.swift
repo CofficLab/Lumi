@@ -12,7 +12,6 @@ public actor AppManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     public nonisolated static let emoji = "📱"
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
     public nonisolated(unsafe) static var databaseRootURLProvider: @Sendable () -> URL = {
         let fileManager = FileManager.default

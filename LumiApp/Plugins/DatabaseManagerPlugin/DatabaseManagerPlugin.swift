@@ -18,12 +18,12 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", table: "DatabaseManager")
     static let iconName = "server.rack"
     static var order: Int { 50 }
+
+    nonisolated static let policy: PluginPolicy = .optIn
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DatabaseManagerPlugin()
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
-    nonisolated static let shouldRegister: Bool = true
-    nonisolated static let enabledByDefault: Bool = false
 
     // MARK: - UI Contributions
 

@@ -12,8 +12,6 @@ actor CodeReviewPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "Code Review"
     static let description: String = "Reviews current Git changes and reports actionable issues."
     static let iconName: String = "checklist"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .developerTool }
     static var order: Int { 17 }
 

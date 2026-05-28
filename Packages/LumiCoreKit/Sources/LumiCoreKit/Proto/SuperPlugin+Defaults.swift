@@ -17,12 +17,25 @@ extension SuperPlugin {
 
     public static var iconName: String { "puzzlepiece" }
 
-    public static var isConfigurable: Bool { false }
+    /// 默认策略：始终启用
+    public static var policy: PluginPolicy { .alwaysOn }
 
-    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    public static var isConfigurable: Bool {
+        switch policy {
+        case .alwaysOn, .disabled: return false
+        case .optOut, .optIn: return true
+        }
+    }
+
+    @available(*, deprecated, message: "Use policy instead.")
     public static var enable: Bool { enabledByDefault }
 
-    public static var shouldRegister: Bool { true }
+    public static var shouldRegister: Bool { policy != .disabled }
 
-    public static var enabledByDefault: Bool { true }
+    public static var enabledByDefault: Bool {
+        switch policy {
+        case .alwaysOn, .optOut: return true
+        case .optIn, .disabled: return false
+        }
+    }
 }

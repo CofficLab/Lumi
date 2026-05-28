@@ -17,9 +17,7 @@ public actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginGitHubCLIDetectLocalization.string("GitHub CLI Detect")
     public static let description: String = PluginGitHubCLIDetectLocalization.string("检测系统是否安装了 GitHub CLI (gh) 命令行工具。")
     public static let iconName: String = "terminal"
-    public static let isConfigurable: Bool = false
     public static var category: PluginCategory { .general }
-    public static let enable: Bool = true
     public static var order: Int { 16 }
 
     public static let shared = GitHubCLIDetectPlugin()

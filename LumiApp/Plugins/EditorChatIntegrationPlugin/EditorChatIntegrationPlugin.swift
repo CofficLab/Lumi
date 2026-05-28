@@ -9,8 +9,6 @@ actor EditorChatIntegrationPlugin: SuperPlugin {
     static let iconName = "bubble.left"
     static var category: PluginCategory { .editor }
     static let order = 12
-    static let enable = true
-    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

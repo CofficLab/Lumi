@@ -8,8 +8,6 @@ actor SwiftPrimitiveTypesEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides Swift primitive type completion suggestions.", table: "SwiftPrimitiveTypesEditor")
     static let iconName = "square.and.pencil"
     static let order = 10
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

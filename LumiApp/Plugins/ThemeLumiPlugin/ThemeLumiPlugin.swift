@@ -6,8 +6,6 @@ actor ThemeLumiPlugin: SuperPlugin {
     static let displayName: String = "Lumi"
     static let description: String = "Balanced default theme that adapts to system appearance"
     static let iconName: String = "circle.hexagonpath.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 119 }
 

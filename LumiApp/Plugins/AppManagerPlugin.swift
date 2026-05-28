@@ -10,7 +10,6 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "📱"
-    nonisolated static let enable: Bool = PluginAppManager.AppManagerPlugin.enable
     nonisolated static let verbose: Bool = PluginAppManager.AppManagerPlugin.verbose
 
     static let id = PluginAppManager.AppManagerPlugin.id

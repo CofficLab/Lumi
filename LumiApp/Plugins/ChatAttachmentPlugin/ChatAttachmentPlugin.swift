@@ -17,7 +17,6 @@ actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     static let iconName = "paperclip"
     static var category: PluginCategory { .agent }
     static var order: Int { 94 }
-    nonisolated static let enable: Bool = true
     static let shared = ChatAttachmentPlugin()
 
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] {

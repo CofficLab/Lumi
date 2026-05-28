@@ -22,8 +22,6 @@ actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Adds LSP context commands like go to definition and rename.", table: "EditorLSPContextCommands")
     static let iconName = "command"
     static let order = 15
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

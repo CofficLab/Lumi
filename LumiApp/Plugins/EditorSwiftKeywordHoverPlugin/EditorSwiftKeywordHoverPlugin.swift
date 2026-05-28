@@ -9,10 +9,9 @@ actor EditorSwiftKeywordHoverPlugin: SuperPlugin {
     static let iconName = "swift"
     static let order = 20
     static var category: PluginCategory { .general }
-    static var isConfigurable: Bool { false }
+    nonisolated static let policy: PluginPolicy = .disabled
 
     /// 插件注册策略：开发中，暂不注册
-    nonisolated static let shouldRegister: Bool = false
 
     nonisolated var providesEditorExtensions: Bool { true }
 

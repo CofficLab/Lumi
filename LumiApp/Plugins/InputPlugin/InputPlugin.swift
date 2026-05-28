@@ -9,7 +9,6 @@ actor InputPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "⌨️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "InputManager"
@@ -17,7 +16,6 @@ actor InputPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Input Manager", table: "Input")
     static let description = String(localized: "Manage input-related behaviors", table: "Input")
     static let iconName = "keyboard"
-    static let isConfigurable: Bool = false
     static var order: Int { 70 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -29,8 +27,6 @@ actor InputPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    
-    
     @MainActor
     func addViewContainer() -> ViewContainerItem? {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {

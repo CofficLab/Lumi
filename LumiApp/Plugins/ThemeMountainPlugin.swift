@@ -8,8 +8,6 @@ actor ThemeMountainPlugin: SuperPlugin {
     static let displayName: String = PluginThemeMountain.ThemeMountainPlugin.displayName
     static let description: String = PluginThemeMountain.ThemeMountainPlugin.description
     static let iconName: String = PluginThemeMountain.ThemeMountainPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeMountain.ThemeMountainPlugin.isConfigurable
-    static let enable: Bool = PluginThemeMountain.ThemeMountainPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeMountain.ThemeMountainPlugin.order }
 

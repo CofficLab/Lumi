@@ -8,8 +8,6 @@ actor ThemeOneDarkPlugin: SuperPlugin {
     static let displayName: String = PluginThemeOneDark.ThemeOneDarkPlugin.displayName
     static let description: String = PluginThemeOneDark.ThemeOneDarkPlugin.description
     static let iconName: String = PluginThemeOneDark.ThemeOneDarkPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeOneDark.ThemeOneDarkPlugin.isConfigurable
-    static let enable: Bool = PluginThemeOneDark.ThemeOneDarkPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeOneDark.ThemeOneDarkPlugin.order }
 

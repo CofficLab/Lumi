@@ -12,7 +12,6 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-call-hierarchy")
 
     nonisolated static let emoji = "📞"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorBottomCallHierarchy"
     static let displayName: String = String(
@@ -21,7 +20,6 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
         localized: "Call Hierarchy panel in the editor bottom area",
         table: "EditorBottomCallHierarchy")
     static let iconName: String = "point.3.connected.trianglepath.dotted"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 79 }
 

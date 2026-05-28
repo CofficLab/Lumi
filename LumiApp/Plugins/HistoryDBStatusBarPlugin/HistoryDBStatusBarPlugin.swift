@@ -6,7 +6,6 @@ import Foundation
 actor HistoryDBStatusBarPlugin: SuperPlugin {
     nonisolated static let emoji = "🗄️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "HistoryDBStatusBar"
@@ -14,7 +13,6 @@ actor HistoryDBStatusBarPlugin: SuperPlugin {
     static let displayName: String = String(localized: "History Database Browser", table: "HistoryDBStatusBar")
     static let description: String = String(localized: "Browse message and conversation history in status bar popover", table: "HistoryDBStatusBar")
     static let iconName: String = "tablecells"
-    static let isConfigurable: Bool = false
     static var order: Int { 98 }
 
     nonisolated var instanceLabel: String { Self.id }

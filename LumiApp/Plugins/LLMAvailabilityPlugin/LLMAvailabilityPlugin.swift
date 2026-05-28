@@ -17,10 +17,8 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     static let iconName = "network"
     static var category: PluginCategory { .general }
     static var order: Int { 15 }
-    static let enable: Bool = true
 
     /// 核心基础设施插件，不允许用户禁用
-    static var isConfigurable: Bool { false }
 
     static let shared = LLMAvailabilityPlugin()
 

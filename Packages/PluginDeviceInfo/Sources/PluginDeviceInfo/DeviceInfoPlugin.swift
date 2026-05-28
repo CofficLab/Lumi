@@ -12,7 +12,6 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "💻"
     public static var category: PluginCategory { .general }
-    public nonisolated static let enable: Bool = true
     public nonisolated static let verbose: Bool = true
 
     public static let id: String = "DeviceInfo"
@@ -20,7 +19,6 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginDeviceInfoLocalization.string("Device Info")
     public static let description: String = PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.")
     public static let iconName = "macbook.and.iphone"
-    public static let isConfigurable: Bool = false
     public static var order: Int { 10 }
 
     // MARK: - Instance

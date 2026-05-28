@@ -8,8 +8,6 @@ actor ThemeMidnightPlugin: SuperPlugin {
     static let displayName: String = PluginThemeMidnight.ThemeMidnightPlugin.displayName
     static let description: String = PluginThemeMidnight.ThemeMidnightPlugin.description
     static let iconName: String = PluginThemeMidnight.ThemeMidnightPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeMidnight.ThemeMidnightPlugin.isConfigurable
-    static let enable: Bool = PluginThemeMidnight.ThemeMidnightPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeMidnight.ThemeMidnightPlugin.order }
 

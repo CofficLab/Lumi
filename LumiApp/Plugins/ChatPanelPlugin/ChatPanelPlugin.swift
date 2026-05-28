@@ -17,8 +17,6 @@ actor ChatPanelPlugin: SuperPlugin, SuperLog {
     static let iconName = "bubble.left.and.bubble.right.fill"
     static var category: PluginCategory { .agent }
     static var order: Int { 78 }
-    nonisolated static let enable: Bool = true
-    static var isConfigurable: Bool { false }
     static let shared = ChatPanelPlugin()
 
     nonisolated var instanceLabel: String { Self.id }

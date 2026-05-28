@@ -6,7 +6,6 @@ actor RClickPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🖱️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     
     /// 插件专用 Logger
@@ -17,7 +16,6 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Right Click", table: "RClick")
     static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
     static let iconName = "cursorarrow.click.2"
-    static let isConfigurable: Bool = false
     static var order: Int { 50 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -32,8 +30,6 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - UI
-
-    
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

@@ -9,7 +9,6 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-search")
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorRailWorkspaceSearch"
     static let displayName: String = String(
@@ -18,7 +17,6 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
         localized: "Editor sidebar search tab",
         table: "EditorRailWorkspaceSearch")
     static let iconName: String = "magnifyingglass"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 78 }
 

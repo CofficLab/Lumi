@@ -13,8 +13,6 @@ actor LSPSelectionRangeEditorPlugin: SuperPlugin {
     static let description = String(localized: "Provides smart expand/shrink selection via LSP selection ranges.", table: "LSPSelectionRangeEditor")
     static let iconName = "rectangle.on.rectangle"
     static let order = 27
-    static let enable = true
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
 
     nonisolated var providesEditorExtensions: Bool { true }

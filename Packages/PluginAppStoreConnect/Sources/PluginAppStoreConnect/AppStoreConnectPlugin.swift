@@ -15,13 +15,11 @@ public actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     public static let displayName = AppStoreConnectLocalization.string("App Store")
     public static let description = AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots")
     public static let iconName = "bag"
-    public static let isConfigurable: Bool = true
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 65 }
     
     /// 插件注册策略：可配置，默认不启用（用户可在设置中手动开启）
-    public nonisolated static let shouldRegister: Bool = true
-    public nonisolated static let enabledByDefault: Bool = false
+    public nonisolated static let policy: PluginPolicy = .optIn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = AppStoreConnectPlugin()

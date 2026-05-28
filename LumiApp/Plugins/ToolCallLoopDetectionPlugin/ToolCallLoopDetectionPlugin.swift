@@ -11,9 +11,7 @@ actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "工具调用循环检测", table: "ToolCallLoopDetection")
     static let description: String = String(localized: "检测并防止工具调用进入无限循环。", table: "ToolCallLoopDetection")
     static let iconName: String = "arrow.triangle.2.circlepath"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .agent }
-    static let enable: Bool = true
     static var order: Int { 9 }
 
     static let shared = ToolCallLoopDetectionPlugin()

@@ -8,8 +8,6 @@ actor ThemeAutumnPlugin: SuperPlugin {
     static let displayName: String = PluginThemeAutumn.ThemeAutumnPlugin.displayName
     static let description: String = PluginThemeAutumn.ThemeAutumnPlugin.description
     static let iconName: String = PluginThemeAutumn.ThemeAutumnPlugin.iconName
-    static let isConfigurable: Bool = PluginThemeAutumn.ThemeAutumnPlugin.isConfigurable
-    static let enable: Bool = PluginThemeAutumn.ThemeAutumnPlugin.enable
     static var category: PluginCategory { .theme }
     static var order: Int { PluginThemeAutumn.ThemeAutumnPlugin.order }
 

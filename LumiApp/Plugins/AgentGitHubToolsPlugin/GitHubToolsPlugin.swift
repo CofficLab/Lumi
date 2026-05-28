@@ -20,8 +20,6 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "GitHub Tools", table: "GitHubTools")
     static let description: String = String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", table: "GitHubTools")
     static let iconName: String = "star.circle.fill"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .developerTool }
     static var order: Int { 15 }
 

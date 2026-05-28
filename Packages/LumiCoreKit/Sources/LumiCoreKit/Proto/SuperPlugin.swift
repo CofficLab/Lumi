@@ -163,33 +163,20 @@ public protocol SuperPlugin: Actor {
     /// 插件图标名称（SF Symbols）
     static var iconName: String { get }
 
-    /// 是否可配置
+    /// 插件注册策略，统一控制注册 / 启用 / 可配置行为
+    static var policy: PluginPolicy { get }
+
+    /// 是否可配置（从 policy 派生，新代码请直接使用 policy）
     static var isConfigurable: Bool { get }
 
-    /// 是否启用此插件
-    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    /// 是否启用此插件（已废弃，请使用 policy）
+    @available(*, deprecated, message: "Use policy instead. This property will be removed in a future version.")
     static var enable: Bool { get }
 
-    /// 是否应该注册此插件（第一关：扫描门槛）
-    ///
-    /// - `false`: 插件完全不会被加载，在扫描阶段直接跳过
-    /// - `true`: 插件会被注册到系统，但最终是否启用取决于 `isConfigurable` 和 `enabledByDefault`
-    ///
-    /// 适用场景：
-    /// - 开发中的插件设置为 `false` 避免被加载
-    /// - 已废弃的插件设置为 `false` 静默禁用
+    /// 是否应该注册此插件（从 policy 派生，新代码请直接使用 policy）
     static var shouldRegister: Bool { get }
 
-    /// 默认启用状态（第三关：用户未配置时的默认值）
-    ///
-    /// 仅当 `isConfigurable = true` 时有意义，控制用户未配置过时的初始开关状态。
-    ///
-    /// - `true`: 用户首次安装时默认启用
-    /// - `false`: 用户首次安装时默认禁用，但可在设置中手动开启
-    ///
-    /// 适用场景：
-    /// - 核心插件（Editor、Chat）通常设为 `true`
-    /// - 可选插件（AppStore、Docker）可设为 `false` 减少干扰
+    /// 默认启用状态（从 policy 派生，新代码请直接使用 policy）
     static var enabledByDefault: Bool { get }
 
     /// 插件实例标签（用于识别唯一实例）

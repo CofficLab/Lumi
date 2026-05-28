@@ -17,10 +17,10 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     static let iconName = "list.bullet.rectangle"
     static var category: PluginCategory { .system }
     static var order: Int { 21 }
+
+    nonisolated static let policy: PluginPolicy = .optIn
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
-    nonisolated static let shouldRegister: Bool = true
-    nonisolated static let enabledByDefault: Bool = false
 
     nonisolated var instanceLabel: String { Self.id }
 

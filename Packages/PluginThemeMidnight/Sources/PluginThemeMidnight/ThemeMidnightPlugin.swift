@@ -9,8 +9,6 @@ public actor ThemeMidnightPlugin: SuperPlugin {
     public static let displayName: String = "Midnight"
     public static let description: String = "Deep dark blue color scheme"
     public static let iconName: String = "moon.stars.fill"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .theme }
     public static var order: Int { 120 }
 

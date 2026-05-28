@@ -21,8 +21,6 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = "Auto Task"
     public static let description: String = "Break down complex goals into trackable tasks and drive Agent auto-progress."
     public static let iconName: String = "checklist"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var order: Int { 90 }
     public static var category: PluginCategory { .agent }
 

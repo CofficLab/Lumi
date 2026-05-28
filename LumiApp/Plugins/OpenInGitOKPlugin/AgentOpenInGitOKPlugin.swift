@@ -25,11 +25,9 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
     static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
     static var category: PluginCategory { .integration }
     static var order: Int { 98 }
+    static let policy: PluginPolicy = .optOut
 
     /// 用户可在设置中启用/禁用此插件
-    static var isConfigurable: Bool { true }
-
-    static let enable: Bool = true
 
     static let shared = AgentOpenInGitOKPlugin()
 

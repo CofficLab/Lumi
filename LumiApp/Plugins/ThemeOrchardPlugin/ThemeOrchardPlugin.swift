@@ -6,8 +6,6 @@ actor ThemeOrchardPlugin: SuperPlugin {
     static let displayName: String = "Orchard"
     static let description: String = "Orchard red app theme"
     static let iconName: String = "applelogo"
-    static let isConfigurable: Bool = false
-    static let enable: Bool = true
     static var category: PluginCategory { .theme }
     static var order: Int { 128 }
 

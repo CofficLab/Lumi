@@ -21,12 +21,11 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Menu Bar Manager", table: "MenuBarManager")
     static let description: String = String(localized: "Manage your menu bar items", table: "MenuBarManager")
     static let iconName = "menubar.rectangle"
-    static let isConfigurable: Bool = true
     static var order: Int { 20 }
+
+    nonisolated static let policy: PluginPolicy = .optIn
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
-    nonisolated static let shouldRegister: Bool = true
-    nonisolated static let enabledByDefault: Bool = false
 
     // MARK: - Instance
 

@@ -9,7 +9,6 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🐳"
-    nonisolated static let enable: Bool = PluginDockerManager.DockerManagerPlugin.enable
     nonisolated static let verbose: Bool = PluginDockerManager.DockerManagerPlugin.verbose
 
     static let id = PluginDockerManager.DockerManagerPlugin.id
@@ -27,8 +26,6 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     // MARK: - UI Contributions
-
-    
 
     @MainActor
     func addViewContainer() -> ViewContainerItem? {

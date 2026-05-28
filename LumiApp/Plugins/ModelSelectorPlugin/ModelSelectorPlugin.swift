@@ -19,7 +19,6 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     static let iconName = "globe"
     static var category: PluginCategory { .agent }
     static var order: Int { 84 }
-    nonisolated static let enable: Bool = true
     static let shared = ModelSelectorPlugin()
 
     // MARK: - Lifecycle

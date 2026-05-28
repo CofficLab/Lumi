@@ -21,9 +21,7 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginGitHubCLIDetect.GitHubCLIDetectPlugin.displayName
     static let description: String = PluginGitHubCLIDetect.GitHubCLIDetectPlugin.description
     static let iconName: String = PluginGitHubCLIDetect.GitHubCLIDetectPlugin.iconName
-    static let isConfigurable: Bool = PluginGitHubCLIDetect.GitHubCLIDetectPlugin.isConfigurable
     static var category: PluginCategory { .general }
-    static let enable: Bool = PluginGitHubCLIDetect.GitHubCLIDetectPlugin.enable
     static var order: Int { PluginGitHubCLIDetect.GitHubCLIDetectPlugin.order }
 
     static let shared = GitHubCLIDetectPlugin()

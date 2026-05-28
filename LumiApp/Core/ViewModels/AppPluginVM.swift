@@ -337,9 +337,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     func eligibility(for plugin: any SuperPlugin) -> PluginEligibility {
         let pluginType = type(of: plugin)
         return PluginEligibility(
-            shouldRegister: pluginType.shouldRegister,
-            isConfigurable: pluginType.isConfigurable,
-            enabledByDefault: pluginType.enabledByDefault,
+            policy: pluginType.policy,
             userEnabled: settingsStore.isPluginEnabled(plugin.instanceLabel, defaultEnabled: pluginType.enabledByDefault)
         )
     }

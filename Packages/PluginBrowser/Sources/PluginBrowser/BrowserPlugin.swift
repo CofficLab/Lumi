@@ -18,8 +18,6 @@ public actor BrowserPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginBrowserLocalization.string("Browser")
     public static let description: String = PluginBrowserLocalization.string("提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。")
     public static let iconName: String = "safari"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .general }
     public static var order: Int { 102 }
 

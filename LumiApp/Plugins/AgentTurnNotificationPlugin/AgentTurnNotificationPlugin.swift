@@ -10,7 +10,6 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.turn-notification")
 
     nonisolated static let emoji = "🔔"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "AgentTurnNotification"
@@ -18,7 +17,6 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     static let description: String = String(
         localized: "Send a system notification when an Agent turn finishes.", table: "AgentTurnNotification")
     static let iconName: String = "bell.badge"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .agent }
     static var order: Int { 99 }
 

@@ -14,13 +14,11 @@ actor ConversationTitlePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "✏️"
     static var category: PluginCategory { .agent }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "ConversationTitle"
     static let displayName: String = String(localized: "Auto Conversation Title", table: "ConversationTitle")
     static let description: String = String(localized: "Automatically generate conversation titles from the first user message", table: "ConversationTitle")
     static let iconName: String = "character.cursor.ibeam"
-    static let isConfigurable: Bool = false
     static var order: Int { 77 }
 
     nonisolated var instanceLabel: String { Self.id }

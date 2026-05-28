@@ -14,7 +14,6 @@ actor CodexPlugin: SuperPlugin {
     static let iconName = PluginLLMProviderCodex.CodexPlugin.iconName
     static var category: PluginCategory { .llmProvider }
     static var order: Int { PluginLLMProviderCodex.CodexPlugin.order }
-    static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         PluginLLMProviderCodex.CodexProvider.self

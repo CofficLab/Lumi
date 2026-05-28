@@ -5,7 +5,6 @@ import LumiCoreKit
 actor FontConfigPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔤"
     static var category: PluginCategory { .theme }
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "FontConfig"
@@ -14,7 +13,6 @@ actor FontConfigPlugin: SuperPlugin, SuperLog {
     static let description: String = String(
         localized: "Quick font switching in status bar", table: "FontConfig")
     static let iconName: String = "textformat"
-    static var isConfigurable: Bool { false }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }

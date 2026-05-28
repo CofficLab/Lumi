@@ -16,13 +16,11 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     )
 
     nonisolated static let emoji = "IP"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorPreview"
     static let displayName: String = String(localized: "Inline Preview", table: "EditorPreview")
     static let description: String = String(localized: "Embedded preview powered by LumiPreviewKit", table: "EditorPreview")
     static let iconName: String = "rectangle.inset.filled"
-    static var isConfigurable: Bool { false }
     static var category: PluginCategory { .editor }
     static var order: Int { 84 }
 

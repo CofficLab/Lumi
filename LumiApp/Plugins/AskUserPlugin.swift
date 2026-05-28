@@ -24,8 +24,6 @@ actor AskUserPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "询问用户"
     static let description: String = "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答"
     static let iconName: String = "questionmark.circle.fill"
-    static let isConfigurable: Bool = PluginAskUser.AskUserPlugin.isConfigurable
-    static let enable: Bool = PluginAskUser.AskUserPlugin.enable
     static var category: PluginCategory { .agent }
     static var order: Int { PluginAskUser.AskUserPlugin.order }
 

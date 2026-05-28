@@ -21,8 +21,6 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     static let displayName: String = PluginWebSearch.WebSearchPlugin.displayName
     static let description: String = PluginWebSearch.WebSearchPlugin.description
     static let iconName: String = PluginWebSearch.WebSearchPlugin.iconName
-    static let isConfigurable: Bool = PluginWebSearch.WebSearchPlugin.isConfigurable
-    static let enable: Bool = PluginWebSearch.WebSearchPlugin.enable
     static var category: PluginCategory { .network }
     static var order: Int { PluginWebSearch.WebSearchPlugin.order }
 

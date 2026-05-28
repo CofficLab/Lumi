@@ -8,7 +8,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🛜"
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id = "NetworkManager"
@@ -41,8 +40,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     }
 
     // MARK: - UI Contributions
-
-    
 
     @MainActor func addMenuBarPopupView() -> AnyView? {
         AnyView(NetworkMenuBarPopupView())

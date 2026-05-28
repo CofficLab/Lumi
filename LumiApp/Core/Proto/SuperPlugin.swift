@@ -174,28 +174,20 @@ protocol SuperPlugin: Actor {
     /// 建议使用与插件功能相关的 SF Symbols 图标。
     static var iconName: String { get }
 
-    /// 是否可配置
-    ///
-    /// 如果为 true，用户可以在设置中启用/禁用此插件。
-    /// 如果为 false，插件始终处于启用状态。
+    /// 插件注册策略，统一控制注册 / 启用 / 可配置行为
+    static var policy: PluginPolicy { get }
+
+    /// 是否可配置（从 policy 派生，新代码请直接使用 policy）
     static var isConfigurable: Bool { get }
 
-    /// 是否启用此插件（已废弃，使用 enabledByDefault 替代）
-    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    /// 是否启用此插件（已废弃，请使用 policy）
+    @available(*, deprecated, message: "Use policy instead. This property will be removed in a future version.")
     static var enable: Bool { get }
 
-    /// 插件是否应该被注册到插件系统
-    ///
-    /// 第一关卡：控制插件是否被系统扫描和注册。
-    /// - `true`：插件会被注册，出现在设置页面中（如果 isConfigurable = true）
-    /// - `false`：插件完全不注册，用户看不到，适用于开发中的插件
+    /// 插件是否应该被注册到插件系统（从 policy 派生）
     static var shouldRegister: Bool { get }
 
-    /// 插件默认是否启用
-    ///
-    /// 第二关卡：定义插件的默认启用状态。仅当 `shouldRegister = true` 时有意义。
-    /// - `true`：默认启用（用户首次安装时默认打开）
-    /// - `false`：默认关闭（用户需要手动在设置中开启）
+    /// 插件默认是否启用（从 policy 派生）
     static var enabledByDefault: Bool { get }
 
     /// 插件实例标签（用于识别唯一实例）
@@ -463,12 +455,24 @@ extension SuperPlugin {
 
     // 注意：category 必须由每个插件显式提供，不再有默认值
 
-    static var isConfigurable: Bool { false }
+    static var policy: PluginPolicy { .alwaysOn }
 
-    @available(*, deprecated, message: "Use enabledByDefault instead. This property will be removed in a future version.")
+    static var isConfigurable: Bool {
+        switch policy {
+        case .alwaysOn, .disabled: return false
+        case .optOut, .optIn: return true
+        }
+    }
+
+    @available(*, deprecated, message: "Use policy instead.")
     static var enable: Bool { enabledByDefault }
 
-    static var shouldRegister: Bool { true }
+    static var shouldRegister: Bool { policy != .disabled }
 
-    static var enabledByDefault: Bool { true }
+    static var enabledByDefault: Bool {
+        switch policy {
+        case .alwaysOn, .optOut: return true
+        case .optIn, .disabled: return false
+        }
+    }
 }

@@ -12,7 +12,6 @@ actor QuickLauncherPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🚀"
 
-    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
 
     static let id: String = "QuickLauncher"
@@ -20,7 +19,6 @@ actor QuickLauncherPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Quick Launcher", table: "QuickLauncher")
     static let description: String = String(localized: "Quick access to system apps and utilities", table: "QuickLauncher")
     static let iconName: String = "app.grid"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .system }
     static var order: Int { 8 }
 

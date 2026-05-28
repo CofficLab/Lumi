@@ -91,4 +91,16 @@ public struct PluginEligibility: Equatable, Sendable {
         self.enabledByDefault = enabledByDefault
         self.userEnabled = userEnabled
     }
+
+    /// 从 PluginPolicy 便捷构造
+    ///
+    /// - Parameters:
+    ///   - policy: 插件的注册策略
+    ///   - userEnabled: 用户在设置中实际配置的启用状态
+    public init(policy: PluginPolicy, userEnabled: Bool) {
+        self.shouldRegister = policy != .disabled
+        self.isConfigurable = (policy == .optOut || policy == .optIn)
+        self.enabledByDefault = (policy == .alwaysOn || policy == .optOut)
+        self.userEnabled = userEnabled
+    }
 }

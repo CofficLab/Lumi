@@ -18,8 +18,6 @@ public actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     public static let displayName: String = PluginBrowserAgentLocalization.string("Browser Agent")
     public static let description: String = PluginBrowserAgentLocalization.string("Browser automation powered by agent-browser CLI")
     public static let iconName: String = "globe"
-    public static let isConfigurable: Bool = false
-    public static let enable: Bool = true
     public static var category: PluginCategory { .general }
     public static var order: Int { 103 }
 

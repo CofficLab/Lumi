@@ -7,7 +7,6 @@ actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "⬆️"
     static var category: PluginCategory { .general }
-    nonisolated static let enable: Bool = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.enable
     nonisolated static let verbose: Bool = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.verbose
 
     static let id = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.id
@@ -15,7 +14,6 @@ actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
     static let displayName = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.displayName
     static let description = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.description
     static let iconName = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.iconName
-    static let isConfigurable: Bool = PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.isConfigurable
     static var order: Int { PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin.order }
 
     nonisolated var instanceLabel: String { Self.id }

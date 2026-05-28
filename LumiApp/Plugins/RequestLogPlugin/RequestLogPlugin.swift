@@ -13,9 +13,7 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "PluginName", table: "RequestLog")
     static let description: String = String(localized: "PluginDescription", table: "RequestLog")
     static let iconName: String = "doc.text.magnifyingglass"
-    static let isConfigurable: Bool = false
     static var category: PluginCategory { .agent }
-    static let enable: Bool = true
     static var order: Int { 100 }
 
     static let shared = RequestLogPlugin()

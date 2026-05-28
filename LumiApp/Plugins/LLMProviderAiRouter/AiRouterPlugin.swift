@@ -9,7 +9,6 @@ actor AiRouterPlugin: SuperPlugin {
     static let iconName = "arrow.triangle.branch"
     static var category: PluginCategory { .llmProvider }
     static var order: Int { 10 }
-    static let enable: Bool = true
 
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
         AiRouterProvider.self
