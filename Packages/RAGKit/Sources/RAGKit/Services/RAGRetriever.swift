@@ -1,23 +1,13 @@
-import CryptoKit
 import Foundation
 
 public struct RAGRetriever {
-    private let store: RAGSQLiteStore
+    private let store: any RAGStore
+    private let cache: RAGCache
     private let logger: RAGLogger
 
-    /// 查询结果缓存（线程安全，通过 cacheLock 保护）
-    private static let cacheLock = NSLock()
-    private nonisolated(unsafe) static var cache: [String: CacheEntry] = [:]
-    private static let cacheTTLSeconds: TimeInterval = 120 // 缓存有效期 2 分钟
-    private static let maxCacheSize = 50 // 最多缓存 50 条
-
-    private struct CacheEntry {
-        let results: [RAGSearchResult]
-        let timestamp: CFAbsoluteTime
-    }
-
-    init(store: RAGSQLiteStore, logger: RAGLogger = NullRAGLogger()) {
+    init(store: any RAGStore, cache: RAGCache = RAGCache(), logger: RAGLogger = NullRAGLogger()) {
         self.store = store
+        self.cache = cache
         self.logger = logger
     }
 
@@ -28,8 +18,8 @@ public struct RAGRetriever {
         topK: Int
     ) throws -> [RAGSearchResult] {
         // 检查缓存
-        let cacheKey = Self.buildCacheKey(query: query, projectPath: projectPath, topK: topK)
-        if let cached = Self.getCached(key: cacheKey) {
+        let cacheKey = cache.buildKey(query: query, projectPath: projectPath, topK: topK)
+        if let cached = cache.get(key: cacheKey) {
             logger.info("[RAGRetriever] 缓存命中: \(query.prefix(40))")
             return cached
         }
@@ -105,50 +95,9 @@ public struct RAGRetriever {
         }
 
         // 存入缓存
-        Self.setCache(key: cacheKey, results: results)
+        cache.set(key: cacheKey, results: results)
 
         return results
-    }
-
-    // MARK: - Cache
-
-    private static func buildCacheKey(query: String, projectPath: String?, topK: Int) -> String {
-        let raw = "\(query)|\(projectPath ?? "")|\(topK)"
-        let digest = SHA256.hash(data: Data(raw.utf8))
-        return digest.map { String(format: "%02x", $0) }.joined()
-    }
-
-    private static func getCached(key: String) -> [RAGSearchResult]? {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        guard let entry = cache[key] else { return nil }
-        let now = CFAbsoluteTimeGetCurrent()
-        guard now - entry.timestamp < cacheTTLSeconds else {
-            cache.removeValue(forKey: key)
-            return nil
-        }
-        return entry.results
-    }
-
-    private static func setCache(key: String, results: [RAGSearchResult]) {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        // 淘汰过期条目
-        let now = CFAbsoluteTimeGetCurrent()
-        cache = cache.filter { now - $0.value.timestamp < cacheTTLSeconds }
-        // 如果超过上限，移除最旧的
-        if cache.count >= maxCacheSize {
-            let oldest = cache.min { $0.value.timestamp < $1.value.timestamp }?.key
-            if let oldest { cache.removeValue(forKey: oldest) }
-        }
-        cache[key] = CacheEntry(results: results, timestamp: now)
-    }
-
-    /// 清除所有缓存（索引更新时调用）
-    public static func clearCache() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        cache.removeAll()
     }
 
     // MARK: - Private

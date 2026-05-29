@@ -294,10 +294,10 @@ import Testing
     #expect(!RAGIntentAnalyzer.shouldUseRAG(for: ""))
 }
 
-// MARK: - HashEmbeddingProvider
+// MARK: - MockEmbeddingProvider
 
 @Test func testHashEmbeddingBasic() throws {
-    let provider = HashEmbeddingProvider(dimension: 128)
+    let provider = MockEmbeddingProvider(dimension: 128)
     #expect(provider.modelID == "local-hash")
     #expect(provider.modelVersion == "v1")
     #expect(provider.dimension == 128)
@@ -311,20 +311,20 @@ import Testing
 }
 
 @Test func testHashEmbeddingConsistency() throws {
-    let provider = HashEmbeddingProvider(dimension: 64)
+    let provider = MockEmbeddingProvider(dimension: 64)
     let a = try provider.embed("test string")
     let b = try provider.embed("test string")
     #expect(a == b)
 }
 
 @Test func testHashEmbeddingEmpty() throws {
-    let provider = HashEmbeddingProvider(dimension: 64)
+    let provider = MockEmbeddingProvider(dimension: 64)
     let embedding = try provider.embed("")
     #expect(embedding.allSatisfy { $0 == 0 })
 }
 
 @Test func testHashEmbeddingBatch() throws {
-    let provider = HashEmbeddingProvider(dimension: 64)
+    let provider = MockEmbeddingProvider(dimension: 64)
     let embeddings = try provider.embedBatch(["hello", "world"])
     #expect(embeddings.count == 2)
     #expect(embeddings[0] != embeddings[1])
@@ -340,7 +340,7 @@ import Testing
 
 @Test func testEmbeddingFactoryMakeHashProvider() {
     let provider = RAGEmbeddingFactory.makeHashProvider(dimension: 128)
-    #expect(provider is HashEmbeddingProvider)
+    #expect(provider is MockEmbeddingProvider)
     #expect(provider.dimension == 128)
 }
 
@@ -351,7 +351,7 @@ import Testing
 }
 
 @Test func testModelIdentifierWithVersion() {
-    let provider = HashEmbeddingProvider()
+    let provider = MockEmbeddingProvider()
     #expect(provider.modelIdentifierWithVersion == "local-hash@v1")
 }
 
@@ -760,6 +760,116 @@ import Testing
     #expect(results.isEmpty)
 }
 
+// MARK: - RAGRetriever Cache Hit
+
+@Test func testRetrieverCacheHitReturnsSameResults() throws {
+    let dbURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RAGKitTests/\(UUID().uuidString)/cache-hit.sqlite")
+    defer { try? FileManager.default.removeItem(at: dbURL.deletingLastPathComponent()) }
+
+    let store = try RAGSQLiteStore(dbURL: dbURL)
+    try store.migrate()
+    try store.configureVectorBackend(embeddingDimension: 4)
+
+    let projectPath = "/tmp/cache-project"
+    try store.replaceFileChunks(
+        projectPath: projectPath,
+        filePath: "\(projectPath)/Sources/A.swift",
+        modifiedTime: Date().timeIntervalSince1970,
+        contentHash: "a",
+        chunks: [
+            RAGChunk(index: 0, content: "cached content alpha"),
+            RAGChunk(index: 1, content: "cached content beta"),
+        ],
+        embeddings: [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+        ],
+        embeddingDimension: 4
+    )
+
+    // 共享 cache 实例
+    let sharedCache = RAGCache(ttlSeconds: 60)
+    let retriever = RAGRetriever(store: store, cache: sharedCache)
+
+    let queryEmbedding: [Float] = [1, 0, 0, 0]
+    let query = "cached content"
+
+    // 第一次：缓存 miss，走正常检索
+    let firstResults = try retriever.retrieve(
+        queryEmbedding: queryEmbedding,
+        query: query,
+        projectPath: projectPath,
+        topK: 2
+    )
+    #expect(firstResults.count == 2)
+
+    // 删掉所有 chunks，如果 retriever 不走缓存就会返回空
+    try store.deleteChunks(projectPath: projectPath, filePath: "\(projectPath)/Sources/A.swift")
+    #expect(try store.loadChunks(projectPath: projectPath).isEmpty)
+
+    // 第二次：应该命中缓存，返回与第一次完全相同的结果
+    let secondResults = try retriever.retrieve(
+        queryEmbedding: queryEmbedding,
+        query: query,
+        projectPath: projectPath,
+        topK: 2
+    )
+    #expect(secondResults.count == firstResults.count)
+    #expect(secondResults.map(\.content) == firstResults.map(\.content))
+    #expect(secondResults.map(\.score) == firstResults.map(\.score))
+
+    // 不同 query 应该 miss
+    let missResults = try retriever.retrieve(
+        queryEmbedding: queryEmbedding,
+        query: "different query",
+        projectPath: projectPath,
+        topK: 2
+    )
+    #expect(missResults.isEmpty)
+}
+
+@Test func testRetrieverCacheInvalidatedOnDifferentTopK() throws {
+    let dbURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RAGKitTests/\(UUID().uuidString)/cache-topk.sqlite")
+    defer { try? FileManager.default.removeItem(at: dbURL.deletingLastPathComponent()) }
+
+    let store = try RAGSQLiteStore(dbURL: dbURL)
+    try store.migrate()
+    try store.configureVectorBackend(embeddingDimension: 4)
+
+    let projectPath = "/tmp/cache-topk"
+    try store.replaceFileChunks(
+        projectPath: projectPath,
+        filePath: "\(projectPath)/Sources/A.swift",
+        modifiedTime: Date().timeIntervalSince1970,
+        contentHash: "a",
+        chunks: [RAGChunk(index: 0, content: "hello world")],
+        embeddings: [[1, 0, 0, 0]],
+        embeddingDimension: 4
+    )
+
+    let sharedCache = RAGCache(ttlSeconds: 60)
+    let retriever = RAGRetriever(store: store, cache: sharedCache)
+
+    let queryEmbedding: [Float] = [1, 0, 0, 0]
+
+    // topK=1
+    let r1 = try retriever.retrieve(queryEmbedding: queryEmbedding, query: "hello", projectPath: projectPath, topK: 1)
+    #expect(r1.count == 1)
+
+    // 删掉 chunks
+    try store.deleteChunks(projectPath: projectPath, filePath: "\(projectPath)/Sources/A.swift")
+
+    // 相同 query 不同 topK → 缓存 miss（key 包含 topK）
+    let r2 = try retriever.retrieve(queryEmbedding: queryEmbedding, query: "hello", projectPath: projectPath, topK: 5)
+    #expect(r2.isEmpty)
+
+    // 原始 topK=1 → 缓存命中
+    let r3 = try retriever.retrieve(queryEmbedding: queryEmbedding, query: "hello", projectPath: projectPath, topK: 1)
+    #expect(r3.count == 1)
+}
+
 // MARK: - RAGIndexer Integration
 
 @Test func testIndexerRebuildAndIncrementalCleanup() throws {
@@ -780,7 +890,7 @@ import Testing
 
     let store = try RAGSQLiteStore(dbURL: dbURL)
     try store.migrate()
-    let indexer = RAGIndexer(store: store, embeddingProvider: HashEmbeddingProvider(dimension: 16))
+    let indexer = RAGIndexer(store: store, embeddingProvider: MockEmbeddingProvider(dimension: 16))
 
     let rebuildStats = try indexer.rebuildProjectIndex(at: projectURL.path)
     #expect(rebuildStats.scannedFiles == 2)
@@ -949,6 +1059,80 @@ import Testing
     let status = try await waitForIndexStatus(service: service, projectPath: projectURL.path)
     #expect(status?.fileCount == 1)
     #expect(!RAGService.isIndexing(projectPath: ""))
+}
+
+// MARK: - RAGCache
+
+@Test func testCacheSetAndGet() {
+    let cache = RAGCache(ttlSeconds: 60, maxSize: 10)
+    let key = cache.buildKey(query: "test", projectPath: "/project", topK: 5)
+    let results = [RAGSearchResult(content: "hello", source: "a.swift", score: 0.9)]
+
+    #expect(cache.get(key: key) == nil)
+    cache.set(key: key, results: results)
+    #expect(cache.get(key: key)?.count == 1)
+    #expect(cache.get(key: key)?.first?.content == "hello")
+}
+
+@Test func testCacheBuildKeyDeterministic() {
+    let cache = RAGCache()
+    let a = cache.buildKey(query: "test", projectPath: "/p", topK: 5)
+    let b = cache.buildKey(query: "test", projectPath: "/p", topK: 5)
+    let c = cache.buildKey(query: "other", projectPath: "/p", topK: 5)
+    #expect(a == b)
+    #expect(a != c)
+}
+
+@Test func testCacheClear() {
+    let cache = RAGCache(ttlSeconds: 60)
+    let key = cache.buildKey(query: "test", projectPath: nil, topK: 3)
+    cache.set(key: key, results: [RAGSearchResult(content: "x", source: "a", score: 1)])
+    #expect(cache.get(key: key) != nil)
+    cache.clear()
+    #expect(cache.get(key: key) == nil)
+}
+
+@Test func testCacheExpiration() {
+    let cache = RAGCache(ttlSeconds: 0.01, maxSize: 10)
+    let key = "test-key"
+    cache.set(key: key, results: [RAGSearchResult(content: "x", source: "a", score: 1)])
+    #expect(cache.get(key: key) != nil)
+    Thread.sleep(forTimeInterval: 0.05)
+    #expect(cache.get(key: key) == nil)
+}
+
+@Test func testCacheMaxSizeEviction() {
+    let cache = RAGCache(ttlSeconds: 60, maxSize: 2)
+    cache.set(key: "a", results: [RAGSearchResult(content: "a", source: "a", score: 1)])
+    cache.set(key: "b", results: [RAGSearchResult(content: "b", source: "b", score: 1)])
+    cache.set(key: "c", results: [RAGSearchResult(content: "c", source: "c", score: 1)])
+    // maxSize = 2, so at least one should be evicted
+    let remaining = ["a", "b", "c"].filter { cache.get(key: $0) != nil }
+    #expect(remaining.count <= 2)
+}
+
+// MARK: - RAGTimeout
+
+@Test func testTimeoutSuccess() async {
+    let result = await RAGTimeout.withTimeout(seconds: 5) {
+        return 42
+    }
+    if case .success(let value) = result {
+        #expect(value == 42)
+    } else {
+        Issue.record("Expected success, got timedOut")
+    }
+}
+
+@Test func testTimeoutZeroSeconds() async {
+    let result = await RAGTimeout.withTimeout(seconds: 0) {
+        return "never"
+    }
+    if case .timedOut = result {
+        // expected
+    } else {
+        Issue.record("Expected timedOut for seconds=0")
+    }
 }
 
 // MARK: - Test Helpers

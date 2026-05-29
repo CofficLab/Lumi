@@ -11,11 +11,11 @@ public enum RAGEmbeddingFactory {
         return AppleNativeEmbeddingProvider(dimension: 384)
     }
 
-    /// 创建哈希向量化提供者（备用方案）
+    /// 创建哈希向量化提供者（用于测试和开发）
     /// - Parameter dimension: 向量维度
-    /// - Returns: 哈希向量化提供者实例
+    /// - Returns: 伪向量化提供者实例
     public static func makeHashProvider(dimension: Int = 256) -> RAGEmbeddingProvider {
-        return HashEmbeddingProvider(dimension: dimension)
+        return MockEmbeddingProvider(dimension: dimension)
     }
 
     /// 创建 Apple 原生向量化提供者

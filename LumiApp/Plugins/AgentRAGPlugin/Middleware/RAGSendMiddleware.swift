@@ -86,7 +86,7 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         // 带超时保护执行 RAG 检索，超时后直接放行
-        let ragResult = await withTimeout(seconds: Self.maxMiddlewareTimeoutSeconds) {
+        let ragResult = await RAGTimeout.withTimeout(seconds: Self.maxMiddlewareTimeoutSeconds) {
             await self.performRAGRetrieval(
                 ragService: ragService,
                 projectPath: projectPath,
@@ -202,34 +202,6 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
             let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
             RAGPlugin.logger.error("\(Self.t)   ❌ RAG 检索失败：\(error) (耗时：\(String(format: "%.2f", totalDuration))ms)")
             return .error
-        }
-    }
-
-    // MARK: - Timeout Helper
-
-    private enum TimeoutResult<T> {
-        case success(T)
-        case timedOut
-    }
-
-    /// 带超时的 await 包装
-    private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async -> T) async -> TimeoutResult<T> {
-        guard seconds > 0 else { return .timedOut }
-        return await withCheckedContinuation { continuation in
-            let task = Task {
-                await operation()
-            }
-
-            let timeoutTask = Task {
-                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-                task.cancel()
-            }
-
-            Task {
-                let value = await task.value
-                timeoutTask.cancel()
-                continuation.resume(returning: .success(value))
-            }
         }
     }
 }

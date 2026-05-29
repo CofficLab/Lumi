@@ -72,6 +72,7 @@ final class ToolCallExecutor: SuperLog {
             } else {
                 calls[i].authorizationState = .pendingAuthorization
             }
+
         }
         message.toolCalls = calls
         return message

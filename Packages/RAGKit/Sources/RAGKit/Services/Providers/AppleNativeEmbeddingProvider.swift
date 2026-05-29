@@ -7,7 +7,7 @@ public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider {
     public let modelID: String
     public let modelVersion: String
     public let dimension: Int
-    private let hashFallback: HashEmbeddingProvider
+    private let hashFallback: MockEmbeddingProvider
     static let supportedNativeEmbeddingLanguages: Set<NLLanguage> = [
         .english,
         .simplifiedChinese,
@@ -19,7 +19,7 @@ public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider {
         self.modelID = modelID
         self.modelVersion = modelVersion
         self.dimension = dim
-        self.hashFallback = HashEmbeddingProvider(modelID: "local-hash", modelVersion: "v1", dimension: dim)
+        self.hashFallback = MockEmbeddingProvider(modelID: "local-hash", modelVersion: "v1", dimension: dim)
     }
 
     public func embed(_ text: String) throws -> [Float] {

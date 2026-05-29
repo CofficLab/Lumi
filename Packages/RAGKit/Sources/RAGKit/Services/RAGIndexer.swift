@@ -1,7 +1,7 @@
 import Foundation
 
 public struct RAGIndexer {
-    private let store: RAGSQLiteStore
+    private let store: any RAGStore
     private let chunker: RAGChunker
     private let embeddingProvider: RAGEmbeddingProvider
     private let logger: RAGLogger
@@ -10,7 +10,7 @@ public struct RAGIndexer {
     private static let progressLogInterval = 50
 
     init(
-        store: RAGSQLiteStore,
+        store: any RAGStore,
         embeddingProvider: RAGEmbeddingProvider,
         logger: RAGLogger = NullRAGLogger(),
         onProgress: ((RAGIndexProgressEvent) -> Void)? = nil

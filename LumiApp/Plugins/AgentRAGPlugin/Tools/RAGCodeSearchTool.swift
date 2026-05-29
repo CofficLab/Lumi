@@ -169,7 +169,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         // 收集 keyword 结果
         if let keywordTask {
             let remaining = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
-            let keywordResult = await withTimeout(seconds: remaining) {
+            let keywordResult = await RAGTimeout.withTimeout(seconds: remaining) {
                 await keywordTask.value
             }
             switch keywordResult {
@@ -184,7 +184,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         // 收集 semantic 结果
         if let semanticTask {
             let remaining = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
-            let semanticResult = await withTimeout(seconds: remaining) {
+            let semanticResult = await RAGTimeout.withTimeout(seconds: remaining) {
                 await semanticTask.value
             }
             switch semanticResult {
@@ -199,36 +199,6 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         try context.checkCancellation()
         let merged = mergeResults(results, limit: topK)
         return render(results: merged, query: query, mode: mode, projectPath: projectPath, timedOut: timedOut, timeoutSeconds: timeoutSeconds)
-    }
-
-    // MARK: - Timeout Helper
-
-    /// 带超时的 await 包装，超时返回 .timedOut 而非挂起
-    private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async -> T) async -> TimeoutResult<T> {
-        guard seconds > 0 else { return .timedOut }
-        return await withCheckedContinuation { continuation in
-            let task = Task {
-                let result = await operation()
-                return result
-            }
-
-            let timeoutTask = Task {
-                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-                task.cancel()
-                return nil as T?
-            }
-
-            Task {
-                let value = await task.value
-                timeoutTask.cancel()
-                continuation.resume(returning: .success(value))
-            }
-        }
-    }
-
-    private enum TimeoutResult<T: Sendable> {
-        case success(T)
-        case timedOut
     }
 
     // MARK: - Keyword Search (grep-based)

@@ -25,6 +25,7 @@ public actor RAGService {
     private let initializationState = InitializationState()
     private let logger: RAGLogger
     private let databaseDirectoryProvider: @Sendable () -> URL
+    private let cache = RAGCache()
     private var store: RAGSQLiteStore?
     private var indexer: RAGIndexer?
     private var retriever: RAGRetriever?
@@ -81,7 +82,7 @@ public actor RAGService {
             logger: logger,
             onProgress: onProgress
         )
-        self.retriever = RAGRetriever(store: store, logger: logger)
+        self.retriever = RAGRetriever(store: store, cache: cache, logger: logger)
         self.embeddingProvider = embeddingProvider
         initializationState.isInitialized = true
 
@@ -103,7 +104,7 @@ public actor RAGService {
         Self.indexingRegistry.start(projectPath: normalized)
         defer {
             Self.indexingRegistry.finish(projectPath: normalized)
-            RAGRetriever.clearCache() // 索引完成后清除检索缓存
+            cache.clear() // 索引完成后清除检索缓存
         }
 
         logger.info("🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")

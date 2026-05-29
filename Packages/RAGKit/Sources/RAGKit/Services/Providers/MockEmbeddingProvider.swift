@@ -1,9 +1,9 @@
 import CryptoKit
 import Foundation
 
-/// 哈希向量化提供者
-/// 使用 SHA256 哈希算法将文本转换为向量，作为备用方案
-public struct HashEmbeddingProvider: RAGEmbeddingProvider {
+/// 哈希向量化提供者（用于测试和开发环境的伪 embedding）
+/// 使用 SHA256 哈希算法将文本转换为向量，不产生真实语义嵌入
+public struct MockEmbeddingProvider: RAGEmbeddingProvider, Sendable {
     public let modelID: String
     public let modelVersion: String
     public let dimension: Int
@@ -43,3 +43,7 @@ public struct HashEmbeddingProvider: RAGEmbeddingProvider {
         return vector.map { $0 / norm }
     }
 }
+
+/// 向后兼容别名
+@available(*, deprecated, renamed: "MockEmbeddingProvider")
+public typealias HashEmbeddingProvider = MockEmbeddingProvider
