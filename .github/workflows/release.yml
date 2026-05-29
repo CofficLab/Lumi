@@ -469,7 +469,7 @@ jobs:
       - name: Upload DMG to Cloudflare R2
         if: success()
         env:
-          WEBHOOK_SECRET: ${{ secrets.LUMI_WEBHOOK_SECRET }}
+          WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
           API_URL: https://data.kuaiyizhi.cn
         run: |
           set -euo pipefail
