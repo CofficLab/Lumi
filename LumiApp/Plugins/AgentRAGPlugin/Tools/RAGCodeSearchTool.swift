@@ -6,6 +6,12 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "RAG"
     nonisolated static let verbose: Bool = true
 
+    /// 默认超时时间（秒）
+    private static let defaultTimeoutSeconds: TimeInterval = 15
+
+    /// 最大容忍超时时间（秒）
+    private static let maxTimeoutSeconds: TimeInterval = 60
+
     let name = "search_code"
 
     func description(for language: LanguagePreference) -> String {
@@ -15,12 +21,16 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             在当前项目中搜索代码片段。适合查找符号、错误字符串、文件路径、实现位置，或按自然语言描述检索相关代码。
 
             默认使用 hybrid 模式：结合精确关键字搜索和 RAG 语义检索。keyword 模式不依赖索引；semantic 模式依赖 RAG 索引。
+
+            可通过 `timeout` 参数设置最大容忍等待时间（默认 15 秒，最大 60 秒），超时后返回已收集到的部分结果。
             """
         case .english:
             return """
             Search code snippets in the current project. Use this to find symbols, error strings, file paths, implementation locations, or code related to a natural-language query.
 
             The default hybrid mode combines exact keyword search with RAG semantic retrieval. Keyword mode does not require an index; semantic mode uses the RAG index.
+
+            Use the `timeout` parameter to set a maximum tolerable wait time (default 15s, max 60s). Partial results collected so far are returned on timeout.
             """
         }
     }
@@ -31,6 +41,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         let topKDescription: String
         let pathFilterDescription: String
         let projectPathDescription: String
+        let timeoutDescription: String
 
         switch language {
         case .chinese:
@@ -39,12 +50,14 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             topKDescription = "最多返回多少条结果，默认 8，范围 1-20。"
             pathFilterDescription = "可选，仅返回路径中包含该字符串的文件。"
             projectPathDescription = "可选，项目根路径。默认使用当前会话的项目路径。"
+            timeoutDescription = "可选，最大容忍等待时间（秒）。默认 15，范围 1-60。超时后返回已收集到的部分结果。"
         case .english:
             queryDescription = "Keyword, symbol name, error text, or natural-language question to search for."
             modeDescription = "Search mode. keyword performs exact text search, semantic uses RAG retrieval, and hybrid merges both. Defaults to hybrid."
             topKDescription = "Maximum number of results to return. Defaults to 8, range 1-20."
             pathFilterDescription = "Optional path substring filter."
             projectPathDescription = "Optional project root path. Defaults to the current session project path."
+            timeoutDescription = "Optional max tolerable wait time in seconds. Default 15, range 1-60. Returns partial results on timeout."
         }
 
         return [
@@ -70,6 +83,10 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 "projectPath": [
                     "type": "string",
                     "description": projectPathDescription,
+                ],
+                "timeout": [
+                    "type": "integer",
+                    "description": timeoutDescription,
                 ],
             ],
             "required": ["query"],
@@ -99,6 +116,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         let mode = SearchMode(rawValue: (arguments["mode"]?.value as? String)?.lowercased() ?? "") ?? .hybrid
         let topK = normalizedTopK(arguments["topK"]?.value)
         let pathFilter = trimmedNonEmpty(arguments["pathFilter"]?.value as? String)
+        let timeoutSeconds = normalizedTimeout(arguments["timeout"]?.value)
 
         guard let projectPath = resolveProjectPath(arguments: arguments, context: context) else {
             return """
@@ -118,9 +136,12 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             """
         }
 
-        let keywordTask: Task<[CodeSearchResult], Error>? = mode.includesKeyword
+        // 使用带超时的并发搜索
+        let deadline = CFAbsoluteTimeGetCurrent() + timeoutSeconds
+
+        let keywordTask: Task<[CodeSearchResult], Never>? = mode.includesKeyword
             ? Task.detached(priority: .utility) {
-                try keywordSearch(
+                await self.keywordSearchWithTimeout(
                     query: query,
                     projectPath: projectPath,
                     pathFilter: pathFilter,
@@ -132,7 +153,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
 
         let semanticTask: Task<[CodeSearchResult], Never>? = mode.includesSemantic
             ? Task(priority: .utility) {
-                await semanticSearch(
+                await self.semanticSearch(
                     query: query,
                     projectPath: projectPath,
                     pathFilter: pathFilter,
@@ -141,56 +162,206 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             }
             : nil
 
+        // 带超时收集结果
         var results: [CodeSearchResult] = []
+        var timedOut = false
+
+        // 收集 keyword 结果
         if let keywordTask {
-            results.append(contentsOf: try await keywordTask.value)
+            let remaining = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
+            let keywordResult = await withTimeout(seconds: remaining) {
+                await keywordTask.value
+            }
+            switch keywordResult {
+            case .success(let hits):
+                results.append(contentsOf: hits)
+            case .timedOut:
+                timedOut = true
+                keywordTask.cancel()
+            }
         }
+
+        // 收集 semantic 结果
         if let semanticTask {
-            results.append(contentsOf: await semanticTask.value)
+            let remaining = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
+            let semanticResult = await withTimeout(seconds: remaining) {
+                await semanticTask.value
+            }
+            switch semanticResult {
+            case .success(let hits):
+                results.append(contentsOf: hits)
+            case .timedOut:
+                timedOut = true
+                semanticTask.cancel()
+            }
         }
 
         try context.checkCancellation()
         let merged = mergeResults(results, limit: topK)
-        return render(results: merged, query: query, mode: mode, projectPath: projectPath)
+        return render(results: merged, query: query, mode: mode, projectPath: projectPath, timedOut: timedOut, timeoutSeconds: timeoutSeconds)
     }
 
-    private func resolveProjectPath(arguments: [String: ToolArgument], context: ToolExecutionContext) -> String? {
-        let explicit = trimmedNonEmpty(arguments["projectPath"]?.value as? String)
-        let current = trimmedNonEmpty(context.currentProjectPath)
+    // MARK: - Timeout Helper
 
-        guard let path = explicit ?? current else { return nil }
-        return RAGPathUtils.normalizeProjectPath(path)
-    }
+    /// 带超时的 await 包装，超时返回 .timedOut 而非挂起
+    private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async -> T) async -> TimeoutResult<T> {
+        guard seconds > 0 else { return .timedOut }
+        return await withCheckedContinuation { continuation in
+            let task = Task {
+                let result = await operation()
+                return result
+            }
 
-    private func normalizedTopK(_ value: Any?) -> Int {
-        let raw: Int
-        if let int = value as? Int {
-            raw = int
-        } else if let double = value as? Double {
-            raw = Int(double)
-        } else if let string = value as? String, let int = Int(string) {
-            raw = int
-        } else {
-            raw = 8
+            let timeoutTask = Task {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                task.cancel()
+                return nil as T?
+            }
+
+            Task {
+                let value = await task.value
+                timeoutTask.cancel()
+                continuation.resume(returning: .success(value))
+            }
         }
-        return min(max(raw, 1), 20)
     }
 
-    private func trimmedNonEmpty(_ value: String?) -> String? {
-        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !trimmed.isEmpty else {
-            return nil
-        }
-        return trimmed
+    private enum TimeoutResult<T: Sendable> {
+        case success(T)
+        case timedOut
     }
 
-    private func keywordSearch(
+    // MARK: - Keyword Search (grep-based)
+
+    /// 使用系统 grep 进行关键字搜索，带超时保护
+    private func keywordSearchWithTimeout(
         query: String,
         projectPath: String,
         pathFilter: String?,
         limit: Int,
         context: ToolExecutionContext
-    ) throws -> [CodeSearchResult] {
+    ) async -> [CodeSearchResult] {
+        // 优先使用 grep，失败时回退到 Swift 逐文件搜索
+        if let grepResults = try? grepSearch(
+            query: query,
+            projectPath: projectPath,
+            pathFilter: pathFilter,
+            limit: limit
+        ) {
+            return grepResults
+        }
+
+        // 回退：逐文件搜索
+        return swiftFallbackSearch(
+            query: query,
+            projectPath: projectPath,
+            pathFilter: pathFilter,
+            limit: limit,
+            context: context
+        )
+    }
+
+    /// 使用系统 grep 进行快速搜索
+    private func grepSearch(
+        query: String,
+        projectPath: String,
+        pathFilter: String?,
+        limit: Int
+    ) throws -> [CodeSearchResult]? {
+        let escapedQuery = query.replacingOccurrences(of: "'", with: "'\\''")
+        // 构建 grep 排除目录参数
+        let skipDirs = RAGFileScanner.skipDirectories.map { "--exclude-dir=\($0)" }.joined(separator: " ")
+        // 限定扩展名
+        let extArgs = RAGFileScanner.allowedExtensions.map { "--include=*.\($0)" }.joined(separator: " ")
+
+        // grep -rnI：递归、显示行号、跳过二进制文件
+        // -i：不区分大小写
+        var command = "grep -rnIi \(skipDirs) \(extArgs) --max-count=\(limit) '\(escapedQuery)' '\(projectPath)'"
+
+        if let pathFilter {
+            // 用 grep 结果做 pathFilter 过滤
+            command += " | grep -i '\(pathFilter.replacingOccurrences(of: "'", with: "'\\''"))'"
+        }
+
+        command += " 2>/dev/null | head -\(limit * 3)" // 每个匹配可能有多行上下文
+
+        let process = Process()
+        let pipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", command]
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        process.qualityOfService = .utility
+
+        try process.run()
+
+        // 等待进程完成，最多 10 秒
+        let deadline = Date().addingTimeInterval(10)
+        while process.isRunning && Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        if process.isRunning {
+            process.terminate()
+            return nil
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8), !output.isEmpty else {
+            return []
+        }
+
+        return parseGrepOutput(output, projectPath: projectPath, limit: limit)
+    }
+
+    /// 解析 grep -rn 输出为 CodeSearchResult
+    private func parseGrepOutput(_ output: String, projectPath: String, limit: Int) -> [CodeSearchResult] {
+        var results: [CodeSearchResult] = []
+        var fileLines: [String: [(Int, String)]] = [:]
+
+        for line in output.components(separatedBy: "\n") {
+            guard !line.isEmpty else { continue }
+            // grep -rn 格式: filepath:linenum:content
+            let parts = line.split(separator: ":", maxSplits: 2)
+            guard parts.count >= 3,
+                  let lineNum = Int(parts[1]) else { continue }
+
+            let filePath = String(parts[0])
+            let content = String(parts[2])
+
+            if fileLines[filePath] == nil {
+                fileLines[filePath] = []
+            }
+            fileLines[filePath]?.append((lineNum, content))
+        }
+
+        for (filePath, matches) in fileLines {
+            guard results.count < limit else { break }
+            guard let firstMatch = matches.first else { continue }
+
+            let displayPath = RAGPathUtils.displayPath(filePath: filePath, projectPath: projectPath)
+            let snippet = matches.prefix(5).map { "\($0.0): \($0.1)" }.joined(separator: "\n")
+
+            results.append(CodeSearchResult(
+                source: displayPath,
+                line: firstMatch.0,
+                content: snippet,
+                score: 1,
+                origin: .keyword
+            ))
+        }
+
+        return results
+    }
+
+    /// Swift 回退搜索（grep 不可用时）
+    private func swiftFallbackSearch(
+        query: String,
+        projectPath: String,
+        pathFilter: String?,
+        limit: Int,
+        context: ToolExecutionContext
+    ) -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
         let files = RAGFileScanner.discoverFiles(in: projectPath)
             .filter { filePath in
@@ -202,7 +373,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         matches.reserveCapacity(limit)
 
         for filePath in files {
-            try context.checkCancellation()
+            if Task.isCancelled { break }
             guard matches.count < limit else { break }
             guard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else { continue }
             guard let matchRange = content.range(of: lowerQuery, options: [.caseInsensitive, .diacriticInsensitive]) else { continue }
@@ -220,12 +391,23 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         return matches
     }
 
+    // MARK: - Semantic Search (with timeout & non-blocking check)
+
+    /// 语义搜索，带超时和非阻塞检查
     private func semanticSearch(
         query: String,
         projectPath: String,
         pathFilter: String?,
         limit: Int
     ) async -> [CodeSearchResult] {
+        // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
+        if RAGService.isAnyIndexing() {
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
+            }
+            return []
+        }
+
         let service = await MainActor.run {
             RAGPlugin.getService()
         }
@@ -253,6 +435,52 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         }
     }
 
+    // MARK: - Helpers
+
+    private func resolveProjectPath(arguments: [String: ToolArgument], context: ToolExecutionContext) -> String? {
+        let explicit = trimmedNonEmpty(arguments["projectPath"]?.value as? String)
+        let current = trimmedNonEmpty(context.currentProjectPath)
+
+        guard let path = explicit ?? current else { return nil }
+        return RAGPathUtils.normalizeProjectPath(path)
+    }
+
+    private func normalizedTopK(_ value: Any?) -> Int {
+        let raw: Int
+        if let int = value as? Int {
+            raw = int
+        } else if let double = value as? Double {
+            raw = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            raw = int
+        } else {
+            raw = 8
+        }
+        return min(max(raw, 1), 20)
+    }
+
+    private func normalizedTimeout(_ value: Any?) -> TimeInterval {
+        let raw: Double
+        if let int = value as? Int {
+            raw = Double(int)
+        } else if let double = value as? Double {
+            raw = double
+        } else if let string = value as? String, let int = Int(string) {
+            raw = Double(int)
+        } else {
+            raw = Self.defaultTimeoutSeconds
+        }
+        return min(max(raw, 1), Self.maxTimeoutSeconds)
+    }
+
+    private func trimmedNonEmpty(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
     private func mergeResults(_ results: [CodeSearchResult], limit: Int) -> [CodeSearchResult] {
         var merged: [CodeSearchResult] = []
         var seen = Set<String>()
@@ -278,8 +506,12 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         results: [CodeSearchResult],
         query: String,
         mode: SearchMode,
-        projectPath: String
+        projectPath: String,
+        timedOut: Bool = false,
+        timeoutSeconds: TimeInterval = Self.defaultTimeoutSeconds
     ) -> String {
+        let timeoutNote = timedOut ? "\n⚠️ Search timed out after \(Int(timeoutSeconds))s. Results may be incomplete.\n" : ""
+
         guard !results.isEmpty else {
             return """
             ## Code Search
@@ -289,6 +521,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             Query: `\(query)`
             Mode: `\(mode.rawValue)`
             Project: `\(projectPath)`
+            \(timedOut ? "⚠️ Search timed out after \(Int(timeoutSeconds))s.\n" : "")
             """
         }
 
@@ -299,7 +532,7 @@ struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         Mode: `\(mode.rawValue)`
         Project: `\(projectPath)`
         Results: \(results.count)
-
+        \(timeoutNote)
         """
 
         for (index, result) in results.enumerated() {

@@ -101,7 +101,10 @@ public actor RAGService {
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
         Self.indexingRegistry.start(projectPath: normalized)
-        defer { Self.indexingRegistry.finish(projectPath: normalized) }
+        defer {
+            Self.indexingRegistry.finish(projectPath: normalized)
+            RAGRetriever.clearCache() // 索引完成后清除检索缓存
+        }
 
         logger.info("🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
 
