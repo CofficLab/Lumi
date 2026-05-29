@@ -759,6 +759,50 @@ FileEditTool/
 
 ---
 
+## AutoTask 任务编辑
+
+> 目标：对于未做的任务（`pending` 状态），允许用户在侧栏 UI 中直接编辑任务的标题和描述，而不仅由 Agent 通过工具操控。
+
+### 需求说明
+
+当前 AutoTask 插件的任务（`TaskItem`）只能由 Agent 通过 `CreateTaskTool`、`UpdateTaskTool`、`AppendTaskTool` 等工具创建和修改。用户在侧栏 `AutoTaskSidebarView` 中只能查看任务列表和进度，无法手动编辑任何任务内容。
+
+需要新增的能力：对于状态为 `pending` 的任务，用户可以在 `TaskRowView` 上通过双击或右键菜单触发编辑，修改 `title` 和 `detail` 字段。
+
+### 任务
+
+#### Phase 1: 数据层
+
+- [ ] `TaskStateManager` 新增 `updateTaskContent(id:conversationId:title:detail:)` 方法，仅允许 `pending` 状态的任务被编辑
+- [ ] 编辑完成后发送 `autoTaskDidChange` 通知刷新 UI
+
+#### Phase 2: ViewModel
+
+- [ ] `AutoTaskSidebarViewModel` 新增编辑状态管理：`editingTaskId`、`editingTitle`、`editingDetail`
+- [ ] 提供 `startEditing(_ task:)` / `confirmEditing()` / `cancelEditing()` 方法
+- [ ] `confirmEditing()` 调用 `TaskStateManager.updateTaskContent()` 并刷新列表
+
+#### Phase 3: UI
+
+- [ ] `TaskRowView` 支持 `pending` 任务双击进入内联编辑模式（TextEditor/TextField 替代 Text）
+- [ ] 编辑模式下显示确认（✓）和取消（✗）按钮
+- [ ] 非 `pending` 状态的任务不响应编辑交互，视觉上可适当区分（如已完成的任务标题置灰）
+- [ ] 支持按 Enter 确认、Escape 取消的键盘快捷操作
+
+#### Phase 4: 右键菜单（可选增强）
+
+- [ ] `pending` 任务右键菜单增加"编辑任务"选项
+- [ ] 非 `pending` 任务右键菜单不显示"编辑任务"选项
+
+### 成功标准
+
+- [ ] `pending` 状态任务可双击编辑标题和描述，修改立即持久化并刷新 UI
+- [ ] `in_progress` / `completed` / `skipped` 状态任务不可编辑
+- [ ] 编辑中途切换会话或关闭侧栏不丢失已有任务数据
+- [ ] 👤 需要用户参与：验证编辑交互手感流畅，无明显延迟
+
+---
+
 ## 21. 插件注册策略重构
 
 > 目标：将当前 `enable` 属性身兼两职（扫描门槛 + 默认开关状态）的问题，拆分为语义清晰的三层策略，让每个插件精确控制「是否注册 → 是否可配置 → 默认开关」。
@@ -820,3 +864,53 @@ FileEditTool/
 - [ ] `AppStoreConnectPlugin` 默认不启用，但用户可在设置中看到并开启
 - [ ] 所有原有 `enable=false` 的插件行为不变
 - [ ] 不存在 `shouldRegister=false` + `isConfigurable=true` 的矛盾组合
+
+---
+
+## 22. search_code 工具性能优化
+
+> 目标：解决 `search_code` agent tool 偶发运行 10+ 分钟无响应的问题。
+> 分析来源：`Packages/RAGKit` 和 `Packages/PluginAgentRAG` 源码审查。
+> 涉及文件：`RAGFileScanner.swift`、`RAGCodeSearchTool.swift`、`RAGRetriever.swift`、`RAGSQLiteStore.swift`
+
+### 根因分析
+
+| 排序 | 根因 | 位置 | 影响 |
+|------|------|------|------|
+| 1 | `temp/` 目录未被跳过 | `RAGFileScanner.skipDirectories` | 枚举 27,306 个无关文件（占总量 69%） |
+| 2 | keywordSearch 同步逐文件读取 | `RAGCodeSearchTool.keywordSearch` | 每次搜索重新遍历全量文件，无缓存 |
+| 3 | sqlite-vec 不可用时回退到 Swift 全量余弦计算 | `RAGSQLiteStore.detectRuntimeInfo` | 最多加载 7,000 chunks 逐个计算相似度 |
+
+### Phase 1: 修复文件发现（高优先级）
+
+- [ ] **扩展 `skipDirectories`**：在 `RAGFileScanner.swift` 中将 `temp` 加入 `skipDirectories` 集合，避免扫描项目根目录下的 `temp/` 目录（含 27,306 个无关文件）
+- [ ] **模糊匹配 DerivedData 变体**：`shouldSkipPath` 当前使用精确匹配 `DerivedData`，无法跳过 `DerivedData-Lumi-Multilang`、`DerivedData-Lumi-PluginDescriptionLocalization` 等变体目录。改为前缀匹配或正则匹配 `DerivedData.*`
+- [ ] **审查是否需要扫描 `SourcePackages`**：`build/SourcePackages` 目录包含 22,221 个文件（5,976 个 swift/m/h）。虽然当前 `build` 已在 skip 列表中，但需确认不会被其他路径引入。如项目根目录存在独立的 `SourcePackages/`，也应加入跳过列表
+- [ ] **添加单元测试**：验证 `discoverFiles` 在含 `temp/`、`DerivedData-*`、`SourcePackages/` 等目录的 mock 项目中不会返回这些目录下的文件
+
+### Phase 2: keywordSearch 性能优化（高优先级）
+
+- [ ] **缓存 discoverFiles 结果**：`discoverFiles` 每次调用都重新遍历整个目录树。在 `RAGCodeSearchTool` 中添加短期缓存（如 5 分钟 TTL），避免同一项目短时间内重复枚举
+- [ ] **替换为 grep 子进程**：当前 `keywordSearch` 逐个加载文件到内存并执行 `String.range(of:)`。改为调用 `/usr/bin/grep -rn --include='*.swift' --include='*.h' ...` 子进程，利用 grep 的 C 实现和 mmap 优化，速度可提升 10-100 倍。注意保持 `ToolExecutionContext.checkCancellation()` 的调用以支持任务取消
+- [ ] **添加超时保护**：为 keywordSearch 添加可配置超时（建议 30 秒），超时后返回已有结果并附带超时提示
+
+### Phase 3: semanticSearch 优化（中优先级）
+
+- [ ] **确认 sqlite-vec 可用性**：检查 `RAGSQLiteStore.detectRuntimeInfo` 的运行时日志，确认 vector backend 是否为 `.sqliteVec`。如果是 `.swiftCosine`，说明 sqlite-vec 扩展加载失败
+- [ ] **sqlite-vec 加载失败时的用户提示**：当 sqlite-vec 不可用时，在 RAG 状态栏中显示警告，告知用户 semantic 搜索性能会下降
+- [ ] **降低 fallback chunk 数量上限**：`loadCandidateChunks` 的 `fallbackLimit` 为 7,000。在 swiftCosine 回退模式下，应降低到 1,000-2,000，避免大量余弦计算导致超时
+- [ ] **ANN 检索添加超时**：`RAGRetriever.retrieve` 中为 `loadANNCandidates` 和 fallback 路径分别添加超时保护
+
+### Phase 4: 整体可观测性（低优先级）
+
+- [ ] **为 keywordSearch 添加日志**：当前 `keywordSearch` 完全没有耗时日志。添加 `discoverFiles` 耗时、文件读取数量、匹配数量等日志（参考 `semanticSearch` 的日志风格）
+- [ ] **添加性能预警阈值**：当 `keywordSearch` 耗时 > 5 秒或 `semanticSearch` 耗时 > 3 秒时，输出 warning 级别日志
+- [ ] **RAG 状态栏展示搜索耗时**：在 `RAGStatusBarView` 中展示最近一次 search_code 的 keyword/semantic 各自耗时，便于用户判断性能问题
+
+### 成功标准
+
+- [ ] `search_code` 在 Lumi 项目（180+ packages）上的 keyword 搜索响应时间 < 5 秒
+- [ ] `search_code` 的 semantic 搜索在索引已就绪时响应时间 < 3 秒
+- [ ] `temp/`、`DerivedData-*` 等无关目录不再出现在搜索结果的扫描路径中
+- [ ] 用户无需手动配置即可获得合理的搜索性能
+- [ ] 👤 需要用户参与：在 Lumi 项目上分别测试 keyword、semantic、hybrid 三种模式的响应时间
