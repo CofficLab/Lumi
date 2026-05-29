@@ -1,0 +1,50 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginEditorXcode",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "PluginEditorXcode",
+            targets: ["PluginEditorXcode"]
+        )
+    ],
+    dependencies: [
+        .package(path: "../AgentToolKit"),
+        .package(path: "../LumiCodeEditSourceEditor"),
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiUI"),
+        .package(path: "../SuperLogKit"),
+        .package(path: "../XcodeKit"),
+        .package(path: "../XcodeProjectGen"),
+        .package(url: "https://github.com/tuist/XcodeProj", .upToNextMajor(from: "9.11.0")),
+    ],
+    targets: [
+        .target(
+            name: "PluginEditorXcode",
+            dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "XcodeKit", package: "XcodeKit"),
+                .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),
+                .product(name: "XcodeProj", package: "XcodeProj"),
+            ],
+            path: "Sources/PluginEditorXcode",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "PluginEditorXcodeTests",
+            dependencies: ["PluginEditorXcode"],
+            path: "Tests/PluginEditorXcodeTests"
+        )
+    ]
+)
