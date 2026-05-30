@@ -73,6 +73,28 @@
         }
       }
     },
+    "Export failed: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export failed: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出失敗：%@"
+          }
+        }
+      }
+    },
     "Hosts Manager" : {
       "localizations" : {
         "en" : {
@@ -117,6 +139,28 @@
         }
       }
     },
+    "Import failed: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import failed: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入失敗：%@"
+          }
+        }
+      }
+    },
     "Invalid IP address format" : {
 
     },
@@ -141,6 +185,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "管理系統 hosts 檔案配置"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多"
           }
         }
       }

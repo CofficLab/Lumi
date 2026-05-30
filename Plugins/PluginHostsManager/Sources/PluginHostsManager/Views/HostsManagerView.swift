@@ -50,7 +50,7 @@ public struct HostsManagerView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "ellipsis.circle")
-                        Text("More")
+                        Text(String(localized: "More", table: "HostsManager"))
                     }
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
@@ -114,11 +114,15 @@ public struct HostsManagerView: View {
             if response == .OK, let url = panel.url {
                 do {
                     try HostsFileService.shared.backupHosts(to: url)
+                    viewModel.errorMessage = nil
                 } catch {
-                    // Handle error (show alert)
                     if HostsManagerPlugin.verbose {
-                                            HostsManagerPlugin.logger.error("Export failed: \(error)")
+                        HostsManagerPlugin.logger.error("Export failed: \(error)")
                     }
+                    viewModel.errorMessage = String(
+                        format: String(localized: "Export failed: %@", table: "HostsManager"),
+                        error.localizedDescription
+                    )
                 }
             }
         }
@@ -136,9 +140,14 @@ public struct HostsManagerView: View {
                         try await HostsFileService.shared.importHosts(from: url)
                         await viewModel.loadHosts()
                     } catch {
-                        // Handle error
                         if HostsManagerPlugin.verbose {
-                                                    HostsManagerPlugin.logger.error("Import failed: \(error)")
+                            HostsManagerPlugin.logger.error("Import failed: \(error)")
+                        }
+                        await MainActor.run {
+                            viewModel.errorMessage = String(
+                                format: String(localized: "Import failed: %@", table: "HostsManager"),
+                                error.localizedDescription
+                            )
                         }
                     }
                 }
