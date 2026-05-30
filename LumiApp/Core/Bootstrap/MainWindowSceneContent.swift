@@ -5,8 +5,11 @@ struct MainWindowSceneContent: View {
     @StateObject private var windowContainer: WindowContainer
     @State private var initialProjectPath: String?
 
-    init(route: Binding<LumiWindowRoute?>) {
-        let initialRoute = route.wrappedValue ?? CoreWindowIDStore.consumeDefaultWindowRoute() ?? LumiWindowRoute()
+    init() {
+        self.init(route: CoreWindowIDStore.consumeNextWindowRoute())
+    }
+
+    init(route initialRoute: LumiWindowRoute) {
         _windowContainer = StateObject(
             wrappedValue: WindowContainer(
                 id: initialRoute.id,

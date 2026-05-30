@@ -11,8 +11,21 @@ enum CoreWindowIDStore {
     private static var launchWindowIds: [UUID]?
     private static var didConsumeDefaultWindowRoute = false
     private static var didConsumeAdditionalWindowRoutes = false
+    private static var pendingWindowRoutes: [LumiWindowRoute] = []
 
-    static func consumeDefaultWindowRoute() -> LumiWindowRoute? {
+    static func enqueueWindowRoute(_ route: LumiWindowRoute) {
+        pendingWindowRoutes.append(route)
+    }
+
+    static func consumeNextWindowRoute() -> LumiWindowRoute {
+        if !pendingWindowRoutes.isEmpty {
+            return pendingWindowRoutes.removeFirst()
+        }
+
+        return consumeDefaultWindowRoute() ?? LumiWindowRoute()
+    }
+
+    private static func consumeDefaultWindowRoute() -> LumiWindowRoute? {
         guard !didConsumeDefaultWindowRoute else { return nil }
         didConsumeDefaultWindowRoute = true
 
