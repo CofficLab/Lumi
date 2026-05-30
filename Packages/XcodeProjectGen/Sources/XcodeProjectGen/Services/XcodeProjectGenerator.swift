@@ -508,7 +508,11 @@ public final class XcodeProjectGenerator: Sendable {
             mainGroup.children.append(group)
 
             for file in swiftFiles {
-                let relativePath = file.string.replacingOccurrences(of: projectRoot.string + "/", with: "")
+                let relativePath = XcodeProjectPathUtility.relativePath(
+                    for: file.string,
+                    rootPath: projectRoot.string,
+                    fallbackName: file.lastComponent
+                )
                 let fileRef = PBXFileReference(
                     sourceTree: .group,
                     name: file.lastComponent,
@@ -524,7 +528,11 @@ public final class XcodeProjectGenerator: Sendable {
             }
         } else {
             // 单文件
-            let relativePath = fullPath.string.replacingOccurrences(of: projectRoot.string + "/", with: "")
+            let relativePath = XcodeProjectPathUtility.relativePath(
+                for: fullPath.string,
+                rootPath: projectRoot.string,
+                fallbackName: fullPath.lastComponent
+            )
             let fileRef = PBXFileReference(
                 sourceTree: .group,
                 name: fullPath.lastComponent,
@@ -556,7 +564,11 @@ public final class XcodeProjectGenerator: Sendable {
         let fileExtension = fullPath.extension ?? ""
         let fileType = Xcode.filetype(extension: fileExtension)
 
-        let relativePath = fullPath.string.replacingOccurrences(of: projectRoot.string + "/", with: "")
+        let relativePath = XcodeProjectPathUtility.relativePath(
+            for: fullPath.string,
+            rootPath: projectRoot.string,
+            fallbackName: fullPath.lastComponent
+        )
 
         let fileRef = PBXFileReference(
             sourceTree: .group,

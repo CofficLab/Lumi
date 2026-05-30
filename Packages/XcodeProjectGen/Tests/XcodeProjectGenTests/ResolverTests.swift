@@ -147,4 +147,36 @@ struct XcodeProjectSpecResolverTests {
 
         #expect(result == result.sorted())
     }
+
+    @Test("扫描相对路径只移除项目根目录前缀")
+    func scanRelativePathOnlyDropsProjectRootPrefix() throws {
+        let tempDir = try createTempDirectory()
+        defer { cleanup(tempDir) }
+
+        let repeatedRootFragment = tempDir.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let sourcesDir = tempDir + "/Sources/tmp/" + repeatedRootFragment
+        try FileManager.default.createDirectory(atPath: sourcesDir, withIntermediateDirectories: true)
+        try "".write(toFile: sourcesDir + "/Feature.swift", atomically: true, encoding: .utf8)
+
+        let resolver = XcodeProjectSpecResolver()
+        let result = try resolver.scanSources(in: tempDir + "/Sources", relativeTo: tempDir)
+
+        #expect(result == ["Sources/tmp/\(repeatedRootFragment)/Feature.swift"])
+    }
+
+    @Test("扫描相对路径拒绝同前缀兄弟目录")
+    func scanRelativePathRejectsSiblingWithSharedPrefix() throws {
+        let tempDir = try createTempDirectory()
+        defer { cleanup(tempDir) }
+        let siblingDir = tempDir + "-copy/Sources"
+        defer { cleanup(tempDir + "-copy") }
+
+        try FileManager.default.createDirectory(atPath: siblingDir, withIntermediateDirectories: true)
+        try "".write(toFile: siblingDir + "/Feature.swift", atomically: true, encoding: .utf8)
+
+        let resolver = XcodeProjectSpecResolver()
+        let result = try resolver.scanSources(in: siblingDir, relativeTo: tempDir)
+
+        #expect(result == ["Feature.swift"])
+    }
 }

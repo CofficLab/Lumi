@@ -264,4 +264,33 @@ struct XcodeProjectGeneratorTests {
         #expect(content.contains("macosx"))
         #expect(content.contains("MACOSX_DEPLOYMENT_TARGET"))
     }
+
+    @Test("生成项目文件引用路径只移除项目根目录前缀")
+    func generateProjectFileReferencesOnlyDropProjectRootPrefix() throws {
+        let tempDir = try createTempDirectory()
+        defer { cleanup(tempDir) }
+
+        let repeatedRootFragment = tempDir.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let sourcesDir = tempDir + "/Sources/tmp/" + repeatedRootFragment
+        try FileManager.default.createDirectory(atPath: sourcesDir, withIntermediateDirectories: true)
+        try "".write(toFile: sourcesDir + "/Feature.swift", atomically: true, encoding: .utf8)
+
+        let spec = XcodeProjectSpec(
+            name: "NestedPaths",
+            targets: [
+                .app(
+                    name: "NestedPaths",
+                    platform: .macOS,
+                    sources: ["Sources"],
+                    settings: [.bundleIdentifier("com.example.NestedPaths")]
+                )
+            ]
+        )
+
+        let generator = XcodeProjectGenerator()
+        let resultPath = try generator.generate(spec: spec, projectRoot: tempDir)
+        let content = try String(contentsOfFile: resultPath + "/project.pbxproj", encoding: .utf8)
+
+        #expect(content.contains("Sources/tmp/\(repeatedRootFragment)/Feature.swift"))
+    }
 }

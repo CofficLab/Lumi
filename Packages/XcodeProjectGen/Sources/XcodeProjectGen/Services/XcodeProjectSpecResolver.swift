@@ -133,7 +133,11 @@ public final class XcodeProjectSpecResolver: Sendable {
 
             if options.sourceExtensions.contains(where: { item.hasSuffix(".\($0)") }) {
                 let fullPath = (directory as NSString).appendingPathComponent(item)
-                let relative = fullPath.replacingOccurrences(of: projectRoot.ensureTrailingSlash, with: "")
+                let relative = XcodeProjectPathUtility.relativePath(
+                    for: fullPath,
+                    rootPath: projectRoot,
+                    fallbackName: (fullPath as NSString).lastPathComponent
+                )
                 files.append(relative)
             }
         }
@@ -170,7 +174,11 @@ public final class XcodeProjectSpecResolver: Sendable {
                 // 检查是否是资源扩展名，或者是否在 .lproj 目录中
                 if options.resourceExtensions.contains(ext) || item.contains(".lproj/") {
                     let fullPath = (directory as NSString).appendingPathComponent(item)
-                    let relative = fullPath.replacingOccurrences(of: projectRoot.ensureTrailingSlash, with: "")
+                    let relative = XcodeProjectPathUtility.relativePath(
+                        for: fullPath,
+                        rootPath: projectRoot,
+                        fallbackName: (fullPath as NSString).lastPathComponent
+                    )
                     files.append(relative)
                 }
             }
@@ -178,7 +186,11 @@ public final class XcodeProjectSpecResolver: Sendable {
             // xcassets 是资源目录
             if item.hasSuffix(".xcassets") {
                 let fullPath = (directory as NSString).appendingPathComponent(item)
-                let relative = fullPath.replacingOccurrences(of: projectRoot.ensureTrailingSlash, with: "")
+                let relative = XcodeProjectPathUtility.relativePath(
+                    for: fullPath,
+                    rootPath: projectRoot,
+                    fallbackName: (fullPath as NSString).lastPathComponent
+                )
                 files.append(relative)
                 enumerator.skipDescendants()
             }
@@ -231,12 +243,4 @@ public struct ScanResult: Sendable {
 
     /// 发现的资源文件路径列表（相对于项目根目录）。
     public let resources: [String]
-}
-
-// MARK: - String Extension
-
-private extension String {
-    var ensureTrailingSlash: String {
-        hasSuffix("/") ? self : self + "/"
-    }
 }
