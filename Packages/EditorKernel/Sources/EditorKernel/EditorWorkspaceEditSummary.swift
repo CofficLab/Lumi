@@ -80,12 +80,7 @@ public enum EditorWorkspaceEditSummaryBuilder {
                 fileLabels.append(uri)
                 return
             }
-            let path = url.standardizedFileURL.path
-            if let projectRootPath, !projectRootPath.isEmpty, path.hasPrefix(projectRootPath + "/") {
-                fileLabels.append(String(path.dropFirst(projectRootPath.count + 1)))
-            } else {
-                fileLabels.append(url.lastPathComponent)
-            }
+            fileLabels.append(EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: projectRootPath))
         }
 
         if let changes = edit.changes {

@@ -55,4 +55,28 @@ struct EditorLSPActionPolicyTests {
         #expect(results[1].path == "B.swift")
         #expect(results[1].line == 10)
     }
+
+    @Test("reference display paths reject sibling projects with shared prefixes")
+    func referenceResultDisplayPathRejectsSiblingProjectPrefix() {
+        let currentFile = URL(fileURLWithPath: "/tmp/project/main.swift")
+        let locations: [Location] = [
+            .init(
+                uri: "file:///tmp/project2/Sources/Other.swift",
+                range: .init(
+                    start: .init(line: 0, character: 0),
+                    end: .init(line: 0, character: 5)
+                )
+            )
+        ]
+
+        let results = EditorLSPActionPolicy.referenceResults(
+            from: locations,
+            currentFileURL: currentFile,
+            relativeFilePath: "main.swift",
+            projectRootPath: "/tmp/project",
+            previewLine: { _, _ in "preview" }
+        )
+
+        #expect(results.map(\.path) == ["Other.swift"])
+    }
 }

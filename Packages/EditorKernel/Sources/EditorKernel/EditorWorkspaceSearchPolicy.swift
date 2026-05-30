@@ -144,11 +144,7 @@ public enum EditorWorkspaceSearchPolicy {
     }
 
     private static func relativePath(for url: URL, root: URL) -> String {
-        let path = url.standardizedFileURL.path
-        let rootPath = root.standardizedFileURL.path
-        guard path.hasPrefix(rootPath) else { return url.lastPathComponent }
-        let suffix = path.dropFirst(rootPath.count).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return suffix.isEmpty ? url.lastPathComponent : suffix
+        EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: root.path)
     }
 }
 

@@ -104,13 +104,6 @@ public enum EditorLSPActionPolicy {
             return relativeFilePath
         }
 
-        guard let projectRootPath else { return url.lastPathComponent }
-        let absolutePath = url.path
-        guard absolutePath.hasPrefix(projectRootPath) else { return url.lastPathComponent }
-        var relative = String(absolutePath.dropFirst(projectRootPath.count))
-        if relative.hasPrefix("/") {
-            relative.removeFirst()
-        }
-        return relative
+        return EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: projectRootPath)
     }
 }

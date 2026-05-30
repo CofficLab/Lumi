@@ -183,12 +183,7 @@ public struct EditorPeekController {
     }
 
     private func displayPath(for url: URL, projectRootPath: String?) -> String {
-        guard let projectRootPath, !projectRootPath.isEmpty else { return url.lastPathComponent }
-        let fullPath = url.standardizedFileURL.path
-        if fullPath.hasPrefix(projectRootPath + "/") {
-            return String(fullPath.dropFirst(projectRootPath.count + 1))
-        }
-        return url.lastPathComponent
+        EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: projectRootPath)
     }
 }
 

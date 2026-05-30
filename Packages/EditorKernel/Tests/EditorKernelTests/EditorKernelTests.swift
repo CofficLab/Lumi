@@ -1790,6 +1790,29 @@ struct EditorKernelTests {
     }
 
     @Test
+    func workspaceEditSummaryRejectsSiblingProjectWithSharedPrefix() {
+        let edit = WorkspaceEdit(
+            changes: [
+                "file:///tmp/project2/Sources/Other.swift": [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 1)),
+                        newText: "x"
+                    )
+                ],
+            ],
+            documentChanges: nil
+        )
+
+        let summary = EditorWorkspaceEditSummaryBuilder.summarize(
+            edit,
+            currentURI: "file:///tmp/project/file.swift",
+            projectRootPath: "/tmp/project"
+        )
+
+        #expect(summary.fileLabels == ["Other.swift"])
+    }
+
+    @Test
     @MainActor
     func workspaceEditControllerAppliesDocumentAndFileOperations() throws {
         let currentURI = "file:///tmp/project/file.swift"
@@ -2191,6 +2214,29 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func peekControllerRejectsSiblingProjectWithSharedPrefix() {
+        let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelPeek2.swift")
+        let location = Location(
+            uri: fileURL.absoluteString,
+            range: LSPRange(
+                start: Position(line: 0, character: 0),
+                end: Position(line: 0, character: 4)
+            )
+        )
+        let controller = EditorPeekController()
+
+        let presentation = controller.buildDefinitionPresentation(
+            location: location,
+            currentFileURL: nil,
+            projectRootPath: "/tmp/EditorKernelPeek",
+            currentContent: nil
+        )
+
+        #expect(presentation?.summary == "EditorKernelPeek2.swift:1:1")
+    }
+
+    @Test
+    @MainActor
     func settingsQuickOpenPolicyFiltersAndSortsMatchingItems() {
         let items: [EditorSettingsQuickOpenSearchItem] = [
             .init(
@@ -2242,6 +2288,23 @@ struct EditorKernelTests {
         #expect(markdown.contains("# Search Results"))
         #expect(markdown.contains("## Sources/App.swift"))
         #expect(markdown.contains("`L3:C5` let value = 1"))
+    }
+
+    @Test
+    @MainActor
+    func workspaceSearchPolicyRejectsSiblingProjectWithSharedPrefix() {
+        let output = """
+        {"type":"match","data":{"path":{"text":"/tmp/project2/Sources/App.swift"},"lines":{"text":"let value = 1"},"line_number":3,"submatches":[{"start":4}]}}
+        """
+
+        let response = EditorWorkspaceSearchPolicy.parse(
+            output: output,
+            query: "value",
+            projectRootPath: "/tmp/project",
+            limit: 200
+        )
+
+        #expect(response.fileResults.map(\.path) == ["App.swift"])
     }
 
     @Test
