@@ -523,7 +523,7 @@ public struct HTMLToMarkdownConverter {
                         for cellMatch in cellMatches {
                             // td 或 th 的内容
                             let content = cellMatch[1].isEmpty ? cellMatch[2] : cellMatch[1]
-                            cells.append(stripHTMLTags(content).trimmed)
+                            cells.append(escapeMarkdownTableCell(stripHTMLTags(content).trimmed))
                         }
                         if !cells.isEmpty {
                             rows.append(cells)
@@ -645,6 +645,10 @@ public struct HTMLToMarkdownConverter {
         markdown
             .replacingOccurrences(of: escapedLessThanPlaceholder, with: "<")
             .replacingOccurrences(of: escapedGreaterThanPlaceholder, with: ">")
+    }
+
+    private static func escapeMarkdownTableCell(_ text: String) -> String {
+        text.replacingOccurrences(of: "|", with: #"\|"#)
     }
 
     // MARK: - Helper Methods

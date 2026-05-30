@@ -121,6 +121,21 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("let x = 1"))
     }
 
+    func testEscapesPipeCharactersInTableCells() {
+        let html = """
+        <table>
+        <tr><th>Pattern</th><th>Description</th></tr>
+        <tr><td>foo|bar</td><td>Matches A | B</td></tr>
+        </table>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("| Pattern | Description |"))
+        XCTAssertTrue(markdown.contains("| foo\\|bar | Matches A \\| B |"))
+        XCTAssertFalse(markdown.contains("| foo|bar | Matches A | B |"))
+    }
+
     func testConvertsMultilinePreCodeBlocksBeforeInlineCode() {
         let html = """
         <pre><code>let x = 1
