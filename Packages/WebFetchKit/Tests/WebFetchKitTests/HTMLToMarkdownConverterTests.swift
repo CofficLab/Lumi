@@ -52,6 +52,28 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertFalse(markdown.contains("&#x1F680;"))
     }
 
+    func testRemovesMultilineUnwantedTags() {
+        let html = """
+        <script>
+        window.noisy = true;
+        </script>
+        <style>
+        body { color: red; }
+        </style>
+        <!--
+        hidden comment
+        -->
+        <p>Visible text</p>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("Visible text"))
+        XCTAssertFalse(markdown.contains("window.noisy"))
+        XCTAssertFalse(markdown.contains("color: red"))
+        XCTAssertFalse(markdown.contains("hidden comment"))
+    }
+
     func testConvertsListsWithoutCrashingOnMalformedListContent() {
         let html = """
         <ol></li><li>First</li><li><span>Second</span></li></ol>

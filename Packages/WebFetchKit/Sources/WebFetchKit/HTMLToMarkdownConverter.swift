@@ -109,12 +109,12 @@ public struct HTMLToMarkdownConverter {
 
         // 移除 script, style, noscript, iframe 等标签及其内容
         let removePatterns = [
-            "<script[^>]*>.*?</script>",
-            "<style[^>]*>.*?</style>",
-            "<noscript[^>]*>.*?</noscript>",
-            "<iframe[^>]*>.*?</iframe>",
-            "<svg[^>]*>.*?</svg>",
-            "<!--.*?-->",
+            "(?s)<script[^>]*>.*?</script>",
+            "(?s)<style[^>]*>.*?</style>",
+            "(?s)<noscript[^>]*>.*?</noscript>",
+            "(?s)<iframe[^>]*>.*?</iframe>",
+            "(?s)<svg[^>]*>.*?</svg>",
+            "(?s)<!--.*?-->",
         ]
 
         for pattern in removePatterns {
