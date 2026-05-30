@@ -1,3 +1,0 @@
-import PluginLSPCodeActionEditor
-
-typealias LSPCodeActionEditorPlugin = PluginLSPCodeActionEditor.LSPCodeActionEditorPlugin

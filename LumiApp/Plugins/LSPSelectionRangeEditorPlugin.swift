@@ -1,3 +1,0 @@
-import PluginLSPSelectionRangeEditor
-
-typealias LSPSelectionRangeEditorPlugin = PluginLSPSelectionRangeEditor.LSPSelectionRangeEditorPlugin

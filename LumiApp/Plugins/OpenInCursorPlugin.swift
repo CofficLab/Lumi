@@ -1,3 +1,0 @@
-import PluginOpenInCursor
-
-typealias OpenInCursorPlugin = PluginOpenInCursor.AgentOpenInCursorPlugin

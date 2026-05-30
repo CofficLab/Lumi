@@ -1,3 +1,0 @@
-import PluginEditorCallHierarchyRail
-
-typealias EditorCallHierarchyRailPlugin = PluginEditorCallHierarchyRail.EditorCallHierarchyRailPlugin

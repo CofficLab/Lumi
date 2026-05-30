@@ -1,12 +1,12 @@
 # 插件 Package 化架构
 
 > 日期：2026-05-25
-> 状态：迁移设计中
+> 状态：已切换为 Package 目录注册
 > 涉及范围：Core + LumiCoreKit + Plugins
 
 ## 背景与动机
 
-Lumi 当前已经有大量插件能力，例如 Git、GitHub、Recent Projects、Editor、LLM Provider、Agent Tools 等。早期插件直接放在 `LumiApp/Plugins` 中，协议、共享模型和部分内核逻辑则散落在 `LumiApp/Core` 中。
+Lumi 当前已经有大量插件能力，例如 Git、GitHub、Recent Projects、Editor、LLM Provider、Agent Tools 等。早期插件直接放在 App target 中，协议、共享模型和部分内核逻辑则散落在 `LumiApp/Core` 中；现在插件实现已经收敛到仓库根目录的 `Plugins/Plugin*` Swift Package。
 
 这种结构在插件数量较少时可以工作，但随着插件变多，会出现几个问题：
 
@@ -35,7 +35,7 @@ GitPlugin Package
     GitPluginTests
 ```
 
-App 中可以保留插件注册文件，用来决定哪些插件随 App 一起加载。但插件的核心功能不应该依赖 App Core，而应该依赖稳定的插件 SDK：`LumiCoreKit`。
+App 中保留生成出来的插件注册表，用来决定哪些插件随 App 一起加载。但插件的核心功能不应该依赖 App Core，而应该依赖稳定的插件 SDK：`LumiCoreKit`。
 
 ## 目标架构
 
@@ -178,7 +178,7 @@ Plugin Package → 另一个插件 Package 的实现细节
 
 ## 插件注册
 
-App 可以保留一个集中注册文件，例如：
+App 保留一个集中生成的注册文件，例如：
 
 ```swift
 enum BundledPluginRegistry {
@@ -195,27 +195,21 @@ enum BundledPluginRegistry {
 
 这样 App 明确知道自己打包了哪些插件，但不需要知道插件内部如何实现。
 
-相比完全依赖 runtime 扫描，显式注册更利于 Package 化、测试、裁剪和排查启动问题。
+相比 runtime 扫描，构建期生成注册表更利于 Package 化、测试、裁剪和排查启动问题。当前生成脚本直接扫描 `Plugins/Plugin*/Sources/*/*.swift` 中符合 `public actor *Plugin: ... SuperPlugin` 的插件实现，并生成 `LumiApp/Core/Generated/GeneratedPluginRegistry.swift`。
 
-在迁移完成前，App 侧仍允许保留很薄的 runtime 扫描适配器，但适配器必须只做注册和转发：
+当前目录边界如下：
 
 ```text
-LumiApp/Plugins/
-  BrowserPlugin.swift        # import PluginBrowser，转发到 package 实现
-  WebSearchPlugin.swift      # import PluginWebSearch，转发到 package 实现
-
-Packages/
+Plugins/
   PluginBrowser/
+    Package.swift
+    Sources/PluginBrowser/BrowserPlugin.swift
   PluginWebSearch/
+    Package.swift
+    Sources/PluginWebSearch/WebSearchPlugin.swift
 ```
 
-`LumiApp/Plugins` 不应继续保存插件资源、视图、服务、工具、中间件或业务模型；这些内容应随插件迁入对应的 `Plugins/Plugin*`。可以用下面的脚本检查当前边界：
-
-```bash
-scripts/check-plugin-package-boundaries.sh --allow-legacy
-```
-
-迁移全部完成后，CI 应改为运行严格模式：
+`LumiApp/Plugins` 不再存在，也不应重新引入。插件资源、视图、服务、工具、中间件或业务模型都应随插件放入对应的 `Plugins/Plugin*`。可以用下面的脚本检查当前边界：
 
 ```bash
 scripts/check-plugin-package-boundaries.sh
@@ -449,5 +443,5 @@ LumiPluginLLM
 
 1. 将 App target 添加对 `Plugins/PluginWebFetch` library product 的依赖
 2. 在 App 插件注册处引用 package 中的 `WebFetchPlugin.shared`
-3. 移除或停用 `LumiApp/Plugins/WebFetchPlugin` 中的旧实现，避免重复插件注册
+3. 确认 App 生成注册表中包含 `PluginWebFetch.WebFetchPlugin`
 4. 跑 App 构建和工具聚合测试，确认 `web_fetch` 仍能被 Agent 发现

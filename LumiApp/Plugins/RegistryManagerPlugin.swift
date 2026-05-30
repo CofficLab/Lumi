@@ -1,3 +1,0 @@
-import PluginRegistryManager
-
-typealias RegistryManagerPlugin = PluginRegistryManager.RegistryManagerPlugin

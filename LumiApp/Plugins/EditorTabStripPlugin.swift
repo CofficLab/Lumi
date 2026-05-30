@@ -1,3 +1,0 @@
-import PluginEditorTabStrip
-
-typealias EditorTabStripPlugin = PluginEditorTabStrip.EditorTabStripPlugin

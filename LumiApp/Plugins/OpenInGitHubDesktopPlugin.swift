@@ -1,3 +1,0 @@
-import PluginOpenInGitHubDesktop
-
-typealias OpenInGitHubDesktopPlugin = PluginOpenInGitHubDesktop.AgentOpenInGitHubDesktopPlugin

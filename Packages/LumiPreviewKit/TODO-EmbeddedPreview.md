@@ -136,9 +136,9 @@ Lumi 主进程                              子进程 (LumiHotPreviewHostApp)
 | `Sources/LumiPreviewKit/Host/HotPreviewHostProcess.swift`                           | P2    | `HotHostConnection` 增加 streamEvents 异步序列 |
 | `Sources/LumiHotPreviewHostApp/HotStdioPreviewHost.swift`                           | P2/P3 | 接入 envelope、启动帧循环、转发事件            |
 | `Sources/LumiHotPreviewHostApp/HotPreviewRenderer.swift`                            | P1    | `snapshotFrame` 默认走 surface 路径            |
-| `LumiApp/Plugins/EditorPreviewPlugin/Views/EditorPreviewCanvas.swift`               | P1    | 用 `PreviewSurfaceCanvas` 替换 `Image`         |
-| `LumiApp/Plugins/EditorPreviewPlugin/ViewModels/EditorPreviewViewModel.swift`       | P2/P3 | 新增 `currentSurfaceID`、转发事件入口          |
-| `LumiApp/Plugins/EditorPreviewPlugin/Services/EditorPreviewService.swift`           | P2/P3 | 移除窗口贴位逻辑，改用 surface 通道            |
+| `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/Views/EditorPreviewCanvas.swift`               | P1    | 用 `PreviewSurfaceCanvas` 替换 `Image`         |
+| `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/ViewModels/EditorPreviewViewModel.swift`       | P2/P3 | 新增 `currentSurfaceID`、转发事件入口          |
+| `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/Services/EditorPreviewService.swift`           | P2/P3 | 移除窗口贴位逻辑，改用 surface 通道            |
 
 ### 删除文件（Phase 4）
 
@@ -148,7 +148,7 @@ Lumi 主进程                              子进程 (LumiHotPreviewHostApp)
 | `Sources/LumiPreviewKit/LiveCanvas/LiveCanvasService.swift`                         | 270   |
 | `Sources/LumiHotPreviewHostApp/HotLivePreviewWindow.swift`                          | 87    |
 | `Sources/LumiHotPreviewHostApp/HotPreviewRenderer+Live.swift`                       | 168   |
-| `LumiApp/Plugins/EditorPreviewPlugin/Views/EditorPreviewLiveCanvasFrameReporter.swift` | 323 |
+| `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/Views/EditorPreviewLiveCanvasFrameReporter.swift` | 323 |
 
 预估净删除 **~950 行**纯协调代码。
 

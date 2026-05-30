@@ -37,11 +37,11 @@ Code in this package should localize with `Bundle.module`, not the app main bund
 
 ## Current Status
 
-This package is a migration prototype. It builds and tests independently, but the app still contains the legacy in-app WebFetch plugin implementation until the app target is wired to this package product.
+This package builds and tests independently, and the app discovers it through the generated package plugin registry.
 
 ## App Integration Checklist
 
-1. Add the `PluginWebFetch` product to the Lumi app target.
-2. Register `WebFetchPlugin.shared` from this package in the app plugin registry.
-3. Remove or disable the legacy `LumiApp/Plugins/WebFetchPlugin` implementation.
+1. Keep the `PluginWebFetch` product available to the Lumi app target.
+2. Verify `PluginWebFetch.WebFetchPlugin` is included in `LumiApp/Core/Generated/GeneratedPluginRegistry.swift`.
+3. Keep plugin logic in this package.
 4. Verify the Agent tool list still exposes `web_fetch`.

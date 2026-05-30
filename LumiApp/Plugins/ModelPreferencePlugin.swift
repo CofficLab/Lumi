@@ -1,3 +1,0 @@
-import PluginModelPreference
-
-typealias ModelPreferencePlugin = PluginModelPreference.ModelPreferencePlugin

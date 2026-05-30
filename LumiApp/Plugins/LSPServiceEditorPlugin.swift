@@ -1,3 +1,0 @@
-import PluginLSPServiceEditor
-
-typealias LSPServiceEditorPlugin = PluginLSPServiceEditor.LSPServiceEditorPlugin

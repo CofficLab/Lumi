@@ -1,3 +1,0 @@
-import PluginSampleDecorationEditor
-
-typealias SampleDecorationEditorPlugin = PluginSampleDecorationEditor.SampleDecorationEditorPlugin

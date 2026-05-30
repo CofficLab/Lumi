@@ -11,6 +11,7 @@ import PluginFontConfig
 import PluginGit
 import PluginGoEditor
 import PluginJSEditor
+import PluginAutoTask
 import PluginProjects
 import PluginQuickFileSearch
 import PluginScreenshot
@@ -188,6 +189,7 @@ struct RootView<Content>: View where Content: View {
         configurePluginTerminalBridge()
         configurePluginQuickFileSearchBridge()
         configurePluginProjectsBridge()
+        configurePluginAutoTaskBridge()
     }
 
     private func syncPluginProjectContext() {
@@ -324,6 +326,22 @@ struct RootView<Content>: View where Content: View {
         PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { path in
             NotificationCenter.postSyncSelectedFile(path: path)
         }
+    }
+
+    private func configurePluginAutoTaskBridge() {
+        PluginAutoTask.AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
+    }
+}
+
+private struct AppAutoTaskConfiguration: AutoTaskConfiguration {
+    func databaseDirectory() -> URL {
+        AppConfig.getDBFolderURL()
+    }
+
+    @MainActor
+    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext) {
+        guard let appContext = turnContext as? AppTurnFinishedContext else { return }
+        appContext.messageQueueVM.enqueueMessage(message)
     }
 }
 

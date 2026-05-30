@@ -1,3 +1,0 @@
-import PluginConversationList
-
-typealias ConversationListPlugin = PluginConversationList.ConversationListPlugin

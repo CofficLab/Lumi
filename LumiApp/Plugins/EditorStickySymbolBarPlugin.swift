@@ -1,3 +1,0 @@
-import PluginEditorStickySymbolBar
-
-typealias EditorStickySymbolBarPlugin = PluginEditorStickySymbolBar.EditorStickySymbolBarPlugin

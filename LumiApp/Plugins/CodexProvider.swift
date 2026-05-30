@@ -1,4 +1,0 @@
-import Foundation
-import PluginLLMProviderCodex
-
-typealias CodexProvider = PluginLLMProviderCodex.CodexProvider

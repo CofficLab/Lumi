@@ -1,3 +1,0 @@
-import PluginTextActions
-
-typealias TextActionsPlugin = PluginTextActions.TextActionsPlugin

@@ -1,3 +1,0 @@
-import PluginMarkdownEditor
-
-typealias MarkdownEditorPlugin = PluginMarkdownEditor.MarkdownEditorPlugin

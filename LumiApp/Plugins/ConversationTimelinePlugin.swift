@@ -1,3 +1,0 @@
-import PluginConversationTimeline
-
-typealias ConversationTimelinePlugin = PluginConversationTimeline.ConversationTimelinePlugin

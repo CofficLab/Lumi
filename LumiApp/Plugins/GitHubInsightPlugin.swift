@@ -1,3 +1,0 @@
-import PluginGitHubInsight
-
-typealias GitHubInsightPlugin = PluginGitHubInsight.GitHubInsightPlugin

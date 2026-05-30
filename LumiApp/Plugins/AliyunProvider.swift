@@ -1,4 +1,0 @@
-import Foundation
-import PluginLLMProviderAliyun
-
-typealias AliyunProvider = PluginLLMProviderAliyun.AliyunProvider

@@ -1,3 +1,0 @@
-import PluginHostsManager
-
-typealias HostsManagerPlugin = PluginHostsManager.HostsManagerPlugin

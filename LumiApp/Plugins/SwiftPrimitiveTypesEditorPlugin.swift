@@ -1,3 +1,0 @@
-import PluginSwiftPrimitiveTypesEditor
-
-typealias SwiftPrimitiveTypesEditorPlugin = PluginSwiftPrimitiveTypesEditor.SwiftPrimitiveTypesEditorPlugin

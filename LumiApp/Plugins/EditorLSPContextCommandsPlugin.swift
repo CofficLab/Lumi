@@ -1,3 +1,0 @@
-import PluginEditorLSPContextCommands
-
-typealias EditorLSPContextCommandsPlugin = PluginEditorLSPContextCommands.EditorLSPContextCommandsPlugin

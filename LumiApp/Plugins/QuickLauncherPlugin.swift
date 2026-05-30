@@ -1,3 +1,0 @@
-import PluginQuickLauncher
-
-typealias QuickLauncherPlugin = PluginQuickLauncher.QuickLauncherPlugin

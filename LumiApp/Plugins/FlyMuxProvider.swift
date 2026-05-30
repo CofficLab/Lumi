@@ -1,4 +1,0 @@
-import Foundation
-import PluginLLMProviderFlyMux
-
-typealias FlyMuxProvider = PluginLLMProviderFlyMux.FlyMuxProvider

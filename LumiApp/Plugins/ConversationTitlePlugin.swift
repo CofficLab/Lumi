@@ -1,3 +1,0 @@
-import PluginConversationTitle
-
-typealias ConversationTitlePlugin = PluginConversationTitle.ConversationTitlePlugin

@@ -1,4 +1,0 @@
-import Foundation
-import PluginLLMProviderXybbz
-
-typealias XybbzProvider = PluginLLMProviderXybbz.XybbzProvider

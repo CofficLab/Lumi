@@ -3,6 +3,7 @@ import Foundation
 import LumiCoreKit
 import SuperLogKit
 import os
+import SwiftUI
 
 /// AutoTask 插件 Package 侧主入口
 ///
@@ -54,6 +55,29 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
             AnySuperSendMiddleware(TaskContextMiddleware()),
             AnySuperSendMiddleware(AutoTaskTurnCheckMiddleware()),
         ]
+    }
+
+    // MARK: - UI Contributions
+
+    @MainActor
+    public func addSidebarSections(context: PluginContext) -> [AnyView] {
+        guard context.supportsAIChat else { return [] }
+        return [AnyView(AutoTaskSidebarViewWrapper())]
+    }
+}
+
+@MainActor
+private struct AutoTaskSidebarViewWrapper: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+
+    var body: some View {
+        AutoTaskSidebarView(
+            conversationIdProvider: { conversationVM.selectedConversationId },
+            backgroundColorProvider: {
+                themeVM.activeChromeTheme.workspaceBackgroundColor()
+            }
+        )
     }
 }
 

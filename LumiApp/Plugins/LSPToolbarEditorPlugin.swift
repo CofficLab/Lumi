@@ -1,3 +1,0 @@
-import PluginLSPToolbarEditor
-
-typealias LSPToolbarEditorPlugin = PluginLSPToolbarEditor.LSPToolbarEditorPlugin

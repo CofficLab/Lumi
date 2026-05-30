@@ -29,31 +29,31 @@ scripts/audit-lumiui-styles.sh LumiApp
 
 `Color.adaptive` 主要集中在 Other Plugins、Chat、Status/Menu Bar、Editor Plugins 和 Core Settings。优先文件：
 
-- `LumiApp/Plugins/GitPlugin/Views/GitCommitDetailView.swift`
-- `LumiApp/Plugins/AgentRequestLogPlugin/Views/RequestLogDetailView.swift`
-- `LumiApp/Plugins/DockerManagerPlugin/Views/DockerImagesView.swift`
-- `LumiApp/Plugins/ModelSelectorPlugin/Views/AvailabilityDetailView.swift`
-- `LumiApp/Plugins/AgentMessageRendererPlugin/MessageComponent/MessageWithToolCallsView.swift`
+- `Plugins/PluginGit/Sources/PluginGit/Views/GitCommitDetailView.swift`
+- `Plugins/PluginAgentRequestLog/Sources/PluginAgentRequestLog/Views/RequestLogDetailView.swift`
+- `Plugins/PluginDockerManager/Sources/PluginDockerManager/Views/DockerImagesView.swift`
+- `Plugins/PluginModelSelector/Sources/PluginModelSelector/Views/AvailabilityDetailView.swift`
+- `Plugins/PluginAgentMessageRenderer/Sources/PluginAgentMessageRenderer/MessageComponent/MessageWithToolCallsView.swift`
 - `LumiApp/Core/Views/Settings/LocalProvider/LocalModelRow.swift`
 
 `Color(hex:)` 主要集中在 Editor Plugins、系统监控类插件、Core Settings 和 Status/Menu Bar。优先文件：
 
-- `LumiApp/Plugins/EditorPanelPlugin/Views/EditorCommandPaletteView.swift`
-- `LumiApp/Plugins/NetworkManagerPlugin/Views/NetworkMenuBarPopupView.swift`
-- `LumiApp/Plugins/DeviceInfoPlugin/Views/DeviceInfoView.swift`
-- `LumiApp/Plugins/AgentGitHubToolsPlugin/Views/GitHubPluginSettingsView.swift`
+- `Plugins/PluginEditorPanel/Sources/PluginEditorPanel/Views/EditorCommandPaletteView.swift`
+- `Plugins/PluginNetworkManager/Sources/PluginNetworkManager/Views/NetworkMenuBarPopupView.swift`
+- `Plugins/PluginDeviceInfo/Sources/PluginDeviceInfo/Views/DeviceInfoView.swift`
+- `Plugins/PluginAgentGitHubTools/Sources/PluginAgentGitHubTools/Views/GitHubPluginSettingsView.swift`
 - `LumiApp/Core/Views/Settings/PluginSettingsView.swift`
 
 ### Typography
 
 `.font(.system...)` 是最大逃逸点，共 1157 处。优先文件：
 
-- `LumiApp/Plugins/GitPlugin/Views/GitCommitDetailView.swift`
-- `LumiApp/Plugins/AgentRAGPlugin/Views/RAGStatusBarView.swift`
-- `LumiApp/Plugins/ModelSelectorPlugin/Views/AvailabilityDetailView.swift`
-- `LumiApp/Plugins/AgentRequestLogPlugin/Views/RequestLogDetailView.swift`
-- `LumiApp/Plugins/EditorPanelPlugin/Views/EditorCommandPaletteView.swift`
-- `LumiApp/Plugins/NetworkManagerPlugin/Views/NetworkMenuBarPopupView.swift`
+- `Plugins/PluginGit/Sources/PluginGit/Views/GitCommitDetailView.swift`
+- `Plugins/PluginAgentRAG/Sources/PluginAgentRAG/Views/RAGStatusBarView.swift`
+- `Plugins/PluginModelSelector/Sources/PluginModelSelector/Views/AvailabilityDetailView.swift`
+- `Plugins/PluginAgentRequestLog/Sources/PluginAgentRequestLog/Views/RequestLogDetailView.swift`
+- `Plugins/PluginEditorPanel/Sources/PluginEditorPanel/Views/EditorCommandPaletteView.swift`
+- `Plugins/PluginNetworkManager/Sources/PluginNetworkManager/Views/NetworkMenuBarPopupView.swift`
 
 这说明 LumiUI 需要先暴露更完整的 typography API，否则迁移会变成把 `.font(.system...)` 换成另一组业务层 modifier。
 
@@ -61,22 +61,22 @@ scripts/audit-lumiui-styles.sh LumiApp
 
 `RoundedRectangle` 和 `.background(...)` 的热点说明许多页面仍在手写 card、row、badge 和 panel surface。优先文件：
 
-- `LumiApp/Plugins/EditorPreviewPlugin/Views/EditorPreviewDetailView.swift`
-- `LumiApp/Plugins/AgentGitHubToolsPlugin/Views/GitHubPluginSettingsView.swift`
-- `LumiApp/Plugins/AgentOnboardingPlugin/Views/OnboardingRootOverlay.swift`
-- `LumiApp/Plugins/GitPlugin/Views/GitCommitDetailView.swift`
+- `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/Views/EditorPreviewDetailView.swift`
+- `Plugins/PluginAgentGitHubTools/Sources/PluginAgentGitHubTools/Views/GitHubPluginSettingsView.swift`
+- `Plugins/PluginAgentOnboarding/Sources/PluginAgentOnboarding/Views/OnboardingRootOverlay.swift`
+- `Plugins/PluginGit/Sources/PluginGit/Views/GitCommitDetailView.swift`
 - `LumiApp/Core/Views/Layout/ContentView.swift`
-- `LumiApp/Plugins/LSPCodeActionEditorPlugin/Views/CodeActionPanel.swift`
+- `Plugins/PluginLSPCodeActionEditor/Sources/PluginLSPCodeActionEditor/Views/CodeActionPanel.swift`
 
 ### Chrome Theme Coupling
 
 `activeChromeTheme.*Color()` 主要集中在 editor panels。优先文件：
 
-- `LumiApp/Plugins/EditorRailWorkspaceSearchPlugin/Views/EditorWorkspaceSearchPanelView.swift`
-- `LumiApp/Plugins/EditorPreviewPlugin/Views/EditorPreviewDetailView.swift`
-- `LumiApp/Plugins/EditorBottomSearchPlugin/Views/BottomEditorWorkspaceSearchPanelView.swift`
-- `LumiApp/Plugins/EditorRailReferencesPlugin/Views/EditorReferencesWorkspacePanelView.swift`
-- `LumiApp/Plugins/EditorBottomReferencesPlugin/Views/BottomEditorReferencesWorkspacePanelView.swift`
+- `Plugins/PluginEditorRailWorkspaceSearch/Sources/PluginEditorRailWorkspaceSearch/Views/EditorWorkspaceSearchPanelView.swift`
+- `Plugins/PluginEditorPreview/Sources/PluginEditorPreview/Views/EditorPreviewDetailView.swift`
+- `Plugins/PluginEditorBottomSearch/Sources/PluginEditorBottomSearch/Views/BottomEditorWorkspaceSearchPanelView.swift`
+- `Plugins/PluginEditorRailReferences/Sources/PluginEditorRailReferences/Views/EditorReferencesWorkspacePanelView.swift`
+- `Plugins/PluginEditorBottomReferences/Sources/PluginEditorBottomReferences/Views/BottomEditorReferencesWorkspacePanelView.swift`
 
 这些文件不一定都要立刻改掉，但应该明确哪些属于 chrome layout 边界，哪些只是普通插件 UI 想拿颜色。
 

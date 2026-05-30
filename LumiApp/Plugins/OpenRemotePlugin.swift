@@ -1,3 +1,0 @@
-import PluginOpenRemote
-
-typealias OpenRemotePlugin = PluginOpenRemote.AgentOpenRemotePlugin

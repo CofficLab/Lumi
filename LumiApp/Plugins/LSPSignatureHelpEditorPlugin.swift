@@ -1,3 +1,0 @@
-import PluginLSPSignatureHelpEditor
-
-typealias LSPSignatureHelpEditorPlugin = PluginLSPSignatureHelpEditor.LSPSignatureHelpEditorPlugin

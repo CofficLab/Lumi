@@ -1,3 +1,0 @@
-import PluginEditorRailFileTree
-
-typealias EditorRailFileTreePlugin = PluginEditorRailFileTree.EditorRailFileTreePlugin

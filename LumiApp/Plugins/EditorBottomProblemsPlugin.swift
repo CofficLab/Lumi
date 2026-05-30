@@ -1,3 +1,0 @@
-import PluginEditorBottomProblems
-
-typealias EditorBottomProblemsPlugin = PluginEditorBottomProblems.EditorBottomProblemsPlugin

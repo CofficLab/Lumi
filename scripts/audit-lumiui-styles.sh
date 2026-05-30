@@ -86,10 +86,10 @@ category_for_path() {
         LumiApp/Core/Views/Layout/*) echo "Core Layout" ;;
         LumiApp/Core/Views/Settings/*) echo "Core Settings" ;;
         LumiApp/Core/Views/*) echo "Core Views" ;;
-        LumiApp/Plugins/AgentMessageRendererPlugin/*|LumiApp/Plugins/ChatMessagesPlugin/*|LumiApp/Plugins/ChatAttachmentPlugin/*|LumiApp/Plugins/ChatPendingMessagesPlugin/*) echo "Chat" ;;
-        LumiApp/Plugins/*StatusBarPlugin/*|LumiApp/Plugins/*/Views/*StatusBar*|LumiApp/Plugins/*/Views/*MenuBar*) echo "Status/Menu Bar" ;;
-        LumiApp/Plugins/*EditorPlugin/*|LumiApp/Plugins/Editor*Plugin/*|LumiApp/Plugins/LSP*EditorPlugin/*) echo "Editor Plugins" ;;
-        LumiApp/Plugins/*) echo "Other Plugins" ;;
+        Plugins/PluginAgentMessageRenderer/*|Plugins/PluginChatMessages/*|Plugins/PluginChatAttachment/*|Plugins/PluginChatPendingMessages/*) echo "Chat" ;;
+        Plugins/Plugin*StatusBar/*|Plugins/Plugin*/Sources/*/Views/*StatusBar*|Plugins/Plugin*/Sources/*/Views/*MenuBar*) echo "Status/Menu Bar" ;;
+        Plugins/Plugin*Editor/*|Plugins/PluginEditor*/*|Plugins/PluginLSP*Editor/*) echo "Editor Plugins" ;;
+        Plugins/Plugin*/*) echo "Other Plugins" ;;
         *) echo "Other" ;;
     esac
 }

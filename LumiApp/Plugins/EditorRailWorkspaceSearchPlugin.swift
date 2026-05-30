@@ -1,3 +1,0 @@
-import PluginEditorRailWorkspaceSearch
-
-typealias EditorRailWorkspaceSearchPlugin = PluginEditorRailWorkspaceSearch.EditorRailWorkspaceSearchPlugin

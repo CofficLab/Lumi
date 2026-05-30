@@ -1,4 +1,0 @@
-import Foundation
-import PluginLLMProviderHyperAPI
-
-typealias HyperAPIProvider = PluginLLMProviderHyperAPI.HyperAPIProvider

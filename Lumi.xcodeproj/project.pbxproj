@@ -2072,7 +2072,6 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/LumiApp/Plugins",
 				"$(SRCROOT)/Plugins",
 				"$(SRCROOT)/scripts/generate-plugin-registry.sh",
 			);

@@ -1,3 +1,0 @@
-import PluginEditorBottomSearch
-
-typealias EditorBottomSearchPlugin = PluginEditorBottomSearch.EditorBottomSearchPlugin

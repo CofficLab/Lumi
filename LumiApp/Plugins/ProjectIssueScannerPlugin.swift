@@ -1,3 +1,0 @@
-import PluginProjectIssueScanner
-
-typealias ProjectIssueScannerPlugin = PluginProjectIssueScanner.ProjectIssueScannerPlugin

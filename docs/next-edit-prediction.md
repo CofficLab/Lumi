@@ -48,7 +48,7 @@
 
 ## 推荐架构
 
-新增一个独立插件：`LumiApp/Plugins/NextEditPredictionEditorPlugin`。它只负责智能预测，不混入普通 LSP completion。
+新增一个独立插件：`Plugins/PluginNextEditPredictionEditor`。它只负责智能预测，不混入普通 LSP completion。
 
 ```mermaid
 flowchart TD

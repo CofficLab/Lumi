@@ -1,3 +1,0 @@
-import PluginDatabaseManager
-
-typealias DatabaseManagerPlugin = PluginDatabaseManager.DatabaseManagerPlugin

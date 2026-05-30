@@ -1,3 +1,0 @@
-import PluginLSPRealtimeSignalsEditor
-
-typealias LSPRealtimeSignalsEditorPlugin = PluginLSPRealtimeSignalsEditor.LSPRealtimeSignalsEditorPlugin

@@ -1,3 +1,0 @@
-import PluginEditorBottomCallHierarchy
-
-typealias EditorBottomCallHierarchyPlugin = PluginEditorBottomCallHierarchy.EditorBottomCallHierarchyPlugin

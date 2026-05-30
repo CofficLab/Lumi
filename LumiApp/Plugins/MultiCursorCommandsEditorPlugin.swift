@@ -1,3 +1,0 @@
-import PluginMultiCursorCommandsEditor
-
-typealias MultiCursorCommandsEditorPlugin = PluginMultiCursorCommandsEditor.MultiCursorCommandsEditorPlugin

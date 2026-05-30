@@ -1,3 +1,0 @@
-import PluginLSPDocumentColorEditor
-
-typealias LSPDocumentColorEditorPlugin = PluginLSPDocumentColorEditor.LSPDocumentColorEditorPlugin

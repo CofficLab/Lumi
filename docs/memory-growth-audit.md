@@ -87,7 +87,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 ### 5. LSP progress tokens can remain forever when servers do not send `end`
 
 - Module: LSP progress state
-- Path: `LumiApp/Plugins/LSPServiceEditorPlugin/LSPProgressProvider.swift`
+- Path: `Plugins/PluginLSPServiceEditor/Sources/PluginLSPServiceEditor/LSPProgressProvider.swift`
 - Risk: Medium
 - Evidence:
   - `activeTasks` dictionary is keyed by server progress token at line 9.
@@ -105,7 +105,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 ### 6. LSP service singleton holds one global document/server state across windows
 
 - Module: LSP service
-- Path: `LumiApp/Plugins/LSPServiceEditorPlugin/LSPService.swift`
+- Path: `Plugins/PluginLSPServiceEditor/Sources/PluginLSPServiceEditor/LSPService.swift`
 - Risk: Medium-High
 - Evidence:
   - `LSPService.shared` is global at line 18.
@@ -122,7 +122,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 ### 7. Request log stats fetch all records into memory
 
 - Module: Agent request log
-- Path: `LumiApp/Plugins/AgentRequestLogPlugin/Services/RequestLogHistoryManager.swift`
+- Path: `Plugins/PluginAgentRequestLog/Sources/PluginAgentRequestLog/Services/RequestLogHistoryManager.swift`
 - Risk: Medium
 - Evidence:
   - Persistent retention is capped by `maxRecords = 10000` at line 14.
@@ -138,7 +138,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 
 - Module: Terminal plugin
 - Paths:
-  - `LumiApp/Plugins/TerminalPlugin/ViewModels/TerminalTabsViewModelSingleton.swift`
+  - `Plugins/PluginTerminal/Sources/PluginTerminal/ViewModels/TerminalTabsViewModelSingleton.swift`
   - `Packages/TerminalCoreKit/Sources/TerminalCoreKit/ViewModels/TerminalTabsViewModel.swift`
   - `Packages/TerminalCoreKit/Sources/TerminalCoreKit/ViewModels/TerminalSession.swift`
 - Risk: Medium-High
@@ -160,7 +160,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 ### 9. CodeServer process output handlers are not cleared on stop
 
 - Module: CodeServer plugin
-- Path: `LumiApp/Plugins/CodeServerPlugin/CodeServerManager.swift`
+- Path: `Plugins/PluginCodeServer/Sources/PluginCodeServer/CodeServerManager.swift`
 - Risk: Medium
 - Evidence:
   - `start` installs `readabilityHandler` closures on stdout/stderr handles at lines 277-295.
@@ -178,7 +178,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 
 - Module: Database manager plugin
 - Paths:
-  - `LumiApp/Plugins/DatabaseManagerPlugin/ViewModels/DatabaseViewModel.swift`
+  - `Plugins/PluginDatabaseManager/Sources/PluginDatabaseManager/ViewModels/DatabaseViewModel.swift`
   - `Packages/DatabaseKit/Sources/DatabaseKit/DatabaseManager.swift`
 - Risk: Medium
 - Evidence:
@@ -201,7 +201,7 @@ This report tracks modules that may cause memory or resource usage to keep risin
 - Paths:
   - `Packages/MCPKit/Sources/MCPKit/MCPService.swift`
   - `Packages/MCPKit/Sources/MCPKit/SubprocessTransport.swift`
-  - `LumiApp/Plugins/AgentMCPToolsPlugin/AgentMCPToolsPlugin.swift`
+  - `Plugins/PluginAgentMCPTools/Sources/PluginAgentMCPTools/AgentMCPToolsPlugin.swift`
 - Risk: Medium latent
 - Evidence:
   - `MCPService` stores `connectedClients`, `tools`, and `cachedTools` at lines 9-13.

@@ -1,3 +1,0 @@
-import PluginEditorBottomReferences
-
-typealias EditorBottomReferencesPlugin = PluginEditorBottomReferences.EditorBottomReferencesPlugin

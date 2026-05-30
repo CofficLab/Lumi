@@ -298,7 +298,7 @@ case undoManagerSize = "undoManager.size"
 
 ## 3. Onboarding 插件选择界面
 
-> 涉及文件：`LumiApp/Plugins/AgentOnboardingPlugin/Views/OnboardingRootOverlay.swift`
+> 涉及文件：`Plugins/PluginAgentOnboarding/Sources/PluginAgentOnboarding/Views/OnboardingRootOverlay.swift`
 
 - [ ] 👤 需要用户参与：验证首次引导流程的视觉和交互体验（删除 onboarding state plist 重启 App 触发）。
 
@@ -429,7 +429,7 @@ case undoManagerSize = "undoManager.size"
 
 ### V1 Scope
 
-- [ ] Create `LumiApp/Plugins/MotrixDownloadPlugin/`
+- [ ] Create `Plugins/PluginMotrixDownload/Sources/PluginMotrixDownload/`
 - [ ] 插件元数据、面板入口、设置入口
 - [ ] HTTP/HTTPS 下载、任务列表、暂停/恢复/移除/重试
 - [ ] 全局下载速度显示、下载目录设置、全局限速、完成通知

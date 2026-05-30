@@ -1,6 +1,6 @@
 # Plugin Testing Conventions
 
-- Each top-level plugin under `LumiApp/Plugins` gets a matching `Tests/<PluginName>Tests/` directory.
+- Each plugin package under `Plugins/Plugin*` gets a matching `Tests/<PluginName>Tests/` directory.
 - `CoreTests/` is reserved for cross-plugin core logic and utilities, not plugin-specific behavior.
 - New plugin work should add at least:
   - one metadata/smoke test for plugin registration shape

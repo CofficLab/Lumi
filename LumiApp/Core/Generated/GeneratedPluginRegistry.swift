@@ -2,12 +2,46 @@
 // Do not edit by hand.
 
 import Foundation
+import PluginAgentAvailableTools
+import PluginAgentContextSync
 import PluginAgentCoreTools
+import PluginAgentDelayMessage
+import PluginAgentGitHubTools
+import PluginAgentLanguage
+import PluginAgentMCPTools
+import PluginAgentMessageRenderer
+import PluginAgentRAG
+import PluginAgentRules
+import PluginAgentTurnNotification
+import PluginAppIconDesigner
+import PluginAppLoadedPlugins
+import PluginAppManager
+import PluginAppStoreConnect
+import PluginAppUpdateStatusBar
+import PluginAskUser
+import PluginAutoTask
+import PluginBrewManager
+import PluginBrowser
+import PluginBrowserAgent
 import PluginCSSEditor
+import PluginCaffeinate
+import PluginChatAttachment
+import PluginChatInput
+import PluginChatMessages
+import PluginChatMode
+import PluginChatPanel
+import PluginChatPendingMessages
+import PluginChatSubmit
+import PluginClipboardManager
+import PluginCodeReview
 import PluginConversationList
+import PluginConversationNew
 import PluginConversationTimeline
 import PluginConversationTitle
 import PluginDatabaseManager
+import PluginDeviceInfo
+import PluginDiskManager
+import PluginDockerManager
 import PluginEditorBottomCallHierarchy
 import PluginEditorBottomProblems
 import PluginEditorBottomReferences
@@ -30,8 +64,10 @@ import PluginEditorStickySymbolBar
 import PluginEditorSwiftKeywordHover
 import PluginEditorTabStrip
 import PluginEditorXcode
+import PluginFileLog
 import PluginFontConfig
 import PluginGit
+import PluginGitHubCLIDetect
 import PluginGitHubInsight
 import PluginGoEditor
 import PluginHTMLEditor
@@ -41,6 +77,24 @@ import PluginIdleTime
 import PluginInput
 import PluginJSEditor
 import PluginLLMAvailability
+import PluginLLMProviderAiRouter
+import PluginLLMProviderAliyun
+import PluginLLMProviderAnthropic
+import PluginLLMProviderCodex
+import PluginLLMProviderDeepSeek
+import PluginLLMProviderFeifeimiao
+import PluginLLMProviderFlyMux
+import PluginLLMProviderFreeModel
+import PluginLLMProviderHappyCode
+import PluginLLMProviderHyperAPI
+import PluginLLMProviderLPgpt
+import PluginLLMProviderMLX
+import PluginLLMProviderMegaLLM
+import PluginLLMProviderOpenAI
+import PluginLLMProviderOpenRouter
+import PluginLLMProviderXiaomi
+import PluginLLMProviderXybbz
+import PluginLLMProviderZhipu
 import PluginLSPCallHierarchyEditor
 import PluginLSPCodeActionEditor
 import PluginLSPDocumentColorEditor
@@ -57,6 +111,7 @@ import PluginLSPToolbarEditor
 import PluginLSPWorkspaceSymbolEditor
 import PluginLayout
 import PluginMarkdownEditor
+import PluginMemory
 import PluginMenuBarManager
 import PluginModelPreference
 import PluginModelSelector
@@ -74,6 +129,7 @@ import PluginOpenInXcode
 import PluginOpenRemote
 import PluginPortManager
 import PluginProjectIssueScanner
+import PluginProjectOverview
 import PluginProjects
 import PluginQuickFileSearch
 import PluginQuickLauncher
@@ -83,63 +139,83 @@ import PluginRequestLog
 import PluginSampleDecorationEditor
 import PluginSampleInsightsEditor
 import PluginScreenshot
+import PluginShowImage
 import PluginSkill
 import PluginSwiftPrimitiveTypesEditor
 import PluginSwiftSelectionCodeActionEditor
 import PluginTerminal
 import PluginTextActions
+import PluginThemeAurora
+import PluginThemeAutumn
+import PluginThemeDracula
+import PluginThemeGithub
+import PluginThemeLumi
+import PluginThemeMidnight
+import PluginThemeMountain
+import PluginThemeNebula
+import PluginThemeOneDark
+import PluginThemeOrchard
+import PluginThemeRiver
+import PluginThemeSky
+import PluginThemeSpring
+import PluginThemeStatusBar
+import PluginThemeSummer
+import PluginThemeVoid
+import PluginThemeVscodeDark
+import PluginThemeVscodeLight
+import PluginThemeWinter
 import PluginToolCallLoopDetection
+import PluginToolPermission
+import PluginVerbosity
 import PluginVueEditor
+import PluginWebFetch
+import PluginWebSearch
+import PluginWindowPersistence
 
 enum GeneratedPluginRegistry {
     @MainActor
     static var plugins: [any SuperPlugin] {
         var plugins: [any SuperPlugin] = []
-        plugins.append(AgentAvailableToolsPlugin.shared)
-        plugins.append(AgentContextSyncPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentAvailableTools.AgentAvailableToolsPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentContextSync.AgentContextSyncPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginAgentCoreTools.AgentCoreToolsPlugin>.shared)
-        plugins.append(AgentDelayMessagePlugin.shared)
-        plugins.append(AgentGitHubToolsPlugin.shared)
-        plugins.append(AgentLanguagePlugin.shared)
-        plugins.append(AgentMCPToolsPlugin.shared)
-        plugins.append(AgentMessageRendererPlugin.shared)
-        plugins.append(AgentRAGPlugin.shared)
-        plugins.append(AgentRulesPlugin.shared)
-        plugins.append(AgentTurnNotificationPlugin.shared)
-        plugins.append(AiRouterPlugin.shared)
-        plugins.append(AliyunPlugin.shared)
-        plugins.append(AnthropicPlugin.shared)
-        plugins.append(AppIconDesignerPlugin.shared)
-        plugins.append(AppLoadedPluginsPlugin.shared)
-        plugins.append(AppManagerPlugin.shared)
-        plugins.append(AppStoreConnectPlugin.shared)
-        plugins.append(AppUpdateStatusBarPlugin.shared)
-        plugins.append(AskUserPlugin.shared)
-        plugins.append(AutoTaskPlugin.shared)
-        plugins.append(BrewManagerPlugin.shared)
-        plugins.append(BrowserAgentPlugin.shared)
-        plugins.append(BrowserPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentDelayMessage.DelayMessagePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentGitHubTools.GitHubToolsPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentLanguage.AgentLanguagePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentMCPTools.AgentMCPToolsPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentMessageRenderer.MessageRendererPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentRAG.RAGPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentRules.AgentRulesPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAgentTurnNotification.AgentTurnNotificationPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAppIconDesigner.AppIconDesignerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAppLoadedPlugins.AppLoadedPluginsPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAppManager.AppManagerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAppStoreConnect.AppStoreConnectPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAppUpdateStatusBar.AppUpdateStatusBarPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAskUser.AskUserPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginAutoTask.AutoTaskPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginBrewManager.BrewManagerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginBrowser.BrowserPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginBrowserAgent.BrowserAgentPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginCSSEditor.CSSEditorPlugin>.shared)
-        plugins.append(CaffeinatePlugin.shared)
-        plugins.append(ChatAttachmentPlugin.shared)
-        plugins.append(ChatInputPlugin.shared)
-        plugins.append(ChatMessagesPlugin.shared)
-        plugins.append(ChatModePlugin.shared)
-        plugins.append(ChatPanelPlugin.shared)
-        plugins.append(ChatPendingMessagesPlugin.shared)
-        plugins.append(ChatSubmitPlugin.shared)
-        plugins.append(ClipboardManagerPlugin.shared)
-        plugins.append(CodeReviewPlugin.shared)
-        plugins.append(CodexPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginCaffeinate.CaffeinatePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatAttachment.ChatAttachmentPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatInput.ChatInputPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatMessages.AgentChatPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatMode.ChatModePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatPanel.ChatPanelPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatPendingMessages.ChatPendingMessagesPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginChatSubmit.ChatSubmitPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginClipboardManager.ClipboardManagerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginCodeReview.CodeReviewPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginConversationList.ConversationListPlugin>.shared)
-        plugins.append(ConversationNewPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginConversationNew.ConversationNewHeaderPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginConversationTimeline.ConversationTimelinePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginConversationTitle.ConversationTitlePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginDatabaseManager.DatabaseManagerPlugin>.shared)
-        plugins.append(DeepSeekPlugin.shared)
-        plugins.append(DeviceInfoPlugin.shared)
-        plugins.append(DiskManagerPlugin.shared)
-        plugins.append(DockerManagerPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginDeviceInfo.DeviceInfoPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginDiskManager.DiskManagerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginDockerManager.DockerManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginEditorBottomCallHierarchy.EditorBottomCallHierarchyPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginEditorBottomProblems.EditorBottomProblemsPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginEditorBottomReferences.EditorBottomReferencesPlugin>.shared)
@@ -162,25 +238,37 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginEditorSwiftKeywordHover.EditorSwiftKeywordHoverPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginEditorTabStrip.EditorTabStripPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginEditorXcode.EditorXcodePlugin>.shared)
-        plugins.append(FeifeimiaoPlugin.shared)
-        plugins.append(FileLogPlugin.shared)
-        plugins.append(FlyMuxPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginFileLog.FileLogPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginFontConfig.FontConfigPlugin>.shared)
-        plugins.append(FreeModelPlugin.shared)
-        plugins.append(GitHubCLIDetectPlugin.shared)
-        plugins.append(PackagePluginAdapter<PluginGitHubInsight.GitHubInsightPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginGit.GitPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginGitHubCLIDetect.GitHubCLIDetectPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginGitHubInsight.GitHubInsightPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginGoEditor.GoEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginHTMLEditor.HTMLEditorPlugin>.shared)
-        plugins.append(HappyCodePlugin.shared)
         plugins.append(PackagePluginAdapter<PluginHistoryDBStatusBar.HistoryDBStatusBarPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginHostsManager.HostsManagerPlugin>.shared)
-        plugins.append(HyperAPIPlugin.shared)
         plugins.append(PackagePluginAdapter<PluginIdleTime.IdleTimePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginInput.InputPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginJSEditor.JSEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMAvailability.LLMAvailabilityPlugin>.shared)
-        plugins.append(LPgptPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderAiRouter.AiRouterPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderAliyun.AliyunPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderAnthropic.AnthropicPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderCodex.CodexPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderDeepSeek.DeepSeekPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderFeifeimiao.FeifeimiaoPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderFlyMux.FlyMuxPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderFreeModel.FreeModelPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderHappyCode.HappyCodePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderHyperAPI.HyperAPIPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderLPgpt.LPgptPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderMLX.MLXPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderMegaLLM.MegaLLMPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderOpenAI.OpenAIPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderOpenRouter.OpenRouterPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderXiaomi.XiaomiPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderXybbz.XybbzPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderZhipu.ZhipuPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLSPCallHierarchyEditor.LSPCallHierarchyEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLSPCodeActionEditor.LSPCodeActionEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLSPDocumentColorEditor.LSPDocumentColorEditorPlugin>.shared)
@@ -197,8 +285,7 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginLSPWorkspaceSymbolEditor.LSPWorkspaceSymbolEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLayout.LayoutPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginMarkdownEditor.MarkdownEditorPlugin>.shared)
-        plugins.append(MegaLLMPlugin.shared)
-        plugins.append(MemoryPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginMemory.MemoryPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginMenuBarManager.MenuBarManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginModelPreference.ModelPreferencePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginModelSelector.ModelSelectorPlugin>.shared)
@@ -207,7 +294,6 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginNetto.NettoPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginNetworkManager.NetworkManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginOnboarding.OnboardingPlugin>.shared)
-        plugins.append(OpenAIPlugin.shared)
         plugins.append(PackagePluginAdapter<PluginOpenInAntigravity.AgentOpenInAntigravityPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginOpenInCursor.AgentOpenInCursorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginOpenInFinder.AgentOpenInFinderPlugin>.shared)
@@ -215,10 +301,9 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginOpenInGitOK.AgentOpenInGitOKPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginOpenInXcode.AgentOpenInXcodePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginOpenRemote.AgentOpenRemotePlugin>.shared)
-        plugins.append(OpenRouterPlugin.shared)
         plugins.append(PackagePluginAdapter<PluginPortManager.PortManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginProjectIssueScanner.ProjectIssueScannerPlugin>.shared)
-        plugins.append(ProjectOverviewPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginProjectOverview.ProjectOverviewPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginProjects.ProjectsPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginQuickFileSearch.QuickFileSearchPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginQuickLauncher.QuickLauncherPlugin>.shared)
@@ -228,41 +313,38 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginSampleDecorationEditor.SampleDecorationEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginSampleInsightsEditor.SampleInsightsEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginScreenshot.ScreenshotPlugin>.shared)
-        plugins.append(ShowImagePlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginShowImage.ShowImagePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginSkill.SkillPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginSwiftPrimitiveTypesEditor.SwiftPrimitiveTypesEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginSwiftSelectionCodeActionEditor.SwiftSelectionCodeActionEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginTerminal.TerminalPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginTextActions.TextActionsPlugin>.shared)
-        plugins.append(ThemeAuroraPlugin.shared)
-        plugins.append(ThemeAutumnPlugin.shared)
-        plugins.append(ThemeDraculaPlugin.shared)
-        plugins.append(ThemeGithubPlugin.shared)
-        plugins.append(ThemeLumiPlugin.shared)
-        plugins.append(ThemeMidnightPlugin.shared)
-        plugins.append(ThemeMountainPlugin.shared)
-        plugins.append(ThemeNebulaPlugin.shared)
-        plugins.append(ThemeOneDarkPlugin.shared)
-        plugins.append(ThemeOrchardPlugin.shared)
-        plugins.append(ThemeRiverPlugin.shared)
-        plugins.append(ThemeSkyPlugin.shared)
-        plugins.append(ThemeSpringPlugin.shared)
-        plugins.append(ThemeStatusBarPlugin.shared)
-        plugins.append(ThemeSummerPlugin.shared)
-        plugins.append(ThemeVoidPlugin.shared)
-        plugins.append(ThemeVscodeDarkPlugin.shared)
-        plugins.append(ThemeVscodeLightPlugin.shared)
-        plugins.append(ThemeWinterPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeAurora.ThemeAuroraPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeAutumn.ThemeAutumnPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeDracula.ThemeDraculaPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeGithub.ThemeGithubPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeLumi.ThemeLumiPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeMidnight.ThemeMidnightPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeMountain.ThemeMountainPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeNebula.ThemeNebulaPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeOneDark.ThemeOneDarkPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeOrchard.ThemeOrchardPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeRiver.ThemeRiverPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeSky.ThemeSkyPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeSpring.ThemeSpringPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeStatusBar.ThemeStatusBarPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeSummer.ThemeSummerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeVoid.ThemeVoidPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeVscodeDark.ThemeVscodeDarkPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeVscodeLight.ThemeVscodeLightPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginThemeWinter.ThemeWinterPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginToolCallLoopDetection.ToolCallLoopDetectionPlugin>.shared)
-        plugins.append(ToolPermissionPlugin.shared)
-        plugins.append(VerbosityPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginToolPermission.AgentToolPermissionPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginVerbosity.VerbosityPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginVueEditor.VueEditorPlugin>.shared)
-        plugins.append(WebFetchPlugin.shared)
-        plugins.append(WebSearchPlugin.shared)
-        plugins.append(WindowPersistencePlugin.shared)
-        plugins.append(XiaomiPlugin.shared)
-        plugins.append(XybbzPlugin.shared)
-        plugins.append(ZhipuPlugin.shared)
+        plugins.append(PackagePluginAdapter<PluginWebFetch.WebFetchPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginWebSearch.WebSearchPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginWindowPersistence.WindowPersistencePlugin>.shared)
         return plugins
     }
 }

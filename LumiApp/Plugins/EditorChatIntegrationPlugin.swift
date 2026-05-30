@@ -1,3 +1,0 @@
-import PluginEditorChatIntegration
-
-typealias EditorChatIntegrationPlugin = PluginEditorChatIntegration.EditorChatIntegrationPlugin

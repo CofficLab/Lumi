@@ -1,3 +1,0 @@
-import PluginLSPCallHierarchyEditor
-
-typealias LSPCallHierarchyEditorPlugin = PluginLSPCallHierarchyEditor.LSPCallHierarchyEditorPlugin

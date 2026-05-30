@@ -48,6 +48,12 @@ public struct PluginContext {
     /// 当前窗口的语言偏好。
     public let languagePreference: LanguagePreference
 
+    /// 当前运行时可用的 Agent 工具。
+    public let availableTools: [SuperAgentTool]
+
+    /// 工具描述展示使用的语言偏好。
+    public let toolLanguagePreference: LanguagePreference
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
@@ -55,7 +61,9 @@ public struct PluginContext {
         supportsAIChat: Bool = false,
         showsProjectToolbar: Bool = false,
         currentProjectPath: String = "",
-        languagePreference: LanguagePreference = .current
+        languagePreference: LanguagePreference = .current,
+        availableTools: [SuperAgentTool] = [],
+        toolLanguagePreference: LanguagePreference = .current
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
@@ -64,5 +72,7 @@ public struct PluginContext {
         self.showsProjectToolbar = showsProjectToolbar
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference
+        self.availableTools = availableTools
+        self.toolLanguagePreference = toolLanguagePreference
     }
 }

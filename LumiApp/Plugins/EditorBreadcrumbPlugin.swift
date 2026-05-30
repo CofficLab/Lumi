@@ -1,3 +1,0 @@
-import PluginEditorBreadcrumb
-
-typealias EditorBreadcrumbPlugin = PluginEditorBreadcrumb.BreadcrumbNavPlugin

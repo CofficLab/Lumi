@@ -1,3 +1,0 @@
-import PluginLSPDocumentLinkEditor
-
-typealias LSPDocumentLinkEditorPlugin = PluginLSPDocumentLinkEditor.LSPDocumentLinkEditorPlugin

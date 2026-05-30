@@ -1,3 +1,0 @@
-import PluginLSPSheetsEditor
-
-typealias LSPSheetsEditorPlugin = PluginLSPSheetsEditor.LSPSheetsEditorPlugin

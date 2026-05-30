@@ -1,3 +1,0 @@
-import PluginOpenInFinder
-
-typealias OpenInFinderPlugin = PluginOpenInFinder.AgentOpenInFinderPlugin

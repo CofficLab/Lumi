@@ -1,3 +1,0 @@
-import PluginEditorSwiftKeywordHover
-
-typealias EditorSwiftKeywordHoverPlugin = PluginEditorSwiftKeywordHover.EditorSwiftKeywordHoverPlugin
