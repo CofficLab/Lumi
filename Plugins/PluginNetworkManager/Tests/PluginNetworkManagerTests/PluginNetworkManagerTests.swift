@@ -1,4 +1,5 @@
 import Testing
+import Combine
 @testable import PluginNetworkManager
 
 @MainActor
@@ -45,6 +46,30 @@ import Testing
 
     #expect(counter.starts == 1)
     #expect(counter.stops == 1)
+}
+
+@MainActor
+@Test func networkUsageUpdatePublishesOnce() {
+    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false)
+    var publishCount = 0
+    var cancellables = Set<AnyCancellable>()
+
+    viewModel.objectWillChange
+        .sink { publishCount += 1 }
+        .store(in: &cancellables)
+
+    viewModel.applyNetworkUsage(
+        downloadSpeed: 120,
+        uploadSpeed: 34,
+        totalDownload: 1_000,
+        totalUpload: 500
+    )
+
+    #expect(publishCount == 1)
+    #expect(viewModel.networkState.downloadSpeed == 120)
+    #expect(viewModel.networkState.uploadSpeed == 34)
+    #expect(viewModel.networkState.totalDownload == 1_000)
+    #expect(viewModel.networkState.totalUpload == 500)
 }
 
 private actor PublicIPFetcherStub {

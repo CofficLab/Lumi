@@ -153,10 +153,12 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
             .combineLatest(NetworkService.shared.$uploadSpeed, NetworkService.shared.$totalDownload, NetworkService.shared.$totalUpload)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (down, up, totalDown, totalUp) in
-                self?.networkState.downloadSpeed = down
-                self?.networkState.uploadSpeed = up
-                self?.networkState.totalDownload = totalDown
-                self?.networkState.totalUpload = totalUp
+                self?.applyNetworkUsage(
+                    downloadSpeed: down,
+                    uploadSpeed: up,
+                    totalDownload: totalDown,
+                    totalUpload: totalUp
+                )
             }
             .store(in: &networkCancellables)
 
@@ -184,23 +186,40 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
     
     // Removed updateStats() as it is replaced by Combine subscription
+
+    func applyNetworkUsage(
+        downloadSpeed: Double,
+        uploadSpeed: Double,
+        totalDownload: UInt64,
+        totalUpload: UInt64
+    ) {
+        var updatedState = networkState
+        updatedState.downloadSpeed = downloadSpeed
+        updatedState.uploadSpeed = uploadSpeed
+        updatedState.totalDownload = totalDownload
+        updatedState.totalUpload = totalUpload
+        networkState = updatedState
+    }
     
     private func updateSlowStats() async {
         // WiFi
         let (ssid, rssi) = await NetworkService.shared.getWifiInfo()
-        networkState.wifiSSID = ssid
-        networkState.wifiSignalStrength = rssi
+        var updatedState = networkState
+        updatedState.wifiSSID = ssid
+        updatedState.wifiSignalStrength = rssi
 
         // Ping
         let latency = await NetworkService.shared.ping()
-        networkState.ping = latency
+        updatedState.ping = latency
 
         // Local IP
-        networkState.localIP = NetworkService.shared.getLocalIP()
+        updatedState.localIP = NetworkService.shared.getLocalIP()
 
         if let cachedIP = cachedPublicIP {
-            networkState.publicIP = cachedIP
+            updatedState.publicIP = cachedIP
         }
+
+        networkState = updatedState
     }
 
     public func refreshPublicIPIfNeeded(force: Bool = false) async {
