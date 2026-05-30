@@ -358,9 +358,9 @@ final class AppPluginVM: ObservableObject, SuperLog {
         eligibility(for: plugin).isEligible
     }
 
-    /// 获取所有插件的根视图包裹
+    /// 获取所有启用插件的根视图包裹
     ///
-    /// 将所有插件提供的根视图包装器依次应用于内容视图。
+    /// 将所有启用插件提供的根视图包装器依次应用于内容视图。
     /// 包装顺序与插件的 `order` 顺序一致。
     ///
     /// - Parameter content: 原始内容视图
@@ -368,7 +368,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     func getRootViewWrapper<Content: View>(@ViewBuilder content: () -> Content) -> AnyView {
         var wrapped: AnyView = AnyView(content())
 
-        for plugin in plugins {
+        for plugin in plugins where isPluginEnabled(plugin) {
             wrapped = plugin.wrapRoot(wrapped)
         }
 
