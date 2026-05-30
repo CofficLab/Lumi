@@ -8,6 +8,7 @@ import SwiftUI
 final class AppThemeVM: ObservableObject {
 
     private let registry: LumiUIThemeRegistry
+    private let syncThemes: (LumiUIThemeRegistry) -> Void
     private let saveSelectedThemeID: (String) -> Void
     private let postThemeDidChangeNotification: (String, String) -> Void
     private var cancellables = Set<AnyCancellable>()
@@ -39,7 +40,7 @@ final class AppThemeVM: ObservableObject {
 
     init(
         registry: LumiUIThemeRegistry = .shared,
-        syncThemes: (LumiUIThemeRegistry) -> Void = { ThemeService.shared.syncFromPlugins(registry: $0) },
+        syncThemes: @escaping (LumiUIThemeRegistry) -> Void = { ThemeService.shared.syncFromPlugins(registry: $0) },
         loadSelectedThemeID: () -> String? = { ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() },
         saveSelectedThemeID: @escaping (String) -> Void = { ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID($0) },
         postThemeDidChangeNotification: @escaping (String, String) -> Void = { themeId, editorThemeId in
@@ -54,6 +55,7 @@ final class AppThemeVM: ObservableObject {
         }
     ) {
         self.registry = registry
+        self.syncThemes = syncThemes
         self.saveSelectedThemeID = saveSelectedThemeID
         self.postThemeDidChangeNotification = postThemeDidChangeNotification
         syncThemes(registry)
@@ -64,20 +66,11 @@ final class AppThemeVM: ObservableObject {
         self.themes = registry.themes
         self.currentThemeId = initialId
         bindRegistry()
-
-        NotificationCenter.default.addObserver(
-            forName: .pluginsDidLoad,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.reloadThemes()
-            }
-        }
+        bindPluginLoadNotifications()
     }
 
     func reloadThemes() {
-        ThemeService.shared.syncFromPlugins(registry: registry)
+        syncThemes(registry)
         syncPublishedStateFromRegistry(preserveSelection: true)
     }
 
@@ -132,6 +125,15 @@ final class AppThemeVM: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.syncPublishedStateFromRegistry(preserveSelection: true)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func bindPluginLoadNotifications() {
+        NotificationCenter.default.publisher(for: .pluginsDidLoad)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reloadThemes()
             }
             .store(in: &cancellables)
     }

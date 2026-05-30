@@ -67,6 +67,28 @@ final class AppThemeVMTests: XCTestCase {
     }
 
     @MainActor
+    func testPluginsDidLoadReloadsThemesWithInjectedSync() async throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor")
+        ])
+        var syncCount = 0
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in syncCount += 1 },
+            loadSelectedThemeID: { nil },
+            saveSelectedThemeID: { _ in },
+            postThemeDidChangeNotification: { _, _ in }
+        )
+
+        NotificationCenter.default.post(name: .pluginsDidLoad, object: nil)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(vm.currentThemeId, "default-app")
+        XCTAssertEqual(syncCount, 2)
+    }
+
+    @MainActor
     func testEditorThemeIDReturnsContributionEditorTheme() throws {
         let registry = LumiUIThemeRegistry()
         try registry.replaceAll([
