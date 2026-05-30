@@ -1,4 +1,5 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
 import Testing
 @testable import PluginWebSearch
@@ -40,6 +41,33 @@ struct PluginWebSearchTests {
         let tool = WebSearchTool()
 
         #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
+    }
+
+    @Test("tool trims copied query whitespace")
+    func toolTrimsCopiedQueryWhitespace() async throws {
+        let tool = WebSearchTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["query": ToolArgument(" \nLumi release notes\t")],
+            context: context
+        )
+
+        #expect(result.contains("**Query**: Lumi release notes"))
+        #expect(result.contains("https://www.google.com/search?q=Lumi%20release%20notes"))
+    }
+
+    @Test("tool rejects blank copied query")
+    func toolRejectsBlankCopiedQuery() async throws {
+        let tool = WebSearchTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["query": ToolArgument(" \n\t ")],
+            context: context
+        )
+
+        #expect(result == "Error: Missing required 'query' parameter")
     }
 
     @Test("localization catalog is packaged")

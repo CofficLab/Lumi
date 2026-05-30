@@ -60,7 +60,11 @@ Note: This tool is often required to be used alongside web_fetch or web_extracto
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let query = arguments["query"]?.value as? String else {
+        guard let rawQuery = arguments["query"]?.value as? String else {
+            return "Error: Missing required 'query' parameter"
+        }
+        let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
             return "Error: Missing required 'query' parameter"
         }
 
