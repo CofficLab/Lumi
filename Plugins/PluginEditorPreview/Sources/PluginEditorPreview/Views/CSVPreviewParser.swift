@@ -84,13 +84,11 @@ enum CSVPreviewParser {
                 inQuotes.toggle()
             }
 
-            if char == "\n", !inQuotes {
+            if (char == "\n" || char == "\r"), !inQuotes {
                 break
             }
 
-            if char != "\r" || inQuotes {
-                record.append(char)
-            }
+            record.append(char)
             index += 1
         }
 
@@ -126,11 +124,14 @@ enum CSVPreviewParser {
                 } else if char == separator {
                     currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
                     currentField = ""
-                } else if char == "\n" {
+                } else if char == "\n" || char == "\r" {
                     currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
                     appendNonEmptyLine(currentLine, to: &result)
                     currentLine = []
                     currentField = ""
+                    if char == "\r", index + 1 < chars.count, chars[index + 1] == "\n" {
+                        index += 1
+                    }
                 } else if char != "\r" {
                     currentField.append(char)
                 }

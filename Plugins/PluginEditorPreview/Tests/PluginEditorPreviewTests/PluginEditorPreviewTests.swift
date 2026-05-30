@@ -42,3 +42,10 @@ import Testing
     #expect(table.headers == ["Company\nlegal name", "Amount"])
     #expect(table.rows == [["ACME\nInc", "42"]])
 }
+
+@Test func csvParserSupportsCarriageReturnLineEndings() throws {
+    let table = try CSVPreviewParser.parse("Name,Score\rAda,42\rGrace,39")
+
+    #expect(table.headers == ["Name", "Score"])
+    #expect(table.rows == [["Ada", "42"], ["Grace", "39"]])
+}
