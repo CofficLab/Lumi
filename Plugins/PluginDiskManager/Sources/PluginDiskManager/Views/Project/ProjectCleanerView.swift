@@ -56,5 +56,22 @@ struct ProjectCleanerView: View {
         } message: {
             Text(PluginDiskManagerLocalization.string("Are you sure you want to delete the selected build artifacts (node_modules, target, etc)? This will free up space but require rebuilding projects."))
         }
+        .alert(
+            Text(PluginDiskManagerLocalization.string("Cleanup Failed")),
+            isPresented: Binding(
+                get: { viewModel.alertMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.alertMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(role: .cancel) {} label: {
+                Text(PluginDiskManagerLocalization.string("OK"))
+            }
+        } message: {
+            Text(viewModel.alertMessage ?? "")
+        }
     }
 }

@@ -21,107 +21,120 @@ struct DockerImagesView: View {
     @State private var imageToExport: DockerImage?
 
     var body: some View {
-        HSplitView {
-            // Sidebar List
-            VStack(spacing: 0) {
-                // Toolbar
-                HStack {
-                    AppSearchBar(
-                        text: $viewModel.searchText,
-                        placeholder: LocalizedStringKey(String(localized: "Search images...", table: "DockerManager"))
-                    )
-
-                    Menu {
-                        Picker("Sort", selection: $viewModel.sortOption) {
-                            Text(String(localized: "Created", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.created)
-                            Text(String(localized: "Name", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.name)
-                            Text(String(localized: "Size", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.size)
-                        }
-                        Toggle("Descending", isOn: $viewModel.sortDescending)
-                    } label: {
-                        GlassRow {
-                            Label(String(localized: "Sort", table: "DockerManager"), systemImage: "arrow.up.arrow.down")
-                                .foregroundColor(theme.textPrimary)
-                        }
-                        .frame(width: 90)
-                    }
-
-                    AppIconButton(
-                        systemImage: "arrow.clockwise",
-                        label: String(localized: "Refresh", table: "DockerManager"),
-                        size: .regular
-                    ) {
-                        Task { await viewModel.refreshImages() }
-                    }
+        VStack(spacing: 0) {
+            if let errorMessage = viewModel.errorMessage {
+                AppErrorBanner(
+                    message: LocalizedStringKey(errorMessage),
+                    retryTitle: LocalizedStringKey(String(localized: "Dismiss", table: "DockerManager"))
+                ) {
+                    viewModel.errorMessage = nil
                 }
                 .padding(8)
-                .background(Material.regularMaterial)
-
                 GlassDivider()
-
-                List(viewModel.filteredImages, selection: Binding(
-                    get: { viewModel.selectedImage },
-                    set: { newSelection in
-                        if let img = newSelection {
-                            Task { await viewModel.selectImage(img) }
-                        } else {
-                            viewModel.selectedImage = nil
-                        }
-                    }
-                )) { image in
-                    DockerImageRow(image: image)
-                        .tag(image)
-                        .contextMenu {
-                            Button(String(localized: "Tag...", table: "DockerManager")) {
-                                imageToTag = image
-                                newTag = image.repository + ":"
-                                showTagSheet = true
-                            }
-                            Button(String(localized: "Export...", table: "DockerManager")) {
-                                imageToExport = image
-                                showFileExporter = true
-                            }
-                            Button(String(localized: "Scan", table: "DockerManager")) {
-                                Task { await viewModel.scanImage(image) }
-                            }
-                            Divider()
-                            Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
-                                Task { await viewModel.deleteImage(image) }
-                            }
-                        }
-                }
-                .listStyle(.inset)
-
-                GlassDivider()
-
-                // Footer
-                HStack {
-                    Text("\(viewModel.filteredImages.count) images")
-                        .font(.appMicro)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    AppButton(String(localized: "Import", table: "DockerManager"), style: .secondary, size: .small) {
-                        showFileImporter = true
-                    }
-                    AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary, size: .small) {
-                        showPullSheet = true
-                    }
-                }
-                .padding(8)
-                .background(Material.regularMaterial)
             }
-            .frame(minWidth: 250, maxWidth: 400)
 
-            // Detail View
-            if let selected = viewModel.selectedImage {
-                DockerImageDetailView(image: selected, detail: viewModel.selectedImageDetail, history: viewModel.selectedImageHistory, viewModel: viewModel)
-            } else {
-                AppEmptyState(
-                    icon: "cube.box",
-                    title: LocalizedStringKey(String(localized: "Select an image to view details", table: "DockerManager"))
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Material.regularMaterial)
+            HSplitView {
+                // Sidebar List
+                VStack(spacing: 0) {
+                    // Toolbar
+                    HStack {
+                        AppSearchBar(
+                            text: $viewModel.searchText,
+                            placeholder: LocalizedStringKey(String(localized: "Search images...", table: "DockerManager"))
+                        )
+
+                        Menu {
+                            Picker("Sort", selection: $viewModel.sortOption) {
+                                Text(String(localized: "Created", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.created)
+                                Text(String(localized: "Name", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.name)
+                                Text(String(localized: "Size", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.size)
+                            }
+                            Toggle("Descending", isOn: $viewModel.sortDescending)
+                        } label: {
+                            GlassRow {
+                                Label(String(localized: "Sort", table: "DockerManager"), systemImage: "arrow.up.arrow.down")
+                                    .foregroundColor(theme.textPrimary)
+                            }
+                            .frame(width: 90)
+                        }
+
+                        AppIconButton(
+                            systemImage: "arrow.clockwise",
+                            label: String(localized: "Refresh", table: "DockerManager"),
+                            size: .regular
+                        ) {
+                            Task { await viewModel.refreshImages() }
+                        }
+                    }
+                    .padding(8)
+                    .background(Material.regularMaterial)
+
+                    GlassDivider()
+
+                    List(viewModel.filteredImages, selection: Binding(
+                        get: { viewModel.selectedImage },
+                        set: { newSelection in
+                            if let img = newSelection {
+                                Task { await viewModel.selectImage(img) }
+                            } else {
+                                viewModel.selectedImage = nil
+                            }
+                        }
+                    )) { image in
+                        DockerImageRow(image: image)
+                            .tag(image)
+                            .contextMenu {
+                                Button(String(localized: "Tag...", table: "DockerManager")) {
+                                    imageToTag = image
+                                    newTag = image.repository + ":"
+                                    showTagSheet = true
+                                }
+                                Button(String(localized: "Export...", table: "DockerManager")) {
+                                    imageToExport = image
+                                    showFileExporter = true
+                                }
+                                Button(String(localized: "Scan", table: "DockerManager")) {
+                                    Task { await viewModel.scanImage(image) }
+                                }
+                                Divider()
+                                Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
+                                    Task { await viewModel.deleteImage(image) }
+                                }
+                            }
+                    }
+                    .listStyle(.inset)
+
+                    GlassDivider()
+
+                    // Footer
+                    HStack {
+                        Text("\(viewModel.filteredImages.count) images")
+                            .font(.appMicro)
+                            .foregroundColor(theme.textSecondary)
+                        Spacer()
+                        AppButton(String(localized: "Import", table: "DockerManager"), style: .secondary, size: .small) {
+                            showFileImporter = true
+                        }
+                        AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary, size: .small) {
+                            showPullSheet = true
+                        }
+                    }
+                    .padding(8)
+                    .background(Material.regularMaterial)
+                }
+                .frame(minWidth: 250, maxWidth: 400)
+
+                // Detail View
+                if let selected = viewModel.selectedImage {
+                    DockerImageDetailView(image: selected, detail: viewModel.selectedImageDetail, history: viewModel.selectedImageHistory, viewModel: viewModel)
+                } else {
+                    AppEmptyState(
+                        icon: "cube.box",
+                        title: LocalizedStringKey(String(localized: "Select an image to view details", table: "DockerManager"))
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Material.regularMaterial)
+                }
             }
         }
         .sheet(isPresented: $showPullSheet) {
@@ -191,8 +204,9 @@ struct DockerImagesView: View {
                 Task { await viewModel.loadImage(from: url) }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Import failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Import failed: \(error.localizedDescription)")
                 }
+                viewModel.reportFilePanelError(String(localized: "Import failed", table: "DockerManager"), error: error)
             }
         }
         .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
@@ -203,8 +217,9 @@ struct DockerImagesView: View {
                 }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Export failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Export failed: \(error.localizedDescription)")
                 }
+                viewModel.reportFilePanelError(String(localized: "Export failed", table: "DockerManager"), error: error)
             }
         }
         .onAppear {

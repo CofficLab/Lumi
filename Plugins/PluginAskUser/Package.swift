@@ -26,5 +26,10 @@ let package = Package(
             resources: [.process("Resources")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
+        .testTarget(
+            name: "PluginAskUserTests",
+            dependencies: ["PluginAskUser"],
+            path: "Tests/PluginAskUserTests"
+        ),
     ]
 )

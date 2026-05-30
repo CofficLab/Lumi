@@ -106,7 +106,59 @@ public struct DockerImage: Identifiable, Codable, Hashable, Sendable {
 
     /// Size in bytes (requires parsing size string, placeholder for now)
     public var sizeBytes: Int64 {
-        return 0 // TODO: Implement size string parsing
+        Self.parseSizeBytes(size)
+    }
+
+    public static func parseSizeBytes(_ value: String) -> Int64 {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return 0 }
+
+        let pattern = #"^([0-9]+(?:\.[0-9]+)?)\s*([A-Za-z]+)$"#
+        guard
+            let match = trimmed.range(of: pattern, options: .regularExpression),
+            match == trimmed.startIndex..<trimmed.endIndex
+        else {
+            return 0
+        }
+
+        let numberPart = trimmed.replacingOccurrences(
+            of: pattern,
+            with: "$1",
+            options: .regularExpression
+        )
+        let unit = trimmed.replacingOccurrences(
+            of: pattern,
+            with: "$2",
+            options: .regularExpression
+        ).lowercased()
+
+        guard let number = Double(numberPart) else { return 0 }
+
+        let multiplier: Double
+        switch unit {
+        case "b":
+            multiplier = 1
+        case "kb":
+            multiplier = 1_000
+        case "mb":
+            multiplier = 1_000_000
+        case "gb":
+            multiplier = 1_000_000_000
+        case "tb":
+            multiplier = 1_000_000_000_000
+        case "kib":
+            multiplier = 1_024
+        case "mib":
+            multiplier = 1_048_576
+        case "gib":
+            multiplier = 1_073_741_824
+        case "tib":
+            multiplier = 1_099_511_627_776
+        default:
+            return 0
+        }
+
+        return Int64((number * multiplier).rounded())
     }
 }
 

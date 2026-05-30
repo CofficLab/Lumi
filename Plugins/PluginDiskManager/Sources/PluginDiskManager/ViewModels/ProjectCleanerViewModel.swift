@@ -13,6 +13,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     @Published var isCleaning = false
     @Published var showCleanConfirmation = false
     @Published var scanProgress: String = ""
+    @Published var alertMessage: String?
 
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
@@ -147,16 +148,21 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
 
                 if Self.verbose {
                     if DiskManagerPlugin.verbose {
-                                            DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
+                        DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
                     }
                 }
 
                 await scanProjects() // Rescan to update status
             } catch {
-                if DiskManagerPlugin.verbose {
-                                    DiskManagerPlugin.logger.error("\(self.t)项目清理失败：\(error.localizedDescription)")
+                await MainActor.run {
+                    if DiskManagerPlugin.verbose {
+                        DiskManagerPlugin.logger.error("\(self.t)项目清理失败：\(error.localizedDescription)")
+                    }
+                    self.alertMessage = String(
+                        format: PluginDiskManagerLocalization.string("Cleanup error: %@"),
+                        error.localizedDescription
+                    )
                 }
-                // TODO: Show error
             }
 
             await MainActor.run { self.isCleaning = false }
