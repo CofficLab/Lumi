@@ -15,6 +15,7 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     private var cachedPublicIP: String?
     private var lastPublicIPFetch: Date?
     private let publicIPCacheDuration: TimeInterval = 300 // 5 分钟缓存
+    private let publicIPProvider: @Sendable () async -> String?
     
     // Process monitoring related
     @Published var processes: [NetworkProcess] = []
@@ -63,13 +64,22 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     private var networkCancellables = Set<AnyCancellable>()
     private var processCancellables = Set<AnyCancellable>()
 
-    public init() {
+    public init(
+        autoStartMonitoring: Bool = true,
+        publicIPProvider: @escaping @Sendable () async -> String? = {
+            await NetworkService.shared.getPublicIP()
+        }
+    ) {
+        self.publicIPProvider = publicIPProvider
+
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
                             NetworkManagerPlugin.logger.info("\(self.t)NetworkManagerViewModel initialized")
             }
         }
-        startMonitoring()
+        if autoStartMonitoring {
+            startMonitoring()
+        }
         
         // Bind service data
         ProcessMonitorService.shared.$processes
@@ -165,19 +175,23 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         // Local IP
         networkState.localIP = NetworkService.shared.getLocalIP()
 
-        // Public IP - 使用缓存机制，避免频繁请求
-        // 只在以下情况获取：
-        // 1. 从未获取过
-        // 2. 缓存已过期（> 5 分钟）
+        if let cachedIP = cachedPublicIP {
+            networkState.publicIP = cachedIP
+        }
+    }
+
+    public func refreshPublicIPIfNeeded(force: Bool = false) async {
         let shouldFetchPublicIP: Bool
-        if let lastFetch = lastPublicIPFetch {
+        if force {
+            shouldFetchPublicIP = true
+        } else if let lastFetch = lastPublicIPFetch {
             shouldFetchPublicIP = Date().timeIntervalSince(lastFetch) > publicIPCacheDuration
         } else {
             shouldFetchPublicIP = true
         }
 
         if shouldFetchPublicIP {
-            if let ip = await NetworkService.shared.getPublicIP() {
+            if let ip = await publicIPProvider() {
                 networkState.publicIP = ip
                 cachedPublicIP = ip
                 lastPublicIPFetch = Date()

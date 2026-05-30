@@ -53,6 +53,9 @@ public struct NetworkDashboardView: View {
             ProcessNetworkListView(viewModel: viewModel)
         }
         .navigationTitle(NetworkManagerPlugin.displayName)
+        .task {
+            await viewModel.refreshPublicIPIfNeeded()
+        }
     }
 }
 
