@@ -438,7 +438,12 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
 
         let contentLength = contentLength(from: header) ?? 0
-        let expectedLength = headerEnd + contentLength
+        let expectedLengthResult = headerEnd.addingReportingOverflow(contentLength)
+        guard !expectedLengthResult.overflow else {
+            return nil
+        }
+
+        let expectedLength = expectedLengthResult.partialValue
         guard data.count >= expectedLength else {
             return nil
         }
@@ -457,7 +462,12 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
                 else {
                     return nil
                 }
-                return Int(parts[1].trimmingCharacters(in: .whitespacesAndNewlines))
+                guard let value = Int(parts[1].trimmingCharacters(in: .whitespacesAndNewlines)),
+                      value >= 0
+                else {
+                    return nil
+                }
+                return value
             }
             .first
     }

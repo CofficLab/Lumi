@@ -48,4 +48,32 @@ final class AutomationServerTests: XCTestCase {
 
         XCTAssertEqual(AutomationServer.completeHTTPRequestData(from: data), data)
     }
+
+    func testCompleteHTTPRequestDoesNotTruncateForNegativeContentLength() {
+        let request = [
+            "POST /api/action HTTP/1.1",
+            "Host: localhost",
+            "Content-Length: -1",
+            "",
+            #"{"action":"automation.debug_state"}"#,
+        ].joined(separator: "\r\n")
+        let headerOnly = request.components(separatedBy: "\r\n\r\n")[0] + "\r\n\r\n"
+
+        XCTAssertEqual(
+            AutomationServer.completeHTTPRequestData(from: Data(request.utf8)),
+            Data(headerOnly.utf8)
+        )
+    }
+
+    func testCompleteHTTPRequestWaitsWhenContentLengthWouldOverflow() {
+        let request = [
+            "POST /api/action HTTP/1.1",
+            "Host: localhost",
+            "Content-Length: \(Int.max)",
+            "",
+            "{}",
+        ].joined(separator: "\r\n")
+
+        XCTAssertNil(AutomationServer.completeHTTPRequestData(from: Data(request.utf8)))
+    }
 }
