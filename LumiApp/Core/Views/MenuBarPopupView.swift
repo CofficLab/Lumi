@@ -75,7 +75,7 @@ struct MenuBarPopupView: View {
             // 退出应用
             MenuItemRow(
                 title: "退出 Lumi",
-                color: Color(hex: "FF453A"),
+                role: .destructive,
                 action: onQuit
             )
         }
@@ -86,28 +86,43 @@ struct MenuBarPopupView: View {
 // MARK: - Menu Item Row
 
 struct MenuItemRow: View {
+    enum Role {
+        case normal
+        case destructive
+    }
+
     let title: String
-    var color: Color = .primary
+    var role: Role = .normal
     let action: () -> Void
 
+    @LumiTheme private var theme: any LumiUITheme
     @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Text(title)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(isHovering ? color.opacity(0.8) : color)
+                    .font(.appCaption)
+                    .foregroundColor(isHovering ? foregroundColor.opacity(0.8) : foregroundColor)
                     .padding(.horizontal, 12)
 
                 Spacer()
             }
             .padding(.vertical, 8)
-            .background(isHovering ? Color.adaptive(light: "F2F2F7", dark: "2C2C2E").opacity(0.5) : Color.clear)
+            .background(isHovering ? theme.appListRowHoverBackground : Color.clear)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
             isHovering = hovering
+        }
+    }
+
+    private var foregroundColor: Color {
+        switch role {
+        case .normal:
+            theme.textPrimary
+        case .destructive:
+            theme.error
         }
     }
 }
