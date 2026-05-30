@@ -103,6 +103,21 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("- **Bold**"))
     }
 
+    func testPreservesOrderedListStartAttribute() {
+        let html = """
+        <ol start="5">
+        <li>Open Settings</li>
+        <li>Enable the plugin</li>
+        </ol>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("5. Open Settings"))
+        XCTAssertTrue(markdown.contains("6. Enable the plugin"))
+        XCTAssertFalse(markdown.contains("1. Open Settings"))
+    }
+
     func testConvertsTablesAndCodeBlocks() {
         let html = """
         <table>

@@ -390,9 +390,12 @@ public struct HTMLToMarkdownConverter {
                 range: match.upperBound..<result.endIndex
             ) {
                 // 获取列表项并添加编号
+                let openingTag = String(result[match])
+                let startNumber = attributeValue(named: "start", in: openingTag)
+                    .flatMap { Int($0.trimmed) } ?? 1
                 let listContent = String(result[match.upperBound..<closeMatch.lowerBound])
                 let items = convertListItems(in: listContent) { index, content in
-                    "\(index + 1). " + stripHTMLTags(content).trimmed
+                    "\(startNumber + index). " + stripHTMLTags(content).trimmed
                 }
 
                 result.replaceSubrange(match.lowerBound..<closeMatch.upperBound, with: "\n" + items + "\n\n")
