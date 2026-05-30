@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import AgentToolKit
 import Foundation
@@ -112,6 +113,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     @Published var isActive: Bool = false
 
     private var hasCleanedUp = false
+    private var hasConfiguredPersistence = false
 
     // MARK: - Convenience Computed Properties
 
@@ -289,6 +291,110 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         }
 
         updateTitle()
+    }
+
+    /// 根据稳定窗口 ID 恢复上次保存的窗口状态。
+    func restorePersistedStateIfAvailable(allowProjectRestore: Bool) {
+        guard let record = WindowStateStore.shared.record(for: id) else { return }
+        let recordToApply: WindowPersistenceRecord
+        if allowProjectRestore {
+            recordToApply = record
+        } else {
+            recordToApply = WindowPersistenceRecord(
+                windowId: record.windowId,
+                conversationId: record.conversationId,
+                projectPath: nil,
+                editorOpenFilePaths: record.editorOpenFilePaths,
+                editorActiveFilePath: record.editorActiveFilePath,
+                sidebarVisibility: record.sidebarVisibility,
+                createdAt: record.createdAt
+            )
+        }
+        applyPersistenceRecord(recordToApply)
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)恢复窗口状态: \(self.id.uuidString.prefix(8)), project=\(record.projectPath ?? "nil")")
+        }
+    }
+
+    /// 安装窗口状态持久化订阅。
+    func configurePersistenceObserversIfNeeded() {
+        guard !hasConfiguredPersistence else { return }
+        hasConfiguredPersistence = true
+
+        projectVM.$currentProject
+            .dropFirst()
+            .sink { [weak self] project in
+                guard let self else { return }
+                WindowStateStore.shared.saveProject(
+                    windowId: self.id,
+                    projectPath: project?.path,
+                    createdAt: self.createdAt
+                )
+            }
+            .store(in: &cancellables)
+
+        conversationVM.$selectedConversationId
+            .dropFirst()
+            .sink { [weak self] conversationId in
+                guard let self else { return }
+                WindowStateStore.shared.saveConversation(windowId: self.id, conversationId: conversationId)
+            }
+            .store(in: &cancellables)
+
+        $sidebarVisibility
+            .dropFirst()
+            .sink { [weak self] isVisible in
+                guard let self else { return }
+                WindowStateStore.shared.saveSidebar(windowId: self.id, sidebarVisibility: isVisible)
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest($editorOpenFileURLs, $editorActiveFileURL)
+            .dropFirst()
+            .sink { [weak self] openFiles, activeFile in
+                guard let self else { return }
+                WindowStateStore.shared.saveEditor(
+                    windowId: self.id,
+                    editorOpenFilePaths: openFiles.map(\.path),
+                    editorActiveFilePath: activeFile?.path
+                )
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .windowStateShouldPersist)
+            .sink { [weak self] _ in
+                self?.persistCurrentStateSynchronously()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
+            .sink { [weak self] _ in
+                self?.persistCurrentStateSynchronously()
+            }
+            .store(in: &cancellables)
+    }
+
+    func persistCurrentStateSynchronously() {
+        let currentRecord = makePersistenceRecord()
+        var records = WindowStateStore.shared.loadAll()
+        if let index = records.firstIndex(where: { $0.windowId == id }) {
+            records[index] = currentRecord
+        } else {
+            records.insert(currentRecord, at: 0)
+        }
+        WindowStateStore.shared.saveAllSynchronously(records)
+    }
+
+    private func makePersistenceRecord() -> WindowPersistenceRecord {
+        WindowPersistenceRecord(
+            windowId: id,
+            conversationId: conversationVM.selectedConversationId,
+            projectPath: projectVM.currentProject?.path,
+            editorOpenFilePaths: editorOpenFileURLs.map(\.path),
+            editorActiveFilePath: editorActiveFileURL?.path,
+            sidebarVisibility: sidebarVisibility,
+            createdAt: createdAt
+        )
     }
 
     // MARK: - Project Management
