@@ -54,7 +54,9 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         let generation = requestGeneration.next()
         
         let content = textStorage.string
-        let word = (content as NSString).substring(with: range)
+        guard let word = Self.substringIfValid(in: content, range: range) else {
+            return nil
+        }
         
         // 过滤无效输入
         guard !word.isEmpty, word.rangeOfCharacter(from: .alphanumerics) != nil else {
@@ -166,7 +168,9 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         guard let ts = textStorage, let controller = textViewController else { return }
         let generation = requestGeneration.next()
         let content = ts.string
-        let word = (content as NSString).substring(with: range)
+        guard let word = Self.substringIfValid(in: content, range: range) else {
+            return
+        }
         if let preflightMessage = navigationPreflightFailureMessage(kind: kind, symbolName: word) {
             guard requestGeneration.isCurrent(generation) else { return }
             NSSound.beep()
@@ -628,7 +632,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         
         // 查找定义名称
         guard let nameRange = extractDefinitionName(node: node) else { return nil }
-        let name = (content as NSString).substring(with: nameRange)
+        guard let name = Self.substringIfValid(in: content, range: nameRange) else { return nil }
         
         // 匹配且不在光标位置
         if name == word && !cursorRange.intersects(nameRange) {
@@ -700,7 +704,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         ]
         
         let nsContent = content as NSString
-        let searchRange = NSRange(location: 0, length: min(cursorRange.location, nsContent.length))
+        let searchRange = NSRange(location: 0, length: max(0, min(cursorRange.location, nsContent.length)))
         
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { continue }
@@ -758,6 +762,17 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             consumed += 1
         }
         return Position(line: line, character: character)
+    }
+
+    static func substringIfValid(in text: String, range: NSRange) -> String? {
+        let nsText = text as NSString
+        guard range.location >= 0,
+              range.length >= 0,
+              range.location <= nsText.length,
+              range.length <= nsText.length - range.location else {
+            return nil
+        }
+        return nsText.substring(with: range)
     }
 
     private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
