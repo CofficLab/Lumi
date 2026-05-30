@@ -271,12 +271,6 @@ enum MarkdownTableNormalizer {
     
     /// 解析表格行，提取单元格内容
     private static func parseTableRow(_ line: String) -> [String] {
-        let normalized = line
-            .trimmingCharacters(in: .whitespaces)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "|"))
-        guard !normalized.isEmpty else { return [] }
-        return normalized
-            .split(separator: "|", omittingEmptySubsequences: false)
-            .map { String($0).trimmingCharacters(in: .whitespaces) }
+        MarkdownTableRowParser.parse(line)
     }
 }

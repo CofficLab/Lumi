@@ -145,13 +145,7 @@ public enum MarkdownParser {
     }
 
     private static func parseTableRow(_ line: String) -> [String] {
-        let normalized = line
-            .trimmingCharacters(in: .whitespaces)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "|"))
-        guard !normalized.isEmpty else { return [] }
-        return normalized
-            .split(separator: "|", omittingEmptySubsequences: false)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
+        MarkdownTableRowParser.parse(line)
     }
 
     /// 从 swift-markdown 的 Table AST 节点直接提取表头和行数据

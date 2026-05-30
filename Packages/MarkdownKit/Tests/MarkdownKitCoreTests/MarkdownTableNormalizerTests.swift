@@ -160,6 +160,21 @@ struct MarkdownTableNormalizerTests {
         }
     }
 
+    @Test
+    func preservesEscapedPipesInsideCells() {
+        let input = """
+            | Expression | Meaning |
+            | --- | --- |
+            | A \\| B | union text |
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(blocks.count == 1)
+        #expect(blocks[0] == .table(headers: ["Expression", "Meaning"], rows: [["A | B", "union text"]]))
+    }
+
     // MARK: - 分隔线格式变体
 
     @Test
