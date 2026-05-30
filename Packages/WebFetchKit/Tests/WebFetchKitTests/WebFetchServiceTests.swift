@@ -34,6 +34,21 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertEqual(requestCount, 1)
     }
 
+    func testFetchTrimsCopiedURLWhitespace() async {
+        let fetcher = MockFetcher(
+            data: Data("<html><body><h1>Hello</h1></body></html>".utf8),
+            statusCode: 200,
+            headers: ["Content-Type": "text/html"]
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: nil)
+
+        let result = await service.fetch(urlString: " \nhttps://example.com/page\t")
+
+        XCTAssertTrue(result.contains("**URL**: https://example.com/page"))
+        let requestedURL = await fetcher.lastRequestURL
+        XCTAssertEqual(requestedURL?.absoluteString, "https://example.com/page")
+    }
+
     func testFetchReturnsRedirectInstruction() async {
         let fetcher = MockFetcher(
             data: Data(),
@@ -209,6 +224,10 @@ private actor MockFetcher: WebFetchFetching {
 
     var requestCount: Int {
         requests.count
+    }
+
+    var lastRequestURL: URL? {
+        requests.last?.url
     }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {

@@ -60,17 +60,18 @@ public struct WebFetchService: Sendable {
 
     public func fetch(urlString: String, prompt: String? = nil) async -> String {
         do {
-            guard !urlString.isEmpty else {
+            let normalizedURLString = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalizedURLString.isEmpty else {
                 throw WebFetchError.missingURL
             }
-            guard let url = URL(string: urlString) else {
+            guard let url = URL(string: normalizedURLString) else {
                 throw WebFetchError.invalidURL(urlString)
             }
             guard url.scheme == "http" || url.scheme == "https" else {
                 throw WebFetchError.unsupportedScheme(url.scheme)
             }
 
-            if let cached = cache?.get(urlString, now: now()) {
+            if let cached = cache?.get(normalizedURLString, now: now()) {
                 return processCachedContent(cached, prompt: prompt)
             }
 
