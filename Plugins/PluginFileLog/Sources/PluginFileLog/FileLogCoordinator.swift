@@ -63,11 +63,13 @@ final class FileLogCoordinator: @unchecked Sendable {
     // MARK: - State
 
     private let queue = DispatchQueue(label: "com.coffic.lumi.file-log", qos: .utility)
+    private let pollQueue = DispatchQueue(label: "com.coffic.lumi.file-log.poll", qos: .utility)
     private var currentFileHandle: FileHandle?
     private var currentFilePath: URL?
     private var isRunning = false
     private var isFileLoggingDisabled = false
     private var lastPolledDate = Date.distantPast
+    private var pollInFlight = false
     private var pollTimer: DispatchSourceTimer?
 
     // MARK: - Log Directory
@@ -106,7 +108,7 @@ final class FileLogCoordinator: @unchecked Sendable {
             isRunning = false
             pollTimer?.cancel()
             pollTimer = nil
-            pollOnce(allowStopped: true) // flush remaining entries before closing
+            flushCurrentFile()
             closeCurrentFile()
         }
     }
@@ -198,61 +200,77 @@ final class FileLogCoordinator: @unchecked Sendable {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + pollInterval, repeating: pollInterval, leeway: .seconds(1))
         timer.setEventHandler { [weak self] in
-            self?.pollOnce()
+            self?.startPollIfNeeded()
         }
         timer.resume()
         pollTimer = timer
     }
 
-    private func pollOnce(allowStopped: Bool = false) {
-        guard (isRunning || allowStopped), !isFileLoggingDisabled else { return }
+    private func startPollIfNeeded() {
+        guard isRunning, !isFileLoggingDisabled, !pollInFlight else { return }
 
-        let store: OSLogStore
-        do {
-            store = try OSLogStore(scope: .currentProcessIdentifier)
-        } catch {
-            return
-        }
-
-        // 从上次轮询时间点之后获取新条目
-        let position = store.position(date: lastPolledDate)
+        pollInFlight = true
+        let startDate = lastPolledDate
         let pollDate = Date()
+        let subsystem = self.subsystem
 
-        guard let entries = try? store.getEntries(
-            at: position,
-            matching: NSPredicate(format: "subsystem == %@", subsystem)
-        ) else { return }
+        pollQueue.async { [weak self] in
+            let lines = Self.readLogLines(subsystem: subsystem, since: startDate)
 
-        lastPolledDate = pollDate
+            self?.queue.async { [weak self] in
+                guard let self else { return }
+                self.pollInFlight = false
+                guard self.isRunning, !self.isFileLoggingDisabled else { return }
+                guard let lines else { return }
 
-        var hasNewEntries = false
-        for entry in entries {
-            writeEntry(entry)
-            hasNewEntries = true
-        }
+                self.lastPolledDate = pollDate
 
-        if hasNewEntries {
-            flushCurrentFile()
-            if !isFileLoggingDisabled {
-                checkFileSize()
+                for line in lines {
+                    self.writeData(Data(line.utf8))
+                }
+
+                if !lines.isEmpty {
+                    self.flushCurrentFile()
+                    if !self.isFileLoggingDisabled {
+                        self.checkFileSize()
+                    }
+                }
             }
         }
     }
 
-    // MARK: - Write
+    private static func readLogLines(subsystem: String, since date: Date) -> [String]? {
+        let store: OSLogStore
+        do {
+            store = try OSLogStore(scope: .currentProcessIdentifier)
+        } catch {
+            return nil
+        }
 
-    private func writeEntry(_ entry: OSLogEntry) {
-        let line: String
+        let position = store.position(date: date)
+        guard let entries = try? store.getEntries(
+            at: position,
+            matching: NSPredicate(format: "subsystem == %@", subsystem)
+        ) else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+
+        return entries.map { entry in
+            Self.formatEntry(entry, formatter: formatter)
+        }
+    }
+
+    private static func formatEntry(_ entry: OSLogEntry, formatter: DateFormatter) -> String {
+        let time = formatter.string(from: entry.date)
         if let logEntry = entry as? OSLogEntryLog {
             let level = logEntry.level.stringValue
-            let time = entryTimeFormatter.string(from: entry.date)
-            line = "[\(time)] [\(level)] [\(logEntry.category)] \(entry.composedMessage)\n"
-        } else {
-            let time = entryTimeFormatter.string(from: entry.date)
-            line = "[\(time)] \(entry.composedMessage)\n"
+            return "[\(time)] [\(level)] [\(logEntry.category)] \(entry.composedMessage)\n"
         }
-        writeData(Data(line.utf8))
+        return "[\(time)] \(entry.composedMessage)\n"
     }
+
+    // MARK: - Write
 
     private func writeData(_ data: Data) {
         guard let handle = currentFileHandle, !isFileLoggingDisabled else { return }
@@ -322,11 +340,6 @@ final class FileLogCoordinator: @unchecked Sendable {
         return f
     }()
 
-    private lazy var entryTimeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm:ss.SSS"
-        return f
-    }()
 }
 
 // MARK: - OSLogEntryLog.Level String Representation
