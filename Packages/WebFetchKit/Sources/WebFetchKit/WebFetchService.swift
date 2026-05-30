@@ -121,12 +121,14 @@ public struct WebFetchService: Sendable {
         prompt: String? = nil
     ) -> String {
         let resolvedRedirectURL: URL
-        if let absoluteRedirect = URL(string: redirectURL) {
-            if redirectURL.hasPrefix("/") || redirectURL.hasPrefix("./") {
-                resolvedRedirectURL = URL(string: redirectURL, relativeTo: originalURL) ?? originalURL
-            } else {
-                resolvedRedirectURL = absoluteRedirect
-            }
+        if redirectURL.hasPrefix("//"),
+           let scheme = originalURL.scheme,
+           let protocolRelativeURL = URL(string: "\(scheme):\(redirectURL)") {
+            resolvedRedirectURL = protocolRelativeURL
+        } else if let absoluteRedirect = URL(string: redirectURL), absoluteRedirect.scheme != nil {
+            resolvedRedirectURL = absoluteRedirect
+        } else if let relativeRedirect = URL(string: redirectURL, relativeTo: originalURL)?.absoluteURL {
+            resolvedRedirectURL = relativeRedirect
         } else {
             resolvedRedirectURL = originalURL
         }

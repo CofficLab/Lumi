@@ -134,6 +134,20 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertTrue(result.contains("redirects within the same domain"))
     }
 
+    func testPathRelativeSameDomainRedirectIsResolvedAgainstOriginalDirectory() {
+        let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
+
+        let result = service.handleRedirect(
+            originalURL: URL(string: "https://example.com/docs/old")!,
+            redirectURL: "new",
+            statusCode: 302
+        )
+
+        XCTAssertTrue(result.contains("**Redirect URL**: https://example.com/docs/new"))
+        XCTAssertTrue(result.contains("redirects within the same domain"))
+        XCTAssertFalse(result.contains("Cross-domain redirect detected"))
+    }
+
     func testCacheExpiresAndEvictsOldestEntry() {
         let cache = WebFetchCache(maxEntries: 1, ttl: 10)
         let first = CachedContent(
