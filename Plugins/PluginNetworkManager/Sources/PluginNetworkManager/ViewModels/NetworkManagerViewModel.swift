@@ -21,6 +21,7 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     @Published var processes: [NetworkProcess] = []
     @Published var showProcessMonitor = false {
         didSet {
+            guard oldValue != showProcessMonitor else { return }
             if showProcessMonitor {
                 startProcessMonitoring()
             } else {
@@ -61,16 +62,27 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     private var timer: Timer?
     private var isMonitoring = false
+    private var isProcessMonitoringActive = false
     private var networkCancellables = Set<AnyCancellable>()
     private var processCancellables = Set<AnyCancellable>()
+    private let processMonitoringStarter: @MainActor () -> Void
+    private let processMonitoringStopper: @MainActor () -> Void
 
     public init(
         autoStartMonitoring: Bool = true,
         publicIPProvider: @escaping @Sendable () async -> String? = {
             await NetworkService.shared.getPublicIP()
+        },
+        processMonitoringStarter: @escaping @MainActor () -> Void = {
+            ProcessMonitorService.shared.startMonitoring()
+        },
+        processMonitoringStopper: @escaping @MainActor () -> Void = {
+            ProcessMonitorService.shared.stopMonitoring()
         }
     ) {
         self.publicIPProvider = publicIPProvider
+        self.processMonitoringStarter = processMonitoringStarter
+        self.processMonitoringStopper = processMonitoringStopper
 
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
@@ -80,8 +92,11 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         if autoStartMonitoring {
             startMonitoring()
         }
-        
-        // Bind service data
+    }
+
+    private func bindProcessUpdatesIfNeeded() {
+        guard processCancellables.isEmpty else { return }
+
         ProcessMonitorService.shared.$processes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] processes in
@@ -97,16 +112,24 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     
     deinit {
         Task { @MainActor [weak self] in
+            self?.stopProcessMonitoring()
             self?.stopMonitoring()
         }
     }
     
     public func startProcessMonitoring() {
-        ProcessMonitorService.shared.startMonitoring()
+        guard !isProcessMonitoringActive else { return }
+        isProcessMonitoringActive = true
+        bindProcessUpdatesIfNeeded()
+        processMonitoringStarter()
     }
     
     public func stopProcessMonitoring() {
-        ProcessMonitorService.shared.stopMonitoring()
+        guard isProcessMonitoringActive else { return }
+        isProcessMonitoringActive = false
+        processMonitoringStopper()
+        processCancellables.removeAll()
+        processes = []
     }
 
     public func updateProcesses(_ processes: [NetworkProcess]) {

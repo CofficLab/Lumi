@@ -29,6 +29,24 @@ import Testing
     #expect(viewModel.networkState.publicIP == "203.0.113.2")
 }
 
+@MainActor
+@Test func processMonitorToggleIgnoresRepeatedAssignments() {
+    let counter = ProcessMonitorCounter()
+    let viewModel = NetworkManagerViewModel(
+        autoStartMonitoring: false,
+        processMonitoringStarter: { counter.starts += 1 },
+        processMonitoringStopper: { counter.stops += 1 }
+    )
+
+    viewModel.showProcessMonitor = true
+    viewModel.showProcessMonitor = true
+    viewModel.showProcessMonitor = false
+    viewModel.showProcessMonitor = false
+
+    #expect(counter.starts == 1)
+    #expect(counter.stops == 1)
+}
+
 private actor PublicIPFetcherStub {
     private(set) var count = 0
     private let values: [String]
@@ -41,4 +59,10 @@ private actor PublicIPFetcherStub {
         count += 1
         return values[min(count - 1, values.count - 1)]
     }
+}
+
+@MainActor
+private final class ProcessMonitorCounter {
+    var starts = 0
+    var stops = 0
 }
