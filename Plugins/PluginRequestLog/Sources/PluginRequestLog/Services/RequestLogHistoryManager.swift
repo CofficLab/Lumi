@@ -3,11 +3,13 @@ import SuperLogKit
 import HttpKit
 import LumiCoreKit
 import SwiftData
+import os
 
 /// 请求日志历史管理器（HTTP 视角）
 public actor RequestLogHistoryManager: SuperLog {
     public nonisolated static let emoji = "📝"
     public nonisolated static let verbose: Bool = true
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "request-log.history")
     public static let shared = RequestLogHistoryManager()
 
     private let container: ModelContainer
@@ -15,11 +17,23 @@ public actor RequestLogHistoryManager: SuperLog {
     private let maxRecords = 10000
 
     private init() {
+        self.container = Self.makeContainer(databaseRootURL: AppConfig.getDBFolderURL())
+    }
+
+    static func makeContainer(databaseRootURL: URL) -> ModelContainer {
         let schema = Schema([RequestLogItem.self])
-        let dbDir = AppConfig.getDBFolderURL()
-            .appendingPathComponent("RequestLogPlugin", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
+        let dbDir = databaseRootURL.appendingPathComponent("RequestLogPlugin", isDirectory: true)
         let dbURL = dbDir.appendingPathComponent("history.sqlite")
+        let fileManager = FileManager.default
+
+        do {
+            quarantineFileIfItBlocksDirectory(at: dbDir)
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)创建请求日志数据库目录失败：\(error.localizedDescription)")
+            }
+        }
 
         let config = ModelConfiguration(
             schema: schema,
@@ -29,9 +43,72 @@ public actor RequestLogHistoryManager: SuperLog {
         )
 
         do {
-            self.container = try ModelContainer(for: schema, configurations: [config])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create RequestLog ModelContainer: \(error)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)打开请求日志数据库失败，准备重建：\(error.localizedDescription)")
+            }
+            quarantinePersistentStore(at: dbURL)
+        }
+
+        do {
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)重建请求日志数据库失败，使用临时内存存储：\(error.localizedDescription)")
+            }
+            return makeInMemoryContainer(schema: schema)
+        }
+    }
+
+    private static func makeInMemoryContainer(schema: Schema) -> ModelContainer {
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            preconditionFailure("Could not create in-memory RequestLog ModelContainer: \(error)")
+        }
+    }
+
+    private static func quarantinePersistentStore(at dbURL: URL) {
+        let fileManager = FileManager.default
+        let storeURLs = [
+            dbURL,
+            URL(fileURLWithPath: dbURL.path + "-shm"),
+            URL(fileURLWithPath: dbURL.path + "-wal")
+        ]
+
+        for url in storeURLs where fileManager.fileExists(atPath: url.path) {
+            quarantineFile(at: url)
+        }
+    }
+
+    private static func quarantineFileIfItBlocksDirectory(at url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue else {
+            return
+        }
+
+        quarantineFile(at: url)
+    }
+
+    private static func quarantineFile(at url: URL) {
+        let destination = url.deletingLastPathComponent()
+            .appendingPathComponent(url.lastPathComponent + ".corrupt-\(Int(Date().timeIntervalSince1970))")
+        do {
+            try FileManager.default.moveItem(at: url, to: destination)
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)隔离请求日志数据库文件失败：\(error.localizedDescription)")
+            }
         }
     }
 

@@ -7,8 +7,6 @@ struct RequestLogItemDTOTests {
 
     @Test("DTO 从 RequestLogItem 正确映射所有字段")
     func testMappingFromItem() {
-        // 创建 RequestLogItem
-        let id = UUID()
         let requestId = UUID()
         let timestamp = Date()
 
@@ -28,9 +26,6 @@ struct RequestLogItemDTOTests {
             errorMessage: nil,
             duration: 1.5
         )
-        // 使用反射设置 id（因为 @Model 自动生成的 id）
-        // 但由于 SwiftData 模型在测试中需要 container，
-        // 这里改用简化的验证方式
 
         let dto = RequestLogItemDTO(from: item)
 
