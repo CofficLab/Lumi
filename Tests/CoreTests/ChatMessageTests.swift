@@ -212,5 +212,36 @@ final class ChatMessageTests: XCTestCase {
         XCTAssertEqual(result.messages.first?.role, .system)
         XCTAssertEqual(result.messages.dropFirst().first?.content, "message 12")
     }
+
+    /// assistant 一次发起多个 tool_call 时，裁剪后的连续 tool 结果都应保留。
+    func testContextPrunerPreservesConsecutiveToolResultsForSameAssistant() {
+        let toolCalls = [
+            ToolCall(id: "call_1", name: "read_file", arguments: "{}"),
+            ToolCall(id: "call_2", name: "list_files", arguments: "{}")
+        ]
+        let messages = [
+            makeMessage(role: .user, content: "older context"),
+            makeMessage(role: .assistant, content: "older answer"),
+            makeMessage(role: .user, content: "inspect project"),
+            makeMessage(role: .assistant, content: "", toolCalls: toolCalls),
+            makeMessage(role: .tool, content: "file contents", toolCallID: "call_1"),
+            makeMessage(role: .tool, content: "file list", toolCallID: "call_2"),
+            makeMessage(role: .user, content: "continue")
+        ]
+
+        let result = ContextPruner.prune(
+            messages,
+            config: .init(
+                maxMessages: 5,
+                tokenUsageThreshold: 0.8,
+                tighteningFactor: 0.6,
+                summaryPlaceholder: "summary"
+            )
+        )
+        let toolMessages = result.messages.filter { $0.role == .tool }
+
+        XCTAssertEqual(toolMessages.map(\.toolCallID), ["call_1", "call_2"])
+        XCTAssertEqual(toolMessages.map(\.content), ["file contents", "file list"])
+    }
 }
 #endif
