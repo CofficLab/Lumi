@@ -83,12 +83,15 @@ public struct HTMLToMarkdownConverter {
             result = result.replacingOccurrences(of: entity, with: char)
         }
 
-        // 解码数字实体 (如 &#60; -> <)
-        let numericPattern = #"&#(\d+);"#
+        // 解码数字实体 (如 &#60; / &#x3c; -> <)
+        let numericPattern = #"&#(?:[xX]([0-9a-fA-F]+)|(\d+));"#
         while let match = result.range(of: numericPattern, options: .regularExpression) {
             let entityStr = String(result[match])
-            if let numStr = entityStr.matchingStrings(for: numericPattern).first?.last,
-               let num = Int(numStr),
+            let groups = entityStr.matchingStrings(for: numericPattern).first
+            let hexString = groups?.dropFirst().first { !$0.isEmpty }
+            let radix = entityStr.lowercased().hasPrefix("&#x") ? 16 : 10
+            if let numStr = hexString,
+               let num = Int(numStr, radix: radix),
                let scalar = UnicodeScalar(num) {
                 result.replaceSubrange(match, with: String(scalar))
             } else {

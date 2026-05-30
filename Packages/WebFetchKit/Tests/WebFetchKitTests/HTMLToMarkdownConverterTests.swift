@@ -43,6 +43,15 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("![image](https://example.com/logo.svg)"))
     }
 
+    func testDecodesDecimalAndHexNumericEntities() {
+        let html = "<p>Symbols: &#169; &#x1F680; &#X2713;</p>"
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("Symbols: © 🚀 ✓"))
+        XCTAssertFalse(markdown.contains("&#x1F680;"))
+    }
+
     func testConvertsListsWithoutCrashingOnMalformedListContent() {
         let html = """
         <ol></li><li>First</li><li><span>Second</span></li></ol>
