@@ -105,7 +105,7 @@ public struct EditorFileTreeNodeView: View {
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
-            let relativePath = url.path.replacingOccurrences(of: projectRootPath, with: "")
+            let relativePath = EditorFileTreePathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
             let store = EditorFileTreeStore.shared
             _isExpanded = State(initialValue: store.expandedPaths(for: projectRootPath).contains(relativePath))
         }
@@ -313,12 +313,7 @@ public struct EditorFileTreeNodeView: View {
 
     /// 用于 Git 状态查询的相对路径（与 snapshot 中 key 的格式匹配）
     private var gitRelativePath: String {
-        guard !projectRootPath.isEmpty else { return "" }
-        let rootPath = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
-        let nodePath = url.standardizedFileURL.path
-        guard nodePath.hasPrefix(rootPath + "/") else { return "" }
-        let rel = String(nodePath.dropFirst(rootPath.count + 1))
-        return rel
+        EditorFileTreePathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
     }
 
     /// Git 状态标记颜色
@@ -409,11 +404,7 @@ extension EditorFileTreeNodeView {
 
     /// 当前节点相对于项目根目录的路径，保留开头的 "/" 以兼容已持久化的展开状态。
     private var relativePath: String {
-        guard !projectRootPath.isEmpty else { return "" }
-        let rootPath = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
-        let nodePath = url.standardizedFileURL.path
-        guard nodePath == rootPath || nodePath.hasPrefix(rootPath + "/") else { return nodePath }
-        return String(nodePath.dropFirst(rootPath.count))
+        EditorFileTreePathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
     }
 
     /// 将当前展开/折叠状态持久化到 store
