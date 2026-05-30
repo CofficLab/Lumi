@@ -30,3 +30,11 @@ import Testing
 
     #expect(matches.isEmpty)
 }
+
+@Test func colorParserIgnoresInvalidHSLAAlphaWithoutCrashing() async throws {
+    let css = "color: hsla(120, 50%, 40%, .);"
+
+    let matches = ColorParser.findColors(in: css)
+
+    #expect(matches.isEmpty)
+}

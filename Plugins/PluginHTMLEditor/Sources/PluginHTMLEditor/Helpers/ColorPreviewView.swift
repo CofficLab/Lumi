@@ -248,8 +248,10 @@ extension Color {
         let lightness = min(max(lightnessValue / 100.0, 0.0), 1.0)
 
         var alpha = 1.0
-        if match.range(at: 4).location != NSNotFound,
-           let alphaValue = Double(nsString.substring(with: match.range(at: 4))) {
+        if match.range(at: 4).location != NSNotFound {
+            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
+                return nil
+            }
             alpha = min(max(alphaValue, 0.0), 1.0)
         }
 
