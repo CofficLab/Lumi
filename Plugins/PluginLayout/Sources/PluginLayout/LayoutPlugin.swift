@@ -41,7 +41,7 @@ public actor LayoutPlugin: SuperPlugin, SuperLog {
     /// 工具栏右侧：布局菜单（在支持布局调整的工作区显示）
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" || context.activeIcon == "bubble.left.and.bubble.right" else { return nil }
+        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" || context.activeIcon == "bubble.left.and.bubble.right.fill" else { return nil }
         return AnyView(LayoutMenuButton())
     }
 

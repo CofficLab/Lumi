@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+@testable import PluginLSPServiceEditor
 @testable import Lumi
 
 private actor DebouncerHitBox {

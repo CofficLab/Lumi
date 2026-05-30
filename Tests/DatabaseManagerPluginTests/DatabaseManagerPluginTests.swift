@@ -1,5 +1,9 @@
 #if canImport(XCTest)
 import XCTest
+import AgentToolKit
+import DatabaseKit
+import LumiCoreKit
+@testable import PluginDatabaseManager
 @testable import Lumi
 
 final class DatabaseManagerPluginTests: XCTestCase {
@@ -14,8 +18,7 @@ final class DatabaseManagerPluginTests: XCTestCase {
 
     @MainActor
     func testPluginProvidesDatabaseAgentTools() {
-        let context = ToolContext(toolService: ToolService(), llmService: nil, llmVM: nil, conversationVM: nil)
-        let tools = DatabaseManagerPlugin.shared.agentTools(context: context)
+        let tools = DatabaseManagerPlugin.shared.agentTools(context: LumiCoreKit.ToolContext())
         XCTAssertEqual(
             tools.map(\.name),
             [

@@ -23,6 +23,28 @@ public struct MemoryItem: Codable, Identifiable, Sendable {
     /// 文件绝对路径
     public let filePath: String
 
+    public init(
+        id: String,
+        filename: String,
+        type: MemoryType,
+        name: String,
+        description: String,
+        content: String,
+        createdAt: Date,
+        updatedAt: Date,
+        filePath: String
+    ) {
+        self.id = id
+        self.filename = filename
+        self.type = type
+        self.name = name
+        self.description = description
+        self.content = content
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.filePath = filePath
+    }
+
     /// 记忆年龄（天数）
     public var ageInDays: Int {
         Int(Date().timeIntervalSince(updatedAt) / 86400)

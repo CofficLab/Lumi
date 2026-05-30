@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import LumiCoreKit
 @testable import Lumi
 
 /// 消息角色（MessageRole）单元测试
@@ -16,13 +17,13 @@ final class MessageRoleTests: XCTestCase {
     /// rawValue 用于持久化存储（SwiftData 中 `_role` 字段）和网络传输，
     /// 任何值变更都会导致已存储数据解析失败，因此必须保持稳定。
     func testRawValues() {
-        XCTAssertEqual(MessageRole.user.rawValue, "user")
-        XCTAssertEqual(MessageRole.assistant.rawValue, "assistant")
-        XCTAssertEqual(MessageRole.system.rawValue, "system")
-        XCTAssertEqual(MessageRole.tool.rawValue, "tool")
-        XCTAssertEqual(MessageRole.status.rawValue, "status")
-        XCTAssertEqual(MessageRole.error.rawValue, "error")
-        XCTAssertEqual(MessageRole.unknown.rawValue, "unknown")
+        XCTAssertEqual(LumiCoreKit.MessageRole.user.rawValue, "user")
+        XCTAssertEqual(LumiCoreKit.MessageRole.assistant.rawValue, "assistant")
+        XCTAssertEqual(LumiCoreKit.MessageRole.system.rawValue, "system")
+        XCTAssertEqual(LumiCoreKit.MessageRole.tool.rawValue, "tool")
+        XCTAssertEqual(LumiCoreKit.MessageRole.status.rawValue, "status")
+        XCTAssertEqual(LumiCoreKit.MessageRole.error.rawValue, "error")
+        XCTAssertEqual(LumiCoreKit.MessageRole.unknown.rawValue, "unknown")
     }
 
     // MARK: - Codable
@@ -36,16 +37,24 @@ final class MessageRoleTests: XCTestCase {
         ["user", "assistant", "system", "tool", "status", "error", "unknown"]
         """.data(using: .utf8)!
 
-        let roles = try JSONDecoder().decode([MessageRole].self, from: json)
+        let roles = try JSONDecoder().decode([LumiCoreKit.MessageRole].self, from: json)
 
-        XCTAssertEqual(roles, [.user, .assistant, .system, .tool, .status, .error, .unknown])
+        XCTAssertEqual(roles, [
+            LumiCoreKit.MessageRole.user,
+            .assistant,
+            .system,
+            .tool,
+            .status,
+            .error,
+            .unknown,
+        ])
     }
 
     /// 验证编码后的 JSON 字符串与 rawValue 一致。
     ///
     /// 确保序列化输出不会引入额外的引号、转义或格式偏差。
     func testEncodingPreservesRawValue() throws {
-        let encoded = try JSONEncoder().encode(MessageRole.user)
+        let encoded = try JSONEncoder().encode(LumiCoreKit.MessageRole.user)
         let string = String(data: encoded, encoding: .utf8)
 
         XCTAssertEqual(string, #""user""#)

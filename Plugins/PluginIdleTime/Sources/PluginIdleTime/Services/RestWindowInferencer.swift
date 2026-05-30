@@ -125,10 +125,12 @@ public struct RestWindowInferencer: Sendable {
     private func scores(for events: [IdleActivityEvent], now: Date) -> [Double] {
         var scores = Array(repeating: 0.0, count: Self.bucketsPerDay)
         for event in events {
+            let daysAgo = Double(max(0, calendar.dateComponents([.day], from: event.timestamp, to: now).day ?? 0))
+            guard daysAgo <= 21 else { continue }
+
             let components = calendar.dateComponents([.hour, .minute], from: event.timestamp)
             let minuteOfDay = (components.hour ?? 0) * 60 + (components.minute ?? 0)
             let bucket = min(Self.bucketsPerDay - 1, max(0, minuteOfDay / Self.bucketMinutes))
-            let daysAgo = Double(max(0, calendar.dateComponents([.day], from: event.timestamp, to: now).day ?? 0))
             let recencyWeight = Foundation.exp(-daysAgo / 14.0)
             scores[bucket] += event.kind.inferenceWeight * recencyWeight
         }

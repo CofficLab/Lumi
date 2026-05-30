@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import Foundation
 import XCTest
+import GitHubKit
 @testable import Lumi
 
 final class AgentGitHubToolsPluginTests: XCTestCase {

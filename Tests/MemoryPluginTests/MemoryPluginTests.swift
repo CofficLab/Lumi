@@ -1,10 +1,15 @@
 import Testing
 import Foundation
+import MemoryKit
+@testable import PluginMemory
+
+private typealias MemoryStorageService = PluginMemory.MemoryStorageService
+private typealias MemoryRetrievalService = PluginMemory.MemoryRetrievalService
 
 /// MemoryPlugin 单元测试
 ///
 /// 测试记忆系统的核心逻辑：模型、存储、检索。
-@Suite("Memory Plugin Tests")
+@Suite("Memory Plugin Tests", .serialized)
 struct MemoryPluginTests {
 
     // MARK: - MemoryType Tests
@@ -47,7 +52,7 @@ struct MemoryPluginTests {
             filePath: "/tmp/fresh.md"
         )
         #expect(fresh.ageInDays == 0)
-        #expect(!fresh.isStale)
+        #expect(!fresh.isStale(thresholdDays: 7))
 
         let old = MemoryItem(
             id: "old", filename: "old.md", type: .user,
@@ -57,7 +62,7 @@ struct MemoryPluginTests {
             filePath: "/tmp/old.md"
         )
         #expect(old.ageInDays == 8)
-        #expect(old.isStale)
+        #expect(old.isStale(thresholdDays: 7))
     }
 
     @Test("MemoryItem 格式化摘要")
@@ -81,7 +86,7 @@ struct MemoryPluginTests {
             createdAt: now, updatedAt: now.addingTimeInterval(-30 * 86400),
             filePath: "/tmp/stale.md"
         )
-        let content = stale.formattedContent()
+        let content = stale.formattedContent(staleThresholdDays: 7)
         #expect(content.contains("⚠️"))
         #expect(content.contains("30 天前"))
     }

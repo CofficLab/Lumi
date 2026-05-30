@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+@testable import PluginHTMLEditor
 @testable import Lumi
 
 final class HTMLEditorPluginTests: XCTestCase {

@@ -1,5 +1,7 @@
 #if canImport(XCTest)
 import XCTest
+import AgentToolKit
+import LumiCoreKit
 @testable import Lumi
 
 /// 聊天消息（ChatMessage）单元测试

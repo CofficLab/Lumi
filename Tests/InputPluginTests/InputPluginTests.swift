@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+@testable import PluginInput
 @testable import Lumi
 
 class InputPluginTests: XCTestCase {
@@ -32,4 +33,3 @@ class InputPluginTests: XCTestCase {
     }
 }
 #endif
-

@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import AgentToolKit
 @testable import Lumi
 
 /// 工具调用（ToolCall）单元测试

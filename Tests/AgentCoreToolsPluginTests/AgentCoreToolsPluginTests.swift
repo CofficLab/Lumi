@@ -1,5 +1,8 @@
 #if canImport(XCTest)
 import XCTest
+import AgentToolKit
+import LumiCoreKit
+@testable import PluginAgentCoreTools
 @testable import Lumi
 
 final class AgentCoreToolsPluginTests: XCTestCase {
@@ -30,8 +33,7 @@ final class AgentCoreToolsPluginTests: XCTestCase {
 
     @MainActor
     func testPluginExposesCoreAgentTools() async {
-        let context = ToolContext(toolService: ToolService(), llmService: nil, llmVM: nil, conversationVM: nil)
-        let tools = await AgentCoreToolsPlugin.shared.agentTools(context: context)
+        let tools = await AgentCoreToolsPlugin.shared.agentTools(context: LumiCoreKit.ToolContext())
 
         XCTAssertEqual(tools.count, 5)
         XCTAssertEqual(

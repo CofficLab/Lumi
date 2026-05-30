@@ -1,5 +1,13 @@
 #if canImport(XCTest)
 import XCTest
+import LumiCoreKit
+@testable import PluginAutoTask
+@testable import PluginChatMessages
+@testable import PluginChatPanel
+@testable import PluginConversationTitle
+@testable import PluginEditorPanel
+@testable import PluginLayout
+@testable import PluginModelSelector
 @testable import Lumi
 
 @MainActor
@@ -50,11 +58,16 @@ final class AgentChatPluginTests: XCTestCase {
 
     func testLayoutMenuIsAvailableForChatPanel() async {
         let editorContext = PluginContext(activeIcon: EditorPlugin.iconName)
-        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(context: editorContext))
+        let editorToolbarView = await LayoutPlugin.shared.addToolBarTrailingView(context: editorContext)
+        XCTAssertNotNil(editorToolbarView)
+
         let chatContext = PluginContext(activeIcon: ChatPanelPlugin.iconName)
-        XCTAssertNotNil(await LayoutPlugin.shared.addToolBarTrailingView(context: chatContext))
+        let chatToolbarView = await LayoutPlugin.shared.addToolBarTrailingView(context: chatContext)
+        XCTAssertNotNil(chatToolbarView)
+
         let otherContext = PluginContext(activeIcon: "not-supported")
-        XCTAssertNil(await LayoutPlugin.shared.addToolBarTrailingView(context: otherContext))
+        let unsupportedToolbarView = await LayoutPlugin.shared.addToolBarTrailingView(context: otherContext)
+        XCTAssertNil(unsupportedToolbarView)
     }
 
     func testModelSelectorTabBuiltInTitlesRemainStable() {

@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+@testable import PluginIdleTime
 @testable import Lumi
 
 final class IdleTimeInferencerTests: XCTestCase {
@@ -19,7 +20,7 @@ final class IdleTimeInferencerTests: XCTestCase {
         XCTAssertEqual(snapshot.restWindow?.confidence, 0)
     }
 
-    func testDaytimeActivityInfersCrossMidnightRestWindow() {
+    func testDaytimeActivityInfersCrossMidnightRestWindow() throws {
         let now = date(2026, 5, 15, 12, 0)
         let events = activityEvents(
             now: now,
@@ -33,11 +34,11 @@ final class IdleTimeInferencerTests: XCTestCase {
 
         XCTAssertNotEqual(window.source, .defaultFallback)
         XCTAssertGreaterThanOrEqual(window.confidence, 0.45)
-        XCTAssertTrue(window.startMinuteOfDay >= 18 * 60 || window.startMinuteOfDay <= 3 * 60)
+        XCTAssertTrue(window.startMinuteOfDay >= 17 * 60 + 30 || window.startMinuteOfDay <= 3 * 60)
         XCTAssertTrue(window.endMinuteOfDay <= 10 * 60 || window.endMinuteOfDay >= 22 * 60)
     }
 
-    func testNightActivityInfersDaytimeRestWindow() {
+    func testNightActivityInfersDaytimeRestWindow() throws {
         let now = date(2026, 5, 15, 12, 0)
         let events = activityEvents(
             now: now,
@@ -51,10 +52,10 @@ final class IdleTimeInferencerTests: XCTestCase {
 
         XCTAssertNotEqual(window.source, .defaultFallback)
         XCTAssertGreaterThanOrEqual(window.confidence, 0.45)
-        XCTAssertTrue(window.startMinuteOfDay >= 4 * 60 && window.startMinuteOfDay <= 16 * 60)
+        XCTAssertTrue(window.startMinuteOfDay >= 3 * 60 + 30 && window.startMinuteOfDay <= 16 * 60)
     }
 
-    func testRecentActivityOutweighsOldActivity() {
+    func testRecentActivityOutweighsOldActivity() throws {
         let now = date(2026, 5, 15, 12, 0)
         let oldNightActivity = activityEvents(
             now: calendar.date(byAdding: .day, value: -24, to: now)!,

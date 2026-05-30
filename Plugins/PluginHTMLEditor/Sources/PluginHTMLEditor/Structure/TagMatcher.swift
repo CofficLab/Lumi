@@ -18,11 +18,11 @@ enum TagMatcher {
 
         let matchingTag: TagLocation?
         if currentTag.isClosing {
-            matchingTag = findOpeningTag(for: currentTag.name, from: line, lines: lines)
+            matchingTag = findOpeningTag(for: currentTag, lines: lines)
         } else if HTMLKnowledgeBase.voidElements.contains(currentTag.name) {
             matchingTag = nil
         } else {
-            matchingTag = findClosingTag(for: currentTag.name, from: line, lines: lines)
+            matchingTag = findClosingTag(for: currentTag, lines: lines)
         }
 
         return MatchResult(current: currentTag, matching: matchingTag)
@@ -93,14 +93,18 @@ enum TagMatcher {
     }
 
     /// 向后搜索闭标签
-    private static func findClosingTag(for name: String, from startLine: Int, lines: [String]) -> TagLocation? {
+    private static func findClosingTag(for currentTag: TagLocation, lines: [String]) -> TagLocation? {
         var depth = 1
 
-        for lineIndex in startLine..<lines.count {
+        for lineIndex in currentTag.startLine..<lines.count {
             let tags = parseTags(in: lines[lineIndex], lineIndex: lineIndex)
 
             for tag in tags {
-                if tag.name == name {
+                if tag == currentTag {
+                    continue
+                }
+
+                if tag.name == currentTag.name {
                     if tag.isClosing {
                         depth -= 1
                         if depth == 0 { return tag }
@@ -115,14 +119,18 @@ enum TagMatcher {
     }
 
     /// 向前搜索开标签
-    private static func findOpeningTag(for name: String, from startLine: Int, lines: [String]) -> TagLocation? {
+    private static func findOpeningTag(for currentTag: TagLocation, lines: [String]) -> TagLocation? {
         var depth = 1
 
-        for lineIndex in stride(from: startLine, through: 0, by: -1) {
+        for lineIndex in stride(from: currentTag.startLine, through: 0, by: -1) {
             let tags = parseTags(in: lines[lineIndex], lineIndex: lineIndex)
 
             for tag in tags.reversed() {
-                if tag.name == name {
+                if tag == currentTag {
+                    continue
+                }
+
+                if tag.name == currentTag.name {
                     if !tag.isClosing {
                         depth -= 1
                         if depth == 0 { return tag }
