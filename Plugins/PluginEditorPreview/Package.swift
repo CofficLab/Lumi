@@ -37,11 +37,6 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginEditorPreview",
-            exclude: [
-                "Services",
-                "ViewModels",
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]

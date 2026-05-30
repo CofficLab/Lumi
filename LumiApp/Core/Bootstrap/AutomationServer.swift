@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import PluginEditorPreview
 import SwiftUI
 import os
 
@@ -341,6 +342,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     ///
     /// - Parameter data: 原始请求数据
     /// - Returns: 响应数据
+    @MainActor
     private func handleRequest(_ data: Data) -> Data {
         guard let requestString = String(data: data, encoding: .utf8) else {
             return makeResponse(statusCode: 400, message: "Invalid request encoding")
@@ -392,6 +394,14 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
 
             Self.logger.info("\(Self.t)Received automation action: \(action, privacy: .public)")
 
+            if action == "project.debug_state" || action == "projectDebugState" {
+                return makeJSONResponse(statusCode: 200, body: projectDebugStateBody())
+            }
+
+            if action == "automation.debug_state" || action == "automationDebugState" {
+                return makeJSONResponse(statusCode: 200, body: automationDebugStateBody())
+            }
+
             // 分发事件（在主线程上，以便 UI 组件可以响应）
             // 已在 Task { @MainActor } 中调用
             NotificationCenter.postAutomationActionReceived(action: action, payload: payload)
@@ -409,12 +419,16 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     ///   - message: 响应消息
     /// - Returns: 完整的 HTTP 响应数据
     private func makeResponse(statusCode: Int, message: String) -> Data {
-        let statusText = statusCode == 200 ? "OK" : "Bad Request"
         let bodyDict: [String: String] = [
             "status": statusCode == 200 ? "ok" : "error",
             "message": message,
         ]
-        let bodyData = try? JSONSerialization.data(withJSONObject: bodyDict)
+        return makeJSONResponse(statusCode: statusCode, body: bodyDict)
+    }
+
+    private func makeJSONResponse(statusCode: Int, body: [String: Any]) -> Data {
+        let statusText = statusCode == 200 ? "OK" : "Bad Request"
+        let bodyData = try? JSONSerialization.data(withJSONObject: body)
         let body = bodyData ?? Data()
 
         let header = "HTTP/1.1 \(statusCode) \(statusText)\r\n"
@@ -426,6 +440,47 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         var response = header.data(using: .utf8) ?? Data()
         response.append(body)
         return response
+    }
+
+    @MainActor
+    private func projectDebugStateBody() -> [String: Any] {
+        let container = RootContainer.shared.windowManagerVM.activeWindowContainer
+        return [
+            "status": "ok",
+            "windowId": container?.id.uuidString ?? "",
+            "projectSelected": container?.isProjectSelected ?? false,
+            "projectName": container?.projectName ?? "",
+            "projectPath": container?.projectPath ?? "",
+            "activePanel": container?.layoutVM.activeViewContainerIcon ?? "",
+        ]
+    }
+
+    @MainActor
+    private func automationDebugStateBody() -> [String: Any] {
+        let state = InlinePreviewAutomationState.shared
+        return [
+            "status": "ok",
+            "lastSessionActionName": state.lastSessionActionName ?? "",
+            "editorPanelActivationCount": state.editorPanelActivationCount,
+            "inlinePreviewTabActivationCount": state.inlinePreviewTabActivationCount,
+            "demoFrameRequestCount": state.demoFrameRequestCount,
+            "lastDemoFramePayload": state.lastDemoFramePayload,
+            "previewSessionStatus": state.previewSessionStatus,
+            "previewEntryStatus": state.previewEntryStatus,
+            "previewModeName": state.previewModeName,
+            "previewActiveFilePath": state.previewActiveFilePath,
+            "previewHasSource": state.previewHasSource,
+            "previewAvailablePreviewCount": state.previewAvailablePreviewCount,
+            "previewSelectedIndex": state.previewSelectedIndex,
+            "previewHasCurrentFrame": state.previewHasCurrentFrame,
+            "previewReceivedFrameCount": state.previewReceivedFrameCount,
+            "previewLastFrameSeq": state.previewLastFrameSeq,
+            "previewLastBuildTitle": state.previewLastBuildTitle,
+            "previewLastBuildPreviewCount": state.previewLastBuildPreviewCount,
+            "previewLastBuildUsedCache": state.previewLastBuildUsedCache,
+            "previewEntryDebugState": state.previewEntryDebugState,
+            "previewLastBuildLogPath": state.previewLastBuildLogPath,
+        ]
     }
 }
 

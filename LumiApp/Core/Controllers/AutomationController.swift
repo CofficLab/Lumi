@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import MagicAlert
+import PluginEditorPreview
 import os
 
 /// 自动化控制器 — 集中处理自动化测试动作
@@ -31,6 +32,16 @@ final class AutomationController: SuperLog {
 
     /// 启动自动化控制器，注册通知监听
     func start() {
+        EditorPreviewRuntimeBridge.editorServiceProvider = {
+            RootContainer.shared.windowManagerVM.activeWindowContainer?.editorVM.service
+        }
+        EditorPreviewRuntimeBridge.addToChatHandler = { text in
+            NotificationCenter.postAddToChat(
+                text: text,
+                windowId: RootContainer.shared.windowManagerVM.activeWindowId
+            )
+        }
+
         NotificationCenter.default.publisher(for: .automationActionReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -65,6 +76,8 @@ final class AutomationController: SuperLog {
             handleInlinePreviewStartStream(payload: payload)
         case "inline_preview.stop_stream", "inline_preview.stopStream":
             handleInlinePreviewStopStream(payload: payload)
+        case "inline_preview.demoFrame", "inline_preview.demo_frame":
+            handleInlinePreviewDemoFrame(payload: payload)
 
         // 导航操作
         case "navigate.to", "navigateTo":
@@ -101,6 +114,7 @@ final class AutomationController: SuperLog {
 
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.lastSessionActionName = "start"
         InlinePreviewAutomationState.shared.sessionAction = .start
         alert_info("自动化测试：启动预览流")
     }
@@ -111,8 +125,20 @@ final class AutomationController: SuperLog {
 
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.lastSessionActionName = "stop"
         InlinePreviewAutomationState.shared.sessionAction = .stop
         alert_info("自动化测试：停止预览流")
+    }
+
+    /// 处理 Inline Preview demo frame 自动化请求。
+    private func handleInlinePreviewDemoFrame(payload: [String: Any]?) {
+        Self.logger.info("🤖 Handling inline_preview.demoFrame")
+
+        ensureEditorPanelActive()
+        ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.demoFrameRequestCount += 1
+        InlinePreviewAutomationState.shared.lastDemoFramePayload = payload ?? [:]
+        alert_info("自动化测试：Inline Preview demo frame")
     }
 
     /// 处理导航到指定面板
@@ -221,6 +247,7 @@ final class AutomationController: SuperLog {
     /// 确保编辑器面板处于活动状态
     private func ensureEditorPanelActive() {
         RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = "chevron.left.forwardslash.chevron.right"
+        InlinePreviewAutomationState.shared.editorPanelActivationCount += 1
         Self.logger.info("🤖 Activated editor panel")
     }
 
@@ -231,6 +258,7 @@ final class AutomationController: SuperLog {
             object: nil,
             userInfo: ["tabId": "editor-bottom-inline-preview"]
         )
+        InlinePreviewAutomationState.shared.inlinePreviewTabActivationCount += 1
         Self.logger.info("🤖 Activated inline preview bottom tab")
     }
 
@@ -238,29 +266,5 @@ final class AutomationController: SuperLog {
     private func ensureAgentPanelActive() {
         // Agent 面板通常是默认面板
         RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = nil
-    }
-}
-
-// MARK: - InlinePreviewAutomationState
-
-/// 自动化测试专用的共享状态
-///
-/// 供 `AutomationController` 写入操作结果，供 `EditorPreviewDetailView` 读取并响应。
-/// 这样即使 View 层在 AutomationController 之后才渲染，也能获取到之前的操作结果。
-@MainActor
-final class InlinePreviewAutomationState: ObservableObject {
-    static let shared = InlinePreviewAutomationState()
-
-    /// Session 操作指令（start / stop）
-    @Published var sessionAction: SessionAction?
-
-    /// 待打开的文件 URL
-    @Published var pendingFileURL: URL?
-
-    private init() {}
-
-    enum SessionAction {
-        case start
-        case stop
     }
 }

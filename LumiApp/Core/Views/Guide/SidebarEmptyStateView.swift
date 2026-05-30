@@ -12,15 +12,15 @@ struct SidebarEmptyStateView: View {
 
         VStack(spacing: 12) {
             Image(systemName: "tray")
-                .font(.system(size: 48))
+                .font(.appLargeTitle)
                 .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(message)
-                .font(.system(size: 15, weight: .medium))
+                .font(.appBodyEmphasized)
                 .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(subtitle)
-                .font(.system(size: 12, weight: .regular))
+                .font(.appCaption)
                 .foregroundColor(theme.workspaceTertiaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

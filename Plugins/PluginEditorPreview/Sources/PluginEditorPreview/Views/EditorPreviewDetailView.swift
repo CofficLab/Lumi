@@ -1,4 +1,5 @@
 import AppKit
+import LumiCoreKit
 import SuperLogKit
 import HTMLPreviewKit
 import LumiPreviewKit
@@ -24,7 +25,6 @@ public struct EditorPreviewDetailView: View, SuperLog {
     public nonisolated static let emoji = "👁"
     public nonisolated static let verbose: Bool = true
 
-    @EnvironmentObject private var editorVM: WindowEditorVM
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var viewModel = EditorPreviewViewModel()
@@ -36,12 +36,16 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var previewCanvasView: NSView?
     @State private var htmlPreviewWebView: WKWebView?
 
+    private var editorService: EditorService? {
+        EditorPreviewRuntimeBridge.editorServiceProvider?()
+    }
+
     private var sourceText: String? {
-        editorVM.service.content?.string
+        editorService?.content?.string
     }
 
     private var currentFileURL: URL? {
-        editorVM.service.currentFileURL
+        editorService?.currentFileURL
     }
 
     public var body: some View {
@@ -55,7 +59,9 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
             }
             // 订阅 EditorService（幂等，内部有 Combine 订阅，多次调用会重复订阅，所以只调一次）
-            viewModel.wireEditorService(editorVM.service)
+            if let editorService {
+                viewModel.wireEditorService(editorService)
+            }
             viewModel.viewDidAppear(fileURL: currentFileURL, sourceText: sourceText)
 
             // 消费 AutomationController 可能在 View 出现之前就写入的 pending sessionAction。
@@ -84,33 +90,14 @@ public struct EditorPreviewDetailView: View, SuperLog {
             }
             viewModel.setActiveFile(newValue, sourceText: sourceText)
         }
-        .onChange(of: editorVM.service.saveRevision) { _, _ in
+        .onChange(of: editorService?.saveRevision ?? 0) { _, _ in
             if Self.verbose {
                 Self.logger.info("\(self.t)💾 saveRevision 变更")
             }
             viewModel.applySaveRevision(sourceText: sourceText)
         }
-        .onChange(of: editorVM.service.contentRevision) { _, _ in
+        .onChange(of: editorService?.contentRevision ?? 0) { _, _ in
             viewModel.updateBufferText(sourceText)
-        }
-        // 监听自动化测试动作
-        .onAutomationAction { action, payload in
-            switch action {
-            case "inline_preview.start_stream", "inline_preview.startStream":
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化：收到 start_stream 动作")
-                }
-                alert_info(String(localized: "Automation: start preview stream", table: "EditorPreview"))
-                viewModel.startSession()
-            case "inline_preview.stop_stream", "inline_preview.stopStream":
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化：收到 stop_stream 动作")
-                }
-                alert_info(String(localized: "Automation: stop preview stream", table: "EditorPreview"))
-                viewModel.stopSession()
-            default:
-                break
-            }
         }
         // 监听自动化共享状态
         .onChange(of: automationState.sessionAction) { oldAction, newAction in
@@ -604,10 +591,14 @@ public struct EditorPreviewDetailView: View, SuperLog {
         defer { isCleaningCurrentStringCatalog = false }
 
         do {
+            guard let editorService else {
+                alert_warning(String(localized: "Editor service is not available.", table: "EditorPreview"))
+                return
+            }
             let removedCount = try viewModel.cleanCurrentStringCatalog(
                 fileURL: currentFileURL,
                 sourceText: sourceText,
-                editorService: editorVM.service
+                editorService: editorService
             )
             if removedCount > 0 {
                 alert_success(
@@ -636,6 +627,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
             alert_warning(String(localized: "Select a project before cleaning String Catalogs.", table: "EditorPreview"))
             return
         }
+        guard let editorService else {
+            alert_warning(String(localized: "Editor service is not available.", table: "EditorPreview"))
+            return
+        }
 
         isCleaningProjectStringCatalogs = true
         Task {
@@ -644,7 +639,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     projectRootPath: projectRootPath,
                     currentFileURL: currentFileURL,
                     currentSourceText: sourceText,
-                    editorService: editorVM.service
+                    editorService: editorService
                 )
                 isCleaningProjectStringCatalogs = false
 
@@ -711,7 +706,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             case let .image(url):
                 EditorPreviewImageView(fileURL: url)
             case .markdown:
-                EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorVM.service)
+                EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorService)
                     .environmentObject(themeVM)
             case .stringCatalog:
                 EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
@@ -1108,7 +1103,7 @@ private struct EditorPreviewMarkdownView: View {
                         markdown: section.markdown,
                         theme: previewTheme
                     )
-                    .environment(\.codeHighlightProvider, currentHighlightProvider)
+                    .environment(\.codeHighlightProvider, nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .id(section.id)
                 }
@@ -1179,7 +1174,7 @@ private struct EditorPreviewMarkdownView: View {
 
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
-        NotificationCenter.postAddToChat(text: text, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
+        EditorPreviewRuntimeBridge.addToChatHandler?(text)
     }
 
     /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。
@@ -1264,13 +1259,6 @@ private struct EditorPreviewMarkdownView: View {
         )
     }
 
-    private var currentHighlightProvider: TreeSitterCodeHighlightProvider? {
-        guard let contributor = themeVM.currentTheme?.attachments.editorThemeContributor
-                as? any SuperEditorThemeContributor else {
-            return nil
-        }
-        return TreeSitterCodeHighlightProvider(editorTheme: contributor.createTheme())
-    }
 }
 
 private struct EditorPreviewStringCatalogContainer: View {

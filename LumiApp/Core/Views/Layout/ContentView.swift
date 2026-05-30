@@ -295,6 +295,11 @@ extension ContentView {
         // 注册窗口到 WindowManager
         RootContainer.shared.windowManagerVM.registerContainer(container)
 
+        container.restorePersistedStateIfAvailable(
+            allowProjectRestore: initialProjectPath?.isEmpty != false
+        )
+        container.configurePersistenceObserversIfNeeded()
+
         if let path = initialProjectPath, !path.isEmpty, !container.projectVM.isProjectSelected {
             let name = URL(fileURLWithPath: path).lastPathComponent
             container.projectVM.switchProject(
