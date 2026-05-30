@@ -112,13 +112,11 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.start")
                 }
-                alert_info(String(localized: "Automation: start preview stream", table: "EditorPreview"))
                 viewModel.startSession()
             case .stop:
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.stop")
                 }
-                alert_info(String(localized: "Automation: stop preview stream", table: "EditorPreview"))
                 viewModel.stopSession()
             }
         }

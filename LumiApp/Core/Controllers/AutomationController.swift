@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import Foundation
-import MagicAlert
 import PluginEditorPreview
 import os
 
@@ -116,7 +115,6 @@ final class AutomationController: SuperLog {
         ensureInlinePreviewBottomTabActive()
         InlinePreviewAutomationState.shared.lastSessionActionName = "start"
         InlinePreviewAutomationState.shared.sessionAction = .start
-        alert_info("自动化测试：启动预览流")
     }
 
     /// 处理 Inline Preview 停止流
@@ -127,7 +125,6 @@ final class AutomationController: SuperLog {
         ensureInlinePreviewBottomTabActive()
         InlinePreviewAutomationState.shared.lastSessionActionName = "stop"
         InlinePreviewAutomationState.shared.sessionAction = .stop
-        alert_info("自动化测试：停止预览流")
     }
 
     /// 处理 Inline Preview demo frame 自动化请求。
@@ -138,7 +135,6 @@ final class AutomationController: SuperLog {
         ensureInlinePreviewBottomTabActive()
         InlinePreviewAutomationState.shared.demoFrameRequestCount += 1
         InlinePreviewAutomationState.shared.lastDemoFramePayload = payload ?? [:]
-        alert_info("自动化测试：Inline Preview demo frame")
     }
 
     /// 处理导航到指定面板
@@ -153,10 +149,8 @@ final class AutomationController: SuperLog {
         switch panel {
         case "editor", "code", "codeEditor":
             ensureEditorPanelActive()
-            alert_info("自动化测试：切换到编辑器面板")
         case "chat", "agent":
             ensureAgentPanelActive()
-            alert_info("自动化测试：切换到 Agent 面板")
         default:
             Self.logger.warning("🤖 Unknown panel: \(panel, privacy: .public)")
         }
@@ -182,7 +176,6 @@ final class AutomationController: SuperLog {
         editorService.open(at: url)
 
         Self.logger.info("🤖 File opened: \(url.lastPathComponent, privacy: .public)")
-        alert_info("自动化测试：打开文件 \(url.lastPathComponent)")
     }
 
     /// 模拟用户选择当前窗口项目并触发持久化
@@ -206,7 +199,6 @@ final class AutomationController: SuperLog {
         NotificationCenter.postCurrentProjectDidChange(name: name, path: path)
 
         Self.logger.info("🤖 project.select: \(path, privacy: .public)")
-        alert_info("自动化测试：选择项目 \(name)")
     }
 
     private func handleAppTerminate() {
@@ -228,7 +220,6 @@ final class AutomationController: SuperLog {
         themeVM.selectTheme(themeId)
 
         Self.logger.info("🤖 Theme switched to: \(themeId, privacy: .public)")
-        alert_info("自动化测试：切换主题到 \(themeId)")
     }
 
     /// 处理通用按钮点击
@@ -239,7 +230,6 @@ final class AutomationController: SuperLog {
         }
 
         Self.logger.info("🤖 Button click: \(buttonId, privacy: .public)")
-        alert_info("自动化测试：点击按钮 \(buttonId)")
     }
 
     // MARK: - Helpers

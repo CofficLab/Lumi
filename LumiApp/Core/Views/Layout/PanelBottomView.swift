@@ -1,5 +1,4 @@
 import LumiCoreKit
-import MagicAlert
 import LumiUI
 import SwiftUI
 
@@ -78,8 +77,6 @@ struct PanelBottomView: View {
             guard let tabId = notification.userInfo?["tabId"] as? String else { return }
             if tabs.contains(where: { $0.id == tabId }) {
                 activeTabId = tabId
-                let tabTitle = tabs.first(where: { $0.id == tabId })?.title ?? tabId
-                alert_info("自动化测试：切换底部面板「\(tabTitle)」")
             }
         }
     }
