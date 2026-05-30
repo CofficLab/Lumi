@@ -69,18 +69,25 @@ public class ClipboardManagerViewModel: ObservableObject {
     }
     
     public func copyToClipboard(_ item: ClipboardHistoryItem) {
-        let pasteboard = NSPasteboard.general
+        Self.write(item, to: .general)
+    }
+
+    @discardableResult
+    public static func write(_ item: ClipboardHistoryItem, to pasteboard: NSPasteboard) -> Bool {
         pasteboard.clearContents()
         
         switch ClipboardItemType(rawValue: item.type) {
         case .text, .html, .color:
-            pasteboard.setString(item.content, forType: .string)
+            return pasteboard.setString(item.content, forType: .string)
         case .file:
-            pasteboard.writeObjects([URL(fileURLWithPath: item.content) as NSPasteboardWriting])
+            return pasteboard.writeObjects([URL(fileURLWithPath: item.content) as NSPasteboardWriting])
         case .image:
-            break
+            guard let image = NSImage(contentsOfFile: item.content) else {
+                return false
+            }
+            return pasteboard.writeObjects([image])
         case .none:
-            pasteboard.setString(item.content, forType: .string)
+            return pasteboard.setString(item.content, forType: .string)
         }
     }
 }
