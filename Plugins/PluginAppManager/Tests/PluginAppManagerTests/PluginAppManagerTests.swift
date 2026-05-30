@@ -1,5 +1,7 @@
+import Foundation
 import Testing
 import LumiCoreKit
+import SwiftData
 @testable import PluginAppManager
 
 @MainActor
@@ -13,7 +15,7 @@ struct PluginAppManagerTests {
         #expect(AppManagerPlugin.iconName == "apps.ipad")
         #expect(AppManagerPlugin.category == .system)
         #expect(AppManagerPlugin.order == 40)
-        #expect(AppManagerPlugin.enable == true)
+        #expect(AppManagerPlugin.policy == .alwaysOn)
         #expect(AppManagerPlugin.shared.instanceLabel == AppManagerPlugin.id)
     }
 
@@ -39,5 +41,35 @@ struct PluginAppManagerTests {
         #expect(url.path == "/tmp/Lumi App Manager/#Test Folder")
         #expect(url.absoluteString.contains("Lumi%20App%20Manager"))
         #expect(url.absoluteString.contains("%23Test%20Folder"))
+    }
+
+    @Test
+    func cacheStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-cache-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let blockedDirectory = root.appendingPathComponent("AppManagerPlugin", isDirectory: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let container = CacheManager.makeContainer(databaseRootURL: root)
+        let context = ModelContext(container)
+        let item = AppCacheItem(
+            bundlePath: "/Applications/Test.app",
+            lastModified: 1,
+            name: "Test",
+            identifier: "com.example.test",
+            version: "1.0",
+            iconFileName: nil,
+            size: 42
+        )
+
+        context.insert(item)
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<AppCacheItem>())
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.bundlePath == "/Applications/Test.app")
     }
 }

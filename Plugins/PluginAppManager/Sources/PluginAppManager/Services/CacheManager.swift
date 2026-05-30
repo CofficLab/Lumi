@@ -24,11 +24,23 @@ actor CacheManager: SuperLog {
     private(set) var stats = CacheStats()
 
     private init() {
-        let schema = Schema([AppCacheItem.self])
+        self.container = Self.makeContainer(databaseRootURL: AppManagerPlugin.databaseRootURLProvider())
+    }
 
-        let dbDir = AppManagerPlugin.databaseRootURLProvider().appendingPathComponent("AppManagerPlugin", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
+    static func makeContainer(databaseRootURL: URL) -> ModelContainer {
+        let schema = Schema([AppCacheItem.self])
+        let dbDir = databaseRootURL.appendingPathComponent("AppManagerPlugin", isDirectory: true)
         let dbURL = dbDir.appendingPathComponent("AppCache.sqlite")
+        let fileManager = FileManager.default
+
+        do {
+            quarantineFileIfItBlocksDirectory(at: dbDir)
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+        } catch {
+            if AppManagerPlugin.verbose {
+                AppManagerPlugin.logger.error("\(Self.t)创建应用缓存数据库目录失败：\(error.localizedDescription)")
+            }
+        }
 
         let config = ModelConfiguration(
             schema: schema,
@@ -38,9 +50,72 @@ actor CacheManager: SuperLog {
         )
 
         do {
-            self.container = try ModelContainer(for: schema, configurations: [config])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create AppManager Cache ModelContainer: \(error)")
+            if AppManagerPlugin.verbose {
+                AppManagerPlugin.logger.error("\(Self.t)打开应用缓存数据库失败，准备重建：\(error.localizedDescription)")
+            }
+            quarantinePersistentStore(at: dbURL)
+        }
+
+        do {
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            if AppManagerPlugin.verbose {
+                AppManagerPlugin.logger.error("\(Self.t)重建应用缓存数据库失败，使用临时内存缓存：\(error.localizedDescription)")
+            }
+            return makeInMemoryContainer(schema: schema)
+        }
+    }
+
+    private static func makeInMemoryContainer(schema: Schema) -> ModelContainer {
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            preconditionFailure("Could not create in-memory AppManager Cache ModelContainer: \(error)")
+        }
+    }
+
+    private static func quarantinePersistentStore(at dbURL: URL) {
+        let fileManager = FileManager.default
+        let storeURLs = [
+            dbURL,
+            URL(fileURLWithPath: dbURL.path + "-shm"),
+            URL(fileURLWithPath: dbURL.path + "-wal")
+        ]
+
+        for url in storeURLs where fileManager.fileExists(atPath: url.path) {
+            quarantineFile(at: url)
+        }
+    }
+
+    private static func quarantineFileIfItBlocksDirectory(at url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue else {
+            return
+        }
+
+        quarantineFile(at: url)
+    }
+
+    private static func quarantineFile(at url: URL) {
+        let destination = url.deletingLastPathComponent()
+            .appendingPathComponent(url.lastPathComponent + ".corrupt-\(Int(Date().timeIntervalSince1970))")
+        do {
+            try FileManager.default.moveItem(at: url, to: destination)
+        } catch {
+            if AppManagerPlugin.verbose {
+                AppManagerPlugin.logger.error("\(Self.t)隔离应用缓存数据库文件失败：\(error.localizedDescription)")
+            }
         }
     }
 
