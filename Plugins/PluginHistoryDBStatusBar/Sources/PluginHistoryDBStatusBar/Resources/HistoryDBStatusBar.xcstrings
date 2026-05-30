@@ -23,29 +23,6 @@
         }
       }
     },
-    "Browse message and conversation history in toolbar popover": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browse message and conversation history in toolbar popover"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在工具栏弹窗中浏览消息与对话历史"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在工具列彈窗中瀏覽訊息與對話歷史"
-          }
-        }
-      }
-    },
     "Content": {
       "localizations": {
         "en": {
@@ -90,52 +67,6 @@
         }
       }
     },
-    "Conversation ID": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation ID"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "会话 ID"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話 ID"
-          }
-        }
-      }
-    },
-    "Conversation List": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation List"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "对话列表"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話列表"
-          }
-        }
-      }
-    },
     "Conversations": {
       "localizations": {
         "en": {
@@ -154,29 +85,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "對話"
-          }
-        }
-      }
-    },
-    "Created At": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Created At"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "创建时间"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立時間"
           }
         }
       }
@@ -243,52 +151,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "載入中..."
-          }
-        }
-      }
-    },
-    "Message ID": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Message ID"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "消息 ID"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訊息 ID"
-          }
-        }
-      }
-    },
-    "Message List": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Message List"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "消息列表"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訊息列表"
           }
         }
       }
@@ -425,29 +287,6 @@
         }
       }
     },
-    "Project": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "專案"
-          }
-        }
-      }
-    },
     "Reload": {
       "localizations": {
         "en": {
@@ -536,29 +375,6 @@
         }
       }
     },
-    "Title": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Title"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "标题"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標題"
-          }
-        }
-      }
-    },
     "Tokens": {
       "localizations": {
         "en": {
@@ -577,29 +393,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Token"
-          }
-        }
-      }
-    },
-    "Updated At": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updated At"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新时间"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新時間"
           }
         }
       }
