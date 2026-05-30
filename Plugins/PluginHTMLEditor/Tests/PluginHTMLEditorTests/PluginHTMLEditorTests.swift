@@ -16,6 +16,25 @@ import Testing
     #expect(values.contains("hsla(240, 100%, 50%, 0.4)"))
 }
 
+@Test func colorParserFindsModernSpaceSeparatedRGBAndHSLColors() async throws {
+    let css = "color: rgb(255 0 0 / 50%); background: hsl(-120 100% 25% / 0.4);"
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values.contains("rgb(255 0 0 / 50%)"))
+    #expect(values.contains("hsl(-120 100% 25% / 0.4)"))
+}
+
+@Test func colorParserFindsRGBPercentChannels() async throws {
+    let css = "border-color: rgba(100% 0% 50% / 25%);"
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values.contains("rgba(100% 0% 50% / 25%)"))
+}
+
 @Test func colorParserNearColorRecognizesHSLValue() async throws {
     let css = "border-color: hsl(0, 100%, 50%);"
     let character = (css as NSString).range(of: "100%").location

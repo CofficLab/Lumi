@@ -80,13 +80,13 @@ public enum ColorParser {
 
     /// 匹配 rgb/rgba 颜色
     public static let rgbPattern = try! NSRegularExpression(
-        pattern: "rgba?\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*(?:,\\s*[\\d.]+\\s*)?\\)",
+        pattern: "rgba?\\(\\s*[^)]*\\)",
         options: .caseInsensitive
     )
 
     /// 匹配 hsl/hsla 颜色
     public static let hslPattern = try! NSRegularExpression(
-        pattern: "hsla?\\(\\s*\\d+\\s*,\\s*\\d+%\\s*,\\s*\\d+%\\s*(?:,\\s*[\\d.]+\\s*)?\\)",
+        pattern: "hsla?\\(\\s*[^)]*\\)",
         options: .caseInsensitive
     )
 
@@ -192,68 +192,29 @@ public enum ColorParser {
 extension Color {
     /// 从 rgb/rgba 字符串创建颜色
     public init?(fromRGB rgbString: String) {
-        let pattern = try! NSRegularExpression(
-            pattern: "rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*(?:,\\s*([\\d.]+)\\s*)?\\)",
-            options: .caseInsensitive
-        )
-
-        let range = NSRange(location: 0, length: rgbString.utf16.count)
-        guard let match = pattern.firstMatch(in: rgbString, options: [], range: range) else {
+        guard let components = Self.functionalColorComponents(from: rgbString, expectedChannelCount: 3),
+              let red = Self.parseRGBChannel(components.channels[0]),
+              let green = Self.parseRGBChannel(components.channels[1]),
+              let blue = Self.parseRGBChannel(components.channels[2]) else {
             return nil
         }
 
-        let nsString = rgbString as NSString
-        guard let redValue = Double(nsString.substring(with: match.range(at: 1))),
-              let greenValue = Double(nsString.substring(with: match.range(at: 2))),
-              let blueValue = Double(nsString.substring(with: match.range(at: 3))) else {
-            return nil
-        }
-
-        let red = min(max(redValue / 255.0, 0.0), 1.0)
-        let green = min(max(greenValue / 255.0, 0.0), 1.0)
-        let blue = min(max(blueValue / 255.0, 0.0), 1.0)
-
-        var alpha = 1.0
-        if match.range(at: 4).location != NSNotFound {
-            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
-                return nil
-            }
-            alpha = min(max(alphaValue, 0.0), 1.0)
-        }
+        guard let alpha = Self.parseAlpha(components.alpha) else { return nil }
 
         self.init(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
     }
 
     /// 从 hsl/hsla 字符串创建颜色。
     public init?(fromHSL hslString: String) {
-        let pattern = try! NSRegularExpression(
-            pattern: "hsla?\\(\\s*(\\d+)\\s*,\\s*(\\d+)%\\s*,\\s*(\\d+)%\\s*(?:,\\s*([\\d.]+)\\s*)?\\)",
-            options: .caseInsensitive
-        )
-
-        let range = NSRange(location: 0, length: hslString.utf16.count)
-        guard let match = pattern.firstMatch(in: hslString, options: [], range: range) else {
+        guard let components = Self.functionalColorComponents(from: hslString, expectedChannelCount: 3),
+              let hueValue = Self.parseNumber(components.channels[0])?.value,
+              let saturation = Self.parsePercentageChannel(components.channels[1]),
+              let lightness = Self.parsePercentageChannel(components.channels[2]),
+              let alpha = Self.parseAlpha(components.alpha) else {
             return nil
         }
 
-        let nsString = hslString as NSString
-        guard let hueValue = Double(nsString.substring(with: match.range(at: 1))),
-              let saturationValue = Double(nsString.substring(with: match.range(at: 2))),
-              let lightnessValue = Double(nsString.substring(with: match.range(at: 3))) else {
-            return nil
-        }
-
-        let hue = hueValue.truncatingRemainder(dividingBy: 360) / 360.0
-        let saturation = min(max(saturationValue / 100.0, 0.0), 1.0)
-        let lightness = min(max(lightnessValue / 100.0, 0.0), 1.0)
-
-        var alpha = 1.0
-        if match.range(at: 4).location != NSNotFound {
-            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
-                return nil
-            }
-            alpha = min(max(alphaValue, 0.0), 1.0)
-        }
+        let hue = ((hueValue.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)) / 360.0
 
         let chroma = (1.0 - abs(2.0 * lightness - 1.0)) * saturation
         let huePrime = hue * 6.0
@@ -277,6 +238,69 @@ extension Color {
 
         let m = lightness - chroma / 2.0
         self.init(.sRGB, red: rgb.red + m, green: rgb.green + m, blue: rgb.blue + m, opacity: alpha)
+    }
+
+    private static func functionalColorComponents(
+        from colorString: String,
+        expectedChannelCount: Int
+    ) -> (channels: [String], alpha: String?)? {
+        guard let openParen = colorString.firstIndex(of: "("),
+              let closeParen = colorString.lastIndex(of: ")"),
+              openParen < closeParen else {
+            return nil
+        }
+
+        let body = colorString[colorString.index(after: openParen)..<closeParen]
+        let slashParts = body.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
+        var channels = Self.colorTokens(in: String(slashParts[0]))
+        var alpha: String?
+
+        if slashParts.count == 2 {
+            let alphaTokens = Self.colorTokens(in: String(slashParts[1]))
+            guard alphaTokens.count == 1 else { return nil }
+            alpha = alphaTokens[0]
+        } else if channels.count == expectedChannelCount + 1 {
+            alpha = channels.removeLast()
+        }
+
+        guard channels.count == expectedChannelCount else { return nil }
+        return (channels, alpha)
+    }
+
+    private static func colorTokens(in string: String) -> [String] {
+        string
+            .replacingOccurrences(of: ",", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+    }
+
+    private static func parseNumber(_ token: String) -> (value: Double, isPercentage: Bool)? {
+        var trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isPercentage = trimmed.hasSuffix("%")
+        if isPercentage {
+            trimmed.removeLast()
+        }
+
+        guard let value = Double(trimmed), value.isFinite else { return nil }
+        return (value, isPercentage)
+    }
+
+    private static func parseRGBChannel(_ token: String) -> Double? {
+        guard let number = Self.parseNumber(token) else { return nil }
+        let normalized = number.isPercentage ? number.value / 100.0 : number.value / 255.0
+        return min(max(normalized, 0.0), 1.0)
+    }
+
+    private static func parsePercentageChannel(_ token: String) -> Double? {
+        guard let number = Self.parseNumber(token), number.isPercentage else { return nil }
+        return min(max(number.value / 100.0, 0.0), 1.0)
+    }
+
+    private static func parseAlpha(_ token: String?) -> Double? {
+        guard let token else { return 1.0 }
+        guard let number = Self.parseNumber(token) else { return nil }
+        let normalized = number.isPercentage ? number.value / 100.0 : number.value
+        return min(max(normalized, 0.0), 1.0)
     }
 
     /// 转换为十六进制字符串
