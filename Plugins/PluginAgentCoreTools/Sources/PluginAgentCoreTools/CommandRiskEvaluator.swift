@@ -26,27 +26,129 @@ public enum CommandRiskEvaluator {
     /// 将整条命令按管道、重定向、连接符拆成多个子命令，并取每个子命令的首词（命令名）。
     private static func commandNamesInChain(_ command: String) -> [String] {
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
-        // 按 | && || ; 换行 拆成段
-        var parts: [String] = [trimmed]
-        for sep in ["||", "&&", "|", ";", "\n"] {
-            parts = parts.flatMap { $0.components(separatedBy: sep) }
-        }
         var names: [String] = []
         var seen = Set<String>()
-        for part in parts {
+        for part in shellCommandSegments(trimmed) {
             let segment = part.trimmingCharacters(in: .whitespaces)
-            let withoutRedirect: String
-            if let idx = segment.firstIndex(of: ">") {
-                withoutRedirect = String(segment[..<idx]).trimmingCharacters(in: .whitespaces)
-            } else {
-                withoutRedirect = segment
-            }
-            let firstWord = withoutRedirect.split(separator: " ", maxSplits: 1).first.map(String.init) ?? ""
+            let withoutRedirect = prefixBeforeUnquotedRedirect(segment).trimmingCharacters(in: .whitespaces)
+            let firstWord = withoutRedirect
+                .split(whereSeparator: { $0.isWhitespace })
+                .first
+                .map(String.init) ?? ""
             if !firstWord.isEmpty, seen.insert(firstWord).inserted {
                 names.append(firstWord)
             }
         }
-        return names.isEmpty ? [trimmed.split(separator: " ").first.map(String.init) ?? ""] : names
+        return names.isEmpty ? [trimmed.split(whereSeparator: { $0.isWhitespace }).first.map(String.init) ?? ""] : names
+    }
+
+    private static func shellCommandSegments(_ command: String) -> [String] {
+        let characters = Array(command)
+        var segments: [String] = []
+        var current = ""
+        var inSingleQuote = false
+        var inDoubleQuote = false
+        var escaped = false
+        var index = 0
+
+        func finishSegment() {
+            let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                segments.append(trimmed)
+            }
+            current = ""
+        }
+
+        while index < characters.count {
+            let character = characters[index]
+
+            if escaped {
+                current.append(character)
+                escaped = false
+                index += 1
+                continue
+            }
+
+            if character == "\\" && !inSingleQuote {
+                current.append(character)
+                escaped = true
+                index += 1
+                continue
+            }
+
+            if character == "'" && !inDoubleQuote {
+                inSingleQuote.toggle()
+                current.append(character)
+                index += 1
+                continue
+            }
+
+            if character == "\"" && !inSingleQuote {
+                inDoubleQuote.toggle()
+                current.append(character)
+                index += 1
+                continue
+            }
+
+            if !inSingleQuote && !inDoubleQuote {
+                if character == "\n" || character == ";" || character == "|" {
+                    finishSegment()
+                    if character == "|", index + 1 < characters.count, characters[index + 1] == "|" {
+                        index += 1
+                    }
+                    index += 1
+                    continue
+                }
+
+                if character == "&", index + 1 < characters.count, characters[index + 1] == "&" {
+                    finishSegment()
+                    index += 2
+                    continue
+                }
+            }
+
+            current.append(character)
+            index += 1
+        }
+
+        finishSegment()
+        return segments
+    }
+
+    private static func prefixBeforeUnquotedRedirect(_ segment: String) -> String {
+        var inSingleQuote = false
+        var inDoubleQuote = false
+        var escaped = false
+
+        for index in segment.indices {
+            let character = segment[index]
+
+            if escaped {
+                escaped = false
+                continue
+            }
+
+            if character == "\\" && !inSingleQuote {
+                escaped = true
+                continue
+            }
+
+            if character == "'" && !inDoubleQuote {
+                inSingleQuote.toggle()
+                continue
+            }
+
+            if character == "\"" && !inSingleQuote {
+                inDoubleQuote.toggle()
+                continue
+            }
+
+            if character == ">" && !inSingleQuote && !inDoubleQuote {
+                return String(segment[..<index])
+            }
+        }
+
+        return segment
     }
 
     /// 检查危险参数/模式，整条命令若匹配则视为高风险。
