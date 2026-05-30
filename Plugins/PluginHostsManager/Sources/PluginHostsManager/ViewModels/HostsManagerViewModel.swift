@@ -138,9 +138,28 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     }
     
     public func addEntry(ip: String, domain: String, comment: String?, group: String?) {
-        let newEntry = HostEntry(type: .entry(ip: ip, domains: [domain], isEnabled: true, comment: comment))
+        let normalizedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
+        let domains = domain
+            .split(whereSeparator: { $0.isWhitespace })
+            .map(String.init)
+
+        guard isValidIP(normalizedIP), !domains.isEmpty else {
+            errorMessage = "Invalid host entry"
+            return
+        }
+
+        let normalizedComment = comment?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedGroup = group?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newEntry = HostEntry(
+            type: .entry(
+                ip: normalizedIP,
+                domains: domains,
+                isEnabled: true,
+                comment: normalizedComment?.isEmpty == false ? normalizedComment : nil
+            )
+        )
         
-        if let group = group, !group.isEmpty {
+        if let group = normalizedGroup, !group.isEmpty {
             // Check if group exists
             if let groupIndex = entries.firstIndex(where: {
                 if case .groupHeader(let name) = $0.type, name == group { return true }

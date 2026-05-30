@@ -261,15 +261,17 @@ public struct HostAddView: View {
                 }
 
                 AppButton(String(localized: "Save", table: "HostsManager"), style: .primary) {
-                    if viewModel.isValidIP(ip) && !domain.isEmpty {
+                    let trimmedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let hasDomain = !domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    if viewModel.isValidIP(trimmedIP) && hasDomain {
                         viewModel.addEntry(ip: ip, domain: domain, comment: comment.isEmpty ? nil : comment, group: group.isEmpty ? nil : group)
                         isPresented = false
                     } else {
-                        showIPError = !viewModel.isValidIP(ip)
+                        showIPError = !viewModel.isValidIP(trimmedIP)
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(domain.isEmpty)
+                .disabled(domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .padding()
