@@ -32,8 +32,8 @@ public struct ProjectControlView: View {
                 .lineLimit(1)
                 .layoutPriority(1)
 
-            if let branch, !branch.isEmpty {
-                gitBranchBadge(branch)
+            if let branchName = GitBranchCache.displayName(for: branch) {
+                gitBranchBadge(branchName)
             }
 
             Image(systemName: "chevron.down")

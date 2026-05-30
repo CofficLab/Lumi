@@ -56,8 +56,7 @@ public struct ProjectsSidebarView: View {
 
     private func projectRow(_ project: Project) -> some View {
         let isSelected = projectVM.currentProjectPath == project.path
-        let branchName = branchCache.branch(for: project.path)
-        let hasBranch = branchName != nil && !branchName!.isEmpty
+        let branchName = GitBranchCache.displayName(for: branchCache.branch(for: project.path))
 
         return HStack(spacing: 8) {
             Image(systemName: isSelected ? "folder.fill" : "folder")
@@ -72,8 +71,8 @@ public struct ProjectsSidebarView: View {
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
 
-                    if hasBranch {
-                        gitBranchBadge(branchName!)
+                    if let branchName {
+                        gitBranchBadge(branchName)
                     }
                 }
 

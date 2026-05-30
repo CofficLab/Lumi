@@ -26,6 +26,12 @@ public final class GitBranchCache: ObservableObject {
         branches[path]
     }
 
+    public nonisolated static func displayName(for branch: String?) -> String? {
+        guard let branch else { return nil }
+        let trimmed = branch.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     /// 批量刷新多个项目路径的分支信息
     public func refresh(paths: [String]) {
         let pathsToLoad = paths.filter { branches[$0] == nil && !loadingPaths.contains($0) }
