@@ -69,6 +69,7 @@ enum MarkdownTableNormalizer {
             if isTableLine(trimmed) {
                 var tableLines: [String] = []
                 var standardTableLineCount = 0
+                var needsBlockBreakAfterTable = false
                 
                 // 收集连续的表格行
                 while i < lines.count {
@@ -103,17 +104,21 @@ enum MarkdownTableNormalizer {
                     if nextTrimmed.isEmpty { break }
                     if isTableLine(nextTrimmed) { break }
                     
-                    // 只含管道符或看起来像续行的内容 → 收集
-                    if nextTrimmed.contains("|") || looksLikeContinuation(nextTrimmed, after: tableLines) {
+                    // 只收集像表格断裂行的内容，避免把表格后的普通管道文本吞进表格。
+                    if looksLikeBrokenTableContinuation(nextTrimmed, after: tableLines) {
                         tableLines.append(nextLine)
                         i += 1
                     } else {
+                        needsBlockBreakAfterTable = nextTrimmed.contains("|")
                         break
                     }
                 }
                 
                 let normalized = normalizeTableBlock(tableLines)
                 result.append(contentsOf: normalized)
+                if needsBlockBreakAfterTable {
+                    result.append("")
+                }
             } else {
                 result.append(line)
                 i += 1
@@ -178,6 +183,14 @@ enum MarkdownTableNormalizer {
         }
         
         return false
+    }
+
+    private static func looksLikeBrokenTableContinuation(_ line: String, after tableLines: [String]) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("|") || trimmed.hasSuffix("|") {
+            return true
+        }
+        return looksLikeContinuation(trimmed, after: tableLines)
     }
     
     /// 判断是否为分隔线行（如 `| --- | --- |` 或 `| :--- | ---: |`）

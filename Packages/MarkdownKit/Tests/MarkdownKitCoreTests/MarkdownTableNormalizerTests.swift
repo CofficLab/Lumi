@@ -215,6 +215,30 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[3] == .paragraph(text: "More text after table."))
     }
 
+    @Test
+    func preservesPipeParagraphImmediatelyAfterTable() {
+        let input = """
+            | A | B |
+            | --- | --- |
+            | 1 | 2 |
+            Note: choose A | B based on context.
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == """
+            | A | B |
+            | --- | --- |
+            | 1 | 2 |
+
+            Note: choose A | B based on context.
+            """)
+        #expect(blocks.count == 2)
+        #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
+        #expect(blocks[1] == .paragraph(text: "Note: choose A | B based on context."))
+    }
+
     // MARK: - 空内容
 
     @Test
