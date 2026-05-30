@@ -144,6 +144,9 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     /// 默认监听端口
     static let defaultPort: UInt16 = 18765
 
+    /// 端口被占用时的最大尝试次数。
+    static let maxPortBindAttempts = 10
+
     /// 是否启用服务器（可通过环境变量控制）
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["LUMI_AUTOMATION_SERVER"] != "false"
@@ -178,7 +181,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
 
     /// 启动自动化服务器
     ///
-    /// - Parameter port: 监听端口，默认使用 `defaultPort`
+    /// - Parameter port: 首选监听端口，默认使用 `defaultPort`
     func start(port: UInt16 = defaultPort) {
         guard Self.isEnabled else {
             Self.logger.info("\(Self.t)Automation server is disabled via environment variable")
@@ -190,13 +193,32 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
             return
         }
 
+        start(preferredPorts: Self.candidatePorts(preferredPort: port))
+    }
+
+    /// 返回首选端口及后续备用端口。
+    static func candidatePorts(preferredPort: UInt16, maxAttempts: Int = maxPortBindAttempts) -> [UInt16] {
+        guard maxAttempts > 0 else { return [] }
+        return (0..<maxAttempts).compactMap { offset in
+            let candidate = Int(preferredPort) + offset
+            guard candidate <= Int(UInt16.max) else { return nil }
+            return UInt16(candidate)
+        }
+    }
+
+    private func start(preferredPorts ports: [UInt16]) {
+        guard let port = ports.first else {
+            Self.logger.error("\(Self.t)Failed to create listener: no candidate ports available")
+            return
+        }
+
         self.port = port
 
         do {
             let parameters = NWParameters.tcp
             listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
         } catch {
-            Self.logger.error("\(Self.t)Failed to create listener on port \(port): \(error.localizedDescription)")
+            startNextCandidate(afterFailureOn: port, remainingPorts: Array(ports.dropFirst()), error: error)
             return
         }
 
@@ -208,8 +230,8 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
                     NotificationCenter.postAutomationServerDidStart(port: Int(self?.port ?? 0))
                 }
             case .failed(let error):
-                Self.logger.error("\(Self.t)Automation server failed: \(error.localizedDescription)")
                 self?.listener = nil
+                self?.startNextCandidate(afterFailureOn: port, remainingPorts: Array(ports.dropFirst()), error: error)
             case .cancelled:
                 Self.logger.info("\(Self.t)Automation server stopped")
                 Task { @MainActor in
@@ -226,6 +248,18 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
 
         listener?.start(queue: .global(qos: .userInitiated))
+    }
+
+    private func startNextCandidate(afterFailureOn port: UInt16, remainingPorts: [UInt16], error: Error) {
+        guard !remainingPorts.isEmpty else {
+            Self.logger.error("\(Self.t)Automation server failed on port \(port): \(error.localizedDescription)")
+            return
+        }
+
+        Self.logger.warning(
+            "\(Self.t)Automation server could not bind port \(port): \(error.localizedDescription). Trying next port."
+        )
+        start(preferredPorts: remainingPorts)
     }
 
     /// 停止自动化服务器
