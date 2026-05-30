@@ -10,10 +10,10 @@ struct AgentDefaultDetailView: View {
         VStack(spacing: 20) {
             Spacer()
             Text("欢迎使用 Lumi")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.appTitle)
                 .foregroundColor(theme.workspaceTextColor())
             Text("请从侧边栏选择一个导航入口")
-                .font(.system(size: 15, weight: .regular))
+                .font(.appBody)
                 .foregroundColor(theme.workspaceSecondaryTextColor())
             Spacer()
         }
