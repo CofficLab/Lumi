@@ -110,7 +110,7 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let jsonData = try encoder.encode(response)
-        let jsonString = String(data: jsonData, encoding: .utf8)!
+        let jsonString = String(decoding: jsonData, as: UTF8.self)
 
         if Self.verbose {
             Self.logger.info("\(Self.t) AskUser tool called: \(question) with options: \(options)")
@@ -121,11 +121,19 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
         return "__ASK_USER_PENDING__\n\(jsonString)"
     }
 
-    private func errorResult(message: String) -> String {
+    func errorResult(message: String) -> String {
+        Self.errorResult(message: message)
+    }
+
+    static func errorResult(message: String) -> String {
         let error = AskUserErrorResponse(error: message)
         let encoder = JSONEncoder()
-        let jsonData = try! encoder.encode(error)
-        return "__ASK_USER_ERROR__\n\(String(data: jsonData, encoding: .utf8)!)"
+        do {
+            let jsonData = try encoder.encode(error)
+            return "__ASK_USER_ERROR__\n\(String(decoding: jsonData, as: UTF8.self))"
+        } catch {
+            return "__ASK_USER_ERROR__\n{\"error\":\"Failed to encode ask_user error response\"}"
+        }
     }
 }
 
