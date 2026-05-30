@@ -1,0 +1,33 @@
+{
+  "originHash" : "bb02c76d9c9912baf72fb580edc292fb9375ecf1181cf87fd4c297388e7e4a01",
+  "pins" : [
+    {
+      "identity" : "libgit2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/Libgit2swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d7a6fa955463bc517a65c0cf146328eff9da8098"
+      }
+    },
+    {
+      "identity" : "magicdiffview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicDiffView",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b97553a3cb8d877981ec787f5f94e5fd0301c9cd"
+      }
+    },
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5"
+      }
+    }
+  ],
+  "version" : 3
+}

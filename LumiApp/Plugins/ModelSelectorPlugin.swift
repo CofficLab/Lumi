@@ -1,0 +1,3 @@
+import PluginModelSelector
+
+typealias ModelSelectorPlugin = PluginModelSelector.ModelSelectorPlugin

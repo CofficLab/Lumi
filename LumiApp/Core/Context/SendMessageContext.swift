@@ -49,19 +49,14 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
         super.init(
             conversationId: conversationId,
             message: message,
-            currentFileURL: currentFileURL
+            currentFileURL: currentFileURL,
+            currentProjectPath: projectVM.currentProjectPath,
+            languagePreference: projectVM.languagePreference,
+            previousMessages: chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
         )
+        self.abortWithMessage = { [chatHistoryService, conversationId] message in
+            chatHistoryService.saveMessage(message, toConversationId: conversationId)
+        }
     }
 
-    // MARK: - Public Methods
-    
-    /// 便捷方法：终止当前发送并保存一条系统消息到会话中
-    ///
-    /// 用于中间件在终止发送时同时通知用户原因（如"请求已取消"、"无法连接到服务"等）。
-    ///
-    /// - Parameter systemMessage: 要保存的系统消息，会显示在聊天界面中
-    func abort(withMessage systemMessage: ChatMessage) {
-        chatHistoryService.saveMessage(systemMessage, toConversationId: conversationId)
-        abortTurn?()
-    }
 }

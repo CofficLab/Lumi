@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderZhipu
+
+typealias ZhipuProvider = PluginLLMProviderZhipu.ZhipuProvider

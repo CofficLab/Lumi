@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderFeifeimiao
+
+typealias FeifeimiaoProvider = PluginLLMProviderFeifeimiao.FeifeimiaoProvider

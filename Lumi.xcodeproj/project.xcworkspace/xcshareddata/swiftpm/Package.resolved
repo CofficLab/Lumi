@@ -456,8 +456,8 @@
         "repositoryURL": "https://github.com/tuist/XcodeProj",
         "state": {
           "branch": null,
-          "revision": "7dbe497dd963b6b29622b13711aa9a156e362ba5",
-          "version": "9.11.0"
+          "revision": "fb79d68bc758cdb00079d72b6c8b899d99f5f15e",
+          "version": "9.12.0"
         }
       },
       {

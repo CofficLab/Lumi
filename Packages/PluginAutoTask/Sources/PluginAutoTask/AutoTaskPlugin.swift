@@ -50,7 +50,10 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(TaskContextMiddleware())]
+        [
+            AnySuperSendMiddleware(TaskContextMiddleware()),
+            AnySuperSendMiddleware(AutoTaskTurnCheckMiddleware()),
+        ]
     }
 }
 
@@ -65,4 +68,7 @@ private struct DefaultAutoTaskConfiguration: AutoTaskConfiguration {
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent("db", isDirectory: true)
     }
+
+    @MainActor
+    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext) {}
 }

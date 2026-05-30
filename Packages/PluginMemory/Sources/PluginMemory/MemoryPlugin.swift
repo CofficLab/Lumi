@@ -79,6 +79,11 @@ public actor MemoryPlugin: SuperPlugin, SuperLog {
             DeleteMemoryTool(),
         ]
     }
+
+    @MainActor
+    public func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(MemoryContextSuperSendMiddleware())]
+    }
 }
 
 enum PluginMemoryLocalization {

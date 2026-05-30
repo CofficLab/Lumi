@@ -1,0 +1,42 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginAgentAvailableTools",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "PluginAgentAvailableTools",
+            targets: ["PluginAgentAvailableTools"]
+        )
+    ],
+    dependencies: [
+        .package(path: "../AgentToolKit"),
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiUI"),
+        .package(path: "../SuperLogKit"),
+    ],
+    targets: [
+        .target(
+            name: "PluginAgentAvailableTools",
+            dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
+            path: "Sources/PluginAgentAvailableTools",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "PluginAgentAvailableToolsTests",
+            dependencies: ["PluginAgentAvailableTools"],
+            path: "Tests/PluginAgentAvailableToolsTests"
+        )
+    ]
+)

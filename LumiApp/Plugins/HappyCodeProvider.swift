@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderHappyCode
+
+typealias HappyCodeProvider = PluginLLMProviderHappyCode.HappyCodeProvider

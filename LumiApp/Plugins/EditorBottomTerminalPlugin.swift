@@ -1,0 +1,3 @@
+import PluginEditorBottomTerminal
+
+typealias EditorBottomTerminalPlugin = PluginEditorBottomTerminal.EditorBottomTerminalPlugin

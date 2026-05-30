@@ -1,0 +1,3 @@
+import PluginSwiftSelectionCodeActionEditor
+
+typealias SwiftSelectionCodeActionEditorPlugin = PluginSwiftSelectionCodeActionEditor.SwiftSelectionCodeActionEditorPlugin

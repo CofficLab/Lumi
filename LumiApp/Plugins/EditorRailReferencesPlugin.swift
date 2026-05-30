@@ -1,0 +1,3 @@
+import PluginEditorRailReferences
+
+typealias EditorRailReferencesPlugin = PluginEditorRailReferences.EditorRailReferencesPlugin

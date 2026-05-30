@@ -75,7 +75,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(AutoTaskTurnCheckMiddleware())]
+        PluginAutoTask.AutoTaskPlugin.shared.sendMiddlewares().map(AnySuperSendMiddleware.init)
     }
 
     // MARK: - UI Contributions
@@ -93,6 +93,12 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 private struct AppAutoTaskConfiguration: AutoTaskConfiguration {
     func databaseDirectory() -> URL {
         AppConfig.getDBFolderURL()
+    }
+
+    @MainActor
+    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext) {
+        guard let appContext = turnContext as? AppTurnFinishedContext else { return }
+        appContext.messageQueueVM.enqueueMessage(message)
     }
 }
 

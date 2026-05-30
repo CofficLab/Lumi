@@ -3,6 +3,18 @@ import Foundation
 import MagicAlert
 import SwiftData
 import SwiftUI
+import LumiCoreKit
+import PluginEditorStickySymbolBar
+import PluginEditorTabStrip
+import PluginEditorRailWorkspaceSymbols
+import PluginFontConfig
+import PluginGit
+import PluginGoEditor
+import PluginJSEditor
+import PluginProjects
+import PluginQuickFileSearch
+import PluginScreenshot
+import PluginTerminal
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
@@ -27,6 +39,14 @@ struct RootView<Content>: View where Content: View {
 
     /// 全局服务容器（单例）。
     @StateObject var container = RootContainer.shared
+    @StateObject private var pluginProjectContext = PluginProjectContext()
+    @StateObject private var pluginRecentProjectsVM = LumiCoreKit.AppProjectsVM()
+    @StateObject private var pluginThemeVM = LumiCoreKit.AppThemeVM()
+    @StateObject private var pluginPluginVM = LumiCoreKit.AppPluginVM()
+    @StateObject private var pluginLLMVM = LumiCoreKit.AppLLMVM()
+    @StateObject private var pluginGitVM = LumiCoreKit.AppGitVM()
+    @StateObject private var pluginConversationVM = LumiCoreKit.WindowConversationVM()
+    @StateObject private var pluginLayoutContext = LumiCoreKit.WindowLayoutVM()
 
     init(container: WindowContainer, @ViewBuilder content: () -> Content) {
         self._windowContainer = ObservedObject(wrappedValue: container)
@@ -34,41 +54,275 @@ struct RootView<Content>: View where Content: View {
     }
 
     var body: some View {
+        pluginLayoutLifecycleScene
+    }
+
+    private var baseScene: some View {
         ZStack {
             RootListener(scope: windowContainer)
-            content
-                .withMagicToast()
-                // 全局 VM（所有窗口共享）
-                .environmentObject(container.windowManagerVM)
-                .environmentObject(container.themeVM)
-                .environmentObject(container.providerRegistry)
-                .environmentObject(container.pluginVM)
-                .environmentObject(container.messageRendererVM)
-                .environmentObject(container.conversationTurnServices)
-                .environmentObject(container.agentSessionConfig)
-                .environmentObject(container.chatHistoryVM)
-                .environmentObject(container.recentProjectsVM)
-                .environmentObject(container.gitVM)
-                .environmentObject(container.idleTimeVM)
-                // 窗口级 VM（每窗口独立）
-                .environmentObject(windowContainer)
-                .environmentObject(windowContainer.editorVM)
-                .environmentObject(windowContainer.conversationVM)
-                .environmentObject(windowContainer.projectVM)
-                .environmentObject(windowContainer.layoutVM)
-                .environmentObject(windowContainer.messageQueueVM)
-                .environmentObject(windowContainer.agentAttachmentsVM)
-                .environmentObject(windowContainer.inputQueueVM)
-                .environmentObject(windowContainer.chatDraftVM)
-                .environmentObject(windowContainer.permissionHandlingVM)
-                .environmentObject(windowContainer.commandSuggestionVM)
-                .environmentObject(windowContainer.permissionRequestVM)
-                .environmentObject(windowContainer.taskCancellationVM)
-                .environmentObject(windowContainer.chatTimelineViewModel)
-                .environmentObject(windowContainer.conversationSendStatusVM)
-                .environmentObject(windowContainer.projectContextRequestVM)
-                .environment(\.windowContainer, windowContainer)
-                .modelContainer(container.modelContainer)
+            configuredContent
+        }
+    }
+
+    private var initialLifecycleScene: some View {
+        baseScene
+            .onAppear(perform: performInitialLifecycleSetup)
+    }
+
+    private var projectLifecycleScene: some View {
+        initialLifecycleScene
+        .onChange(of: windowContainer.projectVM.currentProjectPath) { _, _ in
+            syncPluginProjectContext()
+        }
+        .onChange(of: windowContainer.projectVM.languagePreference) { _, _ in
+            syncPluginProjectContext()
+        }
+        .onChange(of: container.recentProjectsVM.recentProjects) { _, _ in
+            syncPluginRecentProjectsContext()
+        }
+        .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
+            syncPluginConversationContext()
+        }
+    }
+
+    private var llmLifecycleScene: some View {
+        projectLifecycleScene
+        .onChange(of: container.agentSessionConfig.selectedProviderId) { _, _ in syncPluginLLMContext() }
+        .onChange(of: container.agentSessionConfig.currentModel) { _, _ in syncPluginLLMContext() }
+        .onChange(of: container.agentSessionConfig.isAutoMode) { _, _ in syncPluginLLMContext() }
+        .onChange(of: container.agentSessionConfig.chatMode) { _, _ in syncPluginLLMContext() }
+    }
+
+    private var appLayoutLifecycleScene: some View {
+        llmLifecycleScene
+        .onChange(of: windowContainer.layoutVM.bottomPanelVisible) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.contentPanelVisible) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.editorVisible) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.railVisible) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.rightSidebarVisible) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.activeViewContainerIcon) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentSidebarTabId) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentDetailId) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.layoutRatios) { _, _ in syncPluginLayoutContext() }
+    }
+
+    private var pluginLayoutLifecycleScene: some View {
+        appLayoutLifecycleScene
+        .onChange(of: pluginLayoutContext.bottomPanelVisible) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.contentPanelVisible) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.editorVisible) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.railVisible) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.rightSidebarVisible) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.activeViewContainerIcon) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.selectedAgentSidebarTabId) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.selectedAgentDetailId) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.layoutRatios) { _, _ in propagatePluginLayoutContextToApp() }
+    }
+
+    private var configuredContent: some View {
+        windowEnvironmentContent
+            .environment(\.windowContainer, windowContainer)
+            .modelContainer(container.modelContainer)
+    }
+
+    private var windowEnvironmentContent: some View {
+        globalEnvironmentContent
+            // 窗口级 VM（每窗口独立）
+            .environmentObject(windowContainer)
+            .environmentObject(windowContainer.editorVM)
+            .environmentObject(windowContainer.conversationVM)
+            .environmentObject(pluginConversationVM)
+            .environmentObject(windowContainer.projectVM)
+            .environmentObject(pluginProjectContext)
+            .environmentObject(windowContainer.layoutVM)
+            .environmentObject(pluginLayoutContext)
+            .environmentObject(windowContainer.messageQueueVM)
+            .environmentObject(windowContainer.agentAttachmentsVM)
+            .environmentObject(windowContainer.inputQueueVM)
+            .environmentObject(windowContainer.chatDraftVM)
+            .environmentObject(windowContainer.permissionHandlingVM)
+            .environmentObject(windowContainer.commandSuggestionVM)
+            .environmentObject(windowContainer.permissionRequestVM)
+            .environmentObject(windowContainer.taskCancellationVM)
+            .environmentObject(windowContainer.chatTimelineViewModel)
+            .environmentObject(windowContainer.conversationSendStatusVM)
+            .environmentObject(windowContainer.projectContextRequestVM)
+    }
+
+    private var globalEnvironmentContent: some View {
+        content
+            .withMagicToast()
+            // 全局 VM（所有窗口共享）
+            .environmentObject(container.windowManagerVM)
+            .environmentObject(container.themeVM)
+            .environmentObject(pluginThemeVM)
+            .environmentObject(container.providerRegistry)
+            .environmentObject(container.pluginVM)
+            .environmentObject(pluginPluginVM)
+            .environmentObject(container.messageRendererVM)
+            .environmentObject(container.conversationTurnServices)
+            .environmentObject(container.agentSessionConfig)
+            .environmentObject(pluginLLMVM)
+            .environmentObject(container.chatHistoryVM)
+            .environmentObject(container.recentProjectsVM)
+            .environmentObject(pluginRecentProjectsVM)
+            .environmentObject(container.gitVM)
+            .environmentObject(pluginGitVM)
+            .environmentObject(container.idleTimeVM)
+    }
+
+    private func performInitialLifecycleSetup() {
+        syncPluginProjectContext()
+        syncPluginRecentProjectsContext()
+        syncPluginConversationContext()
+        syncPluginLLMContext()
+        syncPluginLayoutContext()
+        configurePluginProjectBridge()
+        configurePluginEditorStickySymbolBarBridge()
+        configurePluginEditorTabStripBridge()
+        configurePluginEditorRailWorkspaceSymbolsBridge()
+        configurePluginFontBridge()
+        configurePluginGoEditorBridge()
+        configurePluginJSEditorBridge()
+        configurePluginScreenshotBridge()
+        configurePluginTerminalBridge()
+        configurePluginQuickFileSearchBridge()
+        configurePluginProjectsBridge()
+    }
+
+    private func syncPluginProjectContext() {
+        pluginProjectContext.update(
+            currentProjectName: windowContainer.projectVM.currentProjectName,
+            currentProjectPath: windowContainer.projectVM.currentProjectPath,
+            languagePreference: windowContainer.projectVM.languagePreference
+        )
+    }
+
+    private func syncPluginRecentProjectsContext() {
+        pluginRecentProjectsVM.setRecentProjects(
+            container.recentProjectsVM.recentProjects.map {
+                LumiCoreKit.Project(name: $0.name, path: $0.path, lastUsed: $0.lastUsed)
+            }
+        )
+    }
+
+    private func syncPluginConversationContext() {
+        pluginConversationVM.selectedConversationId = windowContainer.conversationVM.selectedConversationId
+    }
+
+    private func syncPluginLLMContext() {
+        pluginLLMVM.selectedProviderId = container.agentSessionConfig.selectedProviderId
+        pluginLLMVM.currentModel = container.agentSessionConfig.currentModel
+        pluginLLMVM.isAutoMode = container.agentSessionConfig.isAutoMode
+        pluginLLMVM.lastAutoRouteSummary = container.agentSessionConfig.lastAutoRouteSummary
+        pluginLLMVM.chatMode = LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build
+    }
+
+    private func syncPluginLayoutContext() {
+        pluginLayoutContext.update(
+            bottomPanelVisible: windowContainer.layoutVM.bottomPanelVisible,
+            contentPanelVisible: windowContainer.layoutVM.contentPanelVisible,
+            editorVisible: windowContainer.layoutVM.editorVisible,
+            railVisible: windowContainer.layoutVM.railVisible,
+            rightSidebarVisible: windowContainer.layoutVM.rightSidebarVisible,
+            activeViewContainerIcon: windowContainer.layoutVM.activeViewContainerIcon,
+            selectedAgentSidebarTabId: windowContainer.layoutVM.selectedAgentSidebarTabId,
+            selectedAgentDetailId: windowContainer.layoutVM.selectedAgentDetailId,
+            layoutRatios: windowContainer.layoutVM.layoutRatios
+        )
+    }
+
+    private func propagatePluginLayoutContextToApp() {
+        let layoutVM = windowContainer.layoutVM
+        layoutVM.restoreFromPlugin(activeViewContainerIcon: pluginLayoutContext.activeViewContainerIcon)
+        layoutVM.restoreFromPlugin(tabId: pluginLayoutContext.selectedAgentSidebarTabId)
+        layoutVM.restoreFromPlugin(detailId: pluginLayoutContext.selectedAgentDetailId)
+        layoutVM.restoreFromPlugin(ratios: pluginLayoutContext.layoutRatios)
+        layoutVM.restoreFromPlugin(bottomPanelVisible: pluginLayoutContext.bottomPanelVisible)
+        layoutVM.restoreFromPlugin(contentPanelVisible: pluginLayoutContext.contentPanelVisible)
+        layoutVM.restoreFromPlugin(editorVisible: pluginLayoutContext.editorVisible)
+        layoutVM.restoreFromPlugin(railVisible: pluginLayoutContext.railVisible)
+        layoutVM.restoreFromPlugin(rightSidebarVisible: pluginLayoutContext.rightSidebarVisible)
+    }
+
+    private func configurePluginProjectBridge() {
+        PluginProjectContext.switchProjectHandler = { [windowContainer] project, reason in
+            windowContainer.projectVM.switchProject(
+                to: Project(name: project.name, path: project.path, lastUsed: project.lastUsed),
+                reason: reason
+            )
+        }
+    }
+
+    private func configurePluginProjectsBridge() {
+        PluginProjects.ProjectsBridge.currentProjectPathProvider = { [windowContainer] in
+            windowContainer.projectPath
+        }
+        pluginConversationVM.switchToLatestConversationHandler = { [windowContainer] projectPath in
+            windowContainer.conversationVM.switchToLatestConversation(forProject: projectPath)
+        }
+        pluginConversationVM.createNewConversationHandler = { [windowContainer] projectName, projectPath, languagePreference in
+            await windowContainer.conversationVM.createNewConversation(
+                projectName: projectName,
+                projectPath: projectPath,
+                languagePreference: languagePreference
+            )
+        }
+    }
+
+    private func configurePluginFontBridge() {
+        PluginFontConfig.FontConfigViewModel.applyFontNameHandler = { [windowContainer] fontName in
+            windowContainer.editorVM.service.state.fontName = fontName
+        }
+    }
+
+    private func configurePluginGoEditorBridge() {
+        PluginGoEditor.GoEditorBridge.openFileHandler = { [windowContainer] url, projectRoot in
+            await windowContainer.editorVM.service.refreshProjectContext(for: projectRoot)
+            windowContainer.editorVM.service.open(at: url)
+        }
+    }
+
+    private func configurePluginEditorStickySymbolBarBridge() {
+        PluginEditorStickySymbolBar.EditorStickySymbolBarBridge.editorServiceProvider = { [windowContainer] in
+            windowContainer.editorVM.service
+        }
+    }
+
+    private func configurePluginEditorTabStripBridge() {
+        PluginEditorTabStrip.EditorTabStripBridge.editorServiceProvider = { [windowContainer] in
+            windowContainer.editorVM.service
+        }
+    }
+
+    private func configurePluginEditorRailWorkspaceSymbolsBridge() {
+        PluginEditorRailWorkspaceSymbols.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [windowContainer] in
+            windowContainer.editorVM.service
+        }
+    }
+
+    private func configurePluginJSEditorBridge() {
+        PluginJSEditor.JSEditorBridge.openFileHandler = { [windowContainer] url, projectRoot in
+            await windowContainer.editorVM.service.refreshProjectContext(for: projectRoot)
+            windowContainer.editorVM.service.open(at: url)
+        }
+    }
+
+    private func configurePluginScreenshotBridge() {
+        PluginScreenshot.ScreenshotBridge.activeWindowIdProvider = { [container] in
+            container.windowManagerVM.activeWindowId
+        }
+    }
+
+    private func configurePluginTerminalBridge() {
+        PluginTerminal.TerminalPluginBridge.editorThemeIdProvider = { [container] in
+            container.themeVM.activeEditorThemeId
+        }
+    }
+
+    private func configurePluginQuickFileSearchBridge() {
+        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { path in
+            NotificationCenter.postSyncSelectedFile(path: path)
         }
     }
 }

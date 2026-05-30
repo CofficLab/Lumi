@@ -1,0 +1,3 @@
+import PluginToolCallLoopDetection
+
+typealias ToolCallLoopDetectionPlugin = PluginToolCallLoopDetection.ToolCallLoopDetectionPlugin

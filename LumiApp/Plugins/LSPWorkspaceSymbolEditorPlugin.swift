@@ -1,0 +1,3 @@
+import PluginLSPWorkspaceSymbolEditor
+
+typealias LSPWorkspaceSymbolEditorPlugin = PluginLSPWorkspaceSymbolEditor.LSPWorkspaceSymbolEditorPlugin

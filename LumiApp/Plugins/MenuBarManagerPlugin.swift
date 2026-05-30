@@ -1,0 +1,3 @@
+import PluginMenuBarManager
+
+typealias MenuBarManagerPlugin = PluginMenuBarManager.MenuBarManagerPlugin

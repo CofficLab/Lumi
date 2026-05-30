@@ -1,0 +1,3 @@
+import PluginEditorRailWorkspaceSymbols
+
+typealias EditorRailWorkspaceSymbolsPlugin = PluginEditorRailWorkspaceSymbols.EditorRailWorkspaceSymbolsPlugin

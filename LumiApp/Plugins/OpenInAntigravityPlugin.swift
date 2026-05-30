@@ -1,0 +1,3 @@
+import PluginOpenInAntigravity
+
+typealias OpenInAntigravityPlugin = PluginOpenInAntigravity.AgentOpenInAntigravityPlugin

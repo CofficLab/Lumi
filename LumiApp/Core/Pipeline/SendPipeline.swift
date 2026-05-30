@@ -29,6 +29,23 @@ struct AnySuperSendMiddleware: SuperSendMiddleware {
         }
     }
 
+    init(_ middleware: LumiCoreKit.AnySuperSendMiddleware) {
+        self.id = middleware.id
+        self.order = middleware.order
+        self._handle = { ctx, next in
+            await middleware.handle(ctx: ctx) { coreContext in
+                guard let appContext = coreContext as? SendMessageContext else { return }
+                await next(appContext)
+            }
+        }
+        self._handlePost = { metadata, response in
+            await middleware.handlePost(metadata: metadata, response: response)
+        }
+        self._handleTurnFinished = { ctx in
+            await middleware.handleTurnFinished(ctx: ctx)
+        }
+    }
+
     func handle(
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void

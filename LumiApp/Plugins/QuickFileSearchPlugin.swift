@@ -1,0 +1,3 @@
+import PluginQuickFileSearch
+
+typealias QuickFileSearchPlugin = PluginQuickFileSearch.QuickFileSearchPlugin

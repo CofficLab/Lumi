@@ -1,0 +1,3 @@
+import PluginSampleInsightsEditor
+
+typealias SampleInsightsEditorPlugin = PluginSampleInsightsEditor.SampleInsightsEditorPlugin

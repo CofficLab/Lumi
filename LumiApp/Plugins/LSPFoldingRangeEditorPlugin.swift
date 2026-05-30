@@ -1,0 +1,3 @@
+import PluginLSPFoldingRangeEditor
+
+typealias LSPFoldingRangeEditorPlugin = PluginLSPFoldingRangeEditor.LSPFoldingRangeEditorPlugin

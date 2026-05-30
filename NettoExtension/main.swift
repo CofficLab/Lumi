@@ -1,5 +1,6 @@
 import Foundation
 import NetworkExtension
+import PluginNetto
 
 autoreleasepool {
     NEProvider.startSystemExtensionMode()

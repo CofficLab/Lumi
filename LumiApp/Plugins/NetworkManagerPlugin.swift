@@ -1,0 +1,3 @@
+import PluginNetworkManager
+
+typealias NetworkManagerPlugin = PluginNetworkManager.NetworkManagerPlugin

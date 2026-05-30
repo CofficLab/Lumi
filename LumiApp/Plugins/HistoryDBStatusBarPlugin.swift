@@ -1,0 +1,3 @@
+import PluginHistoryDBStatusBar
+
+typealias HistoryDBStatusBarPlugin = PluginHistoryDBStatusBar.HistoryDBStatusBarPlugin

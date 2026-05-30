@@ -8,8 +8,25 @@ import AgentToolKit
 @MainActor
 public struct ToolContext: AgentToolKit.ToolContextProviding {
     public let languagePreference: LanguagePreference
+    public let llmService: LLMService?
+    public let toolService: ToolService
+    public let llmVM: AppLLMVM?
+    public let conversationVM: WindowConversationVM?
+    public let recentProjectsVM: AppProjectsVM?
 
-    public init(languagePreference: LanguagePreference = .english) {
+    public init(
+        languagePreference: LanguagePreference = .english,
+        llmService: LLMService? = nil,
+        toolService: ToolService = ToolService(),
+        llmVM: AppLLMVM? = nil,
+        conversationVM: WindowConversationVM? = nil,
+        recentProjectsVM: AppProjectsVM? = nil
+    ) {
         self.languagePreference = languagePreference
+        self.llmService = llmService
+        self.toolService = toolService
+        self.llmVM = llmVM
+        self.conversationVM = conversationVM
+        self.recentProjectsVM = recentProjectsVM
     }
 }

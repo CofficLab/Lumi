@@ -4,12 +4,6 @@ import AgentToolKit
 // MARK: - 内置系统消息占位键与工厂
 
 extension ChatMessage {
-    // MARK: 占位键
-
-    static var loadingLocalModelSystemContentKey: String { "__LUMI_LOADING_LOCAL_MODEL__" }
-    static var loadingLocalModelDoneSystemContentKey: String { "__LUMI_LOADING_LOCAL_MODEL_DONE__" }
-    static var turnCompletedSystemContentKey: String { "__LUMI_TURN_COMPLETED__" }
-
     // MARK: 工厂
 
     /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。

@@ -1,4 +1,6 @@
+import AgentToolKit
 import Foundation
+import LumiCoreKit
 
 /// Memory Plugin 配置。
 ///
@@ -22,13 +24,21 @@ public struct MemoryPluginConfig: Sendable {
     /// 是否注入项目索引
     public let injectProjectIndex: Bool
 
+    /// 从 App 侧发送上下文读取当前项目路径。
+    public let projectPathProvider: @MainActor @Sendable (SendMessageContext) -> String
+
+    /// 从 App 侧发送上下文读取语言偏好。
+    public let languagePreferenceProvider: @MainActor @Sendable (SendMessageContext) -> LanguagePreference
+
     public init(
         memoryRootURL: URL,
         maxRelevantMemories: Int = 3,
         staleThresholdDays: Int = 7,
         halfLifeDays: Double = 30,
         injectGlobalIndex: Bool = true,
-        injectProjectIndex: Bool = true
+        injectProjectIndex: Bool = true,
+        projectPathProvider: @escaping @MainActor @Sendable (SendMessageContext) -> String = { _ in "" },
+        languagePreferenceProvider: @escaping @MainActor @Sendable (SendMessageContext) -> LanguagePreference = { _ in .current }
     ) {
         self.memoryRootURL = memoryRootURL
         self.maxRelevantMemories = maxRelevantMemories
@@ -36,6 +46,8 @@ public struct MemoryPluginConfig: Sendable {
         self.halfLifeDays = halfLifeDays
         self.injectGlobalIndex = injectGlobalIndex
         self.injectProjectIndex = injectProjectIndex
+        self.projectPathProvider = projectPathProvider
+        self.languagePreferenceProvider = languagePreferenceProvider
     }
 
     /// 默认配置（用于测试）

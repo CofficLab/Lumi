@@ -1,0 +1,3 @@
+import PluginEditorBottomSymbols
+
+typealias EditorBottomSymbolsPlugin = PluginEditorBottomSymbols.EditorBottomSymbolsPlugin

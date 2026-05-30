@@ -1,0 +1,3 @@
+import PluginLSPInlayHintEditor
+
+typealias LSPInlayHintEditorPlugin = PluginLSPInlayHintEditor.LSPInlayHintEditorPlugin

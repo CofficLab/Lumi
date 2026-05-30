@@ -1,0 +1,3 @@
+import PluginLLMAvailability
+
+typealias LLMAvailabilityPlugin = PluginLLMAvailability.LLMAvailabilityPlugin

@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderLPgpt
+
+typealias LPgptProvider = PluginLLMProviderLPgpt.LPgptProvider

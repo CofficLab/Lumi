@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 插件视图构建上下文
 ///
@@ -39,17 +40,29 @@ public struct PluginContext {
     /// 项目相关插件可据此决定是否贡献工具栏视图。
     public let showsProjectToolbar: Bool
 
+    /// 当前项目路径。
+    ///
+    /// 为空字符串表示当前窗口未选择项目。
+    public let currentProjectPath: String
+
+    /// 当前窗口的语言偏好。
+    public let languagePreference: LanguagePreference
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
         activeProviderId: String? = nil,
         supportsAIChat: Bool = false,
-        showsProjectToolbar: Bool = false
+        showsProjectToolbar: Bool = false,
+        currentProjectPath: String = "",
+        languagePreference: LanguagePreference = .current
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
         self.activeProviderId = activeProviderId
         self.supportsAIChat = supportsAIChat
         self.showsProjectToolbar = showsProjectToolbar
+        self.currentProjectPath = currentProjectPath
+        self.languagePreference = languagePreference
     }
 }

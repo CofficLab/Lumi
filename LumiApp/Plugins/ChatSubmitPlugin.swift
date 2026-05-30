@@ -1,5 +1,6 @@
 import LumiCoreKit
 import LumiUI
+import PluginChatSubmit
 import SwiftUI
 import os
 
@@ -12,12 +13,12 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🚀"
     nonisolated static let verbose: Bool = true
-    static let id = "ChatSubmit"
-    static let displayName = String(localized: "Chat Submit", table: "AgentChat")
-    static let description = String(localized: "Send or stop chat messages", table: "AgentChat")
-    static let iconName = "paperplane"
-    static var category: PluginCategory { .agent }
-    static var order: Int { 86 }
+    static let id = PluginChatSubmit.ChatSubmitPlugin.id
+    static let displayName = PluginChatSubmit.ChatSubmitPlugin.displayName
+    static let description = PluginChatSubmit.ChatSubmitPlugin.description
+    static let iconName = PluginChatSubmit.ChatSubmitPlugin.iconName
+    static var category: PluginCategory { PluginCategory(package: PluginChatSubmit.ChatSubmitPlugin.category) }
+    static var order: Int { PluginChatSubmit.ChatSubmitPlugin.order }
     static let shared = ChatSubmitPlugin()
 
     // MARK: - Lifecycle
@@ -29,15 +30,7 @@ actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     // MARK: - Sidebar Toolbar
 
     @MainActor func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.supportsAIChat else { return [] }
-        return [
-            SidebarToolbarItem(
-                id: "chat-submit",
-                title: String(localized: "Send Message", table: "AgentChat"),
-                systemImage: "paperplane.fill",
-                priority: 50
-            )
-        ]
+        PluginChatSubmit.ChatSubmitPlugin.shared.addSidebarTrailingToolbarItems(context: context).map(SidebarToolbarItem.init(package:))
     }
 
     @MainActor func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
@@ -133,11 +126,4 @@ extension ChatSubmitToolbarButton {
         guard let conversationId = conversationVM.selectedConversationId else { return }
         taskCancellationVM.requestCancel(conversationId: conversationId)
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    ChatSubmitToolbarButton()
-        .inRootView()
 }

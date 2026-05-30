@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0309FF660DD579535EF2639E /* PluginEditorRailReferences in Frameworks */ = {isa = PBXBuildFile; productRef = A73D3B5ABDE77D231BC4C2CE /* PluginEditorRailReferences */; };
+		0434893535D5E18D2FC114DE /* PluginEditorXcode in Frameworks */ = {isa = PBXBuildFile; productRef = D2F657DE38A9CE03FA6BAC91 /* PluginEditorXcode */; };
+		066C1D1FC706CDF96453C2F2 /* PluginEditorChatIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = D833CDACADF47F5D404A4314 /* PluginEditorChatIntegration */; };
+		070DA8662CEA8B02EC65A188 /* PluginDatabaseManager in Frameworks */ = {isa = PBXBuildFile; productRef = F580545C289FE0C1D7966F4A /* PluginDatabaseManager */; };
 		0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */ = {isa = PBXBuildFile; productRef = MRK100000000000000001 /* ModelRouterKit */; };
 		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
 		0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9192FC3111D00F7DC5D /* PluginWebFetch */; };
@@ -35,7 +39,33 @@
 		0B14A1F22FD4000000A14A1F /* PluginThemeNebula in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1F12FD4000000A14A1F /* PluginThemeNebula */; };
 		0B14A2022FD4000000A14A20 /* PluginThemeOneDark in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2012FD4000000A14A20 /* PluginThemeOneDark */; };
 		0B14A2122FD4000000A14A21 /* PluginAppStoreConnect in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */; };
+		0B14B1022FD4000000B14B10 /* PluginThemeLumi in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1012FD4000000B14B10 /* PluginThemeLumi */; };
+		0B14B1122FD4000000B14B11 /* PluginThemeOrchard in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1112FD4000000B14B11 /* PluginThemeOrchard */; };
+		0B14B1222FD4000000B14B12 /* PluginThemeRiver in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1212FD4000000B14B12 /* PluginThemeRiver */; };
+		0B14B1322FD4000000B14B13 /* PluginThemeSky in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1312FD4000000B14B13 /* PluginThemeSky */; };
+		0B14B1422FD4000000B14B14 /* PluginThemeSpring in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1412FD4000000B14B14 /* PluginThemeSpring */; };
+		0B14B1522FD4000000B14B15 /* PluginThemeSummer in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1512FD4000000B14B15 /* PluginThemeSummer */; };
+		0B14B1622FD4000000B14B16 /* PluginThemeVoid in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1612FD4000000B14B16 /* PluginThemeVoid */; };
+		0B14B1722FD4000000B14B17 /* PluginThemeVscodeDark in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */; };
+		0B14B1822FD4000000B14B18 /* PluginThemeVscodeLight in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */; };
+		0B14B1922FD4000000B14B19 /* PluginThemeWinter in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1912FD4000000B14B19 /* PluginThemeWinter */; };
 		0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = 0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */; };
+		0B16C2022FD6000000C16C20 /* PluginLLMProviderAiRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2012FD6000000C16C20 /* PluginLLMProviderAiRouter */; };
+		0B16C2122FD6000000C16C21 /* PluginLLMProviderAliyun in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2112FD6000000C16C21 /* PluginLLMProviderAliyun */; };
+		0B16C2222FD6000000C16C22 /* PluginLLMProviderAnthropic in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2212FD6000000C16C22 /* PluginLLMProviderAnthropic */; };
+		0B16C2322FD6000000C16C23 /* PluginLLMProviderDeepSeek in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2312FD6000000C16C23 /* PluginLLMProviderDeepSeek */; };
+		0B16C2422FD6000000C16C24 /* PluginLLMProviderFeifeimiao in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2412FD6000000C16C24 /* PluginLLMProviderFeifeimiao */; };
+		0B16C2522FD6000000C16C25 /* PluginLLMProviderFlyMux in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2512FD6000000C16C25 /* PluginLLMProviderFlyMux */; };
+		0B16C2622FD6000000C16C26 /* PluginLLMProviderFreeModel in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2612FD6000000C16C26 /* PluginLLMProviderFreeModel */; };
+		0B16C2722FD6000000C16C27 /* PluginLLMProviderHappyCode in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2712FD6000000C16C27 /* PluginLLMProviderHappyCode */; };
+		0B16C2822FD6000000C16C28 /* PluginLLMProviderHyperAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2812FD6000000C16C28 /* PluginLLMProviderHyperAPI */; };
+		0B16C2922FD6000000C16C29 /* PluginLLMProviderLPgpt in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2912FD6000000C16C29 /* PluginLLMProviderLPgpt */; };
+		0B16C2A22FD6000000C16C2A /* PluginLLMProviderMegaLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2A12FD6000000C16C2A /* PluginLLMProviderMegaLLM */; };
+		0B16C2B22FD6000000C16C2B /* PluginLLMProviderOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2B12FD6000000C16C2B /* PluginLLMProviderOpenAI */; };
+		0B16C2C22FD6000000C16C2C /* PluginLLMProviderOpenRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2C12FD6000000C16C2C /* PluginLLMProviderOpenRouter */; };
+		0B16C2D22FD6000000C16C2D /* PluginLLMProviderXiaomi in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2D12FD6000000C16C2D /* PluginLLMProviderXiaomi */; };
+		0B16C2E22FD6000000C16C2E /* PluginLLMProviderXybbz in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2E12FD6000000C16C2E /* PluginLLMProviderXybbz */; };
+		0B16C2F22FD6000000C16C2F /* PluginLLMProviderZhipu in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2F12FD6000000C16C2F /* PluginLLMProviderZhipu */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
 		0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F822F662D8500F15618 /* MLXFast */; };
@@ -64,7 +94,64 @@
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		110CA997C62F1EABA1192424 /* PluginAgentDelayMessage in Frameworks */ = {isa = PBXBuildFile; productRef = C987521DF47CD2B78A18DEEA /* PluginAgentDelayMessage */; };
+		116713ECD19CB60F0FE8DD56 /* PluginVerbosity in Frameworks */ = {isa = PBXBuildFile; productRef = 421F79F03BD0B9582EF22F77 /* PluginVerbosity */; };
+		126B7B873448E07D757E32A7 /* PluginChatPanel in Frameworks */ = {isa = PBXBuildFile; productRef = 6A47B269A2ED1ED3084795B2 /* PluginChatPanel */; };
+		1317EF19687E0E0275CC8AAF /* PluginAgentContextSync in Frameworks */ = {isa = PBXBuildFile; productRef = 756A5E948D13CF19249C0E7C /* PluginAgentContextSync */; };
+		13ED7035AD480A898EDB782E /* PluginToolPermission in Frameworks */ = {isa = PBXBuildFile; productRef = A888E42C948716BF00411A5A /* PluginToolPermission */; };
+		1728277B923BCE3F349C7429 /* PluginProjects in Frameworks */ = {isa = PBXBuildFile; productRef = 6019D587DEBF8FC157A4B183 /* PluginProjects */; };
+		17BE6E536402248FF62AEF59 /* PluginLSPFoldingRangeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 1113D32AF9EE515970F22173 /* PluginLSPFoldingRangeEditor */; };
+		1845167D0C85F9D21F4CF36E /* PluginQuickFileSearch in Frameworks */ = {isa = PBXBuildFile; productRef = CA9677964B0ADD77AC15F115 /* PluginQuickFileSearch */; };
+		190CC2C7077EB69949D915EE /* PluginModelSelector in Frameworks */ = {isa = PBXBuildFile; productRef = 33C4717D770A5C280531D31A /* PluginModelSelector */; };
+		1B3F411F9227EFE6A6E668B2 /* PluginNetworkManager in Frameworks */ = {isa = PBXBuildFile; productRef = 0CC28B22B67E5167FC53D5CA /* PluginNetworkManager */; };
+		20091CB0F3EA09F769E89C92 /* PluginLSPCodeActionEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 540EC2E245852513F1CF1367 /* PluginLSPCodeActionEditor */; };
+		2373D46695721855442F6F33 /* PluginEditorBottomSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 42F8546E40DA4FA3EC0B495C /* PluginEditorBottomSymbols */; };
+		25767DACBD96495DB2A01A09 /* PluginQuickLauncher in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE952B8EC5589B7FAC5F438 /* PluginQuickLauncher */; };
+		25EBD5F8828299D24CD957AB /* PluginOpenInFinder in Frameworks */ = {isa = PBXBuildFile; productRef = 2BBCDA7A2E5E2FC32492A4CE /* PluginOpenInFinder */; };
+		26B1FE86E8B0A29B0C1186C5 /* PluginCodeReview in Frameworks */ = {isa = PBXBuildFile; productRef = 222862D73B28AE7E70D024CD /* PluginCodeReview */; };
+		2BD0B54D2418DEF95C57C5AC /* PluginSwiftPrimitiveTypesEditor in Frameworks */ = {isa = PBXBuildFile; productRef = ADCEB9CD62A88AAD4ADA31FE /* PluginSwiftPrimitiveTypesEditor */; };
+		2F2C6C67EF861EF851FAFD0E /* PluginGitHubInsight in Frameworks */ = {isa = PBXBuildFile; productRef = 2139E33490AD39C3E62FE370 /* PluginGitHubInsight */; };
+		2FD0F52CDE473F3C84AE341E /* PluginHostsManager in Frameworks */ = {isa = PBXBuildFile; productRef = 3FAB0446AE0905E166689557 /* PluginHostsManager */; };
+		31BEE72F0BE3FAF4BC8AA026 /* PluginProjectIssueScanner in Frameworks */ = {isa = PBXBuildFile; productRef = B2F094BFBD5983FB736842A7 /* PluginProjectIssueScanner */; };
+		35CB4C8E281ADCE40C9C225C /* PluginRequestLog in Frameworks */ = {isa = PBXBuildFile; productRef = 3B5D9B10E007DA3DF5568D45 /* PluginRequestLog */; };
+		3737F3D94228D3EEB2AE12E1 /* PluginWindowPersistence in Frameworks */ = {isa = PBXBuildFile; productRef = 3378041B4453306FBCAAC631 /* PluginWindowPersistence */; };
+		38E7CA5232BB4EF006059236 /* PluginOpenInCursor in Frameworks */ = {isa = PBXBuildFile; productRef = EA7D69B8243B8FB0A6A35A44 /* PluginOpenInCursor */; };
+		3C074EFAB969B302CB8BFCB6 /* PluginSampleDecorationEditor in Frameworks */ = {isa = PBXBuildFile; productRef = E87E1005243A0185A1950AEA /* PluginSampleDecorationEditor */; };
+		3C2437EA332E033F3A27F3F0 /* PluginLSPSignatureHelpEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 7E49825683D80FC2058AA030 /* PluginLSPSignatureHelpEditor */; };
+		426BCD3BF3C1D77D64B549E1 /* PluginOpenInGitHubDesktop in Frameworks */ = {isa = PBXBuildFile; productRef = 2DF456A9B61F32257059FBA6 /* PluginOpenInGitHubDesktop */; };
+		431A2253A7287C3DAC6CEF8D /* PluginAgentTurnNotification in Frameworks */ = {isa = PBXBuildFile; productRef = 21709EC063923191DD80EA8C /* PluginAgentTurnNotification */; };
+		45AF4812A015A3C07E6100AE /* PluginAgentAvailableTools in Frameworks */ = {isa = PBXBuildFile; productRef = 0807A4F132BDC96F1DF8D95A /* PluginAgentAvailableTools */; };
+		4698F76BE2458B089C9BB092 /* PluginOpenRemote in Frameworks */ = {isa = PBXBuildFile; productRef = 6EF37B09934798601F41B124 /* PluginOpenRemote */; };
+		4E7A28FFAEFAE9F8CAE69C5A /* PluginSkill in Frameworks */ = {isa = PBXBuildFile; productRef = 24D491F56AE264B9AA9E2E91 /* PluginSkill */; };
+		4E85441A500D47D3A56EAB24 /* PluginGit in Frameworks */ = {isa = PBXBuildFile; productRef = FF447BE55639C32DE38DF2FF /* PluginGit */; };
+		4F1D3C96C622FE0070A8F2DC /* PluginChatPendingMessages in Frameworks */ = {isa = PBXBuildFile; productRef = EB14ADD8E23A0509E5B4A450 /* PluginChatPendingMessages */; };
+		527E538338A2D896F69F433A /* PluginEditorLSPContextCommands in Frameworks */ = {isa = PBXBuildFile; productRef = C1FE8D6B33D4FD981DA1B304 /* PluginEditorLSPContextCommands */; };
+		5AEBA0D9F7D752533E179AAE /* PluginChatMessages in Frameworks */ = {isa = PBXBuildFile; productRef = 8DBCC412CBCC77F72DF8AC86 /* PluginChatMessages */; };
+		632870E268CBC1FE7CBEC713 /* PluginJSEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 5ADFB2940134A5456FFC50DC /* PluginJSEditor */; };
+		63FE8D3115ADAF240720F766 /* PluginChatSubmit in Frameworks */ = {isa = PBXBuildFile; productRef = 40744482CF09A5DA593B072E /* PluginChatSubmit */; };
+		6C870097B99D594B3F75ED76 /* PluginEditorBreadcrumb in Frameworks */ = {isa = PBXBuildFile; productRef = 06D6189D393D16D050911274 /* PluginEditorBreadcrumb */; };
+		6CBF32D3ECDB6455EE034D92 /* PluginEditorOutlineRail in Frameworks */ = {isa = PBXBuildFile; productRef = 6D57941C98C787EFAF6ACEE7 /* PluginEditorOutlineRail */; };
+		6D4A399ECA106E81542AF33C /* PluginHistoryDBStatusBar in Frameworks */ = {isa = PBXBuildFile; productRef = CD36D0CA9AEA1700AA795264 /* PluginHistoryDBStatusBar */; };
+		7174D3C019E0427230D6601E /* PluginEditorPreview in Frameworks */ = {isa = PBXBuildFile; productRef = A5FC32ADABD140B2B0035C89 /* PluginEditorPreview */; };
+		72F32F0061704AEDE532938E /* PluginChatMode in Frameworks */ = {isa = PBXBuildFile; productRef = 6F8A1AB868752C8243F6967D /* PluginChatMode */; };
+		7396FF7A2581C41E9FB78526 /* PluginEditorBottomProblems in Frameworks */ = {isa = PBXBuildFile; productRef = 6A7151DA003C0EB79C0EA85C /* PluginEditorBottomProblems */; };
+		7B0B6089AFF0C7FD6A1948C6 /* PluginConversationTimeline in Frameworks */ = {isa = PBXBuildFile; productRef = 093F70C122EC1FED81C67B47 /* PluginConversationTimeline */; };
+		7B6CCCD982190CD1F976111F /* PluginEditorStickySymbolBar in Frameworks */ = {isa = PBXBuildFile; productRef = 8C0AD937A0B1EA2C75715271 /* PluginEditorStickySymbolBar */; };
+		7C2A50AD6255CB6CA6590E56 /* PluginAgentMCPTools in Frameworks */ = {isa = PBXBuildFile; productRef = 6AC603D847F506F371242CD7 /* PluginAgentMCPTools */; };
+		7D5BFE230296855759086281 /* PluginEditorTabStrip in Frameworks */ = {isa = PBXBuildFile; productRef = 117C9B4CBEDA46F2D629D728 /* PluginEditorTabStrip */; };
+		7DD8F4335E155DC97ABF13F8 /* PluginEditorBottomCallHierarchy in Frameworks */ = {isa = PBXBuildFile; productRef = 0D4B4B8A4AFC75820A5EE968 /* PluginEditorBottomCallHierarchy */; };
+		7EF274F366ED61F3BF9C8255 /* PluginHTMLEditor in Frameworks */ = {isa = PBXBuildFile; productRef = A8C9517E99964AA34F66E8AC /* PluginHTMLEditor */; };
+		803C1DAC55C7906647CA73FB /* PluginClipboardManager in Frameworks */ = {isa = PBXBuildFile; productRef = 4FCD6020D268A9D5AC47D7F2 /* PluginClipboardManager */; };
+		8C52E2D1E6E203DDC985D262 /* PluginMarkdownEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 7392A072A2B7A013040F1CEF /* PluginMarkdownEditor */; };
+		8CFDB6189464E7EE4900509B /* PluginLSPDocumentHighlightEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 63535D28C4AF6B0BFA910B9D /* PluginLSPDocumentHighlightEditor */; };
+		9126473F502831A7FE6BE25C /* PluginTextActions in Frameworks */ = {isa = PBXBuildFile; productRef = F6016FAA6014704B4C9FCB38 /* PluginTextActions */; };
+		9245E1C1E335583539C6DCEB /* PluginChatInput in Frameworks */ = {isa = PBXBuildFile; productRef = 5755CBABA6BBE5EB002B95BE /* PluginChatInput */; };
+		94BCD4A7A20B016D0EFE8768 /* PluginLLMProviderMLX in Frameworks */ = {isa = PBXBuildFile; productRef = 5E5BE619B13B7D70554962B2 /* PluginLLMProviderMLX */; };
+		983CBFE449716268E836981E /* PluginRClick in Frameworks */ = {isa = PBXBuildFile; productRef = 97D1986301A61EFEDC58B1DC /* PluginRClick */; };
+		99E19AC31FAB359BA7CB7CA9 /* PluginMenuBarManager in Frameworks */ = {isa = PBXBuildFile; productRef = 80F4055C0A75E21F621EDD2F /* PluginMenuBarManager */; };
 		9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = B58B244CDF214E2CB80C1953 /* LLMKit */; };
+		9BB7CC2702C9F8312F4C1041 /* PluginFontConfig in Frameworks */ = {isa = PBXBuildFile; productRef = D04E348CC6815BBC821246B8 /* PluginFontConfig */; };
+		9DDBAC02E131DDF3207FA765 /* PluginThemeStatusBar in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */; };
 		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
@@ -81,7 +168,30 @@
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		A1B2C4652F70000100AAA108 /* OpenInKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4642F70000100AAA108 /* OpenInKit */; };
+		A32C0583D3F40913D91DD732 /* PluginEditorBottomTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 4E06C63D18FE5570C01D0BE4 /* PluginEditorBottomTerminal */; };
+		A3DDA20A0EF759F47843A7F2 /* PluginModelPreference in Frameworks */ = {isa = PBXBuildFile; productRef = E38A5C1F87C002AB69089D69 /* PluginModelPreference */; };
+		A4EE8CF89B7405397129374C /* PluginLSPDocumentColorEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 4D9A3039E03ABC33955C1158 /* PluginLSPDocumentColorEditor */; };
+		AABC057E19985637886A7F9C /* PluginEditorRailWorkspaceSearch in Frameworks */ = {isa = PBXBuildFile; productRef = 5C78FF3A41548DF8C421E006 /* PluginEditorRailWorkspaceSearch */; };
+		AC1D2F789F62AE449A60D34B /* PluginPortManager in Frameworks */ = {isa = PBXBuildFile; productRef = B560FF04481C6F165CD60F19 /* PluginPortManager */; };
+		AF379962E09CF02B4C1D30AF /* PluginLSPCallHierarchyEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 05028C92A65D275F2BA258D1 /* PluginLSPCallHierarchyEditor */; };
+		AF9669E84A2C8E96656C548A /* PluginOpenInAntigravity in Frameworks */ = {isa = PBXBuildFile; productRef = CD119DA64936A0677CFFC355 /* PluginOpenInAntigravity */; };
+		AFA8E601EF5D2CF137AB66DD /* PluginNetto in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* PluginNetto */; };
+		B094495387BE5ABD5F457CC4 /* PluginLLMAvailability in Frameworks */ = {isa = PBXBuildFile; productRef = CF37A2737672A36EE39F9675 /* PluginLLMAvailability */; };
+		B0BB783FD703D1E973BFC2AB /* PluginCSSEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 9CA85CCC25B5CFCDB05CE712 /* PluginCSSEditor */; };
+		B0D252781F08F87C6D529525 /* PluginLSPWorkspaceSymbolEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 3733D959456FB1A13F7B6C72 /* PluginLSPWorkspaceSymbolEditor */; };
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
+		B2369B70657A89A84E8AF509 /* PluginEditorSwiftKeywordHover in Frameworks */ = {isa = PBXBuildFile; productRef = ED1C0B8D0E735CE19C445B2A /* PluginEditorSwiftKeywordHover */; };
+		B370A61A765A0039F2164429 /* PluginEditorRailProblems in Frameworks */ = {isa = PBXBuildFile; productRef = C11E6B666996D1E7463CBA19 /* PluginEditorRailProblems */; };
+		B51B8D70B520D4035EF95216 /* PluginLayout in Frameworks */ = {isa = PBXBuildFile; productRef = E5BAAC407D353CE1C4C3456C /* PluginLayout */; };
+		B53E423F3C186EBA2A4AF6A5 /* PluginSwiftSelectionCodeActionEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 17409507E773057064E5EE13 /* PluginSwiftSelectionCodeActionEditor */; };
+		B56FDF4F3C2A9C03E0014C92 /* PluginOpenInXcode in Frameworks */ = {isa = PBXBuildFile; productRef = CE01B1C3B34746452A52C83B /* PluginOpenInXcode */; };
+		B6FA30697B81A9126DDCA645 /* PluginChatAttachment in Frameworks */ = {isa = PBXBuildFile; productRef = CE43FCDC3916F4304CD5E500 /* PluginChatAttachment */; };
+		B9320A26F00C7DFB3E8D95B5 /* PluginLSPToolbarEditor in Frameworks */ = {isa = PBXBuildFile; productRef = EDF68831967B90546941FAD4 /* PluginLSPToolbarEditor */; };
+		B9BC9BCBCB384FC7BFD6A25D /* PluginAgentCoreTools in Frameworks */ = {isa = PBXBuildFile; productRef = BD7E70D4D1B6285FA55DF1A4 /* PluginAgentCoreTools */; };
+		BABF9D4E66FD8DB6E0D0DE86 /* PluginEditorRailWorkspaceSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = AC9B98BECA0E380218D5A1EC /* PluginEditorRailWorkspaceSymbols */; };
+		BEAADCF034AB86A0F7391A64 /* PluginEditorBottomSearch in Frameworks */ = {isa = PBXBuildFile; productRef = 99107EEA435A36CE02544423 /* PluginEditorBottomSearch */; };
+		BF0A4AF60E062B81C68669C0 /* PluginEditorCallHierarchyRail in Frameworks */ = {isa = PBXBuildFile; productRef = 0FB5999145DD4E2DDFF64901 /* PluginEditorCallHierarchyRail */; };
+		C0C7A298A9A03C75070E4258 /* PluginIdleTime in Frameworks */ = {isa = PBXBuildFile; productRef = 156103FFA7EBEA0288507387 /* PluginIdleTime */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
 		C0FF1C112FB4000000000001 /* HttpKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C122FB4000000000001 /* HttpKit */; };
 		C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF2A112FB5000000000001 /* GitHubKit */; };
@@ -89,7 +199,30 @@
 		C0FF6F012FCF000000000001 /* GoEditorCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF6F022FCF000000000001 /* GoEditorCore */; };
 		C0FF7A012FD0000000000001 /* MCPKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7A022FD0000000000001 /* MCPKit */; };
 		C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7B022FD1000000000001 /* WorkspaceFileKit */; };
+		C1F8DE2C15A7D8407AD54E32 /* PluginInput in Frameworks */ = {isa = PBXBuildFile; productRef = 92B3FDD21155C9F036A5598E /* PluginInput */; };
+		C30BD02944EBE421AB26D1F8 /* PluginEditorPanel in Frameworks */ = {isa = PBXBuildFile; productRef = 0FE19E618D25039EB8817B38 /* PluginEditorPanel */; };
+		CA887353886BBA1B3F940CAA /* PluginAgentRAG in Frameworks */ = {isa = PBXBuildFile; productRef = 1C295BDFECB699C46510D2D4 /* PluginAgentRAG */; };
+		CFF3EA168629382018C28250 /* PluginScreenshot in Frameworks */ = {isa = PBXBuildFile; productRef = 7F080107C249FFC8C5F9E0C4 /* PluginScreenshot */; };
+		D0DF68DEA8E44F944DB2A220 /* PluginLSPRealtimeSignalsEditor in Frameworks */ = {isa = PBXBuildFile; productRef = E23DAA9331335EBF87C2EF45 /* PluginLSPRealtimeSignalsEditor */; };
+		D18D263887DCE7609786AB30 /* PluginEditorBottomReferences in Frameworks */ = {isa = PBXBuildFile; productRef = 590583DC36F54C708D573720 /* PluginEditorBottomReferences */; };
+		D4D80C0D6F8934D748BBAB65 /* PluginAgentMessageRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = E7A6066A71F4DE1B69B489A7 /* PluginAgentMessageRenderer */; };
+		D59BC26BC4D1C97A9E498482 /* PluginLSPDocumentLinkEditor in Frameworks */ = {isa = PBXBuildFile; productRef = ACCA775D38E3807370061F59 /* PluginLSPDocumentLinkEditor */; };
+		D950F28305D0F9B7DDAA6738 /* PluginConversationTitle in Frameworks */ = {isa = PBXBuildFile; productRef = 57FD4D7CA89D0CCBB5BF034D /* PluginConversationTitle */; };
+		D97027B95BD7221FF642209C /* PluginAgentRules in Frameworks */ = {isa = PBXBuildFile; productRef = B4793F7CEEF875247D8526E6 /* PluginAgentRules */; };
+		DC47779704049EFAB703CD70 /* PluginOnboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 7F5096839AA1CAEB37D14115 /* PluginOnboarding */; };
+		DC4E41169C5DD6BAC3931412 /* PluginLSPInlayHintEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 5048D4096A0CD01B54CEE904 /* PluginLSPInlayHintEditor */; };
+		DE2BAD45B5E01C7870351ACB /* PluginAgentGitHubTools in Frameworks */ = {isa = PBXBuildFile; productRef = 30E2D969ABAB2E8661190487 /* PluginAgentGitHubTools */; };
+		DF2B056E9B45FF14D7A27520 /* PluginGoEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 26B5C12A68D5CA8916483351 /* PluginGoEditor */; };
+		E0260D2EC50E3629FBB83CBF /* PluginEditorRailFileTree in Frameworks */ = {isa = PBXBuildFile; productRef = 4CA3D711C573428EB9CE2F4C /* PluginEditorRailFileTree */; };
+		E0E80CE69619E14D18AEF140 /* PluginLSPSelectionRangeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 03413D108D23512D0E24E109 /* PluginLSPSelectionRangeEditor */; };
+		E59ED5F547A067AE6B69CC59 /* PluginConversationNew in Frameworks */ = {isa = PBXBuildFile; productRef = 7BF09B47A508DCAE88D0A48C /* PluginConversationNew */; };
+		E7D1ECDF52B61DA69CC2D16B /* PluginToolCallLoopDetection in Frameworks */ = {isa = PBXBuildFile; productRef = 84C54E39AE2E087C8D61369C /* PluginToolCallLoopDetection */; };
+		E887184C00D8CC565341C78A /* PluginMultiAgent in Frameworks */ = {isa = PBXBuildFile; productRef = 35D9AAED8E001F885C8BB4E2 /* PluginMultiAgent */; };
+		EBE42835821504AD41EDA50A /* PluginMultiCursorCommandsEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 53D4936FC55D006274692D3E /* PluginMultiCursorCommandsEditor */; };
+		EFEFA269155FCE4FE1124CD1 /* PluginConversationList in Frameworks */ = {isa = PBXBuildFile; productRef = D37B2AD8A54E6BC166768D80 /* PluginConversationList */; };
+		F1B01FF0EF34101613B107E3 /* PluginTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 93B13FD377B9551E0AFAC1A7 /* PluginTerminal */; };
 		F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2A3022FC2000100000001 /* FileTreeKit */; };
+		F4E12898BBD1F1DA550F91F6 /* PluginLSPServiceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 34BAE1356C3CAC4154A7BFA7 /* PluginLSPServiceEditor */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
@@ -100,8 +233,15 @@
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
+		F6716FCEFE4C936C9418D933 /* PluginSampleInsightsEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 09EFB72F5DA8A0A7A2BEE6C3 /* PluginSampleInsightsEditor */; };
+		F695A1225EE724C3B3472E1F /* PluginAgentLanguage in Frameworks */ = {isa = PBXBuildFile; productRef = 75E88D92D53FA3E545C39E17 /* PluginAgentLanguage */; };
+		F8436C654D86B4A86BFEA2F0 /* PluginRegistryManager in Frameworks */ = {isa = PBXBuildFile; productRef = D1C00D2ECA84580C41D51314 /* PluginRegistryManager */; };
+		FA4A0DF462ED747AD5424D7D /* PluginOpenInGitOK in Frameworks */ = {isa = PBXBuildFile; productRef = 18BCD88DED4AFD6DB26615AA /* PluginOpenInGitOK */; };
+		FAD21E63E42ACF18B3F0B47F /* PluginVueEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 2CAF5CCEB4916D41FC30FA1C /* PluginVueEditor */; };
+		FDE07B8B75ABB2FCB5395546 /* PluginLSPSheetsEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 061D5BF900836C9D78A6354B /* PluginLSPSheetsEditor */; };
 		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
 		HPK1000000000000000001 /* HTMLPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = HPK2000000000000000001 /* HTMLPreviewKit */; };
+		NETTOEXTPLUGINNETTO00001 /* PluginNetto in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* PluginNetto */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -187,6 +327,8 @@
 		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
+		F508C61C2FC9410400D95FBC /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
+		F508C6332FC9410400D95FBC /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
 		F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
 		F5370B292FB1E52500AF4705 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MermaidPlayground.xcodeproj; sourceTree = "<group>"; };
@@ -252,15 +394,6 @@
 			);
 			target = F5A640642F3ED1910039A761 /* NettoExtension */;
 		};
-		F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Plugins/NettoPlugin/Bridge/IPCConnection.swift,
-				Plugins/NettoPlugin/Bridge/NEFilterFlowExt.swift,
-				Plugins/NettoPlugin/Bridge/Protocols.swift,
-			);
-			target = F5A640642F3ED1910039A761 /* NettoExtension */;
-		};
 		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -315,7 +448,6 @@
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
 				F57EEC332F7B4C97001233A2 /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */,
-				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
 			sourceTree = "<group>";
@@ -342,6 +474,119 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63FE8D3115ADAF240720F766 /* PluginChatSubmit in Frameworks */,
+				45AF4812A015A3C07E6100AE /* PluginAgentAvailableTools in Frameworks */,
+				1317EF19687E0E0275CC8AAF /* PluginAgentContextSync in Frameworks */,
+				B9BC9BCBCB384FC7BFD6A25D /* PluginAgentCoreTools in Frameworks */,
+				110CA997C62F1EABA1192424 /* PluginAgentDelayMessage in Frameworks */,
+				DE2BAD45B5E01C7870351ACB /* PluginAgentGitHubTools in Frameworks */,
+				F695A1225EE724C3B3472E1F /* PluginAgentLanguage in Frameworks */,
+				7C2A50AD6255CB6CA6590E56 /* PluginAgentMCPTools in Frameworks */,
+				D4D80C0D6F8934D748BBAB65 /* PluginAgentMessageRenderer in Frameworks */,
+				CA887353886BBA1B3F940CAA /* PluginAgentRAG in Frameworks */,
+				D97027B95BD7221FF642209C /* PluginAgentRules in Frameworks */,
+				431A2253A7287C3DAC6CEF8D /* PluginAgentTurnNotification in Frameworks */,
+				B0BB783FD703D1E973BFC2AB /* PluginCSSEditor in Frameworks */,
+				B6FA30697B81A9126DDCA645 /* PluginChatAttachment in Frameworks */,
+				9245E1C1E335583539C6DCEB /* PluginChatInput in Frameworks */,
+				5AEBA0D9F7D752533E179AAE /* PluginChatMessages in Frameworks */,
+				72F32F0061704AEDE532938E /* PluginChatMode in Frameworks */,
+				126B7B873448E07D757E32A7 /* PluginChatPanel in Frameworks */,
+				4F1D3C96C622FE0070A8F2DC /* PluginChatPendingMessages in Frameworks */,
+				803C1DAC55C7906647CA73FB /* PluginClipboardManager in Frameworks */,
+				26B1FE86E8B0A29B0C1186C5 /* PluginCodeReview in Frameworks */,
+				EFEFA269155FCE4FE1124CD1 /* PluginConversationList in Frameworks */,
+				E59ED5F547A067AE6B69CC59 /* PluginConversationNew in Frameworks */,
+				7B0B6089AFF0C7FD6A1948C6 /* PluginConversationTimeline in Frameworks */,
+				D950F28305D0F9B7DDAA6738 /* PluginConversationTitle in Frameworks */,
+				070DA8662CEA8B02EC65A188 /* PluginDatabaseManager in Frameworks */,
+				7DD8F4335E155DC97ABF13F8 /* PluginEditorBottomCallHierarchy in Frameworks */,
+				7396FF7A2581C41E9FB78526 /* PluginEditorBottomProblems in Frameworks */,
+				D18D263887DCE7609786AB30 /* PluginEditorBottomReferences in Frameworks */,
+				BEAADCF034AB86A0F7391A64 /* PluginEditorBottomSearch in Frameworks */,
+				2373D46695721855442F6F33 /* PluginEditorBottomSymbols in Frameworks */,
+				A32C0583D3F40913D91DD732 /* PluginEditorBottomTerminal in Frameworks */,
+				6C870097B99D594B3F75ED76 /* PluginEditorBreadcrumb in Frameworks */,
+				BF0A4AF60E062B81C68669C0 /* PluginEditorCallHierarchyRail in Frameworks */,
+				066C1D1FC706CDF96453C2F2 /* PluginEditorChatIntegration in Frameworks */,
+				527E538338A2D896F69F433A /* PluginEditorLSPContextCommands in Frameworks */,
+				6CBF32D3ECDB6455EE034D92 /* PluginEditorOutlineRail in Frameworks */,
+				C30BD02944EBE421AB26D1F8 /* PluginEditorPanel in Frameworks */,
+				7174D3C019E0427230D6601E /* PluginEditorPreview in Frameworks */,
+				E0260D2EC50E3629FBB83CBF /* PluginEditorRailFileTree in Frameworks */,
+				B370A61A765A0039F2164429 /* PluginEditorRailProblems in Frameworks */,
+				0309FF660DD579535EF2639E /* PluginEditorRailReferences in Frameworks */,
+				AABC057E19985637886A7F9C /* PluginEditorRailWorkspaceSearch in Frameworks */,
+				BABF9D4E66FD8DB6E0D0DE86 /* PluginEditorRailWorkspaceSymbols in Frameworks */,
+				7B6CCCD982190CD1F976111F /* PluginEditorStickySymbolBar in Frameworks */,
+				B2369B70657A89A84E8AF509 /* PluginEditorSwiftKeywordHover in Frameworks */,
+				7D5BFE230296855759086281 /* PluginEditorTabStrip in Frameworks */,
+				0434893535D5E18D2FC114DE /* PluginEditorXcode in Frameworks */,
+				9BB7CC2702C9F8312F4C1041 /* PluginFontConfig in Frameworks */,
+				4E85441A500D47D3A56EAB24 /* PluginGit in Frameworks */,
+				2F2C6C67EF861EF851FAFD0E /* PluginGitHubInsight in Frameworks */,
+				DF2B056E9B45FF14D7A27520 /* PluginGoEditor in Frameworks */,
+				7EF274F366ED61F3BF9C8255 /* PluginHTMLEditor in Frameworks */,
+				6D4A399ECA106E81542AF33C /* PluginHistoryDBStatusBar in Frameworks */,
+				2FD0F52CDE473F3C84AE341E /* PluginHostsManager in Frameworks */,
+				C0C7A298A9A03C75070E4258 /* PluginIdleTime in Frameworks */,
+				C1F8DE2C15A7D8407AD54E32 /* PluginInput in Frameworks */,
+				632870E268CBC1FE7CBEC713 /* PluginJSEditor in Frameworks */,
+				B094495387BE5ABD5F457CC4 /* PluginLLMAvailability in Frameworks */,
+				94BCD4A7A20B016D0EFE8768 /* PluginLLMProviderMLX in Frameworks */,
+				AF379962E09CF02B4C1D30AF /* PluginLSPCallHierarchyEditor in Frameworks */,
+				20091CB0F3EA09F769E89C92 /* PluginLSPCodeActionEditor in Frameworks */,
+				A4EE8CF89B7405397129374C /* PluginLSPDocumentColorEditor in Frameworks */,
+				8CFDB6189464E7EE4900509B /* PluginLSPDocumentHighlightEditor in Frameworks */,
+				D59BC26BC4D1C97A9E498482 /* PluginLSPDocumentLinkEditor in Frameworks */,
+				17BE6E536402248FF62AEF59 /* PluginLSPFoldingRangeEditor in Frameworks */,
+				DC4E41169C5DD6BAC3931412 /* PluginLSPInlayHintEditor in Frameworks */,
+				D0DF68DEA8E44F944DB2A220 /* PluginLSPRealtimeSignalsEditor in Frameworks */,
+				E0E80CE69619E14D18AEF140 /* PluginLSPSelectionRangeEditor in Frameworks */,
+				F4E12898BBD1F1DA550F91F6 /* PluginLSPServiceEditor in Frameworks */,
+				FDE07B8B75ABB2FCB5395546 /* PluginLSPSheetsEditor in Frameworks */,
+				3C2437EA332E033F3A27F3F0 /* PluginLSPSignatureHelpEditor in Frameworks */,
+				B9320A26F00C7DFB3E8D95B5 /* PluginLSPToolbarEditor in Frameworks */,
+				B0D252781F08F87C6D529525 /* PluginLSPWorkspaceSymbolEditor in Frameworks */,
+				B51B8D70B520D4035EF95216 /* PluginLayout in Frameworks */,
+				8C52E2D1E6E203DDC985D262 /* PluginMarkdownEditor in Frameworks */,
+				99E19AC31FAB359BA7CB7CA9 /* PluginMenuBarManager in Frameworks */,
+				A3DDA20A0EF759F47843A7F2 /* PluginModelPreference in Frameworks */,
+				190CC2C7077EB69949D915EE /* PluginModelSelector in Frameworks */,
+				E887184C00D8CC565341C78A /* PluginMultiAgent in Frameworks */,
+				EBE42835821504AD41EDA50A /* PluginMultiCursorCommandsEditor in Frameworks */,
+				AFA8E601EF5D2CF137AB66DD /* PluginNetto in Frameworks */,
+				1B3F411F9227EFE6A6E668B2 /* PluginNetworkManager in Frameworks */,
+				DC47779704049EFAB703CD70 /* PluginOnboarding in Frameworks */,
+				AF9669E84A2C8E96656C548A /* PluginOpenInAntigravity in Frameworks */,
+				38E7CA5232BB4EF006059236 /* PluginOpenInCursor in Frameworks */,
+				25EBD5F8828299D24CD957AB /* PluginOpenInFinder in Frameworks */,
+				426BCD3BF3C1D77D64B549E1 /* PluginOpenInGitHubDesktop in Frameworks */,
+				FA4A0DF462ED747AD5424D7D /* PluginOpenInGitOK in Frameworks */,
+				B56FDF4F3C2A9C03E0014C92 /* PluginOpenInXcode in Frameworks */,
+				4698F76BE2458B089C9BB092 /* PluginOpenRemote in Frameworks */,
+				AC1D2F789F62AE449A60D34B /* PluginPortManager in Frameworks */,
+				31BEE72F0BE3FAF4BC8AA026 /* PluginProjectIssueScanner in Frameworks */,
+				1728277B923BCE3F349C7429 /* PluginProjects in Frameworks */,
+				1845167D0C85F9D21F4CF36E /* PluginQuickFileSearch in Frameworks */,
+				25767DACBD96495DB2A01A09 /* PluginQuickLauncher in Frameworks */,
+				983CBFE449716268E836981E /* PluginRClick in Frameworks */,
+				F8436C654D86B4A86BFEA2F0 /* PluginRegistryManager in Frameworks */,
+				35CB4C8E281ADCE40C9C225C /* PluginRequestLog in Frameworks */,
+				3C074EFAB969B302CB8BFCB6 /* PluginSampleDecorationEditor in Frameworks */,
+				F6716FCEFE4C936C9418D933 /* PluginSampleInsightsEditor in Frameworks */,
+				CFF3EA168629382018C28250 /* PluginScreenshot in Frameworks */,
+				4E7A28FFAEFAE9F8CAE69C5A /* PluginSkill in Frameworks */,
+				2BD0B54D2418DEF95C57C5AC /* PluginSwiftPrimitiveTypesEditor in Frameworks */,
+				B53E423F3C186EBA2A4AF6A5 /* PluginSwiftSelectionCodeActionEditor in Frameworks */,
+				F1B01FF0EF34101613B107E3 /* PluginTerminal in Frameworks */,
+				9126473F502831A7FE6BE25C /* PluginTextActions in Frameworks */,
+				9DDBAC02E131DDF3207FA765 /* PluginThemeStatusBar in Frameworks */,
+				E7D1ECDF52B61DA69CC2D16B /* PluginToolCallLoopDetection in Frameworks */,
+				13ED7035AD480A898EDB782E /* PluginToolPermission in Frameworks */,
+				116713ECD19CB60F0FE8DD56 /* PluginVerbosity in Frameworks */,
+				FAD21E63E42ACF18B3F0B47F /* PluginVueEditor in Frameworks */,
+				3737F3D94228D3EEB2AE12E1 /* PluginWindowPersistence in Frameworks */,
 				0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */,
 				0BA8A7362FC08EB9004C2B71 /* AgentToolKit in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
@@ -371,6 +616,22 @@
 				0B13B1322FD3000000A13B13 /* PluginShowImage in Frameworks */,
 				0B13B1422FD3000000A13B14 /* PluginMemory in Frameworks */,
 				0B13B1522FD3000000A13B15 /* PluginLLMProviderCodex in Frameworks */,
+				0B16C2022FD6000000C16C20 /* PluginLLMProviderAiRouter in Frameworks */,
+				0B16C2122FD6000000C16C21 /* PluginLLMProviderAliyun in Frameworks */,
+				0B16C2222FD6000000C16C22 /* PluginLLMProviderAnthropic in Frameworks */,
+				0B16C2322FD6000000C16C23 /* PluginLLMProviderDeepSeek in Frameworks */,
+				0B16C2422FD6000000C16C24 /* PluginLLMProviderFeifeimiao in Frameworks */,
+				0B16C2522FD6000000C16C25 /* PluginLLMProviderFlyMux in Frameworks */,
+				0B16C2622FD6000000C16C26 /* PluginLLMProviderFreeModel in Frameworks */,
+				0B16C2722FD6000000C16C27 /* PluginLLMProviderHappyCode in Frameworks */,
+				0B16C2822FD6000000C16C28 /* PluginLLMProviderHyperAPI in Frameworks */,
+				0B16C2922FD6000000C16C29 /* PluginLLMProviderLPgpt in Frameworks */,
+				0B16C2A22FD6000000C16C2A /* PluginLLMProviderMegaLLM in Frameworks */,
+				0B16C2B22FD6000000C16C2B /* PluginLLMProviderOpenAI in Frameworks */,
+				0B16C2C22FD6000000C16C2C /* PluginLLMProviderOpenRouter in Frameworks */,
+				0B16C2D22FD6000000C16C2D /* PluginLLMProviderXiaomi in Frameworks */,
+				0B16C2E22FD6000000C16C2E /* PluginLLMProviderXybbz in Frameworks */,
+				0B16C2F22FD6000000C16C2F /* PluginLLMProviderZhipu in Frameworks */,
 				0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */,
 				0B14A1022FD4000000A14A10 /* PluginAppLoadedPlugins in Frameworks */,
 				0B14A1122FD4000000A14A11 /* PluginAppUpdateStatusBar in Frameworks */,
@@ -390,6 +651,16 @@
 				0B14A1E22FD4000000A14A1E /* PluginThemeMountain in Frameworks */,
 				0B14A1F22FD4000000A14A1F /* PluginThemeNebula in Frameworks */,
 				0B14A2022FD4000000A14A20 /* PluginThemeOneDark in Frameworks */,
+				0B14B1022FD4000000B14B10 /* PluginThemeLumi in Frameworks */,
+				0B14B1122FD4000000B14B11 /* PluginThemeOrchard in Frameworks */,
+				0B14B1222FD4000000B14B12 /* PluginThemeRiver in Frameworks */,
+				0B14B1322FD4000000B14B13 /* PluginThemeSky in Frameworks */,
+				0B14B1422FD4000000B14B14 /* PluginThemeSpring in Frameworks */,
+				0B14B1522FD4000000B14B15 /* PluginThemeSummer in Frameworks */,
+				0B14B1622FD4000000B14B16 /* PluginThemeVoid in Frameworks */,
+				0B14B1722FD4000000B14B17 /* PluginThemeVscodeDark in Frameworks */,
+				0B14B1822FD4000000B14B18 /* PluginThemeVscodeLight in Frameworks */,
+				0B14B1922FD4000000B14B19 /* PluginThemeWinter in Frameworks */,
 				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
 				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
@@ -439,6 +710,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				NETTOEXTPLUGINNETTO00001 /* PluginNetto in Frameworks */,
 				F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -524,6 +796,20 @@
 			sourceTree = "<group>";
 		};
 		F5050AA52FADA83D002AA7B5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F508C63A2FC9410400D95FBC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F508C63C2FC9410400D95FBC /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -938,6 +1224,119 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
+				40744482CF09A5DA593B072E /* PluginChatSubmit */,
+				0807A4F132BDC96F1DF8D95A /* PluginAgentAvailableTools */,
+				756A5E948D13CF19249C0E7C /* PluginAgentContextSync */,
+				BD7E70D4D1B6285FA55DF1A4 /* PluginAgentCoreTools */,
+				C987521DF47CD2B78A18DEEA /* PluginAgentDelayMessage */,
+				30E2D969ABAB2E8661190487 /* PluginAgentGitHubTools */,
+				75E88D92D53FA3E545C39E17 /* PluginAgentLanguage */,
+				6AC603D847F506F371242CD7 /* PluginAgentMCPTools */,
+				E7A6066A71F4DE1B69B489A7 /* PluginAgentMessageRenderer */,
+				1C295BDFECB699C46510D2D4 /* PluginAgentRAG */,
+				B4793F7CEEF875247D8526E6 /* PluginAgentRules */,
+				21709EC063923191DD80EA8C /* PluginAgentTurnNotification */,
+				9CA85CCC25B5CFCDB05CE712 /* PluginCSSEditor */,
+				CE43FCDC3916F4304CD5E500 /* PluginChatAttachment */,
+				5755CBABA6BBE5EB002B95BE /* PluginChatInput */,
+				8DBCC412CBCC77F72DF8AC86 /* PluginChatMessages */,
+				6F8A1AB868752C8243F6967D /* PluginChatMode */,
+				6A47B269A2ED1ED3084795B2 /* PluginChatPanel */,
+				EB14ADD8E23A0509E5B4A450 /* PluginChatPendingMessages */,
+				4FCD6020D268A9D5AC47D7F2 /* PluginClipboardManager */,
+				222862D73B28AE7E70D024CD /* PluginCodeReview */,
+				D37B2AD8A54E6BC166768D80 /* PluginConversationList */,
+				7BF09B47A508DCAE88D0A48C /* PluginConversationNew */,
+				093F70C122EC1FED81C67B47 /* PluginConversationTimeline */,
+				57FD4D7CA89D0CCBB5BF034D /* PluginConversationTitle */,
+				F580545C289FE0C1D7966F4A /* PluginDatabaseManager */,
+				0D4B4B8A4AFC75820A5EE968 /* PluginEditorBottomCallHierarchy */,
+				6A7151DA003C0EB79C0EA85C /* PluginEditorBottomProblems */,
+				590583DC36F54C708D573720 /* PluginEditorBottomReferences */,
+				99107EEA435A36CE02544423 /* PluginEditorBottomSearch */,
+				42F8546E40DA4FA3EC0B495C /* PluginEditorBottomSymbols */,
+				4E06C63D18FE5570C01D0BE4 /* PluginEditorBottomTerminal */,
+				06D6189D393D16D050911274 /* PluginEditorBreadcrumb */,
+				0FB5999145DD4E2DDFF64901 /* PluginEditorCallHierarchyRail */,
+				D833CDACADF47F5D404A4314 /* PluginEditorChatIntegration */,
+				C1FE8D6B33D4FD981DA1B304 /* PluginEditorLSPContextCommands */,
+				6D57941C98C787EFAF6ACEE7 /* PluginEditorOutlineRail */,
+				0FE19E618D25039EB8817B38 /* PluginEditorPanel */,
+				A5FC32ADABD140B2B0035C89 /* PluginEditorPreview */,
+				4CA3D711C573428EB9CE2F4C /* PluginEditorRailFileTree */,
+				C11E6B666996D1E7463CBA19 /* PluginEditorRailProblems */,
+				A73D3B5ABDE77D231BC4C2CE /* PluginEditorRailReferences */,
+				5C78FF3A41548DF8C421E006 /* PluginEditorRailWorkspaceSearch */,
+				AC9B98BECA0E380218D5A1EC /* PluginEditorRailWorkspaceSymbols */,
+				8C0AD937A0B1EA2C75715271 /* PluginEditorStickySymbolBar */,
+				ED1C0B8D0E735CE19C445B2A /* PluginEditorSwiftKeywordHover */,
+				117C9B4CBEDA46F2D629D728 /* PluginEditorTabStrip */,
+				D2F657DE38A9CE03FA6BAC91 /* PluginEditorXcode */,
+				D04E348CC6815BBC821246B8 /* PluginFontConfig */,
+				FF447BE55639C32DE38DF2FF /* PluginGit */,
+				2139E33490AD39C3E62FE370 /* PluginGitHubInsight */,
+				26B5C12A68D5CA8916483351 /* PluginGoEditor */,
+				A8C9517E99964AA34F66E8AC /* PluginHTMLEditor */,
+				CD36D0CA9AEA1700AA795264 /* PluginHistoryDBStatusBar */,
+				3FAB0446AE0905E166689557 /* PluginHostsManager */,
+				156103FFA7EBEA0288507387 /* PluginIdleTime */,
+				92B3FDD21155C9F036A5598E /* PluginInput */,
+				5ADFB2940134A5456FFC50DC /* PluginJSEditor */,
+				CF37A2737672A36EE39F9675 /* PluginLLMAvailability */,
+				5E5BE619B13B7D70554962B2 /* PluginLLMProviderMLX */,
+				05028C92A65D275F2BA258D1 /* PluginLSPCallHierarchyEditor */,
+				540EC2E245852513F1CF1367 /* PluginLSPCodeActionEditor */,
+				4D9A3039E03ABC33955C1158 /* PluginLSPDocumentColorEditor */,
+				63535D28C4AF6B0BFA910B9D /* PluginLSPDocumentHighlightEditor */,
+				ACCA775D38E3807370061F59 /* PluginLSPDocumentLinkEditor */,
+				1113D32AF9EE515970F22173 /* PluginLSPFoldingRangeEditor */,
+				5048D4096A0CD01B54CEE904 /* PluginLSPInlayHintEditor */,
+				E23DAA9331335EBF87C2EF45 /* PluginLSPRealtimeSignalsEditor */,
+				03413D108D23512D0E24E109 /* PluginLSPSelectionRangeEditor */,
+				34BAE1356C3CAC4154A7BFA7 /* PluginLSPServiceEditor */,
+				061D5BF900836C9D78A6354B /* PluginLSPSheetsEditor */,
+				7E49825683D80FC2058AA030 /* PluginLSPSignatureHelpEditor */,
+				EDF68831967B90546941FAD4 /* PluginLSPToolbarEditor */,
+				3733D959456FB1A13F7B6C72 /* PluginLSPWorkspaceSymbolEditor */,
+				E5BAAC407D353CE1C4C3456C /* PluginLayout */,
+				7392A072A2B7A013040F1CEF /* PluginMarkdownEditor */,
+				80F4055C0A75E21F621EDD2F /* PluginMenuBarManager */,
+				E38A5C1F87C002AB69089D69 /* PluginModelPreference */,
+				33C4717D770A5C280531D31A /* PluginModelSelector */,
+				35D9AAED8E001F885C8BB4E2 /* PluginMultiAgent */,
+				53D4936FC55D006274692D3E /* PluginMultiCursorCommandsEditor */,
+				5F6F4F3AD385478337B1AF43 /* PluginNetto */,
+				0CC28B22B67E5167FC53D5CA /* PluginNetworkManager */,
+				7F5096839AA1CAEB37D14115 /* PluginOnboarding */,
+				CD119DA64936A0677CFFC355 /* PluginOpenInAntigravity */,
+				EA7D69B8243B8FB0A6A35A44 /* PluginOpenInCursor */,
+				2BBCDA7A2E5E2FC32492A4CE /* PluginOpenInFinder */,
+				2DF456A9B61F32257059FBA6 /* PluginOpenInGitHubDesktop */,
+				18BCD88DED4AFD6DB26615AA /* PluginOpenInGitOK */,
+				CE01B1C3B34746452A52C83B /* PluginOpenInXcode */,
+				6EF37B09934798601F41B124 /* PluginOpenRemote */,
+				B560FF04481C6F165CD60F19 /* PluginPortManager */,
+				B2F094BFBD5983FB736842A7 /* PluginProjectIssueScanner */,
+				6019D587DEBF8FC157A4B183 /* PluginProjects */,
+				CA9677964B0ADD77AC15F115 /* PluginQuickFileSearch */,
+				0CE952B8EC5589B7FAC5F438 /* PluginQuickLauncher */,
+				97D1986301A61EFEDC58B1DC /* PluginRClick */,
+				D1C00D2ECA84580C41D51314 /* PluginRegistryManager */,
+				3B5D9B10E007DA3DF5568D45 /* PluginRequestLog */,
+				E87E1005243A0185A1950AEA /* PluginSampleDecorationEditor */,
+				09EFB72F5DA8A0A7A2BEE6C3 /* PluginSampleInsightsEditor */,
+				7F080107C249FFC8C5F9E0C4 /* PluginScreenshot */,
+				24D491F56AE264B9AA9E2E91 /* PluginSkill */,
+				ADCEB9CD62A88AAD4ADA31FE /* PluginSwiftPrimitiveTypesEditor */,
+				17409507E773057064E5EE13 /* PluginSwiftSelectionCodeActionEditor */,
+				93B13FD377B9551E0AFAC1A7 /* PluginTerminal */,
+				F6016FAA6014704B4C9FCB38 /* PluginTextActions */,
+				4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */,
+				84C54E39AE2E087C8D61369C /* PluginToolCallLoopDetection */,
+				A888E42C948716BF00411A5A /* PluginToolPermission */,
+				421F79F03BD0B9582EF22F77 /* PluginVerbosity */,
+				2CAF5CCEB4916D41FC30FA1C /* PluginVueEditor */,
+				3378041B4453306FBCAAC631 /* PluginWindowPersistence */,
 				F53C41592F1A3E6500929321 /* Sparkle */,
 				A1B2C4612F70000100AAA107 /* SuperLogKit */,
 				A1B2C4642F70000100AAA108 /* OpenInKit */,
@@ -1002,6 +1401,22 @@
 				0B13B1312FD3000000A13B13 /* PluginShowImage */,
 				0B13B1412FD3000000A13B14 /* PluginMemory */,
 				0B13B1512FD3000000A13B15 /* PluginLLMProviderCodex */,
+				0B16C2012FD6000000C16C20 /* PluginLLMProviderAiRouter */,
+				0B16C2112FD6000000C16C21 /* PluginLLMProviderAliyun */,
+				0B16C2212FD6000000C16C22 /* PluginLLMProviderAnthropic */,
+				0B16C2312FD6000000C16C23 /* PluginLLMProviderDeepSeek */,
+				0B16C2412FD6000000C16C24 /* PluginLLMProviderFeifeimiao */,
+				0B16C2512FD6000000C16C25 /* PluginLLMProviderFlyMux */,
+				0B16C2612FD6000000C16C26 /* PluginLLMProviderFreeModel */,
+				0B16C2712FD6000000C16C27 /* PluginLLMProviderHappyCode */,
+				0B16C2812FD6000000C16C28 /* PluginLLMProviderHyperAPI */,
+				0B16C2912FD6000000C16C29 /* PluginLLMProviderLPgpt */,
+				0B16C2A12FD6000000C16C2A /* PluginLLMProviderMegaLLM */,
+				0B16C2B12FD6000000C16C2B /* PluginLLMProviderOpenAI */,
+				0B16C2C12FD6000000C16C2C /* PluginLLMProviderOpenRouter */,
+				0B16C2D12FD6000000C16C2D /* PluginLLMProviderXiaomi */,
+				0B16C2E12FD6000000C16C2E /* PluginLLMProviderXybbz */,
+				0B16C2F12FD6000000C16C2F /* PluginLLMProviderZhipu */,
 				0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */,
 				0B14A1012FD4000000A14A10 /* PluginAppLoadedPlugins */,
 				0B14A1112FD4000000A14A11 /* PluginAppUpdateStatusBar */,
@@ -1021,6 +1436,16 @@
 				0B14A1E12FD4000000A14A1E /* PluginThemeMountain */,
 				0B14A1F12FD4000000A14A1F /* PluginThemeNebula */,
 				0B14A2012FD4000000A14A20 /* PluginThemeOneDark */,
+				0B14B1012FD4000000B14B10 /* PluginThemeLumi */,
+				0B14B1112FD4000000B14B11 /* PluginThemeOrchard */,
+				0B14B1212FD4000000B14B12 /* PluginThemeRiver */,
+				0B14B1312FD4000000B14B13 /* PluginThemeSky */,
+				0B14B1412FD4000000B14B14 /* PluginThemeSpring */,
+				0B14B1512FD4000000B14B15 /* PluginThemeSummer */,
+				0B14B1612FD4000000B14B16 /* PluginThemeVoid */,
+				0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */,
+				0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */,
+				0B14B1912FD4000000B14B19 /* PluginThemeWinter */,
 				0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */,
 				0BB9F76F2FC48DF7003720A5 /* PluginAskUser */,
 				0BB9947F2FC492FC003720A4 /* PluginProjectOverview */,
@@ -1047,6 +1472,7 @@
 			);
 			name = NettoExtension;
 			packageProductDependencies = (
+				5F6F4F3AD385478337B1AF43 /* PluginNetto */,
 			);
 			productName = NettoExtension;
 			productReference = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */;
@@ -1144,6 +1570,22 @@
 				0B13B1302FD3000000A13B13 /* XCLocalSwiftPackageReference "Packages/PluginShowImage" */,
 				0B13B1402FD3000000A13B14 /* XCLocalSwiftPackageReference "Packages/PluginMemory" */,
 				0B13B1502FD3000000A13B15 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */,
+				0B16C2002FD6000000C16C20 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAiRouter" */,
+				0B16C2102FD6000000C16C21 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAliyun" */,
+				0B16C2202FD6000000C16C22 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAnthropic" */,
+				0B16C2302FD6000000C16C23 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderDeepSeek" */,
+				0B16C2402FD6000000C16C24 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFeifeimiao" */,
+				0B16C2502FD6000000C16C25 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFlyMux" */,
+				0B16C2602FD6000000C16C26 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFreeModel" */,
+				0B16C2702FD6000000C16C27 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHappyCode" */,
+				0B16C2802FD6000000C16C28 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHyperAPI" */,
+				0B16C2902FD6000000C16C29 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderLPgpt" */,
+				0B16C2A02FD6000000C16C2A /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderMegaLLM" */,
+				0B16C2B02FD6000000C16C2B /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenAI" */,
+				0B16C2C02FD6000000C16C2C /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenRouter" */,
+				0B16C2D02FD6000000C16C2D /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXiaomi" */,
+				0B16C2E02FD6000000C16C2E /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXybbz" */,
+				0B16C2F02FD6000000C16C2F /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderZhipu" */,
 				0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */,
 				0B14A1002FD4000000A14A10 /* XCLocalSwiftPackageReference "Packages/PluginAppLoadedPlugins" */,
 				0B14A1102FD4000000A14A11 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdateStatusBar" */,
@@ -1163,6 +1605,16 @@
 				0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Packages/PluginThemeMountain" */,
 				0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Packages/PluginThemeNebula" */,
 				0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Packages/PluginThemeOneDark" */,
+				0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Packages/PluginThemeLumi" */,
+				0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Packages/PluginThemeOrchard" */,
+				0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Packages/PluginThemeRiver" */,
+				0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Packages/PluginThemeSky" */,
+				0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Packages/PluginThemeSpring" */,
+				0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Packages/PluginThemeSummer" */,
+				0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Packages/PluginThemeVoid" */,
+				0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeDark" */,
+				0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeLight" */,
+				0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Packages/PluginThemeWinter" */,
 				0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Packages/PluginAutoTask" */,
 				0BB9F76E2FC48DF7003720A5 /* XCLocalSwiftPackageReference "Packages/PluginAskUser" */,
 				0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Packages/PluginProjectOverview" */,
@@ -1181,12 +1633,20 @@
 					ProjectRef = F567FDE32FAF42620054AB4B /* AEXML.xcodeproj */;
 				},
 				{
+					ProductGroup = F508C63A2FC9410400D95FBC /* Products */;
+					ProjectRef = F508C6332FC9410400D95FBC /* AEXML.xcodeproj */;
+				},
+				{
 					ProductGroup = F56701212FAF42620054AB4B /* Products */;
 					ProjectRef = F567FDCC2FAF42620054AB4B /* AEXMLDemo.xcodeproj */;
 				},
 				{
 					ProductGroup = F5679F812FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */;
+				},
+				{
+					ProductGroup = F508C63C2FC9410400D95FBC /* Products */;
+					ProjectRef = F508C61C2FC9410400D95FBC /* AEXMLDemo.xcodeproj */;
 				},
 				{
 					ProductGroup = F56701252FAF42620054AB4B /* Products */;
@@ -2050,6 +2510,26 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		00C178F5FA11A0248E6F2D98 /* XCLocalSwiftPackageReference "Packages/PluginEditorSwiftKeywordHover" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorSwiftKeywordHover;
+		};
+		0125D185F41B5C826D672572 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentHighlightEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPDocumentHighlightEditor;
+		};
+		04AB96159248E2BAE1A295EB /* XCLocalSwiftPackageReference "Packages/PluginLSPCodeActionEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPCodeActionEditor;
+		};
+		0567466E51CE874BF4546719 /* XCLocalSwiftPackageReference "Packages/PluginOpenInFinder" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInFinder;
+		};
+		0AB17A9B54073127B7ECBB74 /* XCLocalSwiftPackageReference "Packages/PluginChatPanel" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatPanel;
+		};
 		0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCoreKit;
@@ -2158,9 +2638,113 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppStoreConnect;
 		};
+		0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Packages/PluginThemeLumi" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeLumi;
+		};
+		0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Packages/PluginThemeOrchard" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeOrchard;
+		};
+		0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Packages/PluginThemeRiver" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeRiver;
+		};
+		0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Packages/PluginThemeSky" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeSky;
+		};
+		0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Packages/PluginThemeSpring" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeSpring;
+		};
+		0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Packages/PluginThemeSummer" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeSummer;
+		};
+		0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Packages/PluginThemeVoid" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeVoid;
+		};
+		0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeDark" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeVscodeDark;
+		};
+		0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeLight" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeVscodeLight;
+		};
+		0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Packages/PluginThemeWinter" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeWinter;
+		};
 		0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppIconDesigner;
+		};
+		0B16C2002FD6000000C16C20 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAiRouter" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderAiRouter;
+		};
+		0B16C2102FD6000000C16C21 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAliyun" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderAliyun;
+		};
+		0B16C2202FD6000000C16C22 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAnthropic" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderAnthropic;
+		};
+		0B16C2302FD6000000C16C23 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderDeepSeek" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderDeepSeek;
+		};
+		0B16C2402FD6000000C16C24 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFeifeimiao" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderFeifeimiao;
+		};
+		0B16C2502FD6000000C16C25 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFlyMux" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderFlyMux;
+		};
+		0B16C2602FD6000000C16C26 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFreeModel" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderFreeModel;
+		};
+		0B16C2702FD6000000C16C27 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHappyCode" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderHappyCode;
+		};
+		0B16C2802FD6000000C16C28 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHyperAPI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderHyperAPI;
+		};
+		0B16C2902FD6000000C16C29 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderLPgpt" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderLPgpt;
+		};
+		0B16C2A02FD6000000C16C2A /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderMegaLLM" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderMegaLLM;
+		};
+		0B16C2B02FD6000000C16C2B /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenAI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderOpenAI;
+		};
+		0B16C2C02FD6000000C16C2C /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenRouter" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderOpenRouter;
+		};
+		0B16C2D02FD6000000C16C2D /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXiaomi" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderXiaomi;
+		};
+		0B16C2E02FD6000000C16C2E /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXybbz" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderXybbz;
+		};
+		0B16C2F02FD6000000C16C2F /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderZhipu" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderZhipu;
 		};
 		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2194,9 +2778,301 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMProviderKit;
 		};
+		0EB1AEE4EB53935C8F7459E7 /* XCLocalSwiftPackageReference "Packages/PluginScreenshot" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginScreenshot;
+		};
+		11F354C6F26319DA2A2DBC4F /* XCLocalSwiftPackageReference "Packages/PluginSampleDecorationEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginSampleDecorationEditor;
+		};
+		1439E04E4CACC36550D515E6 /* XCLocalSwiftPackageReference "Packages/PluginChatMode" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatMode;
+		};
+		14649868B766BDFC15C6A8C7 /* XCLocalSwiftPackageReference "Packages/PluginHTMLEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginHTMLEditor;
+		};
+		16A8B7354A90F457057B21A5 /* XCLocalSwiftPackageReference "Packages/PluginEditorLSPContextCommands" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorLSPContextCommands;
+		};
+		1AF119CC9CEEBD3A781722D3 /* XCLocalSwiftPackageReference "Packages/PluginSwiftPrimitiveTypesEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginSwiftPrimitiveTypesEditor;
+		};
+		1B4C5B46D5841338BB06298F /* XCLocalSwiftPackageReference "Packages/PluginEditorCallHierarchyRail" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorCallHierarchyRail;
+		};
+		1C2F411DAE0BB77D4D4E1704 /* XCLocalSwiftPackageReference "Packages/PluginMarkdownEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginMarkdownEditor;
+		};
+		1D8C8FA6027F59FBCECEB095 /* XCLocalSwiftPackageReference "Packages/PluginOpenRemote" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenRemote;
+		};
+		1E903643CA57FACBD18F6AA8 /* XCLocalSwiftPackageReference "Packages/PluginQuickLauncher" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginQuickLauncher;
+		};
+		227BBCAEDA68032AF1767D9D /* XCLocalSwiftPackageReference "Packages/PluginCSSEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginCSSEditor;
+		};
+		24AFA24AD552A670D99FEABF /* XCLocalSwiftPackageReference "Packages/PluginDatabaseManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginDatabaseManager;
+		};
+		24DEA50C18C9F0CB44466251 /* XCLocalSwiftPackageReference "Packages/PluginChatSubmit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatSubmit;
+		};
+		26185CFB630CBA546B070D8D /* XCLocalSwiftPackageReference "Packages/PluginWindowPersistence" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginWindowPersistence;
+		};
+		2A77DBC75EF31FF11B9C67DE /* XCLocalSwiftPackageReference "Packages/PluginRequestLog" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginRequestLog;
+		};
+		2E58D35D09AAC9218981C1E2 /* XCLocalSwiftPackageReference "Packages/PluginProjects" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginProjects;
+		};
+		2FAFADD4986F9B28B920D246 /* XCLocalSwiftPackageReference "Packages/PluginInput" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginInput;
+		};
+		36158046E776BAE9DB0EB26C /* XCLocalSwiftPackageReference "Packages/PluginModelPreference" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginModelPreference;
+		};
+		3683752D874AB5C06B03494A /* XCLocalSwiftPackageReference "Packages/PluginEditorRailProblems" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorRailProblems;
+		};
+		385AA5FBDF4553C351E07EFD /* XCLocalSwiftPackageReference "Packages/PluginGoEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginGoEditor;
+		};
+		392D16DD858B5FC453A33793 /* XCLocalSwiftPackageReference "Packages/PluginToolCallLoopDetection" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginToolCallLoopDetection;
+		};
+		3B749126721800C110D71783 /* XCLocalSwiftPackageReference "Packages/PluginLSPSheetsEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPSheetsEditor;
+		};
+		3D6044F26F960568A324F00F /* XCLocalSwiftPackageReference "Packages/PluginEditorXcode" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorXcode;
+		};
+		42004787393870A6F7669878 /* XCLocalSwiftPackageReference "Packages/PluginAgentCoreTools" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentCoreTools;
+		};
+		4386FA4B9D0C542ECEED83AC /* XCLocalSwiftPackageReference "Packages/PluginEditorChatIntegration" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorChatIntegration;
+		};
+		43D15C7427DA0D3F2739E939 /* XCLocalSwiftPackageReference "Packages/PluginPortManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginPortManager;
+		};
+		43EE5A99B7EDF6FE1F4BE938 /* XCLocalSwiftPackageReference "Packages/PluginAgentContextSync" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentContextSync;
+		};
+		450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Packages/PluginAgentLanguage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentLanguage;
+		};
+		457662F287CAEA1F2516EDB3 /* XCLocalSwiftPackageReference "Packages/PluginLSPWorkspaceSymbolEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPWorkspaceSymbolEditor;
+		};
+		4620D386B0853D55DD22BC53 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomSearch" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomSearch;
+		};
+		46461024EDA6A9F8E3CEEFAD /* XCLocalSwiftPackageReference "Packages/PluginLSPRealtimeSignalsEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPRealtimeSignalsEditor;
+		};
+		47D4CB0ED1F6367AA59B54B7 /* XCLocalSwiftPackageReference "Packages/PluginConversationTitle" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginConversationTitle;
+		};
+		49CC01090415F2C6634A95D9 /* XCLocalSwiftPackageReference "Packages/PluginEditorPanel" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorPanel;
+		};
+		4AC985FD6EE32E7449477FC4 /* XCLocalSwiftPackageReference "Packages/PluginTextActions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginTextActions;
+		};
+		4E0EA1EEC7A494F76E5D4AE8 /* XCLocalSwiftPackageReference "Packages/PluginChatPendingMessages" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatPendingMessages;
+		};
+		52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Packages/PluginNetto" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginNetto;
+		};
+		53CF6C859BD2B7CB8CE4B262 /* XCLocalSwiftPackageReference "Packages/PluginOpenInGitHubDesktop" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInGitHubDesktop;
+		};
+		5932E9B53BF1D6D648185271 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomCallHierarchy" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomCallHierarchy;
+		};
+		5D50B561F887DC0054A07175 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailWorkspaceSymbols" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorRailWorkspaceSymbols;
+		};
+		625027296DBBC8DCBDA468DA /* XCLocalSwiftPackageReference "Packages/PluginAgentDelayMessage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentDelayMessage;
+		};
+		62EFA1AD2E37361A13714510 /* XCLocalSwiftPackageReference "Packages/PluginLLMAvailability" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMAvailability;
+		};
 		6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMKit;
+		};
+		69FFA372C772D731A1DDEC56 /* XCLocalSwiftPackageReference "Packages/PluginEditorBreadcrumb" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBreadcrumb;
+		};
+		6C006DD5534A68F3C431B4A0 /* XCLocalSwiftPackageReference "Packages/PluginSampleInsightsEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginSampleInsightsEditor;
+		};
+		6CCDE545AC7049AA73E8BAF5 /* XCLocalSwiftPackageReference "Packages/PluginConversationTimeline" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginConversationTimeline;
+		};
+		7092076FFF03E0AF7B10BED0 /* XCLocalSwiftPackageReference "Packages/PluginLSPSignatureHelpEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPSignatureHelpEditor;
+		};
+		70F156DD5328E6C908B459B1 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomSymbols" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomSymbols;
+		};
+		7190006DDCE4867F7ED0ACF4 /* XCLocalSwiftPackageReference "Packages/PluginOpenInXcode" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInXcode;
+		};
+		723BA5FBB04E92B18970E702 /* XCLocalSwiftPackageReference "Packages/PluginHostsManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginHostsManager;
+		};
+		75831AB4BBE1E42A7D60385D /* XCLocalSwiftPackageReference "Packages/PluginMenuBarManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginMenuBarManager;
+		};
+		79AD127284A1185BD9F45189 /* XCLocalSwiftPackageReference "Packages/PluginTerminal" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginTerminal;
+		};
+		7AA1C628641F583C0AA79EFF /* XCLocalSwiftPackageReference "Packages/PluginOpenInGitOK" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInGitOK;
+		};
+		7B13B52D4919470F99CF077E /* XCLocalSwiftPackageReference "Packages/PluginAgentGitHubTools" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentGitHubTools;
+		};
+		7DA8FFD6782284385BB7ABA0 /* XCLocalSwiftPackageReference "Packages/PluginAgentRules" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentRules;
+		};
+		7E644FF75CEB837D74A802E7 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentColorEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPDocumentColorEditor;
+		};
+		7E9090EFB5D24735B646C860 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderMLX" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderMLX;
+		};
+		7ED0FE3ECDC44389D825AD98 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailFileTree" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorRailFileTree;
+		};
+		81136F3B1BE643FA162FCA0F /* XCLocalSwiftPackageReference "Packages/PluginLSPFoldingRangeEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPFoldingRangeEditor;
+		};
+		82D3703A7B8466FBE77541FB /* XCLocalSwiftPackageReference "Packages/PluginVerbosity" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginVerbosity;
+		};
+		840DCC274B42A7D88A4156F5 /* XCLocalSwiftPackageReference "Packages/PluginMultiCursorCommandsEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginMultiCursorCommandsEditor;
+		};
+		884C56BEB501E68B10B537E9 /* XCLocalSwiftPackageReference "Packages/PluginAgentAvailableTools" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentAvailableTools;
+		};
+		8AF6CD739C90F7F1AE360408 /* XCLocalSwiftPackageReference "Packages/PluginConversationNew" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginConversationNew;
+		};
+		8C0656B667F3CF438AE76157 /* XCLocalSwiftPackageReference "Packages/PluginCodeReview" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginCodeReview;
+		};
+		8C305A8A9B87F2E5769A5B77 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentLinkEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPDocumentLinkEditor;
+		};
+		8E67694E5FE081602B929FC0 /* XCLocalSwiftPackageReference "Packages/PluginLSPCallHierarchyEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPCallHierarchyEditor;
+		};
+		92EE9263BA0A5A34398A9805 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomReferences" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomReferences;
+		};
+		95AAEF349DD231840FEE6117 /* XCLocalSwiftPackageReference "Packages/PluginChatMessages" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatMessages;
+		};
+		97816ACF466B7FD3E3255041 /* XCLocalSwiftPackageReference "Packages/PluginChatAttachment" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatAttachment;
+		};
+		9AA11459D833867A2A290395 /* XCLocalSwiftPackageReference "Packages/PluginModelSelector" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginModelSelector;
+		};
+		9BC3F72FEB02E1C00E843E60 /* XCLocalSwiftPackageReference "Packages/PluginVueEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginVueEditor;
+		};
+		9C03CCC010FE898FC483D164 /* XCLocalSwiftPackageReference "Packages/PluginLSPInlayHintEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPInlayHintEditor;
+		};
+		9D8B53DD0534D4A3DBD26F1C /* XCLocalSwiftPackageReference "Packages/PluginSwiftSelectionCodeActionEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginSwiftSelectionCodeActionEditor;
+		};
+		9E5C3801F915BEB60845BC0E /* XCLocalSwiftPackageReference "Packages/PluginAgentRAG" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentRAG;
+		};
+		A143F108E3CA51CE0184BAFA /* XCLocalSwiftPackageReference "Packages/PluginLayout" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLayout;
 		};
 		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2262,9 +3138,69 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/AgentToolKit;
 		};
+		A26B81E654785DF789381418 /* XCLocalSwiftPackageReference "Packages/PluginNetworkManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginNetworkManager;
+		};
+		A2ADB26C5F2AEBB647B15758 /* XCLocalSwiftPackageReference "Packages/PluginJSEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginJSEditor;
+		};
+		A5677092083ADA32657144E4 /* XCLocalSwiftPackageReference "Packages/PluginLSPToolbarEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPToolbarEditor;
+		};
+		A626E02DF890355D4AC83911 /* XCLocalSwiftPackageReference "Packages/PluginGitHubInsight" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginGitHubInsight;
+		};
+		AB165A0E7319BDEBECEF298E /* XCLocalSwiftPackageReference "Packages/PluginAgentTurnNotification" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentTurnNotification;
+		};
+		ADD6ADE3C4EA8163DE3957F1 /* XCLocalSwiftPackageReference "Packages/PluginEditorStickySymbolBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorStickySymbolBar;
+		};
+		AE18651E79E1D7331CF0F8B2 /* XCLocalSwiftPackageReference "Packages/PluginQuickFileSearch" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginQuickFileSearch;
+		};
+		AEEA735EDDFC9FC687CD198E /* XCLocalSwiftPackageReference "Packages/PluginGit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginGit;
+		};
+		B0BF2AA6B0FDCDB96257AE2B /* XCLocalSwiftPackageReference "Packages/PluginOnboarding" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOnboarding;
+		};
+		B0D2A0D4A7F3058306E9C4D8 /* XCLocalSwiftPackageReference "Packages/PluginHistoryDBStatusBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginHistoryDBStatusBar;
+		};
 		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/XcodeKit;
+		};
+		B45E616DE375FBF2467A081E /* XCLocalSwiftPackageReference "Packages/PluginConversationList" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginConversationList;
+		};
+		B4AF0A3229AAA972CB7C211A /* XCLocalSwiftPackageReference "Packages/PluginFontConfig" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginFontConfig;
+		};
+		BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Packages/PluginAgentMessageRenderer" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentMessageRenderer;
+		};
+		BDCD488DF93D20097CCB06E7 /* XCLocalSwiftPackageReference "Packages/PluginRClick" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginRClick;
+		};
+		C088DC8DEBDCEA227E781E19 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomTerminal" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomTerminal;
 		};
 		C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2294,9 +3230,89 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/WorkspaceFileKit;
 		};
+		C2B465D4F7FF081D9C0FA8AA /* XCLocalSwiftPackageReference "Packages/PluginEditorPreview" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorPreview;
+		};
+		C391643F0F5597E903B83E1A /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomProblems" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorBottomProblems;
+		};
+		C95A4D2197FCD25203E31D02 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailReferences" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorRailReferences;
+		};
+		CC18BFF730D232FC98064A88 /* XCLocalSwiftPackageReference "Packages/PluginEditorTabStrip" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorTabStrip;
+		};
+		CD1B29E5238850205F1EB7AA /* XCLocalSwiftPackageReference "Packages/PluginLSPSelectionRangeEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPSelectionRangeEditor;
+		};
+		D10D7C8C7905F72B750B7726 /* XCLocalSwiftPackageReference "Packages/PluginOpenInAntigravity" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInAntigravity;
+		};
+		D2EEC9FA7CE47BBF4E21D9C5 /* XCLocalSwiftPackageReference "Packages/PluginSkill" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginSkill;
+		};
+		D50AA1D731419E8D1D9834B2 /* XCLocalSwiftPackageReference "Packages/PluginProjectIssueScanner" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginProjectIssueScanner;
+		};
+		D617BFB133AA527F2D2AAC94 /* XCLocalSwiftPackageReference "Packages/PluginOpenInCursor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginOpenInCursor;
+		};
+		DD7499EC77BE0853E49810D5 /* XCLocalSwiftPackageReference "Packages/PluginToolPermission" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginToolPermission;
+		};
+		DE6E85E2CBF14CA4BF5F9A6F /* XCLocalSwiftPackageReference "Packages/PluginEditorRailWorkspaceSearch" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorRailWorkspaceSearch;
+		};
+		E1253D169F46AAAC2487C607 /* XCLocalSwiftPackageReference "Packages/PluginClipboardManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginClipboardManager;
+		};
+		E67D779E13BE6EA6ABFBFF5E /* XCLocalSwiftPackageReference "Packages/PluginLSPServiceEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLSPServiceEditor;
+		};
+		E6F33ECA9A4256B5D47C46DA /* XCLocalSwiftPackageReference "Packages/PluginChatInput" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginChatInput;
+		};
+		E74763AAEF20F46DDE0340FA /* XCLocalSwiftPackageReference "Packages/PluginAgentMCPTools" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAgentMCPTools;
+		};
+		EBB8616FA0424BBA143A92F7 /* XCLocalSwiftPackageReference "Packages/PluginIdleTime" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginIdleTime;
+		};
 		F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FileTreeKit;
+		};
+		F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Packages/PluginThemeStatusBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginThemeStatusBar;
+		};
+		F9D60328E2020ED0DAFFE1B7 /* XCLocalSwiftPackageReference "Packages/PluginRegistryManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginRegistryManager;
+		};
+		FAE6C189F7D1B9CB24BB867D /* XCLocalSwiftPackageReference "Packages/PluginEditorOutlineRail" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginEditorOutlineRail;
+		};
+		FE3D02BD2B997D252A13D45E /* XCLocalSwiftPackageReference "Packages/PluginMultiAgent" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginMultiAgent;
 		};
 		GBK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/GitBranchMonitorKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2420,6 +3436,41 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		03413D108D23512D0E24E109 /* PluginLSPSelectionRangeEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD1B29E5238850205F1EB7AA /* XCLocalSwiftPackageReference "Packages/PluginLSPSelectionRangeEditor" */;
+			productName = PluginLSPSelectionRangeEditor;
+		};
+		05028C92A65D275F2BA258D1 /* PluginLSPCallHierarchyEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8E67694E5FE081602B929FC0 /* XCLocalSwiftPackageReference "Packages/PluginLSPCallHierarchyEditor" */;
+			productName = PluginLSPCallHierarchyEditor;
+		};
+		061D5BF900836C9D78A6354B /* PluginLSPSheetsEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B749126721800C110D71783 /* XCLocalSwiftPackageReference "Packages/PluginLSPSheetsEditor" */;
+			productName = PluginLSPSheetsEditor;
+		};
+		06D6189D393D16D050911274 /* PluginEditorBreadcrumb */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 69FFA372C772D731A1DDEC56 /* XCLocalSwiftPackageReference "Packages/PluginEditorBreadcrumb" */;
+			productName = PluginEditorBreadcrumb;
+		};
+		0807A4F132BDC96F1DF8D95A /* PluginAgentAvailableTools */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 884C56BEB501E68B10B537E9 /* XCLocalSwiftPackageReference "Packages/PluginAgentAvailableTools" */;
+			productName = PluginAgentAvailableTools;
+		};
+		093F70C122EC1FED81C67B47 /* PluginConversationTimeline */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6CCDE545AC7049AA73E8BAF5 /* XCLocalSwiftPackageReference "Packages/PluginConversationTimeline" */;
+			productName = PluginConversationTimeline;
+		};
+		09EFB72F5DA8A0A7A2BEE6C3 /* PluginSampleInsightsEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6C006DD5534A68F3C431B4A0 /* XCLocalSwiftPackageReference "Packages/PluginSampleInsightsEditor" */;
+			productName = PluginSampleInsightsEditor;
+		};
 		0B12E9172FC3111D00F7DC5D /* LumiCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LumiCoreKit;
@@ -2554,10 +3605,140 @@
 			package = 0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Packages/PluginAppStoreConnect" */;
 			productName = PluginAppStoreConnect;
 		};
+		0B14B1012FD4000000B14B10 /* PluginThemeLumi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Packages/PluginThemeLumi" */;
+			productName = PluginThemeLumi;
+		};
+		0B14B1112FD4000000B14B11 /* PluginThemeOrchard */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Packages/PluginThemeOrchard" */;
+			productName = PluginThemeOrchard;
+		};
+		0B14B1212FD4000000B14B12 /* PluginThemeRiver */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Packages/PluginThemeRiver" */;
+			productName = PluginThemeRiver;
+		};
+		0B14B1312FD4000000B14B13 /* PluginThemeSky */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Packages/PluginThemeSky" */;
+			productName = PluginThemeSky;
+		};
+		0B14B1412FD4000000B14B14 /* PluginThemeSpring */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Packages/PluginThemeSpring" */;
+			productName = PluginThemeSpring;
+		};
+		0B14B1512FD4000000B14B15 /* PluginThemeSummer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Packages/PluginThemeSummer" */;
+			productName = PluginThemeSummer;
+		};
+		0B14B1612FD4000000B14B16 /* PluginThemeVoid */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Packages/PluginThemeVoid" */;
+			productName = PluginThemeVoid;
+		};
+		0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeDark" */;
+			productName = PluginThemeVscodeDark;
+		};
+		0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Packages/PluginThemeVscodeLight" */;
+			productName = PluginThemeVscodeLight;
+		};
+		0B14B1912FD4000000B14B19 /* PluginThemeWinter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Packages/PluginThemeWinter" */;
+			productName = PluginThemeWinter;
+		};
 		0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Packages/PluginAppIconDesigner" */;
 			productName = PluginAppIconDesigner;
+		};
+		0B16C2012FD6000000C16C20 /* PluginLLMProviderAiRouter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2002FD6000000C16C20 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAiRouter" */;
+			productName = PluginLLMProviderAiRouter;
+		};
+		0B16C2112FD6000000C16C21 /* PluginLLMProviderAliyun */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2102FD6000000C16C21 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAliyun" */;
+			productName = PluginLLMProviderAliyun;
+		};
+		0B16C2212FD6000000C16C22 /* PluginLLMProviderAnthropic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2202FD6000000C16C22 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderAnthropic" */;
+			productName = PluginLLMProviderAnthropic;
+		};
+		0B16C2312FD6000000C16C23 /* PluginLLMProviderDeepSeek */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2302FD6000000C16C23 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderDeepSeek" */;
+			productName = PluginLLMProviderDeepSeek;
+		};
+		0B16C2412FD6000000C16C24 /* PluginLLMProviderFeifeimiao */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2402FD6000000C16C24 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFeifeimiao" */;
+			productName = PluginLLMProviderFeifeimiao;
+		};
+		0B16C2512FD6000000C16C25 /* PluginLLMProviderFlyMux */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2502FD6000000C16C25 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFlyMux" */;
+			productName = PluginLLMProviderFlyMux;
+		};
+		0B16C2612FD6000000C16C26 /* PluginLLMProviderFreeModel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2602FD6000000C16C26 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderFreeModel" */;
+			productName = PluginLLMProviderFreeModel;
+		};
+		0B16C2712FD6000000C16C27 /* PluginLLMProviderHappyCode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2702FD6000000C16C27 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHappyCode" */;
+			productName = PluginLLMProviderHappyCode;
+		};
+		0B16C2812FD6000000C16C28 /* PluginLLMProviderHyperAPI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2802FD6000000C16C28 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderHyperAPI" */;
+			productName = PluginLLMProviderHyperAPI;
+		};
+		0B16C2912FD6000000C16C29 /* PluginLLMProviderLPgpt */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2902FD6000000C16C29 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderLPgpt" */;
+			productName = PluginLLMProviderLPgpt;
+		};
+		0B16C2A12FD6000000C16C2A /* PluginLLMProviderMegaLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2A02FD6000000C16C2A /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderMegaLLM" */;
+			productName = PluginLLMProviderMegaLLM;
+		};
+		0B16C2B12FD6000000C16C2B /* PluginLLMProviderOpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2B02FD6000000C16C2B /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenAI" */;
+			productName = PluginLLMProviderOpenAI;
+		};
+		0B16C2C12FD6000000C16C2C /* PluginLLMProviderOpenRouter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2C02FD6000000C16C2C /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderOpenRouter" */;
+			productName = PluginLLMProviderOpenRouter;
+		};
+		0B16C2D12FD6000000C16C2D /* PluginLLMProviderXiaomi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2D02FD6000000C16C2D /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXiaomi" */;
+			productName = PluginLLMProviderXiaomi;
+		};
+		0B16C2E12FD6000000C16C2E /* PluginLLMProviderXybbz */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2E02FD6000000C16C2E /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderXybbz" */;
+			productName = PluginLLMProviderXybbz;
+		};
+		0B16C2F12FD6000000C16C2F /* PluginLLMProviderZhipu */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B16C2F02FD6000000C16C2F /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderZhipu" */;
+			productName = PluginLLMProviderZhipu;
 		};
 		0B1A4F7E2F662D8500F15618 /* MLX */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2674,10 +3855,355 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = LLMProviderKit;
 		};
+		0CC28B22B67E5167FC53D5CA /* PluginNetworkManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A26B81E654785DF789381418 /* XCLocalSwiftPackageReference "Packages/PluginNetworkManager" */;
+			productName = PluginNetworkManager;
+		};
+		0CE952B8EC5589B7FAC5F438 /* PluginQuickLauncher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1E903643CA57FACBD18F6AA8 /* XCLocalSwiftPackageReference "Packages/PluginQuickLauncher" */;
+			productName = PluginQuickLauncher;
+		};
+		0D4B4B8A4AFC75820A5EE968 /* PluginEditorBottomCallHierarchy */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5932E9B53BF1D6D648185271 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomCallHierarchy" */;
+			productName = PluginEditorBottomCallHierarchy;
+		};
+		0FB5999145DD4E2DDFF64901 /* PluginEditorCallHierarchyRail */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1B4C5B46D5841338BB06298F /* XCLocalSwiftPackageReference "Packages/PluginEditorCallHierarchyRail" */;
+			productName = PluginEditorCallHierarchyRail;
+		};
+		0FE19E618D25039EB8817B38 /* PluginEditorPanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 49CC01090415F2C6634A95D9 /* XCLocalSwiftPackageReference "Packages/PluginEditorPanel" */;
+			productName = PluginEditorPanel;
+		};
+		1113D32AF9EE515970F22173 /* PluginLSPFoldingRangeEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 81136F3B1BE643FA162FCA0F /* XCLocalSwiftPackageReference "Packages/PluginLSPFoldingRangeEditor" */;
+			productName = PluginLSPFoldingRangeEditor;
+		};
+		117C9B4CBEDA46F2D629D728 /* PluginEditorTabStrip */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CC18BFF730D232FC98064A88 /* XCLocalSwiftPackageReference "Packages/PluginEditorTabStrip" */;
+			productName = PluginEditorTabStrip;
+		};
+		156103FFA7EBEA0288507387 /* PluginIdleTime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EBB8616FA0424BBA143A92F7 /* XCLocalSwiftPackageReference "Packages/PluginIdleTime" */;
+			productName = PluginIdleTime;
+		};
+		17409507E773057064E5EE13 /* PluginSwiftSelectionCodeActionEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9D8B53DD0534D4A3DBD26F1C /* XCLocalSwiftPackageReference "Packages/PluginSwiftSelectionCodeActionEditor" */;
+			productName = PluginSwiftSelectionCodeActionEditor;
+		};
+		18BCD88DED4AFD6DB26615AA /* PluginOpenInGitOK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7AA1C628641F583C0AA79EFF /* XCLocalSwiftPackageReference "Packages/PluginOpenInGitOK" */;
+			productName = PluginOpenInGitOK;
+		};
+		1C295BDFECB699C46510D2D4 /* PluginAgentRAG */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9E5C3801F915BEB60845BC0E /* XCLocalSwiftPackageReference "Packages/PluginAgentRAG" */;
+			productName = PluginAgentRAG;
+		};
+		2139E33490AD39C3E62FE370 /* PluginGitHubInsight */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A626E02DF890355D4AC83911 /* XCLocalSwiftPackageReference "Packages/PluginGitHubInsight" */;
+			productName = PluginGitHubInsight;
+		};
+		21709EC063923191DD80EA8C /* PluginAgentTurnNotification */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AB165A0E7319BDEBECEF298E /* XCLocalSwiftPackageReference "Packages/PluginAgentTurnNotification" */;
+			productName = PluginAgentTurnNotification;
+		};
+		222862D73B28AE7E70D024CD /* PluginCodeReview */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C0656B667F3CF438AE76157 /* XCLocalSwiftPackageReference "Packages/PluginCodeReview" */;
+			productName = PluginCodeReview;
+		};
 		223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */;
 			productName = BeautifulMermaid;
+		};
+		24D491F56AE264B9AA9E2E91 /* PluginSkill */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D2EEC9FA7CE47BBF4E21D9C5 /* XCLocalSwiftPackageReference "Packages/PluginSkill" */;
+			productName = PluginSkill;
+		};
+		26B5C12A68D5CA8916483351 /* PluginGoEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 385AA5FBDF4553C351E07EFD /* XCLocalSwiftPackageReference "Packages/PluginGoEditor" */;
+			productName = PluginGoEditor;
+		};
+		2BBCDA7A2E5E2FC32492A4CE /* PluginOpenInFinder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0567466E51CE874BF4546719 /* XCLocalSwiftPackageReference "Packages/PluginOpenInFinder" */;
+			productName = PluginOpenInFinder;
+		};
+		2CAF5CCEB4916D41FC30FA1C /* PluginVueEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9BC3F72FEB02E1C00E843E60 /* XCLocalSwiftPackageReference "Packages/PluginVueEditor" */;
+			productName = PluginVueEditor;
+		};
+		2DF456A9B61F32257059FBA6 /* PluginOpenInGitHubDesktop */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 53CF6C859BD2B7CB8CE4B262 /* XCLocalSwiftPackageReference "Packages/PluginOpenInGitHubDesktop" */;
+			productName = PluginOpenInGitHubDesktop;
+		};
+		30E2D969ABAB2E8661190487 /* PluginAgentGitHubTools */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7B13B52D4919470F99CF077E /* XCLocalSwiftPackageReference "Packages/PluginAgentGitHubTools" */;
+			productName = PluginAgentGitHubTools;
+		};
+		3378041B4453306FBCAAC631 /* PluginWindowPersistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 26185CFB630CBA546B070D8D /* XCLocalSwiftPackageReference "Packages/PluginWindowPersistence" */;
+			productName = PluginWindowPersistence;
+		};
+		33C4717D770A5C280531D31A /* PluginModelSelector */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9AA11459D833867A2A290395 /* XCLocalSwiftPackageReference "Packages/PluginModelSelector" */;
+			productName = PluginModelSelector;
+		};
+		34BAE1356C3CAC4154A7BFA7 /* PluginLSPServiceEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E67D779E13BE6EA6ABFBFF5E /* XCLocalSwiftPackageReference "Packages/PluginLSPServiceEditor" */;
+			productName = PluginLSPServiceEditor;
+		};
+		35D9AAED8E001F885C8BB4E2 /* PluginMultiAgent */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE3D02BD2B997D252A13D45E /* XCLocalSwiftPackageReference "Packages/PluginMultiAgent" */;
+			productName = PluginMultiAgent;
+		};
+		3733D959456FB1A13F7B6C72 /* PluginLSPWorkspaceSymbolEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 457662F287CAEA1F2516EDB3 /* XCLocalSwiftPackageReference "Packages/PluginLSPWorkspaceSymbolEditor" */;
+			productName = PluginLSPWorkspaceSymbolEditor;
+		};
+		3B5D9B10E007DA3DF5568D45 /* PluginRequestLog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2A77DBC75EF31FF11B9C67DE /* XCLocalSwiftPackageReference "Packages/PluginRequestLog" */;
+			productName = PluginRequestLog;
+		};
+		3FAB0446AE0905E166689557 /* PluginHostsManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 723BA5FBB04E92B18970E702 /* XCLocalSwiftPackageReference "Packages/PluginHostsManager" */;
+			productName = PluginHostsManager;
+		};
+		40744482CF09A5DA593B072E /* PluginChatSubmit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 24DEA50C18C9F0CB44466251 /* XCLocalSwiftPackageReference "Packages/PluginChatSubmit" */;
+			productName = PluginChatSubmit;
+		};
+		421F79F03BD0B9582EF22F77 /* PluginVerbosity */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 82D3703A7B8466FBE77541FB /* XCLocalSwiftPackageReference "Packages/PluginVerbosity" */;
+			productName = PluginVerbosity;
+		};
+		42F8546E40DA4FA3EC0B495C /* PluginEditorBottomSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 70F156DD5328E6C908B459B1 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomSymbols" */;
+			productName = PluginEditorBottomSymbols;
+		};
+		4CA3D711C573428EB9CE2F4C /* PluginEditorRailFileTree */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ED0FE3ECDC44389D825AD98 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailFileTree" */;
+			productName = PluginEditorRailFileTree;
+		};
+		4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Packages/PluginThemeStatusBar" */;
+			productName = PluginThemeStatusBar;
+		};
+		4D9A3039E03ABC33955C1158 /* PluginLSPDocumentColorEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7E644FF75CEB837D74A802E7 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentColorEditor" */;
+			productName = PluginLSPDocumentColorEditor;
+		};
+		4E06C63D18FE5570C01D0BE4 /* PluginEditorBottomTerminal */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C088DC8DEBDCEA227E781E19 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomTerminal" */;
+			productName = PluginEditorBottomTerminal;
+		};
+		4FCD6020D268A9D5AC47D7F2 /* PluginClipboardManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1253D169F46AAAC2487C607 /* XCLocalSwiftPackageReference "Packages/PluginClipboardManager" */;
+			productName = PluginClipboardManager;
+		};
+		5048D4096A0CD01B54CEE904 /* PluginLSPInlayHintEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9C03CCC010FE898FC483D164 /* XCLocalSwiftPackageReference "Packages/PluginLSPInlayHintEditor" */;
+			productName = PluginLSPInlayHintEditor;
+		};
+		53D4936FC55D006274692D3E /* PluginMultiCursorCommandsEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 840DCC274B42A7D88A4156F5 /* XCLocalSwiftPackageReference "Packages/PluginMultiCursorCommandsEditor" */;
+			productName = PluginMultiCursorCommandsEditor;
+		};
+		540EC2E245852513F1CF1367 /* PluginLSPCodeActionEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 04AB96159248E2BAE1A295EB /* XCLocalSwiftPackageReference "Packages/PluginLSPCodeActionEditor" */;
+			productName = PluginLSPCodeActionEditor;
+		};
+		5755CBABA6BBE5EB002B95BE /* PluginChatInput */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6F33ECA9A4256B5D47C46DA /* XCLocalSwiftPackageReference "Packages/PluginChatInput" */;
+			productName = PluginChatInput;
+		};
+		57FD4D7CA89D0CCBB5BF034D /* PluginConversationTitle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47D4CB0ED1F6367AA59B54B7 /* XCLocalSwiftPackageReference "Packages/PluginConversationTitle" */;
+			productName = PluginConversationTitle;
+		};
+		590583DC36F54C708D573720 /* PluginEditorBottomReferences */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 92EE9263BA0A5A34398A9805 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomReferences" */;
+			productName = PluginEditorBottomReferences;
+		};
+		5ADFB2940134A5456FFC50DC /* PluginJSEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A2ADB26C5F2AEBB647B15758 /* XCLocalSwiftPackageReference "Packages/PluginJSEditor" */;
+			productName = PluginJSEditor;
+		};
+		5C78FF3A41548DF8C421E006 /* PluginEditorRailWorkspaceSearch */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DE6E85E2CBF14CA4BF5F9A6F /* XCLocalSwiftPackageReference "Packages/PluginEditorRailWorkspaceSearch" */;
+			productName = PluginEditorRailWorkspaceSearch;
+		};
+		5E5BE619B13B7D70554962B2 /* PluginLLMProviderMLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7E9090EFB5D24735B646C860 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderMLX" */;
+			productName = PluginLLMProviderMLX;
+		};
+		5F6F4F3AD385478337B1AF43 /* PluginNetto */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Packages/PluginNetto" */;
+			productName = PluginNetto;
+		};
+		6019D587DEBF8FC157A4B183 /* PluginProjects */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2E58D35D09AAC9218981C1E2 /* XCLocalSwiftPackageReference "Packages/PluginProjects" */;
+			productName = PluginProjects;
+		};
+		63535D28C4AF6B0BFA910B9D /* PluginLSPDocumentHighlightEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0125D185F41B5C826D672572 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentHighlightEditor" */;
+			productName = PluginLSPDocumentHighlightEditor;
+		};
+		6A47B269A2ED1ED3084795B2 /* PluginChatPanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0AB17A9B54073127B7ECBB74 /* XCLocalSwiftPackageReference "Packages/PluginChatPanel" */;
+			productName = PluginChatPanel;
+		};
+		6A7151DA003C0EB79C0EA85C /* PluginEditorBottomProblems */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C391643F0F5597E903B83E1A /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomProblems" */;
+			productName = PluginEditorBottomProblems;
+		};
+		6AC603D847F506F371242CD7 /* PluginAgentMCPTools */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E74763AAEF20F46DDE0340FA /* XCLocalSwiftPackageReference "Packages/PluginAgentMCPTools" */;
+			productName = PluginAgentMCPTools;
+		};
+		6D57941C98C787EFAF6ACEE7 /* PluginEditorOutlineRail */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FAE6C189F7D1B9CB24BB867D /* XCLocalSwiftPackageReference "Packages/PluginEditorOutlineRail" */;
+			productName = PluginEditorOutlineRail;
+		};
+		6EF37B09934798601F41B124 /* PluginOpenRemote */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D8C8FA6027F59FBCECEB095 /* XCLocalSwiftPackageReference "Packages/PluginOpenRemote" */;
+			productName = PluginOpenRemote;
+		};
+		6F8A1AB868752C8243F6967D /* PluginChatMode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1439E04E4CACC36550D515E6 /* XCLocalSwiftPackageReference "Packages/PluginChatMode" */;
+			productName = PluginChatMode;
+		};
+		7392A072A2B7A013040F1CEF /* PluginMarkdownEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C2F411DAE0BB77D4D4E1704 /* XCLocalSwiftPackageReference "Packages/PluginMarkdownEditor" */;
+			productName = PluginMarkdownEditor;
+		};
+		756A5E948D13CF19249C0E7C /* PluginAgentContextSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 43EE5A99B7EDF6FE1F4BE938 /* XCLocalSwiftPackageReference "Packages/PluginAgentContextSync" */;
+			productName = PluginAgentContextSync;
+		};
+		75E88D92D53FA3E545C39E17 /* PluginAgentLanguage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Packages/PluginAgentLanguage" */;
+			productName = PluginAgentLanguage;
+		};
+		7BF09B47A508DCAE88D0A48C /* PluginConversationNew */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8AF6CD739C90F7F1AE360408 /* XCLocalSwiftPackageReference "Packages/PluginConversationNew" */;
+			productName = PluginConversationNew;
+		};
+		7E49825683D80FC2058AA030 /* PluginLSPSignatureHelpEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7092076FFF03E0AF7B10BED0 /* XCLocalSwiftPackageReference "Packages/PluginLSPSignatureHelpEditor" */;
+			productName = PluginLSPSignatureHelpEditor;
+		};
+		7F080107C249FFC8C5F9E0C4 /* PluginScreenshot */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EB1AEE4EB53935C8F7459E7 /* XCLocalSwiftPackageReference "Packages/PluginScreenshot" */;
+			productName = PluginScreenshot;
+		};
+		7F5096839AA1CAEB37D14115 /* PluginOnboarding */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B0BF2AA6B0FDCDB96257AE2B /* XCLocalSwiftPackageReference "Packages/PluginOnboarding" */;
+			productName = PluginOnboarding;
+		};
+		80F4055C0A75E21F621EDD2F /* PluginMenuBarManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 75831AB4BBE1E42A7D60385D /* XCLocalSwiftPackageReference "Packages/PluginMenuBarManager" */;
+			productName = PluginMenuBarManager;
+		};
+		84C54E39AE2E087C8D61369C /* PluginToolCallLoopDetection */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 392D16DD858B5FC453A33793 /* XCLocalSwiftPackageReference "Packages/PluginToolCallLoopDetection" */;
+			productName = PluginToolCallLoopDetection;
+		};
+		8C0AD937A0B1EA2C75715271 /* PluginEditorStickySymbolBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ADD6ADE3C4EA8163DE3957F1 /* XCLocalSwiftPackageReference "Packages/PluginEditorStickySymbolBar" */;
+			productName = PluginEditorStickySymbolBar;
+		};
+		8DBCC412CBCC77F72DF8AC86 /* PluginChatMessages */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 95AAEF349DD231840FEE6117 /* XCLocalSwiftPackageReference "Packages/PluginChatMessages" */;
+			productName = PluginChatMessages;
+		};
+		92B3FDD21155C9F036A5598E /* PluginInput */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2FAFADD4986F9B28B920D246 /* XCLocalSwiftPackageReference "Packages/PluginInput" */;
+			productName = PluginInput;
+		};
+		93B13FD377B9551E0AFAC1A7 /* PluginTerminal */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 79AD127284A1185BD9F45189 /* XCLocalSwiftPackageReference "Packages/PluginTerminal" */;
+			productName = PluginTerminal;
+		};
+		97D1986301A61EFEDC58B1DC /* PluginRClick */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDCD488DF93D20097CCB06E7 /* XCLocalSwiftPackageReference "Packages/PluginRClick" */;
+			productName = PluginRClick;
+		};
+		99107EEA435A36CE02544423 /* PluginEditorBottomSearch */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4620D386B0853D55DD22BC53 /* XCLocalSwiftPackageReference "Packages/PluginEditorBottomSearch" */;
+			productName = PluginEditorBottomSearch;
+		};
+		9CA85CCC25B5CFCDB05CE712 /* PluginCSSEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 227BBCAEDA68032AF1767D9D /* XCLocalSwiftPackageReference "Packages/PluginCSSEditor" */;
+			productName = PluginCSSEditor;
 		};
 		A1B2C3A12F70000200AAA101 /* SkillKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2764,15 +4290,70 @@
 			package = A1B2C4692F70000100AAA109 /* XCLocalSwiftPackageReference "Packages/AgentToolKit" */;
 			productName = AgentToolKit;
 		};
+		A5FC32ADABD140B2B0035C89 /* PluginEditorPreview */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C2B465D4F7FF081D9C0FA8AA /* XCLocalSwiftPackageReference "Packages/PluginEditorPreview" */;
+			productName = PluginEditorPreview;
+		};
+		A73D3B5ABDE77D231BC4C2CE /* PluginEditorRailReferences */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C95A4D2197FCD25203E31D02 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailReferences" */;
+			productName = PluginEditorRailReferences;
+		};
+		A888E42C948716BF00411A5A /* PluginToolPermission */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DD7499EC77BE0853E49810D5 /* XCLocalSwiftPackageReference "Packages/PluginToolPermission" */;
+			productName = PluginToolPermission;
+		};
+		A8C9517E99964AA34F66E8AC /* PluginHTMLEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 14649868B766BDFC15C6A8C7 /* XCLocalSwiftPackageReference "Packages/PluginHTMLEditor" */;
+			productName = PluginHTMLEditor;
+		};
+		AC9B98BECA0E380218D5A1EC /* PluginEditorRailWorkspaceSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5D50B561F887DC0054A07175 /* XCLocalSwiftPackageReference "Packages/PluginEditorRailWorkspaceSymbols" */;
+			productName = PluginEditorRailWorkspaceSymbols;
+		};
+		ACCA775D38E3807370061F59 /* PluginLSPDocumentLinkEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C305A8A9B87F2E5769A5B77 /* XCLocalSwiftPackageReference "Packages/PluginLSPDocumentLinkEditor" */;
+			productName = PluginLSPDocumentLinkEditor;
+		};
+		ADCEB9CD62A88AAD4ADA31FE /* PluginSwiftPrimitiveTypesEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1AF119CC9CEEBD3A781722D3 /* XCLocalSwiftPackageReference "Packages/PluginSwiftPrimitiveTypesEditor" */;
+			productName = PluginSwiftPrimitiveTypesEditor;
+		};
 		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
 			productName = XcodeKit;
 		};
+		B2F094BFBD5983FB736842A7 /* PluginProjectIssueScanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D50AA1D731419E8D1D9834B2 /* XCLocalSwiftPackageReference "Packages/PluginProjectIssueScanner" */;
+			productName = PluginProjectIssueScanner;
+		};
+		B4793F7CEEF875247D8526E6 /* PluginAgentRules */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7DA8FFD6782284385BB7ABA0 /* XCLocalSwiftPackageReference "Packages/PluginAgentRules" */;
+			productName = PluginAgentRules;
+		};
+		B560FF04481C6F165CD60F19 /* PluginPortManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 43D15C7427DA0D3F2739E939 /* XCLocalSwiftPackageReference "Packages/PluginPortManager" */;
+			productName = PluginPortManager;
+		};
 		B58B244CDF214E2CB80C1953 /* LLMKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */;
 			productName = LLMKit;
+		};
+		BD7E70D4D1B6285FA55DF1A4 /* PluginAgentCoreTools */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 42004787393870A6F7669878 /* XCLocalSwiftPackageReference "Packages/PluginAgentCoreTools" */;
+			productName = PluginAgentCoreTools;
 		};
 		C0FF1C022FB3000000000001 /* WebFetchKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2809,6 +4390,121 @@
 			package = C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */;
 			productName = WorkspaceFileKit;
 		};
+		C11E6B666996D1E7463CBA19 /* PluginEditorRailProblems */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3683752D874AB5C06B03494A /* XCLocalSwiftPackageReference "Packages/PluginEditorRailProblems" */;
+			productName = PluginEditorRailProblems;
+		};
+		C1FE8D6B33D4FD981DA1B304 /* PluginEditorLSPContextCommands */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 16A8B7354A90F457057B21A5 /* XCLocalSwiftPackageReference "Packages/PluginEditorLSPContextCommands" */;
+			productName = PluginEditorLSPContextCommands;
+		};
+		C987521DF47CD2B78A18DEEA /* PluginAgentDelayMessage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 625027296DBBC8DCBDA468DA /* XCLocalSwiftPackageReference "Packages/PluginAgentDelayMessage" */;
+			productName = PluginAgentDelayMessage;
+		};
+		CA9677964B0ADD77AC15F115 /* PluginQuickFileSearch */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE18651E79E1D7331CF0F8B2 /* XCLocalSwiftPackageReference "Packages/PluginQuickFileSearch" */;
+			productName = PluginQuickFileSearch;
+		};
+		CD119DA64936A0677CFFC355 /* PluginOpenInAntigravity */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D10D7C8C7905F72B750B7726 /* XCLocalSwiftPackageReference "Packages/PluginOpenInAntigravity" */;
+			productName = PluginOpenInAntigravity;
+		};
+		CD36D0CA9AEA1700AA795264 /* PluginHistoryDBStatusBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B0D2A0D4A7F3058306E9C4D8 /* XCLocalSwiftPackageReference "Packages/PluginHistoryDBStatusBar" */;
+			productName = PluginHistoryDBStatusBar;
+		};
+		CE01B1C3B34746452A52C83B /* PluginOpenInXcode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7190006DDCE4867F7ED0ACF4 /* XCLocalSwiftPackageReference "Packages/PluginOpenInXcode" */;
+			productName = PluginOpenInXcode;
+		};
+		CE43FCDC3916F4304CD5E500 /* PluginChatAttachment */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97816ACF466B7FD3E3255041 /* XCLocalSwiftPackageReference "Packages/PluginChatAttachment" */;
+			productName = PluginChatAttachment;
+		};
+		CF37A2737672A36EE39F9675 /* PluginLLMAvailability */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 62EFA1AD2E37361A13714510 /* XCLocalSwiftPackageReference "Packages/PluginLLMAvailability" */;
+			productName = PluginLLMAvailability;
+		};
+		D04E348CC6815BBC821246B8 /* PluginFontConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4AF0A3229AAA972CB7C211A /* XCLocalSwiftPackageReference "Packages/PluginFontConfig" */;
+			productName = PluginFontConfig;
+		};
+		D1C00D2ECA84580C41D51314 /* PluginRegistryManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F9D60328E2020ED0DAFFE1B7 /* XCLocalSwiftPackageReference "Packages/PluginRegistryManager" */;
+			productName = PluginRegistryManager;
+		};
+		D2F657DE38A9CE03FA6BAC91 /* PluginEditorXcode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D6044F26F960568A324F00F /* XCLocalSwiftPackageReference "Packages/PluginEditorXcode" */;
+			productName = PluginEditorXcode;
+		};
+		D37B2AD8A54E6BC166768D80 /* PluginConversationList */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B45E616DE375FBF2467A081E /* XCLocalSwiftPackageReference "Packages/PluginConversationList" */;
+			productName = PluginConversationList;
+		};
+		D833CDACADF47F5D404A4314 /* PluginEditorChatIntegration */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4386FA4B9D0C542ECEED83AC /* XCLocalSwiftPackageReference "Packages/PluginEditorChatIntegration" */;
+			productName = PluginEditorChatIntegration;
+		};
+		E23DAA9331335EBF87C2EF45 /* PluginLSPRealtimeSignalsEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46461024EDA6A9F8E3CEEFAD /* XCLocalSwiftPackageReference "Packages/PluginLSPRealtimeSignalsEditor" */;
+			productName = PluginLSPRealtimeSignalsEditor;
+		};
+		E38A5C1F87C002AB69089D69 /* PluginModelPreference */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 36158046E776BAE9DB0EB26C /* XCLocalSwiftPackageReference "Packages/PluginModelPreference" */;
+			productName = PluginModelPreference;
+		};
+		E5BAAC407D353CE1C4C3456C /* PluginLayout */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A143F108E3CA51CE0184BAFA /* XCLocalSwiftPackageReference "Packages/PluginLayout" */;
+			productName = PluginLayout;
+		};
+		E7A6066A71F4DE1B69B489A7 /* PluginAgentMessageRenderer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Packages/PluginAgentMessageRenderer" */;
+			productName = PluginAgentMessageRenderer;
+		};
+		E87E1005243A0185A1950AEA /* PluginSampleDecorationEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11F354C6F26319DA2A2DBC4F /* XCLocalSwiftPackageReference "Packages/PluginSampleDecorationEditor" */;
+			productName = PluginSampleDecorationEditor;
+		};
+		EA7D69B8243B8FB0A6A35A44 /* PluginOpenInCursor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D617BFB133AA527F2D2AAC94 /* XCLocalSwiftPackageReference "Packages/PluginOpenInCursor" */;
+			productName = PluginOpenInCursor;
+		};
+		EB14ADD8E23A0509E5B4A450 /* PluginChatPendingMessages */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4E0EA1EEC7A494F76E5D4AE8 /* XCLocalSwiftPackageReference "Packages/PluginChatPendingMessages" */;
+			productName = PluginChatPendingMessages;
+		};
+		ED1C0B8D0E735CE19C445B2A /* PluginEditorSwiftKeywordHover */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00C178F5FA11A0248E6F2D98 /* XCLocalSwiftPackageReference "Packages/PluginEditorSwiftKeywordHover" */;
+			productName = PluginEditorSwiftKeywordHover;
+		};
+		EDF68831967B90546941FAD4 /* PluginLSPToolbarEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A5677092083ADA32657144E4 /* XCLocalSwiftPackageReference "Packages/PluginLSPToolbarEditor" */;
+			productName = PluginLSPToolbarEditor;
+		};
 		F1E2A3022FC2000100000001 /* FileTreeKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */;
@@ -2818,6 +4514,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		F580545C289FE0C1D7966F4A /* PluginDatabaseManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 24AFA24AD552A670D99FEABF /* XCLocalSwiftPackageReference "Packages/PluginDatabaseManager" */;
+			productName = PluginDatabaseManager;
 		};
 		F5A6407F2F3ED7060039A761 /* PostgresNIO */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2848,6 +4549,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
 			productName = XcodeProj;
+		};
+		F6016FAA6014704B4C9FCB38 /* PluginTextActions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4AC985FD6EE32E7449477FC4 /* XCLocalSwiftPackageReference "Packages/PluginTextActions" */;
+			productName = PluginTextActions;
+		};
+		FF447BE55639C32DE38DF2FF /* PluginGit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AEEA735EDDFC9FC687CD198E /* XCLocalSwiftPackageReference "Packages/PluginGit" */;
+			productName = PluginGit;
 		};
 		GBK2000000000000000001 /* GitBranchMonitorKit */ = {
 			isa = XCSwiftPackageProductDependency;

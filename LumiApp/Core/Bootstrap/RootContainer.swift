@@ -1,6 +1,7 @@
 import CodeEditTextView
 import EditorService
 import Foundation
+import PluginMultiCursorCommandsEditor
 import SwiftData
 import os
 

@@ -1,0 +1,3 @@
+import PluginLSPDocumentHighlightEditor
+
+typealias LSPDocumentHighlightEditorPlugin = PluginLSPDocumentHighlightEditor.LSPDocumentHighlightEditorPlugin

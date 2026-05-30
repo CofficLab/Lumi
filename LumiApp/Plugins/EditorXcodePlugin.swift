@@ -1,0 +1,3 @@
+import PluginEditorXcode
+
+typealias EditorXcodePlugin = PluginEditorXcode.EditorXcodePlugin

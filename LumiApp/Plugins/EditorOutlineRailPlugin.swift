@@ -1,0 +1,3 @@
+import PluginEditorOutlineRail
+
+typealias EditorOutlineRailPlugin = PluginEditorOutlineRail.EditorOutlineRailPlugin

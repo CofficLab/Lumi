@@ -1,0 +1,3 @@
+import PluginEditorPreview
+
+typealias EditorPreviewPlugin = PluginEditorPreview.EditorPreviewPlugin

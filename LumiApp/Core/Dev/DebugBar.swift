@@ -139,11 +139,3 @@ private struct DynamicPreviewSizingView<Content: View>: View {
         #endif
     }
 }
-
-// MARK: Preview
-
-#Preview("App") {
-    ContentView()
-        .inRootView()
-        .withDebugBar()
-}

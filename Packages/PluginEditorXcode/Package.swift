@@ -14,10 +14,12 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../EditorService"),
         .package(path: "../AgentToolKit"),
         .package(path: "../LumiCodeEditSourceEditor"),
         .package(path: "../LumiCoreKit"),
         .package(path: "../LumiUI"),
+        .package(path: "../PluginLSPServiceEditor"),
         .package(path: "../SuperLogKit"),
         .package(path: "../XcodeKit"),
         .package(path: "../XcodeProjectGen"),
@@ -27,10 +29,12 @@ let package = Package(
         .target(
             name: "PluginEditorXcode",
             dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "PluginLSPServiceEditor", package: "PluginLSPServiceEditor"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "XcodeKit", package: "XcodeKit"),
                 .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),

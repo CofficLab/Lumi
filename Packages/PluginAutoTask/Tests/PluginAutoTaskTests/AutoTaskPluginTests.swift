@@ -29,7 +29,7 @@ struct AutoTaskPluginTests {
             "list_tasks",
             "check_progress",
         ])
-        #expect(AutoTaskPlugin.shared.sendMiddlewares().count == 1)
+        #expect(AutoTaskPlugin.shared.sendMiddlewares().count == 2)
     }
 }
 

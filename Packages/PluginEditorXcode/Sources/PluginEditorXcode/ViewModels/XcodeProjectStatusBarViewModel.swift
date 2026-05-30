@@ -1,4 +1,5 @@
 import Combine
+import PluginLSPServiceEditor
 import SuperLogKit
 import SwiftUI
 import XcodeKit

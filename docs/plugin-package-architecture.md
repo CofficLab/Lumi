@@ -197,6 +197,30 @@ enum BundledPluginRegistry {
 
 相比完全依赖 runtime 扫描，显式注册更利于 Package 化、测试、裁剪和排查启动问题。
 
+在迁移完成前，App 侧仍允许保留很薄的 runtime 扫描适配器，但适配器必须只做注册和转发：
+
+```text
+LumiApp/Plugins/
+  BrowserPlugin.swift        # import PluginBrowser，转发到 package 实现
+  WebSearchPlugin.swift      # import PluginWebSearch，转发到 package 实现
+
+Packages/
+  PluginBrowser/
+  PluginWebSearch/
+```
+
+`LumiApp/Plugins` 不应继续保存插件资源、视图、服务、工具、中间件或业务模型；这些内容应随插件迁入对应的 `Packages/Plugin*`。可以用下面的脚本检查当前边界：
+
+```bash
+scripts/check-plugin-package-boundaries.sh --allow-legacy
+```
+
+迁移全部完成后，CI 应改为运行严格模式：
+
+```bash
+scripts/check-plugin-package-boundaries.sh
+```
+
 ## 迁移路径
 
 ### 1. 先稳定 LumiCoreKit

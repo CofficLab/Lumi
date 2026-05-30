@@ -2,6 +2,8 @@ import Combine
 import AgentToolKit
 import Foundation
 import SwiftUI
+import PluginChatMessages
+import PluginWindowPersistence
 
 /// 窗口作用域容器
 ///
@@ -188,11 +190,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             slashCommandService: container.slashCommandService
         )
         self.projectContextRequestVM = WindowProjectContextRequestVM()
-        self.chatTimelineViewModel = WindowChatTimelineViewModel(
-            chatHistoryService: container.chatHistoryService,
-            conversationVM: conversationVM,
-            conversationSendStatusVM: conversationSendStatusVM
-        )
+        self.chatTimelineViewModel = WindowChatTimelineViewModel()
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
         )

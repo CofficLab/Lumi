@@ -220,7 +220,7 @@ final class AutomationController: SuperLog {
 
     /// 确保编辑器面板处于活动状态
     private func ensureEditorPanelActive() {
-        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = EditorPlugin.iconName
+        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = "chevron.left.forwardslash.chevron.right"
         Self.logger.info("🤖 Activated editor panel")
     }
 

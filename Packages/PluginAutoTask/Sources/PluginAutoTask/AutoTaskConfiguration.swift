@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 /// AutoTask 配置协议
 ///
@@ -9,4 +10,8 @@ public protocol AutoTaskConfiguration: Sendable {
     ///
     /// 替代 `AppConfig.getDBFolderURL()` 的调用。
     func databaseDirectory() -> URL
+
+    /// 将 AutoTask 生成的用户提示消息入队，触发下一轮 Agent turn。
+    @MainActor
+    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext)
 }

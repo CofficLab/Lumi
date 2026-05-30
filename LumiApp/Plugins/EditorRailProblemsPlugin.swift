@@ -1,0 +1,3 @@
+import PluginEditorRailProblems
+
+typealias EditorRailProblemsPlugin = PluginEditorRailProblems.EditorRailProblemsPlugin

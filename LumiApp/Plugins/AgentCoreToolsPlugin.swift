@@ -1,0 +1,3 @@
+import PluginAgentCoreTools
+
+typealias AgentCoreToolsPlugin = PluginAgentCoreTools.AgentCoreToolsPlugin

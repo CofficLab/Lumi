@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderXiaomi
+
+typealias XiaomiProvider = PluginLLMProviderXiaomi.XiaomiProvider

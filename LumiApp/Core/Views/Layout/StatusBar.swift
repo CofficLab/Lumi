@@ -9,6 +9,7 @@ struct StatusBar: View {
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var llmVM: AppLLMVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     /// 当前活跃的供应商 ID（优先对话级偏好，回退到全局选择）
     private var activeProviderId: String? {
@@ -23,7 +24,9 @@ struct StatusBar: View {
             isEditorVisible: layoutVM.editorVisible,
             activeProviderId: activeProviderId,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            currentProjectPath: projectVM.currentProjectPath,
+            languagePreference: projectVM.languagePreference
         )
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)

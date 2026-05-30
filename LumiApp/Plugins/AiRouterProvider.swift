@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderAiRouter
+
+typealias AiRouterProvider = PluginLLMProviderAiRouter.AiRouterProvider

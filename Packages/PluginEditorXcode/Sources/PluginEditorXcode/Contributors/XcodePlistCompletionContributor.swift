@@ -1,4 +1,5 @@
 import Foundation
+import EditorService
 import SuperLogKit
 import XcodeKit
 import os

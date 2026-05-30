@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderOpenRouter
+
+typealias OpenRouterProvider = PluginLLMProviderOpenRouter.OpenRouterProvider

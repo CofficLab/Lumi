@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 
 /// 消息发送上下文
 ///
@@ -25,6 +26,17 @@ open class SendMessageContext {
     /// 当前选中的文件 URL（可选）
     public let currentFileURL: URL?
 
+    /// 当前项目路径。
+    ///
+    /// 为空字符串表示当前发送不绑定项目。
+    public let currentProjectPath: String
+
+    /// 当前发送使用的语言偏好。
+    public let languagePreference: LanguagePreference
+
+    /// 最近历史消息。插件 package 只能依赖这份快照，不能直接读取 App 的历史服务。
+    public let previousMessages: [ChatMessage]
+
     // MARK: - Mutable Properties
 
     /// 仅在当前发送轮次有效的 system 提示词（不落库）
@@ -32,6 +44,9 @@ open class SendMessageContext {
 
     /// 终止本轮发送的回调
     public var abortTurn: (() -> Void)?
+
+    /// 终止并保存消息的回调。
+    public var abortWithMessage: ((ChatMessage) -> Void)?
 
     // MARK: - Initializer (LumiCoreKit 最小集合)
 
@@ -42,17 +57,28 @@ open class SendMessageContext {
     public init(
         conversationId: UUID,
         message: ChatMessage,
-        currentFileURL: URL? = nil
+        currentFileURL: URL? = nil,
+        currentProjectPath: String = "",
+        languagePreference: LanguagePreference = .current,
+        previousMessages: [ChatMessage] = []
     ) {
         self.conversationId = conversationId
         self.message = message
         self.currentFileURL = currentFileURL
+        self.currentProjectPath = currentProjectPath
+        self.languagePreference = languagePreference
+        self.previousMessages = previousMessages
     }
 
     // MARK: - Public Methods
 
     /// 终止当前发送
     public func abort() {
+        abortTurn?()
+    }
+
+    public func abort(withMessage message: ChatMessage) {
+        abortWithMessage?(message)
         abortTurn?()
     }
 }

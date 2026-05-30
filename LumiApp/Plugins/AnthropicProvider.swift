@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderAnthropic
+
+typealias AnthropicProvider = PluginLLMProviderAnthropic.AnthropicProvider

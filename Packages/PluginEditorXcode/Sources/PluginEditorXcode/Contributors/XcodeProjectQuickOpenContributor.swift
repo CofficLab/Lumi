@@ -1,4 +1,5 @@
 import Foundation
+import EditorService
 import XcodeKit
 import CodeEditSourceEditor
 import os

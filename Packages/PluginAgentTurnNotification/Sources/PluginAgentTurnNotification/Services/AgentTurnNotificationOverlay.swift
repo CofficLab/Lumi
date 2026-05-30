@@ -1,0 +1,131 @@
+import AppKit
+import SuperLogKit
+import SwiftUI
+import UserNotifications
+
+/// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
+public struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
+    public nonisolated static var emoji: String { "🔔" }
+    public nonisolated static var verbose: Bool { false }
+
+    public let content: Content
+
+    public var body: some View {
+        content
+    }
+}
+
+/// 实际执行通知发送逻辑的 Handler
+@MainActor
+public final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
+    public nonisolated static var emoji: String { "🔔" }
+    public nonisolated static var verbose: Bool { false }
+
+    private let center = UNUserNotificationCenter.current()
+
+    // MARK: - Setup
+
+    /// 注册为通知中心代理
+    public func bind() {
+        center.delegate = self
+        if Self.verbose {
+            AgentTurnNotificationPlugin.logger.info("\(Self.t)✅ 已设置通知中心代理")
+        }
+    }
+
+    // MARK: - Notification Posting
+
+    public func postTurnFinishedNotification(conversationId: UUID) {
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else {
+                // 未授权通知，请求授权
+                Task {
+                    await self.requestAuthorizationAndPost(conversationId: conversationId)
+                }
+                return
+            }
+
+            // 已授权，直接发送
+            Task {
+                await self.deliverNotification(conversationId: conversationId)
+            }
+        }
+    }
+
+    private func requestAuthorizationAndPost(conversationId: UUID) async {
+        do {
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            if granted {
+                await deliverNotification(conversationId: conversationId)
+            }
+        } catch {
+            if Self.verbose {
+                AgentTurnNotificationPlugin.logger.error("\(Self.t)❌ 请求通知权限失败: \(error)")
+            }
+        }
+    }
+
+    private func deliverNotification(conversationId: UUID) async {
+        let notificationContent = UNMutableNotificationContent()
+        notificationContent.title = String(localized: "Lumi Agent")
+        notificationContent.body = String(localized: "Agent 回合已结束")
+        notificationContent.sound = .default
+        notificationContent.userInfo = ["conversationId": conversationId.uuidString]
+
+        let request = UNNotificationRequest(
+            identifier: "agent-turn-\(conversationId.uuidString)",
+            content: notificationContent,
+            trigger: nil
+        )
+
+        do {
+            try await center.add(request)
+            if Self.verbose {
+                AgentTurnNotificationPlugin.logger.info("\(Self.t)📤 已发送 turn 结束通知: \(conversationId)")
+            }
+        } catch {
+            if Self.verbose {
+                AgentTurnNotificationPlugin.logger.error("\(Self.t)❌ 发送 turn 结束通知失败: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
+    /// 用户点击通知时的回调
+    /// 激活应用窗口并选中对应的对话
+    public nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+
+        // 从 userInfo 中提取 conversationId
+        guard let conversationIdString = userInfo["conversationId"] as? String,
+              let conversationId = UUID(uuidString: conversationIdString) else {
+            AgentTurnNotificationPlugin.logger.info("\(Self.t)⚠️ 通知中未找到有效的 conversationId")
+            completionHandler()
+            return
+        }
+
+        AgentTurnNotificationPlugin.logger.info("\(Self.t)🖱️ 用户点击了通知，准备选中对话: \(conversationId)")
+
+        Task { @MainActor in
+            // 1. 激活应用
+            NSApp.activate(ignoringOtherApps: true)
+
+            // 2. 显示主窗口
+            if let window = NSApp.windows.first {
+                window.makeKeyAndOrderFront(nil)
+            }
+
+            AgentTurnNotificationRuntime.selectConversation(conversationId)
+
+            AgentTurnNotificationPlugin.logger.info("\(Self.t)✅ 已选中对话: \(conversationId)")
+        }
+        completionHandler()
+    }
+}

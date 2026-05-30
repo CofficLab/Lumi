@@ -1,0 +1,56 @@
+import Foundation
+import Network
+import NetworkExtension
+import SwiftUI
+
+extension NEFilterFlow {
+    /// Get local port
+    public func getLocalPort() -> String {
+        guard let socketFlow = self as? NEFilterSocketFlow else {
+            return ""
+        }
+
+        guard #available(macOS 15.0, *) else { return "" }
+        guard let endpoint = socketFlow.localFlowEndpoint else { return "" }
+        switch endpoint {
+        case .hostPort(_, let port):
+            return String(describing: port)
+        default:
+            return ""
+        }
+    }
+
+    /// Get hostname
+    public func getHostname() -> String {
+        guard let socketFlow = self as? NEFilterSocketFlow else {
+            return ""
+        }
+
+        guard #available(macOS 15.0, *) else { return "" }
+        guard let endpoint = socketFlow.remoteFlowEndpoint else { return "" }
+        switch endpoint {
+        case .hostPort(let host, _):
+            return String(describing: host)
+        default:
+            return ""
+        }
+    }
+
+    /// Get App ID
+    public func getAppId() -> String {
+        // Try to access the property directly if possible, or fallback to KVC
+        if #available(macOS 10.15, *) {
+            // sourceAppIdentifier is public API
+            // But strictness might vary. 
+            // The original code used value(forKey:) which suggests KVC.
+            // We'll stick to KVC for now to match original behavior, 
+            // but normally self.sourceAppIdentifier should work if available.
+             return (self.value(forKey: "sourceAppIdentifier") as? String) ?? ""
+        }
+        return ""
+    }
+
+    public func getAppUniqueId() -> String {
+        return ""
+    }
+}

@@ -1,0 +1,3 @@
+import PluginOpenInGitOK
+
+typealias OpenInGitOKPlugin = PluginOpenInGitOK.AgentOpenInGitOKPlugin

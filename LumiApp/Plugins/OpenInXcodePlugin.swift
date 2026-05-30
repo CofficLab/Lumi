@@ -1,0 +1,3 @@
+import PluginOpenInXcode
+
+typealias OpenInXcodePlugin = PluginOpenInXcode.AgentOpenInXcodePlugin

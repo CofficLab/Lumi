@@ -1,0 +1,246 @@
+import SwiftUI
+import SuperLogKit
+import RAGKit
+
+@MainActor
+public struct RAGSettingsPopoverView: View, SuperLog {
+    public nonisolated static var emoji: String { "🦞" }
+    public nonisolated static var verbose: Bool { true }
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var statusesByPath: [String: RAGIndexStatus] = [:]
+    @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
+    @State private var isLoading = false
+    @State private var activeProjectActionPath: String?
+    @State private var message: String?
+
+    public var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label(String(localized: "RAG 索引状态", table: "RAG"), systemImage: "doc.text.magnifyingglass")
+                    .font(.headline)
+                Spacer()
+                Button(String(localized: "刷新全部", table: "RAG")) {
+                    Task { await loadStatus() }
+                }
+                .disabled(isLoading)
+                .controlSize(.small)
+
+                Button(String(localized: "重建全部", table: "RAG")) {
+                    Task { await rebuildAll() }
+                }
+                .disabled(isLoading)
+                .controlSize(.small)
+
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if trackedProjects.isEmpty {
+                        Text(String(localized: "暂无项目", table: "RAG"))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(trackedProjects) { project in
+                            projectRow(project)
+                        }
+                    }
+
+                    if let message {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(16)
+            }
+        }
+        .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
+            await loadStatus()
+        }
+        .onRAGIndexProgressDidChange { event in
+            progressByPath[event.projectPath] = event
+            if event.isFinished {
+                Task { await loadStatus() }
+            }
+        }
+    }
+}
+
+extension RAGSettingsPopoverView {
+    @ViewBuilder
+    private func projectRow(_ project: RAGTrackedProjectPopover) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(project.name)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            Text(project.path)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            if let status = statusesByPath[project.path] {
+                HStack(spacing: 10) {
+                    Label("\(status.fileCount)", systemImage: "doc")
+                    Label("\(status.chunkCount)", systemImage: "square.stack.3d.up")
+                    Label(status.isStale ? String(localized: "已过期", table: "RAG") : String(localized: "最新", table: "RAG"), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                        .foregroundStyle(status.isStale ? .orange : .green)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            } else {
+                Text(String(localized: "尚未建立索引", table: "RAG"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
+                ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
+            }
+
+            HStack(spacing: 8) {
+                Button(String(localized: "刷新", table: "RAG")) {
+                    Task { await refreshProjectStatus(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                Button(String(localized: "重建", table: "RAG")) {
+                    Task { await rebuildProject(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                if activeProjectActionPath == project.path {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(8)
+    }
+}
+
+extension RAGSettingsPopoverView {
+    private var trackedProjects: [RAGTrackedProjectPopover] {
+        let recent = RAGPluginRuntime.recentProjectsProvider().map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) }
+        let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current: [RAGTrackedProjectPopover]
+        if currentPath.isEmpty {
+            current = []
+        } else {
+            let name = RAGPluginRuntime.currentProjectName.isEmpty ? URL(fileURLWithPath: currentPath).lastPathComponent : RAGPluginRuntime.currentProjectName
+            current = [RAGTrackedProjectPopover(name: name, path: currentPath)]
+        }
+        return dedupProjects(current + recent)
+    }
+
+    private func dedupProjects(_ projects: [RAGTrackedProjectPopover]) -> [RAGTrackedProjectPopover] {
+        var seen = Set<String>()
+        var result: [RAGTrackedProjectPopover] = []
+        for project in projects {
+            let normalized = URL(fileURLWithPath: project.path).standardizedFileURL.path
+            guard !normalized.isEmpty else { continue }
+            guard !seen.contains(normalized) else { continue }
+            seen.insert(normalized)
+            result.append(RAGTrackedProjectPopover(name: project.name, path: normalized))
+        }
+        return result
+    }
+
+    private func loadStatus() async {
+        let projects = trackedProjects
+        guard !projects.isEmpty else {
+            statusesByPath = [:]
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            var next: [String: RAGIndexStatus] = [:]
+            for project in projects {
+                if let status = try await service.getIndexStatus(projectPath: project.path) {
+                    next[project.path] = status
+                }
+            }
+            statusesByPath = next
+            message = nil
+        } catch {
+            message = "读取索引状态失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func rebuildAll() async {
+        let projects = trackedProjects
+        guard !projects.isEmpty else { return }
+
+        isLoading = true
+        message = "正在重建全部索引..."
+        defer { isLoading = false }
+
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            for project in projects {
+                try await service.ensureIndexed(projectPath: project.path, force: true)
+            }
+            await loadStatus()
+            message = "全部项目索引更新完成。"
+        } catch {
+            message = "重建索引失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func refreshProjectStatus(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            if status == nil {
+                statusesByPath.removeValue(forKey: projectPath)
+            }
+            message = "已刷新：\(projectPath)"
+        } catch {
+            message = "刷新失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func rebuildProject(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            try await service.ensureIndexed(projectPath: projectPath, force: true)
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            message = "已重建：\(projectPath)"
+        } catch {
+            message = "重建失败：\(error.localizedDescription)"
+        }
+    }
+}
+
+private struct RAGTrackedProjectPopover: Identifiable, Equatable {
+    public var id: String { path }
+    public let name: String
+    public let path: String
+}

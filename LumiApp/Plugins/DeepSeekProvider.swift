@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderDeepSeek
+
+typealias DeepSeekProvider = PluginLLMProviderDeepSeek.DeepSeekProvider

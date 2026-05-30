@@ -4,32 +4,6 @@ import AgentToolKit
 // MARK: - 内置错误消息占位键与工厂
 
 extension ChatMessage {
-    // MARK: 占位键
-
-    /// API Key 缺失错误键
-    static var apiKeyMissingSystemContentKey: String { "__LUMI_API_KEY_MISSING__" }
-    /// LLM 配置相关错误键
-    static var llmModelEmptyContentKey: String { "__LUMI_LLM_MODEL_EMPTY__" }
-    static var llmProviderIdEmptyContentKey: String { "__LUMI_LLM_PROVIDER_ID_EMPTY__" }
-    static var llmTemperatureInvalidContentKey: String { "__LUMI_LLM_TEMPERATURE_INVALID__" }
-    static var llmMaxTokensInvalidContentKey: String { "__LUMI_LLM_MAX_TOKENS_INVALID__" }
-    static var llmProviderNotFoundContentKey: String { "__LUMI_LLM_PROVIDER_NOT_FOUND__" }
-    static var llmInvalidBaseURLContentKey: String { "__LUMI_LLM_INVALID_BASE_URL__" }
-    /// 本地模型加载失败错误键
-    static var loadingLocalModelFailedSystemContentKey: String { "__LUMI_LOADING_LOCAL_MODEL_FAILED__" }
-    /// API 请求失败错误键
-    static var apiRequestFailedErrorKey: String { "__LUMI_API_REQUEST_FAILED__" }
-    /// 网络连接错误键
-    static var networkConnectionErrorKey: String { "__LUMI_NETWORK_CONNECTION_ERROR__" }
-    /// 解析错误键
-    static var parsingErrorKey: String { "__LUMI_PARSING_ERROR__" }
-    /// 认证错误键
-    static var authenticationErrorKey: String { "__LUMI_AUTHENTICATION_ERROR__" }
-    /// 配额超限错误键
-    static var quotaExceededErrorKey: String { "__LUMI_QUOTA_EXCEEDED__" }
-    /// 模型不可用错误键
-    static var modelNotAvailableErrorKey: String { "__LUMI_MODEL_NOT_AVAILABLE__" }
-
     // MARK: 工厂
 
     /// API Key 缺失错误消息
@@ -127,18 +101,6 @@ extension ChatMessage {
             content: message,
             isError: true
         )
-    }
-
-    /// LLM 配置错误相关辅助方法
-    static func llmInvalidBaseURLMessageContent(baseURL: String) -> String {
-        llmInvalidBaseURLContentKey + "\n" + baseURL
-    }
-
-    static func llmInvalidBaseURLPayload(fromContent content: String) -> String? {
-        guard content.hasPrefix(llmInvalidBaseURLContentKey + "\n") else { return nil }
-        let rest = content.dropFirst(llmInvalidBaseURLContentKey.count + 1)
-        let s = String(rest).trimmingCharacters(in: .whitespacesAndNewlines)
-        return s.isEmpty ? nil : s
     }
 
     /// 本地模型加载失败错误消息

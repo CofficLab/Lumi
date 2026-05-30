@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderOpenAI
+
+typealias OpenAIProvider = PluginLLMProviderOpenAI.OpenAIProvider

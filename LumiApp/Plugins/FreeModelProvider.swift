@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderFreeModel
+
+typealias FreeModelProvider = PluginLLMProviderFreeModel.FreeModelProvider

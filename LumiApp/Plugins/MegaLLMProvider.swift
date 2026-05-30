@@ -1,0 +1,4 @@
+import Foundation
+import PluginLLMProviderMegaLLM
+
+typealias MegaLLMProvider = PluginLLMProviderMegaLLM.MegaLLMProvider
