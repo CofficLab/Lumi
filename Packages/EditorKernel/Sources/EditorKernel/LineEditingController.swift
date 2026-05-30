@@ -18,7 +18,7 @@ public enum LineEditingController: Sendable {
         selections: [NSRange]
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         let lineRanges = selections.map { selection in
             fullLineRange(for: selection, in: nsText)
@@ -84,7 +84,7 @@ public enum LineEditingController: Sendable {
         selections: [NSRange]
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         var edits: [(range: NSRange, text: String)] = []
         var newCursors: [NSRange] = []
@@ -115,7 +115,7 @@ public enum LineEditingController: Sendable {
         selections: [NSRange]
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         var edits: [(range: NSRange, text: String)] = []
         var newCursors: [NSRange] = []
@@ -150,7 +150,9 @@ public enum LineEditingController: Sendable {
         descending: Bool
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard let selection = selections.first, selection.length > 0 else { return nil }
+        guard validSelections(selections, in: nsText),
+              let selection = selections.first,
+              selection.length > 0 else { return nil }
 
         let lineRange = nsText.lineRange(for: selection)
         let selectedText = nsText.substring(with: lineRange)
@@ -211,7 +213,7 @@ public enum LineEditingController: Sendable {
         commentPrefix: String
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         let prefix = commentPrefix
         let prefixLength = (prefix as NSString).length
@@ -305,7 +307,7 @@ public enum LineEditingController: Sendable {
         direction: CopyDirection
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         let lineRanges = selections.map { selection in
             fullLineRange(for: selection, in: nsText)
@@ -370,7 +372,7 @@ public enum LineEditingController: Sendable {
         direction: MoveDirection
     ) -> LineEditResult? {
         let nsText = text as NSString
-        guard !selections.isEmpty else { return nil }
+        guard validSelections(selections, in: nsText) else { return nil }
 
         let lineRanges = selections.map { selection in
             fullLineRange(for: selection, in: nsText)
@@ -525,6 +527,16 @@ public enum LineEditingController: Sendable {
             replacementText: result,
             selectedRanges: newCursors
         )
+    }
+
+    private static func validSelections(_ selections: [NSRange], in nsText: NSString) -> Bool {
+        guard !selections.isEmpty else { return false }
+        return selections.allSatisfy { selection in
+            guard selection.location >= 0, selection.length >= 0 else { return false }
+            guard selection.location <= nsText.length else { return false }
+            guard selection.location <= Int.max - selection.length else { return false }
+            return selection.location + selection.length <= nsText.length
+        }
     }
 
     private static func applyEditsFromBack(

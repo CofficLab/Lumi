@@ -1294,6 +1294,22 @@ struct EditorKernelTests {
     }
 
     @Test
+    func lineEditingControllerRejectsStaleSelectionsWithoutCrashing() {
+        let staleCursor = NSRange(location: 50, length: 0)
+        let staleRange = NSRange(location: 1, length: 50)
+
+        #expect(LineEditingController.deleteLine(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.copyLineUp(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.copyLineDown(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.moveLineUp(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.moveLineDown(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.insertLineAbove(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.insertLineBelow(in: "abc", selections: [staleCursor]) == nil)
+        #expect(LineEditingController.sortLines(in: "abc", selections: [staleRange], descending: false) == nil)
+        #expect(LineEditingController.toggleLineComment(in: "abc", selections: [staleCursor], commentPrefix: "//") == nil)
+    }
+
+    @Test
     @MainActor
     func commandRegistryFiltersAndExecutesCommandsByContext() {
         let registry = CommandRegistry()
