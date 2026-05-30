@@ -161,6 +161,9 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     /// 连接数组（用于保持连接活跃）
     private var connections: [NWConnection] = []
 
+    /// 每个连接尚未收齐的 HTTP 请求数据。
+    private var requestBuffers: [ObjectIdentifier: Data] = [:]
+
     /// 当前监听的端口
     private var port: UInt16 = defaultPort
 
@@ -271,6 +274,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         listener?.cancel()
         connections.forEach { $0.cancel() }
         connections.removeAll()
+        requestBuffers.removeAll()
         listener = nil
     }
 
@@ -287,6 +291,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
                 self?.receiveData(on: connection)
             case .cancelled, .failed:
                 self?.connections.removeAll { ObjectIdentifier($0) == connectionId }
+                self?.requestBuffers[connectionId] = nil
             default:
                 break
             }
@@ -317,7 +322,16 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
             // 在主线程上处理请求（因为可能需要更新 UI）
             Task { @MainActor in
                 guard let self else { return }
-                let response = self.handleRequest(content)
+                let connectionId = ObjectIdentifier(connection)
+                self.requestBuffers[connectionId, default: Data()].append(content)
+
+                guard let requestData = Self.completeHTTPRequestData(from: self.requestBuffers[connectionId] ?? Data()) else {
+                    self.receiveData(on: connection)
+                    return
+                }
+
+                self.requestBuffers[connectionId] = nil
+                let response = self.handleRequest(requestData)
                 self.send(response: response, on: connection)
             }
         }
@@ -412,6 +426,42 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
     }
 
+    static func completeHTTPRequestData(from data: Data) -> Data? {
+        guard let headerRange = data.range(of: Data("\r\n\r\n".utf8)) else {
+            return nil
+        }
+
+        let headerEnd = headerRange.upperBound
+        let headerData = data[..<headerRange.lowerBound]
+        guard let header = String(data: headerData, encoding: .utf8) else {
+            return nil
+        }
+
+        let contentLength = contentLength(from: header) ?? 0
+        let expectedLength = headerEnd + contentLength
+        guard data.count >= expectedLength else {
+            return nil
+        }
+
+        return data.prefix(expectedLength)
+    }
+
+    private static func contentLength(from header: String) -> Int? {
+        header
+            .components(separatedBy: "\r\n")
+            .dropFirst()
+            .compactMap { line -> Int? in
+                let parts = line.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+                guard parts.count == 2,
+                      parts[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "content-length"
+                else {
+                    return nil
+                }
+                return Int(parts[1].trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+            .first
+    }
+
     /// 创建 HTTP 响应
     ///
     /// - Parameters:
@@ -427,7 +477,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     }
 
     private func makeJSONResponse(statusCode: Int, body: [String: Any]) -> Data {
-        let statusText = statusCode == 200 ? "OK" : "Bad Request"
+        let statusText = Self.statusText(for: statusCode)
         let bodyData = try? JSONSerialization.data(withJSONObject: body)
         let body = bodyData ?? Data()
 
@@ -440,6 +490,17 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         var response = header.data(using: .utf8) ?? Data()
         response.append(body)
         return response
+    }
+
+    private static func statusText(for statusCode: Int) -> String {
+        switch statusCode {
+        case 200: "OK"
+        case 400: "Bad Request"
+        case 404: "Not Found"
+        case 405: "Method Not Allowed"
+        case 500: "Internal Server Error"
+        default: "HTTP \(statusCode)"
+        }
     }
 
     @MainActor
