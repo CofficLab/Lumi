@@ -20,7 +20,7 @@ public actor InputPlugin: SuperPlugin, SuperLog {
     public static let description = String(localized: "Manage input-related behaviors", table: "Input")
     public static let iconName = "keyboard"
     public static var order: Int { 70 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = InputPlugin()

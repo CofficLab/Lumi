@@ -27,9 +27,9 @@ public actor AgentOpenInGitOKPlugin: SuperPlugin {
     public static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 98 }
-    public static let policy: PluginPolicy = .optIn
+    public static let policy: PluginPolicy = .alwaysOn
 
-    /// 用户可在设置中启用/禁用此插件
+    /// 始终启用，用户不可关闭
 
     public static let shared = AgentOpenInGitOKPlugin()
 

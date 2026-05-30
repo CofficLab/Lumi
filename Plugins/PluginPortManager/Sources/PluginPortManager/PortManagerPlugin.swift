@@ -18,7 +18,7 @@ public actor PortManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "arrow.up.arrow.down.circle"
     public static var category: PluginCategory { .system }
     public static var order: Int { 20 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
 

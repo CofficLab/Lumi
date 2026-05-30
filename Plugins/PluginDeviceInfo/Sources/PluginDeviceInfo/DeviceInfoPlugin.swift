@@ -25,7 +25,7 @@ public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
     public static let iconName = "macbook.and.iphone"
     public static var order: Int { 10 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     // MARK: - Instance
 

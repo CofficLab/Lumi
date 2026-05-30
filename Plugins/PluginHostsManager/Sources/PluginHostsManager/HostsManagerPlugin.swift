@@ -21,7 +21,7 @@ public actor HostsManagerPlugin: SuperPlugin, SuperLog {
     public static var category: PluginCategory { .system }
     public static var order: Int { 21 }
 
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
 

@@ -17,7 +17,7 @@ public actor TerminalPlugin: SuperPlugin, SuperLog {
     public static let iconName = "terminal"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 90 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = TerminalPlugin()

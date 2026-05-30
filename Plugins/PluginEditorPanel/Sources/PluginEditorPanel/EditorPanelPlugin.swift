@@ -21,7 +21,7 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 77 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorPlugin()

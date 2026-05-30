@@ -9,7 +9,7 @@ public actor DockerManagerPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
 
     public nonisolated static let emoji = "🐳"
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let verbose: Bool = true
 
     public static let id = "DockerManager"

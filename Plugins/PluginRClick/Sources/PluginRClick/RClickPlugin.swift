@@ -20,7 +20,7 @@ public actor RClickPlugin: SuperPlugin, SuperLog {
     public static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
     public static let iconName = "cursorarrow.click.2"
     public static var order: Int { 50 }
-    public nonisolated static let policy: PluginPolicy = .optIn
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = RClickPlugin()

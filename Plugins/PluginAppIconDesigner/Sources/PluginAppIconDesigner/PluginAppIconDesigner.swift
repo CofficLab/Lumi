@@ -18,7 +18,7 @@ public actor AppIconDesignerPlugin: SuperPlugin {
     public static let iconName = "app.dashed"
     public static var order: Int { 79 }
     public static var category: PluginCategory { .general }
-    public static let policy: PluginPolicy = .optIn
+    public static let policy: PluginPolicy = .alwaysOn
 
     public static let shared = AppIconDesignerPlugin()
 

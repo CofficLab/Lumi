@@ -21,7 +21,7 @@ public actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     public static let iconName = "network"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 16 }
-    public static let policy: PluginPolicy = .optOut
+    public static let policy: PluginPolicy = .alwaysOn
     public static let shared = GitHubInsightPlugin()
 
     private init() {}

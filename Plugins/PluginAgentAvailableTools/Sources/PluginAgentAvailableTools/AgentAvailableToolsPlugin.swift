@@ -19,9 +19,9 @@ public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     public static let iconName = "wrench.and.screwdriver"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 85 }
-    public static let policy: PluginPolicy = .optOut
+    public static let policy: PluginPolicy = .alwaysOn
 
-    /// 用户可在设置中启用/禁用此插件
+    /// 始终启用，用户不可关闭
 
     public static let shared = AgentAvailableToolsPlugin()
 
