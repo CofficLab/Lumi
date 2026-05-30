@@ -145,12 +145,45 @@ import Testing
     #expect(!normalized.contains("./"))
 }
 
+@Test func testNormalizeProjectPathTrimsCopiedWhitespace() {
+    let normalized = RAGPathUtils.normalizeProjectPath(" \n/Users/test/project/\t")
+    #expect(normalized == "/Users/test/project")
+}
+
+@Test func testNormalizeProjectPathKeepsBlankInputBlank() {
+    #expect(RAGPathUtils.normalizeProjectPath(" \n\t ") == "")
+}
+
 @Test func testDisplayPathWithProject() {
     let result = RAGPathUtils.displayPath(
         filePath: "/Users/test/project/src/main.swift",
         projectPath: "/Users/test/project"
     )
     #expect(result == "src/main.swift")
+}
+
+@Test func testDisplayPathRejectsSiblingProjectWithSharedPrefix() {
+    let result = RAGPathUtils.displayPath(
+        filePath: "/Users/test/project2/src/main.swift",
+        projectPath: "/Users/test/project"
+    )
+    #expect(result == "/Users/test/project2/src/main.swift")
+}
+
+@Test func testDisplayPathTrimsCopiedProjectAndFilePaths() {
+    let result = RAGPathUtils.displayPath(
+        filePath: " \n/Users/test/project/src/main.swift\t",
+        projectPath: " /Users/test/project/ \n"
+    )
+    #expect(result == "src/main.swift")
+}
+
+@Test func testDisplayPathForProjectRootUsesFolderName() {
+    let result = RAGPathUtils.displayPath(
+        filePath: "/Users/test/project",
+        projectPath: "/Users/test/project"
+    )
+    #expect(result == "project")
 }
 
 @Test func testDisplayPathWithoutProject() {
