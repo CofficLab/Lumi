@@ -60,14 +60,60 @@ import Testing
     #expect(!didWrite)
 }
 
+@MainActor
+@Test func monitorPrefersFileURLsOverStringRepresentations() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-file-\(UUID().uuidString).txt")
+    try "file contents".write(to: fileURL, atomically: true, encoding: .utf8)
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.writeObjects([fileURL as NSURL])
+    pasteboard.setString(fileURL.path, forType: .string)
+
+    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+
+    #expect(items.count == 1)
+    #expect(items.first?.type == .file)
+    #expect(items.first?.content == fileURL.path)
+}
+
+@MainActor
+@Test func monitorPrefersImageOverFallbackString() throws {
+    let imageDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-images-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: imageDirectory) }
+
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.writeObjects([makeTestImage()])
+    pasteboard.setString("fallback text", forType: .string)
+
+    let items = ClipboardMonitor.items(
+        from: pasteboard,
+        appName: "TestApp",
+        imageDirectory: imageDirectory
+    )
+
+    #expect(items.count == 1)
+    #expect(items.first?.type == .image)
+    #expect(items.first?.content.hasPrefix(imageDirectory.path) == true)
+}
+
 private func makeTestPNG() throws -> Data {
+    let image = makeTestImage()
+    let tiffData = try #require(image.tiffRepresentation)
+    let bitmap = try #require(NSBitmapImageRep(data: tiffData))
+    return try #require(bitmap.representation(using: .png, properties: [:]))
+}
+
+private func makeTestImage() -> NSImage {
     let image = NSImage(size: NSSize(width: 2, height: 2))
     image.lockFocus()
     NSColor.systemRed.setFill()
     NSRect(x: 0, y: 0, width: 2, height: 2).fill()
     image.unlockFocus()
-
-    let tiffData = try #require(image.tiffRepresentation)
-    let bitmap = try #require(NSBitmapImageRep(data: tiffData))
-    return try #require(bitmap.representation(using: .png, properties: [:]))
+    return image
 }

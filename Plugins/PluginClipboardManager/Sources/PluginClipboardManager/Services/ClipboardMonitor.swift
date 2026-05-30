@@ -50,12 +50,12 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
     
     private func processPasteboardContent() {
-        // Determine type and content
-        if let str = pasteboard.string(forType: .string) {
-            // Text content
-            // Avoid duplicates if the last item is identical
-            
-            let item = ClipboardItem(type: .text, content: str, appName: NSWorkspace.shared.frontmostApplication?.localizedName)
+        let items = Self.items(
+            from: pasteboard,
+            appName: NSWorkspace.shared.frontmostApplication?.localizedName
+        )
+
+        for item in items {
             Task {
                 await storage.add(item: item)
                 await MainActor.run {
@@ -65,61 +65,66 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             
             if Self.verbose {
                 if ClipboardManagerPlugin.verbose {
-                                    ClipboardManagerPlugin.logger.info("\(Self.t)📝 Captured text clipboard item")
+                    ClipboardManagerPlugin.logger.info("\(Self.t)\(Self.logMessage(for: item))")
                 }
             }
         }
-        
-        // Check for image
-        if let image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage {
-            // Save image to file and record
-            let tempDir = FileManager.default.temporaryDirectory
-            let imageName = "clipboard_\(UUID().uuidString).png"
-            let imageURL = tempDir.appendingPathComponent(imageName)
-            
-            if let tiffData = image.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                do {
-                    try pngData.write(to: imageURL)
-                    let item = ClipboardItem(type: .image, content: imageURL.path, appName: NSWorkspace.shared.frontmostApplication?.localizedName)
-                    Task {
-                        await storage.add(item: item)
-                        await MainActor.run {
-                            NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
-                        }
-                    }
-                    
-                    if Self.verbose {
-                        if ClipboardManagerPlugin.verbose {
-                                                    ClipboardManagerPlugin.logger.info("\(Self.t)🖼️ Captured image clipboard item")
-                        }
-                    }
-                } catch {
-                    if ClipboardManagerPlugin.verbose {
-                                            ClipboardManagerPlugin.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
-                    }
-                }
-            }
-        }
-        
-        // Check for files - use explicit type annotation
+    }
+
+    static func items(
+        from pasteboard: NSPasteboard,
+        appName: String?,
+        imageDirectory: URL = FileManager.default.temporaryDirectory
+    ) -> [ClipboardItem] {
         if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
-            for url in fileUrls where url.isFileURL {
-                let item = ClipboardItem(type: .file, content: url.path, appName: NSWorkspace.shared.frontmostApplication?.localizedName)
-                Task {
-                    await storage.add(item: item)
-                    await MainActor.run {
-                        NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
-                    }
-                }
-                
-                if Self.verbose {
-                    if ClipboardManagerPlugin.verbose {
-                                            ClipboardManagerPlugin.logger.info("\(Self.t)📁 Captured file clipboard item: \(url.lastPathComponent)")
-                    }
-                }
+            let fileItems = fileUrls
+                .filter(\.isFileURL)
+                .map { ClipboardItem(type: .file, content: $0.path, appName: appName) }
+            if !fileItems.isEmpty {
+                return fileItems
             }
+        }
+
+        if let image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage,
+           let imagePath = saveImage(image, to: imageDirectory) {
+            return [ClipboardItem(type: .image, content: imagePath, appName: appName)]
+        }
+
+        if let str = pasteboard.string(forType: .string), !str.isEmpty {
+            return [ClipboardItem(type: .text, content: str, appName: appName)]
+        }
+
+        return []
+    }
+
+    private static func saveImage(_ image: NSImage, to directory: URL) -> String? {
+        let imageURL = directory.appendingPathComponent("clipboard_\(UUID().uuidString).png")
+
+        guard let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+
+        do {
+            try pngData.write(to: imageURL)
+            return imageURL.path
+        } catch {
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
+            }
+            return nil
+        }
+    }
+
+    private static func logMessage(for item: ClipboardItem) -> String {
+        switch item.type {
+        case .text, .html, .color:
+            return "📝 Captured text clipboard item"
+        case .image:
+            return "🖼️ Captured image clipboard item"
+        case .file:
+            return "📁 Captured file clipboard item: \(URL(fileURLWithPath: item.content).lastPathComponent)"
         }
     }
 }
