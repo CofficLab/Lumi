@@ -44,7 +44,8 @@ public struct AddProjectTool: SuperAgentTool, SuperLog {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let path = arguments["path"]?.value as? String else {
+        guard let rawPath = arguments["path"]?.value as? String,
+              let path = Self.normalizedPath(from: rawPath) else {
             return "❌ Error: Missing required parameter 'path'"
         }
 
@@ -94,5 +95,10 @@ public struct AddProjectTool: SuperAgentTool, SuperLog {
         }
 
         return output
+    }
+
+    static func normalizedPath(from rawPath: String) -> String? {
+        let path = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : path
     }
 }
