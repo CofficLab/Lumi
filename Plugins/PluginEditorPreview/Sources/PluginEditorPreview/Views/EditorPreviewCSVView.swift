@@ -37,112 +37,9 @@ public struct EditorPreviewCSVView: View, SuperLog {
 
     // MARK: - 解析
 
-    private struct ParsedTable {
-        let headers: [String]
-        let rows: [[String]]
-    }
-
-    private var parsedTable: Result<ParsedTable, Error> {
+    private var parsedTable: Result<CSVPreviewParser.ParsedTable, Error> {
         Result {
-            let trimmed = csvText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                throw CSVParseError.emptyData
-            }
-
-            // 自动检测分隔符
-            let separator = detectSeparator(trimmed)
-            let lines = parseLines(trimmed, separator: separator)
-            guard !lines.isEmpty else {
-                throw CSVParseError.noData
-            }
-
-            let headers = lines[0]
-            let rows = Array(lines.dropFirst())
-            return ParsedTable(headers: headers, rows: rows)
-        }
-    }
-
-    private func detectSeparator(_ text: String) -> Character {
-        let firstLine = text.components(separatedBy: .newlines).first ?? text
-        let commaCount = firstLine.filter { $0 == "," }.count
-        let tabCount = firstLine.filter { $0 == "\t" }.count
-        let semicolonCount = firstLine.filter { $0 == ";" }.count
-
-        if tabCount > commaCount && tabCount > semicolonCount {
-            return "\t"
-        } else if semicolonCount > commaCount {
-            return ";"
-        }
-        return ","
-    }
-
-    private func parseLines(_ text: String, separator: Character) -> [[String]] {
-        var result: [[String]] = []
-        var currentLine: [String] = []
-        var currentField = ""
-        var inQuotes = false
-
-        let chars = Array(text)
-        var index = 0
-
-        while index < chars.count {
-            let char = chars[index]
-
-            if inQuotes {
-                if char == "\"" {
-                    if index + 1 < chars.count && chars[index + 1] == "\"" {
-                        currentField.append("\"")
-                        index += 1
-                    } else {
-                        inQuotes = false
-                    }
-                } else {
-                    currentField.append(char)
-                }
-            } else {
-                if char == "\"" {
-                    inQuotes = true
-                } else if char == separator {
-                    currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
-                    currentField = ""
-                } else if char == "\n" {
-                    currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
-                    if !currentLine.isEmpty && !(currentLine.count == 1 && currentLine[0].isEmpty) {
-                        result.append(currentLine)
-                    }
-                    currentLine = []
-                    currentField = ""
-                } else if char == "\r" {
-                    // 跳过 \r
-                } else {
-                    currentField.append(char)
-                }
-            }
-            index += 1
-        }
-
-        // 处理最后一行
-        if !currentField.isEmpty || !currentLine.isEmpty {
-            currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
-            if !currentLine.isEmpty && !(currentLine.count == 1 && currentLine[0].isEmpty) {
-                result.append(currentLine)
-            }
-        }
-
-        return result
-    }
-
-    private enum CSVParseError: LocalizedError {
-        case emptyData
-        case noData
-
-        var errorDescription: String? {
-            switch self {
-            case .emptyData:
-                return String(localized: "Empty CSV data", table: "EditorPreview")
-            case .noData:
-                return String(localized: "No data rows found", table: "EditorPreview")
-            }
+            try CSVPreviewParser.parse(csvText)
         }
     }
 
@@ -178,7 +75,7 @@ public struct EditorPreviewCSVView: View, SuperLog {
         .padding(24)
     }
 
-    private func tableView(_ table: ParsedTable) -> some View {
+    private func tableView(_ table: CSVPreviewParser.ParsedTable) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // 统计信息
             if !table.rows.isEmpty {
