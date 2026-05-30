@@ -616,6 +616,20 @@ struct EditorKernelTests {
     }
 
     @Test
+    func snippetParserSupportsMultiDigitShorthandPlaceholders() {
+        let result = EditorSnippetParser.parse("${10:value} = $10$0")
+
+        #expect(result.text == "value = value")
+        #expect(result.groups == [
+            .init(index: 10, ranges: [
+                NSRange(location: 0, length: 5),
+                NSRange(location: 8, length: 5),
+            ])
+        ])
+        #expect(result.exitSelection == NSRange(location: 13, length: 0))
+    }
+
+    @Test
     func multiCursorEditEngineInsertDeleteAndOutdentBehaviorsRemainStable() {
         let inserted = MultiCursorEditEngine.apply(
             text: "hello world",
