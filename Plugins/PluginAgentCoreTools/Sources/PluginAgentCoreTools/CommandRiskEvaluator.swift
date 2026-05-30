@@ -29,17 +29,20 @@ public enum CommandRiskEvaluator {
         var names: [String] = []
         var seen = Set<String>()
         for part in shellCommandSegments(trimmed) {
-            let segment = part.trimmingCharacters(in: .whitespaces)
-            let withoutRedirect = prefixBeforeUnquotedRedirect(segment).trimmingCharacters(in: .whitespaces)
-            let firstWord = withoutRedirect
-                .split(whereSeparator: { $0.isWhitespace })
-                .first
-                .map(String.init) ?? ""
-            if !firstWord.isEmpty, seen.insert(firstWord).inserted {
-                names.append(firstWord)
+            if let name = commandName(in: part), seen.insert(name).inserted {
+                names.append(name)
             }
         }
         return names.isEmpty ? [trimmed.split(whereSeparator: { $0.isWhitespace }).first.map(String.init) ?? ""] : names
+    }
+
+    private static func commandName(in segment: String) -> String? {
+        let trimmed = segment.trimmingCharacters(in: .whitespaces)
+        let withoutRedirect = prefixBeforeUnquotedRedirect(trimmed).trimmingCharacters(in: .whitespaces)
+        return withoutRedirect
+            .split(whereSeparator: { $0.isWhitespace })
+            .first
+            .map(String.init)
     }
 
     private static func shellCommandSegments(_ command: String) -> [String] {
@@ -153,24 +156,33 @@ public enum CommandRiskEvaluator {
 
     /// 检查危险参数/模式，整条命令若匹配则视为高风险。
     private static func hasDangerousPatterns(_ command: String) -> Bool {
-        let lower = command.lowercased()
-        let normalized = " " + lower + " "
+        let segments = shellCommandSegments(command)
 
         // rm -rf / 或 rm -rf /* 或 sudo rm -rf 等
-        if (normalized.contains(" rm ") || normalized.hasPrefix("rm ")) {
-            if (lower.contains("-rf") || lower.contains("-r ") || lower.contains("-f ")) {
-                if lower.contains("/") || lower.contains("*") || lower.contains("..") {
+        for segment in segments {
+            let segmentLower = segment.lowercased()
+            let normalized = " " + segmentLower + " "
+            let name = commandName(in: segment)?.lowercased()
+
+            if name == "rm" {
+                if (segmentLower.contains("-rf") || segmentLower.contains("-r ") || segmentLower.contains("-f ")) &&
+                    (segmentLower.contains("/") || segmentLower.contains("*") || segmentLower.contains("..")) {
                     return true
                 }
             }
-        }
-        if lower.contains("sudo") && (lower.contains("rm ") && (lower.contains("-r") || lower.contains("-f"))) {
-            if lower.contains("/") || lower.contains("..") { return true }
+
+            if (name == "sudo" || name == "doas") &&
+                normalized.contains(" rm ") &&
+                (segmentLower.contains("-r") || segmentLower.contains("-f")) &&
+                (segmentLower.contains("/") || segmentLower.contains("..")) {
+                return true
+            }
         }
 
         // curl|sh / wget|sh 等远程脚本执行
-        if (lower.contains("curl") || lower.contains("wget")) && lower.contains("|") {
-            if lower.contains("| sh") || lower.contains("|sh") || lower.contains("| bash") || lower.contains("|bash") {
+        let names = segments.compactMap { commandName(in: $0)?.lowercased() }
+        for pair in zip(names, names.dropFirst()) {
+            if ["curl", "wget"].contains(pair.0) && ["sh", "bash", "zsh"].contains(pair.1) {
                 return true
             }
         }
@@ -180,7 +192,12 @@ public enum CommandRiskEvaluator {
 
     /// 路径穿越
     private static func hasPathTraversal(_ command: String) -> Bool {
-        command.contains("..") && (command.contains("/") || command.hasPrefix(".."))
+        shellCommandSegments(command).contains { segment in
+            guard let name = commandName(in: segment)?.lowercased(), !safeCommands.contains(name) else {
+                return false
+            }
+            return segment.contains("..") && (segment.contains("/") || segment.hasPrefix(".."))
+        }
     }
 
     /// 评估命令风险等级
