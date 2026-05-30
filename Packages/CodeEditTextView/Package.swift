@@ -41,5 +41,9 @@ let package = Package(
             name: "CodeEditTextViewObjC",
             publicHeadersPath: "include"
         ),
+        .testTarget(
+            name: "CodeEditTextViewTests",
+            dependencies: ["CodeEditTextView"]
+        ),
     ]
 )
