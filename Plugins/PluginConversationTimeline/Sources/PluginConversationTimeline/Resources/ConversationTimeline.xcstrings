@@ -36,6 +36,7 @@
       }
     },
     "Assistant" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -232,6 +233,7 @@
       }
     },
     "User" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

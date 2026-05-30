@@ -34,6 +34,7 @@
       }
     },
     "New Chat" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -50,6 +51,7 @@
       }
     },
     "New Conversation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%d x %d vector document" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24,6 +25,7 @@
       }
     },
     "Add" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -46,6 +48,7 @@
       }
     },
     "Add %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -68,6 +71,7 @@
       }
     },
     "Add SF Symbol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -90,6 +94,7 @@
       }
     },
     "Add text" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -112,6 +117,7 @@
       }
     },
     "App Icon Designer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -134,6 +140,7 @@
       }
     },
     "Apply %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -156,6 +163,7 @@
       }
     },
     "Apply background color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -178,6 +186,7 @@
       }
     },
     "Apply fill color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -200,6 +209,7 @@
       }
     },
     "Apply gradient background" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -222,6 +232,7 @@
       }
     },
     "Apply radial background" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -244,6 +255,7 @@
       }
     },
     "Apply shadow color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -266,6 +278,7 @@
       }
     },
     "Apply symbol name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -288,6 +301,7 @@
       }
     },
     "Apply text" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -310,6 +324,7 @@
       }
     },
     "Background" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -332,6 +347,7 @@
       }
     },
     "Blank Icon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -354,6 +370,7 @@
       }
     },
     "Blur %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -376,6 +393,7 @@
       }
     },
     "Bold" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -398,6 +416,7 @@
       }
     },
     "Bracket motif for coding and system tools." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -420,6 +439,7 @@
       }
     },
     "Candidates" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -442,6 +462,7 @@
       }
     },
     "Canvas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -464,6 +485,7 @@
       }
     },
     "Canvas is not square. App icons work best on a square canvas." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -486,6 +508,7 @@
       }
     },
     "capsule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -508,6 +531,7 @@
       }
     },
     "Capsule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -530,6 +554,7 @@
       }
     },
     "Center X %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -552,6 +577,7 @@
       }
     },
     "Center Y %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -574,6 +600,7 @@
       }
     },
     "Centered SF Symbol over a vivid gradient." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -596,6 +623,7 @@
       }
     },
     "Check Quality" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -618,6 +646,7 @@
       }
     },
     "Choose a starting point" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -640,6 +669,7 @@
       }
     },
     "circle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -662,6 +692,7 @@
       }
     },
     "Circle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -684,6 +715,7 @@
       }
     },
     "Create vector icons with shape, color, layer, and export tools." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -706,6 +738,7 @@
       }
     },
     "Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -728,6 +761,7 @@
       }
     },
     "Design vector app icons with manual drawing tools, layer controls, and Xcode icon set export." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -750,6 +784,7 @@
       }
     },
     "Developer Tool" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -772,6 +807,7 @@
       }
     },
     "Document has no layers. Export will contain only the background." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -794,6 +830,7 @@
       }
     },
     "Duplicate" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -816,6 +853,7 @@
       }
     },
     "Export" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -838,6 +876,7 @@
       }
     },
     "Export AppIcon Set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -860,6 +899,7 @@
       }
     },
     "Export AppIcon.appiconset" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -882,6 +922,7 @@
       }
     },
     "Export SVG" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -904,6 +945,7 @@
       }
     },
     "Fill" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -926,6 +968,7 @@
       }
     },
     "Geometry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -948,6 +991,7 @@
       }
     },
     "Glass Tile" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -970,6 +1014,7 @@
       }
     },
     "Gradient Symbol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -992,6 +1037,7 @@
       }
     },
     "Heavy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1014,6 +1060,7 @@
       }
     },
     "Height %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1036,6 +1083,7 @@
       }
     },
     "High contrast ring and luminous glyph." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1058,6 +1106,7 @@
       }
     },
     "Icon document is not exportable. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1080,6 +1129,7 @@
       }
     },
     "Inspector" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1102,6 +1152,7 @@
       }
     },
     "Layer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1124,6 +1175,7 @@
       }
     },
     "Layer has no useful visible size." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1146,6 +1198,7 @@
       }
     },
     "Layer is nearly transparent." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1168,6 +1221,7 @@
       }
     },
     "Layer scale is extremely small." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1190,6 +1244,7 @@
       }
     },
     "Layered translucent tile for utilities." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1212,6 +1267,7 @@
       }
     },
     "Layers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1234,6 +1290,7 @@
       }
     },
     "line" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1256,6 +1313,7 @@
       }
     },
     "Line" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1278,6 +1336,7 @@
       }
     },
     "Load Document" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1300,6 +1359,7 @@
       }
     },
     "Load document JSON" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1322,6 +1382,7 @@
       }
     },
     "Medium" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1344,6 +1405,7 @@
       }
     },
     "Minimal Mono" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1366,6 +1428,7 @@
       }
     },
     "Move backward" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1388,6 +1451,7 @@
       }
     },
     "Move forward" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1410,6 +1474,7 @@
       }
     },
     "Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1432,6 +1497,7 @@
       }
     },
     "Neon Ring" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1454,6 +1520,7 @@
       }
     },
     "No layers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1476,6 +1543,7 @@
       }
     },
     "Opacity %.2f" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1498,6 +1566,7 @@
       }
     },
     "Output directory" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1750,6 +1819,7 @@
       }
     },
     "Presets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1772,6 +1842,7 @@
       }
     },
     "Quiet monochrome mark for pro apps." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1794,6 +1865,7 @@
       }
     },
     "Radius %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1816,6 +1888,7 @@
       }
     },
     "rectangle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1838,6 +1911,7 @@
       }
     },
     "Rectangle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1860,6 +1934,7 @@
       }
     },
     "Redo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1882,6 +1957,7 @@
       }
     },
     "Regular" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1904,6 +1980,7 @@
       }
     },
     "Rename layer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1926,6 +2003,7 @@
       }
     },
     "Rotate %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1948,6 +2026,7 @@
       }
     },
     "Save Document" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1970,6 +2049,7 @@
       }
     },
     "Save document JSON" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1992,6 +2072,7 @@
       }
     },
     "Scale %.1f" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2014,6 +2095,7 @@
       }
     },
     "Select a layer to edit it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2036,6 +2118,7 @@
       }
     },
     "Semibold" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2058,6 +2141,7 @@
       }
     },
     "SF Symbol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2080,6 +2164,7 @@
       }
     },
     "Shadow" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2102,6 +2187,7 @@
       }
     },
     "Shadow %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2124,6 +2210,7 @@
       }
     },
     "Shadow Y %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2146,6 +2233,7 @@
       }
     },
     "Size %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2168,6 +2256,7 @@
       }
     },
     "Start from a tuned preset or create a blank vector canvas." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2190,6 +2279,7 @@
       }
     },
     "Symbol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2212,6 +2302,7 @@
       }
     },
     "Symbol layer has an empty symbol name." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2234,6 +2325,7 @@
       }
     },
     "Symbol size is very small for app icons." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2256,6 +2348,7 @@
       }
     },
     "Text" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2278,6 +2371,7 @@
       }
     },
     "Text layer may be unreadable at small icon sizes." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2300,6 +2394,7 @@
       }
     },
     "Text size is very small for app icons." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2322,6 +2417,7 @@
       }
     },
     "triangle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2344,6 +2440,7 @@
       }
     },
     "Triangle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2366,6 +2463,7 @@
       }
     },
     "Undo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2388,6 +2486,7 @@
       }
     },
     "Untitled Icon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2410,6 +2509,7 @@
       }
     },
     "Weight" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2432,6 +2532,7 @@
       }
     },
     "Width %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2454,6 +2555,7 @@
       }
     },
     "X %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2476,6 +2578,7 @@
       }
     },
     "X1 %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2498,6 +2601,7 @@
       }
     },
     "X2 %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2520,6 +2624,7 @@
       }
     },
     "Y %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2542,6 +2647,7 @@
       }
     },
     "Y1 %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2564,6 +2670,7 @@
       }
     },
     "Y2 %d" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
