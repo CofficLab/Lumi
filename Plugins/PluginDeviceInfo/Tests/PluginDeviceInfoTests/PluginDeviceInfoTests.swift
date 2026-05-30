@@ -35,6 +35,39 @@ struct PluginDeviceInfoTests {
     }
 
     @Test
+    func menuBarMetricsUseVisiblePrecisionForDeduplication() {
+        let first = DeviceInfoMenuBarMetrics(
+            cpu: DeviceInfoMenuBarCPUMetrics(usagePercent: 17, perCoreUsagePercent: [3, 42]),
+            memory: DeviceInfoMenuBarMemoryMetrics(usagePercent: 61, usedMemory: "19 GB", totalMemory: "32 GB")
+        )
+        let equivalent = DeviceInfoMenuBarMetrics(
+            cpu: DeviceInfoMenuBarCPUMetrics(usagePercent: 17, perCoreUsagePercent: [3, 42]),
+            memory: DeviceInfoMenuBarMemoryMetrics(usagePercent: 61, usedMemory: "19 GB", totalMemory: "32 GB")
+        )
+        let changed = DeviceInfoMenuBarMetrics(
+            cpu: DeviceInfoMenuBarCPUMetrics(usagePercent: 18, perCoreUsagePercent: [3, 42]),
+            memory: DeviceInfoMenuBarMemoryMetrics(usagePercent: 61, usedMemory: "19 GB", totalMemory: "32 GB")
+        )
+
+        #expect(first == equivalent)
+        #expect(first != changed)
+    }
+
+    @Test
+    func menuBarSnapshotUsesCachedImagesAndReadableHelp() {
+        let metrics = DeviceInfoMenuBarMetrics(
+            cpu: DeviceInfoMenuBarCPUMetrics(usagePercent: 12, perCoreUsagePercent: [10, 14]),
+            memory: DeviceInfoMenuBarMemoryMetrics(usagePercent: 64, usedMemory: "20 GB", totalMemory: "32 GB")
+        )
+        let snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
+
+        #expect(snapshot.cpuImage.size.width > 0)
+        #expect(snapshot.memoryImage.size.width > 0)
+        #expect(snapshot.cpuHelpText.contains("12"))
+        #expect(snapshot.memoryHelpText.contains("64"))
+    }
+
+    @Test
     func deviceDataUsesInjectedCPUUsageProvider() {
         let counter = DeviceDataMonitorCounter()
         let data = DeviceData(
