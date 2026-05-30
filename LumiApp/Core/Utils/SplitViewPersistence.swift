@@ -126,6 +126,10 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
         nsView.columnIndex = columnIndex
         nsView.attachIfNeeded()
     }
+
+    static func dismantleNSView(_ nsView: SplitViewWidthPersistenceView, coordinator: ()) {
+        nsView.detach()
+    }
 }
 
 final class SplitViewWidthPersistenceView: NSView {
@@ -191,6 +195,18 @@ final class SplitViewWidthPersistenceView: NSView {
                 self?.persistCurrentRatio()
             }
         }
+    }
+
+    func detach() {
+        pendingRetryWorkItem?.cancel()
+        pendingRetryWorkItem = nil
+        pendingApplyRetryWorkItem?.cancel()
+        pendingApplyRetryWorkItem = nil
+        if let resizeObserver {
+            NotificationCenter.default.removeObserver(resizeObserver)
+            self.resizeObserver = nil
+        }
+        observedSplitView = nil
     }
 
     /// NSSplitView.isVertical 含义：divider 方向
