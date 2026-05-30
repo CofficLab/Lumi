@@ -1,5 +1,6 @@
 import AppKit
 import Darwin
+import DeviceMonitorKit
 import Foundation
 import IOKit.ps
 import SwiftUI
@@ -39,10 +40,27 @@ class DeviceData: ObservableObject {
     // MARK: - Private Properties
 
     private nonisolated let timerHolder = TimerHolder()
+    private var isMonitoring = false
+    private let cpuUsageProvider: @MainActor () -> Double
+    private let cpuMonitoringStarter: @MainActor () -> Void
+    private let cpuMonitoringStopper: @MainActor () -> Void
 
     // MARK: - Initialization
 
-    init() {
+    init(
+        cpuUsageProvider: @escaping @MainActor () -> Double = {
+            CPUService.shared.cpuUsage
+        },
+        cpuMonitoringStarter: @escaping @MainActor () -> Void = {
+            CPUService.shared.startMonitoring()
+        },
+        cpuMonitoringStopper: @escaping @MainActor () -> Void = {
+            CPUService.shared.stopMonitoring()
+        }
+    ) {
+        self.cpuUsageProvider = cpuUsageProvider
+        self.cpuMonitoringStarter = cpuMonitoringStarter
+        self.cpuMonitoringStopper = cpuMonitoringStopper
         self.deviceName = Host.current().localizedName ?? "Unknown Mac"
 
         let os = ProcessInfo.processInfo.operatingSystemVersion
@@ -53,20 +71,26 @@ class DeviceData: ObservableObject {
 
         self.memoryTotal = ProcessInfo.processInfo.physicalMemory
 
-        // Initial fetch
         self.updateDynamicData()
-
-        // Start timer
         self.startMonitoring()
     }
 
     deinit {
         timerHolder.invalidate()
+        if isMonitoring {
+            Task { @MainActor [cpuMonitoringStopper] in
+                cpuMonitoringStopper()
+            }
+        }
     }
 
     // MARK: - Monitoring
 
     func startMonitoring() {
+        guard timerHolder.timer == nil else { return }
+        isMonitoring = true
+        cpuMonitoringStarter()
+
         let timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateDynamicData()
@@ -76,7 +100,10 @@ class DeviceData: ObservableObject {
     }
 
     func stopMonitoring() {
+        guard isMonitoring else { return }
+        isMonitoring = false
         timerHolder.invalidate()
+        cpuMonitoringStopper()
     }
 
     // MARK: - Data Fetching
@@ -100,13 +127,7 @@ class DeviceData: ObservableObject {
     }
 
     private func getCPUUsage() -> Double {
-        // Simple approximation or placeholder. Real CPU usage requires complex host_processor_info calls.
-        // For now, let's return a random value for demonstration if complex implementation is too long,
-        // but ideally we should implement it properly.
-        // Implementing proper CPU usage in Swift is verbose.
-        // Let's use a simplified approach or just a placeholder for now to keep it compilable.
-        // TODO: Implement real CPU usage
-        return Double.random(in: 5 ... 30)
+        cpuUsageProvider()
     }
 
     private func updateMemoryUsage() {
