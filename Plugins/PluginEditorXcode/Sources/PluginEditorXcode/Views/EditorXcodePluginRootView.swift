@@ -378,7 +378,7 @@ private enum EditorXcodeProjectPreloader {
                     schemes.append(contentsOf: workspaceSchemes)
                 }
 
-                let uniqueSchemes = Array(Set(schemes))
+                let uniqueSchemes = XcodeSchemeList.uniquePreservingOrder(schemes)
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
                         XcodePluginLog.logger.info("\(logPrefix)xcodebuild 获取 schemes 完成，count=\(uniqueSchemes.count)，schemes=\(uniqueSchemes.joined(separator: ", "))")
