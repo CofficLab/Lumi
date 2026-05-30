@@ -45,7 +45,16 @@ struct PluginWebSearchTests {
 
     @Test("tool trims copied query whitespace")
     func toolTrimsCopiedQueryWhitespace() async throws {
-        let tool = WebSearchTool()
+        let tool = WebSearchTool { query in
+            #expect(query == "Lumi release notes")
+            return [
+                WebSearchResult(
+                    title: "Lumi Releases",
+                    url: "https://example.com/lumi/releases",
+                    snippet: "Latest Lumi release notes."
+                )
+            ]
+        }
         let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
 
         let result = try await tool.execute(
@@ -54,7 +63,8 @@ struct PluginWebSearchTests {
         )
 
         #expect(result.contains("**Query**: Lumi release notes"))
-        #expect(result.contains("https://www.google.com/search?q=Lumi%20release%20notes"))
+        #expect(result.contains("[Lumi Releases](https://example.com/lumi/releases)"))
+        #expect(result.contains("Latest Lumi release notes."))
     }
 
     @Test("tool rejects blank copied query")
@@ -68,6 +78,36 @@ struct PluginWebSearchTests {
         )
 
         #expect(result == "Error: Missing required 'query' parameter")
+    }
+
+    @Test("tool reports empty search result")
+    func toolReportsEmptySearchResult() async throws {
+        let tool = WebSearchTool { _ in [] }
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["query": ToolArgument("unknown term")],
+            context: context
+        )
+
+        #expect(result.contains("**Status**: No results found."))
+    }
+
+    @Test("tool parses DuckDuckGo html results")
+    func toolParsesDuckDuckGoHTMLResults() throws {
+        let html = """
+        <div class="result">
+          <a href="/l/?kh=-1&amp;uddg=https%3A%2F%2Fexample.com%2Fa%3Fx%3D1%26y%3D2" rel="nofollow" class="result__a highlight">Example &amp; Result</a>
+          <a class="result__snippet">A <b>useful</b> summary &amp; details.</a>
+        </div>
+        """
+
+        let results = WebSearchTool.parseDuckDuckGoHTML(html)
+
+        let result = try #require(results.first)
+        #expect(result.title == "Example & Result")
+        #expect(result.url == "https://example.com/a?x=1&y=2")
+        #expect(result.snippet == "A useful summary & details.")
     }
 
     @Test("localization catalog is packaged")
