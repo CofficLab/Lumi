@@ -126,13 +126,16 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                     self.isCleaning = false
                 }
                 // 重新扫描以更新状态
-                self.scan()
-            } catch {
-                await MainActor.run {
-                    if DiskManagerPlugin.verbose {
-                                            DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
-                    }
-                    self.alertMessage = PluginDiskManagerLocalization.string("Cleanup error: \(error.localizedDescription)")
+                    self.scan()
+                } catch {
+                    await MainActor.run {
+                        if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
+                        }
+                        self.alertMessage = String(
+                            format: PluginDiskManagerLocalization.string("Cleanup error: %@"),
+                        error.localizedDescription
+                    )
                     self.isCleaning = false
                 }
             }

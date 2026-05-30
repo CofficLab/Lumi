@@ -59,6 +59,22 @@ struct CacheCleanerView: View {
         } message: {
             Text(String(format: PluginDiskManagerLocalization.string("Successfully freed %@ space."), viewModel.formatBytes(viewModel.lastFreedSpace)))
         }
+        .alert(
+            Text(PluginDiskManagerLocalization.string("Cleanup Failed")),
+            isPresented: Binding(
+                get: { viewModel.alertMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.alertMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(role: .cancel) {} label: {
+                Text(PluginDiskManagerLocalization.string("OK"))
+            }
+        } message: {
+            Text(viewModel.alertMessage ?? "")
+        }
     }
 }
-
