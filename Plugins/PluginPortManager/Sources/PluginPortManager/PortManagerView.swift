@@ -85,8 +85,18 @@ public struct PortManagerView: View {
 
     public func refresh() async {
         isLoading = true
-        ports = await PortScanner.shared.scanPorts()
-        isLoading = false
+        defer { isLoading = false }
+        do {
+            ports = try await PortScanner.shared.scanPorts()
+            showError = false
+        } catch {
+            ports = []
+            errorMessage = String(
+                format: String(localized: "Failed to scan ports: %@", table: "PortManager"),
+                error.localizedDescription
+            )
+            showError = true
+        }
     }
 
     public func killProcess(_ port: PortInfo) async {

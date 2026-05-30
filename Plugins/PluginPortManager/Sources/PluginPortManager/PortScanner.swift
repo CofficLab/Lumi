@@ -14,6 +14,17 @@ public struct PortInfo: Identifiable, Hashable {
     public let address: String
 }
 
+public enum PortScannerError: LocalizedError, Sendable {
+    case scanFailed(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .scanFailed(let message):
+            return message
+        }
+    }
+}
+
 public final class PortScanner: Sendable, SuperLog {
     public nonisolated static let emoji = "🔌"
     public nonisolated static let verbose: Bool = true
@@ -21,26 +32,32 @@ public final class PortScanner: Sendable, SuperLog {
 
     private init() {}
 
-    public func scanPorts() async -> [PortInfo] {
+    public func scanPorts() async throws -> [PortInfo] {
         do {
             let result = try await Shell.execute(
                 executable: "/usr/sbin/lsof",
                 arguments: ["-iTCP", "-sTCP:LISTEN", "-n", "-P"],
                 options: ShellOptions(throwsOnError: false)
             )
-            guard result.exitCode == 0 else { return [] }
+            guard result.exitCode == 0 else {
+                let message = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                if message.isEmpty {
+                    return []
+                }
+                throw PortScannerError.scanFailed(message)
+            }
             return parseLsofOutput(result.stdout)
         } catch {
             if Self.verbose {
                 if PortManagerPlugin.verbose {
-                                    PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
+                    PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
                 }
             }
-            return []
+            throw error
         }
     }
 
-    private func parseLsofOutput(_ output: String) -> [PortInfo] {
+    func parseLsofOutput(_ output: String) -> [PortInfo] {
         var ports: [PortInfo] = []
         let lines = output.components(separatedBy: .newlines)
 
@@ -84,7 +101,7 @@ public final class PortScanner: Sendable, SuperLog {
         } catch {
             if Self.verbose {
                 if PortManagerPlugin.verbose {
-                                    PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
+                    PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
                 }
             }
             throw error

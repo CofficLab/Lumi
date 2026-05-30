@@ -93,6 +93,29 @@
         }
       }
     },
+    "Failed to scan ports: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to scan ports: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描端口失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "掃描端口失敗：%@"
+          }
+        }
+      }
+    },
     "Kill Process" : {
       "extractionState" : "manual",
       "localizations" : {
