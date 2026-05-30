@@ -1609,7 +1609,10 @@ public final class EditorState: ObservableObject, SuperLog {
             }
             let available = self.editorExtensions.allThemes().map(\.id)
             logger.info("\(Self.t)🎨 observeThemeChanges: themeId='\(themeId)', current='\(self.currentThemeId)', available=\(available)")
-            guard self.currentThemeId != themeId else { return }
+            if self.currentThemeId == themeId {
+                self.currentTheme = self.resolveTheme(for: themeId)
+                return
+            }
             self.applyEditorTheme(id: themeId)
         }
     }

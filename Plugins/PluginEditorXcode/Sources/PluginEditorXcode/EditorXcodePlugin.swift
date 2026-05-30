@@ -35,7 +35,8 @@ public actor EditorXcodePlugin: SuperPlugin, SuperLog {
     @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
     @MainActor private lazy var languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
                             XcodePluginLog.logger.info("\(self.t)开始注册编辑器扩展")

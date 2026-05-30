@@ -19,7 +19,8 @@ public actor LSPToolbarEditorPlugin: SuperPlugin {
 
     public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerStatusItemContributor(LSPToolbarContributor())
     }
 }

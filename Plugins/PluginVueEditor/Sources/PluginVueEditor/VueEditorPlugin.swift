@@ -39,7 +39,8 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
     /// Vue 组件大纲视图模型
     @MainActor private var outlineViewModel: VueOutlineViewModel?
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         // 基础补全：Vue 指令、内置组件、宏、修饰符
         registry.registerCompletionContributor(VueCompletionContributor())
 

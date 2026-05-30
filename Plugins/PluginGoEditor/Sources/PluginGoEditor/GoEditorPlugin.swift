@@ -38,7 +38,8 @@ public actor GoEditorPlugin: SuperPlugin, SuperLog {
 
     public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         let buildManager = GoBuildManager()
         let testManager = GoTestManager()
         registry.registerLanguageIntegrationCapability(

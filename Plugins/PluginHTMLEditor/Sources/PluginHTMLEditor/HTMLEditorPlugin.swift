@@ -21,7 +21,8 @@ public actor HTMLEditorPlugin: SuperPlugin {
 
     public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         // Phase 1: 基础编辑
         registry.registerCompletionContributor(HTMLCompletionContributor())
         registry.registerHoverContributor(HTMLHoverContributor())

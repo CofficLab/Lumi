@@ -30,7 +30,8 @@ public actor LSPServiceEditorPlugin: SuperPlugin {
         }
     }
 
-    @MainActor public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         // 创建 LSP 协调器并注册到 Registry — 内核通过协议接口使用，不直接引用插件类型
         let coordinator = LSPCoordinator(lspService: .shared)
         registry.registerSuperEditorLSPClient(coordinator)

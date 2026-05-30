@@ -40,7 +40,8 @@ public actor ThemeAuroraPlugin: SuperPlugin {
     }
 
     @MainActor
-    public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerThemeContributor(AuroraSuperEditorThemeContributor())
     }
 
