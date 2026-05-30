@@ -33,12 +33,14 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
                 "tasks": [
                     "type": "array",
                     "description": "Array of tasks to append. Each task has a title and optional detail.",
+                    "minItems": 1,
                     "items": [
                         "type": "object",
                         "properties": [
                             "title": [
                                 "type": "string",
                                 "description": "Short, actionable task title",
+                                "minLength": 1,
                             ],
                             "detail": [
                                 "type": "string",
@@ -68,11 +70,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
             return String(localized: "Error: tasks array must not be empty", table: "AutoTask")
         }
 
-        let items: [(title: String, detail: String?)] = tasksArray.compactMap { item in
-            guard let title = item["title"] as? String, !title.isEmpty else { return nil }
-            let detail = item["detail"] as? String
-            return (title: title, detail: detail)
-        }
+        let items = TaskToolInputNormalizer.normalize(tasksArray)
 
         guard !items.isEmpty else {
             return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", table: "AutoTask")
@@ -92,7 +90,11 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
             userInfo: ["conversationId": conversationId]
         )
 
-        var result = "✅ \(String(localized: "Appended \(items.count) tasks:", table: "AutoTask")) \n\n"
+        let appendedLabel = String(
+            format: String(localized: "Appended %lld tasks:", table: "AutoTask"),
+            items.count
+        )
+        var result = "✅ \(appendedLabel)\n\n"
         for task in appendedTasks {
             result += "\(task.order). [\(task.id)] **\(task.title)**"
             if let detail = task.detail {

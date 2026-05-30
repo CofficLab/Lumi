@@ -67,9 +67,23 @@ struct AutoTaskPluginTests {
 @Test func testToolSchemasAndRiskLevels() throws {
     let createSchema = CreateTaskTool().inputSchema(for: .english)
     #expect(try #require(createSchema["required"] as? [String]) == ["tasks"])
+    let createProperties = try #require(createSchema["properties"] as? [String: Any])
+    let createTasks = try #require(createProperties["tasks"] as? [String: Any])
+    #expect(try #require(createTasks["minItems"] as? Int) == 1)
+    let createTaskItems = try #require(createTasks["items"] as? [String: Any])
+    let createTaskProperties = try #require(createTaskItems["properties"] as? [String: Any])
+    let createTaskTitle = try #require(createTaskProperties["title"] as? [String: Any])
+    #expect(try #require(createTaskTitle["minLength"] as? Int) == 1)
 
     let appendSchema = AppendTaskTool().inputSchema(for: .english)
     #expect(try #require(appendSchema["required"] as? [String]) == ["tasks"])
+    let appendProperties = try #require(appendSchema["properties"] as? [String: Any])
+    let appendTasks = try #require(appendProperties["tasks"] as? [String: Any])
+    #expect(try #require(appendTasks["minItems"] as? Int) == 1)
+    let appendTaskItems = try #require(appendTasks["items"] as? [String: Any])
+    let appendTaskProperties = try #require(appendTaskItems["properties"] as? [String: Any])
+    let appendTaskTitle = try #require(appendTaskProperties["title"] as? [String: Any])
+    #expect(try #require(appendTaskTitle["minLength"] as? Int) == 1)
 
     let updateSchema = UpdateTaskTool().inputSchema(for: .english)
     #expect(try #require(updateSchema["required"] as? [String]) == ["task_id", "status"])
@@ -79,6 +93,20 @@ struct AutoTaskPluginTests {
     #expect(UpdateTaskTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(ListTasksTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(CheckProgressTool().permissionRiskLevel(arguments: [:]) == .low)
+}
+
+@Test func testTaskToolInputNormalizerTrimsTitlesAndDetails() {
+    let items = TaskToolInputNormalizer.normalize([
+        ["title": "  Write tests  ", "detail": "\nCover whitespace input  "],
+        ["title": "\n\t  ", "detail": "hidden"],
+        ["title": "Ship fix", "detail": "   "],
+    ])
+
+    #expect(items.count == 2)
+    #expect(items[0].title == "Write tests")
+    #expect(items[0].detail == "Cover whitespace input")
+    #expect(items[1].title == "Ship fix")
+    #expect(items[1].detail == nil)
 }
 
 @Test func testTaskStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {

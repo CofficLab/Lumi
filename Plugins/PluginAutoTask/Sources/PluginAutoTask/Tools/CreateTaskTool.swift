@@ -35,12 +35,14 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
                 "tasks": [
                     "type": "array",
                     "description": "Array of tasks to create. Each task has a title and optional detail.",
+                    "minItems": 1,
                     "items": [
                         "type": "object",
                         "properties": [
                             "title": [
                                 "type": "string",
                                 "description": "Short, actionable task title (e.g., 'Setup project structure')",
+                                "minLength": 1,
                             ],
                             "detail": [
                                 "type": "string",
@@ -70,11 +72,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
             return String(localized: "Error: tasks array must not be empty", table: "AutoTask")
         }
 
-        let items: [(title: String, detail: String?)] = tasksArray.compactMap { item in
-            guard let title = item["title"] as? String, !title.isEmpty else { return nil }
-            let detail = item["detail"] as? String
-            return (title: title, detail: detail)
-        }
+        let items = TaskToolInputNormalizer.normalize(tasksArray)
 
         guard !items.isEmpty else {
             return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", table: "AutoTask")
@@ -94,7 +92,11 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
             userInfo: ["conversationId": conversationId]
         )
 
-        var result = "✅ \(String(localized: "Created", table: "AutoTask")) \(items.count) \(String(localized: "tasks:", table: "AutoTask"))\n\n"
+        let createdLabel = String(
+            format: String(localized: "Created %lld tasks:", table: "AutoTask"),
+            items.count
+        )
+        var result = "✅ \(createdLabel)\n\n"
         for (index, task) in createdTasks.enumerated() {
             result += "\(index + 1). [\(task.id)] **\(task.title)**"
             if let detail = task.detail {
@@ -102,9 +104,13 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
             }
             result += "\n"
         }
-        let startLabel = String(localized: "Now start working on task #1", table: "AutoTask")
         let firstTask = createdTasks.first!
-        result += "\n\(startLabel): [\(firstTask.id)] \(firstTask.title)"
+        let firstTaskLabel = "[\(firstTask.id)] \(firstTask.title)"
+        let startLabel = String(
+            format: String(localized: "Now start working on task #1: %@", table: "AutoTask"),
+            firstTaskLabel
+        )
+        result += "\n\(startLabel)"
 
         if Self.verbose {
             AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks for conversation \(conversationId)")
