@@ -212,8 +212,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             case .name:
                 return sortDescending ? a.repository > b.repository : a.repository < b.repository
             case .size:
-                // String comparison for now as Size is string (e.g. "10MB"), would need proper parsing for real sort
-                return sortDescending ? a.size > b.size : a.size < b.size
+                return sortDescending ? a.sizeBytes > b.sizeBytes : a.sizeBytes < b.sizeBytes
             case .created:
                 // createdAt is string "2023-..."
                 return sortDescending ? a.createdAt > b.createdAt : a.createdAt < b.createdAt

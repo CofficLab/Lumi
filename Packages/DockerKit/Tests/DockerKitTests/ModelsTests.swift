@@ -54,6 +54,33 @@ struct DockerImageTests {
         
         #expect(image.shortID == "a1b2c3d4e5f6")
     }
+
+    @Test
+    func parsesDockerSizeStringsToBytes() {
+        #expect(DockerImage.parseSizeBytes("0B") == 0)
+        #expect(DockerImage.parseSizeBytes("900B") == 900)
+        #expect(DockerImage.parseSizeBytes("1kB") == 1_000)
+        #expect(DockerImage.parseSizeBytes("12.5MB") == 12_500_000)
+        #expect(DockerImage.parseSizeBytes("1.2GB") == 1_200_000_000)
+        #expect(DockerImage.parseSizeBytes("2MiB") == 2_097_152)
+        #expect(DockerImage.parseSizeBytes("invalid") == 0)
+    }
+
+    @Test
+    func imageSizeBytesUsesParsedSize() {
+        let image = DockerImage(
+            imageID: "sha256:abc123",
+            repository: "ubuntu",
+            tag: "20.04",
+            createdAt: "2024-01-01",
+            createdSince: "2 weeks ago",
+            size: "1.2GB",
+            virtualSize: "1.2GB",
+            digest: ""
+        )
+
+        #expect(image.sizeBytes == 1_200_000_000)
+    }
 }
 
 struct DockerErrorTests {
