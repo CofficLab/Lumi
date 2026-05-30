@@ -6,7 +6,7 @@ import LumiCoreKit
 ///
 /// 在窗口工具栏右上角显示一个数据库图标，点击后弹出 Popover
 /// 展示消息/对话历史数据，支持 Tab 切换和分页浏览。
-public struct HistoryDBToolbarButton: View {
+public struct ToolbarButton: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPresented = false
 
@@ -30,7 +30,7 @@ public struct HistoryDBToolbarButton: View {
         }
         .help(String(localized: "History DB", table: "HistoryDBStatusBar"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            HistoryDBDetailView(historyService: historyService)
+            DetailView(historyService: historyService)
             .frame(width: 720, height: 520)
         }
     }
@@ -39,7 +39,7 @@ public struct HistoryDBToolbarButton: View {
 // MARK: - Preview
 
 #Preview("History DB Toolbar Button") {
-    HistoryDBToolbarButton()
+    ToolbarButton()
         .padding()
         .inRootView()
 }

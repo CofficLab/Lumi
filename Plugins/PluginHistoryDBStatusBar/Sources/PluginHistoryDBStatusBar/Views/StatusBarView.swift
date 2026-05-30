@@ -2,7 +2,7 @@ import SwiftUI
 import LumiUI
 import LumiCoreKit
 
-public struct HistoryDBStatusBarView: View {
+public struct StatusBarView: View {
     private let historyService: (any HistoryQueryService)?
 
     public init(historyService: (any HistoryQueryService)?) {
@@ -11,7 +11,7 @@ public struct HistoryDBStatusBarView: View {
 
     public var body: some View {
         StatusBarHoverContainer(
-            detailView: HistoryDBDetailView(historyService: historyService),
+            detailView: DetailView(historyService: historyService),
             popoverWidth: 980,
             id: "history-db-status"
         ) {

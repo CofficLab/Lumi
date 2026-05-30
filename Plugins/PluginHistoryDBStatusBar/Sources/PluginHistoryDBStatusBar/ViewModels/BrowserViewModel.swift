@@ -2,14 +2,14 @@ import SwiftUI
 import LumiCoreKit
 
 @MainActor
-public final class HistoryDBBrowserViewModel: ObservableObject {
+public final class BrowserViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let historyService: (any HistoryQueryService)?
 
     // MARK: - UI State
 
-    @Published var selectedMode: HistoryDBViewMode = .messages {
+    @Published var selectedMode: ViewMode = .messages {
         didSet {
             if oldValue != selectedMode {
                 currentPage = 1

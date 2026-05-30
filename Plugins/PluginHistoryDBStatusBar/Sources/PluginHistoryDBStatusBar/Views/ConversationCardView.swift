@@ -5,7 +5,7 @@ import LumiCoreKit
 /// 历史对话卡片视图
 ///
 /// 以卡片形式展示单个历史对话，包含标题、项目、消息数、供应商/模型、时间等信息。
-public struct HistoryConversationCardView: View {
+public struct ConversationCardView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public let row: HistoryConversationRow
@@ -109,7 +109,7 @@ public struct HistoryConversationCardView: View {
 // MARK: - Preview
 
 #Preview("History Conversation Card") {
-    HistoryConversationCardView(
+    ConversationCardView(
         row: HistoryConversationRow(
             id: UUID(),
             title: "帮我重构 ViewModel 层",

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum HistoryDBViewMode: String, CaseIterable, Identifiable {
+public enum ViewMode: String, CaseIterable, Identifiable {
     case messages
     case conversations
 

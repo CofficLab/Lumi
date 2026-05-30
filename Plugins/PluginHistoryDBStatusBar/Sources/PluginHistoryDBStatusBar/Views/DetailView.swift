@@ -2,13 +2,13 @@ import SwiftUI
 import LumiUI
 import LumiCoreKit
 
-public struct HistoryDBDetailView: View {
+public struct DetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var viewModel: HistoryDBBrowserViewModel
+    @StateObject private var viewModel: BrowserViewModel
 
     public init(historyService: (any HistoryQueryService)?) {
-        _viewModel = StateObject(wrappedValue: HistoryDBBrowserViewModel(historyService: historyService))
+        _viewModel = StateObject(wrappedValue: BrowserViewModel(historyService: historyService))
     }
 
     public var body: some View {
@@ -63,7 +63,7 @@ public struct HistoryDBDetailView: View {
         .padding(.bottom, 8)
     }
 
-    private func tabButton(title: String, icon: String, mode: HistoryDBViewMode) -> some View {
+    private func tabButton(title: String, icon: String, mode: ViewMode) -> some View {
         let isSelected = viewModel.selectedMode == mode
 
         return Button {
@@ -158,7 +158,7 @@ public struct HistoryDBDetailView: View {
             ScrollView {
                 LazyVStack(spacing: 6) {
                     ForEach(viewModel.conversationRows) { row in
-                        HistoryConversationCardView(row: row)
+                        ConversationCardView(row: row)
                     }
                 }
                 .padding(.horizontal, 12)
