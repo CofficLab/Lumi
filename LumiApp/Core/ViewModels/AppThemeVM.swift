@@ -11,6 +11,7 @@ final class AppThemeVM: ObservableObject {
     private let syncThemes: (LumiUIThemeRegistry) -> Void
     private let saveSelectedThemeID: (String) -> Void
     private let postThemeDidChangeNotification: (String, String) -> Void
+    private var lastPostedThemeChange: (themeId: String, editorThemeId: String)?
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var themes: [LumiUIThemeContribution] = []
@@ -189,12 +190,18 @@ final class AppThemeVM: ObservableObject {
 
     private func postThemeDidChange() {
         guard let selected = currentTheme ?? themes.first else { return }
-        saveSelectedThemeID(selected.id)
         let colorScheme = SystemAppearanceResolver.effectiveColorScheme
         let editorThemeId = selected.chromeTheme.resolvedEditorThemeId(
             defaultEditorThemeId: selected.editorThemeId,
             colorScheme: colorScheme
         )
+        let themeChange = (themeId: selected.id, editorThemeId: editorThemeId)
+        guard lastPostedThemeChange?.themeId != themeChange.themeId ||
+            lastPostedThemeChange?.editorThemeId != themeChange.editorThemeId
+        else { return }
+
+        lastPostedThemeChange = themeChange
+        saveSelectedThemeID(selected.id)
         postThemeDidChangeNotification(selected.id, editorThemeId)
     }
 }

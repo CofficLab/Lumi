@@ -67,6 +67,33 @@ final class AppThemeVMTests: XCTestCase {
     }
 
     @MainActor
+    func testReloadThemesDoesNotRepostUnchangedThemeAfterInitialBroadcast() throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor")
+        ])
+        var savedThemeIds: [String] = []
+        var postedChanges: [(themeId: String, editorThemeId: String)] = []
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in },
+            loadSelectedThemeID: { nil },
+            saveSelectedThemeID: { savedThemeIds.append($0) },
+            postThemeDidChangeNotification: { themeId, editorThemeId in
+                postedChanges.append((themeId, editorThemeId))
+            }
+        )
+
+        vm.reloadThemes()
+        vm.reloadThemes()
+
+        XCTAssertEqual(savedThemeIds, ["default-app"])
+        XCTAssertEqual(postedChanges.count, 1)
+        XCTAssertEqual(postedChanges.first?.themeId, "default-app")
+        XCTAssertEqual(postedChanges.first?.editorThemeId, "default-editor")
+    }
+
+    @MainActor
     func testPluginsDidLoadReloadsThemesWithInjectedSync() async throws {
         let registry = LumiUIThemeRegistry()
         try registry.replaceAll([
