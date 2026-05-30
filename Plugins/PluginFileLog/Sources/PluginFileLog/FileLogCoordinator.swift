@@ -90,6 +90,7 @@ final class FileLogCoordinator: @unchecked Sendable {
             guard !isRunning else { return }
             isRunning = true
             isFileLoggingDisabled = false
+            lastPolledDate = Date()
             purgeExpiredLogs()
             rotateLogFile()
             schedulePollTimer()
@@ -105,7 +106,7 @@ final class FileLogCoordinator: @unchecked Sendable {
             isRunning = false
             pollTimer?.cancel()
             pollTimer = nil
-            pollOnce() // flush 剩余
+            pollOnce(allowStopped: true) // flush remaining entries before closing
             closeCurrentFile()
         }
     }
@@ -203,8 +204,8 @@ final class FileLogCoordinator: @unchecked Sendable {
         pollTimer = timer
     }
 
-    private func pollOnce() {
-        guard isRunning, !isFileLoggingDisabled else { return }
+    private func pollOnce(allowStopped: Bool = false) {
+        guard (isRunning || allowStopped), !isFileLoggingDisabled else { return }
 
         let store: OSLogStore
         do {
@@ -215,12 +216,14 @@ final class FileLogCoordinator: @unchecked Sendable {
 
         // 从上次轮询时间点之后获取新条目
         let position = store.position(date: lastPolledDate)
-        lastPolledDate = Date()
+        let pollDate = Date()
 
         guard let entries = try? store.getEntries(
             at: position,
             matching: NSPredicate(format: "subsystem == %@", subsystem)
         ) else { return }
+
+        lastPolledDate = pollDate
 
         var hasNewEntries = false
         for entry in entries {
