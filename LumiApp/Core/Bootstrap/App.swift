@@ -43,13 +43,13 @@ struct CoreApp: App {
         //
         // 禁用系统场景恢复：会话/项目/编辑器等状态均绑定稳定的 windowId 并由
         // CoreWindowIDStore + WindowPersistencePlugin 写盘；若与 macOS 默认恢复叠加会重复开窗。
-        WindowGroup("Lumi", id: AppConfig.mainWindowID) {
-            MainWindowSceneContent()
+        WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
+            MainWindowSceneContent(route: route)
         }
         .restorationBehavior(.disabled)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultLaunchBehavior(.presented)
+        .defaultLaunchBehavior(.suppressed)
         .defaultSize(width: 1000, height: 800)
         .commands {
             DebugCommand()

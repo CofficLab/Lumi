@@ -9,6 +9,10 @@ struct MainWindowSceneContent: View {
         self.init(route: CoreWindowIDStore.consumeNextWindowRoute())
     }
 
+    init(route: Binding<LumiWindowRoute?>) {
+        self.init(route: route.wrappedValue ?? CoreWindowIDStore.consumeNextWindowRoute())
+    }
+
     init(route initialRoute: LumiWindowRoute) {
         _windowContainer = StateObject(
             wrappedValue: WindowContainer(

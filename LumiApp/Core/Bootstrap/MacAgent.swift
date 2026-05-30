@@ -41,6 +41,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     private var statusBarController: MenuBarController?
     private var openWindowObserver: NSObjectProtocol?
     private var mainWindows: [NSWindow] = []
+    private var didPresentInitialMainWindow = false
 
     // MARK: - Application Lifecycle
 
@@ -138,6 +139,13 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         guard !flag else {
             return true
+        }
+
+        if let window = mainWindows.first {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            return false
         }
 
         NotificationCenter.postOpenWindowWithRoute(route: LumiWindowRoute())
@@ -245,14 +253,16 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     }
 
     private func ensureMainWindowPresented() {
-        if visibleMainWindows().isEmpty {
+        if !didPresentInitialMainWindow {
             presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
+            didPresentInitialMainWindow = true
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self else { return }
-            if self.visibleMainWindows().isEmpty {
+            if !self.didPresentInitialMainWindow {
                 self.presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
+                self.didPresentInitialMainWindow = true
             }
         }
     }
@@ -274,16 +284,16 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         window.minSize = NSSize(width: 900, height: 640)
         window.setContentSize(NSSize(width: 1000, height: 800))
         window.center()
+        NSApp.unhide(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
+        NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
         if Self.verbose {
             AppLogger.core.info("\(self.t)已呈现主窗口 \(route.id.uuidString.prefix(8))")
         }
-    }
-
-    private func visibleMainWindows() -> [NSWindow] {
-        mainWindows.filter(\.isVisible)
     }
 
     /// 在当前活跃窗口的编辑器中打开文件
