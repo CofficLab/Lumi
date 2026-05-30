@@ -1,4 +1,5 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
 import Testing
 @testable import PluginBrowser
@@ -40,6 +41,18 @@ struct PluginBrowserTests {
         let tool = BrowserScreenshotTool()
 
         #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
+    }
+
+    @Test("tool trims copied URL whitespace")
+    func toolTrimsCopiedURLWhitespace() throws {
+        let url = try #require(BrowserScreenshotTool.normalizedURL(from: " \nhttps://example.com/page\t"))
+
+        #expect(url.absoluteString == "https://example.com/page")
+    }
+
+    @Test("tool rejects blank copied URL")
+    func toolRejectsBlankCopiedURL() {
+        #expect(BrowserScreenshotTool.normalizedURL(from: " \n\t ") == nil)
     }
 
     @Test("localization catalog is packaged")

@@ -75,12 +75,11 @@ Returns the file path of the saved screenshot image (PNG format).
     }
 
     private func executeScreenshot(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let urlString = arguments["url"]?.value as? String else {
+        guard let rawURLString = arguments["url"]?.value as? String else {
             return "Error: Missing required 'url' parameter"
         }
-
-        guard let url = URL(string: urlString) else {
-            return "Error: Invalid URL format: \(urlString)"
+        guard let url = Self.normalizedURL(from: rawURLString) else {
+            return "Error: Invalid URL format: \(rawURLString)"
         }
 
         guard url.scheme == "http" || url.scheme == "https" else {
@@ -91,7 +90,7 @@ Returns the file path of the saved screenshot image (PNG format).
         let waitSeconds = min(arguments["wait"]?.value as? Double ?? 1.0, 10.0)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)📸 Taking screenshot of: \(urlString)")
+            Self.logger.info("\(Self.t)📸 Taking screenshot of: \(url.absoluteString)")
         }
 
         do {
@@ -110,6 +109,12 @@ Returns the file path of the saved screenshot image (PNG format).
             }
             return "Error: Failed to take screenshot - \(error.localizedDescription)"
         }
+    }
+
+    static func normalizedURL(from rawURLString: String) -> URL? {
+        let urlString = rawURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlString.isEmpty else { return nil }
+        return URL(string: urlString)
     }
 
     // MARK: - Screenshot Implementation
