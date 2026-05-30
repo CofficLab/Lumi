@@ -52,6 +52,21 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertFalse(markdown.contains("&#x1F680;"))
     }
 
+    func testPreservesEscapedAngleBracketsInTextAndCode() {
+        let html = """
+        <p>Use &lt;section&gt; when 1 &#60; 2 and 3 &#x3E; 2.</p>
+        <pre><code>&lt;div class=&quot;card&quot;&gt;Hi&lt;/div&gt;</code></pre>
+        <p>Real <span>HTML</span> tags are removed.</p>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("Use <section> when 1 < 2 and 3 > 2."))
+        XCTAssertTrue(markdown.contains("```\n<div class=\"card\">Hi</div>\n```"))
+        XCTAssertTrue(markdown.contains("Real HTML tags are removed."))
+        XCTAssertFalse(markdown.contains("<span>"))
+    }
+
     func testRemovesMultilineUnwantedTags() {
         let html = """
         <script>

@@ -6,6 +6,8 @@ public struct HTMLToMarkdownConverter {
 
     /// 最大内容长度
     public static let maxContentLength = 100_000
+    private static let escapedLessThanPlaceholder = "\u{E000}"
+    private static let escapedGreaterThanPlaceholder = "\u{E001}"
 
     /// 将 HTML 转换为 Markdown
     public static func convert(_ html: String, baseURL: URL? = nil) -> String {
@@ -44,6 +46,7 @@ public struct HTMLToMarkdownConverter {
 
         // 11. 清理
         result = cleanMarkdown(result)
+        result = restoreEscapedAngleBrackets(result)
 
         // 12. 截断
         if result.count > maxContentLength {
@@ -61,8 +64,8 @@ public struct HTMLToMarkdownConverter {
 
         let entities: [String: String] = [
             "&amp;": "&",
-            "&lt;": "<",
-            "&gt;": ">",
+            "&lt;": escapedLessThanPlaceholder,
+            "&gt;": escapedGreaterThanPlaceholder,
             "&quot;": "\"",
             "&apos;": "'",
             "&nbsp;": " ",
@@ -91,9 +94,16 @@ public struct HTMLToMarkdownConverter {
             let hexString = groups?.dropFirst().first { !$0.isEmpty }
             let radix = entityStr.lowercased().hasPrefix("&#x") ? 16 : 10
             if let numStr = hexString,
-               let num = Int(numStr, radix: radix),
-               let scalar = UnicodeScalar(num) {
-                result.replaceSubrange(match, with: String(scalar))
+               let num = Int(numStr, radix: radix) {
+                if num == 60 {
+                    result.replaceSubrange(match, with: escapedLessThanPlaceholder)
+                } else if num == 62 {
+                    result.replaceSubrange(match, with: escapedGreaterThanPlaceholder)
+                } else if let scalar = UnicodeScalar(num) {
+                    result.replaceSubrange(match, with: String(scalar))
+                } else {
+                    break
+                }
             } else {
                 break
             }
@@ -629,6 +639,12 @@ public struct HTMLToMarkdownConverter {
         result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return result
+    }
+
+    private static func restoreEscapedAngleBrackets(_ markdown: String) -> String {
+        markdown
+            .replacingOccurrences(of: escapedLessThanPlaceholder, with: "<")
+            .replacingOccurrences(of: escapedGreaterThanPlaceholder, with: ">")
     }
 
     // MARK: - Helper Methods
