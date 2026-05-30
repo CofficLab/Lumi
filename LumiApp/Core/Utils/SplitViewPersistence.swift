@@ -68,6 +68,7 @@ final class AutosaveConfiguratorView: NSView {
 /// 对于 SwiftUI `.background()` 放置的辅助视图，NSSplitView 一定是祖先节点，
 /// 因此优先向上搜索祖先链，而非搜索兄弟子树。
 enum SplitViewFinder {
+    @MainActor
     static func find(from view: NSView) -> NSSplitView? {
         var current: NSView? = view
         while let node = current {
