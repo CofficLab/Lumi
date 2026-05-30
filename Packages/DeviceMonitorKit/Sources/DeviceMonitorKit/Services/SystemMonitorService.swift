@@ -57,13 +57,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     // CPU load info
     private var numCPUs: natural_t = 0
     private var refCount = 0
-    private let diskCountersProvider: @MainActor () -> (readBytes: UInt64, writeBytes: UInt64)?
+    private var samplingTask: Task<Void, Never>?
+    private let diskCountersProvider: (@MainActor () -> (readBytes: UInt64, writeBytes: UInt64)?)?
     private let timeProvider: @MainActor () -> TimeInterval
 
     package init(
-        diskCountersProvider: @escaping @MainActor () -> (readBytes: UInt64, writeBytes: UInt64)? = {
-            SystemMonitorService.readDiskCounters()
-        },
+        diskCountersProvider: (@MainActor () -> (readBytes: UInt64, writeBytes: UInt64)?)? = nil,
         timeProvider: @escaping @MainActor () -> TimeInterval = {
             Date().timeIntervalSince1970
         }
@@ -102,23 +101,45 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     private func startTimer() {
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.updateMetrics()
+                self?.scheduleMetricsUpdate()
             }
         }
         state.timer = timer
-        updateMetrics()
+        updateMetrics(diskCounters: nil)
+        scheduleMetricsUpdate()
     }
 
     private func stopTimer() {
         state.timer?.invalidate()
         state.timer = nil
+        samplingTask?.cancel()
+        samplingTask = nil
     }
 
-    private func updateMetrics() {
+    private func scheduleMetricsUpdate() {
+        guard samplingTask == nil else { return }
+
+        if let diskCountersProvider {
+            updateMetrics(diskCounters: diskCountersProvider())
+            return
+        }
+
+        samplingTask = Task.detached(priority: .utility) { [weak self] in
+            let diskCounters = Self.readDiskCounters()
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.refCount > 0 else { return }
+                self.updateMetrics(diskCounters: diskCounters)
+            }
+        }
+    }
+
+    private func updateMetrics(diskCounters: (readBytes: UInt64, writeBytes: UInt64)?) {
         let cpu = getCPUUsage()
         let (memUsed, memTotal) = getMemoryUsage()
         let (netIn, netOut) = getNetworkUsage()
-        let (diskRead, diskWrite) = getDiskUsage()
+        let (diskRead, diskWrite) = getDiskUsage(counters: diskCounters)
 
         cpuHistory = (cpuHistory.dropFirst() + [cpu]).suffix(60)
         memoryHistory = (memoryHistory.dropFirst() + [Double(memUsed) / Double(memTotal)]).suffix(60)
@@ -157,7 +178,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     }
 
     func refreshMetricsForTesting() {
-        updateMetrics()
+        updateMetrics(diskCounters: diskCountersProvider?() ?? Self.readDiskCounters())
     }
 
     // MARK: - CPU Usage
@@ -281,9 +302,9 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
 
     // MARK: - Disk Usage
 
-    private func getDiskUsage() -> (readBytes: Double, writeBytes: Double) {
+    private func getDiskUsage(counters: (readBytes: UInt64, writeBytes: UInt64)?) -> (readBytes: Double, writeBytes: Double) {
         let now = timeProvider()
-        guard let counters = diskCountersProvider() else {
+        guard let counters else {
             lastDiskCheckTime = now
             return (0, 0)
         }
