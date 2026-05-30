@@ -2673,6 +2673,28 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func packageManifestSyntaxIgnoresParenthesesInsideStringLiterals() {
+        let content = #"""
+        let package = Package(
+            dependencies: [
+                .package(url: "https://github.com/example/Package(Preview).git", branch: "feature(test)")
+            ]
+        )
+        """#
+
+        let urlOffset = (content as NSString).range(of: "Package(Preview).git").location
+        let link = PackageManifestSyntax.dependencyLink(at: urlOffset, in: content)
+        #expect(link?.rawURL == "https://github.com/example/Package(Preview).git")
+
+        let branchOffset = (content as NSString).range(of: "feature(test)").location
+        let dependency = PackageManifestSyntax.dependency(at: branchOffset, in: content)
+        #expect(dependency?.repositoryName == "Package(Preview)")
+        #expect(dependency?.requirement?.kind == .branch)
+        #expect(dependency?.requirement?.value == "feature(test)")
+    }
+
+    @Test
+    @MainActor
     func stringPreviewLinesReturnsExpectedPrefixesAndSuffixes() {
         let text = "one\ntwo\nthree\nfour"
         #expect(text.getFirstLines(2) == "one\ntwo")

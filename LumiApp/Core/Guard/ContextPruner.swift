@@ -80,35 +80,33 @@ struct ContextPruner: SuperLog {
         lastInputTokens: Int? = nil,
         contextWindowSize: Int? = nil
     ) -> PruneResult {
-        // 1. 不需要裁剪
-        guard messages.count > config.maxMessages else {
-            return PruneResult(messages: messages, prunedCount: 0, reason: nil)
-        }
-
-        // 2. 计算实际保留条数（可能因 token 使用率收紧）
+        // 1. 计算实际保留条数（可能因 token 使用率收紧）
         var effectiveMax = config.maxMessages
+        var pruneReason: PruneReason?
 
         if let lastTokens = lastInputTokens, let windowSize = contextWindowSize, windowSize > 0 {
             let usageRatio = Double(lastTokens) / Double(windowSize)
             if usageRatio > config.tokenUsageThreshold {
                 let tightenedMax = Int(Double(config.maxMessages) * config.tighteningFactor)
-                effectiveMax = max(tightenedMax, 20) // 最低保留 20 条
+                let minimumKeep = min(20, config.maxMessages)
+                effectiveMax = max(tightenedMax, minimumKeep) // 默认最低保留 20 条，但不超过配置上限
                 let kept = min(effectiveMax, messages.count)
+                pruneReason = .tokenBudgetTight(original: messages.count, kept: kept, usageRatio: usageRatio)
                 AppLogger.core.info("\(t)Token 使用率 \(String(format: "%.0f%%", usageRatio * 100)) 超过阈值，收紧窗口：\(config.maxMessages) → \(effectiveMax)")
-                return makePrunedResult(
-                    messages: messages,
-                    maxKeep: effectiveMax,
-                    reason: .tokenBudgetTight(original: messages.count, kept: kept, usageRatio: usageRatio),
-                    config: config
-                )
             }
         }
 
-        // 3. 标准裁剪
+        // 2. 不需要裁剪
+        guard messages.count > effectiveMax else {
+            return PruneResult(messages: messages, prunedCount: 0, reason: nil)
+        }
+
+        // 3. 执行裁剪
+        let reason = pruneReason ?? .messageLimitExceeded(original: messages.count, kept: effectiveMax)
         return makePrunedResult(
             messages: messages,
             maxKeep: effectiveMax,
-            reason: .messageLimitExceeded(original: messages.count, kept: effectiveMax),
+            reason: reason,
             config: config
         )
     }
@@ -186,12 +184,14 @@ struct ContextPruner: SuperLog {
 
         // Phase 3: 遍历消息，修复角色交替和 tool 配对
         var i = 0
+        var activeToolCallIDs: Set<String> = []
         while i < working.count {
             let current = working[i]
 
             if result.isEmpty {
                 // 第一条消息，Phase 2 已确保是 user，直接添加
                 result.append(current)
+                activeToolCallIDs = Set(current.toolCalls?.map(\.id) ?? [])
                 i += 1
                 continue
             }
@@ -206,6 +206,7 @@ struct ContextPruner: SuperLog {
                     merged.content += "\n\n" + current.content
                     result.append(merged)
                 } else if lastRole == .tool {
+                    activeToolCallIDs.removeAll()
                     // tool 后面不能直接跟 user（缺少 assistant 过渡）
                     // 插入一个空的 assistant 消息
                     let bridge = ChatMessage(
@@ -216,6 +217,7 @@ struct ContextPruner: SuperLog {
                     result.append(bridge)
                     result.append(current)
                 } else {
+                    activeToolCallIDs.removeAll()
                     result.append(current)
                 }
 
@@ -239,21 +241,23 @@ struct ContextPruner: SuperLog {
                         }
                     }
                     result.append(merged)
+                    activeToolCallIDs = Set(merged.toolCalls?.map(\.id) ?? [])
                 } else {
                     result.append(current)
+                    activeToolCallIDs = Set(current.toolCalls?.map(\.id) ?? [])
                 }
 
             case .tool:
-                // tool 消息必须紧跟在 assistant（带有 tool_calls）之后
-                if lastRole != .assistant {
+                // tool 消息必须紧跟在带有 tool_calls 的 assistant 之后；
+                // 一个 assistant 可对应多条连续 tool 结果。
+                guard lastRole == .assistant || lastRole == .tool else {
+                    activeToolCallIDs.removeAll()
                     // 孤立的 tool 消息，跳过
                     i += 1
                     continue
                 }
-                // 检查上一条 assistant 是否有对应的 tool_call
-                let lastAssistant = result.last!
-                let hasMatchingToolCall = lastAssistant.toolCalls?.contains { $0.id == current.toolCallID } ?? false
-                if !hasMatchingToolCall {
+                guard let toolCallID = current.toolCallID,
+                      activeToolCallIDs.contains(toolCallID) else {
                     // 没有匹配的 tool_call，跳过这个孤立的 tool 消息
                     i += 1
                     continue
@@ -261,6 +265,7 @@ struct ContextPruner: SuperLog {
                 result.append(current)
 
             default:
+                activeToolCallIDs.removeAll()
                 // system/status/error/unknown 消息，正常添加
                 result.append(current)
             }

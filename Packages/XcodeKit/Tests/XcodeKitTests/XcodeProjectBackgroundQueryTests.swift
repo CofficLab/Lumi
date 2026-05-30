@@ -44,4 +44,14 @@ final class XcodeProjectBackgroundQueryTests: XCTestCase {
         XCTAssertNil(inspection.workspaceURL)
         XCTAssertNil(inspection.validBuildServerConfig)
     }
+
+    func testWorkspacePathCandidatesPreserveLookupOrderAndRemoveDuplicates() {
+        let workspaceURL = URL(fileURLWithPath: "/private/tmp/App.xcworkspace")
+
+        let candidates = XcodeProjectBackgroundQuery.workspacePathCandidates(for: workspaceURL)
+
+        XCTAssertEqual(candidates.first, "/private/tmp/App.xcworkspace")
+        XCTAssertEqual(candidates.last, "/tmp/App.xcworkspace")
+        XCTAssertEqual(Set(candidates).count, candidates.count)
+    }
 }

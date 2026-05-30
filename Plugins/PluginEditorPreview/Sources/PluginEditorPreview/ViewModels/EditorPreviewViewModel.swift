@@ -235,7 +235,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         LumiPreviewFacade.verbose = Self.verbose
         wireSessionCallbacks()
         refreshCacheSummary()
-        warmupSessionIfPossible()
     }
 
     deinit {
@@ -286,6 +285,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     public func viewDidAppear(fileURL: URL?, sourceText: String?) {
         isViewVisible = true
+        warmupSessionIfPossible()
         setActiveFile(fileURL, sourceText: sourceText)
         startSessionIfNeededForActiveFile()
     }

@@ -195,8 +195,35 @@ public enum PackageManifestSyntax {
 
         var depth = 0
         var index = openParenLocation
+        var isInString = false
+        var isEscaped = false
+
         while index < utf16.count {
             let scalar = utf16[index]
+
+            if isEscaped {
+                isEscaped = false
+                index += 1
+                continue
+            }
+
+            if scalar == 92 {
+                isEscaped = isInString
+                index += 1
+                continue
+            }
+
+            if scalar == 34 {
+                isInString.toggle()
+                index += 1
+                continue
+            }
+
+            if isInString {
+                index += 1
+                continue
+            }
+
             if scalar == 40 {
                 depth += 1
             } else if scalar == 41 {

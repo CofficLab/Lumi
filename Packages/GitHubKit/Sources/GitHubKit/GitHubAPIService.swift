@@ -217,12 +217,19 @@ public final class GitHubAPIService: @unchecked Sendable {
     }
 
     /// 构建 GET URLRequest。
-    private func buildGetRequest(endpoint: String, params: [String: String] = [:]) -> URLRequest {
-        var components = URLComponents(string: baseURL + endpoint)!
+    func buildGetRequest(endpoint: String, params: [String: String] = [:]) throws -> URLRequest {
+        let rawURL = baseURL + endpoint
+        guard var components = URLComponents(string: rawURL) else {
+            throw GitHubAPIError.invalidURL(rawURL)
+        }
         if !params.isEmpty {
             components.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw GitHubAPIError.invalidURL(rawURL)
+        }
+        try validateAPIURL(url, rawValue: rawURL)
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyAuth(request: &request)
         return request
@@ -251,8 +258,12 @@ public final class GitHubAPIService: @unchecked Sendable {
     }
 
     /// 构建带 body 的 URLRequest。
-    private func buildBodyRequest(endpoint: String, method: String) -> URLRequest {
-        let url = URL(string: baseURL + endpoint)!
+    private func buildBodyRequest(endpoint: String, method: String) throws -> URLRequest {
+        let rawURL = baseURL + endpoint
+        guard let url = URL(string: rawURL) else {
+            throw GitHubAPIError.invalidURL(rawURL)
+        }
+        try validateAPIURL(url, rawValue: rawURL)
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -264,6 +275,14 @@ public final class GitHubAPIService: @unchecked Sendable {
     private func applyAuth(request: inout URLRequest) {
         if let token = tokenProvider?.accessToken, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+    }
+
+    private func validateAPIURL(_ url: URL, rawValue: String) throws {
+        guard let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              url.host?.isEmpty == false else {
+            throw GitHubAPIError.invalidURL(rawValue)
         }
     }
 
@@ -285,7 +304,7 @@ public final class GitHubAPIService: @unchecked Sendable {
         _ endpoint: String,
         params: [String: String] = [:]
     ) async throws -> T {
-        let request = buildGetRequest(endpoint: endpoint, params: params)
+        let request = try buildGetRequest(endpoint: endpoint, params: params)
 
         do {
             return try await client.sendDecodableRequest(request: request, as: T.self)
@@ -303,7 +322,7 @@ public final class GitHubAPIService: @unchecked Sendable {
         _ endpoint: String,
         body: B
     ) async throws -> T {
-        let request = buildBodyRequest(endpoint: endpoint, method: "POST")
+        let request = try buildBodyRequest(endpoint: endpoint, method: "POST")
 
         do {
             let data = try await client.sendEncodableRequest(request: request, body: body)
@@ -322,7 +341,7 @@ public final class GitHubAPIService: @unchecked Sendable {
         _ endpoint: String,
         body: B
     ) async throws -> T {
-        let request = buildBodyRequest(endpoint: endpoint, method: "PATCH")
+        let request = try buildBodyRequest(endpoint: endpoint, method: "PATCH")
 
         do {
             let data = try await client.sendEncodableRequest(request: request, body: body)

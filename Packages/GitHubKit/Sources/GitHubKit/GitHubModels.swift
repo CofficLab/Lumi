@@ -470,6 +470,8 @@ struct CreateIssueCommentRequest: Codable {
 
 /// GitHub API 错误。
 public enum GitHubAPIError: LocalizedError {
+    /// 无效的请求 URL。
+    case invalidURL(String)
     /// 无效的 API 响应。
     case invalidResponse
     /// HTTP 错误。
@@ -485,6 +487,8 @@ public enum GitHubAPIError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
+        case .invalidURL(let url):
+            return "无效的 GitHub API URL：\(url)"
         case .invalidResponse:
             return "无效的 API 响应"
         case .httpError(let code):

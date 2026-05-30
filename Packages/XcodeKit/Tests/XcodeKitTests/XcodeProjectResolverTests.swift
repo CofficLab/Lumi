@@ -91,4 +91,14 @@ final class XcodeProjectResolverTests: XCTestCase {
 
         XCTAssertFalse(XcodeProjectResolver.isXcodeProjectRoot(tempDir))
     }
+
+    // MARK: - Scheme Ordering Tests
+
+    func testUniquePreservingOrderKeepsFirstOccurrenceOrder() {
+        let schemes = ["App", "Widget", "App", "Tests", "Widget", "Package"]
+
+        let result = XcodeProjectResolver.uniquePreservingOrder(schemes)
+
+        XCTAssertEqual(result, ["App", "Widget", "Tests", "Package"])
+    }
 }

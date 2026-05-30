@@ -49,6 +49,15 @@ struct GitHubAPIServiceTests {
         #expect(params["order"] == nil)
     }
 
+    @Test("无效基础 URL 构建请求时抛出错误而不是崩溃")
+    func buildGetRequestThrowsForInvalidBaseURL() throws {
+        let service = GitHubAPIService(baseURL: ":// invalid")
+
+        #expect(throws: GitHubAPIError.self) {
+            _ = try service.buildGetRequest(endpoint: "/repos/example/repo")
+        }
+    }
+
     @Test("文件内容模型解码 GitHub JSON 字段并提供 UTF-8 文本")
     func fileContentDecodesSnakeCaseFieldsAndContent() throws {
         let json = """
@@ -96,6 +105,7 @@ struct GitHubAPIServiceTests {
 
     @Test("API 错误描述覆盖常用错误")
     func apiErrorDescriptionsAreUserFacing() {
+        #expect(GitHubAPIError.invalidURL(":// invalid").errorDescription == "无效的 GitHub API URL：:// invalid")
         #expect(GitHubAPIError.httpError(404).errorDescription == "HTTP 错误：404")
         #expect(GitHubAPIError.rateLimited.errorDescription == "API 请求超限，请稍后重试")
         #expect(GitHubAPIError.unauthorized.errorDescription == "认证失败，请检查 GitHub Token")

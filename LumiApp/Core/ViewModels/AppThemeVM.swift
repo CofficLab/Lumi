@@ -77,13 +77,16 @@ final class AppThemeVM: ObservableObject {
         }
     }
 
-    static func editorThemeID(for themeId: String) -> String {
-        let registry = LumiUIThemeRegistry.shared
+    static func editorThemeID(for themeId: String, registry: LumiUIThemeRegistry = .shared) -> String {
         let themes = registry.themes
         if let match = themes.first(where: { $0.id == themeId }) {
             return match.editorThemeId
         }
-        return (try? registry.defaultThemeId()) ?? themeId
+        if let defaultThemeId = try? registry.defaultThemeId(),
+           let fallback = themes.first(where: { $0.id == defaultThemeId }) {
+            return fallback.editorThemeId
+        }
+        return themeId
     }
 
     static func currentEditorThemeId() -> String {
@@ -93,7 +96,11 @@ final class AppThemeVM: ObservableObject {
            let match = themes.first(where: { $0.id == savedThemeId }) {
             return match.editorThemeId
         }
-        return (try? registry.defaultThemeId()) ?? ""
+        if let defaultThemeId = try? registry.defaultThemeId(),
+           let fallback = themes.first(where: { $0.id == defaultThemeId }) {
+            return fallback.editorThemeId
+        }
+        return ""
     }
 
     // MARK: - Private
