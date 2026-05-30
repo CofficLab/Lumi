@@ -1,7 +1,7 @@
 import Foundation
 
 /// 窗口持久化记录（仅用于写入磁盘）
-public struct WindowPersistenceRecord: Codable {
+public struct WindowPersistenceRecord: Codable, Sendable {
     public let windowId: UUID
     public let conversationId: UUID?
     public let projectPath: String?

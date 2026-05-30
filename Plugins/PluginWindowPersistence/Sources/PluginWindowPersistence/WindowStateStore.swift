@@ -11,14 +11,18 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
 
     public static let shared = WindowStateStore()
 
-    private let queue = DispatchQueue(label: "WindowStateStore.queue", qos: .userInitiated)
+    private let queue: DispatchQueue
+    private let databaseRootURLProvider: @Sendable () -> URL
 
     private static let pluginDirName = "WindowPersistence"
     private static let settingsDirName = "settings"
     private static let statesFileName = "window_states.json"
     public static let maxPersistedWindowCount = 20
 
-    private init() {}
+    init(databaseRootURLProvider: @escaping @Sendable () -> URL = { AppConfig.getDBFolderURL() }) {
+        self.queue = DispatchQueue(label: "WindowStateStore.queue.\(UUID().uuidString)", qos: .userInitiated)
+        self.databaseRootURLProvider = databaseRootURLProvider
+    }
 
     // MARK: - Save
 
@@ -118,15 +122,15 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
 
     private func merge(
         windowId: UUID,
-        build: (WindowPersistenceRecord?) -> WindowPersistenceRecord
+        build: @escaping @Sendable (WindowPersistenceRecord?) -> WindowPersistenceRecord
     ) {
-        let existing = loadWindowStates().first { $0.windowId == windowId }
-        let updated = build(existing)
         queue.async { [self] in
             var records = loadRecords()
             if let index = records.firstIndex(where: { $0.windowId == windowId }) {
+                let updated = build(records[index])
                 records[index] = updated
             } else {
+                let updated = build(nil)
                 records.append(updated)
             }
             persist(records)
@@ -209,7 +213,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     }
 
     private func settingsDirURL() -> URL {
-        AppConfig.getDBFolderURL()
+        databaseRootURLProvider()
             .appendingPathComponent(Self.pluginDirName, isDirectory: true)
             .appendingPathComponent(Self.settingsDirName, isDirectory: true)
     }
