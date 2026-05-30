@@ -43,5 +43,9 @@ let package = Package(
                 .product(name: "CodeEditSymbols", package: "LumiCodeEditSymbols")
             ]
         ),
+        .testTarget(
+            name: "CodeEditSourceEditorTests",
+            dependencies: ["CodeEditSourceEditor"]
+        ),
     ]
 )
