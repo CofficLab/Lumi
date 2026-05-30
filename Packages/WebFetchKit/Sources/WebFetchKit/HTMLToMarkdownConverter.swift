@@ -487,8 +487,12 @@ public struct HTMLToMarkdownConverter {
 
             if let groups = groups.first, groups.count >= 2 {
                 let content = groups[1]
-                let cleanContent = stripHTMLTags(content).trimmed
-                let lines = cleanContent.components(separatedBy: "\n")
+                let quoteMarkdown = convertParagraphs(content)
+                let cleanContent = stripHTMLTags(quoteMarkdown).trimmed
+                let lines = cleanContent
+                    .components(separatedBy: "\n")
+                    .map { $0.trimmed }
+                    .filter { !$0.isEmpty }
                 let quotedLines = lines.map { "> \($0)" }.joined(separator: "\n")
                 result.replaceSubrange(match, with: "\n" + quotedLines + "\n\n")
             } else {
