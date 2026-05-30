@@ -166,6 +166,51 @@ struct ToolExecutionContextTests {
 
         #expect(flag.isSet)
     }
+
+    @Test
+    func isPathAllowedAcceptsAllowedDirectoryAndChildren() {
+        let projectPath = "/tmp/LumiProject"
+        let context = ToolExecutionContext(
+            conversationId: UUID(),
+            toolCallId: "call_1",
+            toolName: "read_file",
+            allowedDirectories: [projectPath]
+        )
+
+        #expect(context.isPathAllowed(projectPath))
+        #expect(context.isPathAllowed("\(projectPath)/Sources/App.swift"))
+    }
+
+    @Test
+    func isPathAllowedRejectsSiblingWithSharedPrefix() {
+        let context = ToolExecutionContext(
+            conversationId: UUID(),
+            toolCallId: "call_1",
+            toolName: "read_file",
+            allowedDirectories: ["/tmp/LumiProject"]
+        )
+
+        #expect(!context.isPathAllowed("/tmp/LumiProjectBackup/Secrets.swift"))
+        #expect(!context.isPathAllowed("/tmp/LumiProject2/Secrets.swift"))
+    }
+
+    @Test
+    func isPathAllowedTrimsCopiedPathWhitespace() {
+        let projectPath = "/tmp/LumiProject"
+        let context = ToolExecutionContext(
+            conversationId: UUID(),
+            toolCallId: "call_1",
+            toolName: "read_file",
+            allowedDirectories: [" \(projectPath)/ \n"]
+        )
+
+        #expect(context.isPathAllowed(" \n\(projectPath)/Sources/App.swift\t"))
+    }
+
+    @Test
+    func resolvePathPreservesRootDirectory() {
+        #expect(ToolExecutionContext.resolvePath("/") == "/")
+    }
 }
 
 // MARK: - SuperAgentTool

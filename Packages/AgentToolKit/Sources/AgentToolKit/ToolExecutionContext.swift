@@ -29,16 +29,19 @@ public final class ToolExecutionContext: @unchecked Sendable {
 
         let resolved = Self.resolvePath(path)
         return allowedDirectories.contains { allowedDir in
-            resolved.hasPrefix(allowedDir)
+            let resolvedAllowedDir = Self.resolvePath(allowedDir)
+            if resolvedAllowedDir == "/" { return true }
+            return resolved == resolvedAllowedDir || resolved.hasPrefix(resolvedAllowedDir + "/")
         }
     }
 
     /// 规范化路径：展开 ~、解析 symlink、消除 `..` 和 `.`
     public static func resolvePath(_ path: String) -> String {
-        let expanded = (path as NSString).expandingTildeInPath
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        let expanded = (trimmed as NSString).expandingTildeInPath
         let url = URL(fileURLWithPath: expanded)
         let resolved = url.resolvingSymlinksInPath().path
-        return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+        return resolved != "/" && resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
     }
 
     private let lock = NSLock()
