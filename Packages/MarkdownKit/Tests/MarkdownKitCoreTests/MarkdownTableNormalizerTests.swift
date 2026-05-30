@@ -229,4 +229,36 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[0] == .heading(level: 1, text: "Hello"))
         #expect(blocks[2] == .codeBlock(language: "swift", code: "let x = 1\n"))
     }
+
+    @Test
+    func preservesPipeTablesInsideFencedCodeBlocks() {
+        let input = """
+            ```markdown
+            | A | B |
+            | 1 | 2 |
+            ```
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.codeBlock(language: "markdown", code: "| A | B |\n| 1 | 2 |\n")])
+    }
+
+    @Test
+    func preservesPipeTablesInsideTildeFencedCodeBlocks() {
+        let input = """
+            ~~~
+            | A | B |
+            | 1 | 2 |
+            ~~~
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.codeBlock(language: nil, code: "| A | B |\n| 1 | 2 |\n")])
+    }
 }

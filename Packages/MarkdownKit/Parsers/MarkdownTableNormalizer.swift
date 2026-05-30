@@ -27,10 +27,27 @@ enum MarkdownTableNormalizer {
         
         var result: [String] = []
         var i = 0
+        var activeFence: String?
         
         while i < lines.count {
             let line = String(lines[i])
             let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if let fence = activeFence {
+                result.append(line)
+                if trimmed.hasPrefix(fence) {
+                    activeFence = nil
+                }
+                i += 1
+                continue
+            }
+
+            if let fence = openingFence(in: trimmed) {
+                activeFence = fence
+                result.append(line)
+                i += 1
+                continue
+            }
             
             if isTableLine(trimmed) {
                 var tableLines: [String] = []
@@ -94,6 +111,12 @@ enum MarkdownTableNormalizer {
     /// 判断一行是否为表格相关行（至少 2 个管道符）
     private static func isTableLine(_ line: String) -> Bool {
         line.filter { $0 == "|" }.count >= 2
+    }
+
+    private static func openingFence(in line: String) -> String? {
+        if line.hasPrefix("```") { return "```" }
+        if line.hasPrefix("~~~") { return "~~~" }
+        return nil
     }
     
     private static func shouldNormalizeTableLines(_ lines: [String]) -> Bool {
