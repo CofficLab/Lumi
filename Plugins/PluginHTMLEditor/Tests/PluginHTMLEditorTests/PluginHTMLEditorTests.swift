@@ -22,3 +22,11 @@ import Testing
 
     #expect(ColorParser.isNearColor(text: css, character: character) != nil)
 }
+
+@Test func colorParserIgnoresInvalidRGBAAlphaWithoutCrashing() async throws {
+    let css = "color: rgba(10, 20, 30, .);"
+
+    let matches = ColorParser.findColors(in: css)
+
+    #expect(matches.isEmpty)
+}

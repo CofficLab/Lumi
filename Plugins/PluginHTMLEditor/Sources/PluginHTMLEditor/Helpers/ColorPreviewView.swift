@@ -203,13 +203,22 @@ extension Color {
         }
 
         let nsString = rgbString as NSString
-        let red = Double(nsString.substring(with: match.range(at: 1)))! / 255.0
-        let green = Double(nsString.substring(with: match.range(at: 2)))! / 255.0
-        let blue = Double(nsString.substring(with: match.range(at: 3)))! / 255.0
+        guard let redValue = Double(nsString.substring(with: match.range(at: 1))),
+              let greenValue = Double(nsString.substring(with: match.range(at: 2))),
+              let blueValue = Double(nsString.substring(with: match.range(at: 3))) else {
+            return nil
+        }
+
+        let red = min(max(redValue / 255.0, 0.0), 1.0)
+        let green = min(max(greenValue / 255.0, 0.0), 1.0)
+        let blue = min(max(blueValue / 255.0, 0.0), 1.0)
 
         var alpha = 1.0
         if match.range(at: 4).location != NSNotFound {
-            alpha = Double(nsString.substring(with: match.range(at: 4)))!
+            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
+                return nil
+            }
+            alpha = min(max(alphaValue, 0.0), 1.0)
         }
 
         self.init(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
