@@ -54,6 +54,12 @@ public struct PluginContext {
     /// 工具描述展示使用的语言偏好。
     public let toolLanguagePreference: LanguagePreference
 
+    /// 历史数据查询服务（由内核注入）。
+    ///
+    /// 插件通过此服务查询消息和对话历史，无需直接访问 SwiftData。
+    /// 为 `nil` 时表示当前环境不支持历史查询（如测试或预览场景）。
+    public let historyService: (any HistoryQueryService)?
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
@@ -63,7 +69,8 @@ public struct PluginContext {
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
         availableTools: [SuperAgentTool] = [],
-        toolLanguagePreference: LanguagePreference = .current
+        toolLanguagePreference: LanguagePreference = .current,
+        historyService: (any HistoryQueryService)? = nil
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
@@ -74,5 +81,6 @@ public struct PluginContext {
         self.languagePreference = languagePreference
         self.availableTools = availableTools
         self.toolLanguagePreference = toolLanguagePreference
+        self.historyService = historyService
     }
 }
