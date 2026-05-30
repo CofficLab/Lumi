@@ -65,6 +65,8 @@ final class AutomationController: SuperLog {
             handleInlinePreviewStartStream(payload: payload)
         case "inline_preview.stop_stream", "inline_preview.stopStream":
             handleInlinePreviewStopStream(payload: payload)
+        case "inline_preview.demoFrame", "inline_preview.demo_frame":
+            handleInlinePreviewDemoFrame(payload: payload)
 
         // 导航操作
         case "navigate.to", "navigateTo":
@@ -101,6 +103,7 @@ final class AutomationController: SuperLog {
 
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.lastSessionActionName = "start"
         InlinePreviewAutomationState.shared.sessionAction = .start
         alert_info("自动化测试：启动预览流")
     }
@@ -111,8 +114,20 @@ final class AutomationController: SuperLog {
 
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.lastSessionActionName = "stop"
         InlinePreviewAutomationState.shared.sessionAction = .stop
         alert_info("自动化测试：停止预览流")
+    }
+
+    /// 处理 Inline Preview demo frame 自动化请求。
+    private func handleInlinePreviewDemoFrame(payload: [String: Any]?) {
+        Self.logger.info("🤖 Handling inline_preview.demoFrame")
+
+        ensureEditorPanelActive()
+        ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.demoFrameRequestCount += 1
+        InlinePreviewAutomationState.shared.lastDemoFramePayload = payload ?? [:]
+        alert_info("自动化测试：Inline Preview demo frame")
     }
 
     /// 处理导航到指定面板
@@ -221,6 +236,7 @@ final class AutomationController: SuperLog {
     /// 确保编辑器面板处于活动状态
     private func ensureEditorPanelActive() {
         RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = "chevron.left.forwardslash.chevron.right"
+        InlinePreviewAutomationState.shared.editorPanelActivationCount += 1
         Self.logger.info("🤖 Activated editor panel")
     }
 
@@ -231,6 +247,7 @@ final class AutomationController: SuperLog {
             object: nil,
             userInfo: ["tabId": "editor-bottom-inline-preview"]
         )
+        InlinePreviewAutomationState.shared.inlinePreviewTabActivationCount += 1
         Self.logger.info("🤖 Activated inline preview bottom tab")
     }
 
@@ -256,6 +273,21 @@ final class InlinePreviewAutomationState: ObservableObject {
 
     /// 待打开的文件 URL
     @Published var pendingFileURL: URL?
+
+    /// 最近一次 start/stop 自动化请求。
+    @Published var lastSessionActionName: String?
+
+    /// 自动化激活编辑器面板次数。
+    @Published var editorPanelActivationCount: Int = 0
+
+    /// 自动化激活 Inline Preview 底部 tab 次数。
+    @Published var inlinePreviewTabActivationCount: Int = 0
+
+    /// Demo frame 自动化请求次数。
+    @Published var demoFrameRequestCount: Int = 0
+
+    /// 最近一次 demo frame payload。
+    @Published var lastDemoFramePayload: [String: Any] = [:]
 
     private init() {}
 

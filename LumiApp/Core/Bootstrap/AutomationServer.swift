@@ -397,6 +397,10 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
                 return makeJSONResponse(statusCode: 200, body: projectDebugStateBody())
             }
 
+            if action == "automation.debug_state" || action == "automationDebugState" {
+                return makeJSONResponse(statusCode: 200, body: automationDebugStateBody())
+            }
+
             // 分发事件（在主线程上，以便 UI 组件可以响应）
             // 已在 Task { @MainActor } 中调用
             NotificationCenter.postAutomationActionReceived(action: action, payload: payload)
@@ -447,6 +451,19 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
             "projectName": container?.projectName ?? "",
             "projectPath": container?.projectPath ?? "",
             "activePanel": container?.layoutVM.activeViewContainerIcon ?? "",
+        ]
+    }
+
+    @MainActor
+    private func automationDebugStateBody() -> [String: Any] {
+        let state = InlinePreviewAutomationState.shared
+        return [
+            "status": "ok",
+            "lastSessionActionName": state.lastSessionActionName ?? "",
+            "editorPanelActivationCount": state.editorPanelActivationCount,
+            "inlinePreviewTabActivationCount": state.inlinePreviewTabActivationCount,
+            "demoFrameRequestCount": state.demoFrameRequestCount,
+            "lastDemoFramePayload": state.lastDemoFramePayload,
         ]
     }
 }
