@@ -68,10 +68,9 @@ public struct WorkspaceDirectoryLister: Sendable {
             }
 
             if currentURL != rootURL {
-                let relativePath = currentURL.path.replacingOccurrences(of: rootPath, with: "")
+                let relativePath = Self.relativePath(for: currentURL, rootPath: rootPath)
                 let isDir = (try? currentURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                let cleanPath = relativePath.hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath
-                output += "\(cleanPath)\(isDir ? "/" : "")\n"
+                output += "\(relativePath)\(isDir ? "/" : "")\n"
                 count += 1
             }
 
@@ -87,5 +86,25 @@ public struct WorkspaceDirectoryLister: Sendable {
         }
 
         return WorkspaceDirectoryListing(output: output.isEmpty ? "(Empty directory)" : output, itemCount: count, truncated: truncated)
+    }
+
+    static func relativePath(for fileURL: URL, rootPath: String) -> String {
+        let filePath = normalizedPath(fileURL.path)
+        let rootPath = normalizedPath(rootPath)
+
+        guard filePath != rootPath else { return "" }
+
+        let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+        guard filePath.hasPrefix(rootPrefix) else {
+            return fileURL.lastPathComponent
+        }
+
+        return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let standardized = (path as NSString).standardizingPath
+        guard standardized.count > 1 else { return standardized }
+        return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 }

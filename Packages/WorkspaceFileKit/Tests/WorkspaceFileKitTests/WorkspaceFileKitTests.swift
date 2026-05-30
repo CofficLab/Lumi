@@ -119,6 +119,25 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertTrue(listing.output.contains("Too many files"))
     }
 
+    func testRecursiveListOnlyDropsRootPrefix() throws {
+        let nestedDirectory = temporaryDirectory
+            .appendingPathComponent("nested", isDirectory: true)
+            .appendingPathComponent(temporaryDirectory.path, isDirectory: true)
+        try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+        try "content".write(to: nestedDirectory.appendingPathComponent("file.txt"), atomically: true, encoding: .utf8)
+
+        let listing = try WorkspaceDirectoryLister().list(path: temporaryDirectory.path, recursive: true)
+
+        XCTAssertTrue(listing.output.contains("nested/\(String(temporaryDirectory.path.dropFirst()))/file.txt"))
+    }
+
+    func testRelativePathRejectsSiblingWithSharedPrefix() {
+        let rootPath = temporaryDirectory.path
+        let sibling = URL(fileURLWithPath: rootPath + "-copy/file.txt")
+
+        XCTAssertEqual(WorkspaceDirectoryLister.relativePath(for: sibling, rootPath: rootPath), "file.txt")
+    }
+
     func testPathResolverAcceptsFileURLString() {
         let path = temporaryDirectory.appendingPathComponent("file.txt").path
         let fileURLString = URL(fileURLWithPath: path).absoluteString
