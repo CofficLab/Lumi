@@ -121,6 +121,6 @@ public class TextSelectionManager: ObservableObject, SuperLog {
 
     nonisolated static func axElement(from value: CFTypeRef?) -> AXUIElement? {
         guard let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        return (value as! AXUIElement)
+        return unsafeDowncast(value, to: AXUIElement.self)
     }
 }
