@@ -1,8 +1,41 @@
 import Testing
+import EditorService
 @testable import PluginEditorPreview
 
 @Test func packageLoads() async throws {
     #expect(Bool(true))
+}
+
+@MainActor
+@Test func previewViewModelStoreReusesViewModelForSameEditorService() {
+    let store = EditorPreviewViewModelStore.shared
+    store.resetForTesting()
+
+    let editorService = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
+    let first = store.viewModel(for: editorService)
+    let second = store.viewModel(for: editorService)
+
+    #expect(first === second)
+}
+
+@MainActor
+@Test func previewViewModelStoreSeparatesDifferentEditorServices() {
+    let store = EditorPreviewViewModelStore.shared
+    store.resetForTesting()
+
+    let first = store.viewModel(for: EditorService(editorExtensionRegistry: EditorExtensionRegistry()))
+    let second = store.viewModel(for: EditorService(editorExtensionRegistry: EditorExtensionRegistry()))
+
+    #expect(first !== second)
+}
+
+@MainActor
+@Test func previewViewModelDoesNotWarmUpWithoutPreviewFile() {
+    let viewModel = EditorPreviewViewModel()
+
+    viewModel.viewDidAppear(fileURL: nil, sourceText: nil)
+
+    #expect(String(describing: viewModel.status) == "idle")
 }
 
 @Test func csvParserIgnoresQuotedDelimitersWhenDetectingSeparator() throws {

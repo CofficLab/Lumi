@@ -27,7 +27,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
-    @StateObject private var viewModel = EditorPreviewViewModel()
+    @ObservedObject private var viewModel: EditorPreviewViewModel
     @StateObject private var automationState = InlinePreviewAutomationState.shared
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
@@ -35,6 +35,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var isTakingScreenshot = false
     @State private var previewCanvasView: NSView?
     @State private var htmlPreviewWebView: WKWebView?
+
+    public init(viewModel: EditorPreviewViewModel? = nil) {
+        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel()
+    }
 
     private var editorService: EditorService? {
         EditorPreviewRuntimeBridge.editorServiceProvider?()

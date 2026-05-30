@@ -285,7 +285,9 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     public func viewDidAppear(fileURL: URL?, sourceText: String?) {
         isViewVisible = true
-        warmupSessionIfPossible()
+        if Self.canPrepareInlinePreview(fileURL: fileURL, sourceText: sourceText) {
+            warmupSessionIfPossible()
+        }
         setActiveFile(fileURL, sourceText: sourceText)
         startSessionIfNeededForActiveFile()
     }
@@ -831,6 +833,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         default:
             return false
         }
+    }
+
+    private static func canPrepareInlinePreview(fileURL: URL?, sourceText: String?) -> Bool {
+        guard fileURL?.pathExtension.lowercased() == "swift" else { return false }
+        return sourceText?.contains("#Preview") == true
     }
 
     private func refreshAvailablePreviews() {
