@@ -24,14 +24,14 @@ public struct HTMLToMarkdownConverter {
         result = convertLinks(result, baseURL: baseURL)
         result = convertImages(result, baseURL: baseURL)
 
-        // 5. 转换文本格式
+        // 5. 转换代码块
+        result = convertCodeBlocks(result)
+
+        // 6. 转换文本格式
         result = convertTextFormatting(result)
 
-        // 6. 转换列表
+        // 7. 转换列表
         result = convertLists(result)
-
-        // 7. 转换代码块
-        result = convertCodeBlocks(result)
 
         // 8. 转换引用块
         result = convertBlockquotes(result)
@@ -445,9 +445,11 @@ public struct HTMLToMarkdownConverter {
         var result = html
 
         // pre 标签
-        while let match = result.range(of: #"<pre[^>]*>(.*?)</pre>"#, options: [.regularExpression, .caseInsensitive]) {
+        let pattern = #"(?s)<pre[^>]*>(.*?)</pre>"#
+
+        while let match = result.range(of: pattern, options: [.regularExpression, .caseInsensitive]) {
             let codeStr = String(result[match])
-            let groups = codeStr.matchingStrings(for: #"<pre[^>]*>(.*?)</pre>"#)
+            let groups = codeStr.matchingStrings(for: pattern)
 
             if let groups = groups.first, groups.count >= 2 {
                 let code = groups[1]

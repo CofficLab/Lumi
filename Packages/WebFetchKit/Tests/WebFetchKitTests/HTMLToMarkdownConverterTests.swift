@@ -106,6 +106,20 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("let x = 1"))
     }
 
+    func testConvertsMultilinePreCodeBlocksBeforeInlineCode() {
+        let html = """
+        <pre><code>let x = 1
+        print(x)</code></pre>
+        <p>Use <code>inline()</code>.</p>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("```\nlet x = 1\nprint(x)\n```"))
+        XCTAssertTrue(markdown.contains("Use `inline()`."))
+        XCTAssertFalse(markdown.contains("`let x = 1"))
+    }
+
     func testTruncatesVeryLargeContent() {
         let html = "<p>" + String(repeating: "a", count: HTMLToMarkdownConverter.maxContentLength + 100) + "</p>"
 
