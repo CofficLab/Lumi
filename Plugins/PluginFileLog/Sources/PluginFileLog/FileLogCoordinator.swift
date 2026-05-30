@@ -59,6 +59,7 @@ final class FileLogCoordinator: @unchecked Sendable {
     private let maxFileSize: Int = 5 * 1024 * 1024  // 5 MB
     private let maxRetentionDays: Int = 7
     private let pollInterval: TimeInterval = 2.0
+    private let writeDelay: TimeInterval = 3.0
 
     // MARK: - State
 
@@ -71,6 +72,8 @@ final class FileLogCoordinator: @unchecked Sendable {
     private var lastPolledDate = Date.distantPast
     private var pollInFlight = false
     private var pollTimer: DispatchSourceTimer?
+    private var pendingRecords: [LogRecord] = []
+    private var seenRecordKeys: Set<String> = []
 
     // MARK: - Log Directory
 
@@ -92,7 +95,9 @@ final class FileLogCoordinator: @unchecked Sendable {
             guard !isRunning else { return }
             isRunning = true
             isFileLoggingDisabled = false
-            lastPolledDate = Date()
+            lastPolledDate = Date().addingTimeInterval(-writeDelay)
+            pendingRecords = []
+            seenRecordKeys = []
             purgeExpiredLogs()
             rotateLogFile()
             schedulePollTimer()
@@ -108,6 +113,7 @@ final class FileLogCoordinator: @unchecked Sendable {
             isRunning = false
             pollTimer?.cancel()
             pollTimer = nil
+            writePendingRecords(upTo: .distantFuture)
             flushCurrentFile()
             closeCurrentFile()
         }
@@ -126,7 +132,10 @@ final class FileLogCoordinator: @unchecked Sendable {
             return
         }
 
-        let filename = logDateFormatter.string(from: Date()) + ".log"
+        let filename = Self.logFilename(
+            for: Date(),
+            processID: ProcessInfo.processInfo.processIdentifier
+        )
         let filePath = logsDirectory.appendingPathComponent(filename)
 
         guard FileManager.default.createFile(atPath: filePath.path, contents: nil) else {
@@ -215,21 +224,22 @@ final class FileLogCoordinator: @unchecked Sendable {
         let subsystem = self.subsystem
 
         pollQueue.async { [weak self] in
-            let lines = Self.readLogLines(subsystem: subsystem, since: startDate)
+            let records = Self.readLogRecords(subsystem: subsystem, since: startDate)
 
             self?.queue.async { [weak self] in
                 guard let self else { return }
                 self.pollInFlight = false
                 guard self.isRunning, !self.isFileLoggingDisabled else { return }
-                guard let lines else { return }
+                guard let records else { return }
 
-                self.lastPolledDate = pollDate
-
-                for line in lines {
-                    self.writeData(Data(line.utf8))
+                self.lastPolledDate = pollDate.addingTimeInterval(-self.writeDelay)
+                for record in records where !self.seenRecordKeys.contains(record.key) {
+                    self.seenRecordKeys.insert(record.key)
+                    self.pendingRecords.append(record)
                 }
 
-                if !lines.isEmpty {
+                let wroteRecords = self.writePendingRecords(upTo: pollDate.addingTimeInterval(-self.writeDelay))
+                if wroteRecords {
                     self.flushCurrentFile()
                     if !self.isFileLoggingDisabled {
                         self.checkFileSize()
@@ -240,6 +250,10 @@ final class FileLogCoordinator: @unchecked Sendable {
     }
 
     private static func readLogLines(subsystem: String, since date: Date) -> [String]? {
+        readLogRecords(subsystem: subsystem, since: date).map(orderedLogLines)
+    }
+
+    private static func readLogRecords(subsystem: String, since date: Date) -> [LogRecord]? {
         let store: OSLogStore
         do {
             store = try OSLogStore(scope: .currentProcessIdentifier)
@@ -256,9 +270,15 @@ final class FileLogCoordinator: @unchecked Sendable {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
 
-        return entries.map { entry in
-            Self.formatEntry(entry, formatter: formatter)
+        let records = entries.map { entry in
+            LogRecord(
+                date: entry.date,
+                key: Self.recordKey(for: entry),
+                line: Self.formatEntry(entry, formatter: formatter)
+            )
         }
+
+        return records
     }
 
     private static func formatEntry(_ entry: OSLogEntry, formatter: DateFormatter) -> String {
@@ -270,6 +290,67 @@ final class FileLogCoordinator: @unchecked Sendable {
         return "[\(time)] \(entry.composedMessage)\n"
     }
 
+    struct LogRecord {
+        let date: Date
+        let key: String
+        let line: String
+
+        init(date: Date, key: String? = nil, line: String) {
+            self.date = date
+            self.key = key ?? "\(date.timeIntervalSinceReferenceDate)|\(line)"
+            self.line = line
+        }
+    }
+
+    static func orderedLogLines(_ records: [LogRecord]) -> [String] {
+        records
+            .enumerated()
+            .sorted { lhs, rhs in
+                if lhs.element.date == rhs.element.date {
+                    return lhs.offset < rhs.offset
+                }
+                return lhs.element.date < rhs.element.date
+            }
+            .map(\.element.line)
+    }
+
+    static func recordsReadyToWrite(_ records: [LogRecord], upTo cutoff: Date) -> (ready: [LogRecord], pending: [LogRecord]) {
+        let orderedRecords = records
+            .enumerated()
+            .sorted { lhs, rhs in
+                if lhs.element.date == rhs.element.date {
+                    return lhs.offset < rhs.offset
+                }
+                return lhs.element.date < rhs.element.date
+            }
+
+        var ready: [LogRecord] = []
+        var pending: [LogRecord] = []
+        ready.reserveCapacity(orderedRecords.count)
+        pending.reserveCapacity(orderedRecords.count)
+
+        for record in orderedRecords.map(\.element) {
+            if record.date <= cutoff {
+                ready.append(record)
+            } else {
+                pending.append(record)
+            }
+        }
+
+        return (ready, pending)
+    }
+
+    static func recordKey(for entry: OSLogEntry) -> String {
+        let category = (entry as? OSLogEntryLog)?.category ?? ""
+        return "\(entry.date.timeIntervalSinceReferenceDate)|\(category)|\(entry.composedMessage)"
+    }
+
+    static func logFilename(for date: Date, processID: Int32) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        return "\(formatter.string(from: date))_pid-\(processID).log"
+    }
+
     // MARK: - Write
 
     private func writeData(_ data: Data) {
@@ -279,6 +360,18 @@ final class FileLogCoordinator: @unchecked Sendable {
         } catch {
             handleFileWriteFailure(error)
         }
+    }
+
+    @discardableResult
+    private func writePendingRecords(upTo cutoff: Date) -> Bool {
+        let result = Self.recordsReadyToWrite(pendingRecords, upTo: cutoff)
+        pendingRecords = result.pending
+
+        for record in result.ready {
+            writeData(Data(record.line.utf8))
+        }
+
+        return !result.ready.isEmpty
     }
 
     private func flushCurrentFile() {
@@ -331,14 +424,6 @@ final class FileLogCoordinator: @unchecked Sendable {
             try? FileManager.default.removeItem(at: file)
         }
     }
-
-    // MARK: - Formatters
-
-    private lazy var logDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        return f
-    }()
 
 }
 
