@@ -116,6 +116,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private var diagnosticsCancellable: AnyCancellable?
     private var keybindingCancellable: AnyCancellable?
     private var settingsCancellable: AnyCancellable?
+    private var themeCancellable: AnyCancellable?
     private var projectContextCancellable: AnyCancellable?
     private var semanticProgressCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
@@ -1602,7 +1603,8 @@ public final class EditorState: ObservableObject, SuperLog {
 
     /// 监听全局主题变更通知（来自底部状态栏的主题切换）
     private func observeThemeChanges() {
-        configController.observeThemeChanges { [weak self] themeId, shouldRegisterThemeContributors in
+        themeCancellable?.cancel()
+        themeCancellable = configController.observeThemeChanges { [weak self] themeId, shouldRegisterThemeContributors in
             guard let self else { return }
             if shouldRegisterThemeContributors {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)

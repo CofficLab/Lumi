@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import Combine
 
 @MainActor
 final class EditorConfigController {
@@ -97,29 +98,26 @@ final class EditorConfigController {
 
     func observeThemeChanges(
         applyResolvedThemeID: @escaping @MainActor (_ themeId: String, _ shouldRegisterThemeContributors: Bool) -> Void
-    ) {
+    ) -> AnyCancellable {
         let notificationName = EditorHostEnvironment.current.notifications.themeDidChange
-        NotificationCenter.default.addObserver(
-            forName: notificationName,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let editorThemeId: String = {
-                if let id = notification.userInfo?["editorThemeId"] as? String {
-                    return id
+        return NotificationCenter.default
+            .publisher(for: notificationName)
+            .receive(on: RunLoop.main)
+            .sink { notification in
+                let editorThemeId: String = {
+                    if let id = notification.userInfo?["editorThemeId"] as? String {
+                        return id
+                    }
+                    if let themeId = notification.userInfo?["themeId"] as? String,
+                       let map = EditorSettingsLifecycle.editorThemeIDForAppThemeID {
+                        return map(themeId)
+                    }
+                    return "xcode-dark"
+                }()
+                Task { @MainActor in
+                    applyResolvedThemeID(editorThemeId, true)
                 }
-                if let themeId = notification.userInfo?["themeId"] as? String,
-                   let map = EditorSettingsLifecycle.editorThemeIDForAppThemeID {
-                    return map(themeId)
-                }
-                return "xcode-dark"
-            }()
-            Task { @MainActor in
-                applyResolvedThemeID(editorThemeId, true)
             }
-        }
-
-
     }
 
     private func persistScopedOverrides(_ scopedSnapshot: EditorScopedConfigSnapshot) {

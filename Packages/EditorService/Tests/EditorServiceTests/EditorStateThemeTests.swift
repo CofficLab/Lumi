@@ -23,6 +23,51 @@ private final class ThemeRegistrationGate {
 
 @MainActor
 final class EditorStateThemeTests: XCTestCase {
+    func testThemeObserverCancellationStopsCallbacks() async {
+        let previousEnvironment = EditorHostEnvironment.current
+        defer {
+            EditorHostEnvironment.configure(previousEnvironment)
+        }
+
+        let themeDidChange = Notification.Name("EditorStateThemeTests.cancellation.\(UUID().uuidString)")
+        let notifications = EditorHostEnvironment.Notifications(themeDidChange: themeDidChange)
+        EditorHostEnvironment.configure(EditorHostEnvironment(notifications: notifications))
+
+        let configController = EditorConfigController()
+        var receivedThemeIDs: [String] = []
+        let firstCallback = expectation(description: "first theme callback")
+        var cancelledCallback: XCTestExpectation?
+        let cancellable = configController.observeThemeChanges { themeId, _ in
+            receivedThemeIDs.append(themeId)
+            if receivedThemeIDs.count == 1 {
+                firstCallback.fulfill()
+            } else {
+                cancelledCallback?.fulfill()
+            }
+        }
+
+        NotificationCenter.default.post(
+            name: themeDidChange,
+            object: nil,
+            userInfo: ["editorThemeId": "first-theme"]
+        )
+        await fulfillment(of: [firstCallback], timeout: 1)
+        XCTAssertEqual(receivedThemeIDs, ["first-theme"])
+
+        let noCallbackAfterCancel = expectation(description: "cancelled observer callback")
+        noCallbackAfterCancel.isInverted = true
+        cancelledCallback = noCallbackAfterCancel
+        cancellable.cancel()
+
+        NotificationCenter.default.post(
+            name: themeDidChange,
+            object: nil,
+            userInfo: ["editorThemeId": "second-theme"]
+        )
+        await fulfillment(of: [noCallbackAfterCancel], timeout: 0.2)
+        XCTAssertEqual(receivedThemeIDs, ["first-theme"])
+    }
+
     func testSameThemeNotificationRefreshesThemeAfterContributorRegistration() async {
         let previousEnvironment = EditorHostEnvironment.current
         let previousRegisterEditorThemeContributors = EditorSettingsLifecycle.registerEditorThemeContributors
@@ -48,7 +93,9 @@ final class EditorStateThemeTests: XCTestCase {
             object: nil,
             userInfo: ["editorThemeId": "delayed-theme"]
         )
-        await Task.yield()
+        await waitUntil("theme id updates to delayed-theme") {
+            state.currentThemeId == "delayed-theme"
+        }
 
         XCTAssertEqual(state.currentThemeId, "delayed-theme")
         XCTAssertNotEqual(redComponent(state.currentTheme?.background), redComponent(.systemRed))
@@ -59,7 +106,9 @@ final class EditorStateThemeTests: XCTestCase {
             object: nil,
             userInfo: ["editorThemeId": "delayed-theme"]
         )
-        await Task.yield()
+        await waitUntil("theme refreshes after contributor registration") {
+            abs(redComponent(state.currentTheme?.background) - redComponent(.systemRed)) < 0.001
+        }
 
         XCTAssertEqual(state.currentThemeId, "delayed-theme")
         XCTAssertEqual(redComponent(state.currentTheme?.background), redComponent(.systemRed), accuracy: 0.001)
@@ -90,5 +139,23 @@ private func makeTheme(background: NSColor) -> EditorTheme {
 
 private func redComponent(_ color: NSColor?) -> CGFloat {
     color?.usingColorSpace(.deviceRGB)?.redComponent ?? -1
+}
+
+@MainActor
+private func waitUntil(
+    _ description: String,
+    timeout: TimeInterval = 1,
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    condition: @escaping @MainActor () -> Bool
+) async {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if condition() {
+            return
+        }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTFail("Timed out waiting for \(description)", file: file, line: line)
 }
 #endif
