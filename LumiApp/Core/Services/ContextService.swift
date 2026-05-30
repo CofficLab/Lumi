@@ -246,11 +246,21 @@ actor ContextService: Sendable, SuperLog {
     }
 
     private func relativize(file: URL, to root: URL) -> String {
-        let filePath = file.path
-        let rootPath = root.path
-        if filePath.hasPrefix(rootPath + "/") {
-            return String(filePath.dropFirst(rootPath.count + 1))
+        let filePath = normalizedPath(file.path)
+        let rootPath = normalizedPath(root.path)
+        guard !filePath.isEmpty, !rootPath.isEmpty else { return file.lastPathComponent }
+
+        let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+        if filePath.hasPrefix(rootPrefix) {
+            return String(filePath.dropFirst(rootPrefix.count))
         }
         return file.lastPathComponent
+    }
+
+    private func normalizedPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let standardized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+        return standardized != "/" && standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 }
