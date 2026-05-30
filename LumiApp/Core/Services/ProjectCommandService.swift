@@ -85,12 +85,7 @@ actor ProjectCommandLoader: SuperLog {
             // 只处理 .md 文件
             guard fileURL.pathExtension == "md" else { continue }
             
-            // 获取相对路径作为命令名
-            let relativePath = fileURL.path.replacingOccurrences(of: directory.path + "/", with: "")
-            let commandName = relativePath.replacingOccurrences(of: ".md", with: "")
-            
-            // 跳过目录分隔符，使用最后一级作为命令名
-            let finalCommandName = commandName.split(separator: "/").last.map(String.init) ?? commandName
+            let finalCommandName = Self.commandName(for: fileURL, in: directory)
             
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
                 if Self.verbose {
@@ -136,6 +131,31 @@ actor ProjectCommandLoader: SuperLog {
         commands.sort { $0.name < $1.name }
         
         return commands
+    }
+
+    static func commandName(for fileURL: URL, in directory: URL) -> String {
+        let relativePath = relativePath(for: fileURL, in: directory)
+        let fileName = (relativePath as NSString).lastPathComponent
+        let commandName = (fileName as NSString).deletingPathExtension
+        return commandName.isEmpty ? fileName : commandName
+    }
+
+    static func relativePath(for fileURL: URL, in directory: URL) -> String {
+        let filePath = normalizedPath(fileURL.path)
+        let directoryPath = normalizedPath(directory.path)
+
+        let directoryPrefix = directoryPath == "/" ? "/" : directoryPath + "/"
+        guard filePath.hasPrefix(directoryPrefix) else {
+            return fileURL.lastPathComponent
+        }
+
+        return String(filePath.dropFirst(directoryPrefix.count))
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let standardized = (path as NSString).standardizingPath
+        guard standardized.count > 1 else { return standardized }
+        return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
     
     private func sourceDescription(_ source: ProjectCommand.Source) -> String {
