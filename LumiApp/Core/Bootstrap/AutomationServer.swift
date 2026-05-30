@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Network
 import PluginEditorPreview
 import SwiftUI
@@ -211,18 +212,20 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     }
 
     private func start(preferredPorts ports: [UInt16]) {
-        guard let port = ports.first else {
+        guard let candidate = Self.firstBindablePort(in: ports) else {
             Self.logger.error("\(Self.t)Failed to create listener: no candidate ports available")
             return
         }
 
+        let port = candidate.port
+        let remainingPorts = candidate.remainingPorts
         self.port = port
 
         do {
             let parameters = NWParameters.tcp
             listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
         } catch {
-            startNextCandidate(afterFailureOn: port, remainingPorts: Array(ports.dropFirst()), error: error)
+            startNextCandidate(afterFailureOn: port, remainingPorts: remainingPorts, error: error)
             return
         }
 
@@ -235,7 +238,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
                 }
             case .failed(let error):
                 self?.listener = nil
-                self?.startNextCandidate(afterFailureOn: port, remainingPorts: Array(ports.dropFirst()), error: error)
+                self?.startNextCandidate(afterFailureOn: port, remainingPorts: remainingPorts, error: error)
             case .cancelled:
                 Self.logger.info("\(Self.t)Automation server stopped")
                 Task { @MainActor in
@@ -252,6 +255,37 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
 
         listener?.start(queue: .global(qos: .userInitiated))
+    }
+
+    static func firstBindablePort(
+        in ports: [UInt16],
+        isPortAvailable: ((UInt16) -> Bool)? = nil
+    ) -> (port: UInt16, remainingPorts: [UInt16])? {
+        let isPortAvailable = isPortAvailable ?? Self.isTCPPortAvailable
+        guard let index = ports.firstIndex(where: isPortAvailable) else { return nil }
+        return (ports[index], Array(ports.dropFirst(index + 1)))
+    }
+
+    static func isTCPPortAvailable(_ port: UInt16) -> Bool {
+        let socketDescriptor = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)
+        guard socketDescriptor >= 0 else { return false }
+        defer { close(socketDescriptor) }
+
+        var address = sockaddr_in6()
+        address.sin6_len = UInt8(MemoryLayout<sockaddr_in6>.size)
+        address.sin6_family = sa_family_t(AF_INET6)
+        address.sin6_port = port.bigEndian
+        address.sin6_addr = in6addr_any
+
+        return withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                bind(
+                    socketDescriptor,
+                    sockaddrPointer,
+                    socklen_t(MemoryLayout<sockaddr_in6>.size)
+                ) == 0
+            }
+        }
     }
 
     private func startNextCandidate(afterFailureOn port: UInt16, remainingPorts: [UInt16], error: Error) {

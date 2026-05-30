@@ -76,4 +76,28 @@ final class AutomationServerTests: XCTestCase {
 
         XCTAssertNil(AutomationServer.completeHTTPRequestData(from: Data(request.utf8)))
     }
+
+    func testFirstBindablePortSkipsUnavailableCandidates() {
+        let result = AutomationServer.firstBindablePort(in: [18765, 18766, 18767]) { port in
+            port == 18767
+        }
+
+        XCTAssertEqual(result?.port, 18767)
+        XCTAssertEqual(result?.remainingPorts, [])
+    }
+
+    func testFirstBindablePortKeepsRemainingFallbacks() {
+        let result = AutomationServer.firstBindablePort(in: [18765, 18766, 18767]) { port in
+            port == 18766
+        }
+
+        XCTAssertEqual(result?.port, 18766)
+        XCTAssertEqual(result?.remainingPorts, [18767])
+    }
+
+    func testFirstBindablePortReturnsNilWhenAllCandidatesUnavailable() {
+        let result = AutomationServer.firstBindablePort(in: [18765, 18766]) { _ in false }
+
+        XCTAssertNil(result)
+    }
 }
