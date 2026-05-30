@@ -42,35 +42,35 @@ declare -a CHECK_PATTERNS=(
 
 count_hits() {
     local pattern="$1"
-    rg -n "$pattern" "$TARGET_DIR" \
+    { rg -n "$pattern" "$TARGET_DIR" \
         --glob '*.swift' \
         --glob '!**/Marketing/**' \
         --glob '!**/ThirdParty/**' \
         --glob '!**/Plugins/Theme*Plugin/*Theme.swift' \
         --glob '!*.generated.swift' \
-        2>/dev/null | wc -l | tr -d ' '
+        2>/dev/null || true; } | wc -l | tr -d ' '
 }
 
 count_files() {
     local pattern="$1"
-    rg -l "$pattern" "$TARGET_DIR" \
+    { rg -l "$pattern" "$TARGET_DIR" \
         --glob '*.swift' \
         --glob '!**/Marketing/**' \
         --glob '!**/ThirdParty/**' \
         --glob '!**/Plugins/Theme*Plugin/*Theme.swift' \
         --glob '!*.generated.swift' \
-        2>/dev/null | wc -l | tr -d ' '
+        2>/dev/null || true; } | wc -l | tr -d ' '
 }
 
 top_files() {
     local pattern="$1"
-    rg -n "$pattern" "$TARGET_DIR" \
+    { rg -n "$pattern" "$TARGET_DIR" \
         --glob '*.swift' \
         --glob '!**/Marketing/**' \
         --glob '!**/ThirdParty/**' \
         --glob '!**/Plugins/Theme*Plugin/*Theme.swift' \
         --glob '!*.generated.swift' \
-        2>/dev/null \
+        2>/dev/null || true; } \
         | cut -d: -f1 \
         | sort \
         | uniq -c \
@@ -97,13 +97,13 @@ category_for_path() {
 category_summary() {
     local pattern="$1"
 
-    rg -n "$pattern" "$TARGET_DIR" \
+    { rg -n "$pattern" "$TARGET_DIR" \
         --glob '*.swift' \
         --glob '!**/Marketing/**' \
         --glob '!**/ThirdParty/**' \
         --glob '!**/Plugins/Theme*Plugin/*Theme.swift' \
         --glob '!*.generated.swift' \
-        2>/dev/null \
+        2>/dev/null || true; } \
         | cut -d: -f1 \
         | while IFS= read -r path; do category_for_path "$path"; done \
         | sort \
