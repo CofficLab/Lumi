@@ -86,18 +86,17 @@ public struct MessageTimelineRow: View {
 
     @ViewBuilder
     private var metadataRow: some View {
-        let hasModelInfo = item.providerId != nil && item.modelName != nil
         let hasTokenInfo = item.inputTokens != nil || item.outputTokens != nil
         let totalTokens = (item.inputTokens ?? 0) + (item.outputTokens ?? 0)
 
-        if hasModelInfo || hasTokenInfo {
+        if item.modelDisplayText != nil || hasTokenInfo {
             HStack(spacing: 12) {
                 // 模型信息
-                if hasModelInfo {
+                if let modelDisplayText = item.modelDisplayText {
                     HStack(spacing: 4) {
                         Image(systemName: "cpu")
                             .font(.system(size: 9))
-                        Text("\(item.providerId!) / \(item.modelName!)")
+                        Text(modelDisplayText)
                             .font(.system(size: 10))
                     }
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
