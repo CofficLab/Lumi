@@ -38,6 +38,18 @@ public struct InputView: View {
         .onAppear {
             isFocused = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addToChat"))) { notification in
+            guard let value = notification.userInfo?["text"] as? String,
+                  !value.isEmpty else {
+                return
+            }
+            if text.isEmpty {
+                text = value
+            } else {
+                text += "\n\n\(value)"
+            }
+            isFocused = true
+        }
     }
 
     private var canSubmit: Bool {

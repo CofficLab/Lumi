@@ -66,7 +66,7 @@ public final class EditorChatIntegrationCommandContributor: SuperEditorCommandCo
         \(selectedText)
         ```
         """
-        NotificationCenter.postAddToChat(text: payload, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
+        EditorChatIntegrationRuntime.postAddToChat(payload)
     }
 
     private static func performAddLocationToChat(textView: TextView, state: EditorState) {
@@ -78,7 +78,7 @@ public final class EditorChatIntegrationCommandContributor: SuperEditorCommandCo
             length: min(max(selection.length, 0), max(0, fullText.length - min(max(selection.location, 0), fullText.length)))
         )
         let locationText = selectionLocationText(range: safeSelection, fullText: fullText, state: state)
-        NotificationCenter.postAddToChat(text: locationText, windowId: RootContainer.shared.windowManagerVM.activeWindowId)
+        EditorChatIntegrationRuntime.postAddToChat(locationText)
     }
 
     // MARK: - Helpers
@@ -107,5 +107,17 @@ public final class EditorChatIntegrationCommandContributor: SuperEditorCommandCo
             return text.distance(from: text.index(after: lastNL), to: text.endIndex) + 1
         }
         return text.count + 1
+    }
+}
+
+public enum EditorChatIntegrationRuntime {
+    public static let addToChatNotificationName = Notification.Name("addToChat")
+
+    public static func postAddToChat(_ text: String) {
+        NotificationCenter.default.post(
+            name: addToChatNotificationName,
+            object: nil,
+            userInfo: ["text": text]
+        )
     }
 }

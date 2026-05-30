@@ -27,16 +27,16 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources/PluginEditorChatIntegration",
-            exclude: [
-                "EditorChatIntegrationCommandContributor.swift",
-            ],
             resources: [
                 .process("Resources")
             ]
         ),
         .testTarget(
             name: "PluginEditorChatIntegrationTests",
-            dependencies: ["PluginEditorChatIntegration"],
+            dependencies: [
+                "PluginEditorChatIntegration",
+                .product(name: "EditorService", package: "EditorService"),
+            ],
             path: "Tests/PluginEditorChatIntegrationTests"
         )
     ]
