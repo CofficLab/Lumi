@@ -100,7 +100,7 @@ public class TextSelectionManager: ObservableObject, SuperLog {
         
         // Get focused element
         let result = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-        guard result == .success, let element = focusedElement as! AXUIElement? else { return nil }
+        guard result == .success, let element = Self.axElement(from: focusedElement) else { return nil }
         
         // Get selected text
         var selectedTextValue: AnyObject?
@@ -117,5 +117,10 @@ public class TextSelectionManager: ObservableObject, SuperLog {
         let convertedPoint = CGPoint(x: mouseLoc.x, y: screenHeight - mouseLoc.y)
         
         return (text, CGRect(origin: convertedPoint, size: .zero))
+    }
+
+    nonisolated static func axElement(from value: CFTypeRef?) -> AXUIElement? {
+        guard let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        return (value as! AXUIElement)
     }
 }
