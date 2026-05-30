@@ -39,7 +39,7 @@ struct CSSModulesTypeGenerator: Sendable {
     /// - Parameter styleContent: style 区块的内容
     /// - Returns: 类名列表
     static func parseClassNames(from styleContent: String) -> [CSSClassEntry] {
-        var entries: [CSSClassEntry] = [:] as! [CSSClassEntry]
+        var entries: [CSSClassEntry] = []
         let lines = styleContent.components(separatedBy: "\n")
 
         var currentClasses: [String] = []
@@ -65,6 +65,19 @@ struct CSSModulesTypeGenerator: Sendable {
                     startLine = index
                     inBlock = trimmed.contains("{")
                     braceDepth = countBraces(in: trimmed)
+                    collectProperties(from: trimmed, into: &currentProperties)
+                    if inBlock && braceDepth <= 0 {
+                        appendEntries(
+                            classes: currentClasses,
+                            properties: currentProperties,
+                            lineNumber: startLine,
+                            to: &entries
+                        )
+                        inBlock = false
+                        currentClasses = []
+                        currentProperties = []
+                        braceDepth = 0
+                    }
                     continue
                 }
             }
@@ -73,24 +86,16 @@ struct CSSModulesTypeGenerator: Sendable {
                 braceDepth += countBraces(in: trimmed)
 
                 // 收集属性
-                let propLine = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "{};"))
-                if !propLine.isEmpty && propLine.contains(":") {
-                    currentProperties.append(propLine.trimmingCharacters(in: CharacterSet(charactersIn: "; ")))
-                }
+                collectProperties(from: trimmed, into: &currentProperties)
 
                 if braceDepth <= 0 {
                     // 块结束
-                    for cls in currentClasses {
-                        let entry = CSSClassEntry(
-                            name: cls,
-                            properties: currentProperties,
-                            lineNumber: startLine
-                        )
-                        // 避免重复
-                        if !entries.contains(where: { $0.name == cls }) {
-                            entries.append(entry)
-                        }
-                    }
+                    appendEntries(
+                        classes: currentClasses,
+                        properties: currentProperties,
+                        lineNumber: startLine,
+                        to: &entries
+                    )
                     inBlock = false
                     currentClasses = []
                     currentProperties = []
@@ -200,6 +205,51 @@ struct CSSModulesTypeGenerator: Sendable {
         }
 
         return names
+    }
+
+    private static func collectProperties(from line: String, into properties: inout [String]) {
+        let body: String
+        if let openBrace = line.firstIndex(of: "{") {
+            let afterOpenBrace = line.index(after: openBrace)
+            if let closeBrace = line[afterOpenBrace...].firstIndex(of: "}") {
+                body = String(line[afterOpenBrace..<closeBrace])
+            } else {
+                body = String(line[afterOpenBrace...])
+            }
+        } else if let closeBrace = line.firstIndex(of: "}") {
+            body = String(line[..<closeBrace])
+        } else {
+            body = line
+        }
+
+        for declaration in body.split(separator: ";") {
+            let property = declaration
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "{}"))
+
+            if property.contains(":") {
+                properties.append(property)
+            }
+        }
+    }
+
+    private static func appendEntries(
+        classes: [String],
+        properties: [String],
+        lineNumber: Int,
+        to entries: inout [CSSClassEntry]
+    ) {
+        for cls in classes {
+            if !entries.contains(where: { $0.name == cls }) {
+                entries.append(
+                    CSSClassEntry(
+                        name: cls,
+                        properties: properties,
+                        lineNumber: lineNumber
+                    )
+                )
+            }
+        }
     }
 
     /// 计算行中的花括号深度变化
