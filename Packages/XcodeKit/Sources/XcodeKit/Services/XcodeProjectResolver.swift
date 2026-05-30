@@ -60,7 +60,7 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         }
 
         let schemes = (listResult.workspace?.schemes ?? []) + (listResult.project?.schemes ?? [])
-        let uniqueSchemes = Array(Set(schemes))
+        let uniqueSchemes = Self.uniquePreservingOrder(schemes)
 
         // 解析 targets。pbxproj 解析和目录枚举可能很重，放到后台执行。
         let targetNames = listResult.project?.targets ?? []
@@ -129,7 +129,7 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         }
 
         let schemeNames = (listResult.workspace?.schemes ?? []) + (listResult.project?.schemes ?? [])
-        let uniqueSchemes = Array(Set(schemeNames))
+        let uniqueSchemes = Self.uniquePreservingOrder(schemeNames)
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
 
@@ -240,6 +240,15 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             }
             result[item.key] = files
         }
+    }
+
+    static func uniquePreservingOrder(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in values where seen.insert(value).inserted {
+            result.append(value)
+        }
+        return result
     }
 
     private static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
