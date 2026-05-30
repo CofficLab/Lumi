@@ -11,6 +11,7 @@ struct StatusBar: View {
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationTurnServices: AppConversationTurnVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
 
     /// 当前活跃的供应商 ID（优先对话级偏好，回退到全局选择）
     private var activeProviderId: String? {
@@ -20,6 +21,9 @@ struct StatusBar: View {
     var body: some View {
         let activeIcon = layoutVM.activeViewContainerIcon
         let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+        let historyService = LiveHistoryQueryService(
+            chatHistoryService: chatHistoryVM.chatHistoryService
+        )
         let context = PluginContext(
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
@@ -29,7 +33,8 @@ struct StatusBar: View {
             currentProjectPath: projectVM.currentProjectPath,
             languagePreference: projectVM.languagePreference,
             availableTools: conversationTurnServices.toolService.allTools,
-            toolLanguagePreference: conversationTurnServices.toolService.languagePreference
+            toolLanguagePreference: conversationTurnServices.toolService.languagePreference,
+            historyService: historyService
         )
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)
