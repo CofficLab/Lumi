@@ -17,8 +17,8 @@ import os
 ///
 /// ## 插件发现机制
 ///
-/// AppPluginVM 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
-/// 且以 "Plugin" 结尾的类，自动创建实例并注册。
+/// AppPluginVM 优先使用构建阶段生成的插件注册表，避免启动时扫描整个
+/// Objective-C runtime。兼容扫描仅在注册表为空或显式启用调试开关时运行。
 /// 插件按 `order` 属性排序，确保按正确顺序加载。
 ///
 /// ## 线程安全
@@ -249,28 +249,31 @@ final class AppPluginVM: ObservableObject, SuperLog {
             }
         }
 
-        for plugin in GeneratedPluginRegistry.plugins {
+        let generatedPlugins = GeneratedPluginRegistry.plugins
+        for plugin in generatedPlugins {
             appendGeneratedOrRuntimePlugin(
                 plugin,
                 className: String(describing: type(of: plugin))
             )
         }
 
-        var count: UInt32 = 0
-        if let classList = objc_copyClassList(&count) {
-            defer { free(UnsafeMutableRawPointer(classList)) }
+        if generatedPlugins.isEmpty || ProcessInfo.processInfo.environment["LUMI_ENABLE_RUNTIME_PLUGIN_SCAN"] == "1" {
+            var count: UInt32 = 0
+            if let classList = objc_copyClassList(&count) {
+                defer { free(UnsafeMutableRawPointer(classList)) }
 
-            let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-            if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类作为兼容兜底") }
+                let classes = UnsafeBufferPointer(start: classList, count: Int(count))
+                if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类作为兼容兜底") }
 
-            for i in 0 ..< classes.count {
-                let cls: AnyClass = classes[i]
-                let className = NSStringFromClass(cls)
+                for i in 0 ..< classes.count {
+                    let cls: AnyClass = classes[i]
+                    let className = NSStringFromClass(cls)
 
-                guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
-                guard let pluginClass = cls as? any SuperPlugin.Type else { continue }
+                    guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
+                    guard let pluginClass = cls as? any SuperPlugin.Type else { continue }
 
-                appendGeneratedOrRuntimePlugin(pluginClass.shared, className: className)
+                    appendGeneratedOrRuntimePlugin(pluginClass.shared, className: className)
+                }
             }
         }
 
