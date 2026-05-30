@@ -120,6 +120,23 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertFalse(markdown.contains("`let x = 1"))
     }
 
+    func testConvertsMultilineBlockquotes() {
+        let html = """
+        <blockquote>
+        <p>First quoted line</p>
+        <p>Second quoted line</p>
+        </blockquote>
+        <p>Outside quote</p>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(html)
+
+        XCTAssertTrue(markdown.contains("> First quoted line"))
+        XCTAssertTrue(markdown.contains("> Second quoted line"))
+        XCTAssertTrue(markdown.contains("Outside quote"))
+        XCTAssertFalse(markdown.contains("<blockquote>"))
+    }
+
     func testTruncatesVeryLargeContent() {
         let html = "<p>" + String(repeating: "a", count: HTMLToMarkdownConverter.maxContentLength + 100) + "</p>"
 

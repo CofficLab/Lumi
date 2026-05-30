@@ -469,10 +469,11 @@ public struct HTMLToMarkdownConverter {
 
     private static func convertBlockquotes(_ html: String) -> String {
         var result = html
+        let pattern = #"(?s)<blockquote[^>]*>(.*?)</blockquote>"#
 
-        while let match = result.range(of: #"<blockquote[^>]*>(.*?)</blockquote>"#, options: [.regularExpression, .caseInsensitive]) {
+        while let match = result.range(of: pattern, options: [.regularExpression, .caseInsensitive]) {
             let quoteStr = String(result[match])
-            let groups = quoteStr.matchingStrings(for: #"<blockquote[^>]*>(.*?)</blockquote>"#)
+            let groups = quoteStr.matchingStrings(for: pattern)
 
             if let groups = groups.first, groups.count >= 2 {
                 let content = groups[1]
