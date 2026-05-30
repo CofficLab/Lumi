@@ -127,7 +127,11 @@ struct ProjectPreviewIndexServiceTests {
     @Test("1.6 ignores non-swift and out-of-root refresh")
     func ignoresInvalidRefreshTargets() async throws {
         let root = try TemporaryProjectFixtures.makeTemporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: root) }
+        let siblingRoot = URL(fileURLWithPath: root.path + "2", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: siblingRoot)
+        }
         let fileURL = root.appendingPathComponent("Sources/App/Valid.swift")
         try TemporaryProjectFixtures.writeSwiftFileWithPreview(at: fileURL, previewLabel: "Valid")
 
@@ -137,6 +141,8 @@ struct ProjectPreviewIndexServiceTests {
         let outsideURL = FileManager.default.temporaryDirectory.appendingPathComponent("Outside.swift")
         try TemporaryProjectFixtures.writeSwiftFileWithPreview(at: outsideURL, previewLabel: "Outside")
         defer { try? FileManager.default.removeItem(at: outsideURL) }
+        let siblingURL = siblingRoot.appendingPathComponent("Sources/App/Sibling.swift")
+        try TemporaryProjectFixtures.writeSwiftFileWithPreview(at: siblingURL, previewLabel: "Sibling")
 
         service.refreshCurrentFile(
             fileURL: outsideURL,
@@ -148,8 +154,17 @@ struct ProjectPreviewIndexServiceTests {
             sourceText: "# Preview",
             previews: []
         )
+        service.refreshCurrentFile(
+            fileURL: siblingURL,
+            sourceText: try String(contentsOf: siblingURL, encoding: .utf8),
+            previews: LumiPreviewFacade.PreviewScanner().scan(
+                fileURL: siblingURL,
+                sourceText: try String(contentsOf: siblingURL, encoding: .utf8)
+            )
+        )
 
         #expect(service.cachedPreviews(for: outsideURL) == nil)
+        #expect(service.cachedPreviews(for: siblingURL) == nil)
     }
 
     @Test("1.7 bestPrewarmCandidate prefers current file")

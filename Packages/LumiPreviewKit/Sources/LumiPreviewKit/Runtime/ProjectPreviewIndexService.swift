@@ -102,9 +102,7 @@ extension LumiPreviewFacade {
       previews: [LumiPreviewFacade.PreviewDiscovery]
     ) {
       guard fileURL.pathExtension == "swift" else { return }
-      guard let rootURL,
-        fileURL.standardizedFileURL.path.hasPrefix(rootURL.standardizedFileURL.path)
-      else { return }
+      guard let rootURL, Self.isFile(fileURL, containedIn: rootURL) else { return }
 
       let metadata = Self.metadata(for: fileURL)
       indexedSwiftFilePaths.insert(fileURL.standardizedFileURL.path)
@@ -280,10 +278,29 @@ extension LumiPreviewFacade {
     nonisolated private static func resolvedRootURL(projectRootPath: String?, currentFileURL: URL?)
       -> URL?
     {
-      if let projectRootPath, !projectRootPath.isEmpty {
-        return URL(fileURLWithPath: projectRootPath, isDirectory: true)
+      if let projectRootPath {
+        let trimmedPath = projectRootPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedPath.isEmpty {
+          return URL(fileURLWithPath: trimmedPath, isDirectory: true)
+        }
       }
       return currentFileURL?.deletingLastPathComponent()
+    }
+
+    nonisolated private static func isFile(_ fileURL: URL, containedIn rootURL: URL) -> Bool {
+      let filePath = normalizedPath(fileURL.standardizedFileURL.path)
+      let rootPath = normalizedPath(rootURL.standardizedFileURL.path)
+      guard !filePath.isEmpty, !rootPath.isEmpty else { return false }
+      if filePath == rootPath { return true }
+      let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+      return filePath.hasPrefix(rootPrefix)
+    }
+
+    nonisolated private static func normalizedPath(_ path: String) -> String {
+      let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmed.isEmpty else { return "" }
+      let standardized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+      return standardized != "/" && standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 
     private struct ScanResult: Sendable {
