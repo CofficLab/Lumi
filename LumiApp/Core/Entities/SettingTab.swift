@@ -22,6 +22,7 @@ enum SettingTab: String, CaseIterable, Hashable {
     }
 
     /// 对应的设置视图
+    @MainActor
     @ViewBuilder
     var destinationView: some View {
         switch self {
