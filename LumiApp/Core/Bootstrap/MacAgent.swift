@@ -51,7 +51,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// `CoreWindowIDStore` 与 `WindowPersistencePlugin` 控制。
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
+        Self.disableSystemWindowRestoration()
     }
 
     /// 应用启动完成
@@ -287,6 +287,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             defer: false
         )
         window.title = "Lumi"
+        window.isRestorable = false
         window.delegate = self
         window.contentViewController = NSHostingController(rootView: MainWindowSceneContent(route: route))
         mainWindows.append(window)
@@ -344,6 +345,36 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 移除通知观察者
         // 防止在应用终止后仍收到通知
         NotificationCenter.default.removeObserver(self)
+    }
+
+    static func disableSystemWindowRestoration(
+        defaults: UserDefaults = .standard,
+        fileManager: FileManager = .default,
+        bundleIdentifier: String? = Bundle.main.bundleIdentifier,
+        libraryDirectory: URL? = nil
+    ) {
+        defaults.set(false, forKey: "NSQuitAlwaysKeepsWindows")
+        defaults.set(true, forKey: "ApplePersistenceIgnoreState")
+
+        guard let bundleIdentifier,
+              let savedStateURL = savedApplicationStateURL(
+                bundleIdentifier: bundleIdentifier,
+                libraryDirectory: libraryDirectory
+              ) else { return }
+
+        try? fileManager.removeItem(at: savedStateURL)
+    }
+
+    static func savedApplicationStateURL(
+        bundleIdentifier: String,
+        libraryDirectory: URL? = nil
+    ) -> URL? {
+        let libraryURL = libraryDirectory
+            ?? FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+
+        return libraryURL?
+            .appendingPathComponent("Saved Application State", isDirectory: true)
+            .appendingPathComponent("\(bundleIdentifier).savedState", isDirectory: true)
     }
 }
 

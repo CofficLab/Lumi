@@ -34,5 +34,6 @@ extension NSWindow {
         titlebarAppearsTransparent = true
         toolbar = nil
         styleMask.insert(.fullSizeContentView)
+        isRestorable = false
     }
 }
