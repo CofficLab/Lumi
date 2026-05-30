@@ -266,7 +266,7 @@ public extension LumiPreviewFacade {
         ///   因为子进程可能用同一个 surface 写了新像素而 ID 没变。
         public func attach(surfaceID: UInt32) {
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
-                Self.logger.error("\(self.t)❌ attach failed: IOSurfaceLookup nil for surfaceID=\(surfaceID)")
+                Self.logger.warning("\(self.t)attach skipped: stale or unavailable IOSurface for surfaceID=\(surfaceID)")
                 return
             }
 
