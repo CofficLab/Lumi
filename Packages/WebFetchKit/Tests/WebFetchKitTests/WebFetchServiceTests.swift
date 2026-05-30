@@ -99,6 +99,21 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertEqual(result, "Install the package with SwiftPM.")
     }
 
+    func testPromptExtractionMatchesChineseKeywordsSeparatedByChinesePunctuation() {
+        let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
+        let markdown = """
+        概览说明。
+
+        安装插件后打开设置页面。
+
+        运行时配置位于偏好设置。
+        """
+
+        let result = service.extractWithPrompt(markdown: markdown, prompt: "安装，配置")
+
+        XCTAssertEqual(result, "安装插件后打开设置页面。\n\n运行时配置位于偏好设置。")
+    }
+
     func testBinaryContentIsSavedToConfiguredDirectory() throws {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("WebFetchServiceTests-\(UUID().uuidString)", isDirectory: true)

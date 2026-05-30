@@ -166,8 +166,10 @@ public struct WebFetchService: Sendable {
 
     public func extractWithPrompt(markdown: String, prompt: String) -> String {
         let keywords = prompt.lowercased()
-            .components(separatedBy: CharacterSet(charactersIn: " ,.?!"))
-            .filter { $0.count > 2 }
+            .components(separatedBy: .webFetchPromptSeparators)
+            .filter { keyword in
+                keyword.containsCJKCharacter ? keyword.count >= 2 : keyword.count > 2
+            }
 
         let paragraphs = markdown.components(separatedBy: "\n\n")
         var relevantParagraphs: [String] = []
@@ -415,5 +417,30 @@ Note: This is an image file. The file has been saved to the path above.
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return formatter.string(from: date)
+    }
+}
+
+private extension CharacterSet {
+    static let webFetchPromptSeparators = CharacterSet.whitespacesAndNewlines
+        .union(.punctuationCharacters)
+        .union(.symbols)
+}
+
+private extension String {
+    var containsCJKCharacter: Bool {
+        unicodeScalars.contains { scalar in
+            switch scalar.value {
+            case 0x3400...0x4DBF,
+                 0x4E00...0x9FFF,
+                 0xF900...0xFAFF,
+                 0x20000...0x2A6DF,
+                 0x2A700...0x2B73F,
+                 0x2B740...0x2B81F,
+                 0x2B820...0x2CEAF:
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
