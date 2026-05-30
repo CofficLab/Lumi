@@ -84,7 +84,7 @@ public struct XcodeSchemeSpec: Sendable {
 ///             deploymentTarget: "17.0",
 ///             sources: ["Sources/Cisum"],
 ///             dependencies: [
-///                 .local(path: "Packages/PluginAudioControl", product: "PluginAudioControl")
+///                 .local(path: "Plugins/PluginAudioControl", product: "PluginAudioControl")
 ///             ],
 ///             settings: [
 ///                 .bundleIdentifier("com.cofficlab.Cisum"),

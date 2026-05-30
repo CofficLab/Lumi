@@ -209,7 +209,7 @@ Packages/
   PluginWebSearch/
 ```
 
-`LumiApp/Plugins` 不应继续保存插件资源、视图、服务、工具、中间件或业务模型；这些内容应随插件迁入对应的 `Packages/Plugin*`。可以用下面的脚本检查当前边界：
+`LumiApp/Plugins` 不应继续保存插件资源、视图、服务、工具、中间件或业务模型；这些内容应随插件迁入对应的 `Plugins/Plugin*`。可以用下面的脚本检查当前边界：
 
 ```bash
 scripts/check-plugin-package-boundaries.sh --allow-legacy
@@ -370,7 +370,7 @@ App target 添加插件 Package 依赖，并在注册文件中引用插件实例
 
 ## 试点：PluginWebFetch
 
-已新增 `Packages/PluginWebFetch` 作为第一批 package 化试点。Package、product 和 target 使用 `Plugin` 前缀；插件类型仍保留 `WebFetchPlugin`，用于表达插件在运行时的业务身份。
+已新增 `Plugins/PluginWebFetch` 作为第一批 package 化试点。Package、product 和 target 使用 `Plugin` 前缀；插件类型仍保留 `WebFetchPlugin`，用于表达插件在运行时的业务身份。
 
 选择 `PluginWebFetch` 的原因：
 
@@ -382,7 +382,7 @@ App target 添加插件 Package 依赖，并在注册文件中引用插件实例
 当前结构：
 
 ```text
-Packages/PluginWebFetch
+Plugins/PluginWebFetch
   Package.swift
   Sources/PluginWebFetch
     Resources/WebFetch.xcstrings
@@ -395,7 +395,7 @@ Packages/PluginWebFetch
 当前验证结果：
 
 ```bash
-cd Packages/PluginWebFetch
+cd Plugins/PluginWebFetch
 swift test
 ```
 
@@ -447,7 +447,7 @@ LumiPluginLLM
 
 下一步如果要把试点接入 App，需要：
 
-1. 将 App target 添加对 `Packages/PluginWebFetch` library product 的依赖
+1. 将 App target 添加对 `Plugins/PluginWebFetch` library product 的依赖
 2. 在 App 插件注册处引用 package 中的 `WebFetchPlugin.shared`
 3. 移除或停用 `LumiApp/Plugins/WebFetchPlugin` 中的旧实现，避免重复插件注册
 4. 跑 App 构建和工具聚合测试，确认 `web_fetch` 仍能被 Agent 发现

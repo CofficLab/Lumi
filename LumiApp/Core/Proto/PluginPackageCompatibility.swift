@@ -1,4 +1,6 @@
 import LumiCoreKit
+import EditorService
+import SwiftUI
 
 extension PluginCategory {
     init(package value: LumiCoreKit.PluginCategory) {
@@ -6,8 +8,30 @@ extension PluginCategory {
     }
 }
 
+extension RailTab {
+    init(package item: LumiCoreKit.RailTab) {
+        self.init(
+            id: item.id,
+            title: item.title,
+            systemImage: item.systemImage,
+            priority: item.priority
+        )
+    }
+}
+
 extension SidebarToolbarItem {
     init(package item: LumiCoreKit.SidebarToolbarItem) {
+        self.init(
+            id: item.id,
+            title: item.title,
+            systemImage: item.systemImage,
+            priority: item.priority
+        )
+    }
+}
+
+extension BottomPanelTab {
+    init(package item: LumiCoreKit.BottomPanelTab) {
         self.init(
             id: item.id,
             title: item.title,
@@ -35,5 +59,27 @@ extension ToolContext {
         LumiCoreKit.ToolContext(
             languagePreference: languagePreference
         )
+    }
+}
+
+extension EditorExtensionRegistry: LumiCoreKit.EditorExtensionRegistryProtocol {}
+
+struct PackageMessageRendererAdapter: SuperMessageRenderer {
+    private let renderer: any LumiCoreKit.SuperMessageRenderer
+
+    init(_ renderer: any LumiCoreKit.SuperMessageRenderer) {
+        self.renderer = renderer
+    }
+
+    static var id: String { "package-message-renderer" }
+    static var priority: Int { 0 }
+
+    func canRender(message: ChatMessage) -> Bool {
+        renderer.canRender(message: message)
+    }
+
+    @MainActor
+    func render(message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView {
+        renderer.render(message: message, showRawMessage: showRawMessage)
     }
 }

@@ -1,0 +1,42 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginThemeRiver",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "PluginThemeRiver",
+            targets: ["PluginThemeRiver"]
+        )
+    ],
+    dependencies: [
+        .package(path: "../../Packages/EditorService"),
+        .package(path: "../../Packages/LumiCodeEditSourceEditor"),
+        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
+    ],
+    targets: [
+        .target(
+            name: "PluginThemeRiver",
+            dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
+            path: "Sources/PluginThemeRiver",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "PluginThemeRiverTests",
+            dependencies: ["PluginThemeRiver"],
+            path: "Tests/PluginThemeRiverTests"
+        )
+    ]
+)

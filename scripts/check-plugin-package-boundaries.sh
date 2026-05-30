@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGINS_DIR="$ROOT_DIR/LumiApp/Plugins"
-PACKAGES_DIR="$ROOT_DIR/Packages"
+PLUGIN_PACKAGES_DIR="$ROOT_DIR/Plugins"
 
 mode="${1:-strict}"
 if [[ "$mode" != "strict" && "$mode" != "--allow-legacy" ]]; then
@@ -17,7 +17,7 @@ echo "Checking LumiApp/Plugins package boundaries..."
 
 while IFS= read -r -d '' dir; do
   name="$(basename "$dir")"
-  if [[ -d "$PACKAGES_DIR/Plugin${name%Plugin}" || -d "$PACKAGES_DIR/${name}" ]]; then
+  if [[ -d "$PLUGIN_PACKAGES_DIR/Plugin${name%Plugin}" || -d "$PLUGIN_PACKAGES_DIR/${name}" ]]; then
     echo "  packaged adapter still uses a directory: LumiApp/Plugins/$name"
   else
     echo "  legacy plugin implementation directory: LumiApp/Plugins/$name"

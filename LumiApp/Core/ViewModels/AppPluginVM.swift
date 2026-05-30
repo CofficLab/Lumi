@@ -214,63 +214,66 @@ final class AppPluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
-    /// 自动发现并注册所有插件
+    /// 自动发现并注册所有插件。
     ///
-    /// 使用 Objective-C Runtime 扫描所有符合插件命名规范的类：
-    /// - 类名以 "Lumi." 开头
-    /// - 类名以 "Plugin" 结尾
-    ///
-    /// 扫描过程：
-    /// 1. 获取所有类列表
-    /// 2. 筛选符合条件的类
-    /// 3. 创建 Actor 实例
-    /// 4. 按 order 排序
-    /// 5. 调用生命周期钩子
-    ///
-    /// 扫描完成后会发送 `PluginsDidLoad` 通知。
+    /// 主注册表由 `scripts/generate-plugin-registry.sh` 在构建时生成，
+    /// 避免依赖 Objective-C runtime 枚举 Swift Package 中的 actor 类型。
+    /// runtime 扫描仅作为兼容兜底，用于捕获仍直接声明在 app target 中、
+    /// 但尚未进入生成表的 `Lumi.*Plugin` 类型。
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
         invalidatePluginAggregates()
         enabledPluginIDs.removeAll()
 
-        var count: UInt32 = 0
-        guard let classList = objc_copyClassList(&count) else { return }
-        defer { free(UnsafeMutableRawPointer(classList)) }
-        
-        let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        // 临时存储，包含 (实例，类名，顺序)
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
-        var pluginClassNames: [String] = []
-        
-        if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类") }
+        var discoveredPluginIDs = Set<String>()
 
-        for i in 0 ..< classes.count {
-            let cls: AnyClass = classes[i]
-            let className = NSStringFromClass(cls)
-            
-            // 筛选条件：Lumi 命名空间且以 Plugin 结尾的类
-            guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
-            
-            guard let pluginClass = cls as? any SuperPlugin.Type else {
-                continue
-            }
-
-            // 统一通过插件类型暴露的共享实例拿到 Actor，避免通过 ObjC Runtime
-            // 绕过 actor 初始化语义，也避免给 actor 引入额外的同步初始化要求。
-            let instance = pluginClass.shared
-            
-            // 检查插件是否应该注册（第一关：扫描门槛）
+        func appendGeneratedOrRuntimePlugin(_ instance: any SuperPlugin, className: String) {
             let pluginType = type(of: instance)
-            if pluginType.shouldRegister {
-                discoveredItems.append((instance, className, pluginType.order))
-                pluginClassNames.append(className)
-                if Self.verbose {
-                    AppLogger.core.info("\(self.t)发现插件: \(pluginType.id) (order: \(pluginType.order))")
-                }
+            guard pluginType.shouldRegister else { return }
+            guard discoveredPluginIDs.insert(instance.instanceLabel).inserted else { return }
+
+            discoveredItems.append((instance, className, pluginType.order))
+            if Self.verbose {
+                AppLogger.core.info("\(self.t)发现插件: \(pluginType.id) (order: \(pluginType.order))")
             }
         }
 
-        let sortedPluginClassNames = pluginClassNames.sorted()
+        for plugin in GeneratedPluginRegistry.plugins {
+            appendGeneratedOrRuntimePlugin(
+                plugin,
+                className: String(describing: type(of: plugin))
+            )
+        }
+
+        var count: UInt32 = 0
+        if let classList = objc_copyClassList(&count) {
+            defer { free(UnsafeMutableRawPointer(classList)) }
+
+            let classes = UnsafeBufferPointer(start: classList, count: Int(count))
+            if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类作为兼容兜底") }
+
+            for i in 0 ..< classes.count {
+                let cls: AnyClass = classes[i]
+                let className = NSStringFromClass(cls)
+
+                guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
+                guard let pluginClass = cls as? any SuperPlugin.Type else { continue }
+
+                appendGeneratedOrRuntimePlugin(pluginClass.shared, className: className)
+            }
+        }
+
+        guard !discoveredItems.isEmpty else {
+            self.plugins = []
+            self.isLoaded = true
+            self.discoveredLLMProviderTypes = []
+            NotificationCenter.postPluginsDidLoad()
+            if Self.verbose {
+                AppLogger.core.warning("\(self.t)未发现任何插件")
+            }
+            return
+        }
         
         // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }

@@ -870,7 +870,7 @@ FileEditTool/
 ## 22. search_code 工具性能优化
 
 > 目标：解决 `search_code` agent tool 偶发运行 10+ 分钟无响应的问题。
-> 分析来源：`Packages/RAGKit` 和 `Packages/PluginAgentRAG` 源码审查。
+> 分析来源：`Packages/RAGKit` 和 `Plugins/PluginAgentRAG` 源码审查。
 > 涉及文件：`RAGFileScanner.swift`、`RAGCodeSearchTool.swift`、`RAGRetriever.swift`、`RAGSQLiteStore.swift`
 
 ### 根因分析

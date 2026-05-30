@@ -17,13 +17,8 @@
         }
       }
     },
-    " %@" : {
-
-    },
-    " = " : {
-
-    },
     " to see." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -39,16 +34,8 @@
         }
       }
     },
-    "--" : {
-
-    },
-    ": " : {
-
-    },
-    ":%lld" : {
-
-    },
     ".%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -128,16 +115,8 @@
         }
       }
     },
-    "\"%@\"" : {
-
-    },
-    "(%@)" : {
-
-    },
-    "（%@）" : {
-
-    },
     "(%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -152,9 +131,6 @@
           }
         }
       }
-    },
-    "(%lld%%)" : {
-
     },
     "/path/to/db.sqlite" : {
       "extractionState" : "stale",
@@ -174,6 +150,7 @@
       }
     },
     "# %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -185,19 +162,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "# %@"
-          }
-        }
-      }
-    },
-    "%@" : {
-
-    },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
           }
         }
       }
@@ -226,6 +190,7 @@
       }
     },
     "%@ / %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -243,21 +208,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ / %2$@"
-          }
-        }
-      }
-    },
-    "%@:%lld:%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@:%2$lld:%3$lld"
           }
         }
       }
     },
     "%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -272,29 +228,6 @@
           }
         }
       }
-    },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        }
-      }
-    },
-    "%lld %@, %lld %@, %lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@, %3$lld %4$@, %5$lld %6$@"
-          }
-        }
-      }
-    },
-    "%lld available" : {
-
     },
     "%lld images" : {
       "extractionState" : "stale",
@@ -314,6 +247,7 @@
       }
     },
     "%lld items" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -332,17 +266,8 @@
     "%lld spaces" : {
 
     },
-    "%lld x %lld pt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld x %2$lld pt"
-          }
-        }
-      }
-    },
     "%lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -359,6 +284,7 @@
       }
     },
     "%lld%%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -373,21 +299,9 @@
           }
         }
       }
-    },
-    "%lldP · %lldE · %lldS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lldP · %2$lldE · %3$lldS"
-          }
-        }
-      }
-    },
-    "%llds" : {
-
     },
     "•" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -402,15 +316,6 @@
           }
         }
       }
-    },
-    "• Auto：自动从所有可用模型中选择最优的" : {
-
-    },
-    "• 手动指定：固定使用某个供应商的特定模型" : {
-
-    },
-    "• 每日最多执行 5 次深度分析（节省成本）" : {
-
     },
     "••••••••" : {
       "extractionState" : "stale",
@@ -429,10 +334,8 @@
         }
       }
     },
-    "+%lld" : {
-
-    },
     "0" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -448,22 +351,8 @@
         }
       }
     },
-    "00" : {
-
-    },
-    "06" : {
-
-    },
-    "12" : {
-
-    },
-    "18" : {
-
-    },
-    "24" : {
-
-    },
     "100" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -497,6 +386,7 @@
       }
     },
     "500" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -513,6 +403,7 @@
       }
     },
     "1000" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -579,10 +470,8 @@
         }
       }
     },
-    "abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~" : {
-
-    },
     "Active Only" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -633,6 +522,7 @@
       }
     },
     "Add New Rule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -664,9 +554,6 @@
           }
         }
       }
-    },
-    "Agent 回合已结束" : {
-
     },
     "Agent 模式不可用" : {
       "localizations" : {
@@ -736,6 +623,7 @@
       }
     },
     "App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -769,6 +657,7 @@
       }
     },
     "Application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -836,6 +725,7 @@
       }
     },
     "Are you sure you want to kill process %@ (PID: %@)?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -858,6 +748,7 @@
       }
     },
     "Auto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -872,9 +763,6 @@
           }
         }
       }
-    },
-    "Auto (自动选择)" : {
-
     },
     "Battery" : {
       "extractionState" : "stale",
@@ -892,12 +780,6 @@
           }
         }
       }
-    },
-    "Bottom Panel" : {
-
-    },
-    "Branch name" : {
-
     },
     "Build %@" : {
       "extractionState" : "stale",
@@ -949,9 +831,6 @@
           }
         }
       }
-    },
-    "Clean working tree" : {
-
     },
     "Cleanup error: %@" : {
       "extractionState" : "stale",
@@ -1039,6 +918,7 @@
       }
     },
     "Collecting..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1122,9 +1002,6 @@
         }
       }
     },
-    "Content Panel" : {
-
-    },
     "CPU" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1142,10 +1019,8 @@
         }
       }
     },
-    "Create New Branch" : {
-
-    },
     "Current Registry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1451,6 +1326,7 @@
       }
     },
     "Down" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1467,6 +1343,7 @@
       }
     },
     "Download" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1481,9 +1358,6 @@
           }
         }
       }
-    },
-    "Editor" : {
-
     },
     "Enable Auto Input Source Switching" : {
       "extractionState" : "stale",
@@ -1520,6 +1394,7 @@
       }
     },
     "Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1535,10 +1410,8 @@
         }
       }
     },
-    "Esc" : {
-
-    },
     "Extension (e.g. py)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1589,6 +1462,7 @@
       }
     },
     "Fetching..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1621,10 +1495,8 @@
         }
       }
     },
-    "GitHub" : {
-
-    },
     "Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1664,6 +1536,7 @@
       }
     },
     "History Trend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1765,6 +1638,7 @@
       }
     },
     "Input Source" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1781,6 +1655,7 @@
       }
     },
     "Interface" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1848,6 +1723,7 @@
       }
     },
     "Kill Process" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1863,20 +1739,11 @@
         }
       }
     },
-    "L%lld:C%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "L%1$lld:C%2$lld"
-          }
-        }
-      }
-    },
     "Language" : {
 
     },
     "Last 60 seconds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1893,6 +1760,7 @@
       }
     },
     "Latency (Ping)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1907,9 +1775,6 @@
           }
         }
       }
-    },
-    "Layout" : {
-
     },
     "Load" : {
       "extractionState" : "stale",
@@ -1928,10 +1793,8 @@
         }
       }
     },
-    "Loading..." : {
-
-    },
     "Local IP" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1962,9 +1825,6 @@
           }
         }
       }
-    },
-    "Lumi Agent" : {
-
     },
     "Markdown" : {
       "extractionState" : "manual",
@@ -2001,6 +1861,7 @@
       }
     },
     "More" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2051,6 +1912,7 @@
       }
     },
     "Name (e.g. Python Script)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2135,6 +1997,7 @@
       }
     },
     "No active processes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2168,6 +2031,7 @@
       }
     },
     "Not Connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2199,9 +2063,6 @@
           }
         }
       }
-    },
-    "Open a .vue file to see outline" : {
-
     },
     "Open System Settings" : {
       "extractionState" : "stale",
@@ -2275,6 +2136,7 @@
       }
     },
     "PID: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2291,6 +2153,7 @@
       }
     },
     "PID: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2307,6 +2170,7 @@
       }
     },
     "Pin" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2374,6 +2238,7 @@
       }
     },
     "Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2406,6 +2271,7 @@
       }
     },
     "Process Monitor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2422,6 +2288,7 @@
       }
     },
     "Public IP" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2471,12 +2338,6 @@
         }
       }
     },
-    "RAG" : {
-
-    },
-    "Rail" : {
-
-    },
     "Real-time Monitor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2495,6 +2356,7 @@
       }
     },
     "Refresh" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2561,9 +2423,6 @@
         }
       }
     },
-    "Right Sidebar" : {
-
-    },
     "Run" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2616,9 +2475,6 @@
       }
     },
     "Scope" : {
-
-    },
-    "Search branches..." : {
 
     },
     "Search clipboard history..." : {
@@ -2689,12 +2545,6 @@
         }
       }
     },
-    "Search Models" : {
-
-    },
-    "Search providers or models…" : {
-
-    },
     "Search..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2713,6 +2563,7 @@
       }
     },
     "Select " : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2729,6 +2580,7 @@
       }
     },
     "Select Application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2745,6 +2597,7 @@
       }
     },
     "Select Input Source" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2762,6 +2615,7 @@
     },
     "Show Rendered" : {
       "comment" : "Toggle to show rendered markdown",
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2779,6 +2633,7 @@
     },
     "Show Source" : {
       "comment" : "Toggle to show markdown source",
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2811,17 +2666,8 @@
         }
       }
     },
-    "Showing top %lld of %lld issues, sorted by severity." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Showing top %1$lld of %2$lld issues, sorted by severity."
-          }
-        }
-      }
-    },
     "Signal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2855,6 +2701,7 @@
       }
     },
     "Start" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2871,6 +2718,7 @@
       }
     },
     "Stop" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2887,6 +2735,7 @@
       }
     },
     "Switch Source" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3005,6 +2854,7 @@
       }
     },
     "This action will force terminate the process, which may lead to data loss." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3021,6 +2871,7 @@
       }
     },
     "this text" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3037,6 +2888,7 @@
       }
     },
     "Time Range" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3052,10 +2904,8 @@
         }
       }
     },
-    "TOC" : {
-
-    },
     "Total: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3089,6 +2939,7 @@
       }
     },
     "Unknown" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3122,6 +2973,7 @@
       }
     },
     "Unpin" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3138,6 +2990,7 @@
       }
     },
     "Up" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3171,6 +3024,7 @@
       }
     },
     "Upload" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3221,6 +3075,7 @@
       }
     },
     "v%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3257,6 +3112,7 @@
       }
     },
     "Wi-Fi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3271,12 +3127,6 @@
           }
         }
       }
-    },
-    "Working state (%lld)" : {
-
-    },
-    "上下文交接" : {
-
     },
     "下载" : {
       "localizations" : {
@@ -3359,9 +3209,6 @@
         }
       }
     },
-    "供应商" : {
-
-    },
     "保存" : {
 
     },
@@ -3400,19 +3247,10 @@
         }
       }
     },
-    "最近一次路由" : {
-
-    },
-    "最近复制的文本、链接和片段" : {
-
-    },
     "切换 LLM 供应商" : {
 
     },
     "切换模型系列" : {
-
-    },
-    "剪贴板历史" : {
 
     },
     "功能特性：" : {
@@ -3549,22 +3387,7 @@
     "后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。" : {
 
     },
-    "启用 Auto 模型路由" : {
-
-    },
     "命令面板" : {
-
-    },
-    "固定常用片段" : {
-
-    },
-    "固定片段" : {
-
-    },
-    "在 Antigravity 中打开当前项目" : {
-
-    },
-    "在 Cursor 中打开当前项目" : {
 
     },
     "在 GitHub 打开问题反馈页面" : {
@@ -3619,6 +3442,7 @@
       }
     },
     "如何创建 Personal Access Token？" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3649,9 +3473,6 @@
           }
         }
       }
-    },
-    "工作区符号当前不可用" : {
-
     },
     "工作区符号搜索" : {
 
@@ -3704,9 +3525,6 @@
         }
       }
     },
-    "当前为基础路由版本：不可用模型会被排除，已检测可用模型优先；未检测模型仍可作为候选。" : {
-
-    },
     "当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3747,9 +3565,6 @@
       }
     },
     "快速修复" : {
-
-    },
-    "手动指定" : {
 
     },
     "打开App Support目录" : {
@@ -3833,9 +3648,6 @@
       }
     },
     "打开编辑项" : {
-
-    },
-    "把签名、回复模板和常用命令保存在剪贴板里，随时调用。" : {
 
     },
     "报告问题" : {
@@ -3926,16 +3738,7 @@
     "搜索 editor settings" : {
 
     },
-    "搜索剪贴板" : {
-
-    },
     "搜索快捷键或命令…" : {
-
-    },
-    "搜索文件..." : {
-
-    },
-    "搜索符号..." : {
 
     },
     "撤销" : {
@@ -3979,9 +3782,6 @@
           }
         }
       }
-    },
-    "未找到匹配的符号" : {
-
     },
     "本地模型" : {
       "localizations" : {
@@ -4027,9 +3827,6 @@
         }
       }
     },
-    "根据消息内容、工具需求、模型能力和可用性自动选择模型。" : {
-
-    },
     "格式化文档" : {
 
     },
@@ -4048,12 +3845,6 @@
           }
         }
       }
-    },
-    "模型" : {
-
-    },
-    "模型选择" : {
-
     },
     "欢迎使用 Lumi" : {
       "localizations" : {
@@ -4162,9 +3953,6 @@
     "编辑器" : {
 
     },
-    "自主级别" : {
-
-    },
     "自定义" : {
 
     },
@@ -4240,9 +4028,6 @@
           }
         }
       }
-    },
-    "请选择" : {
-
     },
     "请选择设置项" : {
       "localizations" : {
