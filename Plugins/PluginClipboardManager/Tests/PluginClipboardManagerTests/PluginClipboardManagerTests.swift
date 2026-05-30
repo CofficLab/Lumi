@@ -1,4 +1,5 @@
 import AppKit
+import SwiftData
 import Testing
 @testable import PluginClipboardManager
 
@@ -100,6 +101,31 @@ import Testing
     #expect(items.count == 1)
     #expect(items.first?.type == .image)
     #expect(items.first?.content.hasPrefix(imageDirectory.path) == true)
+}
+
+@Test func historyStoreFallsBackWhenDatabaseDirectoryIsBlocked() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-store-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let blockedDirectory = root.appendingPathComponent("ClipboardManager", isDirectory: true)
+    try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+    let container = ClipboardHistoryManager.makeContainer(databaseDirectory: root)
+    let context = ModelContext(container)
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.text.rawValue,
+        content: "fallback item",
+        searchKeywords: "fallback item"
+    )
+
+    context.insert(item)
+    try context.save()
+
+    let fetched = try context.fetch(FetchDescriptor<ClipboardHistoryItem>())
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.content == "fallback item")
 }
 
 private func makeTestPNG() throws -> Data {

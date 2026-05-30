@@ -27,16 +27,24 @@ public actor ClipboardHistoryManager: SuperLog {
     // MARK: - Initialization
     
     private init() {
-        // 定义 Schema
+        self.container = Self.makeContainer(databaseDirectory: ClipboardManagerRuntime.databaseDirectory())
+    }
+
+    static func makeContainer(databaseDirectory: URL) -> ModelContainer {
         let schema = Schema([ClipboardHistoryItem.self])
-        
-        // 数据库路径
-        let dbDir = ClipboardManagerRuntime.databaseDirectory()
-            .appendingPathComponent("ClipboardManager", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
+        let dbDir = databaseDirectory.appendingPathComponent("ClipboardManager", isDirectory: true)
         let dbURL = dbDir.appendingPathComponent("history.sqlite")
-        
-        // 配置 ModelContainer
+        let fileManager = FileManager.default
+
+        do {
+            quarantineFileIfItBlocksDirectory(at: dbDir)
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+        } catch {
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 创建剪贴板数据库目录失败：\(error.localizedDescription)")
+            }
+        }
+
         let config = ModelConfiguration(
             schema: schema,
             url: dbURL,
@@ -45,9 +53,72 @@ public actor ClipboardHistoryManager: SuperLog {
         )
         
         do {
-            self.container = try ModelContainer(for: schema, configurations: [config])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create ClipboardManager ModelContainer: \(error)")
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 打开剪贴板历史数据库失败，准备重建：\(error.localizedDescription)")
+            }
+            quarantinePersistentStore(at: dbURL)
+        }
+
+        do {
+            try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 重建剪贴板历史数据库失败，使用临时内存存储：\(error.localizedDescription)")
+            }
+            return makeInMemoryContainer(schema: schema)
+        }
+    }
+
+    private static func makeInMemoryContainer(schema: Schema) -> ModelContainer {
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            preconditionFailure("Could not create in-memory ClipboardManager ModelContainer: \(error)")
+        }
+    }
+
+    private static func quarantinePersistentStore(at dbURL: URL) {
+        let fileManager = FileManager.default
+        let storeURLs = [
+            dbURL,
+            URL(fileURLWithPath: dbURL.path + "-shm"),
+            URL(fileURLWithPath: dbURL.path + "-wal")
+        ]
+
+        for url in storeURLs where fileManager.fileExists(atPath: url.path) {
+            quarantineFile(at: url)
+        }
+    }
+
+    private static func quarantineFileIfItBlocksDirectory(at url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue else {
+            return
+        }
+
+        quarantineFile(at: url)
+    }
+
+    private static func quarantineFile(at url: URL) {
+        let destination = url.deletingLastPathComponent()
+            .appendingPathComponent(url.lastPathComponent + ".corrupt-\(Int(Date().timeIntervalSince1970))")
+        do {
+            try FileManager.default.moveItem(at: url, to: destination)
+        } catch {
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 隔离剪贴板数据库文件失败：\(error.localizedDescription)")
+            }
         }
     }
     
@@ -157,7 +228,7 @@ public actor ClipboardHistoryManager: SuperLog {
     public func getPinned() async -> [ClipboardHistoryItem] {
         let context = ModelContext(container)
         
-        var descriptor = FetchDescriptor<ClipboardHistoryItem>(
+        let descriptor = FetchDescriptor<ClipboardHistoryItem>(
             predicate: ClipboardHistoryItem.pinnedPredicate(),
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
@@ -193,7 +264,7 @@ public actor ClipboardHistoryManager: SuperLog {
             predicate: #Predicate<ClipboardHistoryItem> { $0.id == id }
         )
         
-        if var item = try? context.fetch(descriptor).first {
+        if let item = try? context.fetch(descriptor).first {
             item.isPinned = isPinned
             try? context.save()
             
