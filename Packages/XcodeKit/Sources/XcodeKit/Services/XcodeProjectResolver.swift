@@ -267,7 +267,7 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
         var files = Set<String>()
         while let fileURL = enumerator.nextObject() as? URL {
-            let relativePath = fileURL.path.replacingOccurrences(of: rootURL.path + "/", with: "")
+            let relativePath = path(fileURL, relativeTo: rootURL)
             if excludedRelativePaths.contains(relativePath) {
                 continue
             }
@@ -280,6 +280,23 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             }
         }
         return files
+    }
+
+    static func path(_ fileURL: URL, relativeTo rootURL: URL) -> String {
+        let filePath = normalizedPath(fileURL.path)
+        let rootPath = normalizedPath(rootURL.path)
+        guard !filePath.isEmpty, !rootPath.isEmpty else { return fileURL.lastPathComponent }
+
+        let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+        guard filePath.hasPrefix(rootPrefix) else { return fileURL.lastPathComponent }
+        return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let standardized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+        return standardized != "/" && standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 
     /// 异步执行 xcodebuild

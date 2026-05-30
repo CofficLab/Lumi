@@ -101,4 +101,22 @@ final class XcodeProjectResolverTests: XCTestCase {
 
         XCTAssertEqual(result, ["App", "Widget", "Tests", "Package"])
     }
+
+    func testRelativePathOnlyDropsRootPrefix() {
+        let root = URL(fileURLWithPath: "/tmp/App", isDirectory: true)
+        let file = URL(fileURLWithPath: "/tmp/App/Sources/tmp/App/Feature.swift")
+
+        let relativePath = XcodeProjectResolver.path(file, relativeTo: root)
+
+        XCTAssertEqual(relativePath, "Sources/tmp/App/Feature.swift")
+    }
+
+    func testRelativePathRejectsSiblingProjectWithSharedPrefix() {
+        let root = URL(fileURLWithPath: "/tmp/App", isDirectory: true)
+        let file = URL(fileURLWithPath: "/tmp/App2/Sources/Feature.swift")
+
+        let relativePath = XcodeProjectResolver.path(file, relativeTo: root)
+
+        XCTAssertEqual(relativePath, "Feature.swift")
+    }
 }
