@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import PluginEditorPreview
 import SwiftUI
 import os
 
@@ -464,6 +465,21 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
             "inlinePreviewTabActivationCount": state.inlinePreviewTabActivationCount,
             "demoFrameRequestCount": state.demoFrameRequestCount,
             "lastDemoFramePayload": state.lastDemoFramePayload,
+            "previewSessionStatus": state.previewSessionStatus,
+            "previewEntryStatus": state.previewEntryStatus,
+            "previewModeName": state.previewModeName,
+            "previewActiveFilePath": state.previewActiveFilePath,
+            "previewHasSource": state.previewHasSource,
+            "previewAvailablePreviewCount": state.previewAvailablePreviewCount,
+            "previewSelectedIndex": state.previewSelectedIndex,
+            "previewHasCurrentFrame": state.previewHasCurrentFrame,
+            "previewReceivedFrameCount": state.previewReceivedFrameCount,
+            "previewLastFrameSeq": state.previewLastFrameSeq,
+            "previewLastBuildTitle": state.previewLastBuildTitle,
+            "previewLastBuildPreviewCount": state.previewLastBuildPreviewCount,
+            "previewLastBuildUsedCache": state.previewLastBuildUsedCache,
+            "previewEntryDebugState": state.previewEntryDebugState,
+            "previewLastBuildLogPath": state.previewLastBuildLogPath,
         ]
     }
 }

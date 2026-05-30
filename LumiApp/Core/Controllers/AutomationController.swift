@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import MagicAlert
+import PluginEditorPreview
 import os
 
 /// 自动化控制器 — 集中处理自动化测试动作
@@ -31,6 +32,16 @@ final class AutomationController: SuperLog {
 
     /// 启动自动化控制器，注册通知监听
     func start() {
+        EditorPreviewRuntimeBridge.editorServiceProvider = {
+            RootContainer.shared.windowManagerVM.activeWindowContainer?.editorVM.service
+        }
+        EditorPreviewRuntimeBridge.addToChatHandler = { text in
+            NotificationCenter.postAddToChat(
+                text: text,
+                windowId: RootContainer.shared.windowManagerVM.activeWindowId
+            )
+        }
+
         NotificationCenter.default.publisher(for: .automationActionReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -255,44 +266,5 @@ final class AutomationController: SuperLog {
     private func ensureAgentPanelActive() {
         // Agent 面板通常是默认面板
         RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = nil
-    }
-}
-
-// MARK: - InlinePreviewAutomationState
-
-/// 自动化测试专用的共享状态
-///
-/// 供 `AutomationController` 写入操作结果，供 `EditorPreviewDetailView` 读取并响应。
-/// 这样即使 View 层在 AutomationController 之后才渲染，也能获取到之前的操作结果。
-@MainActor
-final class InlinePreviewAutomationState: ObservableObject {
-    static let shared = InlinePreviewAutomationState()
-
-    /// Session 操作指令（start / stop）
-    @Published var sessionAction: SessionAction?
-
-    /// 待打开的文件 URL
-    @Published var pendingFileURL: URL?
-
-    /// 最近一次 start/stop 自动化请求。
-    @Published var lastSessionActionName: String?
-
-    /// 自动化激活编辑器面板次数。
-    @Published var editorPanelActivationCount: Int = 0
-
-    /// 自动化激活 Inline Preview 底部 tab 次数。
-    @Published var inlinePreviewTabActivationCount: Int = 0
-
-    /// Demo frame 自动化请求次数。
-    @Published var demoFrameRequestCount: Int = 0
-
-    /// 最近一次 demo frame payload。
-    @Published var lastDemoFramePayload: [String: Any] = [:]
-
-    private init() {}
-
-    enum SessionAction {
-        case start
-        case stop
     }
 }

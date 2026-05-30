@@ -28,6 +28,7 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorPreviewPlugin()
+    private static let bottomPanelTabId = "editor-bottom-inline-preview"
 
     // MARK: - 底部面板
 
@@ -50,10 +51,19 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
-        []
+        guard context.isEditorVisible else { return [] }
+        return [
+            BottomPanelTab(
+                id: Self.bottomPanelTabId,
+                title: Self.displayName,
+                systemImage: Self.iconName,
+                priority: Self.order
+            ),
+        ]
     }
 
     @MainActor public func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
-        nil
+        guard context.isEditorVisible, tabId == Self.bottomPanelTabId else { return nil }
+        return AnyView(EditorPreviewDetailView())
     }
 }

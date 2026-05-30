@@ -1,19 +1,20 @@
 import Foundation
+import LumiCoreKit
 import LumiPreviewKit
 
 /// EditorPreview 插件专属存储根目录与相关预览构建路径。
 ///
-/// 存储位置：`AppConfig.getPluginDBFolderURL(pluginName: "EditorPreviewPlugin")/`
+/// 存储位置：`LumiCoreKit.AppConfig.getPluginDBFolderURL(pluginName: "EditorPreviewPlugin")/`
 public enum EditorPreviewStorage {
-    struct CacheSummary: Equatable, Sendable {
-        let fileCount: Int
-        let byteCount: Int64
+    public struct CacheSummary: Equatable, Sendable {
+        public let fileCount: Int
+        public let byteCount: Int64
 
-        var isEmpty: Bool {
+        public var isEmpty: Bool {
             fileCount == 0 || byteCount == 0
         }
 
-        var formattedByteCount: String {
+        public var formattedByteCount: String {
             let formatter = ByteCountFormatter()
             formatter.allowedUnits = [.useKB, .useMB, .useGB]
             formatter.countStyle = .file

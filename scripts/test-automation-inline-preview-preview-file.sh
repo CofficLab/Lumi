@@ -85,9 +85,175 @@ assert_api_ok() {
         ok "$description"
         return 0
     else
-        fail "$description（响应: $response）"
+        fail "${description}（响应: ${response}）"
         return 1
     fi
+}
+
+automation_debug_state() {
+    send_action "automation.debug_state" "{}"
+}
+
+json_value() {
+    local json="$1"
+    local key="$2"
+
+    JSON_INPUT="$json" /usr/bin/python3 - "$key" <<'PY'
+import json
+import os
+import sys
+
+key = sys.argv[1]
+try:
+    data = json.loads(os.environ.get("JSON_INPUT", "{}"))
+except Exception:
+    print("")
+    raise SystemExit(0)
+
+value = data
+for part in key.split("."):
+    if isinstance(value, dict):
+        value = value.get(part, "")
+    else:
+        value = ""
+        break
+
+if isinstance(value, bool):
+    print("true" if value else "false")
+else:
+    print(value)
+PY
+}
+
+state_string() {
+    json_value "$(automation_debug_state)" "$1"
+}
+
+state_int() {
+    local value
+    value=$(state_string "$1")
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+        echo "$value"
+    else
+        echo "0"
+    fi
+}
+
+assert_state_int_increased() {
+    local key="$1"
+    local before="$2"
+    local description="$3"
+    local after
+
+    after=$(state_int "$key")
+    if [ "$after" -gt "$before" ]; then
+        ok "${description}（${before} → ${after}）"
+        return 0
+    fi
+
+    fail "${description}（${key} 未递增，当前 ${after}）"
+    return 1
+}
+
+assert_state_string_equals() {
+    local key="$1"
+    local expected="$2"
+    local description="$3"
+    local actual
+
+    actual=$(state_string "$key")
+    if [ "$actual" = "$expected" ]; then
+        ok "$description"
+        return 0
+    fi
+
+    fail "${description}（${key}=${actual}，期望 ${expected}）"
+    return 1
+}
+
+assert_state_bool_true() {
+    local key="$1"
+    local description="$2"
+    local actual
+
+    actual=$(state_string "$key")
+    if [ "$actual" = "true" ]; then
+        ok "$description"
+        return 0
+    fi
+
+    fail "${description}（${key}=${actual}）"
+    return 1
+}
+
+wait_for_state_string() {
+    local key="$1"
+    local expected="$2"
+    local description="$3"
+    local max_wait="${4:-10}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$max_wait" ]; do
+        local actual
+        actual=$(state_string "$key")
+        if [ "$actual" = "$expected" ]; then
+            ok "${description}（等待 ${elapsed}s）"
+            return 0
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    fail "${description}（等待 ${max_wait}s 后 $key=$(state_string "$key")）"
+    return 1
+}
+
+wait_for_preview_entry_loaded() {
+    local description="$1"
+    local max_wait="${2:-20}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$max_wait" ]; do
+        local entry_status
+        entry_status=$(state_string "previewEntryStatus")
+        case "$entry_status" in
+            loaded\(*)
+                ok "${description}（等待 ${elapsed}s，${entry_status}）"
+                return 0
+                ;;
+            failed\(*)
+                fail "${description}（${entry_status}，日志: $(state_string "previewLastBuildLogPath")）"
+                return 1
+                ;;
+        esac
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    fail "${description}（等待 ${max_wait}s 后 previewEntryStatus=$(state_string "previewEntryStatus")）"
+    return 1
+}
+
+wait_for_state_int_greater_than() {
+    local key="$1"
+    local before="$2"
+    local description="$3"
+    local max_wait="${4:-10}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$max_wait" ]; do
+        local current
+        current=$(state_int "$key")
+        if [ "$current" -gt "$before" ]; then
+            ok "${description}（${before} → ${current}，等待 ${elapsed}s）"
+            return 0
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    fail "${description}（等待 ${max_wait}s 后 $key=$(state_int "$key")）"
+    return 1
 }
 
 get_latest_log() {
@@ -164,7 +330,7 @@ check_prerequisites() {
 
     # 检查 Lumi 是否运行
     if ! curl -s --connect-timeout 2 -o /dev/null "$BASE_URL" 2>/dev/null; then
-        fail "无法连接到 Lumi 自动化服务器（$BASE_URL）"
+        fail "无法连接到 Lumi 自动化服务器（${BASE_URL}）"
         fail "请确保 Lumi 应用已启动"
         exit 1
     fi
@@ -191,25 +357,33 @@ check_prerequisites() {
 test_navigate_to_editor() {
     step "测试 1: 导航到编辑器面板"
 
+    local before_count
+    before_count=$(state_int "editorPanelActivationCount")
+
     local response
     response=$(send_action "navigate.to" '{"panel": "editor"}')
     assert_api_ok "$response" "navigate.to editor → API 响应成功" || return 1
 
     sleep "$NAVIGATE_WAIT"
-    assert_log_contains "Activated editor panel" "编辑器面板已激活"
+    assert_state_int_increased "editorPanelActivationCount" "$before_count" "编辑器面板已激活"
 }
 
 # 测试 2: 激活 Inline Preview 底部面板
 test_activate_inline_preview_tab() {
     step "测试 2: 激活 Inline Preview 底部面板"
 
+    local before_tab_count
+    local before_demo_count
+    before_tab_count=$(state_int "inlinePreviewTabActivationCount")
+    before_demo_count=$(state_int "demoFrameRequestCount")
+
     local response
     response=$(send_action "inline_preview.demoFrame" '{"width": 640, "height": 360, "scale": 2.0}')
     assert_api_ok "$response" "inline_preview.demoFrame → API 响应成功" || return 1
 
     sleep 2
-    assert_log_contains "Activated inline preview bottom tab" "Inline Preview 底部标签已激活"
-    assert_log_contains "DemoFrame created" "Demo 帧已创建"
+    assert_state_int_increased "inlinePreviewTabActivationCount" "$before_tab_count" "Inline Preview 底部标签已激活" || return 1
+    assert_state_int_increased "demoFrameRequestCount" "$before_demo_count" "Demo 帧已创建"
 }
 
 # 测试 3: 打开测试文件
@@ -222,8 +396,9 @@ test_open_file() {
 
     sleep "$OPEN_FILE_WAIT"
 
-    assert_log_contains "File opened: AppAvatar.swift" "文件已打开"
-    assert_log_contains "setActiveFile" "ViewModel 收到 setActiveFile 调用"
+    assert_state_string_equals "previewActiveFilePath" "$TEST_FILE" "文件已打开" || return 1
+    assert_state_string_equals "previewModeName" "swift" "ViewModel 已识别 Swift 预览模式" || return 1
+    assert_state_bool_true "previewHasSource" "ViewModel 收到文件源码"
 }
 
 # 测试 4: Start Stream + 等待自动编译
@@ -237,65 +412,12 @@ test_start_stream_and_auto_build() {
     info "等待 $START_STREAM_WAIT 秒让 Session 启动 + 自动编译..."
 
     # 检查 Session 启动
-    wait_for_log "idle → starting" "Session 启动中" "$START_STREAM_WAIT" || true
-    wait_for_log "starting → running" "Session 运行中" 5 || true
+    wait_for_state_string "previewSessionStatus" "running" "Session 运行中" "$START_STREAM_WAIT" || return 1
 
     # 检查自动编译流程
     info "等待自动编译 #Preview..."
-    wait_for_log "autoBuild" "自动编译流程触发" "$BUILD_VERIFY_WAIT" || true
-
-    # 可能的路径：编译成功 → loaded，或编译失败 → failed/noPreviewFound
-    local loaded_count
-    loaded_count=$(grep_log_count "entry ·")
-    local build_success
-    build_success=$(grep_log_count "构建成功")
-    local no_preview
-    no_preview=$(grep_log_count "未找到")
-    local build_failed
-    build_failed=$(grep_log_count "swiftc failed")
-
-    if [ "$loaded_count" -gt 0 ]; then
-        ok "预览 dylib 已加载（entry loaded）"
-    elif [ "$build_success" -gt 0 ]; then
-        ok "构建成功，等待加载..."
-        sleep 2
-        loaded_count=$(grep_log_count "entry ·")
-        if [ "$loaded_count" -gt 0 ]; then
-            ok "预览 dylib 已加载（entry loaded）"
-        else
-            info "构建成功但尚未加载，继续等待..."
-            sleep 3
-            loaded_count=$(grep_log_count "entry ·")
-            if [ "$loaded_count" -gt 0 ]; then
-                ok "预览 dylib 已加载（延迟确认）"
-            else
-                fail "构建成功但 dylib 加载超时"
-                return 1
-            fi
-        fi
-    elif [ "$no_preview" -gt 0 ]; then
-        fail "未找到 #Preview block — PreviewScanner 未识别"
-        return 1
-    elif [ "$build_failed" -gt 0 ]; then
-        fail "编译失败 — swiftc 报错"
-        # 输出编译错误日志帮助诊断
-        info "--- swiftc 错误日志 ---"
-        local log_file
-        log_file=$(get_latest_log)
-        grep -i "swiftc\|error:" "$LOG_DIR/$log_file" 2>/dev/null | tail -20
-        info "--- END ---"
-        return 1
-    else
-        info "尚未检测到编译结果，再等待 5s..."
-        sleep 5
-        loaded_count=$(grep_log_count "entry ·")
-        if [ "$loaded_count" -gt 0 ]; then
-            ok "预览 dylib 已加载（延迟确认）"
-        else
-            fail "超时：未检测到编译结果"
-            return 1
-        fi
-    fi
+    wait_for_preview_entry_loaded "预览 dylib 已加载" "$BUILD_VERIFY_WAIT" || return 1
+    wait_for_state_int_greater_than "previewLastBuildPreviewCount" 0 "PreviewScanner 已识别 #Preview" 1
 }
 
 # 测试 5: 验证帧流产出
@@ -303,9 +425,7 @@ test_frame_production() {
     step "测试 5: 验证帧流产出"
 
     info "等待帧流..."
-    sleep 3
-
-    assert_log_contains "currentFrame" "收到至少一帧"
+    wait_for_state_int_greater_than "previewReceivedFrameCount" 0 "收到至少一帧" 6
 }
 
 # 测试 6: Stop Stream
@@ -318,8 +438,8 @@ test_stop_stream() {
 
     sleep "$STOP_STREAM_WAIT"
 
-    assert_log_contains "stopSession" "ViewModel 收到 stopSession 调用"
-    wait_for_log "Session 已停止" "Session 已完全停止" 5
+    assert_state_string_equals "lastSessionActionName" "stop" "ViewModel 收到 stopSession 调用" || return 1
+    wait_for_state_string "previewSessionStatus" "idle" "Session 已完全停止" 5
 }
 
 # 测试 7: 完整端到端流程（先打开文件 → Start Stream → Auto Build → Stop）
@@ -346,36 +466,14 @@ test_full_e2e() {
     info "等待 Session 启动 + 自动编译 + 加载..."
     sleep "$START_STREAM_WAIT"
 
-    # 验证
-    local loaded_count
-    loaded_count=$(grep_log_count "entry ·")
-    if [ "$loaded_count" -gt 0 ]; then
-        ok "端到端：预览已加载并渲染"
-    else
-        info "端到端：检查编译状态..."
-        local build_failed
-        build_failed=$(grep_log_count "swiftc failed\|未找到")
-        if [ "$build_failed" -gt 0 ]; then
-            fail "端到端：编译或扫描失败"
-            return 1
-        else
-            # 再等一会
-            sleep 5
-            loaded_count=$(grep_log_count "entry ·")
-            if [ "$loaded_count" -gt 0 ]; then
-                ok "端到端：预览已加载并渲染（延迟确认）"
-            else
-                fail "端到端：超时未检测到预览加载"
-                return 1
-            fi
-        fi
-    fi
+    wait_for_preview_entry_loaded "端到端：预览已加载并渲染" 10 || return 1
+    wait_for_state_int_greater_than "previewReceivedFrameCount" 0 "端到端：帧流已产出" 6 || return 1
 
     # Stop
     info "停止 Stream..."
     response=$(send_action "inline_preview.stop_stream")
     sleep "$STOP_STREAM_WAIT"
-    ok "端到端：Stream 已停止"
+    wait_for_state_string "previewSessionStatus" "idle" "端到端：Stream 已停止" 5
 }
 
 # ── 主流程 ────────────────────────────────────────────────────────────

@@ -5,14 +5,14 @@ import SwiftUI
 ///
 /// 展示失败类型标题、可复制的错误信息、一键复制按钮以及日志文件入口。
 /// 使用实色背景遮挡底部的网格线，确保文字清晰可读。
-public struct PreviewFailureView: View {
-    public let failure: EditorPreviewViewModel.EntryFailure
-    public let buildLogURL: URL?
-    public var onRetry: (() -> Void)?
+struct PreviewFailureView: View {
+    let failure: EditorPreviewViewModel.EntryFailure
+    let buildLogURL: URL?
+    var onRetry: (() -> Void)?
 
     @State private var isCopied = false
 
-    public var body: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: failure.systemImage)
