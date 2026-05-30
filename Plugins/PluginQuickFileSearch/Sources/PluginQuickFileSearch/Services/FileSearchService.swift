@@ -247,7 +247,7 @@ public enum FileSearchHelpers {
             }
 
             // 添加文件
-            let relativePath = url.path.replacingOccurrences(of: path + "/", with: "")
+            let relativePath = relativePath(for: url, rootPath: path)
             results.append(FileResult(
                 name: url.lastPathComponent,
                 path: url.path,
@@ -263,6 +263,26 @@ public enum FileSearchHelpers {
         }
 
         return results
+    }
+
+    static func relativePath(for fileURL: URL, rootPath: String) -> String {
+        let filePath = normalizedPath(fileURL.path)
+        let rootPath = normalizedPath(rootPath)
+
+        guard filePath != rootPath else { return fileURL.lastPathComponent }
+
+        let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+        guard filePath.hasPrefix(rootPrefix) else {
+            return fileURL.lastPathComponent
+        }
+
+        return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let standardized = (path as NSString).standardizingPath
+        guard standardized.count > 1 else { return standardized }
+        return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 
     /// 检查是否应该跳过该路径
