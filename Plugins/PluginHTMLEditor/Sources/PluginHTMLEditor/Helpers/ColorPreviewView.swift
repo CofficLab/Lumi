@@ -216,7 +216,7 @@ extension Color {
     /// 从 hsl/hsla 字符串创建颜色。
     public init?(fromHSL hslString: String) {
         guard let components = Self.functionalColorComponents(from: hslString, expectedChannelCount: 3),
-              let hueValue = Self.parseNumber(components.channels[0])?.value,
+              let hueValue = Self.parseHue(components.channels[0]),
               let saturation = Self.parsePercentageChannel(components.channels[1]),
               let lightness = Self.parsePercentageChannel(components.channels[2]),
               let alpha = Self.parseAlpha(components.alpha) else {
@@ -292,6 +292,30 @@ extension Color {
 
         guard let value = Double(trimmed), value.isFinite else { return nil }
         return (value, isPercentage)
+    }
+
+    private static func parseHue(_ token: String) -> Double? {
+        var trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let multiplier: Double
+
+        if trimmed.hasSuffix("deg") {
+            multiplier = 1.0
+            trimmed.removeLast(3)
+        } else if trimmed.hasSuffix("grad") {
+            multiplier = 0.9
+            trimmed.removeLast(4)
+        } else if trimmed.hasSuffix("rad") {
+            multiplier = 180.0 / .pi
+            trimmed.removeLast(3)
+        } else if trimmed.hasSuffix("turn") {
+            multiplier = 360.0
+            trimmed.removeLast(4)
+        } else {
+            multiplier = 1.0
+        }
+
+        guard let value = Double(trimmed), value.isFinite else { return nil }
+        return value * multiplier
     }
 
     private static func parseRGBChannel(_ token: String) -> Double? {

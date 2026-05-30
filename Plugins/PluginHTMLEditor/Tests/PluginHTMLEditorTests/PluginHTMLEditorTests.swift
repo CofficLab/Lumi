@@ -26,6 +26,23 @@ import Testing
     #expect(values.contains("hsl(-120 100% 25% / 0.4)"))
 }
 
+@Test func colorParserFindsHSLColorsWithAngleUnits() async throws {
+    let css = """
+    color: hsl(120deg 100% 25%);
+    background: hsl(.5turn 100% 50% / 40%);
+    border-color: hsl(200grad 80% 40%);
+    outline-color: hsl(3.14159rad 100% 50%);
+    """
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values.contains("hsl(120deg 100% 25%)"))
+    #expect(values.contains("hsl(.5turn 100% 50% / 40%)"))
+    #expect(values.contains("hsl(200grad 80% 40%)"))
+    #expect(values.contains("hsl(3.14159rad 100% 50%)"))
+}
+
 @Test func colorParserFindsRGBPercentChannels() async throws {
     let css = "border-color: rgba(100% 0% 50% / 25%);"
 
