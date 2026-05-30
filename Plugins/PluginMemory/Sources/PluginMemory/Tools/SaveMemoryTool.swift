@@ -84,26 +84,30 @@ public struct SaveMemoryTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let id = arguments["id"]?.value as? String, !id.isEmpty else {
+        guard let id = MemoryToolInput.string(arguments["id"]?.value) else {
             throw MemoryToolError.missingArgument("id")
         }
-        guard let typeRaw = arguments["type"]?.value as? String, let type = MemoryType(rawValue: typeRaw) else {
+        guard let typeRaw = MemoryToolInput.string(arguments["type"]?.value), let type = MemoryType(rawValue: typeRaw) else {
             throw MemoryToolError.invalidArgument("type must be one of: user, feedback, project, reference")
         }
-        guard let name = arguments["name"]?.value as? String, !name.isEmpty else {
+        guard let name = MemoryToolInput.string(arguments["name"]?.value) else {
             throw MemoryToolError.missingArgument("name")
         }
-        guard let description = arguments["description"]?.value as? String, !description.isEmpty else {
+        guard let description = MemoryToolInput.string(arguments["description"]?.value) else {
             throw MemoryToolError.missingArgument("description")
         }
-        guard let content = arguments["content"]?.value as? String, !content.isEmpty else {
+        guard let content = MemoryToolInput.string(arguments["content"]?.value) else {
             throw MemoryToolError.missingArgument("content")
         }
 
-        let scopeRaw = arguments["scope"]?.value as? String ?? "global"
+        let scopeRaw = try MemoryToolInput.scope(
+            arguments["scope"]?.value,
+            default: "global",
+            allowed: ["global", "project"]
+        )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)

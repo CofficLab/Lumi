@@ -54,7 +54,11 @@ public struct ListMemoriesTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let scopeRaw = arguments["scope"]?.value as? String ?? "all"
+        let scopeRaw = try MemoryToolInput.scope(
+            arguments["scope"]?.value,
+            default: "all",
+            allowed: ["global", "project", "all"]
+        )
 
         var globalMemories: [MemoryItem] = []
         var projectMemories: [MemoryItem] = []
@@ -63,13 +67,13 @@ public struct ListMemoriesTool: SuperAgentTool {
         case "global":
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
         case "project":
-            guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
         default: // "all"
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
-            if let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty {
+            if let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) {
                 projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
             }
         }

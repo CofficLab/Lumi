@@ -58,14 +58,18 @@ public struct DeleteMemoryTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let id = arguments["id"]?.value as? String, !id.isEmpty else {
+        guard let id = MemoryToolInput.string(arguments["id"]?.value) else {
             throw MemoryToolError.missingArgument("id")
         }
 
-        let scopeRaw = arguments["scope"]?.value as? String ?? "global"
+        let scopeRaw = try MemoryToolInput.scope(
+            arguments["scope"]?.value,
+            default: "global",
+            allowed: ["global", "project"]
+        )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)

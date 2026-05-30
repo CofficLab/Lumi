@@ -73,4 +73,31 @@ struct PluginMemoryTests {
         #expect(config.injectGlobalIndex == true)
         #expect(config.injectProjectIndex == true)
     }
+
+    @Test("tool input strings are trimmed and blank strings are rejected")
+    func toolInputStringNormalization() {
+        #expect(MemoryToolInput.string(" \n/Users/example/Project\t") == "/Users/example/Project")
+        #expect(MemoryToolInput.string(" \n\t ") == nil)
+    }
+
+    @Test("tool input scopes are trimmed and validated")
+    func toolInputScopeNormalization() throws {
+        let projectScope = try MemoryToolInput.scope(" \nproject\t", default: "global", allowed: ["global", "project"])
+        #expect(projectScope == "project")
+
+        let defaultScope = try MemoryToolInput.scope(nil, default: "all", allowed: ["global", "project", "all"])
+        #expect(defaultScope == "all")
+
+        #expect(throws: MemoryToolError.self) {
+            try MemoryToolInput.scope("workspace", default: "global", allowed: ["global", "project"])
+        }
+    }
+
+    @Test("recall max results are clamped to a safe range")
+    func recallMaxResultsAreClamped() {
+        #expect(MemoryToolInput.maxResults(-3) == 0)
+        #expect(MemoryToolInput.maxResults(8) == 8)
+        #expect(MemoryToolInput.maxResults(99) == 20)
+        #expect(MemoryToolInput.maxResults(nil) == 5)
+    }
 }

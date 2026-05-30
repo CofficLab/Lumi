@@ -62,14 +62,18 @@ public struct RecallMemoryTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let query = arguments["query"]?.value as? String, !query.isEmpty else {
+        guard let query = MemoryToolInput.string(arguments["query"]?.value) else {
             throw MemoryToolError.missingArgument("query")
         }
 
-        let scopeRaw = arguments["scope"]?.value as? String ?? "global"
+        let scopeRaw = try MemoryToolInput.scope(
+            arguments["scope"]?.value,
+            default: "global",
+            allowed: ["global", "project"]
+        )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)
@@ -77,8 +81,7 @@ public struct RecallMemoryTool: SuperAgentTool {
             scope = .global
         }
 
-        let maxResults = (arguments["max_results"]?.value as? Int) ?? 5
-        let cappedMax = min(maxResults, 20)
+        let cappedMax = MemoryToolInput.maxResults(arguments["max_results"]?.value)
 
         let memories = await MemoryRetrievalService.shared.findRelevant(
             query: query,
