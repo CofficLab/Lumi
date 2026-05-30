@@ -276,4 +276,17 @@ struct MarkdownTableNormalizerTests {
         #expect(result == input)
         #expect(blocks == [.codeBlock(language: nil, code: "| A | B |\n| 1 | 2 |\n")])
     }
+
+    @Test
+    func preservesPipeTablesInsideIndentedCodeBlocks() {
+        let input = "Example:\n\n    | A | B |\n    | --- | --- |\n    | 1 | 2 |"
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks.count == 2)
+        #expect(blocks[0] == .paragraph(text: "Example:"))
+        #expect(blocks[1] == .codeBlock(language: nil, code: "| A | B |\n| --- | --- |\n| 1 | 2 |\n"))
+    }
 }

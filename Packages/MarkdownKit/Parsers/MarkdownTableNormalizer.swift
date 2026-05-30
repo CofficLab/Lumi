@@ -28,10 +28,20 @@ enum MarkdownTableNormalizer {
         var result: [String] = []
         var i = 0
         var activeFence: String?
+        var activeIndentedCode = false
         
         while i < lines.count {
             let line = String(lines[i])
             let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if activeIndentedCode {
+                if line.isEmpty || isIndentedCodeLine(line) {
+                    result.append(line)
+                    i += 1
+                    continue
+                }
+                activeIndentedCode = false
+            }
 
             if let fence = activeFence {
                 result.append(line)
@@ -44,6 +54,13 @@ enum MarkdownTableNormalizer {
 
             if let fence = openingFence(in: trimmed) {
                 activeFence = fence
+                result.append(line)
+                i += 1
+                continue
+            }
+
+            if startsIndentedCodeBlock(line, at: i, in: lines) {
+                activeIndentedCode = true
                 result.append(line)
                 i += 1
                 continue
@@ -117,6 +134,16 @@ enum MarkdownTableNormalizer {
         if line.hasPrefix("```") { return "```" }
         if line.hasPrefix("~~~") { return "~~~" }
         return nil
+    }
+
+    private static func startsIndentedCodeBlock(_ line: String, at index: Int, in lines: [String.SubSequence]) -> Bool {
+        guard isIndentedCodeLine(line) else { return false }
+        if index == 0 { return true }
+        return String(lines[index - 1]).trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private static func isIndentedCodeLine(_ line: String) -> Bool {
+        line.hasPrefix("    ") || line.hasPrefix("\t")
     }
     
     private static func shouldNormalizeTableLines(_ lines: [String]) -> Bool {
