@@ -24,6 +24,25 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("![Preview](https://example.com/image.png)"))
     }
 
+    func testConvertsLinksAndImagesWithFlexibleAttributeSyntax() {
+        let html = """
+        <a class="button" href='/docs/start'>
+            <span>Start Guide</span>
+        </a>
+        <img alt='Hero' loading="lazy" src="/hero.png">
+        <img src=/logo.svg>
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(
+            html,
+            baseURL: URL(string: "https://example.com/base/")
+        )
+
+        XCTAssertTrue(markdown.contains("[Start Guide](https://example.com/docs/start)"))
+        XCTAssertTrue(markdown.contains("![Hero](https://example.com/hero.png)"))
+        XCTAssertTrue(markdown.contains("![image](https://example.com/logo.svg)"))
+    }
+
     func testConvertsListsWithoutCrashingOnMalformedListContent() {
         let html = """
         <ol></li><li>First</li><li><span>Second</span></li></ol>

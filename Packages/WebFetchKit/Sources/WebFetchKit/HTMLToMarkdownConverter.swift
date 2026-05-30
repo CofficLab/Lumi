@@ -168,7 +168,7 @@ public struct HTMLToMarkdownConverter {
     // MARK: - Link Conversion
 
     private static func convertLinks(_ html: String, baseURL: URL?) -> String {
-        let pattern = #"<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>"#
+        let pattern = #"(?s)<a\b[^>]*>(.*?)</a>"#
 
         var result = html
 
@@ -176,12 +176,15 @@ public struct HTMLToMarkdownConverter {
             let linkStr = String(result[match])
             let groups = linkStr.matchingStrings(for: pattern)
 
-            if let groups = groups.first, groups.count >= 3 {
-                let href = groups[1]
-                let text = groups[2]
+            if let groups = groups.first, groups.count >= 2 {
+                let text = groups[1]
+                guard let href = attributeValue(named: "href", in: linkStr) else {
+                    result.replaceSubrange(match, with: text)
+                    continue
+                }
 
                 // 解码链接文本中的标签
-                let cleanText = stripHTMLTags(text)
+                let cleanText = stripHTMLTags(text).normalizedInlineWhitespace
                 let absoluteHref = resolveURL(href, baseURL: baseURL)
 
                 let markdownLink = "[\(cleanText)](\(absoluteHref))"
@@ -193,7 +196,7 @@ public struct HTMLToMarkdownConverter {
 
         // 处理没有 href 的链接
         result = result.replacingOccurrences(
-            of: #"<a[^>]*>(.*?)</a>"#,
+            of: #"(?s)<a[^>]*>(.*?)</a>"#,
             with: "$1",
             options: [.regularExpression, .caseInsensitive]
         )
@@ -204,41 +207,20 @@ public struct HTMLToMarkdownConverter {
     // MARK: - Image Conversion
 
     private static func convertImages(_ html: String, baseURL: URL?) -> String {
-        let pattern = #"<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>"#
+        let pattern = #"<img\b[^>]*>"#
         var result = html
 
-        // 带 alt 的图片
         while let match = result.range(of: pattern, options: [.regularExpression, .caseInsensitive]) {
             let imgStr = String(result[match])
-            let groups = imgStr.matchingStrings(for: pattern)
-
-            if let groups = groups.first, groups.count >= 3 {
-                let src = groups[1]
-                let alt = groups[2].isEmpty ? "image" : groups[2]
-                let absoluteSrc = resolveURL(src, baseURL: baseURL)
-
-                let markdownImg = "![\(alt)](\(absoluteSrc))"
-                result.replaceSubrange(match, with: markdownImg)
-            } else {
-                break
+            guard let src = attributeValue(named: "src", in: imgStr) else {
+                result.replaceSubrange(match, with: "")
+                continue
             }
-        }
 
-        // 不带 alt 的图片
-        let patternNoAlt = #"<img[^>]*src="([^"]*)"[^>]*>"#
-        while let match = result.range(of: patternNoAlt, options: [.regularExpression, .caseInsensitive]) {
-            let imgStr = String(result[match])
-            let groups = imgStr.matchingStrings(for: patternNoAlt)
-
-            if let groups = groups.first, groups.count >= 2 {
-                let src = groups[1]
-                let absoluteSrc = resolveURL(src, baseURL: baseURL)
-
-                let markdownImg = "![image](\(absoluteSrc))"
-                result.replaceSubrange(match, with: markdownImg)
-            } else {
-                break
-            }
+            let alt = attributeValue(named: "alt", in: imgStr)?.trimmed
+            let absoluteSrc = resolveURL(src, baseURL: baseURL)
+            let markdownImg = "![\(alt?.isEmpty == false ? alt! : "image")](\(absoluteSrc))"
+            result.replaceSubrange(match, with: markdownImg)
         }
 
         return result
@@ -672,6 +654,30 @@ public struct HTMLToMarkdownConverter {
 
         return url
     }
+
+    private static func attributeValue(named name: String, in tag: String) -> String? {
+        let escapedName = NSRegularExpression.escapedPattern(for: name)
+        let pattern = #"\b"# + escapedName + #"\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+            return nil
+        }
+
+        let nsRange = NSRange(tag.startIndex..<tag.endIndex, in: tag)
+        guard let match = regex.firstMatch(in: tag, range: nsRange) else {
+            return nil
+        }
+
+        for rangeIndex in 1..<match.numberOfRanges {
+            let range = match.range(at: rangeIndex)
+            guard range.location != NSNotFound,
+                  let swiftRange = Range(range, in: tag) else {
+                continue
+            }
+            return String(tag[swiftRange])
+        }
+
+        return nil
+    }
 }
 
 // MARK: - String Extension for Regex Matching
@@ -681,9 +687,15 @@ private extension String {
         trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var normalizedInlineWhitespace: String {
+        components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
     /// 获取正则表达式匹配的所有组
     func matchingStrings(for pattern: String) -> [[String]] {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
             return []
         }
 
