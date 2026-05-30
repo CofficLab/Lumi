@@ -11,13 +11,12 @@ class FinderSync: FIFinderSync, SuperLog {
 
     let myFolderURL = URL(fileURLWithPath: "/Users")
     let appGroupId = "group.com.coffic.lumi"
-    let configKey = "RClickConfig"
+    let configFilename = "RClickConfig.json"
 
     /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
     var cachedTemplates: [NewFileTemplate] = []
 
     private enum ConfigLoadReason: String {
-        case appGroupMissing = "app_group_missing"
         case configNotFound = "config_not_found"
         case decodeFailed = "decode_failed"
         case invalidConfig = "invalid_config"
@@ -186,19 +185,10 @@ class FinderSync: FIFinderSync, SuperLog {
     // MARK: - Helpers
 
     private func loadConfig() -> (config: RClickConfig, reason: ConfigLoadReason) {
-        guard let defaults = UserDefaults(suiteName: appGroupId) else {
+        guard let data = loadConfigData() else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)无法访问 UserDefaults，suite: \(self.appGroupId)")
-                }
-            }
-            return (defaultConfig(), .appGroupMissing)
-        }
-
-        guard let data = defaults.data(forKey: configKey) else {
-            if Self.verbose {
-                if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)未找到配置数据，key: \(self.configKey)")
+                                    FinderSync.logger.warning("\(self.t)未找到 App Group 配置文件: \(self.configFilename)")
                 }
             }
             return (defaultConfig(), .configNotFound)
@@ -217,6 +207,17 @@ class FinderSync: FIFinderSync, SuperLog {
             }
             return (defaultConfig(), .decodeFailed)
         }
+    }
+
+    private func loadConfigData() -> Data? {
+        guard let fileURL = appGroupConfigFileURL() else { return nil }
+        return try? Data(contentsOf: fileURL)
+    }
+
+    private func appGroupConfigFileURL() -> URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupId)?
+            .appendingPathComponent(configFilename, isDirectory: false)
     }
 
     func getSelectedURLs() -> [URL]? {
