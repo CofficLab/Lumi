@@ -47,3 +47,22 @@ lumi_resolve_automation_base_url() {
     echo "$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
     return 1
 }
+
+lumi_file_log_dir() {
+    local app_support_dir="${LUMI_APP_SUPPORT_DIR:-$HOME/Library/Application Support/com.coffic.lumi}"
+    local current_log_dir="$app_support_dir/FileLog"
+    local debug_log_dir="$app_support_dir/logs_debug_v2"
+    local production_log_dir="$app_support_dir/logs_production_v2"
+
+    if [ -d "$current_log_dir" ]; then
+        echo "$current_log_dir"
+        return 0
+    fi
+
+    if find "$debug_log_dir" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
+        echo "$debug_log_dir"
+        return 0
+    fi
+
+    echo "$production_log_dir"
+}

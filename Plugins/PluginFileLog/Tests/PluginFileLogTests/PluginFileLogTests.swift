@@ -27,6 +27,23 @@ struct PluginFileLogTests {
 
         #expect(FileLogPlugin.configuration.logsDirectory() == tempURL)
     }
+
+    @Test
+    func coordinatorCreatesMissingLogDirectory() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("file-log-test-\(UUID().uuidString)", isDirectory: true)
+        let logURL = rootURL.appendingPathComponent("nested/logs", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        #expect(FileManager.default.fileExists(atPath: logURL.path) == false)
+
+        try FileLogCoordinator.prepareLogsDirectory(logURL)
+
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: logURL.path, isDirectory: &isDirectory)
+        #expect(exists)
+        #expect(isDirectory.boolValue)
+    }
 }
 
 private struct TestFileLogConfiguration: FileLogConfiguration {

@@ -25,13 +25,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT_DIR="$ROOT_DIR/scripts"
 source "$SCRIPT_DIR/lib/automation-server.sh"
 BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
-DEBUG_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_debug_v2"
-PRODUCTION_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_production_v2"
-if find "$DEBUG_LOG_DIR" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
-    LOG_DIR="$DEBUG_LOG_DIR"
-else
-    LOG_DIR="$PRODUCTION_LOG_DIR"
-fi
+LOG_DIR="$(lumi_file_log_dir)"
 UNIFIED_LOG_LAST="20m"
 
 # 测试文件（含 #Preview 的自包含 SwiftUI 视图）
@@ -259,6 +253,7 @@ wait_for_state_int_greater_than() {
 }
 
 get_latest_log() {
+    LOG_DIR="$(lumi_file_log_dir)"
     ls -t "$LOG_DIR" 2>/dev/null | head -1
 }
 

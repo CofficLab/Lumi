@@ -116,6 +116,13 @@ final class FileLogCoordinator: @unchecked Sendable {
         closeCurrentFile()
         guard !isFileLoggingDisabled else { return }
 
+        do {
+            try Self.prepareLogsDirectory(logsDirectory)
+        } catch {
+            handleFileWriteFailure(error)
+            return
+        }
+
         let filename = logDateFormatter.string(from: Date()) + ".log"
         let filePath = logsDirectory.appendingPathComponent(filename)
 
@@ -156,6 +163,10 @@ final class FileLogCoordinator: @unchecked Sendable {
 
         """
         writeData(Data(header.utf8))
+    }
+
+    static func prepareLogsDirectory(_ directory: URL, fileManager: FileManager = .default) throws {
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
     private func closeCurrentFile() {

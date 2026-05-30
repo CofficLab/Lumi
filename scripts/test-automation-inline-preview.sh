@@ -23,13 +23,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/automation-server.sh"
 BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
-DEBUG_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_debug_v2"
-PRODUCTION_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_production_v2"
-if find "$DEBUG_LOG_DIR" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
-    LOG_DIR="$DEBUG_LOG_DIR"
-else
-    LOG_DIR="$PRODUCTION_LOG_DIR"
-fi
+LOG_DIR="$(lumi_file_log_dir)"
 UNIFIED_LOG_LAST="20m"
 START_STREAM_WAIT=5    # 等待 Start Stream 完成的秒数
 STOP_STREAM_WAIT=3     # 等待 Stop Stream 完成的秒数
@@ -86,6 +80,7 @@ assert_api_ok() {
 
 # 获取最新日志文件路径
 get_latest_log() {
+    LOG_DIR="$(lumi_file_log_dir)"
     ls -t "$LOG_DIR" 2>/dev/null | head -1
 }
 

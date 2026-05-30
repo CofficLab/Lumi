@@ -9,12 +9,12 @@
 set -euo pipefail
 
 APP_SUPPORT_DIR="$HOME/Library/Application Support/com.coffic.lumi"
-LOG_DIR="$APP_SUPPORT_DIR/logs_debug_v2"
 DB_DIR="$APP_SUPPORT_DIR/db_debug_v2"
 STATES_FILE="$DB_DIR/WindowPersistence/settings/window_states.json"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/automation-server.sh"
+LOG_DIR="$(lumi_file_log_dir)"
 BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
 PROJECT_PATH="${PROJECT_PATH:-$REPO_ROOT}"
 export PROJECT_PATH
@@ -60,6 +60,7 @@ wait_for_server() {
 
 tail_logs() {
     local n="${1:-40}"
+    LOG_DIR="$(lumi_file_log_dir)"
     if [ -d "$LOG_DIR" ]; then
         local latest
         latest=$(ls -t "$LOG_DIR" 2>/dev/null | head -1)
