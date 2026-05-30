@@ -6,6 +6,67 @@ import SwiftUI
 
 final class AppThemeVMTests: XCTestCase {
     @MainActor
+    func testInitialThemeUsesSavedThemeWhenAvailable() throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor"),
+            contribution(pluginOrder: 20, themeId: "saved-app", editorThemeId: "saved-editor")
+        ])
+
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in },
+            loadSelectedThemeID: { "saved-app" },
+            saveSelectedThemeID: { _ in },
+            postThemeDidChangeNotification: { _, _ in }
+        )
+
+        XCTAssertEqual(vm.currentThemeId, "saved-app")
+        XCTAssertEqual(registry.selectedThemeId, "saved-app")
+    }
+
+    @MainActor
+    func testInitialThemeIgnoresUnknownSavedTheme() throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor"),
+            contribution(pluginOrder: 20, themeId: "other-app", editorThemeId: "other-editor")
+        ])
+
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in },
+            loadSelectedThemeID: { "missing-app" },
+            saveSelectedThemeID: { _ in },
+            postThemeDidChangeNotification: { _, _ in }
+        )
+
+        XCTAssertEqual(vm.currentThemeId, "default-app")
+        XCTAssertEqual(registry.selectedThemeId, "default-app")
+    }
+
+    @MainActor
+    func testSelectingThemePersistsTheme() throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor"),
+            contribution(pluginOrder: 20, themeId: "other-app", editorThemeId: "other-editor")
+        ])
+        var savedThemeId: String?
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in },
+            loadSelectedThemeID: { nil },
+            saveSelectedThemeID: { savedThemeId = $0 },
+            postThemeDidChangeNotification: { _, _ in }
+        )
+
+        vm.selectTheme("other-app")
+
+        XCTAssertEqual(savedThemeId, "other-app")
+    }
+
+    @MainActor
     func testEditorThemeIDReturnsContributionEditorTheme() throws {
         let registry = LumiUIThemeRegistry()
         try registry.replaceAll([

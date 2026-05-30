@@ -8,6 +8,8 @@ import SwiftUI
 final class AppThemeVM: ObservableObject {
 
     private let registry: LumiUIThemeRegistry
+    private let saveSelectedThemeID: (String) -> Void
+    private let postThemeDidChangeNotification: (String, String) -> Void
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var themes: [LumiUIThemeContribution] = []
@@ -35,10 +37,30 @@ final class AppThemeVM: ObservableObject {
         currentTheme?.attachments.fileIconThemeContributor as? any LumiFileIconThemeContributor
     }
 
-    init(registry: LumiUIThemeRegistry = .shared) {
+    init(
+        registry: LumiUIThemeRegistry = .shared,
+        syncThemes: (LumiUIThemeRegistry) -> Void = { ThemeService.shared.syncFromPlugins(registry: $0) },
+        loadSelectedThemeID: () -> String? = { ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() },
+        saveSelectedThemeID: @escaping (String) -> Void = { ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID($0) },
+        postThemeDidChangeNotification: @escaping (String, String) -> Void = { themeId, editorThemeId in
+            NotificationCenter.default.post(
+                name: .lumiThemeDidChange,
+                object: nil,
+                userInfo: [
+                    "themeId": themeId,
+                    "editorThemeId": editorThemeId,
+                ]
+            )
+        }
+    ) {
         self.registry = registry
-        ThemeService.shared.syncFromPlugins(registry: registry)
-        let initialId = Self.requireSelectedId(registry: registry)
+        self.saveSelectedThemeID = saveSelectedThemeID
+        self.postThemeDidChangeNotification = postThemeDidChangeNotification
+        syncThemes(registry)
+        let initialId = Self.initialSelectedId(registry: registry, savedThemeId: loadSelectedThemeID())
+        if registry.selectedThemeId != initialId {
+            try? registry.select(themeId: initialId)
+        }
         self.themes = registry.themes
         self.currentThemeId = initialId
         bindRegistry()
@@ -155,21 +177,23 @@ final class AppThemeVM: ObservableObject {
         return id
     }
 
+    static func initialSelectedId(registry: LumiUIThemeRegistry, savedThemeId: String?) -> String {
+        let themes = registry.themes
+        if let savedThemeId, themes.contains(where: { $0.id == savedThemeId }) {
+            return savedThemeId
+        }
+        return requireSelectedId(registry: registry)
+    }
+
     private func postThemeDidChange() {
         guard let selected = currentTheme ?? themes.first else { return }
+        saveSelectedThemeID(selected.id)
         let colorScheme = SystemAppearanceResolver.effectiveColorScheme
         let editorThemeId = selected.chromeTheme.resolvedEditorThemeId(
             defaultEditorThemeId: selected.editorThemeId,
             colorScheme: colorScheme
         )
-        NotificationCenter.default.post(
-            name: .lumiThemeDidChange,
-            object: nil,
-            userInfo: [
-                "themeId": selected.id,
-                "editorThemeId": editorThemeId,
-            ]
-        )
+        postThemeDidChangeNotification(selected.id, editorThemeId)
     }
 }
 
