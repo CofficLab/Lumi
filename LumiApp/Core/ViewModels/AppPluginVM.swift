@@ -91,7 +91,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     ///
     /// 如果 `autoDiscover` 为 true，会立即扫描并注册所有插件。
     /// 设为 false 可以延迟加载，常用于测试场景。
-    private init(settingsStore: AppPluginSettingsVM = AppPluginSettingsVM.shared, autoDiscover: Bool = true) {
+    init(settingsStore: AppPluginSettingsVM = AppPluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
         if autoDiscover {
@@ -123,6 +123,16 @@ final class AppPluginVM: ObservableObject, SuperLog {
         clearPluginMetadataCaches()
         cachedSuperSendMiddlewares = nil
     }
+
+    #if DEBUG
+    func replacePluginsForTesting(_ plugins: [any SuperPlugin]) {
+        self.plugins = plugins
+        self.isLoaded = true
+        self.discoveredLLMProviderTypes = []
+        enabledPluginIDs.removeAll()
+        reconcilePluginEnabledStates()
+    }
+    #endif
 
     private func reconcilePluginEnabledStates() {
         let nextEnabledPluginIDs = Set(
@@ -300,8 +310,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
         }
         self.discoveredLLMProviderTypes = providerTypes
 
-        let discoveredProviderIDs = providerTypes.map { $0.id }
-
         // 调用生命周期钩子
         for plugin in sortedPlugins {
             plugin.onRegister()
@@ -433,7 +441,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 仅收集各插件通过 `addViewContainer()` 提供的入口信息，
     /// 不触发 `makeView()`。用于渲染活动栏图标按钮。
     ///
-    /// 如果发现两个插件提供了相同的 icon，会触发 fatalError。
+    /// 如果发现两个插件提供了相同的 icon，会保留先加载插件的入口并跳过后续冲突项。
     func getViewContainerItems() -> [ViewContainerItem] {
         if let viewContainerItemsCache {
             return viewContainerItemsCache
@@ -448,11 +456,10 @@ final class AppPluginVM: ObservableObject, SuperLog {
             let icon = item.icon
 
             if let existingPluginId = seenIcons[icon] {
-                fatalError(
-                    "[AppPluginVM] Duplicate view container icon \"\(icon)\" detected: " +
-                    "\(existingPluginId) and \(pluginId) both provide the same icon. " +
-                    "Each plugin must provide a unique icon via addViewContainer()."
+                AppLogger.core.error(
+                    "\(self.t)Duplicate view container icon \"\(icon)\" from \(pluginId); keeping \(existingPluginId)'s entry and skipping the duplicate."
                 )
+                continue
             }
             seenIcons[icon] = pluginId
             items.append(item)
