@@ -13,7 +13,10 @@ APP_SUPPORT_DIR="$HOME/Library/Application Support/com.coffic.lumi"
 LOG_DIR="$APP_SUPPORT_DIR/logs_debug_v2"
 DB_DIR="$APP_SUPPORT_DIR/db_debug_v2"
 STATES_FILE="$DB_DIR/WindowPersistence/settings/window_states.json"
-PROJECT_PATH="${PROJECT_PATH:-/Users/angel/Code/Coffic/Lumi}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_PATH="${PROJECT_PATH:-$REPO_ROOT}"
+export PROJECT_PATH
 APP_NAME="Lumi"
 BUILD_DIR="$HOME/Library/Developer/Xcode/DerivedData"
 
@@ -97,16 +100,16 @@ path=data[0].get('projectPath') or ''
 print('projectPath=', path)
 if not path:
     sys.exit(2)
-if '$PROJECT_PATH' not in path and path != '$PROJECT_PATH':
-    # allow any non-empty for CI flexibility
-    pass
+if path != '$PROJECT_PATH':
+    print('expected=', '$PROJECT_PATH')
+    sys.exit(3)
 sys.exit(0)
 " || return 1
-    ok "磁盘 window_states.json 含 projectPath"
+    ok "磁盘 window_states.json 含本次选择的 projectPath"
 }
 
 step "构建 Debug"
-cd "$(dirname "$0")/.."
+cd "$REPO_ROOT"
 xcodebuild -scheme Lumi -destination 'platform=macOS' build -quiet
 
 step "结束已有 Lumi 进程"
@@ -161,6 +164,7 @@ PROJECT_STATE_JSON="$RESP" python3 <<'PY'
 import json, os
 
 body = os.environ["PROJECT_STATE_JSON"]
+expected = os.environ["PROJECT_PATH"]
 state = json.loads(body)
 print("projectSelected=", state.get("projectSelected"))
 print("projectPath=", state.get("projectPath"))
@@ -168,10 +172,13 @@ if state.get("status") != "ok":
     raise SystemExit("FAIL: project.debug_state did not return ok")
 if not state.get("projectSelected"):
     raise SystemExit("FAIL: project is not selected after restart")
-if not state.get("projectPath"):
+actual = state.get("projectPath") or ""
+if not actual:
     raise SystemExit("FAIL: projectPath is empty after restart")
+if actual != expected:
+    raise SystemExit(f"FAIL: restored projectPath mismatch: {actual!r} != {expected!r}")
 PY
-ok "重启后 scope 已选项目，不应弹出选项目界面"
+ok "重启后 scope 恢复到本次选择的项目，不应弹出选项目界面"
 
 step "检查日志中的恢复记录与选项目界面（辅助诊断）"
 if tail_logs 80 | grep -E "prepare restoration|applied first record|first record projectPath|plugin.window-persistence" >/dev/null; then
@@ -209,7 +216,9 @@ with urllib.request.urlopen(req) as r:
 print("disk projectPath:", disk_path)
 if not disk_path:
     raise SystemExit("FAIL: disk has no projectPath after restart prep")
-print("PASS: disk still has projectPath")
+if disk_path != "$PROJECT_PATH":
+    raise SystemExit("FAIL: disk projectPath mismatch")
+print("PASS: disk still has expected projectPath")
 PY
 
 ok "项目持久化自测完成"

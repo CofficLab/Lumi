@@ -25,6 +25,19 @@ enum CoreWindowIDStore {
         return consumeDefaultWindowRoute() ?? LumiWindowRoute()
     }
 
+    static func consumeRestoredWindowGroupRoute(_ route: LumiWindowRoute?) -> LumiWindowRoute {
+        guard let route else {
+            return consumeNextWindowRoute()
+        }
+
+        let persistedIds = Set(loadLaunchWindowIds())
+        guard persistedIds.contains(route.id) else {
+            return consumeNextWindowRoute()
+        }
+
+        return route
+    }
+
     private static func consumeDefaultWindowRoute() -> LumiWindowRoute? {
         guard !didConsumeDefaultWindowRoute else { return nil }
         didConsumeDefaultWindowRoute = true
