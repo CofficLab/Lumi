@@ -58,7 +58,7 @@ struct VueProjectScanner: Sendable {
             guard fileURL.pathExtension.lowercased() == "vue" else { continue }
 
             let absolutePath = fileURL.path
-            let relativePath = fileURL.path.replacingOccurrences(of: projectPath, with: "").dropFirst()
+            let relativePath = relativePath(for: fileURL, rootPath: projectPath)
 
             let fileName = fileURL.deletingPathExtension().lastPathComponent
             let componentName = fileNameToComponentName(fileName)
@@ -94,31 +94,20 @@ struct VueProjectScanner: Sendable {
 
     /// 生成组件的相对导入路径（带或不带扩展名）
     static func importPath(for component: ComponentEntry, relativeTo currentFile: URL) -> String {
-        let componentURL = URL(fileURLWithPath: component.path)
-        let componentDir = componentURL.deletingLastPathComponent().path
-
-        // 计算相对路径
-        var relPath = ""
-        if let relative = try? URL(
-            fileURLWithPath: component.path,
-            relativeTo: currentFile.deletingLastPathComponent()
-        ).path {
-            relPath = relative
-        } else {
-            relPath = component.relativePath
-        }
+        let relPath = relativeImportPath(
+            from: currentFile.deletingLastPathComponent(),
+            to: URL(fileURLWithPath: component.path)
+        )
 
         // 确保以 ./ 或 ../ 开头
-        if !relPath.hasPrefix("./") && !relPath.hasPrefix("../") {
-            relPath = "./" + relPath
-        }
+        var importPath = relPath.hasPrefix("../") ? relPath : "./" + relPath
 
         // 移除 .vue 扩展名（现代构建工具可自动解析）
-        if relPath.hasSuffix(".vue") {
-            relPath = String(relPath.dropLast(4))
+        if importPath.hasSuffix(".vue") {
+            importPath = String(importPath.dropLast(4))
         }
 
-        return relPath
+        return importPath
     }
 
     // MARK: - 辅助方法
@@ -163,5 +152,49 @@ struct VueProjectScanner: Sendable {
             result += char.lowercased()
         }
         return result
+    }
+
+    static func relativePath(for fileURL: URL, rootPath: String) -> String {
+        let filePath = normalizedPath(fileURL.path)
+        let root = normalizedPath(rootPath)
+
+        guard !root.isEmpty, filePath != root else {
+            return fileURL.lastPathComponent
+        }
+
+        let rootPrefix = root == "/" ? "/" : root + "/"
+        guard filePath.hasPrefix(rootPrefix) else {
+            return fileURL.lastPathComponent
+        }
+
+        return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    static func relativeImportPath(from directoryURL: URL, to fileURL: URL) -> String {
+        let fromComponents = normalizedPath(directoryURL.path)
+            .split(separator: "/")
+            .map(String.init)
+        let toComponents = normalizedPath(fileURL.path)
+            .split(separator: "/")
+            .map(String.init)
+
+        var commonCount = 0
+        while commonCount < fromComponents.count,
+              commonCount < toComponents.count,
+              fromComponents[commonCount] == toComponents[commonCount] {
+            commonCount += 1
+        }
+
+        let parentSegments = Array(repeating: "..", count: fromComponents.count - commonCount)
+        let targetSegments = Array(toComponents.dropFirst(commonCount))
+        let segments = parentSegments + targetSegments
+
+        return segments.isEmpty ? fileURL.lastPathComponent : segments.joined(separator: "/")
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let standardized = (path as NSString).standardizingPath
+        guard standardized.count > 1 else { return standardized }
+        return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
     }
 }
