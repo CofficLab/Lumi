@@ -30,4 +30,14 @@ struct PluginAppManagerTests {
         #expect(PluginAppManagerLocalization.bundle.url(forResource: "AppManager", withExtension: "xcstrings") != nil)
         #expect(PluginAppManagerLocalization.string("App Manager").isEmpty == false)
     }
+
+    @Test
+    func directoryURLSupportsSpacesAndSpecialCharacters() {
+        let url = AppService.directoryURL(forPath: "/tmp/Lumi App Manager/#Test Folder")
+
+        #expect(url.isFileURL)
+        #expect(url.path == "/tmp/Lumi App Manager/#Test Folder")
+        #expect(url.absoluteString.contains("Lumi%20App%20Manager"))
+        #expect(url.absoluteString.contains("%23Test%20Folder"))
+    }
 }

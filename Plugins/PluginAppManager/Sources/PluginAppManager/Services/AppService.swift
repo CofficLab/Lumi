@@ -31,6 +31,11 @@ final class AppService: @unchecked Sendable, SuperLog {
         return paths
     }
 
+    static func directoryURL(forPath path: String) -> URL {
+        let expandedPath = NSString(string: path).expandingTildeInPath
+        return URL(fileURLWithPath: expandedPath, isDirectory: true)
+    }
+
     private let libraryPaths = [
         "Library/Application Support",
         "Library/Caches",
@@ -64,8 +69,7 @@ final class AppService: @unchecked Sendable, SuperLog {
                         var validPaths = Set<String>()
 
                         for path in paths {
-                            let expandedPath = NSString(string: path).expandingTildeInPath
-                            guard let url = URL(string: "file://\(expandedPath)") else { continue }
+                            let url = Self.directoryURL(forPath: path)
 
                             if let directoryContents = try? FileManager.default.contentsOfDirectory(
                                 at: url,
