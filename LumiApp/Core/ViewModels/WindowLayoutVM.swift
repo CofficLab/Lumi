@@ -81,6 +81,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// - Parameter availableTabIds: 当前可用的标签 ID 列表
     func restoreSelectedTab(from availableTabIds: [String]) {
         guard !availableTabIds.isEmpty else {
+            guard !selectedAgentSidebarTabId.isEmpty else { return }
             if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedTab: 无可用标签，清空选中") }
             selectedAgentSidebarTabId = ""
             return
@@ -111,6 +112,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// - Parameter availableDetailIds: 当前可用的 Detail ID 列表
     func restoreSelectedDetail(from availableDetailIds: [String]) {
         guard !availableDetailIds.isEmpty else {
+            guard !selectedAgentDetailId.isEmpty else { return }
             if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedDetail: 无可用 Detail，清空选中") }
             selectedAgentDetailId = ""
             return
@@ -128,12 +130,14 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     
     /// 清除选中的标签（当没有可用标签时）
     func clearSelectedTab() {
+        guard !selectedAgentSidebarTabId.isEmpty else { return }
         if Self.verbose { AppLogger.layout.info("\(Self.t)清除侧边栏标签选中") }
         selectedAgentSidebarTabId = ""
     }
     
     /// 清除选中的 Detail（当没有可用时）
     func clearSelectedDetail() {
+        guard !selectedAgentDetailId.isEmpty else { return }
         if Self.verbose { AppLogger.layout.info("\(Self.t)清除 Detail 视图选中") }
         selectedAgentDetailId = ""
     }
@@ -142,46 +146,56 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     
     /// 由 LayoutPlugin 调用，从本地存储恢复视图容器图标
     func restoreFromPlugin(activeViewContainerIcon: String?) {
+        guard self.activeViewContainerIcon != activeViewContainerIcon else { return }
         self.activeViewContainerIcon = activeViewContainerIcon
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID
     func restoreFromPlugin(tabId: String) {
-        selectedAgentSidebarTabId = tabId == "GitCommitHistory" ? PluginGit.GitPlugin.id : tabId
+        let normalizedTabId = tabId == "GitCommitHistory" ? PluginGit.GitPlugin.id : tabId
+        guard selectedAgentSidebarTabId != normalizedTabId else { return }
+        selectedAgentSidebarTabId = normalizedTabId
     }
     
     /// 由 LayoutPlugin 调用，从本地存储恢复 Detail 视图 ID
     func restoreFromPlugin(detailId: String) {
+        guard selectedAgentDetailId != detailId else { return }
         selectedAgentDetailId = detailId
     }
     
     /// 由 LayoutPlugin 调用，从本地存储恢复分栏比例
     func restoreFromPlugin(ratios: [String: Double]) {
+        guard layoutRatios != ratios else { return }
         layoutRatios = ratios
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复底部面板可见性
     func restoreFromPlugin(bottomPanelVisible: Bool) {
+        guard self.bottomPanelVisible != bottomPanelVisible else { return }
         self.bottomPanelVisible = bottomPanelVisible
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复内容面板可见性
     func restoreFromPlugin(contentPanelVisible: Bool) {
+        guard self.contentPanelVisible != contentPanelVisible else { return }
         self.contentPanelVisible = contentPanelVisible
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复编辑器区域可见性
     func restoreFromPlugin(editorVisible: Bool) {
+        guard self.editorVisible != editorVisible else { return }
         self.editorVisible = editorVisible
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复 Rail 区域可见性
     func restoreFromPlugin(railVisible: Bool) {
+        guard self.railVisible != railVisible else { return }
         self.railVisible = railVisible
     }
 
     /// 由 LayoutPlugin 调用，从本地存储恢复右侧栏可见性
     func restoreFromPlugin(rightSidebarVisible: Bool) {
+        guard self.rightSidebarVisible != rightSidebarVisible else { return }
         self.rightSidebarVisible = rightSidebarVisible
     }
 
