@@ -31,8 +31,11 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginHistoryDBStatusBarTests",
-            dependencies: ["PluginHistoryDBStatusBar"],
-            path: "Tests/PluginHistoryDBStatusBarTests"
+            dependencies: [
+                "PluginHistoryDBStatusBar",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
+            path: "Tests"
         )
     ]
 )
