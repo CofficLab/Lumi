@@ -36,7 +36,7 @@ enum CSVPreviewParser {
     }
 
     static func detectSeparator(_ text: String) -> Character {
-        let firstLine = text.components(separatedBy: .newlines).first ?? text
+        let firstLine = firstRecord(in: text)
         var counts: [Character: Int] = [",": 0, "\t": 0, ";": 0]
         var inQuotes = false
         let chars = Array(firstLine)
@@ -63,6 +63,38 @@ enum CSVPreviewParser {
             return ";"
         }
         return ","
+    }
+
+    private static func firstRecord(in text: String) -> String {
+        var record = ""
+        var inQuotes = false
+        let chars = Array(text)
+        var index = 0
+
+        while index < chars.count {
+            let char = chars[index]
+
+            if char == "\"" {
+                if inQuotes, index + 1 < chars.count, chars[index + 1] == "\"" {
+                    record.append(char)
+                    record.append(chars[index + 1])
+                    index += 2
+                    continue
+                }
+                inQuotes.toggle()
+            }
+
+            if char == "\n", !inQuotes {
+                break
+            }
+
+            if char != "\r" || inQuotes {
+                record.append(char)
+            }
+            index += 1
+        }
+
+        return record
     }
 
     static func parseLines(_ text: String, separator: Character) -> [[String]] {
