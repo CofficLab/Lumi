@@ -894,18 +894,7 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 若无项目则返回文件名
     public var relativeFilePath: String {
         guard let url = currentFileURL else { return "" }
-        guard let projectPath = projectRootPath else {
-            return url.lastPathComponent
-        }
-        let absolutePath = url.path
-        guard absolutePath.hasPrefix(projectPath) else {
-            return url.lastPathComponent
-        }
-        var relative = String(absolutePath.dropFirst(projectPath.count))
-        if relative.hasPrefix("/") {
-            relative = String(relative.dropFirst())
-        }
-        return relative
+        return EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: projectRootPath)
     }
 
     @MainActor

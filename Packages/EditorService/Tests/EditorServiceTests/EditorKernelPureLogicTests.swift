@@ -34,6 +34,23 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertEqual(EditorPeekMode.references.title, "Peek References")
     }
 
+    func testEditorFileStateRelativeFilePathRejectsSiblingProjectWithSharedPrefix() {
+        let state = EditorFileState()
+        state.currentFileURL = URL(fileURLWithPath: "/tmp/Lumi2/Sources/App/Main.swift")
+
+        XCTAssertEqual(state.relativeFilePath(projectRootPath: "/tmp/Lumi"), "Main.swift")
+    }
+
+    func testEditorFileStateRelativeFilePathTrimsCopiedProjectRootPath() {
+        let state = EditorFileState()
+        state.currentFileURL = URL(fileURLWithPath: "/tmp/Lumi/Sources/App/Main.swift")
+
+        XCTAssertEqual(
+            state.relativeFilePath(projectRootPath: " \n/tmp/Lumi/\t"),
+            "Sources/App/Main.swift"
+        )
+    }
+
     func testEditorPeekControllerBuildsDefinitionPresentationFromCurrentBuffer() throws {
         let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelPureLogicTests.swift")
         let location = Location(

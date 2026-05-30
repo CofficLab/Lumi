@@ -38,10 +38,28 @@ public struct EditorQuickOpenFileCandidate: Equatable {
 
 public enum EditorQuickOpenFilePolicy {
     public static func relativePath(for fileURL: URL, projectRootPath: String?) -> String {
-        if let projectRootPath, fileURL.path.hasPrefix(projectRootPath + "/") {
-            return String(fileURL.path.dropFirst(projectRootPath.count + 1))
+        let filePath = normalizedPath(fileURL.path)
+        guard let projectRootPath else { return fileURL.lastPathComponent }
+
+        let rootPath = normalizedPath(projectRootPath)
+        guard !rootPath.isEmpty else { return fileURL.lastPathComponent }
+
+        if filePath == rootPath {
+            return fileURL.lastPathComponent
+        }
+
+        let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
+        if filePath.hasPrefix(rootPrefix) {
+            return String(filePath.dropFirst(rootPrefix.count))
         }
         return fileURL.lastPathComponent
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let normalized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+        return normalized != "/" && normalized.hasSuffix("/") ? String(normalized.dropLast()) : normalized
     }
 
     public static func parentLabel(for relativePath: String) -> String? {

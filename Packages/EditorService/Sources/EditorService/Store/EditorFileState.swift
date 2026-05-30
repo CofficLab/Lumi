@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import CodeEditLanguages
+import EditorKernel
 import LanguageServerProtocol
 
 /// 编辑器文件状态
@@ -77,18 +78,7 @@ final class EditorFileState: ObservableObject {
     /// 当前文件相对于项目根目录的路径
     func relativeFilePath(projectRootPath: String?) -> String {
         guard let url = currentFileURL else { return "" }
-        guard let projectPath = projectRootPath else {
-            return url.lastPathComponent
-        }
-        let absolutePath = url.path
-        guard absolutePath.hasPrefix(projectPath) else {
-            return url.lastPathComponent
-        }
-        var relative = String(absolutePath.dropFirst(projectPath.count))
-        if relative.hasPrefix("/") {
-            relative = String(relative.dropFirst())
-        }
-        return relative
+        return EditorQuickOpenFilePolicy.relativePath(for: url, projectRootPath: projectRootPath)
     }
 
     // MARK: - 重置

@@ -958,6 +958,23 @@ struct EditorKernelTests {
     }
 
     @Test
+    func quickOpenFilePolicyRejectsSiblingProjectWithSharedPrefix() {
+        let fileURL = URL(fileURLWithPath: "/tmp/Lumi2/Sources/App/Main.swift")
+        #expect(EditorQuickOpenFilePolicy.relativePath(for: fileURL, projectRootPath: "/tmp/Lumi") == "Main.swift")
+    }
+
+    @Test
+    func quickOpenFilePolicyTrimsCopiedProjectRootPath() {
+        let fileURL = URL(fileURLWithPath: "/tmp/Lumi/Sources/App/Main.swift")
+        #expect(
+            EditorQuickOpenFilePolicy.relativePath(
+                for: fileURL,
+                projectRootPath: " \n/tmp/Lumi/\t"
+            ) == "Sources/App/Main.swift"
+        )
+    }
+
+    @Test
     func quickOpenFilePolicyMatchesFuzzyQueriesAndEngineeringFiles() {
         #expect(EditorQuickOpenFilePolicy.fuzzyMatch("editorquickopen", query: "eqo"))
         #expect(!EditorQuickOpenFilePolicy.fuzzyMatch("editorquickopen", query: "eqz"))
