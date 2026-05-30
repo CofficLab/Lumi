@@ -81,8 +81,8 @@ public struct ChatAttachmentDropRootView: View {
     private func acceptChatFileDropFromProviders(_ providers: [NSItemProvider]) -> Bool {
         guard canChat, let provider = providers.first else { return false }
         if provider.canLoadObject(ofClass: URL.self) {
-            provider.loadObject(ofClass: URL.self) { item, _ in
-                guard let url = item as? URL else { return }
+            _ = provider.loadObject(ofClass: URL.self) { item, _ in
+                guard let url = item else { return }
                 Task { @MainActor in
                     handleFileDrop(fileURL: url)
                 }
@@ -90,8 +90,8 @@ public struct ChatAttachmentDropRootView: View {
             return true
         }
         if provider.canLoadObject(ofClass: String.self) {
-            provider.loadObject(ofClass: String.self) { item, _ in
-                guard let path = item as? String, path.hasPrefix("/") else { return }
+            _ = provider.loadObject(ofClass: String.self) { item, _ in
+                guard let path = item, path.hasPrefix("/") else { return }
                 Task { @MainActor in
                     handleFileDrop(fileURL: URL(fileURLWithPath: path))
                 }

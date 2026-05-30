@@ -283,8 +283,8 @@ public struct NoProjectOverlay: View {
     private func acceptFolderDrop(_ providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
         if provider.canLoadObject(ofClass: URL.self) {
-            provider.loadObject(ofClass: URL.self) { item, _ in
-                guard let url = item as? URL else { return }
+            _ = provider.loadObject(ofClass: URL.self) { item, _ in
+                guard let url = item else { return }
                 Task { @MainActor in
                     importDroppedFolder(url)
                 }
