@@ -232,6 +232,30 @@ struct SystemMonitorServiceTests {
         #expect(service.currentMetrics.disk.readHistory.last == 1500)
         #expect(service.currentMetrics.disk.writeHistory.last == 600)
     }
+
+    @Test
+    @MainActor
+    func scheduledMetricsThrottleDiskCounterReads() async throws {
+        let clock = ManualClock(now: 100)
+        let reader = DiskCounterReaderSpy()
+        let service = SystemMonitorService(
+            diskCountersReader: { reader.nextCounters() },
+            diskCounterInterval: 5,
+            timeProvider: { clock.now }
+        )
+
+        service.refreshScheduledMetricsForTesting()
+        try await waitUntil { reader.callCount == 1 }
+
+        clock.now = 102
+        service.refreshScheduledMetricsForTesting()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(reader.callCount == 1)
+
+        clock.now = 105
+        service.refreshScheduledMetricsForTesting()
+        try await waitUntil { reader.callCount == 2 }
+    }
 }
 
 @MainActor
@@ -252,6 +276,46 @@ private final class DiskCounterSequence {
     func nextTime() -> TimeInterval {
         defer { timeIndex += 1 }
         return times[min(timeIndex, times.count - 1)]
+    }
+}
+
+@MainActor
+private final class ManualClock {
+    var now: TimeInterval
+
+    init(now: TimeInterval) {
+        self.now = now
+    }
+}
+
+private final class DiskCounterReaderSpy: @unchecked Sendable {
+    private let lock = NSLock()
+    private var calls = 0
+
+    var callCount: Int {
+        lock.withLock { calls }
+    }
+
+    func nextCounters() -> (readBytes: UInt64, writeBytes: UInt64) {
+        lock.withLock {
+            calls += 1
+            return (UInt64(calls) * 1_000, UInt64(calls) * 2_000)
+        }
+    }
+}
+
+@MainActor
+private func waitUntil(
+    timeout: Duration = .seconds(1),
+    condition: @MainActor @escaping () -> Bool
+) async throws {
+    let deadline = ContinuousClock.now + timeout
+    while !condition() {
+        if ContinuousClock.now >= deadline {
+            Issue.record("Timed out waiting for condition")
+            return
+        }
+        try await Task.sleep(for: .milliseconds(10))
     }
 }
 
