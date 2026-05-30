@@ -62,10 +62,19 @@ public enum XcodeProjectBackgroundQuery {
         return nil
     }
 
-    private static func workspacePathCandidates(for workspaceURL: URL) -> [String] {
+    static func workspacePathCandidates(for workspaceURL: URL) -> [String] {
         let rawPath = workspaceURL.path
         let resolvedPath = workspaceURL.resolvingSymlinksInPath().path
         let withoutPrivatePrefix = rawPath.hasPrefix("/private/") ? String(rawPath.dropFirst("/private".count)) : rawPath
-        return Array(Set([rawPath, resolvedPath, withoutPrivatePrefix]))
+        return uniquePreservingOrder([rawPath, resolvedPath, withoutPrivatePrefix])
+    }
+
+    private static func uniquePreservingOrder(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in values where seen.insert(value).inserted {
+            result.append(value)
+        }
+        return result
     }
 }
