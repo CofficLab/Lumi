@@ -34,5 +34,26 @@ final class AppWindowManagerVMTests: XCTestCase {
 
         XCTAssertEqual(closeCount, 1)
     }
+
+    @MainActor
+    func testActivatePreferredWindowFallsBackToAssociatedWindow() {
+        let manager = AppWindowManagerVM()
+        let missingWindowId = UUID()
+        let fallbackWindowId = UUID()
+        let fallbackWindow = NSWindow()
+
+        manager.setActiveWindow(missingWindowId)
+        manager.associateWindow(fallbackWindow, with: fallbackWindowId)
+
+        XCTAssertTrue(manager.activatePreferredWindow())
+        XCTAssertEqual(manager.activeWindowId, fallbackWindowId)
+    }
+
+    @MainActor
+    func testActivatePreferredWindowReturnsFalseWithoutAssociatedWindows() {
+        let manager = AppWindowManagerVM()
+
+        XCTAssertFalse(manager.activatePreferredWindow())
+    }
 }
 #endif

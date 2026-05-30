@@ -136,11 +136,25 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
 
     /// 激活指定窗口
     func activateWindow(_ windowId: UUID) {
-        guard let window = window(for: windowId) else { return }
+        activateWindowIfPresent(windowId)
+    }
 
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        setActiveWindow(windowId)
+    /// 激活当前最合适的主窗口。
+    @discardableResult
+    func activatePreferredWindow() -> Bool {
+        if let activeWindowId, activateWindowIfPresent(activeWindowId) {
+            return true
+        }
+
+        for container in windowContainers where activateWindowIfPresent(container.id) {
+            return true
+        }
+
+        if let windowId = windowIdMap.values.first, activateWindowIfPresent(windowId) {
+            return true
+        }
+
+        return false
     }
 
     /// 关闭所有窗口
@@ -149,6 +163,16 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
         for scope in windowsToClose {
             closeWindow(scope.id)
         }
+    }
+
+    @discardableResult
+    private func activateWindowIfPresent(_ windowId: UUID) -> Bool {
+        guard let window = window(for: windowId) else { return false }
+
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        setActiveWindow(windowId)
+        return true
     }
 
     // MARK: - NSWindow Tracking

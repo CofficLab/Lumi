@@ -452,9 +452,10 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 激活应用并显示主窗口。
     private func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        if let window = NSApp.windows.first {
-            window.makeKeyAndOrderFront(nil)
+        if RootContainer.shared.windowManagerVM.activatePreferredWindow() {
+            return
         }
+        NotificationCenter.postOpenWindowWithRoute(route: LumiWindowRoute())
     }
 
     /// 退出应用
