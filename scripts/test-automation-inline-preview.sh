@@ -3,11 +3,11 @@
 # test-automation-inline-preview.sh
 #
 # 自动化测试 Inline Preview 的 Start Stream / Stop Stream 功能。
-# 通过 Lumi 的 HTTP 自动化 API（localhost:18765）发送指令，
+# 通过 Lumi 的 HTTP 自动化 API 发送指令，
 # 然后检查应用日志验证状态转换是否正确。
 #
 # 前置条件：
-#   1. Lumi 应用已启动并运行（AutomationServer 在 localhost:18765 监听）
+#   1. Lumi 应用已启动并运行（AutomationServer 在 localhost:18765 或备用端口监听）
 #   2. bash 4+ / zsh（支持 mapfile）
 #
 # 用法：
@@ -20,7 +20,9 @@ set -euo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────────
 
-BASE_URL="http://localhost:18765/api/action"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/automation-server.sh"
+BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
 DEBUG_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_debug_v2"
 PRODUCTION_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_production_v2"
 if find "$DEBUG_LOG_DIR" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
@@ -222,17 +224,13 @@ assert_last_session_action() {
 
 check_prerequisites() {
     info "检查前置条件..."
-    
-    # 检查 Lumi 是否运行
-    if ! curl -s --connect-timeout 2 "$BASE_URL" > /dev/null 2>&1; then
-        # 即使返回错误，只要能连接就算通过（GET 请求会返回 404）
-        if ! curl -s --connect-timeout 2 -o /dev/null -w "%{http_code}" "$BASE_URL" 2>/dev/null | grep -q "."; then
-            fail "无法连接到 Lumi 自动化服务器（${BASE_URL}）"
-            fail "请确保 Lumi 应用已启动"
-            exit 1
-        fi
+
+    if ! BASE_URL="$(lumi_resolve_automation_base_url)"; then
+        fail "无法连接到 Lumi 自动化服务器（已检查端口: $(lumi_automation_candidate_ports | tr '\n' ' ')）"
+        fail "请确保 Lumi 应用已启动"
+        exit 1
     fi
-    ok "Lumi 自动化服务器可达"
+    ok "Lumi 自动化服务器可达: $BASE_URL"
     
     # 检查日志目录
     if [ ! -d "$LOG_DIR" ]; then

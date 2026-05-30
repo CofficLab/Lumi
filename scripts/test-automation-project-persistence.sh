@@ -8,13 +8,14 @@
 #
 set -euo pipefail
 
-BASE_URL="http://localhost:18765/api/action"
 APP_SUPPORT_DIR="$HOME/Library/Application Support/com.coffic.lumi"
 LOG_DIR="$APP_SUPPORT_DIR/logs_debug_v2"
 DB_DIR="$APP_SUPPORT_DIR/db_debug_v2"
 STATES_FILE="$DB_DIR/WindowPersistence/settings/window_states.json"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib/automation-server.sh"
+BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
 PROJECT_PATH="${PROJECT_PATH:-$REPO_ROOT}"
 export PROJECT_PATH
 APP_NAME="Lumi"
@@ -48,9 +49,8 @@ send_action() {
 wait_for_server() {
     local i
     for i in $(seq 1 40); do
-        if curl -s -o /dev/null -w "%{http_code}" "$BASE_URL" -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"action":"project.debug_state","payload":{}}' | grep -q "200\|ok"; then
+        if BASE_URL="$(lumi_resolve_automation_base_url)"; then
+            info "Automation Server 地址: $BASE_URL"
             return 0
         fi
         sleep 0.5

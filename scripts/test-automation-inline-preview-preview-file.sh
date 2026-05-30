@@ -3,14 +3,14 @@
 # test-automation-inline-preview-preview-file.sh
 #
 # 自动化测试：打开 Swift 文件 → 自动编译 #Preview → Inline Preview 渲染。
-# 通过 Lumi 的 HTTP 自动化 API（localhost:18765）发送指令，
+# 通过 Lumi 的 HTTP 自动化 API 发送指令，
 # 然后检查应用日志验证整个链路是否正确工作。
 #
 # 测试场景：打开 AppAvatar.swift（含 #Preview），验证 Inline Preview
 # 自动编译并加载用户的预览视图。
 #
 # 前置条件：
-#   1. Lumi 应用已启动并运行（AutomationServer 在 localhost:18765 监听）
+#   1. Lumi 应用已启动并运行（AutomationServer 在 localhost:18765 或备用端口监听）
 #   2. bash 4+ / zsh
 #
 # 用法：
@@ -21,8 +21,10 @@ set -uo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────────
 
-BASE_URL="http://localhost:18765/api/action"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$ROOT_DIR/scripts"
+source "$SCRIPT_DIR/lib/automation-server.sh"
+BASE_URL="$(lumi_automation_api_url "${LUMI_AUTOMATION_PORT:-18765}")"
 DEBUG_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_debug_v2"
 PRODUCTION_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_production_v2"
 if find "$DEBUG_LOG_DIR" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
@@ -328,13 +330,12 @@ wait_for_log() {
 check_prerequisites() {
     info "检查前置条件..."
 
-    # 检查 Lumi 是否运行
-    if ! curl -s --connect-timeout 2 -o /dev/null "$BASE_URL" 2>/dev/null; then
-        fail "无法连接到 Lumi 自动化服务器（${BASE_URL}）"
+    if ! BASE_URL="$(lumi_resolve_automation_base_url)"; then
+        fail "无法连接到 Lumi 自动化服务器（已检查端口: $(lumi_automation_candidate_ports | tr '\n' ' ')）"
         fail "请确保 Lumi 应用已启动"
         exit 1
     fi
-    ok "Lumi 自动化服务器可达"
+    ok "Lumi 自动化服务器可达: $BASE_URL"
 
     # 检查日志目录
     if [ ! -d "$LOG_DIR" ]; then
