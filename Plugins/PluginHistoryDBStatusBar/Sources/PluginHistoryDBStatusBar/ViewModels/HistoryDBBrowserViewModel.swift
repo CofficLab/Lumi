@@ -1,7 +1,12 @@
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 public final class HistoryDBBrowserViewModel: ObservableObject {
+    // MARK: - Dependencies
+
+    private let historyService: (any HistoryQueryService)?
+
     // MARK: - UI State
 
     @Published var selectedMode: HistoryDBViewMode = .messages {
@@ -28,7 +33,9 @@ public final class HistoryDBBrowserViewModel: ObservableObject {
     @Published private(set) var conversationRows: [HistoryConversationRow] = []
     @Published private(set) var isLoading: Bool = false
 
-    public init() {}
+    public init(historyService: (any HistoryQueryService)? = nil) {
+        self.historyService = historyService
+    }
 
     public var totalPages: Int {
         let pages = Int(ceil(Double(totalCount) / Double(max(pageSize, 1))))
@@ -58,28 +65,35 @@ public final class HistoryDBBrowserViewModel: ObservableObject {
     }
 
     public func reload() async {
+        guard let service = historyService else {
+            totalCount = 0
+            messageRows = []
+            conversationRows = []
+            return
+        }
+
         isLoading = true
         defer { isLoading = false }
 
         switch selectedMode {
         case .messages:
-            await loadMessageRows()
+            await loadMessageRows(service: service)
         case .conversations:
-            await loadConversationRows()
+            await loadConversationRows(service: service)
         }
     }
 
     // MARK: - Loaders
 
-    private func loadMessageRows() async {
-        totalCount = 0
-        messageRows = []
+    private func loadMessageRows(service: any HistoryQueryService) async {
+        totalCount = await service.fetchMessageCount()
+        messageRows = await service.fetchMessagePage(limit: pageSize, offset: offset)
         conversationRows = []
     }
 
-    private func loadConversationRows() async {
-        totalCount = 0
-        conversationRows = []
+    private func loadConversationRows(service: any HistoryQueryService) async {
+        totalCount = await service.fetchConversationCount()
+        conversationRows = await service.fetchConversationPage(limit: pageSize, offset: offset)
         messageRows = []
     }
 }

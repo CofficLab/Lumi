@@ -1,13 +1,14 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct HistoryDBDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @StateObject private var viewModel: HistoryDBBrowserViewModel
 
-    public init() {
-        _viewModel = StateObject(wrappedValue: HistoryDBBrowserViewModel())
+    public init(historyService: (any HistoryQueryService)?) {
+        _viewModel = StateObject(wrappedValue: HistoryDBBrowserViewModel(historyService: historyService))
     }
 
     public var body: some View {

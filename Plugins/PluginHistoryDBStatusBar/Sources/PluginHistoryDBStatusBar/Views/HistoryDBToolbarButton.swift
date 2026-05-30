@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// 工具栏上的历史数据入口按钮
 ///
@@ -9,8 +10,13 @@ public struct HistoryDBToolbarButton: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPresented = false
 
+    private let historyService: (any HistoryQueryService)?
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
+
+    public init(historyService: (any HistoryQueryService)? = nil) {
+        self.historyService = historyService
+    }
 
     public var body: some View {
         Button {
@@ -24,7 +30,7 @@ public struct HistoryDBToolbarButton: View {
         }
         .help(String(localized: "History DB", table: "HistoryDBStatusBar"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            HistoryDBDetailView()
+            HistoryDBDetailView(historyService: historyService)
             .frame(width: 720, height: 520)
         }
     }

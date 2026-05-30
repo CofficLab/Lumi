@@ -20,7 +20,7 @@ public actor HistoryDBStatusBarPlugin: SuperPlugin {
 
     @MainActor
     public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(HistoryDBStatusBarView())
+        guard context.supportsAIChat else { return nil }
+        return AnyView(HistoryDBStatusBarView(historyService: context.historyService))
     }
 }
