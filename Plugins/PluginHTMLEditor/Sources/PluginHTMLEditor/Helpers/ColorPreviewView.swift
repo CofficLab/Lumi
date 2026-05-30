@@ -118,6 +118,15 @@ public enum ColorParser {
             }
         }
 
+        // 查找 hsl/hsla 颜色
+        hslPattern.enumerateMatches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) { match, _, _ in
+            guard let match = match else { return }
+            let hslValue = nsText.substring(with: match.range)
+            if let color = Color(fromHSL: hslValue) {
+                results.append((range: match.range, hexString: hslValue, color: color))
+            }
+        }
+
         // 查找命名颜色
         let wordPattern = try! NSRegularExpression(pattern: "\\b[a-zA-Z]+\\b", options: [])
         wordPattern.enumerateMatches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) { match, _, _ in
@@ -194,16 +203,80 @@ extension Color {
         }
 
         let nsString = rgbString as NSString
-        let red = Double(nsString.substring(with: match.range(at: 1)))! / 255.0
-        let green = Double(nsString.substring(with: match.range(at: 2)))! / 255.0
-        let blue = Double(nsString.substring(with: match.range(at: 3)))! / 255.0
+        guard let redValue = Double(nsString.substring(with: match.range(at: 1))),
+              let greenValue = Double(nsString.substring(with: match.range(at: 2))),
+              let blueValue = Double(nsString.substring(with: match.range(at: 3))) else {
+            return nil
+        }
+
+        let red = min(max(redValue / 255.0, 0.0), 1.0)
+        let green = min(max(greenValue / 255.0, 0.0), 1.0)
+        let blue = min(max(blueValue / 255.0, 0.0), 1.0)
 
         var alpha = 1.0
         if match.range(at: 4).location != NSNotFound {
-            alpha = Double(nsString.substring(with: match.range(at: 4)))!
+            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
+                return nil
+            }
+            alpha = min(max(alphaValue, 0.0), 1.0)
         }
 
         self.init(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
+    }
+
+    /// 从 hsl/hsla 字符串创建颜色。
+    public init?(fromHSL hslString: String) {
+        let pattern = try! NSRegularExpression(
+            pattern: "hsla?\\(\\s*(\\d+)\\s*,\\s*(\\d+)%\\s*,\\s*(\\d+)%\\s*(?:,\\s*([\\d.]+)\\s*)?\\)",
+            options: .caseInsensitive
+        )
+
+        let range = NSRange(location: 0, length: hslString.utf16.count)
+        guard let match = pattern.firstMatch(in: hslString, options: [], range: range) else {
+            return nil
+        }
+
+        let nsString = hslString as NSString
+        guard let hueValue = Double(nsString.substring(with: match.range(at: 1))),
+              let saturationValue = Double(nsString.substring(with: match.range(at: 2))),
+              let lightnessValue = Double(nsString.substring(with: match.range(at: 3))) else {
+            return nil
+        }
+
+        let hue = hueValue.truncatingRemainder(dividingBy: 360) / 360.0
+        let saturation = min(max(saturationValue / 100.0, 0.0), 1.0)
+        let lightness = min(max(lightnessValue / 100.0, 0.0), 1.0)
+
+        var alpha = 1.0
+        if match.range(at: 4).location != NSNotFound {
+            guard let alphaValue = Double(nsString.substring(with: match.range(at: 4))) else {
+                return nil
+            }
+            alpha = min(max(alphaValue, 0.0), 1.0)
+        }
+
+        let chroma = (1.0 - abs(2.0 * lightness - 1.0)) * saturation
+        let huePrime = hue * 6.0
+        let x = chroma * (1.0 - abs(huePrime.truncatingRemainder(dividingBy: 2.0) - 1.0))
+
+        let rgb: (red: Double, green: Double, blue: Double)
+        switch huePrime {
+        case 0..<1:
+            rgb = (chroma, x, 0)
+        case 1..<2:
+            rgb = (x, chroma, 0)
+        case 2..<3:
+            rgb = (0, chroma, x)
+        case 3..<4:
+            rgb = (0, x, chroma)
+        case 4..<5:
+            rgb = (x, 0, chroma)
+        default:
+            rgb = (chroma, 0, x)
+        }
+
+        let m = lightness - chroma / 2.0
+        self.init(.sRGB, red: rgb.red + m, green: rgb.green + m, blue: rgb.blue + m, opacity: alpha)
     }
 
     /// 转换为十六进制字符串

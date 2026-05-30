@@ -68,10 +68,24 @@ public enum EditorSnippetParser {
 
             let next = ns.character(at: index + 1)
             if next >= 0x30, next <= 0x39 {
-                let placeholderIndex = Int(next - 0x30)
+                var cursor = index + 1
+                var digits = ""
+                while cursor < ns.length {
+                    let value = ns.character(at: cursor)
+                    guard value >= 0x30, value <= 0x39 else { break }
+                    digits.append(ns.substring(with: NSRange(location: cursor, length: 1)))
+                    cursor += 1
+                }
+
+                guard let placeholderIndex = Int(digits) else {
+                    output.append("$")
+                    index += 1
+                    continue
+                }
+
                 let seededText = placeholderSeeds[placeholderIndex] ?? ""
                 appendPlaceholder(index: placeholderIndex, text: seededText)
-                index += 2
+                index = cursor
                 continue
             }
 
