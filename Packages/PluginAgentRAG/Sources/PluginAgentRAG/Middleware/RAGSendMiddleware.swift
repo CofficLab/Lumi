@@ -1,9 +1,9 @@
-import Foundation
-import SuperLogKit
 import AgentToolKit
-import RAGKit
-import os
+import Foundation
 import LumiCoreKit
+import RAGKit
+import SuperLogKit
+import os
 
 /// RAG 中间件
 ///
@@ -16,7 +16,7 @@ import LumiCoreKit
 /// 4. 如果未初始化，跳过 RAG（中间件不负责初始化）
 /// 5. 检查索引状态
 /// 6. 如果索引未完成，启动后台索引，不阻塞发送流程
-/// 7. 如果索引已完成，调用 RAG 服务检索相关文档
+/// 7. 如果索引已完成，调用 RAG 服务检索相关文档（带超时保护）
 /// 8. 将检索结果附加到消息上下文
 @MainActor
 public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
@@ -24,6 +24,9 @@ public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     public nonisolated static let verbose: Bool = true
     public let id = "rag"
     public let order: Int = 100
+
+    /// 中间件 RAG 检索的最大容忍时间（秒）
+    private static let maxMiddlewareTimeoutSeconds: TimeInterval = 10
 
     public func handle(
         ctx: SendMessageContext,
@@ -35,34 +38,24 @@ public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         let userMessage = ctx.message.content
         let projectPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if Self.verbose {
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.info("\(Self.t)🔀 RAG 中间件：检查消息")
-            }
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.info("\(Self.t)   用户消息：\"\(userMessage)\"")
-            }
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
-            }
+        if Self.verbose, RAGPlugin.verbose {
+            RAGPlugin.logger.info("\(Self.t)🔀 RAG 中间件：检查消息")
+            RAGPlugin.logger.info("\(Self.t)   用户消息：\"\(userMessage)\"")
+            RAGPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
 
         // 使用 RAGIntentAnalyzer 判断是否需要 RAG
         guard RAGIntentAnalyzer.shouldUseRAG(for: userMessage) else {
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (不符合触发条件)")
-                }
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (不符合触发条件)")
             }
             await next(ctx)
             return
         }
 
         guard !projectPath.isEmpty else {
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (未选择项目)")
-                }
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (未选择项目)")
             }
             await next(ctx)
             return
@@ -72,92 +65,102 @@ public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         let ragService = RAGPlugin.getService()
 
         // 检查服务是否已初始化（nonisolated 属性，无需 await）
-        let isInitialized = ragService.isInitialized
-        if !isInitialized {
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (服务未初始化)")
-                }
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   💡 提示：RAG 服务由插件在适当时机初始化，中间件不负责初始化")
-                }
+        guard ragService.isInitialized else {
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (服务未初始化)")
+                RAGPlugin.logger.info("\(Self.t)   💡 提示：RAG 服务由插件在适当时机初始化，中间件不负责初始化")
             }
             await next(ctx)
             return
         }
 
-        // ⏱️ 记录索引检查时间
-        let indexingCheckStart = CFAbsoluteTimeGetCurrent()
-        let isAnyIndexing = RAGService.isAnyIndexing()
-        let isProjectIndexing = RAGService.isIndexing(projectPath: projectPath)
-        let indexingCheckDuration = (CFAbsoluteTimeGetCurrent() - indexingCheckStart) * 1000
-
-        if Self.verbose {
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.info("\(Self.t)   🔍 索引状态检查：anyIndexing=\(isAnyIndexing), projectIndexing=\(isProjectIndexing) (\(String(format: "%.2f", indexingCheckDuration))ms)")
-            }
-        }
-
-        // 只要任意项目正在索引，都直接跳过本轮 RAG，避免卡在 RAGService actor 队列
-        if isAnyIndexing {
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (存在后台索引任务，不阻塞发送)")
-                }
-            }
-            await next(ctx)
-            return
-        }
-        // 索引进行中时，发送链路应直接放行，避免等待 RAGService actor 队列
-        if isProjectIndexing {
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (索引进行中，不阻塞发送)")
-                }
+        // 快速检查：非阻塞地检查是否正在索引（不进入 actor 队列）
+        if RAGService.isAnyIndexing() || RAGService.isIndexing(projectPath: projectPath) {
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (后台索引进行中，不阻塞发送)")
             }
             await next(ctx)
             return
         }
 
-        if Self.verbose {
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.info("\(Self.t)   ✅ 触发 RAG 检索")
-            }
+        if Self.verbose, RAGPlugin.verbose {
+            RAGPlugin.logger.info("\(Self.t)   ✅ 触发 RAG 检索")
         }
 
+        // 带超时保护执行 RAG 检索，超时后直接放行
+        let ragResult = await RAGTimeout.withTimeout(seconds: Self.maxMiddlewareTimeoutSeconds) {
+            await self.performRAGRetrieval(
+                ragService: ragService,
+                projectPath: projectPath,
+                userMessage: userMessage,
+                totalStart: totalStart,
+                languagePreference: ctx.languagePreference.ragPreference
+            )
+        }
+
+        switch ragResult {
+        case .success(let outcome):
+            switch outcome {
+            case .augmented(let prompt):
+                ctx.transientSystemPrompts.append(prompt)
+                let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
+                if Self.verbose, RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)   📝 已构建增强提示词 (\(prompt.count) 字符)")
+                    RAGPlugin.logger.info("\(Self.t)   🧩 已注入本轮临时 system 上下文")
+                    RAGPlugin.logger.info("\(Self.t)   ⏱️ RAG 中间件总耗时：\(String(format: "%.2f", totalDuration))ms")
+                    RAGPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
+                }
+            case .backgroundIndexing, .noResults, .error:
+                break // 直接放行，不注入 RAG 上下文
+            }
+
+        case .timedOut:
+            let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
+            RAGPlugin.logger.warning("\(Self.t)   ⚠️ RAG 中间件超时 (\(String(format: "%.1f", totalDuration))ms > \(Int(Self.maxMiddlewareTimeoutSeconds))s)，直接放行")
+        }
+
+        await next(ctx)
+    }
+
+    // MARK: - RAG Retrieval Logic
+
+    private enum RAGOutcome: Sendable {
+        case augmented(String)
+        case backgroundIndexing
+        case noResults
+        case error
+    }
+
+    private func performRAGRetrieval(
+        ragService: RAGService,
+        projectPath: String,
+        userMessage: String,
+        totalStart: CFAbsoluteTime,
+        languagePreference: RAGLanguagePreference
+    ) async -> RAGOutcome {
         do {
             // ⏱️ checkNeedsIndex 耗时
             let checkStart = CFAbsoluteTimeGetCurrent()
             let needsIndex = try await ragService.checkNeedsIndex(projectPath: projectPath)
             let checkDuration = (CFAbsoluteTimeGetCurrent() - checkStart) * 1000
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏱️ checkNeedsIndex 耗时：\(String(format: "%.2f", checkDuration))ms, needsIndex=\(needsIndex)")
-                }
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ checkNeedsIndex 耗时：\(String(format: "%.2f", checkDuration))ms, needsIndex=\(needsIndex)")
             }
 
             if needsIndex {
                 // 需要索引，启动后台索引任务，不阻塞发送流程
-                if Self.verbose {
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)   🔄 索引未完成，启动后台索引任务")
-                    }
+                if Self.verbose, RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)   🔄 索引未完成，启动后台索引任务")
                 }
                 await ragService.ensureIndexedBackground(projectPath: projectPath)
-
-                // 直接继续发送流程（不使用 RAG）
-                if Self.verbose {
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)   ⏭️ 后台索引中，跳过本次 RAG 检索")
-                    }
+                if Self.verbose, RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)   ⏭️ 后台索引中，跳过本次 RAG 检索")
                 }
-                await next(ctx)
-                return
+                return .backgroundIndexing
             }
 
             // ⏱️ retrieve 耗时（这是最关键的指标）
             let retrieveStart = CFAbsoluteTimeGetCurrent()
-            // 索引已完成，执行检索
             let response = try await ragService.retrieve(
                 query: userMessage,
                 projectPath: projectPath,
@@ -165,40 +168,27 @@ public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
             )
             let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
 
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏱️ retrieve 耗时：\(String(format: "%.2f", retrieveDuration))ms")
-                }
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ retrieve 耗时：\(String(format: "%.2f", retrieveDuration))ms")
             }
 
             // ⚠️ 性能预警：超过 300ms 显示警告
-            if Self.verbose, retrieveDuration > 300 {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.warning("\(Self.t)   ⚠️ RAG 检索耗时过长：\(String(format: "%.2f", retrieveDuration))ms (>300ms)")
-                }
+            if Self.verbose, RAGPlugin.verbose, retrieveDuration > 300 {
+                RAGPlugin.logger.warning("\(Self.t)   ⚠️ RAG 检索耗时过长：\(String(format: "%.2f", retrieveDuration))ms (>300ms)")
             }
 
             guard response.hasResults else {
-                if Self.verbose {
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)   ⚠️ 未找到相关文档")
-                    }
+                if Self.verbose, RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)   ⚠️ 未找到相关文档")
                 }
-                await next(ctx)
-                return
+                return .noResults
             }
 
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   📄 找到 \(response.results.count) 个相关文档:")
-                }
+            if Self.verbose, RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)   📄 找到 \(response.results.count) 个相关文档:")
                 for (index, result) in response.results.enumerated() {
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)      [\(index + 1)] \(result.source) (相似度：\(String(format: "%.2f", result.score)))")
-                    }
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)          \(result.content.prefix(50))...")
-                    }
+                    RAGPlugin.logger.info("\(Self.t)      [\(index + 1)] \(result.source) (相似度：\(String(format: "%.2f", result.score)))")
+                    RAGPlugin.logger.info("\(Self.t)          \(result.content.prefix(50))...")
                 }
             }
 
@@ -206,36 +196,15 @@ public final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
                 query: userMessage,
                 results: response.results,
                 projectPath: projectPath,
-                languagePreference: .chinese
+                languagePreference: languagePreference
             )
-            ctx.transientSystemPrompts.append(augmentedPrompt)
+            return .augmented(augmentedPrompt)
 
-            // ⏱️ 总耗时
-            let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
-
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   📝 已构建增强提示词 (\(augmentedPrompt.count) 字符)")
-                }
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   🧩 已注入本轮临时 system 上下文")
-                }
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ⏱️ RAG 中间件总耗时：\(String(format: "%.2f", totalDuration))ms")
-                }
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
-                }
-            }
         } catch {
-            // ⏱️ 错误也要记录耗时
             let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
-            if RAGPlugin.verbose {
-                            RAGPlugin.logger.error("\(Self.t)   ❌ RAG 检索失败：\(error) (耗时：\(String(format: "%.2f", totalDuration))ms)")
-            }
+            RAGPlugin.logger.error("\(Self.t)   ❌ RAG 检索失败：\(error) (耗时：\(String(format: "%.2f", totalDuration))ms)")
+            return .error
         }
-
-        await next(ctx)
     }
 }
 

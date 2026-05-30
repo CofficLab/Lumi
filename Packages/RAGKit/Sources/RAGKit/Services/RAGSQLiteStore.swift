@@ -58,45 +58,11 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func migrate() throws {
-        try execute("""
-        CREATE TABLE IF NOT EXISTS rag_files (
-            project_path TEXT NOT NULL,
-            file_path TEXT NOT NULL,
-            mtime REAL NOT NULL,
-            content_hash TEXT NOT NULL,
-            updated_at REAL NOT NULL,
-            PRIMARY KEY(project_path, file_path)
-        );
-        """)
-
-        try execute("""
-        CREATE TABLE IF NOT EXISTS rag_chunks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_path TEXT NOT NULL,
-            file_path TEXT NOT NULL,
-            chunk_index INTEGER NOT NULL,
-            content TEXT NOT NULL,
-            content_hash TEXT NOT NULL,
-            mtime REAL NOT NULL,
-            embedding BLOB NOT NULL,
-            dimension INTEGER NOT NULL,
-            created_at REAL NOT NULL
-        );
-        """)
-
-        try execute("CREATE INDEX IF NOT EXISTS idx_rag_chunks_project ON rag_chunks(project_path);")
-        try execute("CREATE INDEX IF NOT EXISTS idx_rag_chunks_file ON rag_chunks(project_path, file_path);")
-
-        try execute("""
-        CREATE TABLE IF NOT EXISTS rag_index_state (
-            project_path TEXT PRIMARY KEY,
-            last_indexed_at REAL NOT NULL,
-            file_count INTEGER NOT NULL,
-            chunk_count INTEGER NOT NULL,
-            embedding_model TEXT NOT NULL,
-            embedding_dimension INTEGER NOT NULL
-        );
-        """)
+        try execute(RAGSQL.createFilesTable)
+        try execute(RAGSQL.createChunksTable)
+        try execute(RAGSQL.createChunksProjectIndex)
+        try execute(RAGSQL.createChunksFileIndex)
+        try execute(RAGSQL.createIndexStateTable)
     }
 
     func configureVectorBackend(embeddingDimension: Int) throws {
@@ -105,11 +71,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func fetchIndexedFileStates(projectPath: String) throws -> [String: RAGIndexedFileState] {
-        let sql = """
-        SELECT file_path, mtime, content_hash
-        FROM rag_files
-        WHERE project_path = ?;
-        """
+        let sql = RAGSQL.fetchFileStates
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare fetchIndexedFileStates failed")
@@ -151,11 +113,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         do {
             try deleteChunks(projectPath: projectPath, filePath: filePath)
 
-            let insertSQL = """
-            INSERT INTO rag_chunks
-            (project_path, file_path, chunk_index, content, content_hash, mtime, embedding, dimension, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """
+            let insertSQL = RAGSQL.insertChunk
             var insertStmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK else {
                 throw dbError("prepare replaceFileChunks insert failed")
@@ -209,7 +167,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func deleteFileState(projectPath: String, filePath: String) throws {
-        let sql = "DELETE FROM rag_files WHERE project_path = ? AND file_path = ?;"
+        let sql = RAGSQL.deleteFileState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare deleteFileState failed")
@@ -239,7 +197,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
     func deleteChunks(projectPath: String, filePath: String) throws {
         let chunkIDs = try fetchChunkIDs(projectPath: projectPath, filePath: filePath)
-        let sql = "DELETE FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
+        let sql = RAGSQL.deleteChunksByFile
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare deleteChunks failed")
@@ -264,17 +222,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         embeddingModel: String,
         embeddingDimension: Int
     ) throws {
-        let sql = """
-        INSERT INTO rag_index_state
-        (project_path, last_indexed_at, file_count, chunk_count, embedding_model, embedding_dimension)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(project_path) DO UPDATE SET
-          last_indexed_at = excluded.last_indexed_at,
-          file_count = excluded.file_count,
-          chunk_count = excluded.chunk_count,
-          embedding_model = excluded.embedding_model,
-          embedding_dimension = excluded.embedding_dimension;
-        """
+        let sql = RAGSQL.upsertProjectIndexState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare upsertProjectIndexState failed")
@@ -392,12 +340,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func fetchProjectIndexState(projectPath: String) throws -> RAGProjectIndexState? {
-        let sql = """
-        SELECT project_path, last_indexed_at, file_count, chunk_count, embedding_model, embedding_dimension
-        FROM rag_index_state
-        WHERE project_path = ?
-        LIMIT 1;
-        """
+        let sql = RAGSQL.fetchProjectIndexState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare fetchProjectIndexState failed")
@@ -425,14 +368,14 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
     func countProjectFiles(projectPath: String) throws -> Int {
         try querySingleInt(
-            sql: "SELECT COUNT(*) FROM rag_files WHERE project_path = ?;",
+            sql: RAGSQL.countProjectFiles,
             param: projectPath
         )
     }
 
     func countProjectChunks(projectPath: String) throws -> Int {
         try querySingleInt(
-            sql: "SELECT COUNT(*) FROM rag_chunks WHERE project_path = ?;",
+            sql: RAGSQL.countProjectChunks,
             param: projectPath
         )
     }
@@ -572,15 +515,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         modifiedTime: Double,
         contentHash: String
     ) throws {
-        let sql = """
-        INSERT INTO rag_files
-        (project_path, file_path, mtime, content_hash, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(project_path, file_path) DO UPDATE SET
-          mtime = excluded.mtime,
-          content_hash = excluded.content_hash,
-          updated_at = excluded.updated_at;
-        """
+        let sql = RAGSQL.upsertFileState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare upsertFileState failed")
@@ -725,7 +660,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     private func fetchChunkIDs(projectPath: String, filePath: String) throws -> [Int64] {
-        let sql = "SELECT id FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
+        let sql = RAGSQL.fetchChunkIDsByFile
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare fetchChunkIDs failed")
@@ -762,7 +697,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
     private func upsertVectorIndex(rowID: Int64, embedding: [Float]) throws {
         guard runtimeInfo.vectorBackend == .sqliteVec else { return }
-        let sql = "INSERT OR REPLACE INTO \(Self.vecTableName)(rowid, embedding) VALUES (?, ?);"
+        let sql = RAGSQL.upsertVectorIndex
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
             throw dbError("prepare upsertVectorIndex failed")
@@ -780,19 +715,19 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     private func ensureVectorTable(dimension: Int) throws {
-        try execute("DROP TABLE IF EXISTS \(Self.vecTableName);")
-        try execute("CREATE VIRTUAL TABLE \(Self.vecTableName) USING vec0(embedding float[\(dimension)]);")
+        try execute(RAGSQL.dropVectorTable)
+        try execute(RAGSQL.createVectorTable(dimension: dimension))
     }
 
     private func rebuildVectorTableFromChunks() throws {
-        let sql = "SELECT id, embedding FROM rag_chunks;"
+        let sql = RAGSQL.rebuildVectorFromChunks
         var queryStmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &queryStmt, nil) == SQLITE_OK else {
             throw dbError("prepare rebuildVectorTableFromChunks failed")
         }
         defer { sqlite3_finalize(queryStmt) }
 
-        let insertSQL = "INSERT OR REPLACE INTO \(Self.vecTableName)(rowid, embedding) VALUES (?, ?);"
+        let insertSQL = RAGSQL.upsertVectorIndex
         var insertStmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK else {
             throw dbError("prepare rebuildVectorTableFromChunks insert failed")

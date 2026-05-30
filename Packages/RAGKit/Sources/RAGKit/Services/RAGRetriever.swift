@@ -1,11 +1,13 @@
 import Foundation
 
 public struct RAGRetriever {
-    private let store: RAGSQLiteStore
+    private let store: any RAGStore
+    private let cache: RAGCache
     private let logger: RAGLogger
 
-    init(store: RAGSQLiteStore, logger: RAGLogger = NullRAGLogger()) {
+    init(store: any RAGStore, cache: RAGCache = RAGCache(), logger: RAGLogger = NullRAGLogger()) {
         self.store = store
+        self.cache = cache
         self.logger = logger
     }
 
@@ -15,6 +17,12 @@ public struct RAGRetriever {
         projectPath: String?,
         topK: Int
     ) throws -> [RAGSearchResult] {
+        // 检查缓存
+        let cacheKey = cache.buildKey(query: query, projectPath: projectPath, topK: topK)
+        if let cached = cache.get(key: cacheKey) {
+            logger.info("[RAGRetriever] 缓存命中: \(query.prefix(40))")
+            return cached
+        }
         let start = CFAbsoluteTimeGetCurrent()
 
         let queryTerms = RAGTextUtils.tokenize(query.lowercased())
@@ -77,7 +85,7 @@ public struct RAGRetriever {
             logger.warning("[RAGRetriever]⚠️ retrieve 耗时过长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
         }
 
-        return top.map {
+        let results = top.map {
             let sourcePath = RAGPathUtils.displayPath(filePath: $0.0.filePath, projectPath: projectPath)
             return RAGSearchResult(
                 content: $0.0.content,
@@ -85,6 +93,11 @@ public struct RAGRetriever {
                 score: $0.1
             )
         }
+
+        // 存入缓存
+        cache.set(key: cacheKey, results: results)
+
+        return results
     }
 
     // MARK: - Private

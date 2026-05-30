@@ -1,5 +1,33 @@
 import Foundation
 
+/// Prompt 语言模板
+private struct PromptTemplate: Sendable {
+    let disclaimer: String
+    let projectPathLabel: String
+    let snippetsHeader: String
+    let snippetLabel: @Sendable (Int) -> String
+    let sourceLabel: String
+    let truncationNote: String
+
+    static let chinese = PromptTemplate(
+        disclaimer: "以下上下文仅供参考，可能存在不准确的情况。",
+        projectPathLabel: "项目路径",
+        snippetsHeader: "相关片段",
+        snippetLabel: { index in "[片段 \(index)]" },
+        sourceLabel: "来源",
+        truncationNote: "[说明] 由于上下文预算限制，已截断部分片段。"
+    )
+
+    static let english = PromptTemplate(
+        disclaimer: "The following context is for reference only and may contain inaccuracies.",
+        projectPathLabel: "Project path",
+        snippetsHeader: "Relevant snippets",
+        snippetLabel: { index in "[Snippet \(index)]" },
+        sourceLabel: "Source",
+        truncationNote: "[Note] Some snippets were truncated due to the context budget."
+    )
+}
+
 public enum RAGContextBuilder {
     private static let maxContextChars = 9000
 
@@ -9,20 +37,21 @@ public enum RAGContextBuilder {
         projectPath: String?,
         languagePreference: RAGLanguagePreference = .chinese
     ) -> String {
-        switch languagePreference {
-        case .chinese:
-            return buildChinesePrompt(query: query, results: results, projectPath: projectPath)
-        case .english:
-            return buildEnglishPrompt(query: query, results: results, projectPath: projectPath)
-        }
+        let template: PromptTemplate = languagePreference == .chinese ? .chinese : .english
+        return buildPrompt(query: query, results: results, projectPath: projectPath, template: template)
     }
 
-    private static func buildChinesePrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
-        var prompt = "以下上下文仅供参考，可能存在不准确的情况。\n\n"
+    private static func buildPrompt(
+        query: String,
+        results: [RAGSearchResult],
+        projectPath: String?,
+        template: PromptTemplate
+    ) -> String {
+        var prompt = "\(template.disclaimer)\n\n"
         if let projectPath, !projectPath.isEmpty {
-            prompt += "项目路径：\(projectPath)\n\n"
+            prompt += "\(template.projectPathLabel)：\(projectPath)\n\n"
         }
-        prompt += "---\n相关片段：\n"
+        prompt += "---\n\(template.snippetsHeader)：\n"
 
         var usedChars = 0
         var includedCount = 0
@@ -32,41 +61,14 @@ public enum RAGContextBuilder {
             let clipped = clip(result.content, maxChars: min(3000, budget))
             if clipped.isEmpty { continue }
 
-            prompt += "\n[片段 \(index + 1)] 来源：\(result.source)\n"
+            prompt += "\n\(template.snippetLabel(index + 1)) \(template.sourceLabel)：\(result.source)\n"
             prompt += "\(clipped)\n"
             usedChars += clipped.count
             includedCount += 1
         }
 
         if includedCount < results.count {
-            prompt += "\n[说明] 由于上下文预算限制，已截断部分片段。\n"
-        }
-        return prompt
-    }
-
-    private static func buildEnglishPrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
-        var prompt = "The following context is for reference only and may contain inaccuracies.\n\n"
-        if let projectPath, !projectPath.isEmpty {
-            prompt += "Project path: \(projectPath)\n\n"
-        }
-        prompt += "---\nRelevant snippets:\n"
-
-        var usedChars = 0
-        var includedCount = 0
-        for (index, result) in results.enumerated() {
-            let budget = max(maxContextChars - usedChars, 0)
-            if budget == 0 { break }
-            let clipped = clip(result.content, maxChars: min(3000, budget))
-            if clipped.isEmpty { continue }
-
-            prompt += "\n[Snippet \(index + 1)] Source: \(result.source)\n"
-            prompt += "\(clipped)\n"
-            usedChars += clipped.count
-            includedCount += 1
-        }
-
-        if includedCount < results.count {
-            prompt += "\n[Note] Some snippets were truncated due to the context budget.\n"
+            prompt += "\n\(template.truncationNote)\n"
         }
         return prompt
     }
