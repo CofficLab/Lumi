@@ -110,7 +110,7 @@ private struct SidebarToolbarBar: View {
             // 默认图标按钮
             Button(action: {}) {
                 Image(systemName: item.systemImage)
-                    .font(.system(size: 13))
+                    .font(.appCallout)
                     .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .frame(width: 28, height: 28)
                     .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
