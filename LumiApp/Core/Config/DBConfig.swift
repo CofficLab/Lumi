@@ -1,11 +1,13 @@
 import Foundation
 import AgentToolKit
 import SwiftData
+import os
 
 /// 数据库配置管理器
 ///
 /// 负责 SwiftData 容器配置和数据库路径管理。
 enum DBConfig {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "database.config")
     
     // MARK: - Schema Definition
     
@@ -40,7 +42,14 @@ enum DBConfig {
     static func getContainer() -> ModelContainer {
         let schema = getSchema()
         let dbFileURL = getDBFileURL()
-        
+
+        return makeContainer(schema: schema, dbFileURL: dbFileURL)
+    }
+
+    static func makeContainer(schema: Schema, dbFileURL: URL) -> ModelContainer {
+        let dbDirectory = dbFileURL.deletingLastPathComponent()
+        ensureDirectory(at: dbDirectory)
+
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             url: dbFileURL,
@@ -51,7 +60,31 @@ enum DBConfig {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            logger.error("打开主数据库失败，准备重建：\(error.localizedDescription)")
+            quarantinePersistentStore(at: dbFileURL)
+        }
+
+        do {
+            ensureDirectory(at: dbDirectory)
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            logger.error("重建主数据库失败，使用临时内存存储：\(error.localizedDescription)")
+            return makeInMemoryContainer(schema: schema)
+        }
+    }
+
+    private static func makeInMemoryContainer(schema: Schema) -> ModelContainer {
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            preconditionFailure("Could not create in-memory ModelContainer: \(error)")
         }
     }
     
@@ -129,13 +162,8 @@ enum DBConfig {
         #endif
         
         let dbDirectory = appSupport.appendingPathComponent(dbDirectoryName, isDirectory: true)
-        
-        // 确保数据库目录存在
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: dbDirectory.path) {
-            try? fileManager.createDirectory(at: dbDirectory, withIntermediateDirectories: true, attributes: nil)
-        }
-        
+        ensureDirectory(at: dbDirectory)
+
         return dbDirectory
     }
     
@@ -147,10 +175,7 @@ enum DBConfig {
     /// - Returns: Core 数据目录的 URL
     static func getCoreDBFolderURL() -> URL {
         let coreDirectory = getDBFolderURL().appendingPathComponent("Core", isDirectory: true)
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: coreDirectory.path) {
-            try? fileManager.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
-        }
+        ensureDirectory(at: coreDirectory)
         return coreDirectory
     }
     
@@ -182,12 +207,8 @@ enum DBConfig {
         
         let name = sanitized.isEmpty ? "Plugin" : sanitized
         let pluginDir = base.appendingPathComponent(name, isDirectory: true)
-        
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: pluginDir.path) {
-            try? fileManager.createDirectory(at: pluginDir, withIntermediateDirectories: true, attributes: nil)
-        }
-        
+        ensureDirectory(at: pluginDir)
+
         return pluginDir
     }
     
@@ -200,19 +221,57 @@ enum DBConfig {
     /// - Returns: App Support 目录的 URL
     private static func getAppSupportDirectory() -> URL {
         let fileManager = FileManager.default
-        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("无法获取 App Support 目录")
-        }
+        let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support", isDirectory: true)
 
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
         let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
 
-        // 确保目录存在
-        if !fileManager.fileExists(atPath: appDirectory.path) {
-            try? fileManager.createDirectory(at: appDirectory, withIntermediateDirectories: true, attributes: nil)
-        }
+        ensureDirectory(at: appDirectory)
 
         return appDirectory
+    }
+
+    private static func ensureDirectory(at url: URL) {
+        quarantineFileIfItBlocksDirectory(at: url)
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        } catch {
+            logger.error("创建数据库目录失败：\(url.path, privacy: .public) \(error.localizedDescription)")
+        }
+    }
+
+    private static func quarantinePersistentStore(at dbURL: URL) {
+        let fileManager = FileManager.default
+        let storeURLs = [
+            dbURL,
+            URL(fileURLWithPath: dbURL.path + "-shm"),
+            URL(fileURLWithPath: dbURL.path + "-wal")
+        ]
+
+        for url in storeURLs where fileManager.fileExists(atPath: url.path) {
+            quarantineFile(at: url)
+        }
+    }
+
+    private static func quarantineFileIfItBlocksDirectory(at url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue else {
+            return
+        }
+
+        quarantineFile(at: url)
+    }
+
+    private static func quarantineFile(at url: URL) {
+        let destination = url.deletingLastPathComponent()
+            .appendingPathComponent(url.lastPathComponent + ".corrupt-\(Int(Date().timeIntervalSince1970))-\(UUID().uuidString)")
+        do {
+            try FileManager.default.moveItem(at: url, to: destination)
+        } catch {
+            logger.error("隔离数据库文件失败：\(url.path, privacy: .public) \(error.localizedDescription)")
+        }
     }
 }
 
