@@ -73,10 +73,6 @@ public actor RequestLogHistoryManager: SuperLog {
         return items.map { RequestLogItemDTO(from: $0) }
     }
 
-    public nonisolated func getContext() -> ModelContext {
-        ModelContext(container)
-    }
-
     public func getLatest(limit: Int = 100, offset: Int = 0) async -> [RequestLogItemDTO] {
         let context = ModelContext(container)
         var descriptor = FetchDescriptor<RequestLogItem>(
@@ -184,12 +180,4 @@ public actor RequestLogHistoryManager: SuperLog {
         guard let data = try? JSONSerialization.data(withJSONObject: dict, options: [.sortedKeys]) else { return nil }
         return String(data: data, encoding: .utf8)
     }
-}
-
-public struct RequestLogStats: Sendable {
-    public var totalRequests: Int = 0
-    public var successCount: Int = 0
-    public var failedCount: Int = 0
-    public var successRate: Double = 0
-    public var averageDuration: Double = 0
 }
