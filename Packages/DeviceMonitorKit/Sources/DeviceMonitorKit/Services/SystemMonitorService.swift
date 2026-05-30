@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import IOKit
 import SuperLogKit
 import os
 
@@ -43,6 +44,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     private var prevDiskRead: UInt64 = 0
     private var prevDiskWrite: UInt64 = 0
     private var lastCheckTime: TimeInterval = 0
+    private var lastDiskCheckTime: TimeInterval = 0
 
     // History buffers (keep last 60 points)
     private var cpuHistory: [Double] = Array(repeating: 0, count: 60)
@@ -55,8 +57,20 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     // CPU load info
     private var numCPUs: natural_t = 0
     private var refCount = 0
+    private let diskCountersProvider: @MainActor () -> (readBytes: UInt64, writeBytes: UInt64)?
+    private let timeProvider: @MainActor () -> TimeInterval
 
-    package init() {
+    package init(
+        diskCountersProvider: @escaping @MainActor () -> (readBytes: UInt64, writeBytes: UInt64)? = {
+            SystemMonitorService.readDiskCounters()
+        },
+        timeProvider: @escaping @MainActor () -> TimeInterval = {
+            Date().timeIntervalSince1970
+        }
+    ) {
+        self.diskCountersProvider = diskCountersProvider
+        self.timeProvider = timeProvider
+
         var mib = [CTL_HW, HW_NCPU]
         var sizeOfNumCPUs = MemoryLayout<natural_t>.size
         sysctl(&mib, 2, &numCPUs, &sizeOfNumCPUs, nil, 0)
@@ -104,9 +118,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         let cpu = getCPUUsage()
         let (memUsed, memTotal) = getMemoryUsage()
         let (netIn, netOut) = getNetworkUsage()
-        // TODO: Implement real Disk I/O using IOKit
-        let diskRead = Double.random(in: 0...1024*1024)
-        let diskWrite = Double.random(in: 0...512*1024)
+        let (diskRead, diskWrite) = getDiskUsage()
 
         cpuHistory = (cpuHistory.dropFirst() + [cpu]).suffix(60)
         memoryHistory = (memoryHistory.dropFirst() + [Double(memUsed) / Double(memTotal)]).suffix(60)
@@ -142,6 +154,10 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         )
 
         currentMetrics = metrics
+    }
+
+    func refreshMetricsForTesting() {
+        updateMetrics()
     }
 
     // MARK: - CPU Usage
@@ -263,11 +279,89 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         return (speedIn, speedOut)
     }
 
+    // MARK: - Disk Usage
+
+    private func getDiskUsage() -> (readBytes: Double, writeBytes: Double) {
+        let now = timeProvider()
+        guard let counters = diskCountersProvider() else {
+            lastDiskCheckTime = now
+            return (0, 0)
+        }
+
+        let timeDiff = now - lastDiskCheckTime
+        var readSpeed: Double = 0
+        var writeSpeed: Double = 0
+
+        if lastDiskCheckTime > 0 && timeDiff > 0 {
+            if counters.readBytes >= prevDiskRead {
+                readSpeed = Double(counters.readBytes - prevDiskRead) / timeDiff
+            }
+            if counters.writeBytes >= prevDiskWrite {
+                writeSpeed = Double(counters.writeBytes - prevDiskWrite) / timeDiff
+            }
+        }
+
+        prevDiskRead = counters.readBytes
+        prevDiskWrite = counters.writeBytes
+        lastDiskCheckTime = now
+
+        return (readSpeed, writeSpeed)
+    }
+
     // MARK: - Helper
 
     private nonisolated func getKernelPageSize() -> UInt64 {
         var pageSize: vm_size_t = 0
         let result = host_page_size(mach_host_self(), &pageSize)
         return result == KERN_SUCCESS ? UInt64(pageSize) : 4096
+    }
+
+    private nonisolated static func readDiskCounters() -> (readBytes: UInt64, writeBytes: UInt64)? {
+        var iterator: io_iterator_t = 0
+        guard let matching = IOServiceMatching("IOBlockStorageDriver"),
+              IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS
+        else {
+            return nil
+        }
+        defer { IOObjectRelease(iterator) }
+
+        var totalRead: UInt64 = 0
+        var totalWrite: UInt64 = 0
+
+        while true {
+            let service = IOIteratorNext(iterator)
+            if service == 0 { break }
+            defer { IOObjectRelease(service) }
+
+            var propertiesRef: Unmanaged<CFMutableDictionary>?
+            let result = IORegistryEntryCreateCFProperties(service, &propertiesRef, kCFAllocatorDefault, 0)
+            guard result == KERN_SUCCESS,
+                  let properties = propertiesRef?.takeRetainedValue() as NSDictionary?,
+                  let statistics = properties["Statistics"] as? NSDictionary
+            else {
+                continue
+            }
+
+            totalRead += uint64Value(statistics["Bytes (Read)"])
+            totalWrite += uint64Value(statistics["Bytes (Write)"])
+        }
+
+        return (totalRead, totalWrite)
+    }
+
+    private nonisolated static func uint64Value(_ value: Any?) -> UInt64 {
+        if let number = value as? NSNumber {
+            return number.uint64Value
+        }
+        if let value = value as? UInt64 {
+            return value
+        }
+        if let value = value as? Int64 {
+            return UInt64(max(value, 0))
+        }
+        if let value = value as? Int {
+            return UInt64(max(value, 0))
+        }
+        return 0
     }
 }

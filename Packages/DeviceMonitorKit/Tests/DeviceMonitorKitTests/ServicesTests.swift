@@ -212,6 +212,47 @@ struct SystemMonitorServiceTests {
 
         service.stopMonitoring()
     }
+
+    @Test
+    @MainActor
+    func diskMetricsUseCounterDeltas() {
+        let counter = DiskCounterSequence()
+        let service = SystemMonitorService(
+            diskCountersProvider: { counter.nextCounters() },
+            timeProvider: { counter.nextTime() }
+        )
+
+        service.refreshMetricsForTesting()
+        #expect(service.currentMetrics.disk.readSpeed == 0)
+        #expect(service.currentMetrics.disk.writeSpeed == 0)
+
+        service.refreshMetricsForTesting()
+        #expect(service.currentMetrics.disk.readSpeed == 1500)
+        #expect(service.currentMetrics.disk.writeSpeed == 600)
+        #expect(service.currentMetrics.disk.readHistory.last == 1500)
+        #expect(service.currentMetrics.disk.writeHistory.last == 600)
+    }
+}
+
+@MainActor
+private final class DiskCounterSequence {
+    private var counterIndex = 0
+    private var timeIndex = 0
+    private let counters: [(readBytes: UInt64, writeBytes: UInt64)] = [
+        (1_000, 2_000),
+        (2_500, 2_600),
+    ]
+    private let times: [TimeInterval] = [100, 101]
+
+    func nextCounters() -> (readBytes: UInt64, writeBytes: UInt64) {
+        defer { counterIndex += 1 }
+        return counters[min(counterIndex, counters.count - 1)]
+    }
+
+    func nextTime() -> TimeInterval {
+        defer { timeIndex += 1 }
+        return times[min(timeIndex, times.count - 1)]
+    }
 }
 
 // MARK: - CPU History Service Tests
