@@ -117,7 +117,11 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let source = arguments["source"]?.value as? String, !source.isEmpty else {
+        guard let rawSource = arguments["source"]?.value as? String else {
+            return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
+        }
+        let source = rawSource.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !source.isEmpty else {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }
 

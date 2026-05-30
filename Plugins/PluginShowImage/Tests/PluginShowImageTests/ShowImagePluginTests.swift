@@ -1,4 +1,5 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
 import Testing
 @testable import PluginShowImage
@@ -40,6 +41,23 @@ struct PluginShowImageTests {
         let tool = ShowImageTool()
 
         #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
+    }
+
+    @MainActor
+    @Test("tool trims copied remote source whitespace")
+    func toolTrimsCopiedRemoteSourceWhitespace() async throws {
+        ShowImageState.shared.clear()
+        let tool = ShowImageTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["source": ToolArgument(" \nhttps://example.com/image.png\t")],
+            context: context
+        )
+
+        #expect(result == "Image displayed successfully. Source: https://example.com/image.png")
+        #expect(ShowImageState.shared.displayItem?.source == .remote("https://example.com/image.png"))
+        ShowImageState.shared.clear()
     }
 
     @Test("localization catalog is packaged")
