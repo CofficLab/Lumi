@@ -1,5 +1,7 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
+import SwiftData
 import Testing
 @testable import PluginAutoTask
 
@@ -14,7 +16,7 @@ struct AutoTaskPluginTests {
         #expect(AutoTaskPlugin.isConfigurable == false)
         #expect(AutoTaskPlugin.category == .agent)
         #expect(AutoTaskPlugin.order == 90)
-        #expect(AutoTaskPlugin.enable == true)
+        #expect(AutoTaskPlugin.policy == .alwaysOn)
     }
 
     @MainActor
@@ -77,4 +79,25 @@ struct AutoTaskPluginTests {
     #expect(UpdateTaskTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(ListTasksTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(CheckProgressTool().permissionRiskLevel(arguments: [:]) == .low)
+}
+
+@Test func testTaskStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("auto-task-store-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let blockedDirectory = root.appendingPathComponent("AutoTaskPlugin", isDirectory: true)
+    try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+    let container = TaskStateManager.makeContainer(databaseRootURL: root)
+    let context = ModelContext(container)
+    let task = TaskItem(conversationId: "conversation", title: "Recovered task", order: 1)
+
+    context.insert(task)
+    try context.save()
+
+    let fetched = try context.fetch(FetchDescriptor<TaskItem>())
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.title == "Recovered task")
 }
