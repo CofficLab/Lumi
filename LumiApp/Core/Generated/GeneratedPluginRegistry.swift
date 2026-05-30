@@ -23,7 +23,6 @@ import PluginAutoTask
 import PluginBrewManager
 import PluginBrowser
 import PluginBrowserAgent
-import PluginCSSEditor
 import PluginCaffeinate
 import PluginChatAttachment
 import PluginChatInput
@@ -38,6 +37,7 @@ import PluginConversationList
 import PluginConversationNew
 import PluginConversationTimeline
 import PluginConversationTitle
+import PluginCSSEditor
 import PluginDatabaseManager
 import PluginDeviceInfo
 import PluginDiskManager
@@ -70,12 +70,13 @@ import PluginGit
 import PluginGitHubCLIDetect
 import PluginGitHubInsight
 import PluginGoEditor
-import PluginHTMLEditor
 import PluginHistoryDBStatusBar
 import PluginHostsManager
+import PluginHTMLEditor
 import PluginIdleTime
 import PluginInput
 import PluginJSEditor
+import PluginLayout
 import PluginLLMAvailability
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
@@ -88,8 +89,8 @@ import PluginLLMProviderFreeModel
 import PluginLLMProviderHappyCode
 import PluginLLMProviderHyperAPI
 import PluginLLMProviderLPgpt
-import PluginLLMProviderMLX
 import PluginLLMProviderMegaLLM
+import PluginLLMProviderMLX
 import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderXiaomi
@@ -109,7 +110,6 @@ import PluginLSPSheetsEditor
 import PluginLSPSignatureHelpEditor
 import PluginLSPToolbarEditor
 import PluginLSPWorkspaceSymbolEditor
-import PluginLayout
 import PluginMarkdownEditor
 import PluginMemory
 import PluginMenuBarManager
@@ -197,7 +197,6 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginBrewManager.BrewManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginBrowser.BrowserPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginBrowserAgent.BrowserAgentPlugin>.shared)
-        plugins.append(PackagePluginAdapter<PluginCSSEditor.CSSEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginCaffeinate.CaffeinatePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginChatAttachment.ChatAttachmentPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginChatInput.ChatInputPlugin>.shared)
@@ -212,6 +211,7 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginConversationNew.ConversationNewHeaderPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginConversationTimeline.ConversationTimelinePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginConversationTitle.ConversationTitlePlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginCSSEditor.CSSEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginDatabaseManager.DatabaseManagerPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginDeviceInfo.DeviceInfoPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginDiskManager.DiskManagerPlugin>.shared)
@@ -244,12 +244,13 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginGitHubCLIDetect.GitHubCLIDetectPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginGitHubInsight.GitHubInsightPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginGoEditor.GoEditorPlugin>.shared)
-        plugins.append(PackagePluginAdapter<PluginHTMLEditor.HTMLEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginHistoryDBStatusBar.HistoryDBStatusBarPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginHostsManager.HostsManagerPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginHTMLEditor.HTMLEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginIdleTime.IdleTimePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginInput.InputPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginJSEditor.JSEditorPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLayout.LayoutPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMAvailability.LLMAvailabilityPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderAiRouter.AiRouterPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderAliyun.AliyunPlugin>.shared)
@@ -262,8 +263,8 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginLLMProviderHappyCode.HappyCodePlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderHyperAPI.HyperAPIPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderLPgpt.LPgptPlugin>.shared)
-        plugins.append(PackagePluginAdapter<PluginLLMProviderMLX.MLXPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderMegaLLM.MegaLLMPlugin>.shared)
+        plugins.append(PackagePluginAdapter<PluginLLMProviderMLX.MLXPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderOpenAI.OpenAIPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderOpenRouter.OpenRouterPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLLMProviderXiaomi.XiaomiPlugin>.shared)
@@ -283,7 +284,6 @@ enum GeneratedPluginRegistry {
         plugins.append(PackagePluginAdapter<PluginLSPSignatureHelpEditor.LSPSignatureHelpEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLSPToolbarEditor.LSPToolbarEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginLSPWorkspaceSymbolEditor.LSPWorkspaceSymbolEditorPlugin>.shared)
-        plugins.append(PackagePluginAdapter<PluginLayout.LayoutPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginMarkdownEditor.MarkdownEditorPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginMemory.MemoryPlugin>.shared)
         plugins.append(PackagePluginAdapter<PluginMenuBarManager.MenuBarManagerPlugin>.shared)
