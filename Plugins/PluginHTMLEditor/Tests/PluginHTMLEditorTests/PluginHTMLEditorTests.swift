@@ -35,9 +35,26 @@ import Testing
     #expect(values.contains("rgba(100% 0% 50% / 25%)"))
 }
 
+@Test func colorParserFindsHexColorsWithAlphaChannels() async throws {
+    let css = "color: #0f08; background: #336699cc;"
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values.contains("#0f08"))
+    #expect(values.contains("#336699cc"))
+}
+
 @Test func colorParserNearColorRecognizesHSLValue() async throws {
     let css = "border-color: hsl(0, 100%, 50%);"
     let character = (css as NSString).range(of: "100%").location
+
+    #expect(ColorParser.isNearColor(text: css, character: character) != nil)
+}
+
+@Test func colorParserNearColorRecognizesHexAlphaValue() async throws {
+    let css = "background-color: #336699cc;"
+    let character = (css as NSString).range(of: "699").location
 
     #expect(ColorParser.isNearColor(text: css, character: character) != nil)
 }

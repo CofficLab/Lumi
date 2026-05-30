@@ -74,7 +74,7 @@ public enum ColorParser {
 
     /// 匹配十六进制颜色
     public static let hexPattern = try! NSRegularExpression(
-        pattern: "#(?:[0-9a-fA-F]{3}){1,2}\\b",
+        pattern: "#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b",
         options: .caseInsensitive
     )
 
@@ -166,24 +166,33 @@ public enum ColorParser {
             hexString.removeFirst()
         }
 
-        // 处理缩写形式 #RGB -> #RRGGBB
-        if hexString.count == 3 {
+        // 处理缩写形式 #RGB/#RGBA -> #RRGGBB/#RRGGBBAA
+        if hexString.count == 3 || hexString.count == 4 {
             let r = String(hexString[hexString.index(hexString.startIndex, offsetBy: 0)])
             let g = String(hexString[hexString.index(hexString.startIndex, offsetBy: 1)])
             let b = String(hexString[hexString.index(hexString.startIndex, offsetBy: 2)])
-            hexString = r + r + g + g + b + b
+            let a = hexString.count == 4
+                ? String(hexString[hexString.index(hexString.startIndex, offsetBy: 3)])
+                : nil
+            hexString = r + r + g + g + b + b + (a.map { $0 + $0 } ?? "")
         }
 
-        guard hexString.count == 6 else { return nil }
+        guard hexString.count == 6 || hexString.count == 8 else { return nil }
 
         var rgbValue: UInt64 = 0
-        Scanner(string: hexString).scanHexInt64(&rgbValue)
+        guard Scanner(string: hexString).scanHexInt64(&rgbValue) else { return nil }
 
-        let red = Double((rgbValue >> 16) & 0xFF) / 255.0
-        let green = Double((rgbValue >> 8) & 0xFF) / 255.0
-        let blue = Double(rgbValue & 0xFF) / 255.0
+        let hasAlpha = hexString.count == 8
+        let redShift = hasAlpha ? 24 : 16
+        let greenShift = hasAlpha ? 16 : 8
+        let blueShift = hasAlpha ? 8 : 0
 
-        return Color(.sRGB, red: red, green: green, blue: blue, opacity: 1.0)
+        let red = Double((rgbValue >> redShift) & 0xFF) / 255.0
+        let green = Double((rgbValue >> greenShift) & 0xFF) / 255.0
+        let blue = Double((rgbValue >> blueShift) & 0xFF) / 255.0
+        let alpha = hasAlpha ? Double(rgbValue & 0xFF) / 255.0 : 1.0
+
+        return Color(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
     }
 }
 
