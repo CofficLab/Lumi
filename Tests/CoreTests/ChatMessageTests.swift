@@ -181,5 +181,36 @@ final class ChatMessageTests: XCTestCase {
     func testShouldDisplayInChatList_systemReturnsFalse() {
         XCTAssertFalse(makeMessage(role: .system).shouldDisplayInChatList())
     }
+
+    // MARK: - ContextPruner
+
+    /// token 使用率过高时，即使消息数还没超过默认上限，也应该按收紧后的窗口裁剪。
+    func testContextPrunerTightensBeforeMessageLimitIsExceeded() {
+        let conversationId = UUID()
+        let messages = (0..<60).map { index in
+            ChatMessage(
+                role: index.isMultiple(of: 2) ? .user : .assistant,
+                conversationId: conversationId,
+                content: "message \(index)"
+            )
+        }
+
+        let result = ContextPruner.prune(
+            messages,
+            lastInputTokens: 90,
+            contextWindowSize: 100
+        )
+
+        XCTAssertEqual(result.messages.count, 49)
+        XCTAssertEqual(result.prunedCount, 12)
+
+        guard case .tokenBudgetTight(original: 60, kept: 48, usageRatio: let ratio) = result.reason else {
+            XCTFail("Expected tokenBudgetTight prune reason")
+            return
+        }
+        XCTAssertEqual(ratio, 0.9, accuracy: 0.0001)
+        XCTAssertEqual(result.messages.first?.role, .system)
+        XCTAssertEqual(result.messages.dropFirst().first?.content, "message 12")
+    }
 }
 #endif

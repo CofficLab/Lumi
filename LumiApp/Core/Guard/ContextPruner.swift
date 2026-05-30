@@ -80,35 +80,33 @@ struct ContextPruner: SuperLog {
         lastInputTokens: Int? = nil,
         contextWindowSize: Int? = nil
     ) -> PruneResult {
-        // 1. 不需要裁剪
-        guard messages.count > config.maxMessages else {
-            return PruneResult(messages: messages, prunedCount: 0, reason: nil)
-        }
-
-        // 2. 计算实际保留条数（可能因 token 使用率收紧）
+        // 1. 计算实际保留条数（可能因 token 使用率收紧）
         var effectiveMax = config.maxMessages
+        var pruneReason: PruneReason?
 
         if let lastTokens = lastInputTokens, let windowSize = contextWindowSize, windowSize > 0 {
             let usageRatio = Double(lastTokens) / Double(windowSize)
             if usageRatio > config.tokenUsageThreshold {
                 let tightenedMax = Int(Double(config.maxMessages) * config.tighteningFactor)
-                effectiveMax = max(tightenedMax, 20) // 最低保留 20 条
+                let minimumKeep = min(20, config.maxMessages)
+                effectiveMax = max(tightenedMax, minimumKeep) // 默认最低保留 20 条，但不超过配置上限
                 let kept = min(effectiveMax, messages.count)
+                pruneReason = .tokenBudgetTight(original: messages.count, kept: kept, usageRatio: usageRatio)
                 AppLogger.core.info("\(t)Token 使用率 \(String(format: "%.0f%%", usageRatio * 100)) 超过阈值，收紧窗口：\(config.maxMessages) → \(effectiveMax)")
-                return makePrunedResult(
-                    messages: messages,
-                    maxKeep: effectiveMax,
-                    reason: .tokenBudgetTight(original: messages.count, kept: kept, usageRatio: usageRatio),
-                    config: config
-                )
             }
         }
 
-        // 3. 标准裁剪
+        // 2. 不需要裁剪
+        guard messages.count > effectiveMax else {
+            return PruneResult(messages: messages, prunedCount: 0, reason: nil)
+        }
+
+        // 3. 执行裁剪
+        let reason = pruneReason ?? .messageLimitExceeded(original: messages.count, kept: effectiveMax)
         return makePrunedResult(
             messages: messages,
             maxKeep: effectiveMax,
-            reason: .messageLimitExceeded(original: messages.count, kept: effectiveMax),
+            reason: reason,
             config: config
         )
     }
