@@ -155,6 +155,14 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
 
     /// 关联 NSWindow 和窗口 ID
     func associateWindow(_ window: NSWindow, with windowId: UUID) {
+        if windowIdMap[window] == windowId {
+            return
+        }
+
+        if windowIdMap[window] != nil {
+            removeWindowObservers(for: window)
+        }
+
         windowIdMap[window] = windowId
 
         NotificationCenter.default.addObserver(
@@ -180,6 +188,7 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
 
         unregisterContainer(windowId)
         windowIdMap.removeValue(forKey: window)
+        removeWindowObservers(for: window)
     }
 
     @objc private func windowDidBecomeKey(_ notification: Notification) {
@@ -206,6 +215,19 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
 
     private func persistWindowIds() {
         CoreWindowIDStore.saveWindowIds(windowContainers.map(\.id))
+    }
+
+    private func removeWindowObservers(for window: NSWindow) {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.willCloseNotification,
+            object: window
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.didBecomeKeyNotification,
+            object: window
+        )
     }
 
     @objc private func applicationWillTerminate() {
