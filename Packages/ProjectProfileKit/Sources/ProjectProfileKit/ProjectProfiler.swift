@@ -259,7 +259,120 @@ public struct ProjectProfiler {
                 return clean.split(whereSeparator: { "=<>~ ".contains($0) }).first.map(String.init)
             }
         }
+        result += pyprojectDependencies(at: root.appendingPathComponent("pyproject.toml"))
         return result
+    }
+
+    private func pyprojectDependencies(at url: URL) -> [String] {
+        guard let text = readTextFile(url) else { return [] }
+        var dependencies: [String] = []
+        var section = ""
+        var collectingArray: String?
+        var arrayText = ""
+
+        for rawLine in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = stripTOMLComment(String(rawLine)).trimmingCharacters(in: .whitespaces)
+            if line.isEmpty { continue }
+
+            if line.hasPrefix("[") && line.hasSuffix("]") {
+                section = String(line.dropFirst().dropLast())
+                collectingArray = nil
+                arrayText = ""
+                continue
+            }
+
+            if collectingArray != nil {
+                arrayText += "\n" + line
+                if line.contains("]") {
+                    dependencies += pythonDependencyNames(fromTOMLArray: arrayText)
+                    collectingArray = nil
+                    arrayText = ""
+                }
+                continue
+            }
+
+            if section == "project" {
+                guard let (key, value) = tomlKeyValue(from: line), key == "dependencies" else { continue }
+                if value.contains("]") {
+                    dependencies += pythonDependencyNames(fromTOMLArray: value)
+                } else {
+                    collectingArray = "dependencies"
+                    arrayText = value
+                }
+                continue
+            }
+
+            if section.hasPrefix("project.optional-dependencies"),
+               let value = tomlValue(from: line) {
+                if value.contains("]") {
+                    dependencies += pythonDependencyNames(fromTOMLArray: value)
+                } else {
+                    collectingArray = "optional-dependencies"
+                    arrayText = value
+                }
+                continue
+            }
+
+            if isPoetryDependencySection(section),
+               let key = line.split(separator: "=", maxSplits: 1).first?.trimmingCharacters(in: .whitespaces),
+               key != "python",
+               !key.isEmpty {
+                dependencies.append(key.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")))
+            }
+        }
+
+        return dependencies
+    }
+
+    private func tomlKeyValue(from line: String) -> (key: String, value: String)? {
+        guard let equalsIndex = line.firstIndex(of: "=") else { return nil }
+        let key = String(line[..<equalsIndex]).trimmingCharacters(in: .whitespaces)
+        let value = String(line[line.index(after: equalsIndex)...]).trimmingCharacters(in: .whitespaces)
+        return (key, value)
+    }
+
+    private func tomlValue(from line: String) -> String? {
+        tomlKeyValue(from: line)?.value
+    }
+
+    private func pythonDependencyNames(fromTOMLArray text: String) -> [String] {
+        regexMatches(pattern: #"["']([^"']+)["']"#, text: text)
+            .compactMap(pythonDependencyName(from:))
+    }
+
+    private func pythonDependencyName(from requirement: String) -> String? {
+        let withoutEnvironmentMarker = requirement
+            .split(separator: ";", maxSplits: 1)
+            .first?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+        return withoutEnvironmentMarker
+            .split(whereSeparator: { "=<>~! ".contains($0) })
+            .first
+            .map(String.init)
+    }
+
+    private func stripTOMLComment(_ line: String) -> String {
+        var result = ""
+        var inSingleQuote = false
+        var inDoubleQuote = false
+
+        for character in line {
+            if character == "'", !inDoubleQuote {
+                inSingleQuote.toggle()
+            } else if character == "\"", !inSingleQuote {
+                inDoubleQuote.toggle()
+            } else if character == "#", !inSingleQuote, !inDoubleQuote {
+                break
+            }
+            result.append(character)
+        }
+
+        return result
+    }
+
+    private func isPoetryDependencySection(_ section: String) -> Bool {
+        section == "tool.poetry.dependencies" ||
+            (section.hasPrefix("tool.poetry.group.") && section.hasSuffix(".dependencies"))
     }
 
     /// 递归扫描源码文件，补充语言和框架信号。

@@ -332,6 +332,57 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertEqual(profile.dependencies, ["fastapi", "requests", "uvicorn[standard]"])
     }
 
+    func testPyprojectDetectsPEP621Dependencies() throws {
+        let root = try makeProject()
+        try write(
+            """
+            [project]
+            dependencies = [
+                "fastapi>=0.110.0",
+                "uvicorn[standard]>=0.29.0 ; python_version >= '3.11'",
+            ]
+
+            [project.optional-dependencies]
+            test = [
+                'pytest>=8',
+                'pytest-cov ~= 5.0',
+            ]
+            """,
+            to: root.appendingPathComponent("pyproject.toml")
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "Python")
+        XCTAssertEqual(profile.dependencies, [
+            "fastapi",
+            "pytest",
+            "pytest-cov",
+            "uvicorn[standard]",
+        ])
+    }
+
+    func testPyprojectDetectsPoetryDependencies() throws {
+        let root = try makeProject()
+        try write(
+            """
+            [tool.poetry.dependencies]
+            python = "^3.12"
+            django = "^5.0"
+            httpx = { version = "^0.27", extras = ["http2"] }
+
+            [tool.poetry.group.dev.dependencies]
+            ruff = "^0.8"
+            """,
+            to: root.appendingPathComponent("pyproject.toml")
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "Python")
+        XCTAssertEqual(profile.dependencies, ["django", "httpx", "ruff"])
+    }
+
     func testKotlinBuildFilesDetectLanguageWithoutDependencies() throws {
         let root = try makeProject()
         try write(
