@@ -28,9 +28,25 @@ public actor BrewService {
     public static let shared = BrewService()
 
     private var brewPath: String?
+    private let commandRunner: BrewCommandRunner
 
     public init() {
         self.brewPath = BrewService.findBrewPathStatic()
+        self.commandRunner = { executable, arguments, environment in
+            try await BrewService.runBrewCommand(
+                executable: executable,
+                arguments: arguments,
+                environment: environment
+            )
+        }
+    }
+
+    init(
+        brewPath: String?,
+        commandRunner: @escaping BrewCommandRunner
+    ) {
+        self.brewPath = brewPath
+        self.commandRunner = commandRunner
     }
 
     private static func findBrewPathStatic() -> String? {
@@ -129,13 +145,16 @@ public actor BrewService {
     }
 
     public func search(query: String) async throws -> [BrewPackage] {
-        let output = try await execute(["search", "--cask", query])
-        let names = output.split(separator: "\n").map { String($0) }
+        let formulaNames = try await searchNames(["search", "--formula", query])
+        let caskNames = try await searchNames(["search", "--cask", query])
 
-        if names.isEmpty { return [] }
+        let formulaLimit = Array(formulaNames.prefix(10))
+        let caskLimit = Array(caskNames.prefix(max(0, 10 - formulaLimit.count)))
 
-        let limitNames = Array(names.prefix(10))
-        return try await getInfo(names: limitNames, isCask: true)
+        async let formulaInfo = getInfo(names: formulaLimit, isCask: false)
+        async let caskInfo = getInfo(names: caskLimit, isCask: true)
+
+        return try await formulaInfo + caskInfo
     }
 
     public func getInfo(names: [String], isCask: Bool) async throws -> [BrewPackage] {
@@ -219,17 +238,14 @@ public actor BrewService {
         }
 
         let currentPath = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-        let result = try await Shell.execute(
-            executable: brewPath,
-            arguments: args,
-            options: ShellOptions(
-                environment: [
-                    "HOMEBREW_NO_AUTO_UPDATE": "1",
-                    "HOMEBREW_NO_INSTALL_CLEANUP": "1",
-                    "PATH": currentPath + ":/opt/homebrew/bin:/usr/local/bin"
-                ],
-                throwsOnError: false
-            )
+        let result = try await commandRunner(
+            brewPath,
+            args,
+            [
+                "HOMEBREW_NO_AUTO_UPDATE": "1",
+                "HOMEBREW_NO_INSTALL_CLEANUP": "1",
+                "PATH": currentPath + ":/opt/homebrew/bin:/usr/local/bin"
+            ]
         )
 
         if result.exitCode == 0 {
@@ -237,4 +253,44 @@ public actor BrewService {
         }
         throw BrewError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
     }
+
+    private func searchNames(_ args: [String]) async throws -> [String] {
+        let output = try await execute(args)
+        return output
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    private static func runBrewCommand(
+        executable: String,
+        arguments: [String],
+        environment: [String: String]
+    ) async throws -> BrewCommandResult {
+        let result = try await Shell.execute(
+            executable: executable,
+            arguments: arguments,
+            options: ShellOptions(
+                environment: environment,
+                throwsOnError: false
+            )
+        )
+        return BrewCommandResult(
+            exitCode: result.exitCode,
+            stdout: result.stdout,
+            stderr: result.stderr
+        )
+    }
 }
+
+struct BrewCommandResult: Sendable {
+    let exitCode: Int32
+    let stdout: String
+    let stderr: String
+}
+
+typealias BrewCommandRunner = @Sendable (
+    _ executable: String,
+    _ arguments: [String],
+    _ environment: [String: String]
+) async throws -> BrewCommandResult
