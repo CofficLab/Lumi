@@ -280,6 +280,34 @@ import Foundation
     #expect(result.stderr.contains("stderr-300-"))
 }
 
+@Test func scriptTaskRunnerFindsHoistedLocalBinFromSubpackage() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let binDirectory = directory.appendingPathComponent("node_modules/.bin", isDirectory: true)
+    try FileManager.default.createDirectory(at: binDirectory, withIntermediateDirectories: true)
+    let toolURL = binDirectory.appendingPathComponent("lumi-hoisted-tool")
+    try """
+    #!/bin/sh
+    echo hoisted-tool "$@"
+    """.write(to: toolURL, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: toolURL.path)
+
+    let packageDirectory = directory.appendingPathComponent("apps/web", isDirectory: true)
+    try FileManager.default.createDirectory(at: packageDirectory, withIntermediateDirectories: true)
+
+    let result = await ScriptTaskRunner().runExecutable(
+        "lumi-hoisted-tool",
+        arguments: ["--version"],
+        projectPath: packageDirectory.path
+    )
+
+    #expect(result.exitCode == 0)
+    #expect(result.stdout.contains("hoisted-tool --version"))
+}
+
 @Test func scriptTaskRunnerCancelStopsRunningProcessPromptly() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)

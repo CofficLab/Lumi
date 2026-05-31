@@ -132,10 +132,19 @@ public actor ScriptTaskRunner: SuperLog {
     }
 
     private func localBin(_ name: String, projectPath: String) -> String? {
-        let path = URL(fileURLWithPath: projectPath)
-            .appendingPathComponent("node_modules/.bin")
-            .appendingPathComponent(name)
-            .path
-        return FileManager.default.isExecutableFile(atPath: path) ? path : nil
+        var directory = URL(fileURLWithPath: projectPath)
+        while true {
+            let path = directory
+                .appendingPathComponent("node_modules/.bin")
+                .appendingPathComponent(name)
+                .path
+            if FileManager.default.isExecutableFile(atPath: path) {
+                return path
+            }
+
+            let parent = directory.deletingLastPathComponent()
+            if parent.path == directory.path { return nil }
+            directory = parent
+        }
     }
 }
