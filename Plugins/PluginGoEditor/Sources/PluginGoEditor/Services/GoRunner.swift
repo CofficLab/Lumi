@@ -62,9 +62,15 @@ public actor GoRunner: SuperLog {
             }
         }
 
+        async let stdoutData = GoRunnerOutputCollector.readData(from: stdoutPipe)
+        async let stderrData = GoRunnerOutputCollector.readData(from: stderrPipe)
+
+        let exitCode: Int32
         do {
-            try process.run()
+            exitCode = try await Self.runAndWait(process)
         } catch {
+            try? stdoutPipe.fileHandleForWriting.close()
+            try? stderrPipe.fileHandleForWriting.close()
             currentProcess = nil
             return GoRunResult(
                 exitCode: -1,
@@ -72,17 +78,12 @@ public actor GoRunner: SuperLog {
                 stderr: error.localizedDescription
             )
         }
-
-        async let stdoutData = GoRunnerOutputCollector.readData(from: stdoutPipe)
-        async let stderrData = GoRunnerOutputCollector.readData(from: stderrPipe)
-
-        process.waitUntilExit()
         let output = await (stdoutData, stderrData)
 
         currentProcess = nil
 
         return GoRunResult(
-            exitCode: Int(process.terminationStatus),
+            exitCode: Int(exitCode),
             stdout: String(data: output.0, encoding: .utf8) ?? "",
             stderr: String(data: output.1, encoding: .utf8) ?? ""
         )
@@ -107,6 +108,20 @@ public actor GoRunner: SuperLog {
         if GoEditorPlugin.verbose {
             if GoEditorPlugin.verbose {
                             GoEditorPlugin.logger.info("\(Self.t)已取消正在执行的命令")
+            }
+        }
+    }
+
+    private nonisolated static func runAndWait(_ process: Process) async throws -> Int32 {
+        try await withCheckedThrowingContinuation { continuation in
+            process.terminationHandler = { terminatedProcess in
+                continuation.resume(returning: terminatedProcess.terminationStatus)
+            }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                continuation.resume(throwing: error)
             }
         }
     }
