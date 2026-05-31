@@ -1,5 +1,6 @@
 import Foundation
 import CommonCrypto
+import os
 
 /// Build Server 配置存储
 ///
@@ -9,8 +10,11 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
 
     // MARK: - Constants
 
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.build-server-store")
+
     private let pluginDirName = "EditorXcodePlugin"
     private let fileName = "buildServer.json"
+    private let corruptFileName = "buildServer.corrupt.json"
 
     /// 存储根路径（由外部注入）
     public let storageRootURL: URL
@@ -46,9 +50,22 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     /// 读取并解析指定项目的 buildServer.json
     public func load(forWorkspace workspacePath: String) -> Config? {
         let url = fileURL(forWorkspace: workspacePath)
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+
+        let json: [String: Any]
+        do {
+            let data = try Data(contentsOf: url)
+            guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                Self.logger.error("Load buildServer.json failed: root JSON is not an object")
+                quarantineCorruptFile(at: url, forWorkspace: workspacePath)
+                return nil
+            }
+            json = parsed
+        } catch {
+            Self.logger.error("Load buildServer.json failed: \(error.localizedDescription)")
+            quarantineCorruptFile(at: url, forWorkspace: workspacePath)
             return nil
         }
 
@@ -71,10 +88,14 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     @discardableResult
     public func ensureDirectory(forWorkspace workspacePath: String) -> URL {
         let dir = directoryURL(forWorkspace: workspacePath)
-        try? FileManager.default.createDirectory(
-            at: dir,
-            withIntermediateDirectories: true
-        )
+        do {
+            try FileManager.default.createDirectory(
+                at: dir,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            Self.logger.error("Create build server store directory failed: \(error.localizedDescription)")
+        }
         return dir
     }
 
@@ -95,12 +116,37 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     /// 清理指定项目的 buildServer.json
     public func remove(forWorkspace workspacePath: String) {
         let dir = directoryURL(forWorkspace: workspacePath)
-        try? FileManager.default.removeItem(at: dir)
+        do {
+            try FileManager.default.removeItem(at: dir)
+        } catch {
+            Self.logger.error("Remove build server store failed: \(error.localizedDescription)")
+        }
     }
 
     /// 清理所有项目的 buildServer.json
     public func removeAll() {
-        try? FileManager.default.removeItem(at: rootDirectoryURL)
+        do {
+            try FileManager.default.removeItem(at: rootDirectoryURL)
+        } catch {
+            Self.logger.error("Remove all build server stores failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func corruptFileURL(forWorkspace workspacePath: String) -> URL {
+        directoryURL(forWorkspace: workspacePath)
+            .appendingPathComponent(corruptFileName, isDirectory: false)
+    }
+
+    private func quarantineCorruptFile(at fileURL: URL, forWorkspace workspacePath: String) {
+        let quarantineURL = corruptFileURL(forWorkspace: workspacePath)
+        do {
+            if FileManager.default.fileExists(atPath: quarantineURL.path) {
+                try FileManager.default.removeItem(at: quarantineURL)
+            }
+            try FileManager.default.moveItem(at: fileURL, to: quarantineURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt buildServer.json failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Config Model

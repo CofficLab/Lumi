@@ -225,14 +225,24 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         isGeneratingBuildServer = false
 
-        if success {
-            if let config = store.load(forWorkspace: workspaceURL.path) {
-                buildServerJSONPath = config.buildServerJSONPath
-                buildContextStatus = .available(XcodeBuildServerConfig(from: config))
-                if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
-            }
+        let config = success ? store.load(forWorkspace: workspaceURL.path) : nil
+        buildContextStatus = Self.buildServerGenerationStatus(success: success, config: config)
+        if let config {
+            buildServerJSONPath = config.buildServerJSONPath
+            if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
+        }
+    }
+
+    public static func buildServerGenerationStatus(
+        success: Bool,
+        config: XcodeBuildServerStore.Config?
+    ) -> BuildContextStatus {
+        if success, let config {
+            return .available(XcodeBuildServerConfig(from: config))
+        } else if success {
+            return .unavailable("Generated buildServer.json was missing or invalid")
         } else {
-            buildContextStatus = .unavailable("Failed to generate buildServer.json")
+            return .unavailable("Failed to generate buildServer.json")
         }
     }
 

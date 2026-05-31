@@ -78,11 +78,34 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         let workspacePath = "/Users/test/MyProject.xcworkspace"
         let directory = store.ensureDirectory(forWorkspace: workspacePath)
         let fileURL = directory.appendingPathComponent("buildServer.json")
+        let corruptURL = directory.appendingPathComponent("buildServer.corrupt.json")
         
         try "invalid json".write(to: fileURL, atomically: true, encoding: .utf8)
         
         let config = store.load(forWorkspace: workspacePath)
         XCTAssertNil(config)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: corruptURL.path))
+    }
+
+    func testLoadCanRecoverAfterQuarantiningInvalidJSON() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let fileURL = directory.appendingPathComponent("buildServer.json")
+
+        try "invalid json".write(to: fileURL, atomically: true, encoding: .utf8)
+        XCTAssertNil(store.load(forWorkspace: workspacePath))
+
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "RecoveredScheme"
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        try data.write(to: fileURL)
+
+        let config = store.load(forWorkspace: workspacePath)
+        XCTAssertEqual(config?.workspacePath, workspacePath)
+        XCTAssertEqual(config?.scheme, "RecoveredScheme")
     }
     
     // MARK: - validate Tests

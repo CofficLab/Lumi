@@ -320,6 +320,27 @@ final class XcodeBuildContextProviderTests: XCTestCase {
         let status = XcodeBuildContextProvider.BuildContextStatus.needsResync
         XCTAssertEqual(status.displayDescription, "Needs resync")
     }
+
+    func testBuildServerGenerationStatusReportsInvalidOutputAfterSuccessfulCommand() {
+        let status = XcodeBuildContextProvider.buildServerGenerationStatus(
+            success: true,
+            config: nil
+        )
+
+        XCTAssertEqual(
+            status,
+            .unavailable("Generated buildServer.json was missing or invalid")
+        )
+    }
+
+    func testBuildServerGenerationStatusReportsCommandFailure() {
+        let status = XcodeBuildContextProvider.buildServerGenerationStatus(
+            success: false,
+            config: nil
+        )
+
+        XCTAssertEqual(status, .unavailable("Failed to generate buildServer.json"))
+    }
     
     // MARK: - XcodeBuildServerConfig Tests
     
