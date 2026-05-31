@@ -268,6 +268,35 @@ import Testing
     #expect(remaining.isEmpty)
 }
 
+@Test func historyManagerClampsFetchLimitsBeforeQuerying() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-history-limits-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = ClipboardHistoryManager(databaseDirectory: root)
+    for index in 0..<3 {
+        let item = ClipboardHistoryItem(
+            type: ClipboardItemType.text.rawValue,
+            content: "item \(index)",
+            searchKeywords: "item \(index)"
+        )
+        #expect(await manager.add(item))
+    }
+
+    let latest = await manager.getLatest(limit: -10)
+    let all = await manager.getAll(limit: 0)
+    let searched = await manager.search(keyword: "item", limit: Int.max)
+
+    #expect(ClipboardHistoryManager.normalizedFetchLimit(-10) == 1)
+    #expect(ClipboardHistoryManager.normalizedFetchLimit(0) == 1)
+    #expect(ClipboardHistoryManager.normalizedFetchLimit(100) == 100)
+    #expect(ClipboardHistoryManager.normalizedFetchLimit(Int.max) == ClipboardHistoryManager.maxFetchLimit)
+    #expect(latest.count == 1)
+    #expect(all.count == 1)
+    #expect(searched.count == 3)
+}
+
 private func makeTestPNG() throws -> Data {
     let image = makeTestImage()
     let tiffData = try #require(image.tiffRepresentation)

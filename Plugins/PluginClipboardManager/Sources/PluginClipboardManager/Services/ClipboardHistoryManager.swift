@@ -9,6 +9,7 @@ import SwiftData
 public actor ClipboardHistoryManager: SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
+    static let maxFetchLimit = 5_000
     
     // MARK: - Singleton
     
@@ -180,6 +181,7 @@ public actor ClipboardHistoryManager: SuperLog {
     /// 查询所有项（按时间倒序）
     public func getAll(limit: Int = 1000) async -> [ClipboardHistoryItem] {
         let context = ModelContext(container)
+        let limit = Self.normalizedFetchLimit(limit)
         
         var descriptor = FetchDescriptor<ClipboardHistoryItem>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
@@ -219,6 +221,7 @@ public actor ClipboardHistoryManager: SuperLog {
     /// 搜索
     public func search(keyword: String, limit: Int = 100) async -> [ClipboardHistoryItem] {
         let context = ModelContext(container)
+        let limit = Self.normalizedFetchLimit(limit)
         
         var descriptor = FetchDescriptor<ClipboardHistoryItem>(
             predicate: ClipboardHistoryItem.searchPredicate(for: keyword),
@@ -252,6 +255,7 @@ public actor ClipboardHistoryManager: SuperLog {
     /// 获取最新 N 条记录
     public func getLatest(limit: Int = 100) async -> [ClipboardHistoryItem] {
         let context = ModelContext(container)
+        let limit = Self.normalizedFetchLimit(limit)
         
         var descriptor = FetchDescriptor<ClipboardHistoryItem>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
@@ -438,5 +442,9 @@ public actor ClipboardHistoryManager: SuperLog {
             }
             return false
         }
+    }
+
+    static func normalizedFetchLimit(_ limit: Int) -> Int {
+        min(max(limit, 1), maxFetchLimit)
     }
 }
