@@ -239,6 +239,19 @@ struct XcodeCompilerTests {
         #expect(arguments[arguments.index(after: targetIndex)].contains("-apple-macos14.0"))
     }
 
+    @Test("build setting list preserves quoted and escaped paths")
+    func splitBuildSettingListPreservesPathsWithSpaces() {
+        let value = #""/tmp/Build Products/Debug" '/tmp/Header Search' /tmp/Plain\ Path $(inherited)"#
+
+        let parts = LumiPreviewFacade.XcodeCompiler.splitBuildSettingList(value)
+
+        #expect(parts == [
+            "/tmp/Build Products/Debug",
+            "/tmp/Header Search",
+            "/tmp/Plain Path"
+        ])
+    }
+
     private func makeTemporaryXcodeProject(
         targetName: String,
         source: String

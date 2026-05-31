@@ -541,14 +541,56 @@ final class XcodeCompiler: Sendable {
         return objectFiles.sorted().uniqued()
     }
 
-    private static func splitBuildSettingList(_ value: String) -> [String] {
-        value
-            .split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "\t" })
-            .map(String.init)
-            .map {
-                $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+    static func splitBuildSettingList(_ value: String) -> [String] {
+        var result: [String] = []
+        var current = ""
+        var activeQuote: Character?
+        var isEscaping = false
+
+        func appendCurrent() {
+            guard !current.isEmpty, current != "$(inherited)" else {
+                current = ""
+                return
             }
-            .filter { !$0.isEmpty && $0 != "$(inherited)" }
+            result.append(current)
+            current = ""
+        }
+
+        for character in value {
+            if isEscaping {
+                current.append(character)
+                isEscaping = false
+                continue
+            }
+
+            if character == "\\" {
+                isEscaping = true
+                continue
+            }
+
+            if let quote = activeQuote {
+                if character == quote {
+                    activeQuote = nil
+                } else {
+                    current.append(character)
+                }
+                continue
+            }
+
+            if character == "\"" || character == "'" {
+                activeQuote = character
+            } else if character == " " || character == "\n" || character == "\t" {
+                appendCurrent()
+            } else {
+                current.append(character)
+            }
+        }
+
+        if isEscaping {
+            current.append("\\")
+        }
+        appendCurrent()
+        return result
     }
 
     private static func isEnabled(_ value: String?) -> Bool {
