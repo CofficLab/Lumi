@@ -43,3 +43,25 @@ import Testing
     #expect(output.contains("UTF16Searchable.swift"))
     #expect(output.contains("needle utf16 keyword target"))
 }
+
+@Test func processCaptureHandlesLargeStdoutWithoutPipeBackpressure() async throws {
+    let result = try RAGCodeSearchTool.runProcessCapturingStdout(
+        executableURL: URL(fileURLWithPath: "/bin/sh"),
+        arguments: [
+            "-c",
+            """
+            i=1
+            while [ "$i" -le 300 ]; do
+              printf 'rag-grep-%03d-%0512d\\n' "$i" 0
+              i=$((i + 1))
+            done
+            """
+        ],
+        timeout: 5
+    )
+
+    let output = String(data: result?.stdout ?? Data(), encoding: .utf8) ?? ""
+    #expect(result?.terminationStatus == 0)
+    #expect(output.contains("rag-grep-300-"))
+    #expect((result?.stdout.count ?? 0) > 150_000)
+}

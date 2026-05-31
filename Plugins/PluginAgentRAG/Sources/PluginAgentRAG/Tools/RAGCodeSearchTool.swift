@@ -15,6 +15,11 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
 
     public let name = "search_code"
 
+    struct CapturedProcessOutput: Sendable, Equatable {
+        let terminationStatus: Int32
+        let stdout: Data
+    }
+
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
@@ -247,11 +252,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         pathFilter: String?,
         limit: Int
     ) throws -> [CodeSearchResult]? {
-        let process = Process()
-        let pipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/grep")
-        process.arguments = [
+        let arguments = [
             "-rnIi",
             "--max-count=\(limit)",
         ]
@@ -262,24 +263,17 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             query,
             projectPath,
         ]
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-        process.qualityOfService = .utility
 
-        try process.run()
-
-        // 等待进程完成，最多 10 秒
-        let deadline = Date().addingTimeInterval(10)
-        while process.isRunning && Date() < deadline {
-            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
-        }
-        if process.isRunning {
-            process.terminate()
+        guard let result = try Self.runProcessCapturingStdout(
+            executableURL: URL(fileURLWithPath: "/usr/bin/grep"),
+            arguments: arguments,
+            timeout: 10,
+            qualityOfService: .utility
+        ) else {
             return nil
         }
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8), !output.isEmpty else {
+        guard let output = String(data: result.stdout, encoding: .utf8), !output.isEmpty else {
             return []
         }
 
@@ -298,6 +292,55 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         }
 
         return parseGrepOutput(filteredOutput, projectPath: projectPath, limit: limit)
+    }
+
+    static func runProcessCapturingStdout(
+        executableURL: URL,
+        arguments: [String],
+        timeout: TimeInterval,
+        qualityOfService: QualityOfService? = nil
+    ) throws -> CapturedProcessOutput? {
+        let process = Process()
+        process.executableURL = executableURL
+        process.arguments = arguments
+        if let qualityOfService {
+            process.qualityOfService = qualityOfService
+        }
+
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiRAGProcess-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: outputDirectory) }
+
+        let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
+        try Data().write(to: stdoutURL)
+
+        let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
+        process.standardOutput = stdoutHandle
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+        } catch {
+            try? stdoutHandle.close()
+            throw error
+        }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        if process.isRunning {
+            process.terminate()
+            try? stdoutHandle.close()
+            return nil
+        }
+
+        try? stdoutHandle.close()
+        return CapturedProcessOutput(
+            terminationStatus: process.terminationStatus,
+            stdout: (try? Data(contentsOf: stdoutURL)) ?? Data()
+        )
     }
 
     /// 解析 grep -rn 输出为 CodeSearchResult
