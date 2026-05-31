@@ -1,10 +1,12 @@
 import Foundation
+import os
 
 /// ConversationList Plugin 本地存储
 ///
 /// 负责持久化插件的配置和设置项。
 /// 存储位置：ConversationListRuntime.databaseDirectory()/ConversationListPlugin/settings.plist
 public final class ConversationListLocalStore: @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list.local-store")
     
     // MARK: - Singleton
     
@@ -16,6 +18,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "ConversationListLocalStore.queue", qos: .userInitiated)
     private let pluginDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
     
     private static let storageKey = "selectedConversationId"
     private static let legacyKey: String = {
@@ -28,13 +31,21 @@ public final class ConversationListLocalStore: @unchecked Sendable {
     
     // MARK: - Initialization
     
-    private init() {
-        let root = ConversationListRuntime.databaseDirectory()
+    public convenience init() {
+        self.init(settingsDirectory: ConversationListRuntime.databaseDirectory()
             .appendingPathComponent("ConversationListPlugin", isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true))
+    }
+
+    init(settingsDirectory root: URL) {
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("conversation_selection.plist")
-        try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
+        self.corruptSettingsFileURL = root.appendingPathComponent("conversation_selection.corrupt.plist")
+        do {
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create conversation selection directory failed: \(error.localizedDescription)")
+        }
         migrateLegacyIfNeeded()
     }
     
@@ -49,7 +60,8 @@ public final class ConversationListLocalStore: @unchecked Sendable {
     }
     
     /// 保存选中的会话 ID
-    public func saveSelectedConversationId(_ id: UUID?) {
+    @discardableResult
+    public func saveSelectedConversationId(_ id: UUID?) -> Bool {
         queue.sync {
             var dict = readDict()
             if let id {
@@ -57,7 +69,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
             } else {
                 dict.removeValue(forKey: Self.storageKey)
             }
-            writeDict(dict)
+            return writeDict(dict)
         }
     }
     
@@ -65,39 +77,67 @@ public final class ConversationListLocalStore: @unchecked Sendable {
     
     /// 从文件读取字典
     private func readDict() -> [String: Any] {
-        guard fileManager.fileExists(atPath: settingsFileURL.path),
-              let data = try? Data(contentsOf: settingsFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return [:] }
+        do {
+            let data = try Data(contentsOf: settingsFileURL)
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                Self.logger.error("Read conversation selection failed: root plist is not a dictionary")
+                quarantineCorruptSettings()
+                return [:]
+            }
+            return dict
+        } catch {
+            Self.logger.error("Read conversation selection failed: \(error.localizedDescription)")
+            quarantineCorruptSettings()
             return [:]
         }
-        return dict
     }
     
     /// 写入字典到文件（原子操作）
-    private func writeDict(_ dict: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(
-            fromPropertyList: dict,
-            format: .binary,
-            options: 0
-        ) else {
-            return
+    @discardableResult
+    private func writeDict(_ dict: [String: Any]) -> Bool {
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(
+                fromPropertyList: dict,
+                format: .binary,
+                options: 0
+            )
+        } catch {
+            Self.logger.error("Encode conversation selection failed: \(error.localizedDescription)")
+            return false
         }
         
         let tmpURL = pluginDirectory.appendingPathComponent("conversation_selection.tmp")
         
         do {
-            // 原子写入临时文件
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
             try data.write(to: tmpURL, options: .atomic)
             
-            // 替换原文件
             if fileManager.fileExists(atPath: settingsFileURL.path) {
-                _ = try? fileManager.replaceItemAt(settingsFileURL, withItemAt: tmpURL)
+                _ = try fileManager.replaceItemAt(settingsFileURL, withItemAt: tmpURL)
             } else {
                 try fileManager.moveItem(at: tmpURL, to: settingsFileURL)
             }
+            return true
         } catch {
+            Self.logger.error("Persist conversation selection failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
+            return false
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt conversation selection failed: \(error.localizedDescription)")
         }
     }
     
