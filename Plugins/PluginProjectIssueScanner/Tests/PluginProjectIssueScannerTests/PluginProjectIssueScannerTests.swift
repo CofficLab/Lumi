@@ -41,6 +41,29 @@ import Foundation
     #expect(issues.first?.lineNumber == 2)
 }
 
+@Test func localRuleScannerReadsUTF16SourceFiles() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("issue-scanner-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let source = """
+    struct Example {
+        func run() {
+            // FIXME: handle localized source files
+        }
+    }
+    """
+    try source.write(to: root.appendingPathComponent("Example.swift"), atomically: true, encoding: .utf16)
+
+    let issues = LocalRuleScanner().scan(projectPath: root.path)
+
+    #expect(issues.count == 1)
+    #expect(issues.first?.type == .fixme)
+    #expect(issues.first?.lineNumber == 3)
+    #expect(issues.first?.description == "FIXME: handle localized source files")
+}
+
 @Test func relativePathRequiresProjectDirectoryBoundary() {
     let projectURL = URL(fileURLWithPath: "/tmp/Lumi")
 

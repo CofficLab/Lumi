@@ -280,7 +280,7 @@ public actor DeepIssueAnalyzer: SuperLog {
                 guard preferredExtensions.contains(fileURL.pathExtension.lowercased()) else { continue }
                 guard (values.fileSize ?? 0) <= 256 * 1024 else { continue }
 
-                let content = try String(contentsOf: fileURL, encoding: .utf8)
+                let content = try ProjectIssueTextReader.read(fileURL)
                 let lines = content.components(separatedBy: .newlines)
                 let excerpt = summarizeContent(lines: lines)
                 guard !excerpt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }

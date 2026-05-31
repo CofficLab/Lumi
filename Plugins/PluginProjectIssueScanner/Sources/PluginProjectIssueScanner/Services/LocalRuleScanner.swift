@@ -55,7 +55,7 @@ public struct LocalRuleScanner: Sendable {
                 guard values.isRegularFile == true else { continue }
                 guard shouldScan(fileURL: fileURL, fileSize: values.fileSize) else { continue }
 
-                let content = try String(contentsOf: fileURL, encoding: .utf8)
+                let content = try ProjectIssueTextReader.read(fileURL)
                 issues.append(contentsOf: scanFile(content: content, fileURL: fileURL, rootURL: rootURL))
             } catch {
                 continue
