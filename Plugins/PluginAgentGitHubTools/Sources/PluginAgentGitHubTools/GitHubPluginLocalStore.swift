@@ -1,7 +1,10 @@
 import Foundation
 import GitHubKit
+import os
 
 public final class GitHubPluginLocalStore: @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-tools.local-store")
+
     nonisolated(unsafe) public static var dbFolderURLProvider: @Sendable () -> URL = {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ??
             FileManager.default.temporaryDirectory
@@ -11,27 +14,38 @@ public final class GitHubPluginLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "GitHubPluginLocalStore.queue", qos: .userInitiated)
     private let settingsDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
-    public init() {
-        let root = Self.dbFolderURLProvider()
+    public convenience init() {
+        self.init(settingsDirectory: Self.dbFolderURLProvider()
             .appendingPathComponent("GitHubToolsPlugin", isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true))
+    }
+
+    init(settingsDirectory root: URL) {
         self.settingsDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
-        try? fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+        self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
+        do {
+            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create GitHub tools settings directory failed: \(error.localizedDescription)")
+        }
     }
 
-    public func migrateLegacyValueIfMissing(forKey key: String) {
-        guard object(forKey: key) == nil else { return }
-        guard let legacy = readLegacyObject(forKey: key) else { return }
-        set(legacy, forKey: key)
+    @discardableResult
+    public func migrateLegacyValueIfMissing(forKey key: String) -> Bool {
+        guard object(forKey: key) == nil else { return true }
+        guard let legacy = readLegacyObject(forKey: key) else { return true }
+        return set(legacy, forKey: key)
     }
 
-    public func set(_ value: Any?, forKey key: String) {
+    @discardableResult
+    public func set(_ value: Any?, forKey key: String) -> Bool {
         queue.sync {
             var dict = readDict()
             if let value { dict[key] = value } else { dict.removeValue(forKey: key) }
-            writeDict(dict)
+            return writeDict(dict)
         }
     }
 
@@ -39,21 +53,58 @@ public final class GitHubPluginLocalStore: @unchecked Sendable {
     public func string(forKey key: String) -> String? { object(forKey: key) as? String }
 
     private func readDict() -> [String: Any] {
-        guard fileManager.fileExists(atPath: settingsFileURL.path),
-              let data = try? Data(contentsOf: settingsFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else { return [:] }
-        return dict
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return [:] }
+        do {
+            let data = try Data(contentsOf: settingsFileURL)
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                Self.logger.error("Read GitHub tools settings failed: root plist is not a dictionary")
+                quarantineCorruptSettings()
+                return [:]
+            }
+            return dict
+        } catch {
+            Self.logger.error("Read GitHub tools settings failed: \(error.localizedDescription)")
+            quarantineCorruptSettings()
+            return [:]
+        }
     }
 
-    private func writeDict(_ dict: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else { return }
+    @discardableResult
+    private func writeDict(_ dict: [String: Any]) -> Bool {
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
+        } catch {
+            Self.logger.error("Encode GitHub tools settings failed: \(error.localizedDescription)")
+            return false
+        }
+
         let tmp = settingsDirectory.appendingPathComponent("settings.tmp")
         do {
+            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
             try data.write(to: tmp, options: .atomic)
-            if fileManager.fileExists(atPath: settingsFileURL.path) { _ = try? fileManager.replaceItemAt(settingsFileURL, withItemAt: tmp) }
+            if fileManager.fileExists(atPath: settingsFileURL.path) { _ = try fileManager.replaceItemAt(settingsFileURL, withItemAt: tmp) }
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
-        } catch { try? fileManager.removeItem(at: tmp) }
+            return true
+        } catch {
+            Self.logger.error("Persist GitHub tools settings failed: \(error.localizedDescription)")
+            try? fileManager.removeItem(at: tmp)
+            return false
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt GitHub tools settings failed: \(error.localizedDescription)")
+        }
     }
 
     private func readLegacyObject(forKey key: String) -> Any? {
