@@ -50,11 +50,15 @@ Returns the file path of the saved screenshot image (PNG format).
                 ],
                 "width": [
                     "type": "integer",
-                    "description": "Viewport width in pixels (default: 1280)",
+                    "description": "Viewport width in pixels (default: 1280, max: 4096)",
+                    "minimum": 1,
+                    "maximum": 4096,
                 ],
                 "wait": [
                     "type": "number",
                     "description": "Additional wait time in seconds after page load before taking the screenshot, useful for JavaScript-heavy pages (default: 1.0, max: 10.0)",
+                    "minimum": 0,
+                    "maximum": 10,
                 ],
             ],
             "required": ["url"],
@@ -86,8 +90,8 @@ Returns the file path of the saved screenshot image (PNG format).
             return "Error: Only HTTP/HTTPS URLs are supported"
         }
 
-        let width = arguments["width"]?.value as? Int ?? 1280
-        let waitSeconds = min(arguments["wait"]?.value as? Double ?? 1.0, 10.0)
+        let width = Self.normalizedViewportWidth(from: arguments["width"]?.value)
+        let waitSeconds = Self.normalizedWaitSeconds(from: arguments["wait"]?.value)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)📸 Taking screenshot of: \(url.absoluteString)")
@@ -115,6 +119,46 @@ Returns the file path of the saved screenshot image (PNG format).
         let urlString = rawURLString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !urlString.isEmpty else { return nil }
         return URL(string: urlString)
+    }
+
+    static func normalizedViewportWidth(from value: Any?) -> Int {
+        let defaultWidth = 1280
+        let maxWidth = 4096
+
+        let width: Int?
+        switch value {
+        case let int as Int:
+            width = int
+        case let double as Double where double.isFinite:
+            width = Int(double)
+        case let string as String:
+            width = Int(string.trimmingCharacters(in: .whitespacesAndNewlines))
+        default:
+            width = nil
+        }
+
+        guard let width, width > 0 else { return defaultWidth }
+        return min(width, maxWidth)
+    }
+
+    static func normalizedWaitSeconds(from value: Any?) -> Double {
+        let defaultWait = 1.0
+        let maxWait = 10.0
+
+        let wait: Double?
+        switch value {
+        case let double as Double:
+            wait = double
+        case let int as Int:
+            wait = Double(int)
+        case let string as String:
+            wait = Double(string.trimmingCharacters(in: .whitespacesAndNewlines))
+        default:
+            wait = nil
+        }
+
+        guard let wait, wait.isFinite else { return defaultWait }
+        return min(max(wait, 0), maxWait)
     }
 
     // MARK: - Screenshot Implementation

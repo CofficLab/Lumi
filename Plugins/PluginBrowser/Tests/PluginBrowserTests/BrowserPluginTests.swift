@@ -32,8 +32,21 @@ struct PluginBrowserTests {
         let required = try #require(schema["required"] as? [String])
         #expect(required == ["url"])
 
-        let properties = try #require(schema["properties"] as? [String: [String: String]])
-        #expect(properties["url"]?["type"] == "string")
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        #expect(properties["url"]?["type"] as? String == "string")
+    }
+
+    @Test("tool schema bounds screenshot dimensions")
+    func toolSchemaBoundsScreenshotDimensions() throws {
+        let schema = BrowserScreenshotTool().inputSchema(for: .english)
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        let width = try #require(properties["width"])
+        let wait = try #require(properties["wait"])
+
+        #expect(width["minimum"] as? Int == 1)
+        #expect(width["maximum"] as? Int == 4096)
+        #expect(wait["minimum"] as? Int == 0)
+        #expect(wait["maximum"] as? Int == 10)
     }
 
     @Test("tool risk level is medium")
@@ -53,6 +66,25 @@ struct PluginBrowserTests {
     @Test("tool rejects blank copied URL")
     func toolRejectsBlankCopiedURL() {
         #expect(BrowserScreenshotTool.normalizedURL(from: " \n\t ") == nil)
+    }
+
+    @Test("tool normalizes unsafe viewport widths")
+    func toolNormalizesUnsafeViewportWidths() {
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: nil) == 1280)
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: -100) == 1280)
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 0) == 1280)
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 1440) == 1440)
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 8192) == 4096)
+        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: " 1024 ") == 1024)
+    }
+
+    @Test("tool normalizes wait seconds")
+    func toolNormalizesWaitSeconds() {
+        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: nil) == 1.0)
+        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: -2.0) == 0)
+        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: 0.25) == 0.25)
+        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: 99) == 10)
+        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: " 2.5 ") == 2.5)
     }
 
     @Test("localization catalog is packaged")
