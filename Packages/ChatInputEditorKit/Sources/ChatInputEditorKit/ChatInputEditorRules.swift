@@ -81,6 +81,9 @@ public enum ChatInputEditorRules {
         if let url = URL(string: trimmed), url.isFileURL {
             return url
         }
+        if trimmed == "~" || trimmed.hasPrefix("~/") {
+            return URL(fileURLWithPath: (trimmed as NSString).expandingTildeInPath)
+        }
         guard trimmed.hasPrefix("/") else { return nil }
         return URL(fileURLWithPath: trimmed)
     }

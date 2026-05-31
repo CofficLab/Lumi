@@ -11,6 +11,7 @@ import LumiCoreKit
 @Test func droppedFileURLStringsBecomeFileURLs() {
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "/tmp/a.png")?.path == "/tmp/a.png")
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: " file:///tmp/a%20b.png\n")?.path == "/tmp/a b.png")
+    #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "~/Desktop/a.png")?.path == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop/a.png").path)
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "https://example.com/a.png") == nil)
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "relative/a.png") == nil)
 }
