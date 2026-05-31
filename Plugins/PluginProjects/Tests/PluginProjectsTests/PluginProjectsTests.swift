@@ -23,7 +23,10 @@ import Testing
     #expect(ListProjectsTool.normalizedLimit(-10) == 1)
     #expect(ListProjectsTool.normalizedLimit(0) == 1)
     #expect(ListProjectsTool.normalizedLimit(25) == 25)
+    #expect(ListProjectsTool.normalizedLimit(25.0) == 25)
+    #expect(ListProjectsTool.normalizedLimit("25") == 25)
     #expect(ListProjectsTool.normalizedLimit(999) == 500)
+    #expect(ListProjectsTool.normalizedLimit("not-a-number") == 5)
 }
 
 @Test func projectsStoreQuarantinesInvalidStateFileAndRecovers() async throws {

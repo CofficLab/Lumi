@@ -34,7 +34,7 @@ public struct ListProjectsTool: SuperAgentTool, SuperLog {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
+        let limit = Self.normalizedLimit(arguments["limit"]?.value)
 
         if Self.verbose {
             if ProjectsPlugin.verbose {
@@ -59,8 +59,19 @@ public struct ListProjectsTool: SuperAgentTool, SuperLog {
         return output
     }
 
-    static func normalizedLimit(_ rawLimit: Int?) -> Int {
-        min(max(rawLimit ?? 5, 1), 500)
+    static func normalizedLimit(_ value: Any?) -> Int {
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = 5
+        }
+
+        return min(max(requested, 1), 500)
     }
 
     private func formatDate(_ date: Date) -> String {
