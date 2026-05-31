@@ -951,6 +951,30 @@ struct EditorKernelTests {
     }
 
     @Test
+    func findReplaceControllerMergesOverlappingSelectionScopesInDocumentOrder() {
+        let state = EditorFindReplaceState(
+            findText: "foo",
+            options: .init(inSelectionOnly: true)
+        )
+
+        let result = EditorFindReplaceController.matches(
+            in: "foo bar foo baz foo",
+            state: state,
+            selections: [
+                .init(range: .init(location: 8, length: 11)),
+                .init(range: .init(location: 0, length: 11))
+            ],
+            primarySelection: nil
+        )
+
+        #expect(result.matches.map(\.range) == [
+            .init(location: 0, length: 3),
+            .init(location: 8, length: 3),
+            .init(location: 16, length: 3),
+        ])
+    }
+
+    @Test
     func findReplaceControllerPrefersCurrentOrNextMatch() {
         var preferred = EditorFindReplaceState(findText: "foo")
         preferred.selectedMatchRange = .init(location: 4, length: 3)

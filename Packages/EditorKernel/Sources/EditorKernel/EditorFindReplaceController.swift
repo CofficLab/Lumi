@@ -87,7 +87,8 @@ public enum EditorFindReplaceController {
         selections: [EditorSelection],
         primarySelection: EditorSelection?
     ) -> [EditorRange] {
-        let fullRange = EditorRange(location: 0, length: (text as NSString).length)
+        let textLength = (text as NSString).length
+        let fullRange = EditorRange(location: 0, length: textLength)
         guard options.inSelectionOnly else { return [fullRange] }
 
         let nonEmptySelections = selections
@@ -95,14 +96,59 @@ public enum EditorFindReplaceController {
             .filter { $0.length > 0 }
 
         if !nonEmptySelections.isEmpty {
-            return nonEmptySelections
+            return normalizedSearchScopes(nonEmptySelections, textLength: textLength)
         }
 
         if let primarySelection, primarySelection.range.length > 0 {
-            return [primarySelection.range]
+            return normalizedSearchScopes([primarySelection.range], textLength: textLength)
         }
 
         return [fullRange]
+    }
+
+    private static func normalizedSearchScopes(
+        _ ranges: [EditorRange],
+        textLength: Int
+    ) -> [EditorRange] {
+        let sorted = ranges.compactMap { range -> EditorRange? in
+            guard range.location >= 0,
+                  range.length > 0,
+                  range.location <= textLength,
+                  range.location <= Int.max - range.length else {
+                return nil
+            }
+
+            let rawEnd = min(range.location + range.length, textLength)
+            guard rawEnd > range.location else { return nil }
+            return EditorRange(location: range.location, length: rawEnd - range.location)
+        }
+        .sorted { lhs, rhs in
+            if lhs.location != rhs.location {
+                return lhs.location < rhs.location
+            }
+            return lhs.length < rhs.length
+        }
+
+        var merged: [EditorRange] = []
+        for range in sorted {
+            guard let last = merged.last else {
+                merged.append(range)
+                continue
+            }
+
+            let lastEnd = last.location + last.length
+            let rangeEnd = range.location + range.length
+            guard range.location <= lastEnd else {
+                merged.append(range)
+                continue
+            }
+
+            merged[merged.count - 1] = EditorRange(
+                location: last.location,
+                length: max(lastEnd, rangeEnd) - last.location
+            )
+        }
+        return merged
     }
 
     private static func selectedMatchIndex(
