@@ -22,7 +22,10 @@ import Testing
     #expect(QueryEcoKBTool.normalizedLimit(-10) == 1)
     #expect(QueryEcoKBTool.normalizedLimit(0) == 1)
     #expect(QueryEcoKBTool.normalizedLimit(8) == 8)
+    #expect(QueryEcoKBTool.normalizedLimit(8.0) == 8)
+    #expect(QueryEcoKBTool.normalizedLimit("8") == 8)
     #expect(QueryEcoKBTool.normalizedLimit(999) == QueryEcoKBTool.maxResultLimit)
+    #expect(QueryEcoKBTool.normalizedLimit("not-a-number") == QueryEcoKBTool.defaultResultLimit)
 }
 
 @Test func knowledgeBaseSavesAndReloadsProjectStore() async throws {

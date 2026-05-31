@@ -58,7 +58,7 @@ public struct QueryEcoKBTool: SuperAgentTool {
             return String(localized: "Missing required parameter: query", table: "GitHubInsight")
         }
 
-        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
+        let limit = Self.normalizedLimit(arguments["limit"]?.value)
         let projectPath = (arguments["project_path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let entries: [GitHubInsightKBEntry]
@@ -101,7 +101,18 @@ public struct QueryEcoKBTool: SuperAgentTool {
         return lines.joined(separator: "\n")
     }
 
-    static func normalizedLimit(_ rawLimit: Int?) -> Int {
-        min(max(rawLimit ?? defaultResultLimit, 1), maxResultLimit)
+    static func normalizedLimit(_ value: Any?) -> Int {
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = defaultResultLimit
+        }
+
+        return min(max(requested, 1), maxResultLimit)
     }
 }
