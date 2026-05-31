@@ -122,6 +122,18 @@ import Foundation
     #expect(table.rows == [["Ada", "42"]])
 }
 
+@Test func csvParserPreservesWhitespaceInsideQuotedFields() throws {
+    let csv = "Name,Note\n"
+        + "\"  Ada  \",\" keeps spaces \"\n"
+        + "Grace, trims unquoted \n"
+    let table = try CSVPreviewParser.parse(csv)
+
+    #expect(table.rows == [
+        ["  Ada  ", " keeps spaces "],
+        ["Grace", "trims unquoted"],
+    ])
+}
+
 @Test func csvParserRejectsUnclosedQuotedFields() throws {
     #expect(throws: CSVPreviewParser.ParseError.unclosedQuote) {
         try CSVPreviewParser.parse("Name,Note\nAda,\"unfinished")

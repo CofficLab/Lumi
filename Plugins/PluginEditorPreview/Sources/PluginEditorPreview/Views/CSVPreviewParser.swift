@@ -107,7 +107,9 @@ enum CSVPreviewParser {
         var result: [[String]] = []
         var currentLine: [String] = []
         var currentField = ""
+        var currentFieldWasQuoted = false
         var inQuotes = false
+        var justClosedQuote = false
 
         let chars = Array(text)
         var index = 0
@@ -122,26 +124,38 @@ enum CSVPreviewParser {
                         index += 1
                     } else {
                         inQuotes = false
+                        justClosedQuote = true
                     }
                 } else {
                     currentField.append(char)
                 }
             } else {
                 if char == "\"" {
+                    if currentField.trimmingCharacters(in: .whitespaces).isEmpty {
+                        currentField = ""
+                        currentFieldWasQuoted = true
+                    }
                     inQuotes = true
                 } else if char == separator {
-                    currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
+                    currentLine.append(normalizedField(currentField, wasQuoted: currentFieldWasQuoted))
                     currentField = ""
+                    currentFieldWasQuoted = false
+                    justClosedQuote = false
                 } else if char == "\n" || char == "\r" {
-                    currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
+                    currentLine.append(normalizedField(currentField, wasQuoted: currentFieldWasQuoted))
                     appendNonEmptyLine(currentLine, to: &result)
                     currentLine = []
                     currentField = ""
+                    currentFieldWasQuoted = false
+                    justClosedQuote = false
                     if char == "\r", index + 1 < chars.count, chars[index + 1] == "\n" {
                         index += 1
                     }
+                } else if justClosedQuote && (char == " " || char == "\t") {
+                    // Ignore padding between a closing quote and the delimiter.
                 } else if char != "\r" {
                     currentField.append(char)
+                    justClosedQuote = false
                 }
             }
             index += 1
@@ -152,11 +166,15 @@ enum CSVPreviewParser {
         }
 
         if !currentField.isEmpty || !currentLine.isEmpty {
-            currentLine.append(currentField.trimmingCharacters(in: .whitespaces))
+            currentLine.append(normalizedField(currentField, wasQuoted: currentFieldWasQuoted))
             appendNonEmptyLine(currentLine, to: &result)
         }
 
         return result
+    }
+
+    private static func normalizedField(_ field: String, wasQuoted: Bool) -> String {
+        wasQuoted ? field : field.trimmingCharacters(in: .whitespaces)
     }
 
     private static func appendNonEmptyLine(_ line: [String], to result: inout [[String]]) {
