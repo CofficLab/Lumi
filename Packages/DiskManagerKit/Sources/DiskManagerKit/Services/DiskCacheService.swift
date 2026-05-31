@@ -25,14 +25,21 @@ public actor ScanCacheService {
     private let decoder = JSONDecoder()
 
     init() {
-        let cacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        self.cacheDirectory = cacheBase.appendingPathComponent("DiskManagerKit/ScanCache")
+        self.cacheDirectory = Self.defaultCacheDirectory(
+            cachesDirectory: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first,
+            temporaryDirectory: FileManager.default.temporaryDirectory
+        )
         try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
 
     public init(cacheDirectory: URL) {
         self.cacheDirectory = cacheDirectory
         try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+    }
+
+    static func defaultCacheDirectory(cachesDirectory: URL?, temporaryDirectory: URL) -> URL {
+        let base = cachesDirectory ?? temporaryDirectory
+        return base.appendingPathComponent("DiskManagerKit/ScanCache", isDirectory: true)
     }
 
     public func save(_ result: ScanResult, for path: String) {

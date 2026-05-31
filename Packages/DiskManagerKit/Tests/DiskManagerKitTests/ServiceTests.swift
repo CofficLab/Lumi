@@ -100,11 +100,36 @@ struct MaxHeapTests {
 
 struct ScanCacheServiceTests {
     @Test
+    func defaultCacheDirectoryUsesCachesDirectoryWhenAvailable() {
+        let cachesDirectory = URL(fileURLWithPath: "/tmp/Caches", isDirectory: true)
+        let temporaryDirectory = URL(fileURLWithPath: "/tmp/Temporary", isDirectory: true)
+
+        let url = ScanCacheService.defaultCacheDirectory(
+            cachesDirectory: cachesDirectory,
+            temporaryDirectory: temporaryDirectory
+        )
+
+        #expect(url.path == "/tmp/Caches/DiskManagerKit/ScanCache")
+    }
+
+    @Test
+    func defaultCacheDirectoryFallsBackToTemporaryDirectory() {
+        let temporaryDirectory = URL(fileURLWithPath: "/tmp/Temporary", isDirectory: true)
+
+        let url = ScanCacheService.defaultCacheDirectory(
+            cachesDirectory: nil,
+            temporaryDirectory: temporaryDirectory
+        )
+
+        #expect(url.path == "/tmp/Temporary/DiskManagerKit/ScanCache")
+    }
+
+    @Test
     func initWithCustomDirectory() throws {
         let tmpDir = FileManager.default.temporaryDirectory.appendingPathComponent("DiskManagerKitTest-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
-        let service = ScanCacheService(cacheDirectory: tmpDir)
+        _ = ScanCacheService(cacheDirectory: tmpDir)
         #expect(FileManager.default.fileExists(atPath: tmpDir.path))
     }
 
