@@ -84,7 +84,9 @@ public actor MemoryRetrievalService {
         storage: MemoryStorageService,
         maxResults: Int? = nil
     ) async -> [MemoryItem] {
-        let limit = maxResults ?? config.maxResults
+        let limit = max(0, maxResults ?? config.maxResults)
+        guard limit > 0 else { return [] }
+
         let memories = await storage.listMemories(scope: scope)
 
         guard !memories.isEmpty else { return [] }

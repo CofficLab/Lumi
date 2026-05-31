@@ -220,6 +220,52 @@ struct MemoryRetrievalTests {
         }
     }
 
+    @Test("非正数最大结果数返回空结果")
+    func nonPositiveMaxResultsReturnsEmpty() async throws {
+        let (storage, tempDir) = createTempStorage()
+        defer { cleanup(tempDir) }
+
+        _ = try await storage.createMemory(
+            id: "swift-memory", type: .user, name: "Swift Memory",
+            description: "Swift development preference",
+            content: "User prefers Swift development",
+            scope: .global
+        )
+
+        let negativeConfigRetrieval = MemoryRetrievalService(
+            config: MemoryRetrievalConfig(halfLifeDays: 30, maxResults: -1),
+            verbose: false
+        )
+
+        let negativeConfigResults = await negativeConfigRetrieval.findRelevant(
+            query: "Swift development",
+            scope: .global,
+            storage: storage
+        )
+        #expect(negativeConfigResults.isEmpty)
+
+        let retrieval = MemoryRetrievalService(
+            config: MemoryRetrievalConfig(halfLifeDays: 30, maxResults: 5),
+            verbose: false
+        )
+
+        let zeroOverrideResults = await retrieval.findRelevant(
+            query: "Swift development",
+            scope: .global,
+            storage: storage,
+            maxResults: 0
+        )
+        #expect(zeroOverrideResults.isEmpty)
+
+        let negativeOverrideResults = await retrieval.findRelevant(
+            query: "Swift development",
+            scope: .global,
+            storage: storage,
+            maxResults: -3
+        )
+        #expect(negativeOverrideResults.isEmpty)
+    }
+
     // MARK: - Project Scope Retrieval
 
     @Test("项目级作用域检索")
