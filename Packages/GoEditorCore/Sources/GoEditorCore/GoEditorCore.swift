@@ -334,6 +334,8 @@ public struct GoBuildOutputParser: Sendable {
 }
 
 public struct GoTestOutputParser: Sendable {
+    private static let packageFailureTestName = "Package failure"
+
     public struct TestEvent: Identifiable, Equatable, Sendable {
         public let id = UUID()
         public let test: String
@@ -382,10 +384,19 @@ public struct GoTestOutputParser: Sendable {
                   let data = line.data(using: .utf8),
                   let json = try? decoder.decode(TestJSONLine.self, from: data),
                   let action = json.Action,
-                  let status = TestStatus(rawValue: action),
-                  let test = json.Test else {
+                  let status = TestStatus(rawValue: action) else {
                 continue
             }
+
+            let test: String
+            if let parsedTest = json.Test {
+                test = parsedTest
+            } else if status == .fail, json.Package != nil {
+                test = packageFailureTestName
+            } else {
+                continue
+            }
+
             results.append(TestEvent(
                 test: test,
                 package: json.Package ?? "",
@@ -400,9 +411,22 @@ public struct GoTestOutputParser: Sendable {
     public static func finalEvents(from output: String) -> [TestEvent] {
         let parsed = parse(output: output)
         var deduped: [String: TestEvent] = [:]
+        var packagesWithTestEvents: Set<String> = []
+        var packageFailures: [String: TestEvent] = [:]
+
         for event in parsed where event.status != .run {
-            deduped["\(event.package)#\(event.test)"] = event
+            if event.test == packageFailureTestName {
+                packageFailures[event.package] = event
+            } else {
+                packagesWithTestEvents.insert(event.package)
+                deduped["\(event.package)#\(event.test)"] = event
+            }
         }
+
+        for (package, event) in packageFailures where !packagesWithTestEvents.contains(package) {
+            deduped["\(package)#\(event.test)"] = event
+        }
+
         return Array(deduped.values).sorted {
             if $0.package == $1.package {
                 return $0.test.localizedCaseInsensitiveCompare($1.test) == .orderedAscending

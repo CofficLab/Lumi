@@ -133,6 +133,37 @@ final class GoEditorCoreTests: XCTestCase {
         XCTAssertEqual(events.map(\.status), [.pass, .fail])
     }
 
+    func testGoTestOutputParserKeepsPackageLevelCompileFailures() {
+        let output = """
+        {"Action":"output","Package":"example.com/app","Output":"# example.com/app\\n"}
+        {"Action":"output","Package":"example.com/app","Output":"./main.go:4:2: undefined: missing\\n"}
+        {"Action":"fail","Package":"example.com/app","Elapsed":0.01}
+        """
+
+        let parsed = GoTestOutputParser.parse(output: output)
+        let events = GoTestOutputParser.finalEvents(from: output)
+
+        XCTAssertEqual(parsed.count, 1)
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events[0].package, "example.com/app")
+        XCTAssertEqual(events[0].test, "Package failure")
+        XCTAssertEqual(events[0].status, .fail)
+    }
+
+    func testGoTestOutputParserDoesNotDuplicatePackageFailWhenTestsFailed() {
+        let output = """
+        {"Action":"run","Package":"example.com/app","Test":"TestAlpha"}
+        {"Action":"fail","Package":"example.com/app","Test":"TestAlpha","Elapsed":0.02}
+        {"Action":"fail","Package":"example.com/app","Elapsed":0.03}
+        """
+
+        let events = GoTestOutputParser.finalEvents(from: output)
+
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events[0].test, "TestAlpha")
+        XCTAssertEqual(events[0].status, .fail)
+    }
+
     func testGoInlayHintPipelineSettingsAndRequestGate() {
         let pipeline = GoInlayHintPipeline.default
 
