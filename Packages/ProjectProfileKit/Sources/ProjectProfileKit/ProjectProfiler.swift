@@ -188,11 +188,43 @@ public struct ProjectProfiler {
     /// 从 `go.mod` 提取直接 Go 模块依赖。
     private func goDependencies(at url: URL) -> [String] {
         guard let text = readTextFile(url) else { return [] }
-        return text.split(separator: "\n").compactMap { line in
+        var dependencies: [String] = []
+        var inRequireBlock = false
+
+        for line in text.split(separator: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.hasPrefix("require ") else { return nil }
-            return trimmed.replacingOccurrences(of: "require ", with: "").split(separator: " ").first.map(String.init)
+            if trimmed.isEmpty || trimmed.hasPrefix("//") { continue }
+
+            if inRequireBlock {
+                if trimmed == ")" {
+                    inRequireBlock = false
+                    continue
+                }
+                if let dependency = goDependencyName(from: String(trimmed)) {
+                    dependencies.append(dependency)
+                }
+                continue
+            }
+
+            let requireDeclaration = trimmed.split(
+                maxSplits: 1,
+                whereSeparator: \.isWhitespace
+            )
+            guard requireDeclaration.first == "require", requireDeclaration.count == 2 else { continue }
+            let declaration = String(requireDeclaration[1]).trimmingCharacters(in: .whitespaces)
+            if declaration == "(" {
+                inRequireBlock = true
+            } else if let dependency = goDependencyName(from: declaration) {
+                dependencies.append(dependency)
+            }
         }
+
+        return dependencies
+    }
+
+    private func goDependencyName(from declaration: String) -> String? {
+        let dependencyLine = declaration.split(separator: "//", maxSplits: 1).first ?? ""
+        return dependencyLine.split(whereSeparator: \.isWhitespace).first.map(String.init)
     }
 
     /// 从 TOML 文件的 `[dependencies]` 段提取依赖名称。

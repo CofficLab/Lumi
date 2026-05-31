@@ -260,6 +260,35 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertEqual(profile.dependencies, ["github.com/gin-gonic/gin", "github.com/spf13/cobra"])
     }
 
+    func testGoModDetectsRequireBlocksWithIndirectDependencies() throws {
+        let root = try makeProject()
+        try write(
+            """
+            module github.com/example/server
+
+            require (
+                github.com/gin-gonic/gin v1.10.0
+                github.com/spf13/cobra v1.8.1
+                golang.org/x/sys v0.30.0 // indirect
+            )
+            """,
+            to: root.appendingPathComponent("go.mod")
+        )
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent("cmd"),
+            withIntermediateDirectories: true
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "Go")
+        XCTAssertEqual(profile.dependencies, [
+            "github.com/gin-gonic/gin",
+            "github.com/spf13/cobra",
+            "golang.org/x/sys",
+        ])
+    }
+
     func testCargoTomlDetectsRustDependencies() throws {
         let root = try makeProject()
         try write(
