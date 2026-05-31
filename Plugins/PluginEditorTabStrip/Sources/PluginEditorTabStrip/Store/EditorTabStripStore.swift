@@ -39,11 +39,19 @@ public final class EditorTabStripStore: @unchecked Sendable, SuperLog {
 
     // MARK: - Initialization
 
-    private init() {
-        self.baseDirectory = AppConfig.getDBFolderURL()
+    public convenience init() {
+        self.init(baseDirectory: AppConfig.getDBFolderURL()
             .appendingPathComponent("EditorTabStrip", isDirectory: true)
-            .appendingPathComponent("projects", isDirectory: true)
-        try? fileManager.createDirectory(at: baseDirectory, withIntermediateDirectories: true)
+            .appendingPathComponent("projects", isDirectory: true))
+    }
+
+    init(baseDirectory: URL) {
+        self.baseDirectory = baseDirectory
+        do {
+            try fileManager.createDirectory(at: baseDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("\(Self.t)Create editor tab strip directory failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Public API
@@ -73,13 +81,10 @@ public final class EditorTabStripStore: @unchecked Sendable, SuperLog {
     /// 加载指定项目的标签页列表（同步，需要返回值）
     public func loadTabs(forProject projectPath: String) -> (tabs: [PersistedTab], activeTabPath: String?) {
         queue.sync {
-            let fileURL = self.getFileURL(forProject: projectPath)
-            let fileExists = self.fileManager.fileExists(atPath: fileURL.path)
-
             guard let snapshot = self.readSnapshot(forProject: projectPath) else {
                 return ([], nil)
             }
-            
+
             return (snapshot.tabs, snapshot.activeTabPath)
         }
     }
@@ -173,27 +178,56 @@ public final class EditorTabStripStore: @unchecked Sendable, SuperLog {
     private func readSnapshot(forProject projectPath: String) -> PersistedProjectTabs? {
         let fileURL = getFileURL(forProject: projectPath)
         guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return try? JSONDecoder().decode(PersistedProjectTabs.self, from: data)
+        do {
+            let data = try Data(contentsOf: fileURL)
+            return try JSONDecoder().decode(PersistedProjectTabs.self, from: data)
+        } catch {
+            Self.logger.error("\(Self.t)Read editor tab strip state failed: \(error.localizedDescription)")
+            quarantineCorruptSnapshot(forProject: projectPath)
+            return nil
+        }
     }
 
     private func writeSnapshot(_ snapshot: PersistedProjectTabs, forProject projectPath: String) {
         let fileURL = getFileURL(forProject: projectPath)
         let dirURL = fileURL.deletingLastPathComponent()
-        try? fileManager.createDirectory(at: dirURL, withIntermediateDirectories: true)
 
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(snapshot)
+        } catch {
+            Self.logger.error("\(Self.t)Encode editor tab strip state failed: \(error.localizedDescription)")
+            return
+        }
 
         let tmpURL = dirURL.appendingPathComponent("tabs.tmp")
         do {
+            try fileManager.createDirectory(at: dirURL, withIntermediateDirectories: true)
             try data.write(to: tmpURL, options: .atomic)
             if fileManager.fileExists(atPath: fileURL.path) {
-                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+                _ = try fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
             } else {
                 try fileManager.moveItem(at: tmpURL, to: fileURL)
             }
         } catch {
+            Self.logger.error("\(Self.t)Persist editor tab strip state failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
+        }
+    }
+
+    private func quarantineCorruptSnapshot(forProject projectPath: String) {
+        let fileURL = getFileURL(forProject: projectPath)
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+
+        let corruptURL = fileURL.deletingLastPathComponent()
+            .appendingPathComponent("tabs.corrupt.json", isDirectory: false)
+        do {
+            if fileManager.fileExists(atPath: corruptURL.path) {
+                try fileManager.removeItem(at: corruptURL)
+            }
+            try fileManager.moveItem(at: fileURL, to: corruptURL)
+        } catch {
+            Self.logger.error("\(Self.t)Quarantine corrupt editor tab strip state failed: \(error.localizedDescription)")
         }
     }
 }
