@@ -368,20 +368,11 @@ actor ProjectCommandExecutor: SuperLog {
         for match in matches.reversed() {
             guard let pathRange = Range(match.range(at: 1), in: result) else { continue }
             let filePath = String(result[pathRange])
-            
-            // 解析文件路径
-            let fileURL: URL
-            if filePath.hasPrefix("/") {
-                fileURL = URL(fileURLWithPath: filePath)
-            } else if filePath.hasPrefix("~") {
-                fileURL = URL(fileURLWithPath: NSString(string: filePath).expandingTildeInPath)
-            } else {
-                fileURL = URL(fileURLWithPath: projectPath).appendingPathComponent(filePath)
-            }
-            
+            let resolvedReference = resolveFileReference(filePath, projectPath: projectPath)
+
             // 读取文件内容
-            if let fileContent = try? String(contentsOf: fileURL, encoding: .utf8) {
-                let replacement = "```\n// File: \(filePath)\n\(fileContent)\n```"
+            if let fileContent = try? String(contentsOf: resolvedReference.url, encoding: .utf8) {
+                let replacement = "```\n// File: \(resolvedReference.path)\n\(fileContent)\n```\(resolvedReference.trailingText)"
                 if let fullMatchRange = Range(match.range, in: result) {
                     result.replaceSubrange(fullMatchRange, with: replacement)
                 }
@@ -394,5 +385,38 @@ actor ProjectCommandExecutor: SuperLog {
         }
         
         return result
+    }
+
+    private func resolveFileReference(_ filePath: String, projectPath: String) -> (path: String, url: URL, trailingText: String) {
+        let directURL = fileURL(for: filePath, projectPath: projectPath)
+        if FileManager.default.fileExists(atPath: directURL.path) {
+            return (filePath, directURL, "")
+        }
+
+        var strippedPath = filePath
+        var trailingText = ""
+        let trailingDelimiters = CharacterSet(charactersIn: ".,;:!?)]}\"'")
+
+        while let lastScalar = strippedPath.unicodeScalars.last,
+              trailingDelimiters.contains(lastScalar) {
+            let lastCharacter = String(strippedPath.removeLast())
+            trailingText = lastCharacter + trailingText
+        }
+
+        guard !strippedPath.isEmpty else {
+            return (filePath, directURL, "")
+        }
+
+        return (strippedPath, fileURL(for: strippedPath, projectPath: projectPath), trailingText)
+    }
+
+    private func fileURL(for filePath: String, projectPath: String) -> URL {
+        if filePath.hasPrefix("/") {
+            return URL(fileURLWithPath: filePath)
+        } else if filePath.hasPrefix("~") {
+            return URL(fileURLWithPath: NSString(string: filePath).expandingTildeInPath)
+        } else {
+            return URL(fileURLWithPath: projectPath).appendingPathComponent(filePath)
+        }
     }
 }

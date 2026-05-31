@@ -48,5 +48,41 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertEqual(result.frontmatter?.disableModelInvocation, true)
         XCTAssertEqual(result.body, "Ship $ARGUMENTS\n")
     }
+
+    func testFileReferenceKeepsSentencePunctuationOutsidePath() async throws {
+        let commandName = "review-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "Important release notes".write(
+            to: projectURL.appendingPathComponent("README.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "Summarize @README.md.".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName)")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("// File: README.md"))
+        XCTAssertTrue(message.contains("Important release notes"))
+        XCTAssertTrue(message.hasSuffix("```."))
+        XCTAssertFalse(message.contains("[文件不存在]"))
+    }
 }
 #endif
