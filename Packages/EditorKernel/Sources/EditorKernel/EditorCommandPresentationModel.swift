@@ -37,13 +37,14 @@ public struct EditorCommandPresentationModel {
                 || shortcutText.localizedCaseInsensitiveContains(normalizedQuery)
         }
 
-        let suggestionsByID = Dictionary(uniqueKeysWithValues: filteredSuggestions.map { ($0.id, $0) })
+        let uniqueSuggestions = deduplicatingSuggestionsPreservingFirst(filteredSuggestions)
+        let suggestionsByID = Dictionary(uniqueKeysWithValues: uniqueSuggestions.map { ($0.id, $0) })
         let recentCommands = recentCommandIDs
             .compactMap { suggestionsByID[$0] }
             .prefix(recentLimit)
             .map { $0 }
         let recentIDs = Set(recentCommands.map(\.id))
-        let frequentCommands = filteredSuggestions
+        let frequentCommands = uniqueSuggestions
             .filter { !recentIDs.contains($0.id) && (commandUsageCounts[$0.id] ?? 0) > 1 }
             .sorted { lhs, rhs in
                 let lhsCount = commandUsageCounts[lhs.id] ?? 0
@@ -56,7 +57,7 @@ public struct EditorCommandPresentationModel {
             .map { $0 }
         let frequentIDs = Set(frequentCommands.map(\.id))
 
-        let grouped = Dictionary(grouping: filteredSuggestions.filter {
+        let grouped = Dictionary(grouping: uniqueSuggestions.filter {
             !recentIDs.contains($0.id) && !frequentIDs.contains($0.id)
         }) { suggestion in
             EditorCommandCategory(rawValue: suggestion.category ?? "") ?? .other
@@ -73,5 +74,14 @@ public struct EditorCommandPresentationModel {
             frequentCommands: frequentCommands,
             sections: sections
         )
+    }
+
+    private static func deduplicatingSuggestionsPreservingFirst(
+        _ suggestions: [EditorCommandSuggestion]
+    ) -> [EditorCommandSuggestion] {
+        var seen = Set<String>()
+        return suggestions.filter { suggestion in
+            seen.insert(suggestion.id).inserted
+        }
     }
 }

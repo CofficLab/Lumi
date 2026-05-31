@@ -1671,6 +1671,51 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func editorCommandPresentationToleratesDuplicateSuggestionIDs() {
+        let suggestions = [
+            EditorCommandSuggestion(
+                id: "find.replace",
+                title: "Replace",
+                systemImage: "text.magnifyingglass",
+                category: "find",
+                order: 1,
+                isEnabled: true,
+                action: {}
+            ),
+            EditorCommandSuggestion(
+                id: "find.replace",
+                title: "Replace Duplicate",
+                systemImage: "text.magnifyingglass",
+                category: "find",
+                order: 2,
+                isEnabled: true,
+                action: {}
+            ),
+            EditorCommandSuggestion(
+                id: "format.document",
+                title: "Format Document",
+                systemImage: "textformat",
+                category: "format",
+                order: 0,
+                isEnabled: true,
+                action: {}
+            ),
+        ]
+
+        let model = EditorCommandPresentationModel.build(
+            from: suggestions,
+            recentCommandIDs: ["find.replace"],
+            commandUsageCounts: ["format.document": 3],
+            query: ""
+        )
+
+        #expect(model.recentCommands.map(\.title) == ["Replace"])
+        #expect(model.frequentCommands.map(\.id) == ["format.document"])
+        #expect(model.flattenedCommands.map(\.id) == ["find.replace", "format.document"])
+    }
+
+    @Test
+    @MainActor
     func editorCommandPresentationFiltersByShortcutAndCategoryScope() {
         let suggestions = [
             EditorCommandSuggestion(
