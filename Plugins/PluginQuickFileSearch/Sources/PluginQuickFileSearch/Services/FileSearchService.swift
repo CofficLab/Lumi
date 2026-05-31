@@ -105,6 +105,9 @@ public final class FileSearchService: ObservableObject, SuperLog {
         projectPath: String,
         limit: Int = 40
     ) -> [FileResult] {
+        let normalizedLimit = max(0, limit)
+        guard normalizedLimit > 0 else { return [] }
+
         let normalizedProjectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalizedProjectPath.isEmpty, !normalizedQuery.isEmpty else { return [] }
@@ -121,7 +124,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         return Array(
             FileSearchHelpers
                 .searchInFiles(indexStore.files, query: normalizedQuery)
-                .prefix(limit)
+                .prefix(normalizedLimit)
         )
     }
 

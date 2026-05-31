@@ -62,6 +62,14 @@ import Foundation
     #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "", completedQuery: "App"))
 }
 
+@Test @MainActor func quickOpenResultsClampsNonPositiveLimits() {
+    let service = FileSearchService.shared
+    service.clearIndex()
+
+    #expect(service.quickOpenResults(matching: "App", projectPath: "/tmp/project", limit: 0).isEmpty)
+    #expect(service.quickOpenResults(matching: "App", projectPath: "/tmp/project", limit: -3).isEmpty)
+}
+
 @Test func fuzzyMatchRejectsEmptyQuery() {
     #expect(!FileSearchHelpers.fuzzyMatch("Application.swift", query: ""))
 }
