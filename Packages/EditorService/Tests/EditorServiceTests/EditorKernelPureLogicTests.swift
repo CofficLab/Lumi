@@ -196,6 +196,19 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertNil(bridge.lspRange(from: NSRange(location: 1, length: Int.max), in: "abc"))
     }
 
+    func testTextViewBridgeLastCharacterKeepsComposedCharactersIntact() {
+        XCTAssertEqual(TextViewBridge.lastCharacter(before: 1, in: "a"), "a")
+        XCTAssertEqual(TextViewBridge.lastCharacter(before: 2, in: "😀"), "😀")
+        XCTAssertEqual(TextViewBridge.lastCharacter(before: 2, in: "e\u{301}"), "e\u{301}")
+    }
+
+    func testTextViewBridgeLastCharacterRejectsInvalidLocations() {
+        XCTAssertNil(TextViewBridge.lastCharacter(before: NSNotFound, in: "abc"))
+        XCTAssertNil(TextViewBridge.lastCharacter(before: 0, in: "abc"))
+        XCTAssertNil(TextViewBridge.lastCharacter(before: -1, in: "abc"))
+        XCTAssertNil(TextViewBridge.lastCharacter(before: 4, in: "abc"))
+    }
+
     func testEditorViewStateControllerIgnoresOverflowingSelectionEnds() {
         let state = EditorViewStateController.positions(
             from: [MultiCursorSelection(location: 1, length: Int.max)],

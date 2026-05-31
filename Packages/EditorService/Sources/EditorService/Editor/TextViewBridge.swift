@@ -144,11 +144,18 @@ final class TextViewBridge {
 
     func lastTypedCharacter(in controller: TextViewController) -> String? {
         guard let textView = controller.textView else { return nil }
-        let text = textView.string as NSString
         guard let selection = textView.selectionManager.textSelections.first else { return nil }
-        let location = selection.range.location
-        guard location != NSNotFound, location > 0, location <= text.length else { return nil }
-        return text.substring(with: NSRange(location: location - 1, length: 1))
+        return Self.lastCharacter(before: selection.range.location, in: textView.string)
+    }
+
+    static func lastCharacter(before location: Int, in text: String) -> String? {
+        let nsText = text as NSString
+        guard location != NSNotFound, location > 0, location <= nsText.length else { return nil }
+        let characterRange = nsText.rangeOfComposedCharacterSequence(at: location - 1)
+        guard characterRange.location != NSNotFound,
+              characterRange.location >= 0,
+              characterRange.max <= nsText.length else { return nil }
+        return nsText.substring(with: characterRange)
     }
 
     func lspRange(from nsRange: NSRange, in text: String) -> LSPRange? {
