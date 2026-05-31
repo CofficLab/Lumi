@@ -64,6 +64,19 @@ struct LumiUIThemeRegistryTests {
 
     @Test
     @MainActor
+    func builtInFallbackContributionCanSeedRegistry() throws {
+        let registry = LumiUIThemeRegistry()
+
+        try registry.replaceAll([.builtInFallback()])
+
+        #expect(registry.selectedThemeId == "lumi-fallback")
+        #expect(registry.chromeTheme.identifier == "lumi-fallback")
+        #expect(registry.uiTheme.id == "lumi-default")
+        #expect(registry.resolvedEditorThemeId(colorScheme: .dark) == "xcode-dark")
+    }
+
+    @Test
+    @MainActor
     func replaceAllDuplicateIdThrows() {
         let registry = LumiUIThemeRegistry()
         let a = contribution(pluginOrder: 1, themeId: "same")

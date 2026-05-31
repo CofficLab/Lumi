@@ -9,12 +9,11 @@ final class ThemeService {
 
     func syncFromPlugins(registry: LumiUIThemeRegistry = .shared) {
         let contributions = AppPluginVM.shared.getThemeContributions()
+        let themes = contributions.isEmpty ? [LumiUIThemeContribution.builtInFallback()] : contributions
         do {
-            try registry.replaceAll(contributions)
+            try registry.replaceAll(themes)
         } catch {
-            fatalError(
-                "Failed to register theme contributions: \(error). Enable at least one theme plugin."
-            )
+            try? registry.replaceAll([LumiUIThemeContribution.builtInFallback()])
         }
     }
 }
