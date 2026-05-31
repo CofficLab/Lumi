@@ -219,6 +219,32 @@ struct IncrementalBuildPipelineTests {
         #expect(plan.moduleArtifactPath == nil)
     }
 
+    @Test("captures large process stdout and stderr without blocking")
+    func capturesLargeProcessOutputWithoutBlocking() throws {
+        let result = try LumiPreviewFacade.IncrementalBuildPipeline.runProcessCapturingOutput(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: [
+                "-c",
+                """
+                i=1
+                while [ "$i" -le 300 ]; do
+                  printf 'stdout-%03d-%0512d\\n' "$i" 0
+                  printf 'stderr-%03d-%0512d\\n' "$i" 0 >&2
+                  i=$((i + 1))
+                done
+                """
+            ],
+            currentDirectoryURL: nil,
+            outputComponent: "process-capture-test"
+        )
+
+        #expect(result.terminationStatus == 0)
+        #expect(result.stdout.contains("stdout-300-"))
+        #expect(result.stderr.contains("stderr-300-"))
+        #expect(result.stdout.count > 150_000)
+        #expect(result.stderr.count > 150_000)
+    }
+
     @Test("emits interposable linker flags for preview entry dylibs")
     func emitsInterposableLinkerFlagsForPreviewEntryDylibs() {
         let command = LumiPreviewFacade.IncrementalBuildPipeline.emitLibraryCommand(

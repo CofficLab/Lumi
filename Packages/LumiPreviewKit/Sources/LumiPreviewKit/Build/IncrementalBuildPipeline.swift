@@ -41,6 +41,12 @@ public extension LumiPreviewFacade {
         private let moduleNameResolver: @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> String?
         private let moduleImportPlanCache: ModuleImportPlanCache
 
+        internal struct CapturedProcessResult: Sendable, Equatable {
+            let terminationStatus: Int32
+            let stdout: String
+            let stderr: String
+        }
+
         public init(
             incrementalCompiler: LumiPreviewFacade.IncrementalCompiler = .init(),
             xcodeCompiler: LumiPreviewFacade.XcodeCompiler = .init(),
@@ -363,40 +369,30 @@ public extension LumiPreviewFacade {
             derivedDataPath: URL?
         ) async throws -> String {
             try await Task.detached {
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-                process.arguments = Self.xcodebuildArguments(
-                    projectURL: projectURL,
-                    scheme: scheme,
-                    configuration: configuration,
-                    derivedDataPath: derivedDataPath
-                )
-                process.currentDirectoryURL = projectURL.deletingLastPathComponent()
-
-                let stdoutPipe = Pipe()
-                let stderrPipe = Pipe()
-                process.standardOutput = stdoutPipe
-                process.standardError = stderrPipe
-
+                let result: CapturedProcessResult
                 do {
-                    try process.run()
+                    result = try Self.runProcessCapturingOutput(
+                        executableURL: URL(fileURLWithPath: "/usr/bin/env"),
+                        arguments: Self.xcodebuildArguments(
+                            projectURL: projectURL,
+                            scheme: scheme,
+                            configuration: configuration,
+                            derivedDataPath: derivedDataPath
+                        ),
+                        currentDirectoryURL: projectURL.deletingLastPathComponent(),
+                        outputComponent: "xcode-build-log"
+                    )
                 } catch {
                     throw LumiPreviewFacade.PreviewError.compilationFailed(
                         message: "Failed to launch xcodebuild for compile command capture: \(error.localizedDescription)"
                     )
                 }
 
-                process.waitUntilExit()
-
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
-                let stderr = String(data: stderrData, encoding: .utf8) ?? ""
-                let combined = [stdout, stderr]
+                let combined = [result.stdout, result.stderr]
                     .filter { !$0.isEmpty }
                     .joined(separator: "\n")
 
-                guard process.terminationStatus == 0 else {
+                guard result.terminationStatus == 0 else {
                     throw LumiPreviewFacade.PreviewError.compilationFailed(
                         message: combined.isEmpty
                             ? "xcodebuild failed during compile command capture."
@@ -406,6 +402,49 @@ public extension LumiPreviewFacade {
 
                 return combined
             }.value
+        }
+
+        internal static func runProcessCapturingOutput(
+            executableURL: URL,
+            arguments: [String],
+            currentDirectoryURL: URL?,
+            outputComponent: String = "process-output"
+        ) throws -> CapturedProcessResult {
+            let process = Process()
+            process.executableURL = executableURL
+            process.arguments = arguments
+            process.currentDirectoryURL = currentDirectoryURL
+
+            let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: outputComponent)
+            defer { try? FileManager.default.removeItem(at: outputDirectory) }
+
+            let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
+            let stderrURL = outputDirectory.appendingPathComponent("stderr.log")
+            FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
+            FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
+
+            let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
+            let stderrHandle = try FileHandle(forWritingTo: stderrURL)
+            process.standardOutput = stdoutHandle
+            process.standardError = stderrHandle
+
+            do {
+                try process.run()
+            } catch {
+                try? stdoutHandle.close()
+                try? stderrHandle.close()
+                throw error
+            }
+
+            process.waitUntilExit()
+            try? stdoutHandle.close()
+            try? stderrHandle.close()
+
+            return CapturedProcessResult(
+                terminationStatus: process.terminationStatus,
+                stdout: (try? String(contentsOf: stdoutURL, encoding: .utf8)) ?? "",
+                stderr: (try? String(contentsOf: stderrURL, encoding: .utf8)) ?? ""
+            )
         }
 
         private static func xcodebuildArguments(
@@ -586,43 +625,30 @@ public extension LumiPreviewFacade {
             derivedDataPath: URL?
         ) async throws -> String? {
             try await Task.detached {
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-                process.arguments = xcodebuildSettingsArguments(
-                    projectURL: projectURL,
-                    scheme: scheme,
-                    configuration: configuration,
-                    derivedDataPath: derivedDataPath
-                )
-                process.currentDirectoryURL = projectURL.deletingLastPathComponent()
-
-                let stdoutPipe = Pipe()
-                let stderrPipe = Pipe()
-                process.standardOutput = stdoutPipe
-                process.standardError = stderrPipe
-
+                let result: CapturedProcessResult
                 do {
-                    try process.run()
+                    result = try runProcessCapturingOutput(
+                        executableURL: URL(fileURLWithPath: "/usr/bin/env"),
+                        arguments: xcodebuildSettingsArguments(
+                            projectURL: projectURL,
+                            scheme: scheme,
+                            configuration: configuration,
+                            derivedDataPath: derivedDataPath
+                        ),
+                        currentDirectoryURL: projectURL.deletingLastPathComponent(),
+                        outputComponent: "xcode-build-settings"
+                    )
                 } catch {
                     throw LumiPreviewFacade.PreviewError.compilationFailed(
                         message: "Failed to launch xcodebuild for module resolution: \(error.localizedDescription)"
                     )
                 }
-                process.waitUntilExit()
 
-                let stdout = String(
-                    data: stdoutPipe.fileHandleForReading.readDataToEndOfFile(),
-                    encoding: .utf8
-                ) ?? ""
-                let stderr = String(
-                    data: stderrPipe.fileHandleForReading.readDataToEndOfFile(),
-                    encoding: .utf8
-                ) ?? ""
-                let combined = [stdout, stderr]
+                let combined = [result.stdout, result.stderr]
                     .filter { !$0.isEmpty }
                     .joined(separator: "\n")
 
-                guard process.terminationStatus == 0 else {
+                guard result.terminationStatus == 0 else {
                     throw LumiPreviewFacade.PreviewError.compilationFailed(
                         message: combined.isEmpty
                             ? "xcodebuild failed during module resolution."
@@ -630,7 +656,7 @@ public extension LumiPreviewFacade {
                     )
                 }
 
-                let settings = parseBuildSettings(stdout)
+                let settings = parseBuildSettings(result.stdout)
                 for key in ["PRODUCT_MODULE_NAME", "SWIFT_MODULE_NAME", "PRODUCT_NAME", "TARGET_NAME"] {
                     if let value = settings[key], !value.isEmpty {
                         return value
