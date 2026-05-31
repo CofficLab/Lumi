@@ -76,6 +76,11 @@ final class ChatHistoryService: SuperLog, Sendable {
         let currentContextTokens: Int
     }
 
+    private struct ModelPreferenceKey: Hashable {
+        let providerId: String
+        let model: String
+    }
+
     /// 使用 LLM 服务和模型容器初始化
     init(llmService: LLMService, modelContainer: ModelContainer, reason: String) {
         self.llmService = llmService
@@ -207,7 +212,7 @@ extension ChatHistoryService {
         let context = self.getContext()
 
         // 拉取所有设置了模型偏好的对话
-        var descriptor = FetchDescriptor<Conversation>(
+        let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.providerId != nil && $0.model != nil },
             sortBy: []
         )
@@ -220,13 +225,13 @@ extension ChatHistoryService {
         }
 
         // 统计 (providerId, model) 组合的出现次数
-        var usageCount: [String: Int] = [:]
+        var usageCount: [ModelPreferenceKey: Int] = [:]
         for conversation in conversations {
             guard let providerId = conversation.providerId,
                   let model = conversation.model else {
                 continue
             }
-            let key = "\(providerId)|\(model)"
+            let key = ModelPreferenceKey(providerId: providerId, model: model)
             usageCount[key] = (usageCount[key] ?? 0) + 1
         }
 
@@ -238,12 +243,7 @@ extension ChatHistoryService {
             return nil
         }
 
-        let components = topKey.split(separator: "|", maxSplits: 1)
-        guard components.count == 2 else {
-            return nil
-        }
-
-        let result = (providerId: String(components[0]), model: String(components[1]))
+        let result = (providerId: topKey.providerId, model: topKey.model)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📊 最流行模型偏好：\(result.providerId) - \(result.model)（使用 \(usageCount[topKey] ?? 0) 次）")
