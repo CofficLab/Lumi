@@ -306,7 +306,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                let size = attrs[.size] as? Int64, size == expectedSize {
                 return size
             }
-            try? fileManager.removeItem(at: localURL)
+            try fileManager.removeItem(at: localURL)
         }
 
         var request = URLRequest(url: url)
@@ -380,7 +380,7 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
         if let response = downloadTask.response as? HTTPURLResponse {
             switch response.statusCode {
             case 200, 206:
-                try? fileManager.moveItem(at: location, to: incompleteURL)
+                break
             case 416:
                 try? fileManager.removeItem(at: incompleteURL)
                 try? fileManager.removeItem(at: location)
@@ -398,23 +398,24 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
             }
         }
 
-        // 验证并移动文件
-        var actualSize: Int64 = 0
-        if let attrs = try? fileManager.attributesOfItem(atPath: incompleteURL.path),
-           let size = attrs[.size] as? Int64 {
-            actualSize = size
-            if expectedSize > 0 && size != expectedSize {
-                if Self.verbose {
-                                    Self.logger.warning("\(self.t)大小不匹配：期望 \(expectedSize), 实际 \(size)")
-                }
-            }
-            try? fileManager.removeItem(at: destURL)
-            try? fileManager.moveItem(at: incompleteURL, to: destURL)
-        }
+        do {
+            let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode
+            let actualSize = try Self.finalizeDownloadedFile(
+                from: location,
+                to: destURL,
+                expectedSize: expectedSize,
+                statusCode: statusCode,
+                fileManager: fileManager
+            )
 
-        // 完成回调
-        if let context = DownloadContext.remove(id: taskInfo) {
-            context.resume(returning: expectedSize > 0 ? expectedSize : actualSize)
+            if let context = DownloadContext.remove(id: taskInfo) {
+                context.resume(returning: actualSize)
+            }
+        } catch {
+            try? fileManager.removeItem(at: location)
+            if let context = DownloadContext.remove(id: taskInfo) {
+                context.resume(throwing: error)
+            }
         }
     }
 
@@ -431,6 +432,55 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
             }
         }
         // 成功情况在 didFinishDownloadingTo 中处理，这里不重复调用 continuation
+    }
+
+    static func finalizeDownloadedFile(
+        from location: URL,
+        to destURL: URL,
+        expectedSize: Int64,
+        statusCode: Int?,
+        fileManager: FileManager = .default
+    ) throws -> Int64 {
+        let incompleteURL = destURL.appendingPathExtension("incomplete")
+
+        if statusCode == 206, fileManager.fileExists(atPath: incompleteURL.path) {
+            try appendFile(at: location, to: incompleteURL, fileManager: fileManager)
+            try fileManager.removeItem(at: location)
+        } else {
+            if fileManager.fileExists(atPath: incompleteURL.path) {
+                try fileManager.removeItem(at: incompleteURL)
+            }
+            try fileManager.moveItem(at: location, to: incompleteURL)
+        }
+
+        let attrs = try fileManager.attributesOfItem(atPath: incompleteURL.path)
+        let actualSize = attrs[.size] as? Int64 ?? 0
+        if expectedSize > 0 && actualSize != expectedSize {
+            try? fileManager.removeItem(at: incompleteURL)
+            throw DownloadError.sizeMismatch(expectedSize, actualSize)
+        }
+
+        if fileManager.fileExists(atPath: destURL.path) {
+            try fileManager.removeItem(at: destURL)
+        }
+        try fileManager.moveItem(at: incompleteURL, to: destURL)
+
+        return actualSize
+    }
+
+    private static func appendFile(at sourceURL: URL, to destinationURL: URL, fileManager: FileManager) throws {
+        let source = try FileHandle(forReadingFrom: sourceURL)
+        defer { try? source.close() }
+
+        let destination = try FileHandle(forWritingTo: destinationURL)
+        defer { try? destination.close() }
+        try destination.seekToEnd()
+
+        while true {
+            let chunk = try source.read(upToCount: 1024 * 1024) ?? Data()
+            if chunk.isEmpty { break }
+            try destination.write(contentsOf: chunk)
+        }
     }
 }
 
