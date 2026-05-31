@@ -355,8 +355,7 @@ protocol SuperPlugin: Actor {
     /// 添加菜单栏弹窗视图（向后兼容，默认返回单个视图包装为数组）
     ///
     /// - Returns: 菜单栏弹窗视图，如果不需要则返回 nil
-    /// - Deprecated: 使用 `addMenuBarPopupViews()` 替代
-    @available(*, deprecated, message: "Use addMenuBarPopupViews() returning [AnyView] instead")
+    /// 新插件应优先实现 `addMenuBarPopupViews()`；该入口保留给只提供单个弹窗的旧插件。
     @MainActor func addMenuBarPopupView() -> AnyView?
 
     /// 添加菜单栏内容视图

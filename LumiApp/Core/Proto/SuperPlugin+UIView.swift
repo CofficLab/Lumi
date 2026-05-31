@@ -90,7 +90,8 @@ extension SuperPlugin {
     }
 
     /// 默认实现：不提供菜单栏弹窗视图
-    @available(*, deprecated, message: "Use addMenuBarPopupViews() returning [AnyView] instead")
+    ///
+    /// 新插件应优先实现 `addMenuBarPopupViews()`；该入口保留给只提供单个弹窗的旧插件。
     @MainActor func addMenuBarPopupView() -> AnyView? { nil }
 
     /// 默认实现：不提供菜单栏内容视图

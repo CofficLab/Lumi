@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import HttpKit
+import SwiftUI
 import Testing
 @testable import LumiCoreKit
 
@@ -152,6 +153,13 @@ struct LumiCoreKitActorTests {
         #expect(ctx.transientSystemPrompts.count == 1)
     }
 
+    @Test("旧版菜单栏弹窗入口仍会聚合为数组")
+    func legacyMenuBarPopupViewFallback() {
+        let views = LegacyMenuBarPopupPlugin.shared.addMenuBarPopupViews()
+
+        #expect(views.count == 1)
+    }
+
     @Test("SendPipeline 中间件排序与执行")
     func sendPipelineOrdering() async {
         let executionOrder = LockedArray<String>()
@@ -217,6 +225,20 @@ struct LumiCoreKitActorTests {
             "post-early-ok",
             "post-late-ok",
         ])
+    }
+}
+
+private actor LegacyMenuBarPopupPlugin: SuperPlugin {
+    static let shared = LegacyMenuBarPopupPlugin()
+    static let displayName = "Legacy Menu"
+    static let description = "Legacy menu popup"
+    static let iconName = "menubar.rectangle"
+    static var category: PluginCategory { .general }
+    static var order: Int { 0 }
+
+    @MainActor
+    func addMenuBarPopupView() -> AnyView? {
+        AnyView(Text("Legacy"))
     }
 }
 
