@@ -475,12 +475,30 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     public func selectPreview(index: Int) {
-        guard previewMode == .swift else { return }
-        guard index != selectedPreviewIndex else { return }
+        guard Self.shouldSelectPreview(
+            index: index,
+            currentIndex: selectedPreviewIndex,
+            availablePreviewIndexes: availablePreviews.map(\.index),
+            previewMode: previewMode
+        ) else { return }
+
         selectedPreviewIndex = index
         lastLoadedFingerprint = nil
         clearRenderedPreview()
         autoBuildIfPossible()
+    }
+
+    static func shouldSelectPreview(
+        index: Int,
+        currentIndex: Int,
+        availablePreviewIndexes: [Int],
+        previewMode: PreviewMode
+    ) -> Bool {
+        guard previewMode == .swift else { return false }
+        guard index != currentIndex else { return false }
+        guard index >= 0 else { return false }
+        guard !availablePreviewIndexes.isEmpty else { return true }
+        return availablePreviewIndexes.contains(index)
     }
 
     /// 手动重试预览构建（由 UI 重试按钮触发）。

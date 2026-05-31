@@ -86,6 +86,40 @@ import Foundation
     #expect(viewModel.selectedPreviewIndex == 1)
 }
 
+@MainActor
+@Test func previewViewModelRejectsUnavailablePreviewSelection() {
+    #expect(EditorPreviewViewModel.shouldSelectPreview(
+        index: 1,
+        currentIndex: 0,
+        availablePreviewIndexes: [0, 2],
+        previewMode: .swift
+    ) == false)
+    #expect(EditorPreviewViewModel.shouldSelectPreview(
+        index: -1,
+        currentIndex: 0,
+        availablePreviewIndexes: [0, 1],
+        previewMode: .swift
+    ) == false)
+    #expect(EditorPreviewViewModel.shouldSelectPreview(
+        index: 1,
+        currentIndex: 0,
+        availablePreviewIndexes: [0, 1],
+        previewMode: .swift
+    ))
+    #expect(EditorPreviewViewModel.shouldSelectPreview(
+        index: 1,
+        currentIndex: 0,
+        availablePreviewIndexes: [],
+        previewMode: .swift
+    ))
+    #expect(EditorPreviewViewModel.shouldSelectPreview(
+        index: 1,
+        currentIndex: 0,
+        availablePreviewIndexes: [0, 1],
+        previewMode: .markdown(URL(fileURLWithPath: "/tmp/readme.md"))
+    ) == false)
+}
+
 @Test func csvParserIgnoresQuotedDelimitersWhenDetectingSeparator() throws {
     let text = """
     "Company, legal name";Amount
