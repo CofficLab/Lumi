@@ -19,14 +19,17 @@ public struct WorkspaceFileEditor: Sendable {
 
         let fileManager = FileManager.default
         var originalContent = ""
+        var originalEncoding = String.Encoding.utf8
         var fileExists = false
 
         if fileManager.fileExists(atPath: resolvedPath) {
-            let data = try Data(contentsOf: fileURL)
-            guard let content = String(data: data, encoding: .utf8) else {
-                throw WorkspaceFileError("File content is not valid UTF-8 text.")
+            var detectedEncoding = String.Encoding.utf8
+            do {
+                originalContent = try String(contentsOf: fileURL, usedEncoding: &detectedEncoding)
+                originalEncoding = detectedEncoding
+            } catch {
+                throw WorkspaceFileError("File content is not valid text.")
             }
-            originalContent = content
             fileExists = true
         }
 
@@ -48,7 +51,7 @@ public struct WorkspaceFileEditor: Sendable {
                 throw WorkspaceFileError("Cannot create new file — file already exists and has content.")
             }
 
-            try newString.write(to: fileURL, atomically: true, encoding: .utf8)
+            try newString.write(to: fileURL, atomically: true, encoding: originalEncoding)
             return .wroteEmptyFile(path: filePath)
         }
 
@@ -75,7 +78,7 @@ public struct WorkspaceFileEditor: Sendable {
             throw WorkspaceFileError("Replacement produced no changes.")
         }
 
-        try updatedContent.write(to: fileURL, atomically: true, encoding: .utf8)
+        try updatedContent.write(to: fileURL, atomically: true, encoding: originalEncoding)
 
         let diff = generateDiffSummary(original: originalContent, updated: updatedContent)
         return .updated(path: filePath, matchCount: matchCount, replaceAll: replaceAll, diff: diff)

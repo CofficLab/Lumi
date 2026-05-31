@@ -60,6 +60,15 @@ final class WorkspaceFileKitTests: XCTestCase {
         }
     }
 
+    func testReadDetectsUTF16TextFiles() throws {
+        let url = temporaryDirectory.appendingPathComponent("utf16.txt")
+        try "hello 中文".write(to: url, atomically: true, encoding: .utf16)
+
+        let result = try WorkspaceFileReader().read(path: url.path)
+
+        XCTAssertEqual(result, .text(content: "hello 中文", resolvedPath: url.path, truncated: false))
+    }
+
     func testEditRequiresUniqueMatchUnlessReplaceAll() throws {
         let path = temporaryDirectory.appendingPathComponent("file.txt").path
         try "one two one".write(toFile: path, atomically: true, encoding: .utf8)
@@ -115,6 +124,22 @@ final class WorkspaceFileKitTests: XCTestCase {
             XCTFail("Expected updated outcome")
         }
         XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "after")
+    }
+
+    func testEditPreservesDetectedTextEncoding() throws {
+        let url = temporaryDirectory.appendingPathComponent("utf16-edit.txt")
+        try "hello 中文".write(to: url, atomically: true, encoding: .utf16)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: url.path,
+            oldString: "中文",
+            newString: "Lumi"
+        )
+
+        var detectedEncoding = String.Encoding.utf8
+        let content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
+        XCTAssertEqual(content, "hello Lumi")
+        XCTAssertEqual(detectedEncoding, .utf16)
     }
 
     func testListDirectorySkipsHiddenFiles() throws {

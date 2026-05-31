@@ -37,8 +37,8 @@ public struct WorkspaceFileReader: Sendable {
             return .image(data: data, mimeType: mimeType, resolvedPath: resolvedPath)
         }
 
-        let data = try Data(contentsOf: fileURL)
-        guard let content = String(data: data, encoding: .utf8) else {
+        var encoding = String.Encoding.utf8
+        guard let content = try? String(contentsOf: fileURL, usedEncoding: &encoding) else {
             return .nonUTF8(resolvedPath: resolvedPath, supportedImageExtensions: supportedImageExtensions.keys.sorted())
         }
 
