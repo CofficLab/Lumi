@@ -286,16 +286,16 @@ public actor TaskStateManager: SuperLog {
     // MARK: - Update
 
     /// 更新任务状态
-    func updateTaskStatus(id: String, status: TaskItem.TaskStatus) -> Bool {
-        updateTaskStatusScoped(id: id, conversationId: nil, status: status)
+    func updateTaskStatus(id: String, status: TaskItem.TaskStatus) throws -> Bool {
+        try updateTaskStatusScoped(id: id, conversationId: nil, status: status)
     }
 
     /// 更新当前会话内的任务状态
-    func updateTaskStatus(id: String, conversationId: String, status: TaskItem.TaskStatus) -> Bool {
-        updateTaskStatusScoped(id: id, conversationId: conversationId, status: status)
+    func updateTaskStatus(id: String, conversationId: String, status: TaskItem.TaskStatus) throws -> Bool {
+        try updateTaskStatusScoped(id: id, conversationId: conversationId, status: status)
     }
 
-    private func updateTaskStatusScoped(id: String, conversationId: String?, status: TaskItem.TaskStatus) -> Bool {
+    private func updateTaskStatusScoped(id: String, conversationId: String?, status: TaskItem.TaskStatus) throws -> Bool {
         let context = ModelContext(container)
 
         let descriptor: FetchDescriptor<TaskItem>
@@ -309,7 +309,7 @@ public actor TaskStateManager: SuperLog {
             )
         }
 
-        guard let task = try? context.fetch(descriptor).first else {
+        guard let task = try context.fetch(descriptor).first else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)任务不存在：\(id)")
             }
@@ -318,7 +318,7 @@ public actor TaskStateManager: SuperLog {
 
         task.status = status
         task.updatedAt = Date().timeIntervalSince1970
-        try? context.save()
+        try context.save()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)任务状态更新：\(task.title) → \(status.rawValue)")

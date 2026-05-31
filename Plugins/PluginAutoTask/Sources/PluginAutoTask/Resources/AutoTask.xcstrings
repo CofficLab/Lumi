@@ -177,6 +177,29 @@
         }
       }
     },
+    "Failed to auto-start next task: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to auto-start next task: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动开始下一个任务失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動開始下一個任務失敗：%@"
+          }
+        }
+      }
+    },
     "Error: conversation_id is required" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -219,6 +242,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錯誤：儲存任務失敗：%@"
+          }
+        }
+      }
+    },
+    "Error: failed to save task status: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: failed to save task status: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误：保存任务状态失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤：儲存任務狀態失敗：%@"
           }
         }
       }

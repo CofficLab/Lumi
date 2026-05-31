@@ -64,7 +64,16 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
         }
 
         let manager = TaskStateManager.shared
-        let success = await manager.updateTaskStatus(id: taskId, conversationId: conversationId, status: status)
+        let success: Bool
+        do {
+            success = try await manager.updateTaskStatus(id: taskId, conversationId: conversationId, status: status)
+        } catch {
+            AutoTaskPlugin.logger.error("\(Self.t)Failed to update task \(taskId): \(error.localizedDescription)")
+            return String(
+                format: String(localized: "Error: failed to save task status: %@", table: "AutoTask"),
+                error.localizedDescription
+            )
+        }
 
         guard success else {
             let notFoundLabel = String(localized: "Error: task not found", table: "AutoTask")
@@ -92,7 +101,21 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
         if status == .completed || status == .skipped {
             let allTasks = await manager.fetchTasks(conversationId: conversationId)
             if let nextTask = allTasks.first(where: { $0.status == .pending }) {
-                _ = await manager.updateTaskStatus(id: nextTask.id, conversationId: conversationId, status: .inProgress)
+                do {
+                    let autoStarted = try await manager.updateTaskStatus(id: nextTask.id, conversationId: conversationId, status: .inProgress)
+                    guard autoStarted else {
+                        AutoTaskPlugin.logger.warning("\(Self.t)Pending task disappeared before auto-start: \(nextTask.id)")
+                        return result
+                    }
+                } catch {
+                    AutoTaskPlugin.logger.error("\(Self.t)Failed to auto-start next task \(nextTask.id): \(error.localizedDescription)")
+                    let failedAutoStartLabel = String(
+                        format: String(localized: "Failed to auto-start next task: %@", table: "AutoTask"),
+                        error.localizedDescription
+                    )
+                    result += "\n\n⚠️ \(failedAutoStartLabel)"
+                    return result
+                }
 
                 // 再次通知 UI 刷新（推进了下一个任务）
                 NotificationCenter.default.post(
