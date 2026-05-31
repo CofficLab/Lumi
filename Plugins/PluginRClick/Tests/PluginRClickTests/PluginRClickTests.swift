@@ -15,6 +15,53 @@ import Foundation
     )
 }
 
+@MainActor
+@Test func appGroupConfigQuarantinesInvalidJSONAndRecoversFromLegacyBackup() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigManager-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let appGroupConfigURL = directory.appending(path: RClickConfigManager.sharedConfigFilename)
+    let corruptURL = RClickConfigManager.corruptSharedConfigURL(for: appGroupConfigURL)
+    let invalidData = Data("not json".utf8)
+    try invalidData.write(to: appGroupConfigURL)
+
+    let store = RClickPluginLocalStore(pluginDirectory: directory.appending(path: "LocalStore"))
+    let backupConfig = RClickConfig(
+        items: [RClickMenuItem(id: "copy", type: .copyPath, customTitle: "Copy Absolute Path")],
+        fileTemplates: [NewFileTemplate(id: "swift", name: "Swift", extensionName: "swift")]
+    )
+    let backupData = try JSONEncoder().encode(backupConfig)
+    #expect(store.set(backupData, forKey: "rClickConfig") == true)
+
+    let manager = RClickConfigManager(appGroupConfigFileURL: appGroupConfigURL, store: store)
+
+    #expect(manager.config == backupConfig)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == backupConfig)
+}
+
+@MainActor
+@Test func appGroupConfigQuarantinesInvalidJSONBeforeWritingDefault() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigManager-Default-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let appGroupConfigURL = directory.appending(path: RClickConfigManager.sharedConfigFilename)
+    let corruptURL = RClickConfigManager.corruptSharedConfigURL(for: appGroupConfigURL)
+    let invalidData = Data("not json".utf8)
+    try invalidData.write(to: appGroupConfigURL)
+
+    let store = RClickPluginLocalStore(pluginDirectory: directory.appending(path: "LocalStore"))
+    let manager = RClickConfigManager(appGroupConfigFileURL: appGroupConfigURL, store: store)
+
+    #expect(manager.config == .default)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == .default)
+}
+
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("RClickLocalStore-\(UUID().uuidString)", isDirectory: true)

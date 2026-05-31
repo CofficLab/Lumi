@@ -13,11 +13,13 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     /// 与 `LumiFinder/FinderSync` 保持一致
     public nonisolated static let appGroupId = "group.com.coffic.lumi"
     public nonisolated static let sharedConfigFilename = "RClickConfig.json"
+    public nonisolated static let corruptSharedConfigFilename = "RClickConfig.corrupt.json"
 
     public static let shared = RClickConfigManager()
 
-    private let store = RClickPluginLocalStore.shared
+    private let store: RClickPluginLocalStore
     private let legacyConfigKey = "rClickConfig"
+    private let customAppGroupConfigFileURL: URL?
     
     @Published var config: RClickConfig {
         didSet {
@@ -25,7 +27,13 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         }
     }
     
-    private init() {
+    private convenience init() {
+        self.init(appGroupConfigFileURL: nil, store: .shared)
+    }
+
+    init(appGroupConfigFileURL: URL?, store: RClickPluginLocalStore) {
+        self.customAppGroupConfigFileURL = appGroupConfigFileURL
+        self.store = store
         self.config = RClickConfig.default
         loadConfig()
     }
@@ -33,8 +41,10 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     /// 加载配置
     public func loadConfig() {
         if let data = readAppGroupConfigData() {
-            applyLoadedData(data, source: "app_group_file")
-            return
+            if applyLoadedData(data, source: "app_group_file") {
+                return
+            }
+            quarantineAppGroupConfigData()
         }
 
         guard let legacyData = store.data(forKey: legacyConfigKey) else {
@@ -45,23 +55,26 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             return
         }
 
-        applyLoadedData(legacyData, source: "legacy_local")
+        _ = applyLoadedData(legacyData, source: "legacy_local")
         saveConfig()
     }
 
     /// 保存配置
-    public func saveConfig() {
+    @discardableResult
+    public func saveConfig() -> Bool {
         do {
             let data = try JSONEncoder().encode(config)
-            writeAppGroupConfigData(data)
-            store.set(data, forKey: legacyConfigKey)
+            let appGroupSaved = writeAppGroupConfigData(data)
+            let localBackupSaved = store.set(data, forKey: legacyConfigKey)
             if Self.verbose, RClickPlugin.verbose {
                 RClickPlugin.logger.info("\(Self.t)💾 已保存配置（App Group + 本地备份）")
             }
+            return appGroupSaved && localBackupSaved
         } catch {
             if RClickPlugin.verbose {
                 RClickPlugin.logger.error("\(Self.t)❌ 编码配置失败：\(error.localizedDescription)")
             }
+            return false
         }
     }
     
@@ -119,8 +132,17 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         containerURL.appendingPathComponent(sharedConfigFilename, isDirectory: false)
     }
 
+    nonisolated static func corruptSharedConfigURL(for sharedConfigURL: URL) -> URL {
+        sharedConfigURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(corruptSharedConfigFilename, isDirectory: false)
+    }
+
     private var appGroupConfigFileURL: URL? {
-        FileManager.default
+        if let customAppGroupConfigFileURL {
+            return customAppGroupConfigFileURL
+        }
+        return FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: Self.appGroupId)
             .map(Self.sharedConfigURL)
     }
@@ -130,18 +152,21 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         return try? Data(contentsOf: fileURL)
     }
 
-    private func writeAppGroupConfigData(_ data: Data) {
-        guard let fileURL = appGroupConfigFileURL else { return }
+    @discardableResult
+    private func writeAppGroupConfigData(_ data: Data) -> Bool {
+        guard let fileURL = appGroupConfigFileURL else { return false }
         do {
             try FileManager.default.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
             try data.write(to: fileURL, options: .atomic)
+            return true
         } catch {
             if RClickPlugin.verbose {
                 RClickPlugin.logger.error("\(Self.t)❌ 写入 App Group 配置失败：\(error.localizedDescription)")
             }
+            return false
         }
     }
 
@@ -150,7 +175,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         try? FileManager.default.removeItem(at: fileURL)
     }
 
-    private func applyLoadedData(_ data: Data, source: String) {
+    private func applyLoadedData(_ data: Data, source: String) -> Bool {
         do {
             let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
             self.config = decoded
@@ -159,11 +184,29 @@ public class RClickConfigManager: ObservableObject, SuperLog {
                     "\(Self.t)已加载配置（\(source)）：\(self.config.items.count) 个菜单项，\(self.config.fileTemplates.count) 个模板"
                 )
             }
+            return true
         } catch {
             if RClickPlugin.verbose {
                 RClickPlugin.logger.error("\(Self.t)❌ 解码配置失败：\(error.localizedDescription)")
             }
-            self.config = RClickConfig.default
+            return false
+        }
+    }
+
+    private func quarantineAppGroupConfigData() {
+        guard let fileURL = appGroupConfigFileURL,
+              FileManager.default.fileExists(atPath: fileURL.path) else { return }
+
+        let corruptURL = Self.corruptSharedConfigURL(for: fileURL)
+        do {
+            if FileManager.default.fileExists(atPath: corruptURL.path) {
+                try FileManager.default.removeItem(at: corruptURL)
+            }
+            try FileManager.default.moveItem(at: fileURL, to: corruptURL)
+        } catch {
+            if RClickPlugin.verbose {
+                RClickPlugin.logger.error("\(Self.t)❌ 隔离损坏 App Group 配置失败：\(error.localizedDescription)")
+            }
         }
     }
 }
