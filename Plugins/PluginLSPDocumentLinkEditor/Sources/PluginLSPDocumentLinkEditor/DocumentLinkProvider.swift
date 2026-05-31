@@ -76,11 +76,12 @@ public struct EditorDocumentLink: Identifiable, Equatable {
     
     public var isURL: Bool {
         guard let target else { return false }
-        return target.hasPrefix("http://") || target.hasPrefix("https://")
+        let normalizedTarget = target.lowercased()
+        return normalizedTarget.hasPrefix("http://") || normalizedTarget.hasPrefix("https://")
     }
     
     public var isFilePath: Bool {
         guard let target else { return false }
-        return target.hasPrefix("file://")
+        return target.lowercased().hasPrefix("file://")
     }
 }
