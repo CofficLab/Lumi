@@ -30,7 +30,6 @@ let package = Package(
             ],
             path: "Sources/PluginEditorRailFileTree",
             exclude: [
-                "Services",
                 "Views",
             ],
             resources: [

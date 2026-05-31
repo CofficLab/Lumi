@@ -18,7 +18,8 @@ public struct EditorXcodePackageReference: Equatable, Sendable {
 public enum EditorXcodePackageReferenceParser {
     public static func parse(projectURL: URL) throws -> [EditorXcodePackageReference] {
         let pbxprojURL = projectURL.appendingPathComponent("project.pbxproj")
-        let contents = try String(contentsOf: pbxprojURL, encoding: .utf8)
+        var encoding = String.Encoding.utf8
+        let contents = try String(contentsOf: pbxprojURL, usedEncoding: &encoding)
         return parse(contents: contents)
     }
 
