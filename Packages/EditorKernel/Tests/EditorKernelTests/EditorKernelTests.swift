@@ -693,7 +693,7 @@ struct EditorKernelTests {
         #expect(inserted.text == "x x")
         #expect(inserted.selections == [
             .init(location: 1, length: 0),
-            .init(location: 7, length: 0),
+            .init(location: 3, length: 0),
         ])
 
         let deleted = MultiCursorEditEngine.apply(
@@ -707,7 +707,7 @@ struct EditorKernelTests {
         #expect(deleted.text == "bc")
         #expect(deleted.selections == [
             .init(location: 0, length: 0),
-            .init(location: 3, length: 0),
+            .init(location: 2, length: 0),
         ])
 
         let outdented = MultiCursorEditEngine.apply(

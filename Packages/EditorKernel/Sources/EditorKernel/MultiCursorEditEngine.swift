@@ -51,33 +51,74 @@ public enum MultiCursorEditEngine {
             )
         }
 
-        var newSelections: [MultiCursorSelection] = []
+        var appliedEdits: [(range: NSRange, replacementLength: Int)] = []
+        var selectionRecords: [(selection: MultiCursorSelection, sourceEditIndex: Int?)] = []
 
         for sel in ordered {
             let safe = normalized(sel, maxLength: ns.length)
             switch operation {
             case .replaceSelection(let content):
+                let editIndex = appliedEdits.count
+                appliedEdits.append((
+                    range: NSRange(location: safe.location, length: safe.length),
+                    replacementLength: (content as NSString).length
+                ))
                 ns.replaceCharacters(in: NSRange(location: safe.location, length: safe.length), with: content)
-                newSelections.append(.init(location: safe.location + (content as NSString).length, length: 0))
+                selectionRecords.append((
+                    selection: .init(location: safe.location + (content as NSString).length, length: 0),
+                    sourceEditIndex: editIndex
+                ))
 
             case .insert(let content):
+                let editIndex = appliedEdits.count
+                let replacementLength = (content as NSString).length
                 if safe.length > 0 {
+                    appliedEdits.append((
+                        range: NSRange(location: safe.location, length: safe.length),
+                        replacementLength: replacementLength
+                    ))
                     ns.replaceCharacters(in: NSRange(location: safe.location, length: safe.length), with: content)
-                    newSelections.append(.init(location: safe.location + (content as NSString).length, length: 0))
+                    selectionRecords.append((
+                        selection: .init(location: safe.location + replacementLength, length: 0),
+                        sourceEditIndex: editIndex
+                    ))
                 } else {
+                    appliedEdits.append((
+                        range: NSRange(location: safe.location, length: 0),
+                        replacementLength: replacementLength
+                    ))
                     ns.insert(content, at: safe.location)
-                    newSelections.append(.init(location: safe.location + (content as NSString).length, length: 0))
+                    selectionRecords.append((
+                        selection: .init(location: safe.location + replacementLength, length: 0),
+                        sourceEditIndex: editIndex
+                    ))
                 }
 
             case .deleteBackward:
                 if safe.length > 0 {
+                    let editIndex = appliedEdits.count
+                    appliedEdits.append((
+                        range: NSRange(location: safe.location, length: safe.length),
+                        replacementLength: 0
+                    ))
                     ns.deleteCharacters(in: NSRange(location: safe.location, length: safe.length))
-                    newSelections.append(.init(location: safe.location, length: 0))
+                    selectionRecords.append((
+                        selection: .init(location: safe.location, length: 0),
+                        sourceEditIndex: editIndex
+                    ))
                 } else if safe.location > 0 {
+                    let editIndex = appliedEdits.count
+                    appliedEdits.append((
+                        range: NSRange(location: safe.location - 1, length: 1),
+                        replacementLength: 0
+                    ))
                     ns.deleteCharacters(in: NSRange(location: safe.location - 1, length: 1))
-                    newSelections.append(.init(location: safe.location - 1, length: 0))
+                    selectionRecords.append((
+                        selection: .init(location: safe.location - 1, length: 0),
+                        sourceEditIndex: editIndex
+                    ))
                 } else {
-                    newSelections.append(safe)
+                    selectionRecords.append((selection: safe, sourceEditIndex: nil))
                 }
 
             case .indent, .outdent:
@@ -86,7 +127,18 @@ public enum MultiCursorEditEngine {
         }
 
         buffer = ns as String
-        return .init(text: buffer, selections: newSelections.sorted { $0.location < $1.location })
+        let finalLength = (buffer as NSString).length
+        let adjustedSelections = selectionRecords
+            .map {
+                adjustedSelection(
+                    $0.selection,
+                    sourceEditIndex: $0.sourceEditIndex,
+                    appliedEdits: appliedEdits,
+                    finalLength: finalLength
+                )
+            }
+            .sorted { $0.location < $1.location }
+        return .init(text: buffer, selections: adjustedSelections)
     }
 
     private static func applyIndent(
@@ -238,5 +290,30 @@ public enum MultiCursorEditEngine {
         let newLocation = max(0, selection.location - startShift)
         let newEnd = max(newLocation, originalEnd - endShift)
         return .init(location: newLocation, length: newEnd - newLocation)
+    }
+
+    private static func adjustedSelection(
+        _ selection: MultiCursorSelection,
+        sourceEditIndex: Int?,
+        appliedEdits: [(range: NSRange, replacementLength: Int)],
+        finalLength: Int
+    ) -> MultiCursorSelection {
+        func shifted(_ position: Int) -> Int {
+            let shiftedPosition = appliedEdits.enumerated().reduce(position) { result, item in
+                let (index, edit) = item
+                guard index != sourceEditIndex, edit.range.location < position else {
+                    return result
+                }
+                return result + edit.replacementLength - edit.range.length
+            }
+            return min(max(shiftedPosition, 0), finalLength)
+        }
+
+        let location = shifted(selection.location)
+        let upperBound = shifted(selection.upperBound)
+        return .init(
+            location: min(location, upperBound),
+            length: abs(upperBound - location)
+        )
     }
 }
