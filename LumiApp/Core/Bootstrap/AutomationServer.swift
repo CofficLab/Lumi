@@ -411,7 +411,7 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         let path = parts[1]
 
         // 只处理 POST /api/action
-        guard method == "POST", path == "/api/action" || path == "/api/action/" else {
+        guard Self.isSupportedActionEndpoint(method: method, path: path) else {
             return makeResponse(statusCode: 404, message: "Not found. Use POST /api/action")
         }
 
@@ -478,6 +478,10 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
 
         return (header, Data(data[headerRange.upperBound...]))
+    }
+
+    static func isSupportedActionEndpoint(method: String, path: String) -> Bool {
+        method == "POST" && (path == "/api/action" || path == "/api/action/")
     }
 
     private static func contentLength(from header: String) -> Int? {

@@ -66,6 +66,14 @@ final class AutomationServerTests: XCTestCase {
         XCTAssertEqual(AutomationServer.completeHTTPRequestData(from: data), data)
     }
 
+    func testActionEndpointRequiresPostForBothAcceptedPaths() {
+        XCTAssertTrue(AutomationServer.isSupportedActionEndpoint(method: "POST", path: "/api/action"))
+        XCTAssertTrue(AutomationServer.isSupportedActionEndpoint(method: "POST", path: "/api/action/"))
+
+        XCTAssertFalse(AutomationServer.isSupportedActionEndpoint(method: "GET", path: "/api/action"))
+        XCTAssertFalse(AutomationServer.isSupportedActionEndpoint(method: "GET", path: "/api/action/"))
+    }
+
     func testCompleteHTTPRequestDoesNotTruncateForNegativeContentLength() {
         let request = [
             "POST /api/action HTTP/1.1",
