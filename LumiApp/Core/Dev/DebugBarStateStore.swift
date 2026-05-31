@@ -4,7 +4,6 @@ import Foundation
 enum DebugBarStateStore {
     private static let pluginDirName = "DebugBar"
     private static let settingsFileName = "debugbar_state.plist"
-    private static let tmpFileName = "debugbar_state.tmp"
 
     private static let settingsDirURL: URL = {
         AppConfig.getDBFolderURL()
@@ -45,18 +44,9 @@ enum DebugBarStateStore {
 
         do {
             try FileManager.default.createDirectory(at: settingsDirURL, withIntermediateDirectories: true, attributes: nil)
-
-            let tmpURL = settingsDirURL.appendingPathComponent(tmpFileName, isDirectory: false)
-            try data.write(to: tmpURL, options: .atomic)
-
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                _ = try? FileManager.default.replaceItemAt(fileURL, withItemAt: tmpURL)
-            } else {
-                try FileManager.default.moveItem(at: tmpURL, to: fileURL)
-            }
+            try data.write(to: fileURL, options: .atomic)
         } catch {
             // 不影响 UI 展示：仅用于 Debug 预览尺寸记忆。
         }
     }
 }
-

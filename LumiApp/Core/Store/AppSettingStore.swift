@@ -8,7 +8,6 @@ import Foundation
 /// - 写入使用原子替换，避免半写状态
 enum AppSettingStore {
     private static let settingsFileName = "app_settings.plist"
-    private static let tmpFileName = "app_settings.tmp"
 
     private static let settingsDirURL: URL = {
         AppConfig.getDBFolderURL()
@@ -56,14 +55,7 @@ enum AppSettingStore {
 
         do {
             try FileManager.default.createDirectory(at: settingsDirURL, withIntermediateDirectories: true, attributes: nil)
-            let tmpURL = settingsDirURL.appendingPathComponent(tmpFileName, isDirectory: false)
-            try data.write(to: tmpURL, options: .atomic)
-
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                _ = try? FileManager.default.replaceItemAt(fileURL, withItemAt: tmpURL)
-            } else {
-                try FileManager.default.moveItem(at: tmpURL, to: fileURL)
-            }
+            try data.write(to: fileURL, options: .atomic)
         } catch {
             // 静默失败：仅用于持久化应用级非敏感配置
         }
