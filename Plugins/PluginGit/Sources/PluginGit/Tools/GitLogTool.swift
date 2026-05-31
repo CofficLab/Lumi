@@ -67,7 +67,7 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
-        let count = Self.normalizedCount(arguments["count"]?.value as? Int)
+        let count = Self.normalizedCount(arguments["count"]?.value)
         let branch = arguments["branch"]?.value as? String
         let file = arguments["file"]?.value as? String
 
@@ -111,7 +111,18 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
         return output
     }
 
-    static func normalizedCount(_ rawCount: Int?) -> Int {
-        min(max(rawCount ?? 10, 1), 50)
+    static func normalizedCount(_ value: Any?) -> Int {
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = 10
+        }
+
+        return min(max(requested, 1), 50)
     }
 }

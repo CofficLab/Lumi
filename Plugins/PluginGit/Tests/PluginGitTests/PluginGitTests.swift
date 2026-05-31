@@ -13,7 +13,10 @@ import Testing
     #expect(GitLogTool.normalizedCount(-5) == 1)
     #expect(GitLogTool.normalizedCount(0) == 1)
     #expect(GitLogTool.normalizedCount(12) == 12)
+    #expect(GitLogTool.normalizedCount(12.0) == 12)
+    #expect(GitLogTool.normalizedCount("12") == 12)
     #expect(GitLogTool.normalizedCount(500) == 50)
+    #expect(GitLogTool.normalizedCount("not-a-number") == 10)
 
     let schema = GitLogTool().inputSchema(for: .english)
     let properties = try #require(schema["properties"] as? [String: [String: Any]])
