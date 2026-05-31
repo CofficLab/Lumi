@@ -1,6 +1,31 @@
+import Foundation
 import Testing
+import LumiCoreKit
 @testable import PluginChatInput
 
-@Test func packageLoads() async throws {
-    #expect(true)
+@MainActor
+@Test func windowConversationVMSubmitsDraftText() async throws {
+    var hostDraft = ""
+    var submittedTexts: [String] = []
+    let conversationId = UUID()
+    let conversationVM = WindowConversationVM(
+        selectedConversationId: conversationId,
+        draftText: " hello ",
+        draftTextSetter: { hostDraft = $0 },
+        textSubmitter: { submittedTexts.append($0) }
+    )
+
+    #expect(conversationVM.canSubmitText)
+    conversationVM.setDraftText(" hello ")
+    await conversationVM.submitDraftText(conversationVM.draftText)
+
+    #expect(submittedTexts == ["hello"])
+    #expect(conversationVM.draftText.isEmpty)
+    #expect(hostDraft.isEmpty)
+
+    conversationVM.selectedConversationId = nil
+    conversationVM.setDraftText("blocked")
+    await conversationVM.submitDraftText(conversationVM.draftText)
+
+    #expect(submittedTexts == ["hello"])
 }

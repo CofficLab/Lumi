@@ -1,16 +1,17 @@
 import SwiftUI
+import LumiCoreKit
 import LumiUI
 
 public struct InputView: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @State private var text = ""
     @FocusState private var isFocused: Bool
 
     public init() {}
 
     public var body: some View {
         VStack(spacing: 8) {
-            TextEditor(text: $text)
+            TextEditor(text: draftBinding)
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
                 .scrollContentBackground(.hidden)
@@ -43,23 +44,29 @@ public struct InputView: View {
                   !value.isEmpty else {
                 return
             }
-            if text.isEmpty {
-                text = value
+            if conversationVM.draftText.isEmpty {
+                conversationVM.setDraftText(value)
             } else {
-                text += "\n\n\(value)"
+                conversationVM.setDraftText("\(conversationVM.draftText)\n\n\(value)")
             }
             isFocused = true
         }
     }
 
+    private var draftBinding: Binding<String> {
+        Binding(
+            get: { conversationVM.draftText },
+            set: { conversationVM.setDraftText($0) }
+        )
+    }
+
     private var canSubmit: Bool {
-        ChatInputRuntime.canChat && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        conversationVM.canSubmitText && !conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func submit() {
-        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
-        text = ""
-        Task { await ChatInputRuntime.submitText(value) }
+        Task { await conversationVM.submitDraftText(value) }
     }
 }

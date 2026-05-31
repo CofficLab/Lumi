@@ -169,6 +169,7 @@ public final class WindowConversationVM: ObservableObject {
     @Published public var selectedConversationId: UUID?
     @Published public private(set) var pendingMessagesVersion: Int
     @Published public private(set) var attachmentVersion: Int
+    @Published public private(set) var draftText: String
 
     public var currentPreferenceProvider: @MainActor () -> ModelPreference?
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
@@ -182,6 +183,8 @@ public final class WindowConversationVM: ObservableObject {
     public var imageUploadHandler: @MainActor (URL) -> Void
     public var screenshotDataHandler: @MainActor (Data) -> Void
     public var draftTextAppender: @MainActor (String) -> Void
+    public var draftTextSetter: @MainActor (String) -> Void
+    public var textSubmitter: @MainActor (String) async -> Void
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
@@ -189,6 +192,7 @@ public final class WindowConversationVM: ObservableObject {
         selectedConversationId: UUID? = nil,
         pendingMessagesVersion: Int = 0,
         attachmentVersion: Int = 0,
+        draftText: String = "",
         currentPreferenceProvider: @escaping @MainActor () -> ModelPreference? = { nil },
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
@@ -201,12 +205,15 @@ public final class WindowConversationVM: ObservableObject {
         imageUploadHandler: @escaping @MainActor (URL) -> Void = { _ in },
         screenshotDataHandler: @escaping @MainActor (Data) -> Void = { _ in },
         draftTextAppender: @escaping @MainActor (String) -> Void = { _ in },
+        draftTextSetter: @escaping @MainActor (String) -> Void = { _ in },
+        textSubmitter: @escaping @MainActor (String) async -> Void = { _ in },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
         self.selectedConversationId = selectedConversationId
         self.pendingMessagesVersion = pendingMessagesVersion
         self.attachmentVersion = attachmentVersion
+        self.draftText = draftText
         self.currentPreferenceProvider = currentPreferenceProvider
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
@@ -219,6 +226,8 @@ public final class WindowConversationVM: ObservableObject {
         self.imageUploadHandler = imageUploadHandler
         self.screenshotDataHandler = screenshotDataHandler
         self.draftTextAppender = draftTextAppender
+        self.draftTextSetter = draftTextSetter
+        self.textSubmitter = textSubmitter
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
     }
@@ -281,6 +290,10 @@ public final class WindowConversationVM: ObservableObject {
         hasSelectedConversation
     }
 
+    public var canSubmitText: Bool {
+        hasSelectedConversation
+    }
+
     public func removeAttachment(id attachmentId: UUID) {
         attachmentRemover(attachmentId)
     }
@@ -295,6 +308,25 @@ public final class WindowConversationVM: ObservableObject {
 
     public func appendDraftText(_ text: String) {
         draftTextAppender(text)
+    }
+
+    public func setDraftText(_ text: String) {
+        guard draftText != text else { return }
+        draftText = text
+        draftTextSetter(text)
+    }
+
+    public func updateDraftTextFromHost(_ text: String) {
+        guard draftText != text else { return }
+        draftText = text
+    }
+
+    public func submitDraftText(_ text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canSubmitText, !trimmed.isEmpty else { return }
+        updateDraftTextFromHost("")
+        draftTextSetter("")
+        await textSubmitter(trimmed)
     }
 
     public func notifyAttachmentsChanged() {

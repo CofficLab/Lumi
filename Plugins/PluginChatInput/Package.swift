@@ -33,7 +33,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginChatInputTests",
-            dependencies: ["PluginChatInput"],
+            dependencies: [
+                "PluginChatInput",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests/PluginChatInputTests"
         )
     ]

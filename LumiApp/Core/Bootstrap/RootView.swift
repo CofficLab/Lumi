@@ -84,6 +84,9 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
             syncPluginConversationContext()
         }
+        .onChange(of: windowContainer.chatDraftVM.text) { _, _ in
+            syncPluginConversationContext()
+        }
         .onChange(of: windowContainer.messageQueueVM.queueVersion) { _, _ in
             syncPluginConversationContext()
             pluginConversationVM.notifyPendingMessagesChanged()
@@ -218,6 +221,7 @@ struct RootView<Content>: View where Content: View {
 
     private func syncPluginConversationContext() {
         pluginConversationVM.selectedConversationId = windowContainer.conversationVM.selectedConversationId
+        pluginConversationVM.updateDraftTextFromHost(windowContainer.chatDraftVM.text)
         pluginConversationVM.messagesProvider = { [container] conversationId in
             container.chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) ?? []
         }
@@ -241,6 +245,12 @@ struct RootView<Content>: View where Content: View {
         }
         pluginConversationVM.draftTextAppender = { [windowContainer] text in
             windowContainer.chatDraftVM.append(text)
+        }
+        pluginConversationVM.draftTextSetter = { [windowContainer] text in
+            windowContainer.chatDraftVM.set(text)
+        }
+        pluginConversationVM.textSubmitter = { [windowContainer] text in
+            windowContainer.inputQueueVM.enqueueText(text)
         }
     }
 
