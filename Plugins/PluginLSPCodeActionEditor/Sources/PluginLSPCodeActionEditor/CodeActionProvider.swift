@@ -318,25 +318,27 @@ public final class CodeActionProvider: ObservableObject, SuperEditorCodeActionPr
         }
     }
 
-    private static func uriMatchesDocument(_ documentUri: DocumentUri, documentURL: URL?) -> Bool {
+    nonisolated static func uriMatchesDocument(_ documentUri: DocumentUri, documentURL: URL?) -> Bool {
         guard let documentURL else { return false }
-        let normalizedDoc = documentURL.standardizedFileURL.absoluteString
-        let normalizedTarget = normalizeFileURI(documentUri)
-        if normalizedTarget == normalizedDoc { return true }
-        if let u = URL(string: normalizedTarget) {
-            return u.standardizedFileURL.path == documentURL.standardizedFileURL.path
-        }
-        return false
+        guard let targetURL = fileURL(fromDocumentURI: documentUri) else { return false }
+        return targetURL.standardizedFileURL.path == documentURL.standardizedFileURL.path
     }
 
-    private static func normalizeFileURI(_ uri: String) -> String {
-        if uri.hasPrefix("file:") {
-            return URL(string: uri)?.standardizedFileURL.absoluteString ?? uri
-        }
-        if uri.hasPrefix("/") {
-            return URL(fileURLWithPath: uri).standardizedFileURL.absoluteString
+    nonisolated static func normalizeFileURI(_ uri: String) -> String {
+        if let fileURL = fileURL(fromDocumentURI: uri) {
+            return fileURL.standardizedFileURL.absoluteString
         }
         return uri
+    }
+
+    private nonisolated static func fileURL(fromDocumentURI uri: String) -> URL? {
+        if uri.hasPrefix("file:") {
+            return WorkspaceEditFileOperations.fileURL(from: uri)
+        }
+        if uri.hasPrefix("/") {
+            return URL(fileURLWithPath: uri)
+        }
+        return nil
     }
 
     private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
