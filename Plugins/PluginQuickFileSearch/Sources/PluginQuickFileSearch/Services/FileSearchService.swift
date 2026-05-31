@@ -287,36 +287,35 @@ public enum FileSearchHelpers {
 
     /// 检查是否应该跳过该路径
     public static func shouldSkipPath(_ url: URL) -> Bool {
-        let path = url.path.lowercased()
-
-        // 跳过常见的构建产物和依赖目录
-        let skipPatterns = [
-            "/build/",
-            "/.build/",
-            "/deriveddata/",
-            "/.deriveddata/",
-            "/node_modules/",
-            "/.git/",
-            "/.svn/",
-            "/.hg/",
-            "/.vscode/",
-            "/.idea/",
-            "/.vs/",
-            "/pod/",
-            "/pods/",
-            "/carthage/",
-            "/vendor/",
-            "/.cache/",
-            "/.next/",
-            "/.nuxt/",
-            "/dist/",
-            "/out/",
-            "/bin/",
-            "/obj/",
-            "/.xcodeenv/",
+        let skippedComponents: Set<String> = [
+            "build",
+            ".build",
+            "deriveddata",
+            ".deriveddata",
+            "node_modules",
+            ".git",
+            ".svn",
+            ".hg",
+            ".vscode",
+            ".idea",
+            ".vs",
+            "pod",
+            "pods",
+            "carthage",
+            "vendor",
+            ".cache",
+            ".next",
+            ".nuxt",
+            "dist",
+            "out",
+            "bin",
+            "obj",
+            ".xcodeenv",
         ]
 
-        return skipPatterns.contains { path.contains($0) }
+        return url.standardizedFileURL.pathComponents
+            .map { $0.lowercased() }
+            .contains { skippedComponents.contains($0) }
     }
 
     /// 在文件列表中搜索

@@ -25,3 +25,33 @@ import Foundation
 
     #expect(FileSearchHelpers.relativePath(for: sibling, rootPath: rootPath) == "file.txt")
 }
+
+@Test func scanProjectFilesSkipsRootBuildAndDependencyDirectories() throws {
+    let rootURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("QuickFileSearchTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: rootURL) }
+
+    let sourcesURL = rootURL.appendingPathComponent("Sources", isDirectory: true)
+    let buildURL = rootURL.appendingPathComponent("build", isDirectory: true)
+    let nodeModulesURL = rootURL.appendingPathComponent("node_modules", isDirectory: true)
+    try FileManager.default.createDirectory(at: sourcesURL, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: buildURL, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: nodeModulesURL, withIntermediateDirectories: true)
+
+    try "source".write(to: sourcesURL.appendingPathComponent("App.swift"), atomically: true, encoding: .utf8)
+    try "generated".write(to: buildURL.appendingPathComponent("Generated.swift"), atomically: true, encoding: .utf8)
+    try "dependency".write(to: nodeModulesURL.appendingPathComponent("index.js"), atomically: true, encoding: .utf8)
+
+    let results = FileSearchHelpers.scanProjectFiles(at: rootURL.path)
+    let relativePaths = Set(results.map(\.relativePath))
+
+    #expect(relativePaths.contains("Sources/App.swift"))
+    #expect(!relativePaths.contains("build/Generated.swift"))
+    #expect(!relativePaths.contains("node_modules/index.js"))
+}
+
+@Test func shouldSkipPathMatchesDirectoryComponentAtPathEnd() {
+    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/build")))
+    #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/node_modules")))
+    #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/building/App.swift")))
+}
