@@ -142,6 +142,27 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(detectedEncoding, .utf16)
     }
 
+    func testEditMatchesLFInputAgainstCRLFFileAndPreservesLineEndings() throws {
+        let path = temporaryDirectory.appendingPathComponent("crlf.txt").path
+        try "alpha\r\nbeta\r\ngamma\r\n".write(toFile: path, atomically: true, encoding: .utf8)
+
+        let outcome = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "beta\ngamma",
+            newString: "delta\nepsilon"
+        )
+
+        XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "alpha\r\ndelta\r\nepsilon\r\n")
+        if case .updated(_, let matchCount, let replaceAll, let diff) = outcome {
+            XCTAssertEqual(matchCount, 1)
+            XCTAssertFalse(replaceAll)
+            XCTAssertTrue(diff.contains("delta"))
+            XCTAssertFalse(diff.contains("\r"))
+        } else {
+            XCTFail("Expected updated outcome")
+        }
+    }
+
     func testListDirectorySkipsHiddenFiles() throws {
         try "visible".write(to: temporaryDirectory.appendingPathComponent("visible.txt"), atomically: true, encoding: .utf8)
         try "hidden".write(to: temporaryDirectory.appendingPathComponent(".hidden"), atomically: true, encoding: .utf8)

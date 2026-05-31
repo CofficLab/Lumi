@@ -65,11 +65,12 @@ public struct WorkspaceFileEditor: Sendable {
             throw WorkspaceFileError("Found \(matchCount) matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.")
         }
 
+        let replacement = adaptReplacementLineEndings(newString, toMatch: matched)
         let updatedContent: String
         if replaceAll {
-            updatedContent = originalContent.replacingOccurrences(of: matched, with: newString)
+            updatedContent = originalContent.replacingOccurrences(of: matched, with: replacement)
         } else if let range = originalContent.range(of: matched) {
-            updatedContent = originalContent.replacingCharacters(in: range, with: newString)
+            updatedContent = originalContent.replacingCharacters(in: range, with: replacement)
         } else {
             throw WorkspaceFileError("Failed to apply replacement.")
         }
@@ -85,18 +86,22 @@ public struct WorkspaceFileEditor: Sendable {
     }
 
     private func findActualString(in content: String, searchFor: String) -> String? {
-        if content.contains(searchFor) {
-            return searchFor
+        let candidates = searchCandidates(for: searchFor, in: content)
+
+        for candidate in candidates where content.contains(candidate) {
+            return candidate
         }
 
-        let normalizedSearch = normalizeQuotes(searchFor)
         let normalizedContent = normalizeQuotes(content)
 
-        if let range = normalizedContent.range(of: normalizedSearch) {
-            let nsContent = content as NSString
-            let nsRange = NSRange(range, in: content)
-            if nsRange.location != NSNotFound && nsRange.location + nsRange.length <= nsContent.length {
-                return nsContent.substring(with: nsRange)
+        for candidate in candidates {
+            let normalizedSearch = normalizeQuotes(candidate)
+            if let range = normalizedContent.range(of: normalizedSearch) {
+                let nsContent = content as NSString
+                let nsRange = NSRange(range, in: content)
+                if nsRange.location != NSNotFound && nsRange.location + nsRange.length <= nsContent.length {
+                    return nsContent.substring(with: nsRange)
+                }
             }
         }
 
@@ -111,6 +116,36 @@ public struct WorkspaceFileEditor: Sendable {
             .replacingOccurrences(of: "\u{201D}", with: "\"")
     }
 
+    private func searchCandidates(for search: String, in content: String) -> [String] {
+        var candidates = [search]
+        if let lineEnding = preferredLineEnding(in: content) {
+            let adaptedSearch = normalizeLineEndings(search, to: lineEnding)
+            if adaptedSearch != search {
+                candidates.append(adaptedSearch)
+            }
+        }
+        return candidates
+    }
+
+    private func adaptReplacementLineEndings(_ replacement: String, toMatch matched: String) -> String {
+        guard let lineEnding = preferredLineEnding(in: matched) else { return replacement }
+        return normalizeLineEndings(replacement, to: lineEnding)
+    }
+
+    private func preferredLineEnding(in text: String) -> String? {
+        if text.contains("\r\n") { return "\r\n" }
+        if text.contains("\n") { return "\n" }
+        if text.contains("\r") { return "\r" }
+        return nil
+    }
+
+    private func normalizeLineEndings(_ text: String, to lineEnding: String) -> String {
+        text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: "\n", with: lineEnding)
+    }
+
     private func countOccurrences(of substring: String, in string: String) -> Int {
         var count = 0
         var searchStart = string.startIndex
@@ -122,8 +157,8 @@ public struct WorkspaceFileEditor: Sendable {
     }
 
     private func generateDiffSummary(original: String, updated: String) -> String {
-        let originalLines = original.components(separatedBy: "\n")
-        let updatedLines = updated.components(separatedBy: "\n")
+        let originalLines = normalizeLineEndings(original, to: "\n").components(separatedBy: "\n")
+        let updatedLines = normalizeLineEndings(updated, to: "\n").components(separatedBy: "\n")
 
         var firstChange = -1
         var lastChange = -1
