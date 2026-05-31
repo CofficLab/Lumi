@@ -23,6 +23,9 @@ import AgentToolKit
 public struct DelayMessageTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "⏳"
     public nonisolated static let verbose: Bool = true
+    static let defaultDelaySeconds: TimeInterval = 5
+    static let minDelaySeconds: TimeInterval = 1
+    static let maxDelaySeconds: TimeInterval = 3600
     public let name = "delay_message"
     public func description(for language: LanguagePreference) -> String {
         switch language {
@@ -43,7 +46,9 @@ public struct DelayMessageTool: SuperAgentTool, SuperLog {
                 ],
                 "seconds": [
                     "type": "number",
-                    "description": "Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour)."
+                    "description": "Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour).",
+                    "minimum": Self.minDelaySeconds,
+                    "maximum": Self.maxDelaySeconds
                 ]
             ],
             "required": ["message", "seconds"]
@@ -72,8 +77,7 @@ public struct DelayMessageTool: SuperAgentTool, SuperLog {
         }
 
         // 解析 seconds
-        var seconds = arguments["seconds"]?.value as? Double ?? 5.0
-        seconds = max(1, min(3600, seconds))
+        let seconds = Self.normalizedDelaySeconds(arguments["seconds"]?.value)
 
         if Self.verbose {
             DelayMessagePlugin.logger.info("\(Self.t) 延时 \(Int(seconds))s 后发送消息到会话 \(conversationId.uuidString.prefix(8))")
@@ -98,5 +102,21 @@ public struct DelayMessageTool: SuperAgentTool, SuperLog {
         }
 
         return "Scheduled: a message will be sent in \(Int(seconds)) seconds to conversation \(conversationId.uuidString.prefix(8)). The current turn will end now. When the message arrives, a new turn will start automatically."
+    }
+
+    static func normalizedDelaySeconds(_ value: Any?) -> TimeInterval {
+        let raw: TimeInterval
+        if let double = value as? Double {
+            raw = double
+        } else if let int = value as? Int {
+            raw = TimeInterval(int)
+        } else if let string = value as? String, let double = TimeInterval(string) {
+            raw = double
+        } else {
+            raw = Self.defaultDelaySeconds
+        }
+
+        guard raw.isFinite else { return Self.defaultDelaySeconds }
+        return min(max(raw, Self.minDelaySeconds), Self.maxDelaySeconds)
     }
 }
