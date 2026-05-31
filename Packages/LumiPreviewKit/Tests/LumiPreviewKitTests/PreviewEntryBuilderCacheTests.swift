@@ -70,4 +70,24 @@ struct PreviewEntryBuilderCacheTests {
         #expect(secondURL == firstURL)
         #expect(FileManager.default.fileExists(atPath: secondURL.path))
     }
+
+    @Test("3.7 buildEntry reads stripped UTF-16 source discoveries")
+    func buildEntryReadsStrippedUTF16SourceDiscovery() async throws {
+        let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("UTF16Entry.swift")
+        try TemporaryProjectFixtures.writeSwiftFileWithPreview(at: fileURL, previewLabel: "UTF16Entry")
+        let sourceText = try String(contentsOf: fileURL, encoding: .utf8)
+        try sourceText.write(to: fileURL, atomically: true, encoding: .utf16)
+
+        let discovery = PreviewDiscoveryFixtures.makeDiscovery(
+            fileURL: fileURL,
+            bodySource: #"Text("UTF16")"#,
+            title: "UTF16Entry"
+        ).strippingSourceText()
+        let entryURL = try await LumiPreviewFacade.PreviewEntryBuilder()
+            .buildEntry(for: discovery, configuration: .empty, buildStrategy: nil)
+
+        #expect(FileManager.default.fileExists(atPath: entryURL.path))
+    }
 }

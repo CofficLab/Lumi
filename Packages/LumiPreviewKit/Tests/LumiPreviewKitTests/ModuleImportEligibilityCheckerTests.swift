@@ -5,6 +5,38 @@ import Testing
 
 @Suite("ModuleImportEligibilityChecker")
 struct ModuleImportEligibilityCheckerTests {
+    @Test("rejects module import using private symbols from UTF-16 source files")
+    func rejectsModuleImportForPrivateSymbolsInUTF16SourceFile() throws {
+        let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("PrivatePreview.swift")
+        try """
+        import SwiftUI
+
+        private struct PrivateHelperView: View {
+            var body: some View { Text("Hidden") }
+        }
+
+        #Preview {
+            PrivateHelperView()
+        }
+        """.write(to: fileURL, atomically: true, encoding: .utf16)
+
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
+            id: "preview.private.utf16",
+            title: "Private UTF16 Preview",
+            sourceFileURL: fileURL,
+            lineNumber: 7,
+            endLineNumber: 9,
+            primaryTypeName: "PrivateHelperView",
+            bodySource: "PrivateHelperView()",
+            sourceText: nil
+        )
+
+        #expect(!checker.shouldUseModuleImport(discovery: discovery))
+    }
+
     @Test("rejects module import when preview body references private symbols")
     func rejectsModuleImportForPrivateSymbols() {
         let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()

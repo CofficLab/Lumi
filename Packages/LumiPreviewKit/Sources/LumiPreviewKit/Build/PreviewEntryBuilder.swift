@@ -444,7 +444,7 @@ final class PreviewEntryBuilder: Sendable {
            let sourceText = currentDiscovery.sourceText {
             source = sourceText
         } else {
-            source = try String(contentsOf: sourceFileURL, encoding: .utf8)
+            source = try SourceFileTextLoader.read(sourceFileURL)
         }
         let previews = PreviewScanner().scan(
             fileURL: sourceFileURL,

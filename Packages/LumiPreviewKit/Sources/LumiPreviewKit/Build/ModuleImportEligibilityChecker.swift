@@ -15,7 +15,7 @@ public extension LumiPreviewFacade {
             let sourceText: String
             if let inMemory = discovery.sourceText {
                 sourceText = inMemory
-            } else if let loaded = try? String(contentsOf: discovery.sourceFileURL, encoding: .utf8) {
+            } else if let loaded = try? SourceFileTextLoader.read(discovery.sourceFileURL) {
                 sourceText = loaded
             } else {
                 return true

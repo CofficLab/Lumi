@@ -346,8 +346,7 @@ extension LumiPreviewFacade {
     }
 
     nonisolated private static func sourceText(from fileURL: URL) throws -> String {
-      var encoding = String.Encoding.utf8
-      return try String(contentsOf: fileURL, usedEncoding: &encoding)
+      try SourceFileTextLoader.read(fileURL)
     }
 
     private func updateDirectoryWatches(rootURL: URL) {

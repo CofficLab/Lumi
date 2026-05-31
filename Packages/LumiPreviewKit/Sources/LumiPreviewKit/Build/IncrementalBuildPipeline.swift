@@ -854,7 +854,7 @@ public extension LumiPreviewFacade {
             if let existingSource = discovery.sourceText {
                 source = existingSource
             } else {
-                source = try String(contentsOf: discovery.sourceFileURL, encoding: .utf8)
+                source = try SourceFileTextLoader.read(discovery.sourceFileURL)
             }
             let previews = LumiPreviewFacade.PreviewScanner().scan(
                 fileURL: discovery.sourceFileURL,
