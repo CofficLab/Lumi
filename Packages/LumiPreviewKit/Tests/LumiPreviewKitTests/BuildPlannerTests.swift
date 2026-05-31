@@ -573,6 +573,80 @@ struct BuildPlannerTests {
         #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
     }
 
+    @Test("Xcode project 重复 object ID 不应让 source index 崩溃")
+    func xcodeSourceIndexToleratesDuplicateObjectIDs() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-DuplicatePBXObject-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("DuplicateApp.xcodeproj", isDirectory: true)
+        let sourceFile = rootDirectory.appendingPathComponent("Sources/AppView.swift")
+        let sourceDirectory = sourceFile.deletingLastPathComponent()
+
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try "struct AppView {}\n".write(to: sourceFile, atomically: true, encoding: .utf8)
+        try """
+        // !$*UTF8*$!
+        {
+        \tarchiveVersion = 1;
+        \tclasses = {};
+        \tobjectVersion = 77;
+        \tobjects = {
+        \t\tDUPLICATE /* First */ = {
+        \t\t\tisa = PBXGroup;
+        \t\t\tchildren = ();
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\tDUPLICATE /* Second */ = {
+        \t\t\tisa = PBXGroup;
+        \t\t\tchildren = ();
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\tAAAAAAA1 /* AppView.swift */ = {
+        \t\t\tisa = PBXFileReference;
+        \t\t\tlastKnownFileType = sourcecode.swift;
+        \t\t\tpath = AppView.swift;
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\tBBBBBBB1 /* AppView.swift in Sources */ = {
+        \t\t\tisa = PBXBuildFile;
+        \t\t\tfileRef = AAAAAAA1 /* AppView.swift */;
+        \t\t};
+        \t\tCCCCCCCC /* Sources */ = {
+        \t\t\tisa = PBXGroup;
+        \t\t\tchildren = (
+        \t\t\t\tAAAAAAA1,
+        \t\t\t);
+        \t\t\tpath = Sources;
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\tDDDDDDDD /* Sources */ = {
+        \t\t\tisa = PBXSourcesBuildPhase;
+        \t\t\tfiles = (
+        \t\t\t\tBBBBBBB1,
+        \t\t\t);
+        \t\t};
+        \t\tEEEEEEEE /* DuplicateApp */ = {
+        \t\t\tisa = PBXNativeTarget;
+        \t\t\tbuildPhases = (
+        \t\t\t\tDDDDDDDD,
+        \t\t\t);
+        \t\t\tname = DuplicateApp;
+        \t\t};
+        \t};
+        \trootObject = EEEEEEEE;
+        }
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "DuplicateApp",
+            containing: sourceFile
+        )
+
+        #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
+    }
+
     @Test("Xcode workspace 缺少 contents 时回退到同级 project")
     func xcodeWorkspaceFallsBackToSiblingProjects() throws {
         let rootDirectory = FileManager.default.temporaryDirectory

@@ -637,7 +637,10 @@ private struct XcodeProjectSourceIndex {
 
         let objects = Self.parseObjects(from: content)
         self.projectDirectory = projectURL.deletingLastPathComponent()
-        self.objects = Dictionary(uniqueKeysWithValues: objects.map { ($0.id, $0) })
+        self.objects = Dictionary(
+            objects.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
 
         var parentGroupByChildID: [String: String] = [:]
         for object in objects where object.isa == "PBXGroup"
