@@ -1426,11 +1426,15 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     func recentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
-        Array(editorCommandPresentationModel(matching: query).recentCommands.prefix(limit))
+        let normalizedLimit = max(0, limit)
+        guard normalizedLimit > 0 else { return [] }
+        return Array(editorCommandPresentationModel(matching: query).recentCommands.prefix(normalizedLimit))
     }
 
     func frequentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
-        Array(editorCommandPresentationModel(matching: query).frequentCommands.prefix(limit))
+        let normalizedLimit = max(0, limit)
+        guard normalizedLimit > 0 else { return [] }
+        return Array(editorCommandPresentationModel(matching: query).frequentCommands.prefix(normalizedLimit))
     }
 
     public func preferredCommandPaletteCategory() -> EditorCommandCategory? {

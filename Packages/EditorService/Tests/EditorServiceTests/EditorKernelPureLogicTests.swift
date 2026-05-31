@@ -209,6 +209,15 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertNil(TextViewBridge.lastCharacter(before: 4, in: "abc"))
     }
 
+    func testEditorCommandSuggestionHelpersClampNonPositiveLimits() {
+        let state = EditorState(editorExtensions: EditorExtensionRegistry())
+
+        XCTAssertTrue(state.recentCommandSuggestions(limit: 0).isEmpty)
+        XCTAssertTrue(state.recentCommandSuggestions(limit: -3).isEmpty)
+        XCTAssertTrue(state.frequentCommandSuggestions(limit: 0).isEmpty)
+        XCTAssertTrue(state.frequentCommandSuggestions(limit: -3).isEmpty)
+    }
+
     func testEditorStateSymbolNameForRenameKeepsComposedIdentifierCharacters() {
         let text = "let cafe\u{301} = 1"
         let range = (text as NSString).range(of: "cafe\u{301}")
