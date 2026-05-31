@@ -44,8 +44,7 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
 
     public init() {
         self.fileManager = FileManager.default
-        self.cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("models", isDirectory: true)
+        self.cacheDirectory = _MLXModels.modelsCacheBaseDirectory
         self.systemRAM = _MLXModels.detectSystemRAM()
 
         if Self.verbose {

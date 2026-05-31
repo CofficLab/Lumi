@@ -61,19 +61,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         updateState(.loading)
         self.currentModelId = id
 
-        let cacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let components = id.split(separator: "/").map(String.init)
-        let modelDir: URL
-        if components.count >= 2 {
-            modelDir = cacheBase
-                .appendingPathComponent("models", isDirectory: true)
-                .appendingPathComponent(components[0], isDirectory: true)
-                .appendingPathComponent(components[1], isDirectory: true)
-        } else {
-            modelDir = cacheBase
-                .appendingPathComponent("models", isDirectory: true)
-                .appendingPathComponent(id, isDirectory: true)
-        }
+        let modelDir = MLXModels.cacheDirectory(for: id)
 
         guard FileManager.default.fileExists(atPath: modelDir.path) else {
             updateState(.error("模型未下载"))

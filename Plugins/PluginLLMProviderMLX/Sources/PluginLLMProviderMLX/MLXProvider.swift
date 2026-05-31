@@ -412,20 +412,11 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     // MARK: - Helper Methods
 
     private var cacheBaseModelsURL: URL {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("models", isDirectory: true)
+        MLXModels.modelsCacheBaseDirectory
     }
 
     private func cacheDirectory(for modelId: String) -> URL {
-        let components = modelId.split(separator: "/").map(String.init)
-        if components.count >= 2 {
-            return cacheBaseModelsURL
-                .appendingPathComponent(components[0], isDirectory: true)
-                .appendingPathComponent(components[1], isDirectory: true)
-        } else {
-            return cacheBaseModelsURL
-                .appendingPathComponent(modelId, isDirectory: true)
-        }
+        MLXModels.cacheDirectory(for: modelId)
     }
 
     private func containsValidSafetensorsFiles(_ directory: URL) -> Bool {

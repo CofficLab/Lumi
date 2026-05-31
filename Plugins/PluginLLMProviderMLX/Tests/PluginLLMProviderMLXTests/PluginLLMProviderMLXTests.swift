@@ -6,6 +6,16 @@ import Testing
     #expect(MLXPlugin.id == "LLMProviderMLX")
 }
 
+@Test func modelCacheDirectoryStaysInsideModelsCacheRoot() throws {
+    let root = MLXModels.modelsCacheBaseDirectory.standardizedFileURL.path
+
+    for modelId in ["Qwen/Qwen3-0.6B-4bit", "../escape", "org/../escape", "", "."] {
+        let path = MLXModels.cacheDirectory(for: modelId).standardizedFileURL.path
+        #expect(path == root || path.hasPrefix(root + "/"))
+        #expect(!path.components(separatedBy: "/").contains(".."))
+    }
+}
+
 @Test func finalizedDownloadReplacesDestinationWithCompleteFile() throws {
     let directory = try makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }

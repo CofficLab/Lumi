@@ -49,20 +49,37 @@ public enum MLXModels {
 
     // MARK: - 缓存管理
 
+    /// 所有 MLX 模型的缓存根目录
+    public static var modelsCacheBaseDirectory: URL {
+        cacheRootDirectory.appendingPathComponent("models", isDirectory: true)
+    }
+
     /// 获取模型缓存目录
     public static func cacheDirectory(for modelId: String) -> URL {
-        let cacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let components = modelId.split(separator: "/").map(String.init)
-        if components.count >= 2 {
-            return cacheBase
-                .appendingPathComponent("models", isDirectory: true)
-                .appendingPathComponent(components[0], isDirectory: true)
-                .appendingPathComponent(components[1], isDirectory: true)
-        } else {
-            return cacheBase
-                .appendingPathComponent("models", isDirectory: true)
-                .appendingPathComponent(modelId, isDirectory: true)
+        cachePathComponents(for: modelId).reduce(modelsCacheBaseDirectory) { url, component in
+            url.appendingPathComponent(component, isDirectory: true)
         }
+    }
+
+    private static var cacheRootDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+    }
+
+    private static func cachePathComponents(for modelId: String) -> [String] {
+        let components = modelId.split(separator: "/").map { sanitizedCachePathComponent(String($0)) }
+        if components.count >= 2 {
+            return Array(components.prefix(2))
+        }
+        return [sanitizedCachePathComponent(modelId)]
+    }
+
+    private static func sanitizedCachePathComponent(_ component: String) -> String {
+        let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != ".", trimmed != ".." else { return "_" }
+        return trimmed
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "\\", with: "_")
     }
 
     /// 检查目录是否包含有效的 safetensors 文件
