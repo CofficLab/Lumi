@@ -210,6 +210,9 @@ struct RootView<Content>: View where Content: View {
 
     private func syncPluginConversationContext() {
         pluginConversationVM.selectedConversationId = windowContainer.conversationVM.selectedConversationId
+        pluginConversationVM.messagesProvider = { [container] conversationId in
+            container.chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) ?? []
+        }
     }
 
     private func syncPluginLLMContext() {

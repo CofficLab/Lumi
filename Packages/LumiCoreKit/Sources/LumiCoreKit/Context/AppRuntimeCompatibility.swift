@@ -172,6 +172,7 @@ public final class WindowConversationVM: ObservableObject {
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
     public var preferenceSaver: @MainActor (UUID?, String, String) -> Void
     public var chatModePreferenceProvider: @MainActor () -> ChatMode?
+    public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
@@ -181,6 +182,7 @@ public final class WindowConversationVM: ObservableObject {
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
         chatModePreferenceProvider: @escaping @MainActor () -> ChatMode? = { nil },
+        messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
@@ -189,6 +191,7 @@ public final class WindowConversationVM: ObservableObject {
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
         self.chatModePreferenceProvider = chatModePreferenceProvider
+        self.messagesProvider = messagesProvider
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
     }
@@ -211,6 +214,19 @@ public final class WindowConversationVM: ObservableObject {
 
     public func getChatModePreference() -> ChatMode? {
         chatModePreferenceProvider()
+    }
+
+    public var hasSelectedConversation: Bool {
+        selectedConversationId != nil
+    }
+
+    public func messages(for conversationId: UUID) -> [ChatMessage] {
+        messagesProvider(conversationId)
+    }
+
+    public func currentMessages() -> [ChatMessage] {
+        guard let selectedConversationId else { return [] }
+        return messages(for: selectedConversationId)
     }
 
     @discardableResult
