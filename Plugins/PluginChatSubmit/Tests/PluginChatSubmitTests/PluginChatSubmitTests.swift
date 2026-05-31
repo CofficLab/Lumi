@@ -1,6 +1,20 @@
 import Testing
 @testable import PluginChatSubmit
+import LumiCoreKit
 
-@Test func metadataIsStable() async throws {
-    #expect(await ChatSubmitPlugin.id == "ChatSubmit")
+@Test func metadataIsStable() throws {
+    #expect(ChatSubmitPlugin.id == "ChatSubmit")
+}
+
+@MainActor
+@Test func chatSubmitToolbarProvidesClickableCustomView() async throws {
+    let context = PluginContext(activeIcon: nil, isEditorVisible: false, supportsAIChat: true, showsProjectToolbar: false)
+
+    let item = ChatSubmitPlugin.shared.addSidebarTrailingToolbarItems(context: context).first
+    let view = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "chat-submit", context: context)
+    let unknownView = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "unknown", context: context)
+
+    #expect(item?.id == "chat-submit")
+    #expect(view != nil)
+    #expect(unknownView == nil)
 }
