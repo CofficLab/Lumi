@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import os
 
 /// 管理本地项目持久化的 GitHub 生态知识库文件。
 ///
@@ -8,6 +9,7 @@ import LumiCoreKit
 public actor GitHubInsightKnowledgeBaseManager {
     /// 插件使用的共享知识库管理器。
     public static let shared = GitHubInsightKnowledgeBaseManager()
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-insight.knowledge-base")
 
     /// 用于缓存目录和文件操作的文件系统工具。
     private let fileManager = FileManager.default
@@ -21,18 +23,33 @@ public actor GitHubInsightKnowledgeBaseManager {
     /// 用于持久化项目存储的 JSON 编码器。
     private let encoder = JSONEncoder()
 
-    private init() {
-        self.rootDirectory = AppConfig.getDBFolderURL()
+    public init() {
+        self.init(rootDirectory: AppConfig.getDBFolderURL()
             .appendingPathComponent("GitHubInsightPlugin", isDirectory: true)
+        )
+    }
+
+    init(rootDirectory: URL) {
+        self.rootDirectory = rootDirectory
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try? fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
+        do {
+            try fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create GitHub insight store directory failed: \(error.localizedDescription)")
+        }
     }
 
     /// 加载某个项目路径对应的完整持久化存储。
     public func loadStore(projectPath: String) -> GitHubInsightProjectStore? {
         let url = storeURL(for: projectPath)
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? decoder.decode(GitHubInsightProjectStore.self, from: data)
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        do {
+            let data = try Data(contentsOf: url)
+            return try decoder.decode(GitHubInsightProjectStore.self, from: data)
+        } catch {
+            Self.logger.error("Load GitHub insight store failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// 仅加载某个项目路径对应的缓存条目。
@@ -42,19 +59,28 @@ public actor GitHubInsightKnowledgeBaseManager {
 
     /// 加载所有项目存储中的缓存条目。
     public func loadAllEntries() -> [GitHubInsightKBEntry] {
-        guard let urls = try? fileManager.contentsOfDirectory(
-            at: rootDirectory,
-            includingPropertiesForKeys: nil
-        ) else { return [] }
+        let urls: [URL]
+        do {
+            urls = try fileManager.contentsOfDirectory(
+                at: rootDirectory,
+                includingPropertiesForKeys: nil
+            )
+        } catch {
+            Self.logger.error("List GitHub insight stores failed: \(error.localizedDescription)")
+            return []
+        }
 
         return urls
             .filter { $0.pathExtension == "json" }
             .flatMap { url -> [GitHubInsightKBEntry] in
-                guard let data = try? Data(contentsOf: url),
-                      let store = try? decoder.decode(GitHubInsightProjectStore.self, from: data) else {
+                do {
+                    let data = try Data(contentsOf: url)
+                    let store = try decoder.decode(GitHubInsightProjectStore.self, from: data)
+                    return store.entries
+                } catch {
+                    Self.logger.error("Load GitHub insight store from list failed: \(error.localizedDescription)")
                     return []
                 }
-                return store.entries
             }
     }
 
@@ -69,11 +95,18 @@ public actor GitHubInsightKnowledgeBaseManager {
         let data = try encoder.encode(store)
         let url = storeURL(for: projectPath)
         let temp = url.deletingLastPathComponent().appendingPathComponent(url.lastPathComponent + ".tmp")
-        try data.write(to: temp, options: .atomic)
-        if fileManager.fileExists(atPath: url.path) {
-            _ = try fileManager.replaceItemAt(url, withItemAt: temp)
-        } else {
-            try fileManager.moveItem(at: temp, to: url)
+        do {
+            try fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
+            try data.write(to: temp, options: .atomic)
+            if fileManager.fileExists(atPath: url.path) {
+                _ = try fileManager.replaceItemAt(url, withItemAt: temp)
+            } else {
+                try fileManager.moveItem(at: temp, to: url)
+            }
+        } catch {
+            try? fileManager.removeItem(at: temp)
+            Self.logger.error("Persist GitHub insight store failed: \(error.localizedDescription)")
+            throw error
         }
     }
 
