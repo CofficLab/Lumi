@@ -32,8 +32,9 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                         "description": "仓库名称"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue 编号"
+                        "type": "integer",
+                        "description": "Issue 编号",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "page": [
                         "type": "integer",
@@ -62,8 +63,9 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                         "description": "Repository name"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue number"
+                        "type": "integer",
+                        "description": "Issue number",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "page": [
                         "type": "integer",
@@ -90,7 +92,7 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
-              let issueNumber = arguments["issueNumber"]?.value as? Int else {
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
             throw NSError(
                 domain: name,
                 code: 400,
@@ -98,8 +100,8 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
             )
         }
 
-        let page = Self.normalizedPage(arguments["page"]?.value as? Int)
-        let perPage = Self.normalizedPerPage(arguments["perPage"]?.value as? Int)
+        let page = Self.normalizedPage(arguments["page"]?.value)
+        let perPage = Self.normalizedPerPage(arguments["perPage"]?.value)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {
@@ -155,11 +157,11 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
         return dateString.prefix(10).description
     }
 
-    static func normalizedPage(_ rawPage: Int?) -> Int {
-        max(rawPage ?? 1, 1)
+    static func normalizedPage(_ value: Any?) -> Int {
+        GitHubToolArgumentNormalizer.page(value)
     }
 
-    static func normalizedPerPage(_ rawPerPage: Int?) -> Int {
-        min(max(rawPerPage ?? 10, 1), 100)
+    static func normalizedPerPage(_ value: Any?) -> Int {
+        GitHubToolArgumentNormalizer.perPage(value)
     }
 }

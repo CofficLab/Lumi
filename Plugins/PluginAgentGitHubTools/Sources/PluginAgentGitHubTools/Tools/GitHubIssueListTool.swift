@@ -101,8 +101,8 @@ public struct GitHubIssueListTool: SuperAgentTool, SuperLog {
 
         let stateRaw = arguments["state"]?.value as? String ?? "open"
         let state = GitHubIssueState(rawValue: stateRaw) ?? .open
-        let page = Self.normalizedPage(arguments["page"]?.value as? Int)
-        let perPage = Self.normalizedPerPage(arguments["perPage"]?.value as? Int)
+        let page = Self.normalizedPage(arguments["page"]?.value)
+        let perPage = Self.normalizedPerPage(arguments["perPage"]?.value)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {
@@ -163,11 +163,11 @@ public struct GitHubIssueListTool: SuperAgentTool, SuperLog {
         return dateString.prefix(10).description
     }
 
-    static func normalizedPage(_ rawPage: Int?) -> Int {
-        max(rawPage ?? 1, 1)
+    static func normalizedPage(_ value: Any?) -> Int {
+        GitHubToolArgumentNormalizer.page(value)
     }
 
-    static func normalizedPerPage(_ rawPerPage: Int?) -> Int {
-        min(max(rawPerPage ?? 10, 1), 100)
+    static func normalizedPerPage(_ value: Any?) -> Int {
+        GitHubToolArgumentNormalizer.perPage(value)
     }
 }

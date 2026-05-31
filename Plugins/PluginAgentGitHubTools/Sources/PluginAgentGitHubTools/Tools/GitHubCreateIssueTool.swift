@@ -50,8 +50,9 @@ public struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
                         "description": "指派的用户名数组"
                     ],
                     "milestone": [
-                        "type": "number",
-                        "description": "里程碑编号"
+                        "type": "integer",
+                        "description": "里程碑编号",
+                        "minimum": 1
                     ]
                 ],
                 "required": ["owner", "repo", "title"]
@@ -87,8 +88,9 @@ public struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
                         "description": "Array of usernames to assign"
                     ],
                     "milestone": [
-                        "type": "number",
-                        "description": "Milestone number"
+                        "type": "integer",
+                        "description": "Milestone number",
+                        "minimum": 1
                     ]
                 ],
                 "required": ["owner", "repo", "title"]
@@ -115,7 +117,7 @@ public struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
         let body = arguments["body"]?.value as? String
         let labels = arguments["labels"]?.value as? [String]
         let assignees = arguments["assignees"]?.value as? [String]
-        let milestone = arguments["milestone"]?.value as? Int
+        let milestone = GitHubToolArgumentNormalizer.issueNumber(arguments["milestone"]?.value)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {

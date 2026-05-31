@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import AgentToolKit
 import GitHubKit
 @testable import PluginAgentGitHubTools
 
@@ -74,10 +75,13 @@ import GitHubKit
     let schema = GitHubSearchTool().inputSchema(for: .english)
     let properties = try #require(schema["properties"] as? [String: [String: Any]])
     let limit = try #require(properties["limit"])
+    let minStars = try #require(properties["minStars"])
 
     #expect(limit["type"] as? String == "integer")
     #expect(limit["minimum"] as? Int == GitHubSearchTool.minLimit)
     #expect(limit["maximum"] as? Int == GitHubSearchTool.maxLimit)
+    #expect(minStars["type"] as? String == "integer")
+    #expect(minStars["minimum"] as? Int == 0)
 }
 
 @Test func githubSearchToolFormatsAllReturnedItems() {
@@ -118,11 +122,15 @@ import GitHubKit
     #expect(GitHubIssueListTool.normalizedPage(nil) == 1)
     #expect(GitHubIssueListTool.normalizedPage(-3) == 1)
     #expect(GitHubIssueListTool.normalizedPage(0) == 1)
+    #expect(GitHubIssueListTool.normalizedPage(3.0) == 3)
+    #expect(GitHubIssueListTool.normalizedPage("5") == 5)
     #expect(GitHubIssueListTool.normalizedPage(4) == 4)
 
     #expect(GitHubIssueListTool.normalizedPerPage(nil) == 10)
     #expect(GitHubIssueListTool.normalizedPerPage(-20) == 1)
     #expect(GitHubIssueListTool.normalizedPerPage(0) == 1)
+    #expect(GitHubIssueListTool.normalizedPerPage(15.0) == 15)
+    #expect(GitHubIssueListTool.normalizedPerPage("30") == 30)
     #expect(GitHubIssueListTool.normalizedPerPage(25) == 25)
     #expect(GitHubIssueListTool.normalizedPerPage(250) == 100)
 
@@ -131,6 +139,56 @@ import GitHubKit
     #expect(properties["page"]?["minimum"] as? Int == 1)
     #expect(properties["perPage"]?["minimum"] as? Int == 1)
     #expect(properties["perPage"]?["maximum"] as? Int == 100)
+}
+
+@Test func githubIssueNumberNormalizerAcceptsJSONNumberShapes() {
+    #expect(GitHubToolArgumentNormalizer.issueNumber(42) == 42)
+    #expect(GitHubToolArgumentNormalizer.issueNumber(42.0) == 42)
+    #expect(GitHubToolArgumentNormalizer.issueNumber("42") == 42)
+    #expect(GitHubToolArgumentNormalizer.issueNumber(0) == nil)
+    #expect(GitHubToolArgumentNormalizer.issueNumber(-1.0) == nil)
+    #expect(GitHubToolArgumentNormalizer.issueNumber("not-a-number") == nil)
+
+    #expect(GitHubToolArgumentNormalizer.nonNegativeInteger(nil) == 0)
+    #expect(GitHubToolArgumentNormalizer.nonNegativeInteger(-1) == 0)
+    #expect(GitHubToolArgumentNormalizer.nonNegativeInteger(12.0) == 12)
+    #expect(GitHubToolArgumentNormalizer.nonNegativeInteger("14") == 14)
+}
+
+@Test func githubIssueToolSchemasDeclareIntegerIssueNumbers() throws {
+    let tools: [any SuperAgentTool] = [
+        GitHubAddIssueCommentTool(),
+        GitHubCloseIssueTool(),
+        GitHubIssueCommentsTool(),
+        GitHubIssueDetailTool(),
+        GitHubReopenIssueTool(),
+        GitHubUpdateIssueTool()
+    ]
+
+    for tool in tools {
+        let schema = tool.inputSchema(for: .english)
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        let issueNumber = try #require(properties["issueNumber"], "Missing issueNumber schema for \(tool.name)")
+
+        #expect(issueNumber["type"] as? String == "integer")
+        #expect(issueNumber["minimum"] as? Int == GitHubToolArgumentNormalizer.minIssueNumber)
+    }
+}
+
+@Test func githubIssueMutationSchemasDeclareIntegerMilestones() throws {
+    let tools: [any SuperAgentTool] = [
+        GitHubCreateIssueTool(),
+        GitHubUpdateIssueTool()
+    ]
+
+    for tool in tools {
+        let schema = tool.inputSchema(for: .english)
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        let milestone = try #require(properties["milestone"], "Missing milestone schema for \(tool.name)")
+
+        #expect(milestone["type"] as? String == "integer")
+        #expect(milestone["minimum"] as? Int == 1)
+    }
 }
 
 private func makeRepository(id: Int) -> GitHubRepository {
@@ -168,11 +226,15 @@ private func makeRepository(id: Int) -> GitHubRepository {
     #expect(GitHubIssueCommentsTool.normalizedPage(nil) == 1)
     #expect(GitHubIssueCommentsTool.normalizedPage(-3) == 1)
     #expect(GitHubIssueCommentsTool.normalizedPage(0) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPage(3.0) == 3)
+    #expect(GitHubIssueCommentsTool.normalizedPage("5") == 5)
     #expect(GitHubIssueCommentsTool.normalizedPage(4) == 4)
 
     #expect(GitHubIssueCommentsTool.normalizedPerPage(nil) == 10)
     #expect(GitHubIssueCommentsTool.normalizedPerPage(-20) == 1)
     #expect(GitHubIssueCommentsTool.normalizedPerPage(0) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(15.0) == 15)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage("30") == 30)
     #expect(GitHubIssueCommentsTool.normalizedPerPage(25) == 25)
     #expect(GitHubIssueCommentsTool.normalizedPerPage(250) == 100)
 

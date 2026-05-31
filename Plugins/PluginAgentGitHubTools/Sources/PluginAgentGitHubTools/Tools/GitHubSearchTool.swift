@@ -49,8 +49,9 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
                     "description": languageDesc
                 ],
                 "minStars": [
-                    "type": "number",
-                    "description": minStarsDesc
+                    "type": "integer",
+                    "description": minStarsDesc,
+                    "minimum": 0
                 ],
                 "limit": [
                     "type": "integer",
@@ -78,7 +79,7 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
         }
 
         let language = arguments["language"]?.value as? String
-        let minStars = arguments["minStars"]?.value as? Int ?? 0
+        let minStars = GitHubToolArgumentNormalizer.nonNegativeInteger(arguments["minStars"]?.value)
         let limit = Self.normalizedLimit(arguments["limit"]?.value)
 
         // 构建搜索查询

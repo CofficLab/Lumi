@@ -43,8 +43,9 @@ public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
                     "description": repoDesc
                 ],
                 "issueNumber": [
-                    "type": "number",
-                    "description": issueNumberDesc
+                    "type": "integer",
+                    "description": issueNumberDesc,
+                    "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                 ]
             ],
             "required": ["owner", "repo", "issueNumber"]
@@ -59,7 +60,7 @@ public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
-              let issueNumber = arguments["issueNumber"]?.value as? Int else {
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
             throw NSError(
                 domain: name,
                 code: 400,

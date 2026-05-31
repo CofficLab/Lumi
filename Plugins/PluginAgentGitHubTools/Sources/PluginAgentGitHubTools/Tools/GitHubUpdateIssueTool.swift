@@ -32,8 +32,9 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                         "description": "仓库名称"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue 编号"
+                        "type": "integer",
+                        "description": "Issue 编号",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "title": [
                         "type": "string",
@@ -59,8 +60,9 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                         "description": "新的指派用户数组（可选）"
                     ],
                     "milestone": [
-                        "type": "number",
-                        "description": "里程碑编号（可选，null 表示移除）"
+                        "type": "integer",
+                        "description": "里程碑编号（可选，null 表示移除）",
+                        "minimum": 1
                     ]
                 ],
                 "required": ["owner", "repo", "issueNumber"]
@@ -78,8 +80,9 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                         "description": "Repository name"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue number"
+                        "type": "integer",
+                        "description": "Issue number",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "title": [
                         "type": "string",
@@ -105,8 +108,9 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                         "description": "New assignees array (optional)"
                     ],
                     "milestone": [
-                        "type": "number",
-                        "description": "Milestone number (optional, null to remove)"
+                        "type": "integer",
+                        "description": "Milestone number (optional, null to remove)",
+                        "minimum": 1
                     ]
                 ],
                 "required": ["owner", "repo", "issueNumber"]
@@ -122,7 +126,7 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
-              let issueNumber = arguments["issueNumber"]?.value as? Int else {
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
             throw NSError(
                 domain: name,
                 code: 400,
@@ -135,7 +139,7 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
         let state = arguments["state"]?.value as? String
         let labels = arguments["labels"]?.value as? [String]
         let assignees = arguments["assignees"]?.value as? [String]
-        let milestone = arguments["milestone"]?.value as? Int
+        let milestone = GitHubToolArgumentNormalizer.issueNumber(arguments["milestone"]?.value)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {

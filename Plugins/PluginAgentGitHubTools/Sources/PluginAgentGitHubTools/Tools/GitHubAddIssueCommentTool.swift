@@ -32,8 +32,9 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
                         "description": "仓库名称"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue 编号"
+                        "type": "integer",
+                        "description": "Issue 编号",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "body": [
                         "type": "string",
@@ -55,8 +56,9 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
                         "description": "Repository name"
                     ],
                     "issueNumber": [
-                        "type": "number",
-                        "description": "Issue number"
+                        "type": "integer",
+                        "description": "Issue number",
+                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
                     ],
                     "body": [
                         "type": "string",
@@ -76,7 +78,7 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
-              let issueNumber = arguments["issueNumber"]?.value as? Int,
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value),
               let body = arguments["body"]?.value as? String else {
             throw NSError(
                 domain: name,
