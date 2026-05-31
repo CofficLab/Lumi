@@ -217,11 +217,19 @@ public final class EditorSessionStore: ObservableObject {
     }
 
     private func syncSessionsToTabOrder() {
-        let sessionMap = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
+        let sessionMap = Self.sessionsByIDPreservingFirst(sessions)
         let orderedSessions = tabs.compactMap { sessionMap[$0.sessionID] }
         if orderedSessions.count == sessions.count {
             sessions = orderedSessions
         }
+    }
+
+    static func sessionsByIDPreservingFirst(_ sessions: [EditorSession]) -> [EditorSession.ID: EditorSession] {
+        var sessionsByID: [EditorSession.ID: EditorSession] = [:]
+        for session in sessions where sessionsByID[session.id] == nil {
+            sessionsByID[session.id] = session
+        }
+        return sessionsByID
     }
 
     @discardableResult

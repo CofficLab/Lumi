@@ -76,6 +76,19 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertNil(service.activeSession)
     }
 
+    func testSessionLookupMapToleratesDuplicateSessionIDs() {
+        let sessionID = UUID()
+        let first = EditorSession(id: sessionID, fileURL: makeURL("Facade-Duplicate-A.swift"))
+        let duplicate = EditorSession(id: sessionID, fileURL: makeURL("Facade-Duplicate-B.swift"))
+        let other = EditorSession(fileURL: makeURL("Facade-Duplicate-C.swift"))
+
+        let sessionsByID = EditorSessionStore.sessionsByIDPreservingFirst([first, duplicate, other])
+
+        XCTAssertIdentical(sessionsByID[sessionID], first)
+        XCTAssertEqual(sessionsByID.count, 2)
+        XCTAssertIdentical(sessionsByID[other.id], other)
+    }
+
     func testBuiltinSavePersistsDirtyBufferAndClearsDirtyState() async throws {
         let service = makeService()
         let directory = FileManager.default.temporaryDirectory
