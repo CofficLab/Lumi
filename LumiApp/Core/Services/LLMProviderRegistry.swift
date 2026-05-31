@@ -78,7 +78,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             .map { type in
                 let instance = createProvider(id: type.id)
                 let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-                _ = validatedCapabilities(for: type, isLocal: isLocal)
+                logMissingCapabilities(for: type, isLocal: isLocal)
                 return LLMProviderInfo(
                     id: type.id,
                     displayName: type.displayName,
@@ -102,7 +102,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-            _ = validatedCapabilities(for: type, isLocal: isLocal)
+            logMissingCapabilities(for: type, isLocal: isLocal)
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
@@ -118,26 +118,23 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// 校验并返回供应商的模型能力声明
+    /// 记录供应商缺失的模型能力声明
     ///
     /// 规则：
     /// - 本地供应商不强制（能力来自 `LocalModelInfo`）；
-    /// - 远程供应商必须为每个 available model 提供能力声明。
-    private func validatedCapabilities(
+    /// - 远程供应商缺失声明时降级为未知能力，避免插件元数据问题拖垮整个应用。
+    private func logMissingCapabilities(
         for type: any SuperLLMProvider.Type,
         isLocal: Bool
-    ) -> [String: LLMModelCapabilities] {
-        let capabilities = type.modelCapabilities
-        guard !isLocal else { return capabilities }
+    ) {
+        guard !isLocal else { return }
 
+        let capabilities = type.modelCapabilities
         let missing = type.availableModels.filter { capabilities[$0] == nil }
         if !missing.isEmpty {
             let missingModels = missing.joined(separator: ", ")
-            AppLogger.core.error("\(self.t) 远程供应商 \(type.displayName) 缺少模型能力声明：\(missingModels)")
-            preconditionFailure("\(self.t) 远程供应商 \(type.displayName) 缺少模型能力声明：\(missingModels)")
+            AppLogger.core.warning("\(self.t) 远程供应商 \(type.displayName) 缺少模型能力声明，已按未知能力处理：\(missingModels)")
         }
-
-        return capabilities
     }
 
     /// 创建供应商实例
@@ -170,5 +167,4 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         return instance
     }
 }
-
 
