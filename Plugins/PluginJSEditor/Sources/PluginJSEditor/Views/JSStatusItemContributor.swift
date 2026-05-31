@@ -55,6 +55,10 @@ private struct JSStatusIndicatorView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "30D158"))
+            case .cancelled:
+                Image(systemName: "stop.circle.fill")
+                    .font(.system(size: 9))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             case .failed:
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 9))

@@ -49,12 +49,16 @@ public struct TaskOutputView: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
-            if taskManager.state == .running || taskManager.state == .building || taskManager.state == .linting || taskManager.state == .formatting {
+            if taskManager.state.isRunning {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
                 Text(statusText)
                     .font(.system(size: 11, weight: .medium))
+            } else if taskManager.state == .cancelled {
+                Label(String(localized: "Cancelled", table: "JSEditor"), systemImage: "stop.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else if taskManager.errorCount > 0 {
                 Label("\(taskManager.errorCount) \(String(localized: "errors", table: "JSEditor"))", systemImage: "xmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
@@ -74,6 +78,18 @@ public struct TaskOutputView: View {
             }
 
             Spacer()
+
+            if taskManager.state.isRunning {
+                Button {
+                    taskManager.cancel()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .help(String(localized: "Stop", table: "JSEditor"))
+            }
 
             if taskManager.lastDuration > 0 {
                 Text(String(format: "%.1fs", taskManager.lastDuration))

@@ -31,6 +31,10 @@ public struct TestResultView: View {
                     .frame(width: 12, height: 12)
                 Text(String(localized: "Testing...", table: "JSEditor"))
                     .font(.system(size: 11, weight: .medium))
+            } else if taskManager.state == .cancelled {
+                Label(String(localized: "Cancelled", table: "JSEditor"), systemImage: "stop.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else {
                 Text(summaryText)
                     .font(.system(size: 11, weight: .medium))
@@ -38,6 +42,18 @@ public struct TestResultView: View {
             }
 
             Spacer()
+
+            if taskManager.state == .testing {
+                Button {
+                    taskManager.cancel()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .help(String(localized: "Stop", table: "JSEditor"))
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)

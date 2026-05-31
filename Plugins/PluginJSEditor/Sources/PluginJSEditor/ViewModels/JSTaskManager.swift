@@ -19,6 +19,7 @@ public final class JSTaskManager: ObservableObject, SuperLog {
 
     private let runner = ScriptTaskRunner()
     private lazy var formatOnSaveCoordinator = FormatOnSaveCoordinator(runner: runner)
+    private var cancelRequested = false
 
     public var errorCount: Int {
         issues.filter { $0.severity == .error }.count
@@ -30,6 +31,7 @@ public final class JSTaskManager: ObservableObject, SuperLog {
 
     public func run(script: String, projectPath: String, arguments: [String] = [], mode: TaskState = .running) async {
         state = mode
+        cancelRequested = false
         lastScriptName = script
         outputLines = []
         issues = []
@@ -38,7 +40,9 @@ public final class JSTaskManager: ObservableObject, SuperLog {
         let result = await runner.runScript(script, projectPath: projectPath, arguments: arguments)
         apply(result: result)
 
-        if mode == .testing {
+        if cancelRequested {
+            state = .cancelled
+        } else if mode == .testing {
             testEvents = TestOutputParser.parse(output: BuildOutputAdapter.combinedOutput(stdout: result.stdout, stderr: result.stderr))
             state = .idle
         } else {
@@ -67,6 +71,7 @@ public final class JSTaskManager: ObservableObject, SuperLog {
 
     public func lint(fileURL: URL?, projectPath: String) async {
         state = .linting
+        cancelRequested = false
         lastScriptName = "eslint"
         outputLines = []
         issues = []
@@ -78,11 +83,12 @@ public final class JSTaskManager: ObservableObject, SuperLog {
             return
         }
         apply(result: result)
-        state = result.isSuccess ? .success : .failed
+        state = cancelRequested ? .cancelled : (result.isSuccess ? .success : .failed)
     }
 
     public func format(fileURL: URL?, projectPath: String?) async {
         state = .formatting
+        cancelRequested = false
         lastScriptName = "prettier"
         outputLines = []
         issues = []
@@ -94,12 +100,13 @@ public final class JSTaskManager: ObservableObject, SuperLog {
             return
         }
         apply(result: result)
-        state = result.isSuccess ? .success : .failed
+        state = cancelRequested ? .cancelled : (result.isSuccess ? .success : .failed)
     }
 
     public func cancel() {
+        guard state.isRunning else { return }
+        cancelRequested = true
         Task { await runner.cancel() }
-        state = .idle
     }
 
     private func apply(result: JSScriptResult) {
@@ -115,7 +122,12 @@ public final class JSTaskManager: ObservableObject, SuperLog {
         case testing
         case linting
         case formatting
+        case cancelled
         case success
         case failed
+
+        var isRunning: Bool {
+            self == .running || self == .building || self == .testing || self == .linting || self == .formatting
+        }
     }
 }

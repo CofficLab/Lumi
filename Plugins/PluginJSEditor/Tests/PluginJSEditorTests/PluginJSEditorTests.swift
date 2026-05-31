@@ -215,6 +215,38 @@ import Foundation
     #expect(!result.stdout.contains("should-not-complete"))
 }
 
+@MainActor
+@Test func jsTaskManagerCancelStopsRunningScriptPromptly() async throws {
+    guard JSEnvResolver.findCommand("npm") != nil else { return }
+
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try """
+    {
+      "scripts": {
+        "slow": "node -e \\"setTimeout(() => console.log('should-not-complete'), 5000)\\""
+      }
+    }
+    """.write(to: directory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+
+    let manager = JSTaskManager()
+    let start = Date()
+    let task = Task { @MainActor in
+        await manager.run(script: "slow", projectPath: directory.path)
+    }
+
+    try await Task.sleep(nanoseconds: 100_000_000)
+    manager.cancel()
+    await task.value
+
+    #expect(Date().timeIntervalSince(start) < 2)
+    #expect(manager.state == .cancelled)
+    #expect(!manager.outputLines.contains { $0.contains("should-not-complete") })
+}
+
 @Test func runtimeBridgeHandlesLargeNodeOutput() async throws {
     guard JSEnvResolver.nodePath != nil else { return }
 
