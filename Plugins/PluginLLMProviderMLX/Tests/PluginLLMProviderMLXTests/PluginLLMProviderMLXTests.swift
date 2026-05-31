@@ -81,6 +81,19 @@ import Testing
     #expect(!FileManager.default.fileExists(atPath: incomplete.path))
 }
 
+@Test func downloadProgressFractionStaysFiniteForUnknownTotals() {
+    #expect(MLXDownloadManager.downloadProgressFraction(writtenBytes: 0, totalBytes: 0) == 0)
+    #expect(MLXDownloadManager.downloadProgressFraction(writtenBytes: 100, totalBytes: 0) == 0)
+    #expect(MLXDownloadManager.downloadProgressFraction(writtenBytes: -1, totalBytes: 100) == 0)
+
+    let partial = MLXDownloadManager.downloadProgressFraction(writtenBytes: 50, totalBytes: 100)
+    #expect(partial.isFinite)
+    #expect(partial == 0.475)
+
+    let overComplete = MLXDownloadManager.downloadProgressFraction(writtenBytes: 200, totalBytes: 100)
+    #expect(overComplete == 0.95)
+}
+
 private func makeTemporaryDirectory() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLLMProviderMLXTests")

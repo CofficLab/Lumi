@@ -351,8 +351,21 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         if let cf = completedFiles { progress.completedFiles = cf }
         if let tf = totalFiles { progress.totalFiles = tf }
         if let db = downloadedBytes, let tb = totalBytes {
-            progress.fractionCompleted = Double(db) / Double(tb) * 0.95
+            progress.fractionCompleted = Self.downloadProgressFraction(
+                writtenBytes: db,
+                totalBytes: tb
+            )
         }
+    }
+
+    static func downloadProgressFraction(writtenBytes: Int64, totalBytes: Int64, maxFraction: Double = 0.95) -> Double {
+        guard totalBytes > 0, writtenBytes >= 0, maxFraction.isFinite, maxFraction > 0 else {
+            return 0
+        }
+
+        let fraction = Double(writtenBytes) / Double(totalBytes) * maxFraction
+        guard fraction.isFinite else { return 0 }
+        return min(max(fraction, 0), maxFraction)
     }
 
     @MainActor
@@ -375,7 +388,10 @@ extension MLXDownloadManager: URLSessionDownloadDelegate {
 
         Task { @MainActor [weak self] in
             guard let self, self.status == .downloading else { return }
-            self.progress.fractionCompleted = min(0.95, Double(currentWritten) / Double(currentTotal) * 0.95)
+            self.progress.fractionCompleted = Self.downloadProgressFraction(
+                writtenBytes: currentWritten,
+                totalBytes: currentTotal
+            )
         }
     }
 
