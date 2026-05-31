@@ -366,6 +366,7 @@ actor ProjectCommandExecutor: SuperLog {
         
         // 从后向前替换
         for match in matches.reversed() {
+            guard shouldProcessFileReference(match.range, in: result) else { continue }
             guard let pathRange = Range(match.range(at: 1), in: result) else { continue }
             let filePath = String(result[pathRange])
             let resolvedReference = resolveFileReference(filePath, projectPath: projectPath)
@@ -385,6 +386,20 @@ actor ProjectCommandExecutor: SuperLog {
         }
         
         return result
+    }
+
+    private func shouldProcessFileReference(_ matchRange: NSRange, in content: String) -> Bool {
+        guard matchRange.location > 0,
+              let atRange = Range(matchRange, in: content) else {
+            return true
+        }
+
+        let previousIndex = content.index(before: atRange.lowerBound)
+        let previousScalar = String(content[previousIndex]).unicodeScalars.first
+        guard let previousScalar else { return true }
+
+        let wordCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._%+-"))
+        return !wordCharacters.contains(previousScalar)
     }
 
     private func resolveFileReference(_ filePath: String, projectPath: String) -> (path: String, url: URL, trailingText: String) {
