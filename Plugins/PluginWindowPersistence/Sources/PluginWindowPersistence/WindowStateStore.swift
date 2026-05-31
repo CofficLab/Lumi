@@ -17,6 +17,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     private static let pluginDirName = "WindowPersistence"
     private static let settingsDirName = "settings"
     private static let statesFileName = "window_states.json"
+    private static let corruptStatesFileName = "window_states.corrupt.json"
     public static let maxPersistedWindowCount = 20
 
     init(databaseRootURLProvider: @escaping @Sendable () -> URL = { AppConfig.getDBFolderURL() }) {
@@ -153,6 +154,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
             if Self.verbose {
                 Self.logger.error("\(Self.t)failed to read window_states.json")
             }
+            quarantineCorruptStatesFile()
             return []
         }
         do {
@@ -167,6 +169,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
                     "\(Self.t)decode window_states.json failed: \(String(describing: error), privacy: .public)"
                 )
             }
+            quarantineCorruptStatesFile()
             return []
         }
     }
@@ -221,6 +224,31 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     private func statesFileURL() -> URL {
         settingsDirURL()
             .appendingPathComponent(Self.statesFileName, isDirectory: false)
+    }
+
+    private func corruptStatesFileURL() -> URL {
+        settingsDirURL()
+            .appendingPathComponent(Self.corruptStatesFileName, isDirectory: false)
+    }
+
+    private func quarantineCorruptStatesFile() {
+        let fileManager = FileManager.default
+        let fileURL = statesFileURL()
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+
+        do {
+            let corruptURL = corruptStatesFileURL()
+            if fileManager.fileExists(atPath: corruptURL.path) {
+                try fileManager.removeItem(at: corruptURL)
+            }
+            try fileManager.moveItem(at: fileURL, to: corruptURL)
+        } catch {
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)failed to quarantine corrupt window state file: \(String(describing: error), privacy: .public)"
+                )
+            }
+        }
     }
 
     private func logSave(field: String, windowId: UUID, detail: String?) {
