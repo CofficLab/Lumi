@@ -8,6 +8,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "InputPluginLocalStore.queue", qos: .userInitiated)
     private let settingsDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
     public convenience init() {
         self.init(settingsDirectory: AppConfig.getDBFolderURL()
@@ -18,6 +19,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
     init(settingsDirectory root: URL) {
         self.settingsDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
+        self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
@@ -53,12 +55,14 @@ public final class InputPluginLocalStore: @unchecked Sendable {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 Self.logger.error("Read input plugin settings failed: root plist is not a dictionary")
-                return nil
+                quarantineCorruptSettings()
+                return [:]
             }
             return dict
         } catch {
             Self.logger.error("Read input plugin settings failed: \(error.localizedDescription)")
-            return nil
+            quarantineCorruptSettings()
+            return [:]
         }
     }
 
@@ -83,6 +87,19 @@ public final class InputPluginLocalStore: @unchecked Sendable {
             Self.logger.error("Persist input plugin settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt input plugin settings failed: \(error.localizedDescription)")
         }
     }
 

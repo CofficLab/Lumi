@@ -20,21 +20,26 @@ import Foundation
     #expect(reloadedStore.data(forKey: "InputPluginConfig") == data)
 }
 
-@Test func localStoreReportsFailureAndPreservesInvalidSettingsFile() throws {
+@Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("InputPluginLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
     let settingsURL = directory.appendingPathComponent("settings.plist")
+    let corruptURL = directory.appendingPathComponent("settings.corrupt.plist")
     let invalidData = Data("not a plist".utf8)
     try invalidData.write(to: settingsURL)
 
     let store = InputPluginLocalStore(settingsDirectory: directory)
+    let newData = Data("new config".utf8)
 
-    #expect(store.set(Data("new config".utf8), forKey: "InputPluginConfig") == false)
-    #expect((try? Data(contentsOf: settingsURL)) == invalidData)
-    #expect(store.data(forKey: "InputPluginConfig") == nil)
+    #expect(store.set(newData, forKey: "InputPluginConfig") == true)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect(store.data(forKey: "InputPluginConfig") == newData)
+
+    let reloadedStore = InputPluginLocalStore(settingsDirectory: directory)
+    #expect(reloadedStore.data(forKey: "InputPluginConfig") == newData)
 }
 
 @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
