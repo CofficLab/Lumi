@@ -64,7 +64,6 @@ public actor GoRunner: SuperLog {
 
         do {
             try process.run()
-            process.waitUntilExit()
         } catch {
             currentProcess = nil
             return GoRunResult(
@@ -74,15 +73,18 @@ public actor GoRunner: SuperLog {
             )
         }
 
-        let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+        async let stdoutData = GoRunnerOutputCollector.readData(from: stdoutPipe)
+        async let stderrData = GoRunnerOutputCollector.readData(from: stderrPipe)
+
+        process.waitUntilExit()
+        let output = await (stdoutData, stderrData)
 
         currentProcess = nil
 
         return GoRunResult(
             exitCode: Int(process.terminationStatus),
-            stdout: String(data: stdoutData, encoding: .utf8) ?? "",
-            stderr: String(data: stderrData, encoding: .utf8) ?? ""
+            stdout: String(data: output.0, encoding: .utf8) ?? "",
+            stderr: String(data: output.1, encoding: .utf8) ?? ""
         )
     }
 
@@ -105,6 +107,17 @@ public actor GoRunner: SuperLog {
         if GoEditorPlugin.verbose {
             if GoEditorPlugin.verbose {
                             GoEditorPlugin.logger.info("\(Self.t)已取消正在执行的命令")
+            }
+        }
+    }
+}
+
+enum GoRunnerOutputCollector {
+    static func readData(from pipe: Pipe) async -> Data {
+        await withCheckedContinuation { continuation in
+            let handle = pipe.fileHandleForReading
+            DispatchQueue.global(qos: .utility).async {
+                continuation.resume(returning: handle.readDataToEndOfFile())
             }
         }
     }
