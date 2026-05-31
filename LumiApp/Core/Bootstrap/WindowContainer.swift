@@ -242,17 +242,95 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             return
         }
 
+        if allImages.isEmpty, request.text.hasPrefix("/") {
+            Task { [weak self] in
+                await self?.handleSlashCommandInput(request.text, conversationId: conversationId)
+            }
+            return
+        }
+
+        enqueueMessageForSend(text: request.text, images: allImages, conversationId: conversationId)
+    }
+
+    private func handleSlashCommandInput(_ text: String, conversationId: UUID) async {
+        let result = await _container.slashCommandService.handle(input: text)
+
+        switch result {
+        case .handled:
+            return
+
+        case .notHandled:
+            enqueueMessageForSend(text: text, images: [], conversationId: conversationId)
+
+        case .error(let message):
+            saveSystemMessage(message, conversationId: conversationId)
+
+        case .systemMessage(let message):
+            saveSystemMessage(message, conversationId: conversationId)
+
+        case .userMessage(let message, let triggerProcessing):
+            if triggerProcessing {
+                enqueueMessageForSend(text: message, images: [], conversationId: conversationId)
+            } else {
+                conversationVM.saveMessage(
+                    ChatMessage(role: .user, conversationId: conversationId, content: message),
+                    to: conversationId
+                )
+            }
+
+        case .clearHistory:
+            await clearConversationHistory(conversationId: conversationId)
+
+        case .triggerPlanning(let task):
+            _container.agentSessionConfig.setChatMode(.build)
+            enqueueMessageForSend(text: task, images: [], conversationId: conversationId)
+
+        case .mcpCommand:
+            saveSystemMessage("MCP slash commands are not available in this chat yet.", conversationId: conversationId)
+        }
+    }
+
+    private func enqueueMessageForSend(text: String, images: [ImageAttachment], conversationId: UUID) {
+        guard !text.isEmpty || !images.isEmpty else {
+            return
+        }
+
         let message = ChatMessage(
             role: .user,
             conversationId: conversationId,
-            content: request.text,
-            images: allImages
+            content: text,
+            images: images
         )
         messageQueueVM.enqueueMessage(message)
 
         Task { [weak self] in
             guard let self, !self.hasCleanedUp else { return }
             await self.sendController.attemptBeginNextQueuedSend()
+        }
+    }
+
+    private func saveSystemMessage(_ text: String, conversationId: UUID) {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        conversationVM.saveMessage(
+            ChatMessage(role: .system, conversationId: conversationId, content: text),
+            to: conversationId
+        )
+    }
+
+    private func clearConversationHistory(conversationId: UUID) async {
+        let messages = _container.chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+        let deletedCount = await _container.chatHistoryService.deleteMessagesAsync(
+            messageIds: messages.map(\.id),
+            conversationId: conversationId
+        )
+
+        if deletedCount > 0 {
+            saveSystemMessage("Cleared \(deletedCount) messages from this conversation.", conversationId: conversationId)
+        } else {
+            saveSystemMessage("This conversation is already empty.", conversationId: conversationId)
         }
     }
 
