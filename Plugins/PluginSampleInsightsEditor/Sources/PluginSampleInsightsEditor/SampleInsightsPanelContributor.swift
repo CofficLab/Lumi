@@ -53,11 +53,7 @@ private struct SampleInsightsPanelView: View {
 
     private var todoSummary: (todo: Int, fixme: Int) {
         guard let content = state.content?.string else { return (0, 0) }
-        let lines = content.components(separatedBy: .newlines)
-        return lines.reduce(into: (0, 0)) { partial, line in
-            if line.contains("TODO") { partial.0 += 1 }
-            if line.contains("FIXME") { partial.1 += 1 }
-        }
+        return SampleInsightsMarkerCounter.countMarkers(in: content)
     }
 
     public var body: some View {
@@ -107,5 +103,56 @@ private struct SampleInsightsPanelView: View {
             Text(value)
                 .font(.system(size: 11))
         }
+    }
+}
+
+enum SampleInsightsMarkerCounter {
+    static func countMarkers(in content: String) -> (todo: Int, fixme: Int) {
+        let lines = content.components(separatedBy: .newlines)
+        return lines.reduce(into: (0, 0)) { partial, line in
+            guard let comment = commentFragment(in: line) else { return }
+            if containsMarker("TODO", in: comment) { partial.0 += 1 }
+            if containsMarker("FIXME", in: comment) { partial.1 += 1 }
+        }
+    }
+
+    private static func commentFragment(in line: String) -> String? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("*") {
+            return trimmed
+        }
+
+        let markers = ["//", "#", "/*", "<!--"]
+        let ranges = markers.compactMap { marker in
+            line.range(of: marker).map { $0 }
+        }
+
+        guard let first = ranges.min(by: { $0.lowerBound < $1.lowerBound }) else {
+            return nil
+        }
+
+        return String(line[first.lowerBound...])
+    }
+
+    private static func containsMarker(_ marker: String, in text: String) -> Bool {
+        var searchStart = text.startIndex
+        while let range = text.range(of: marker, options: [.caseInsensitive], range: searchStart..<text.endIndex) {
+            let hasValidPrefix = range.lowerBound == text.startIndex
+                || !isMarkerCharacter(text[text.index(before: range.lowerBound)])
+            let hasValidSuffix = range.upperBound == text.endIndex
+                || !isMarkerCharacter(text[range.upperBound])
+
+            if hasValidPrefix && hasValidSuffix {
+                return true
+            }
+
+            searchStart = range.upperBound
+        }
+
+        return false
+    }
+
+    private static func isMarkerCharacter(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber || character == "_"
     }
 }
