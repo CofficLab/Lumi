@@ -673,15 +673,20 @@ public struct HTMLToMarkdownConverter {
     private static func resolveURL(_ url: String, baseURL: URL?) -> String {
         guard let baseURL = baseURL else { return url }
 
-        if url.hasPrefix("http://") || url.hasPrefix("https://") {
+        let normalizedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let absoluteURL = URL(string: normalizedURL),
+           let scheme = absoluteURL.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
             return url
         }
 
-        if url.hasPrefix("//") {
-            return "https:" + url
+        if normalizedURL.hasPrefix("//"),
+           let scheme = baseURL.scheme,
+           let protocolRelativeURL = URL(string: "\(scheme):\(normalizedURL)") {
+            return protocolRelativeURL.absoluteString
         }
 
-        if let resolvedURL = URL(string: url, relativeTo: baseURL) {
+        if let resolvedURL = URL(string: normalizedURL, relativeTo: baseURL) {
             return resolvedURL.absoluteString
         }
 

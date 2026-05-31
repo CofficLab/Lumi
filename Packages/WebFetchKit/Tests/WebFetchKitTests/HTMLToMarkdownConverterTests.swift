@@ -43,6 +43,38 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertTrue(markdown.contains("![image](https://example.com/logo.svg)"))
     }
 
+    func testPreservesUppercaseAbsoluteURLSchemes() {
+        let html = """
+        <a href="HTTPS://docs.example.com/start">Docs</a>
+        <img src="HTTP://cdn.example.com/logo.png" alt="Logo">
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(
+            html,
+            baseURL: URL(string: "https://example.com/base/")
+        )
+
+        XCTAssertTrue(markdown.contains("[Docs](HTTPS://docs.example.com/start)"))
+        XCTAssertTrue(markdown.contains("![Logo](HTTP://cdn.example.com/logo.png)"))
+        XCTAssertFalse(markdown.contains("https://example.com/base/HTTPS://docs.example.com/start"))
+        XCTAssertFalse(markdown.contains("https://example.com/base/HTTP://cdn.example.com/logo.png"))
+    }
+
+    func testProtocolRelativeURLsUseBaseScheme() {
+        let html = """
+        <a href="//docs.example.com/start">Docs</a>
+        <img src="//cdn.example.com/logo.png" alt="Logo">
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(
+            html,
+            baseURL: URL(string: "http://example.com/base/")
+        )
+
+        XCTAssertTrue(markdown.contains("[Docs](http://docs.example.com/start)"))
+        XCTAssertTrue(markdown.contains("![Logo](http://cdn.example.com/logo.png)"))
+    }
+
     func testDecodesDecimalAndHexNumericEntities() {
         let html = "<p>Symbols: &#169; &#x1F680; &#X2713;</p>"
 
