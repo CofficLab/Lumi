@@ -2118,6 +2118,29 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func workspaceEditControllerAppliesTextEditsToUTF16Files() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "hello\nworld\n".write(to: url, atomically: true, encoding: .utf16)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let edits = [
+            TextEdit(
+                range: LSPRange(start: Position(line: 1, character: 0), end: Position(line: 1, character: 5)),
+                newText: "lumi"
+            )
+        ]
+
+        let controller = EditorWorkspaceEditController()
+        #expect(controller.applyTextEditsToFile(edits, url: url) == true)
+
+        var detectedEncoding = String.Encoding.utf8
+        let updated = try String(contentsOf: url, usedEncoding: &detectedEncoding)
+        #expect(updated == "hello\nlumi\n")
+        #expect(detectedEncoding == .utf16)
+    }
+
+    @Test
+    @MainActor
     func saveStateAndControllerRemainStable() {
         #expect(EditorSaveState.saved.icon == "checkmark.circle.fill")
         #expect(EditorSaveState.error("x").icon == "exclamationmark.triangle.fill")

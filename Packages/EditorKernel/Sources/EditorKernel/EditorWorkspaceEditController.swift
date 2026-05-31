@@ -80,11 +80,12 @@ public final class EditorWorkspaceEditController {
 
     public func applyTextEditsToFile(_ edits: [TextEdit], url: URL) -> Bool {
         do {
-            let original = try String(contentsOf: url, encoding: .utf8)
+            var encoding = String.Encoding.utf8
+            let original = try String(contentsOf: url, usedEncoding: &encoding)
             guard let updated = TextEditApplier.apply(edits: edits, to: original), updated != original else {
                 return false
             }
-            try updated.write(to: url, atomically: true, encoding: .utf8)
+            try updated.write(to: url, atomically: true, encoding: encoding)
             return true
         } catch {
             return false
