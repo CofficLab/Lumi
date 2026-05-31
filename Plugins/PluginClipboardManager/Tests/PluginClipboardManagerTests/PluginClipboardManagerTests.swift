@@ -187,6 +187,36 @@ import Testing
     #expect(fetched.first?.content == "fallback item")
 }
 
+@Test func historyManagerReportsPersistenceResults() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-history-manager-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = ClipboardHistoryManager(databaseDirectory: root)
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.text.rawValue,
+        content: "persisted item",
+        searchKeywords: "persisted item"
+    )
+
+    let added = await manager.add(item)
+    let latest = await manager.getLatest(limit: 10)
+    let storedId = try #require(latest.first?.id)
+    let pinned = await manager.updatePinStatus(id: storedId, isPinned: true)
+    let pinnedItems = await manager.getPinned()
+    let deleted = await manager.delete(id: storedId)
+    let remaining = await manager.getLatest(limit: 10)
+
+    #expect(added)
+    #expect(latest.count == 1)
+    #expect(latest.first?.content == "persisted item")
+    #expect(pinned)
+    #expect(pinnedItems.map(\.id) == [storedId])
+    #expect(deleted)
+    #expect(remaining.isEmpty)
+}
+
 private func makeTestPNG() throws -> Data {
     let image = makeTestImage()
     let tiffData = try #require(image.tiffRepresentation)

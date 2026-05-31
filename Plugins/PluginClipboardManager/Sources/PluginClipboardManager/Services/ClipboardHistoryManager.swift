@@ -30,6 +30,10 @@ public actor ClipboardHistoryManager: SuperLog {
         self.container = Self.makeContainer(databaseDirectory: ClipboardManagerRuntime.databaseDirectory())
     }
 
+    init(databaseDirectory: URL) {
+        self.container = Self.makeContainer(databaseDirectory: databaseDirectory)
+    }
+
     static func makeContainer(databaseDirectory: URL) -> ModelContainer {
         let schema = Schema([ClipboardHistoryItem.self])
         let dbDir = databaseDirectory.appendingPathComponent("ClipboardManager", isDirectory: true)
@@ -125,7 +129,8 @@ public actor ClipboardHistoryManager: SuperLog {
     // MARK: - Public API
     
     /// 添加剪贴板项
-    public func add(_ item: ClipboardHistoryItem) async {
+    @discardableResult
+    public func add(_ item: ClipboardHistoryItem) async -> Bool {
         let context = ModelContext(container)
         
         context.insert(item)
@@ -136,36 +141,40 @@ public actor ClipboardHistoryManager: SuperLog {
             await cleanupOldData(context: context)
         }
         
-        try? context.save()
+        let saved = save(context, operation: "保存剪贴板项")
         
-        if Self.verbose {
+        if saved, Self.verbose {
             if ClipboardManagerPlugin.verbose {
                             ClipboardManagerPlugin.logger.info("\(Self.t)➕ 添加剪贴板项：\(item.content.prefix(50))...")
             }
         }
+        return saved
     }
     
     /// 从 ClipboardItem 添加
-    public func add(_ item: ClipboardItem) async {
+    @discardableResult
+    public func add(_ item: ClipboardItem) async -> Bool {
         let historyItem = ClipboardHistoryItem(from: item)
-        await add(historyItem)
+        return await add(historyItem)
     }
     
     /// 批量添加（用于迁移）
-    public func addBatch(_ items: [ClipboardHistoryItem]) async {
+    @discardableResult
+    public func addBatch(_ items: [ClipboardHistoryItem]) async -> Bool {
         let context = ModelContext(container)
         
         for item in items {
             context.insert(item)
         }
         
-        try? context.save()
+        let saved = save(context, operation: "批量保存剪贴板项")
         
-        if Self.verbose {
+        if saved, Self.verbose {
             if ClipboardManagerPlugin.verbose {
                             ClipboardManagerPlugin.logger.info("\(Self.t)📦 批量添加 \(items.count) 个剪贴板项")
             }
         }
+        return saved
     }
     
     /// 查询所有项（按时间倒序）
@@ -257,7 +266,8 @@ public actor ClipboardHistoryManager: SuperLog {
     }
     
     /// 更新固定状态
-    public func updatePinStatus(id: UUID, isPinned: Bool) async {
+    @discardableResult
+    public func updatePinStatus(id: UUID, isPinned: Bool) async -> Bool {
         let context = ModelContext(container)
         
         let descriptor = FetchDescriptor<ClipboardHistoryItem>(
@@ -266,18 +276,21 @@ public actor ClipboardHistoryManager: SuperLog {
         
         if let item = try? context.fetch(descriptor).first {
             item.isPinned = isPinned
-            try? context.save()
+            let saved = save(context, operation: "更新剪贴板固定状态")
             
-            if Self.verbose {
+            if saved, Self.verbose {
                 if ClipboardManagerPlugin.verbose {
                                     ClipboardManagerPlugin.logger.info("\(Self.t)📌 更新固定状态：\(id) -> \(isPinned)")
                 }
             }
+            return saved
         }
+        return false
     }
     
     /// 删除指定项
-    public func delete(id: UUID) async {
+    @discardableResult
+    public func delete(id: UUID) async -> Bool {
         let context = ModelContext(container)
         
         let descriptor = FetchDescriptor<ClipboardHistoryItem>(
@@ -286,18 +299,21 @@ public actor ClipboardHistoryManager: SuperLog {
         
         if let item = try? context.fetch(descriptor).first {
             context.delete(item)
-            try? context.save()
+            let saved = save(context, operation: "删除剪贴板项")
             
-            if Self.verbose {
+            if saved, Self.verbose {
                 if ClipboardManagerPlugin.verbose {
                                     ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除：\(id)")
                 }
             }
+            return saved
         }
+        return false
     }
     
     /// 批量删除
-    public func delete(ids: [UUID]) async {
+    @discardableResult
+    public func delete(ids: [UUID]) async -> Bool {
         let context = ModelContext(container)
         
         let descriptor = FetchDescriptor<ClipboardHistoryItem>(
@@ -308,22 +324,25 @@ public actor ClipboardHistoryManager: SuperLog {
             for item in items {
                 context.delete(item)
             }
-            try? context.save()
+            let saved = save(context, operation: "批量删除剪贴板项")
             
-            if Self.verbose {
+            if saved, Self.verbose {
                 if ClipboardManagerPlugin.verbose {
                                     ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
                 }
             }
+            return saved
         }
+        return false
     }
     
     /// 清空所有历史记录（保留固定项可选）
-    public func clearAll(keepPinned: Bool = false) async {
+    @discardableResult
+    public func clearAll(keepPinned: Bool = false) async -> Bool {
         let context = ModelContext(container)
         
         let descriptor = FetchDescriptor<ClipboardHistoryItem>()
-        guard let allItems = try? context.fetch(descriptor) else { return }
+        guard let allItems = try? context.fetch(descriptor) else { return false }
         
         let itemsToDelete: [ClipboardHistoryItem]
         if keepPinned {
@@ -336,13 +355,14 @@ public actor ClipboardHistoryManager: SuperLog {
             context.delete(item)
         }
         
-        try? context.save()
+        let saved = save(context, operation: "清空剪贴板历史")
         
-        if Self.verbose {
+        if saved, Self.verbose {
             if ClipboardManagerPlugin.verbose {
                             ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空 \(itemsToDelete.count) 项历史记录")
             }
         }
+        return saved
     }
     
     /// 清理过期数据
@@ -352,7 +372,8 @@ public actor ClipboardHistoryManager: SuperLog {
     }
     
     /// 从 JSON 迁移数据
-    public func migrateFromJSON(items: [ClipboardItem]) async {
+    @discardableResult
+    public func migrateFromJSON(items: [ClipboardItem]) async -> Bool {
         let context = ModelContext(container)
         
         // 先清空现有数据
@@ -369,13 +390,14 @@ public actor ClipboardHistoryManager: SuperLog {
             context.insert(historyItem)
         }
         
-        try? context.save()
+        let saved = save(context, operation: "迁移剪贴板历史")
         
-        if Self.verbose {
+        if saved, Self.verbose {
             if ClipboardManagerPlugin.verbose {
                             ClipboardManagerPlugin.logger.info("\(Self.t)✅ 迁移完成：\(items.count) 项")
             }
         }
+        return saved
     }
     
     // MARK: - Private Helpers
@@ -397,12 +419,24 @@ public actor ClipboardHistoryManager: SuperLog {
             context.delete(item)
         }
         
-        try? context.save()
+        let saved = save(context, operation: "清理过期剪贴板历史")
         
-        if Self.verbose && !oldItems.isEmpty {
+        if saved, Self.verbose && !oldItems.isEmpty {
             if ClipboardManagerPlugin.verbose {
                             ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(oldItems.count) 条过期记录")
             }
+        }
+    }
+
+    private func save(_ context: ModelContext, operation: StaticString) -> Bool {
+        do {
+            try context.save()
+            return true
+        } catch {
+            if ClipboardManagerPlugin.verbose {
+                ClipboardManagerPlugin.logger.error("\(Self.t)❌ \(operation)失败：\(error.localizedDescription)")
+            }
+            return false
         }
     }
 }
