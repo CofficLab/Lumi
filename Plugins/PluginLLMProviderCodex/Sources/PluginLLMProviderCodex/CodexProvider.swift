@@ -240,21 +240,39 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
+        let outputBuffer = CodexProcessOutputBuffer()
+        let errorBuffer = CodexProcessOutputBuffer()
+        outputPipe.fileHandleForReading.readabilityHandler = { handle in
+            outputBuffer.append(handle.availableData)
+        }
+        errorPipe.fileHandleForReading.readabilityHandler = { handle in
+            errorBuffer.append(handle.availableData)
+        }
+
         if Self.verbose {
             let preview = String(prompt.prefix(80))
             Self.logger.info("\(self.t)启动: codex -a never exec --json -m \(model) --skip-git-repo-check \"\(preview)...\"")
         }
 
-        try process.run()
+        do {
+            try process.run()
+        } catch {
+            outputPipe.fileHandleForReading.readabilityHandler = nil
+            errorPipe.fileHandleForReading.readabilityHandler = nil
+            throw error
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 process.waitUntilExit()
 
-                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: outputData, encoding: .utf8) ?? ""
-                let stderr = String(data: errorData, encoding: .utf8) ?? ""
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+                outputBuffer.append(outputPipe.fileHandleForReading.readDataToEndOfFile())
+                errorBuffer.append(errorPipe.fileHandleForReading.readDataToEndOfFile())
+
+                let output = String(data: outputBuffer.data(), encoding: .utf8) ?? ""
+                let stderr = String(data: errorBuffer.data(), encoding: .utf8) ?? ""
                 let combined = [output, stderr].filter { !$0.isEmpty }.joined(separator: "\n")
 
                 if process.terminationStatus != 0 {
@@ -278,6 +296,24 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
             currentIndex = endIndex
         }
         return chunks
+    }
+}
+
+private final class CodexProcessOutputBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage = Data()
+
+    func append(_ data: Data) {
+        guard !data.isEmpty else { return }
+        lock.lock()
+        storage.append(data)
+        lock.unlock()
+    }
+
+    func data() -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
 

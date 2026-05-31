@@ -131,4 +131,39 @@ struct CodexProviderTests {
 
         #expect(state == .error("未找到 codex CLI: /tmp/definitely-missing-codex"))
     }
+
+    @Test("provider drains large codex JSON output")
+    func providerDrainsLargeCodexJSONOutput() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("codex-provider-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let executableURL = directory.appendingPathComponent("codex")
+        try """
+        #!/bin/sh
+        i=1
+        while [ "$i" -le 300 ]; do
+          printf '{"type":"item.completed","item":{"type":"agent_message","text":"message-%03d-%0512d"}}\\n' "$i" 0
+          printf '{"type":"trace","message":"stderr-%03d-%0512d"}\\n' "$i" 0 >&2
+          i=$((i + 1))
+        done
+        printf '{"type":"turn.completed","usage":{"input_tokens":12,"output_tokens":300}}\\n'
+        """.write(to: executableURL, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executableURL.path)
+
+        let provider = CodexProvider(cli: CodexCLI(executablePath: executableURL.path))
+        let conversationId = UUID()
+        let message = try await provider.sendMessage(
+            messages: [ChatMessage(role: .user, conversationId: conversationId, content: "hello")],
+            model: CodexProvider.defaultModel,
+            tools: nil,
+            systemPrompt: nil,
+            images: []
+        )
+
+        #expect(message.content.contains("message-300-"))
+        #expect(message.inputTokens == 12)
+        #expect(message.outputTokens == 300)
+    }
 }
