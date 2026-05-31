@@ -162,6 +162,29 @@ import Foundation
     #expect(stats == MarkdownTODOStats(total: 3, completed: 2))
 }
 
+@Test func exportPolicyCopiesSVGImagesCaseInsensitively() {
+    #expect(EditorPreviewExportPolicy.shouldCopyOriginalImage(for: URL(fileURLWithPath: "/tmp/icon.svg")))
+    #expect(EditorPreviewExportPolicy.shouldCopyOriginalImage(for: URL(fileURLWithPath: "/tmp/ICON.SVG")))
+    #expect(!EditorPreviewExportPolicy.shouldCopyOriginalImage(for: URL(fileURLWithPath: "/tmp/photo.png")))
+}
+
+@Test func exportPolicyBuildsUniqueDestinationWithoutForceUnwrappingDownloads() {
+    let directoryURL = URL(fileURLWithPath: "/tmp/Downloads", isDirectory: true)
+    let sourceURL = URL(fileURLWithPath: "/tmp/Icon.SVG")
+    let existing = Set([
+        directoryURL.appendingPathComponent("Icon.SVG"),
+        directoryURL.appendingPathComponent("Icon (1).SVG"),
+    ])
+
+    let destinationURL = EditorPreviewExportPolicy.uniqueDestinationURL(
+        for: sourceURL,
+        in: directoryURL,
+        fileExists: { existing.contains($0) }
+    )
+
+    #expect(destinationURL.lastPathComponent == "Icon (2).SVG")
+}
+
 @Test func jsonPreviewParserKeepsValidJSONLLines() throws {
     let parsed = JSONPreviewParser.parse("""
     {"name":"Ada"}

@@ -408,7 +408,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
         // 对于 SVG 图片，直接复制原文件到 Downloads，而不是截图转 PNG（否则会得到空白图片）
         if case let .image(url) = viewModel.previewMode,
-           url.pathExtension == "svg" {
+           EditorPreviewExportPolicy.shouldCopyOriginalImage(for: url) {
             copyOriginalFileToDownloads(url)
             return
         }
@@ -424,22 +424,16 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private func copyOriginalFileToDownloads(_ sourceURL: URL) {
         isTakingScreenshot = false
 
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-        let fileName = sourceURL.lastPathComponent
-        guard let destURL = downloadsURL?.appendingPathComponent(fileName) else {
+        guard let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
             alert_warning(String(localized: "Failed to save file.", table: "EditorPreview"))
             return
         }
 
-        // 如果目标文件已存在，添加序号
-        var finalURL = destURL
-        var counter = 1
-        while FileManager.default.fileExists(atPath: finalURL.path) {
-            let name = sourceURL.deletingPathExtension().lastPathComponent
-            let ext = sourceURL.pathExtension
-            finalURL = downloadsURL!.appendingPathComponent("\(name) (\(counter)).\(ext)")
-            counter += 1
-        }
+        let finalURL = EditorPreviewExportPolicy.uniqueDestinationURL(
+            for: sourceURL,
+            in: downloadsURL,
+            fileExists: { FileManager.default.fileExists(atPath: $0.path) }
+        )
 
         do {
             try FileManager.default.copyItem(at: sourceURL, to: finalURL)
@@ -1028,6 +1022,34 @@ private struct MarkdownTOCHeading: Identifiable, Hashable {
     public let level: Int
     public let title: String
     public let lineNumber: Int
+}
+
+enum EditorPreviewExportPolicy {
+    static func shouldCopyOriginalImage(for url: URL) -> Bool {
+        url.pathExtension.localizedCaseInsensitiveCompare("svg") == .orderedSame
+    }
+
+    static func uniqueDestinationURL(
+        for sourceURL: URL,
+        in directoryURL: URL,
+        fileExists: (URL) -> Bool
+    ) -> URL {
+        let fileName = sourceURL.lastPathComponent
+        var destinationURL = directoryURL.appendingPathComponent(fileName)
+        var counter = 1
+
+        while fileExists(destinationURL) {
+            let name = sourceURL.deletingPathExtension().lastPathComponent
+            let ext = sourceURL.pathExtension
+            let numberedName = ext.isEmpty
+                ? "\(name) (\(counter))"
+                : "\(name) (\(counter)).\(ext)"
+            destinationURL = directoryURL.appendingPathComponent(numberedName)
+            counter += 1
+        }
+
+        return destinationURL
+    }
 }
 
 private struct MarkdownTOCSection: Identifiable {
