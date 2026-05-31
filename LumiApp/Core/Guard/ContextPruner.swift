@@ -137,11 +137,24 @@ struct ContextPruner: SuperLog {
             content: config.summaryPlaceholder
         )
 
-        let result = [summaryMessage] + fixed
+        let continuationMessages: [ChatMessage]
+        if fixed.isEmpty {
+            continuationMessages = [
+                ChatMessage(
+                    role: .user,
+                    conversationId: messages.first?.conversationId ?? UUID(),
+                    content: "(Previous conversation was summarized. Continue from here.)"
+                )
+            ]
+        } else {
+            continuationMessages = fixed
+        }
+
+        let result = [summaryMessage] + continuationMessages
         let prunedCount = messages.count - fixed.count
 
         if let convId = messages.first?.conversationId {
-            AppLogger.core.info("\(t)[\(convId)] 裁剪完成：\(messages.count) → \(result.count) 条消息（保留 \(fixed.count) + 1 摘要占位）")
+            AppLogger.core.info("\(t)[\(convId)] 裁剪完成：\(messages.count) → \(result.count) 条消息（保留 \(continuationMessages.count) + 1 摘要占位）")
         }
 
         return PruneResult(messages: result, prunedCount: prunedCount, reason: reason)
