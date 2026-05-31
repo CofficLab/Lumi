@@ -19,6 +19,10 @@ public struct JSPackageInfo: Sendable {
             .merging(optionalDependencies) { current, _ in current }
     }
 
+    public func hasDependency(_ name: String) -> Bool {
+        allDependencies[name] != nil
+    }
+
     /// 已识别的脚本分类
     public var devScripts: [String] {
         scripts.keys.filter { key in

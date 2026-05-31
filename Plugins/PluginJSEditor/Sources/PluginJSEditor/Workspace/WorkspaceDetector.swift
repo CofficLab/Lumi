@@ -10,7 +10,8 @@ public enum WorkspaceDetector {
     }
 
     public static func detect(projectPath: String) -> Workspace? {
-        let root = findRoot(from: URL(fileURLWithPath: projectPath)) ?? URL(fileURLWithPath: projectPath)
+        let root = (findRoot(from: URL(fileURLWithPath: projectPath)) ?? URL(fileURLWithPath: projectPath))
+            .resolvingSymlinksInPath()
         let package = PackageJSONParser.parse(projectPath: root.path)
         return Workspace(
             rootPath: root.path,
@@ -34,8 +35,8 @@ public enum WorkspaceDetector {
 
     private static func packageDirectories(root: URL) -> [String] {
         guard let package = PackageJSONParser.parse(projectPath: root.path) else { return [root.path] }
-        var result = [root.path]
-        if package.devDependencies["turbo"] != nil || package.packageManager?.contains("pnpm") == true {
+        var result = [root.resolvingSymlinksInPath().path]
+        if package.hasDependency("turbo") || package.packageManager?.contains("pnpm") == true {
             result.append(contentsOf: globWorkspacePackages(root: root))
         }
         return Array(Set(result)).sorted()
@@ -53,7 +54,7 @@ public enum WorkspaceDetector {
             return children.filter {
                 (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
                     && FileManager.default.fileExists(atPath: $0.appendingPathComponent("package.json").path)
-            }.map(\.path)
+            }.map { $0.resolvingSymlinksInPath().path }
         }
     }
 }

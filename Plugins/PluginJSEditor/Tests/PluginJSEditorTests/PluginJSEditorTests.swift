@@ -34,6 +34,35 @@ import Foundation
     #expect(package.inferredTestFramework == .vitest)
 }
 
+@Test func workspaceDetectorUsesTurboFromOptionalDependencies() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try """
+    {
+      "name": "workspace-root",
+      "optionalDependencies": {
+        "turbo": "^2.0.0"
+      }
+    }
+    """.write(to: directory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+
+    let appDirectory = directory.appendingPathComponent("apps/web", isDirectory: true)
+    try FileManager.default.createDirectory(at: appDirectory, withIntermediateDirectories: true)
+    try """
+    {
+      "name": "web"
+    }
+    """.write(to: appDirectory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+
+    let workspace = try #require(WorkspaceDetector.detect(projectPath: directory.path))
+    let expectedPaths = [directory, appDirectory].map { $0.resolvingSymlinksInPath().path }.sorted()
+
+    #expect(workspace.packagePaths == expectedPaths)
+}
+
 @Test func tsConfigResolverParsesJSONCCommentsAndTrailingCommas() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
