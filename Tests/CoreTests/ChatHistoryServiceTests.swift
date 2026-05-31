@@ -117,6 +117,20 @@ final class ChatHistoryServiceTests: XCTestCase {
     }
 
     @MainActor
+    func testLiveHistoryQueryServiceRejectsInvalidMessagePagination() async throws {
+        let service = try makeService()
+        let liveQuery = LiveHistoryQueryService(chatHistoryService: service)
+
+        let zeroLimitRows = await liveQuery.fetchMessagePage(limit: 0, offset: 0)
+        let negativeLimitRows = await liveQuery.fetchMessagePage(limit: -1, offset: 0)
+        let negativeOffsetRows = await liveQuery.fetchMessagePage(limit: 10, offset: -1)
+
+        XCTAssertTrue(zeroLimitRows.isEmpty)
+        XCTAssertTrue(negativeLimitRows.isEmpty)
+        XCTAssertTrue(negativeOffsetRows.isEmpty)
+    }
+
+    @MainActor
     private func makeService() throws -> ChatHistoryService {
         let schema = DBConfig.getSchema()
         let config = ModelConfiguration(

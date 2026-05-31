@@ -23,6 +23,8 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
     }
 
     func fetchMessagePage(limit: Int, offset: Int) async -> [HistoryMessageRow] {
+        guard limit > 0, offset >= 0 else { return [] }
+
         let context = chatHistoryService.getContext()
 
         var descriptor = FetchDescriptor<ChatMessageEntity>(
