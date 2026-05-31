@@ -164,4 +164,17 @@ final class WorkspaceFileKitTests: XCTestCase {
 
         XCTAssertEqual(WorkspacePathResolver.fileURL(from: fileURLString).path, path)
     }
+
+    func testPathResolverTrimsCopiedPathWhitespace() {
+        let path = temporaryDirectory.appendingPathComponent("copied.txt").path
+
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: " \n\(path)\t").path, path)
+    }
+
+    func testPathResolverTrimsCopiedFileURLWhitespace() {
+        let path = temporaryDirectory.appendingPathComponent("copied-url.txt").path
+        let fileURLString = URL(fileURLWithPath: path).absoluteString
+
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: " \n\(fileURLString)\t").path, path)
+    }
 }
