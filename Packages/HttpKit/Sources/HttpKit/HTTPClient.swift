@@ -509,9 +509,10 @@ public final class HTTPClient: @unchecked Sendable {
             }
 
             let hitLF = lastBytes.suffix(2).elementsEqual([0x0A, 0x0A])
+            let hitCR = lastBytes.suffix(2).elementsEqual([0x0D, 0x0D])
             let hitCRLF = lastBytes.count >= 4 && lastBytes.suffix(4).elementsEqual([0x0D, 0x0A, 0x0D, 0x0A])
 
-            if hitLF || hitCRLF {
+            if hitLF || hitCR || hitCRLF {
                 let delimiterLength = hitCRLF ? 4 : 2
                 guard eventBuffer.count >= delimiterLength else {
                     eventBuffer.removeAll(keepingCapacity: true)

@@ -186,6 +186,35 @@ struct HTTPClientStreamingTests {
         #expect(events.value[1] == Data("event: pong".utf8))
     }
 
+    @Test("sendStreamingJSONRequest handles CR-only delimiters")
+    func streamingHandlesCROnlyDelimiters() async throws {
+        StreamingMockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                [Data("event: ping\r\revent: pong\r\r".utf8)]
+            )
+        }
+        defer { StreamingMockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
+        request.httpMethod = "POST"
+
+        let events = Box<[Data]>([])
+        try await client.sendStreamingJSONRequest(
+            request: request,
+            body: [:],
+            onEvent: { data in
+                events.value.append(data)
+                return true
+            }
+        )
+
+        #expect(events.value.count == 2)
+        #expect(events.value[0] == Data("event: ping".utf8))
+        #expect(events.value[1] == Data("event: pong".utf8))
+    }
+
     @Test("sendStreamingJSONRequest handles trailing data without delimiter")
     func streamingHandlesTrailingData() async throws {
         StreamingMockURLProtocol.setHandler { _ in
