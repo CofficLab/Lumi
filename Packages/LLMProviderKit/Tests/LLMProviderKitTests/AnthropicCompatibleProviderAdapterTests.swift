@@ -207,6 +207,15 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(chunk?.eventType, .textDelta)
     }
 
+    func testParseStreamTextDeltaWithCRLFLineEndings() throws {
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data("event: content_block_delta\r\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\r\n\r\n".utf8)
+        )
+
+        XCTAssertEqual(chunk?.content, "Hello")
+        XCTAssertEqual(chunk?.eventType, .textDelta)
+    }
+
     func testParseStreamMessageStart() throws {
         let chunk = try makeAdapter().parseStreamChunk(
             data: Data("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":50}}}\n\n".utf8)

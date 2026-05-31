@@ -137,9 +137,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         let lines = text.components(separatedBy: "\n")
         for line in lines {
             if line.hasPrefix("event:") {
-                eventType = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                eventType = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
             } else if line.hasPrefix("data:") {
-                eventDataLines.append(String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces))
+                eventDataLines.append(String(line.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines))
             }
         }
 
