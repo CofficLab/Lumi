@@ -65,7 +65,8 @@ public final class EditorTransactionController {
         replacementText: String,
         selectedRanges: [NSRange]
     ) -> EditorTransaction? {
-        guard replacementRange.location != NSNotFound else { return nil }
+        guard isValidRange(replacementRange) else { return nil }
+        guard selectedRanges.allSatisfy({ isValidRange($0) }) else { return nil }
 
         return EditorTransaction(
             replacements: [
@@ -94,6 +95,9 @@ public final class EditorTransactionController {
         replacementText: String,
         additionalTextEdits: [TextEdit]?
     ) -> EditorTransaction? {
+        let textLength = (text as NSString).length
+        guard isValidRange(replacementRange, maxLength: textLength) else { return nil }
+
         var replacements: [EditorTransaction.Replacement] = [
             .init(
                 range: EditorRange(
@@ -121,7 +125,7 @@ public final class EditorTransactionController {
             return lhs.range.length < rhs.range.length
         }
 
-        let selectionAnchor = replacementRange.location + replacementRange.length
+        let selectionAnchor = NSMaxRange(replacementRange)
         let finalCursorLocation = remappedOffset(
             selectionAnchor,
             isRangeEnd: true,
@@ -144,6 +148,9 @@ public final class EditorTransactionController {
         snippet: EditorSnippetParseResult,
         additionalTextEdits: [TextEdit]?
     ) -> EditorSnippetTransactionPayload? {
+        let textLength = (text as NSString).length
+        guard isValidRange(replacementRange, maxLength: textLength) else { return nil }
+
         var replacements: [EditorTransaction.Replacement] = [
             .init(
                 range: EditorRange(
@@ -172,7 +179,14 @@ public final class EditorTransactionController {
         }
 
         let remapRange: (NSRange) -> NSRange = { range in
+            guard self.isValidRange(range),
+                  replacementRange.location <= Int.max - range.location else {
+                return NSRange(location: replacementRange.location, length: 0)
+            }
             let absoluteStart = replacementRange.location + range.location
+            guard absoluteStart <= Int.max - range.length else {
+                return NSRange(location: absoluteStart, length: 0)
+            }
             let absoluteEnd = absoluteStart + range.length
             let mappedStart = self.remappedOffset(
                 absoluteStart,
@@ -247,6 +261,7 @@ public final class EditorTransactionController {
         for replacements: [EditorTransaction.Replacement]
     ) -> [EditorSelection]? {
         guard !currentSelections.isEmpty else { return nil }
+        guard currentSelections.allSatisfy({ isValidRange($0) }) else { return nil }
 
         let sortedReplacements = replacements.sorted { lhs, rhs in
             if lhs.range.location != rhs.range.location {
@@ -262,7 +277,7 @@ public final class EditorTransactionController {
                 replacements: sortedReplacements
             )
             let end = remappedOffset(
-                selection.location + selection.length,
+                NSMaxRange(selection),
                 isRangeEnd: true,
                 replacements: sortedReplacements
             )
@@ -283,7 +298,9 @@ public final class EditorTransactionController {
         var mapped = offset
         for replacement in replacements {
             let start = replacement.range.location
-            let end = replacement.range.location + replacement.range.length
+            guard let end = rangeEnd(location: replacement.range.location, length: replacement.range.length) else {
+                continue
+            }
             let delta = (replacement.text as NSString).length - replacement.range.length
 
             if mapped < start {
@@ -298,5 +315,21 @@ public final class EditorTransactionController {
             mapped = start + (replacement.text as NSString).length
         }
         return max(mapped, 0)
+    }
+
+    private func isValidRange(_ range: NSRange, maxLength: Int? = nil) -> Bool {
+        guard range.location != NSNotFound,
+              range.location >= 0,
+              range.length >= 0,
+              range.location <= Int.max - range.length else {
+            return false
+        }
+        guard let maxLength else { return true }
+        return NSMaxRange(range) <= maxLength
+    }
+
+    private func rangeEnd(location: Int, length: Int) -> Int? {
+        guard location >= 0, length >= 0, location <= Int.max - length else { return nil }
+        return location + length
     }
 }

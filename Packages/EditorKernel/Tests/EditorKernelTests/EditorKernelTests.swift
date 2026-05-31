@@ -1475,6 +1475,51 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func transactionControllerRejectsInvalidEditRanges() {
+        let controller = EditorTransactionController()
+
+        #expect(
+            controller.transactionForInputEdit(
+                replacementRange: NSRange(location: 0, length: -1),
+                replacementText: "x",
+                selectedRanges: []
+            ) == nil
+        )
+        #expect(
+            controller.transactionForInputEdit(
+                replacementRange: NSRange(location: 0, length: 0),
+                replacementText: "x",
+                selectedRanges: [NSRange(location: Int.max, length: 1)]
+            ) == nil
+        )
+        #expect(
+            controller.transactionForCompletionEdit(
+                text: "abc",
+                replacementRange: NSRange(location: 2, length: 2),
+                replacementText: "x",
+                additionalTextEdits: nil
+            ) == nil
+        )
+        #expect(
+            controller.transactionForCompletionEdit(
+                text: "abc",
+                replacementRange: NSRange(location: Int.max, length: 1),
+                replacementText: "x",
+                additionalTextEdits: nil
+            ) == nil
+        )
+        #expect(
+            controller.transactionForSnippetEdit(
+                text: "abc",
+                replacementRange: NSRange(location: 1, length: -1),
+                snippet: EditorSnippetParser.parse("$0"),
+                additionalTextEdits: nil
+            ) == nil
+        )
+    }
+
+    @Test
+    @MainActor
     func editorPerformanceCollectsSummariesAndSlowEvents() {
         let performance = EditorPerformance()
         performance.clear()
