@@ -18,8 +18,16 @@ public enum LineEnding: String, CaseIterable {
     /// Initialize a line ending from a line string.
     /// - Parameter line: The line to use
     public init?(line: String) {
-        guard let lastChar = line.last,
-              let lineEnding = LineEnding(rawValue: String(lastChar)) else { return nil }
+        let lineEnding: LineEnding
+        if line.hasSuffix(LineEnding.carriageReturnLineFeed.rawValue) {
+            lineEnding = .carriageReturnLineFeed
+        } else if line.hasSuffix(LineEnding.lineFeed.rawValue) {
+            lineEnding = .lineFeed
+        } else if line.hasSuffix(LineEnding.carriageReturn.rawValue) {
+            lineEnding = .carriageReturn
+        } else {
+            return nil
+        }
         self = lineEnding
     }
 
@@ -41,9 +49,10 @@ public enum LineEnding: String, CaseIterable {
                   let lineEnding = LineEnding(line: lineString) else {
                 continue
             }
-            histogram[lineEnding] = histogram[lineEnding]! + 1
+            let count = (histogram[lineEnding] ?? 0) + 1
+            histogram[lineEnding] = count
             // after finding 15 lines of a line ending we assume it's correct.
-            if histogram[lineEnding]! >= 15 {
+            if count >= 15 {
                 shouldContinue = false
             }
         }

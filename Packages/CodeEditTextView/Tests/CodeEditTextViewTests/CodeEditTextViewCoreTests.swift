@@ -59,6 +59,13 @@ final class CodeEditTextViewCoreTests: XCTestCase {
         )
     }
 
+    func testLineEndingDetectsCarriageReturnLineFeedBeforeLineFeed() {
+        XCTAssertEqual(LineEnding(line: "let value = 1\r\n"), .carriageReturnLineFeed)
+        XCTAssertEqual(LineEnding(line: "let value = 1\n"), .lineFeed)
+        XCTAssertEqual(LineEnding(line: "let value = 1\r"), .carriageReturn)
+        XCTAssertNil(LineEnding(line: "let value = 1"))
+    }
+
     func testDragSelectionRangeRejectsNegativeOffsets() {
         XCTAssertNil(TextViewDragSelectionRange.betweenOffsets(-1, 4))
         XCTAssertNil(TextViewDragSelectionRange.betweenOffsets(4, -1))
