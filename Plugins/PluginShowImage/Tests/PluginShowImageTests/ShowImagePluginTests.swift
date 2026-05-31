@@ -51,8 +51,11 @@ struct PluginShowImageTests {
         #expect(ShowImageTool.normalizedMaxWidth(nil) == ShowImageTool.defaultMaxWidth)
         #expect(ShowImageTool.normalizedMaxWidth(-1) == ShowImageTool.minMaxWidth)
         #expect(ShowImageTool.normalizedMaxWidth(50) == ShowImageTool.minMaxWidth)
+        #expect(ShowImageTool.normalizedMaxWidth(320.0) == 320)
+        #expect(ShowImageTool.normalizedMaxWidth("640") == 640)
         #expect(ShowImageTool.normalizedMaxWidth(320) == 320)
         #expect(ShowImageTool.normalizedMaxWidth(9_999) == ShowImageTool.maxMaxWidth)
+        #expect(ShowImageTool.normalizedMaxWidth("not-a-number") == ShowImageTool.defaultMaxWidth)
     }
 
     @MainActor
@@ -88,6 +91,35 @@ struct PluginShowImageTests {
         )
 
         #expect(ShowImageState.shared.displayItem?.maxWidth == ShowImageTool.maxMaxWidth)
+        ShowImageState.shared.clear()
+    }
+
+    @MainActor
+    @Test("tool accepts JSON-style max width values")
+    func toolAcceptsJSONStyleMaxWidthValues() async throws {
+        ShowImageState.shared.clear()
+        let tool = ShowImageTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_3", toolName: tool.name)
+
+        _ = try await tool.execute(
+            arguments: [
+                "source": ToolArgument("https://example.com/image.png"),
+                "maxWidth": ToolArgument(640.0),
+            ],
+            context: context
+        )
+
+        #expect(ShowImageState.shared.displayItem?.maxWidth == 640)
+
+        _ = try await tool.execute(
+            arguments: [
+                "source": ToolArgument("https://example.com/image.png"),
+                "maxWidth": ToolArgument("500"),
+            ],
+            context: context
+        )
+
+        #expect(ShowImageState.shared.displayItem?.maxWidth == 500)
         ShowImageState.shared.clear()
     }
 

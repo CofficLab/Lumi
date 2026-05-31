@@ -132,7 +132,7 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
 
         let title = (arguments["title"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let caption = (arguments["caption"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let maxWidth = Self.normalizedMaxWidth(arguments["maxWidth"]?.value as? Int)
+        let maxWidth = Self.normalizedMaxWidth(arguments["maxWidth"]?.value)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🖼️ 显示图片：\(source)")
@@ -169,7 +169,18 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
         return "Image displayed successfully. Source: \(source)"
     }
 
-    static func normalizedMaxWidth(_ rawMaxWidth: Int?) -> Int {
-        min(max(rawMaxWidth ?? defaultMaxWidth, minMaxWidth), maxMaxWidth)
+    static func normalizedMaxWidth(_ value: Any?) -> Int {
+        let rawMaxWidth: Int?
+        if let int = value as? Int {
+            rawMaxWidth = int
+        } else if let double = value as? Double {
+            rawMaxWidth = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            rawMaxWidth = int
+        } else {
+            rawMaxWidth = nil
+        }
+
+        return min(max(rawMaxWidth ?? defaultMaxWidth, minMaxWidth), maxMaxWidth)
     }
 }
