@@ -720,6 +720,27 @@ struct EditorKernelTests {
     }
 
     @Test
+    func multiCursorEditEngineKeepsIndentedLineSelectionsInBounds() {
+        let selectedLine = MultiCursorEditEngine.apply(
+            text: "abc",
+            selections: [.init(location: 0, length: 3)],
+            operation: .indent("  ")
+        )
+
+        #expect(selectedLine.text == "  abc")
+        #expect(selectedLine.selections == [.init(location: 0, length: 5)])
+
+        let lineStartCaret = MultiCursorEditEngine.apply(
+            text: "abc",
+            selections: [.init(location: 0, length: 0)],
+            operation: .indent("  ")
+        )
+
+        #expect(lineStartCaret.text == "  abc")
+        #expect(lineStartCaret.selections == [.init(location: 2, length: 0)])
+    }
+
+    @Test
     func multiCursorEditEngineClampsOverflowingSelections() {
         let inserted = MultiCursorEditEngine.apply(
             text: "abc",

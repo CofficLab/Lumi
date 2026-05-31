@@ -184,14 +184,18 @@ public enum MultiCursorEditEngine {
         forInsertedLineStarts lineStarts: [Int],
         indentLength: Int
     ) -> MultiCursorSelection {
-        let insertedBeforeStart = lineStarts.filter { $0 < selection.location }.count * indentLength
-        let insertedWithinSelection = lineStarts.filter {
-            $0 >= selection.location && $0 < selection.upperBound
-        }.count * indentLength
+        if selection.isCaret {
+            let insertedBeforeOrAtCaret = lineStarts.filter { $0 <= selection.location }.count * indentLength
+            return MultiCursorSelection(location: selection.location + insertedBeforeOrAtCaret, length: 0)
+        }
 
+        let insertedBeforeStart = lineStarts.filter { $0 < selection.location }.count * indentLength
+        let insertedBeforeEnd = lineStarts.filter { $0 < selection.upperBound }.count * indentLength
+        let location = selection.location + insertedBeforeStart
+        let upperBound = selection.upperBound + insertedBeforeEnd
         return MultiCursorSelection(
-            location: selection.location + insertedBeforeStart,
-            length: selection.length + insertedWithinSelection + (selection.isCaret ? 0 : insertedBeforeStart == 0 && lineStarts.contains(selection.location) ? indentLength : 0)
+            location: location,
+            length: max(0, upperBound - location)
         )
     }
 
