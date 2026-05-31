@@ -7,6 +7,16 @@ public enum ModelSelectorFilteringService {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    public static func providersById(_ providers: [LLMProviderInfo]) -> [String: LLMProviderInfo] {
+        var result: [String: LLMProviderInfo] = [:]
+
+        for provider in providers where result[provider.id] == nil {
+            result[provider.id] = provider
+        }
+
+        return result
+    }
+
     public static func matchesSearch(
         provider: LLMProviderInfo,
         model: String,

@@ -193,7 +193,7 @@ public struct ModelSelectorView: View, SuperLog {
     /// 常用模型列表（跨供应商，按使用频率排序）
     @ViewBuilder
     private var frequentModelsList: some View {
-        let providersById = Dictionary(uniqueKeysWithValues: llmVM.allProviders.map { ($0.id, $0) })
+        let providersById = ModelSelectorFilteringService.providersById(llmVM.allProviders)
         let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(
             frequentModels,
             availableProviderIds: Set(providersById.keys),
@@ -225,7 +225,7 @@ public struct ModelSelectorView: View, SuperLog {
     /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
     @ViewBuilder
     private var fastModelsList: some View {
-        let providersById = Dictionary(uniqueKeysWithValues: llmVM.allProviders.map { ($0.id, $0) })
+        let providersById = ModelSelectorFilteringService.providersById(llmVM.allProviders)
         let filteredEntries = ModelSelectorFilteringService.filteredFastModels(
             fastModels,
             availableProviderIds: Set(providersById.keys),

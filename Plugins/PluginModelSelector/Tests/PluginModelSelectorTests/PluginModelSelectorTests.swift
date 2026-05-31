@@ -1,6 +1,35 @@
 import Foundation
+import LLMKit
 import Testing
 @testable import PluginModelSelector
+
+@Test func providerMapByIdKeepsFirstProviderForDuplicateIds() {
+    let firstOpenAI = makeProvider(
+        id: "openai",
+        displayName: "OpenAI",
+        defaultModel: "gpt-5"
+    )
+    let duplicateOpenAI = makeProvider(
+        id: "openai",
+        displayName: "Duplicate OpenAI",
+        defaultModel: "duplicate-model"
+    )
+    let local = makeProvider(
+        id: "local",
+        displayName: "Local",
+        defaultModel: "llama"
+    )
+
+    let providersById = ModelSelectorFilteringService.providersById([
+        firstOpenAI,
+        duplicateOpenAI,
+        local,
+    ])
+
+    #expect(Set(providersById.keys) == ["openai", "local"])
+    #expect(providersById["openai"] == firstOpenAI)
+    #expect(providersById["local"] == local)
+}
 
 @Test func frequentModelFilteringDropsMissingProvidersBeforeEmptyState() {
     let entries = [
@@ -58,4 +87,23 @@ import Testing
     )
 
     #expect(filtered.isEmpty)
+}
+
+private func makeProvider(
+    id: String,
+    displayName: String,
+    defaultModel: String
+) -> LLMProviderInfo {
+    LLMProviderInfo(
+        id: id,
+        displayName: displayName,
+        shortName: displayName,
+        description: "",
+        websiteURL: nil,
+        availableModels: [defaultModel],
+        defaultModel: defaultModel,
+        isLocal: id == "local",
+        isEnabled: true,
+        contextWindowSizes: [defaultModel: 128_000]
+    )
 }
