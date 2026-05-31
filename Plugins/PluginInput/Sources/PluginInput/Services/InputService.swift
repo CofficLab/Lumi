@@ -134,8 +134,15 @@ public class InputService: ObservableObject, SuperLog {
     }
 
     private func saveConfig() {
-        if let data = try? JSONEncoder().encode(config) {
-            settingsStore.set(data, forKey: configKey)
+        do {
+            let data = try JSONEncoder().encode(config)
+            if !settingsStore.set(data, forKey: configKey), InputPlugin.verbose {
+                InputPlugin.logger.error("\(self.t)Failed to persist input plugin config")
+            }
+        } catch {
+            if InputPlugin.verbose {
+                InputPlugin.logger.error("\(self.t)Failed to encode input plugin config: \(error.localizedDescription)")
+            }
         }
     }
 
