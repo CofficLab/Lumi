@@ -30,4 +30,25 @@ final class CodeEditTextViewCoreTests: XCTestCase {
         XCTAssertEqual(EmphasisStyle.underline(color: .systemBlue).shapeRadius, 0)
         XCTAssertEqual(EmphasisStyle.outline(color: .systemBlue).shapeRadius, 2.5)
     }
+
+    func testSmoothPathSkipsConsecutiveDuplicatePoints() {
+        let path = NSBezierPath.smoothPath(
+            [
+                NSPoint(x: 4, y: 4),
+                NSPoint(x: 4, y: 4),
+                NSPoint(x: 20, y: 4),
+                NSPoint(x: 20, y: 12),
+                NSPoint(x: 4, y: 4)
+            ],
+            radius: 3
+        )
+
+        XCTAssertGreaterThan(path.elementCount, 0)
+
+        var points = [NSPoint](repeating: .zero, count: 3)
+        for index in 0..<path.elementCount {
+            _ = path.element(at: index, associatedPoints: &points)
+            XCTAssertTrue(points.allSatisfy { $0.x.isFinite && $0.y.isFinite })
+        }
+    }
 }

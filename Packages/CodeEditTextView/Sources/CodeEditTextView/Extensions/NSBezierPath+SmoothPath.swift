@@ -31,6 +31,7 @@ extension NSBezierPath {
         let radius = cornerRadius * 1.15
 
         let path = NSBezierPath()
+        let points = removingConsecutiveDuplicates(from: points)
 
         guard points.count > 1 else { return path }
 
@@ -119,5 +120,16 @@ extension NSBezierPath {
         }
 
         return path
+    }
+
+    private static func removingConsecutiveDuplicates(from points: [NSPoint]) -> [NSPoint] {
+        var result: [NSPoint] = []
+        result.reserveCapacity(points.count)
+
+        for point in points where result.last != point {
+            result.append(point)
+        }
+
+        return result
     }
 }
