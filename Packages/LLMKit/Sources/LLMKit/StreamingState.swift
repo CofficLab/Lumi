@@ -68,6 +68,7 @@ public actor StreamingState {
     }
 
     public func startNewToolCall(id: String, name: String, hasPartialJson: Bool = false, arguments: String = "") {
+        saveCurrentToolCall()
         currentToolCallId = id
         currentToolCallName = name
         if !hasPartialJson && !arguments.isEmpty && arguments != "{}" {

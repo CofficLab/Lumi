@@ -127,6 +127,21 @@ struct StreamingStateTests {
         #expect(result?[1].id == "c2")
     }
 
+    @Test("开始新工具调用前保存当前调用")
+    func startingNewToolCallSavesCurrentCall() async {
+        let state = makeState()
+
+        await state.startNewToolCall(id: "c1", name: "a", arguments: "{\"one\":true}")
+        await state.startNewToolCall(id: "c2", name: "b", arguments: "{\"two\":true}")
+        await state.saveCurrentToolCall()
+
+        let result = await state.getFinalToolCalls()
+        #expect(result == [
+            KitToolCall(id: "c1", name: "a", arguments: "{\"one\":true}"),
+            KitToolCall(id: "c2", name: "b", arguments: "{\"two\":true}")
+        ])
+    }
+
     @Test("空 arguments 默认为 {}")
     func emptyArgumentsDefault() async {
         let state = makeState()
