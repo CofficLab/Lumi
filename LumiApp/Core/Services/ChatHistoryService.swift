@@ -511,7 +511,6 @@ extension ChatHistoryService {
 
         // 消息不存在，创建新记录
         let messageEntity = ChatMessageEntity.fromChatMessage(message, in: context)
-        messageEntity.timestamp = Date()
         messageEntity.conversation = fetchedConversation
         syncToolCallRelations(for: messageEntity, with: message, in: context)
         syncImageRelations(for: messageEntity, with: message, in: context)
