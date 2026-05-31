@@ -110,14 +110,33 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
 extension RangeStore {
     /// Handles keeping the internal storage in sync with the document.
     mutating func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
+        guard editedRange.location >= 0, editedRange.length >= 0 else {
+            return
+        }
+
         let storageRange: Range<Int>
         let newLength: Int
 
         if editedRange.length == 0 { // Deleting, editedRange is at beginning of the range that was deleted
-            storageRange = editedRange.location..<(editedRange.location - delta)
+            let oldEndLocation = editedRange.location.subtractingReportingOverflow(delta)
+            guard !oldEndLocation.overflow, oldEndLocation.partialValue >= editedRange.location else {
+                return
+            }
+
+            storageRange = editedRange.location..<oldEndLocation.partialValue
             newLength = 0
         } else { // Replacing or inserting
-            storageRange = editedRange.location..<(editedRange.location + editedRange.length - delta)
+            let replacedLength = editedRange.length.subtractingReportingOverflow(delta)
+            guard !replacedLength.overflow, replacedLength.partialValue >= 0 else {
+                return
+            }
+
+            let oldEndLocation = editedRange.location.addingReportingOverflow(replacedLength.partialValue)
+            guard !oldEndLocation.overflow else {
+                return
+            }
+
+            storageRange = editedRange.location..<oldEndLocation.partialValue
             newLength = editedRange.length
         }
 

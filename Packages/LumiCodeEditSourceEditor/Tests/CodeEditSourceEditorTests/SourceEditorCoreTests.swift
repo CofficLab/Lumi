@@ -93,4 +93,27 @@ final class SourceEditorCoreTests: XCTestCase {
         XCTAssertNil(NSRange(location: maxUTF16Location, length: 1).treeSitterByteRange)
         XCTAssertNil(NSRange(location: Int.max, length: 1).treeSitterByteRange)
     }
+
+    func testRangeStoreIgnoresInvalidStorageEditRanges() {
+        var store = RangeStore<TestRangeStoreElement>(documentLength: 5)
+
+        store.storageUpdated(editedRange: NSRange(location: -1, length: 1), changeInLength: 0)
+        store.storageUpdated(editedRange: NSRange(location: 1, length: -1), changeInLength: 0)
+
+        XCTAssertEqual(store.length, 5)
+    }
+
+    func testRangeStoreIgnoresOverflowingStorageEditRanges() {
+        var store = RangeStore<TestRangeStoreElement>(documentLength: 5)
+
+        store.storageUpdated(editedRange: NSRange(location: Int.max, length: 1), changeInLength: 0)
+        store.storageUpdated(editedRange: NSRange(location: 1, length: Int.max), changeInLength: -1)
+
+        XCTAssertEqual(store.length, 5)
+    }
+}
+
+private struct TestRangeStoreElement: RangeStoreElement {
+    let value: Int
+    var isEmpty: Bool { false }
 }
