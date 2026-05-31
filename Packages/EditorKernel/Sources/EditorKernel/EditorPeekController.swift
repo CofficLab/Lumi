@@ -172,7 +172,8 @@ public struct EditorPeekController {
         if currentFileURL?.standardizedFileURL == url.standardizedFileURL {
             content = currentContent
         } else {
-            content = try? String(contentsOf: url, encoding: .utf8)
+            var encoding = String.Encoding.utf8
+            content = try? String(contentsOf: url, usedEncoding: &encoding)
         }
 
         guard let content else { return "Preview unavailable" }

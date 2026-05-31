@@ -2480,6 +2480,33 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func peekControllerReadsExternalUTF16Previews() throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorKernelPeek-\(UUID().uuidString).swift")
+        try "one\ntwo\nthree\n".write(to: fileURL, atomically: true, encoding: .utf16)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let location = Location(
+            uri: fileURL.absoluteString,
+            range: LSPRange(
+                start: Position(line: 1, character: 0),
+                end: Position(line: 1, character: 3)
+            )
+        )
+        let controller = EditorPeekController()
+
+        let presentation = controller.buildDefinitionPresentation(
+            location: location,
+            currentFileURL: nil,
+            projectRootPath: fileURL.deletingLastPathComponent().path,
+            currentContent: nil
+        )
+
+        #expect(presentation?.items.first?.preview == "two")
+    }
+
+    @Test
+    @MainActor
     func peekControllerRejectsSiblingProjectWithSharedPrefix() {
         let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelPeek2.swift")
         let location = Location(
