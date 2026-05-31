@@ -130,7 +130,7 @@ public actor TaskStateManager: SuperLog {
         title: String,
         detail: String? = nil,
         order: Int = 0
-    ) -> TaskItem {
+    ) throws -> TaskItem {
         let context = ModelContext(container)
         let task = TaskItem(
             conversationId: conversationId,
@@ -139,7 +139,7 @@ public actor TaskStateManager: SuperLog {
             order: order
         )
         context.insert(task)
-        try? context.save()
+        try context.save()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)创建任务：[\(order)] \(title)")
@@ -150,11 +150,11 @@ public actor TaskStateManager: SuperLog {
 
     /// 批量创建任务（用于一次性拆解后批量写入）
     @discardableResult
-    func createTasks(conversationId: String, items: [(title: String, detail: String?)]) -> [TaskItem] {
+    func createTasks(conversationId: String, items: [(title: String, detail: String?)]) throws -> [TaskItem] {
         let context = ModelContext(container)
 
         // 先清除该会话的所有旧任务
-        deleteAllForConversation(conversationId, context: context)
+        try deleteAllForConversation(conversationId, context: context, saveImmediately: false)
 
         var created: [TaskItem] = []
         for (index, item) in items.enumerated() {
@@ -168,7 +168,7 @@ public actor TaskStateManager: SuperLog {
             created.append(task)
         }
 
-        try? context.save()
+        try context.save()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)批量创建 \(items.count) 个任务 (会话: \(conversationId))")
@@ -181,7 +181,7 @@ public actor TaskStateManager: SuperLog {
 
     /// 追加任务到已有任务列表末尾（不清除旧任务）
     @discardableResult
-    func appendTasks(conversationId: String, items: [(title: String, detail: String?)]) -> [TaskItem] {
+    func appendTasks(conversationId: String, items: [(title: String, detail: String?)]) throws -> [TaskItem] {
         let context = ModelContext(container)
 
         // 获取当前最大 order
@@ -200,7 +200,7 @@ public actor TaskStateManager: SuperLog {
             created.append(task)
         }
 
-        try? context.save()
+        try context.save()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)追加 \(items.count) 个任务 (会话: \(conversationId))")
@@ -362,21 +362,27 @@ public actor TaskStateManager: SuperLog {
     /// 删除指定会话的所有任务
     func deleteAllForConversation(_ conversationId: String) {
         let context = ModelContext(container)
-        deleteAllForConversation(conversationId, context: context)
+        try? deleteAllForConversation(conversationId, context: context)
     }
 
     // MARK: - Private
 
-    private func deleteAllForConversation(_ conversationId: String, context: ModelContext) {
+    private func deleteAllForConversation(
+        _ conversationId: String,
+        context: ModelContext,
+        saveImmediately: Bool = true
+    ) throws {
         let descriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate<TaskItem> { $0.conversationId == conversationId }
         )
 
-        guard let tasks = try? context.fetch(descriptor) else { return }
+        let tasks = try context.fetch(descriptor)
         for task in tasks {
             context.delete(task)
         }
-        try? context.save()
+        if saveImmediately {
+            try context.save()
+        }
     }
 }
 

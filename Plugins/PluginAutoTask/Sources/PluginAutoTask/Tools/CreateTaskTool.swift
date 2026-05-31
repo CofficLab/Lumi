@@ -79,7 +79,16 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
         }
 
         let manager = TaskStateManager.shared
-        let createdTasks = await manager.createTasks(conversationId: conversationId, items: items)
+        let createdTasks: [TaskItem]
+        do {
+            createdTasks = try await manager.createTasks(conversationId: conversationId, items: items)
+        } catch {
+            AutoTaskPlugin.logger.error("\(Self.t)Failed to create tasks for cid=\(conversationId.prefix(8)): \(error.localizedDescription)")
+            return String(
+                format: String(localized: "Error: failed to save tasks: %@", table: "AutoTask"),
+                error.localizedDescription
+            )
+        }
 
         if Self.verbose {
             AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")

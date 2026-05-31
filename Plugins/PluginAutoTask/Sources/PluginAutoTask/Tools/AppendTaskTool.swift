@@ -77,7 +77,16 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         }
 
         let manager = TaskStateManager.shared
-        let appendedTasks = await manager.appendTasks(conversationId: conversationId, items: items)
+        let appendedTasks: [TaskItem]
+        do {
+            appendedTasks = try await manager.appendTasks(conversationId: conversationId, items: items)
+        } catch {
+            AutoTaskPlugin.logger.error("\(Self.t)Failed to append tasks for cid=\(conversationId.prefix(8)): \(error.localizedDescription)")
+            return String(
+                format: String(localized: "Error: failed to save tasks: %@", table: "AutoTask"),
+                error.localizedDescription
+            )
+        }
 
         if Self.verbose {
             AutoTaskPlugin.logger.info("\(Self.t)Appended \(items.count) tasks for cid=\(conversationId.prefix(8))")

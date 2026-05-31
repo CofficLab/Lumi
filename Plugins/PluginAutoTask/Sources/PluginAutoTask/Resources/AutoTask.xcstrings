@@ -200,6 +200,29 @@
         }
       }
     },
+    "Error: failed to save tasks: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: failed to save tasks: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误：保存任务失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤：儲存任務失敗：%@"
+          }
+        }
+      }
+    },
     "Error: no valid tasks found (each task needs a non-empty title)" : {
       "extractionState" : "manual",
       "localizations" : {
