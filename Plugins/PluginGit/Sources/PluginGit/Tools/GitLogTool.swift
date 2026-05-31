@@ -24,12 +24,12 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
         switch language {
         case .chinese:
             pathDesc = "Git 仓库路径，默认为当前工作目录"
-            countDesc = "显示的提交数量，默认 10"
+            countDesc = "显示的提交数量，默认 10，范围 1-50"
             branchDesc = "可选，查看特定分支的日志"
             fileDesc = "可选，查看特定文件的提交历史"
         case .english:
             pathDesc = "Git repository path, defaults to current working directory"
-            countDesc = "Number of commits to display, default 10"
+            countDesc = "Number of commits to display, default 10, range 1-50"
             branchDesc = "Optional, view logs for a specific branch"
             fileDesc = "Optional, view commit history for a specific file"
         }
@@ -41,8 +41,10 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
                     "description": pathDesc
                 ],
                 "count": [
-                    "type": "number",
-                    "description": countDesc
+                    "type": "integer",
+                    "description": countDesc,
+                    "minimum": 1,
+                    "maximum": 50
                 ],
                 "branch": [
                     "type": "string",
@@ -65,7 +67,7 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let path = arguments["path"]?.value as? String
-        let count = arguments["count"]?.value as? Int ?? 10
+        let count = Self.normalizedCount(arguments["count"]?.value as? Int)
         let branch = arguments["branch"]?.value as? String
         let file = arguments["file"]?.value as? String
 
@@ -79,7 +81,7 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
             
             let logs = try await GitService.shared.getLog(
                 path: validatedPath,
-                count: min(count, 50),
+                count: count,
                 branch: branch,
                 file: file
             )
@@ -107,5 +109,9 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
         }
 
         return output
+    }
+
+    static func normalizedCount(_ rawCount: Int?) -> Int {
+        min(max(rawCount ?? 10, 1), 50)
     }
 }

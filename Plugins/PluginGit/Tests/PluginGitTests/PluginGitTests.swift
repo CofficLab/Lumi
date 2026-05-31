@@ -2,7 +2,24 @@ import Testing
 @testable import PluginGit
 
 @Test func packageLoads() async throws {
-    #expect(true)
+    #expect(GitPlugin.id == "GitPlugin")
+    #expect(GitPlugin.displayName.isEmpty == false)
+    #expect(GitPlugin.iconName == "arrow.triangle.branch")
+    #expect(GitPlugin.order == 11)
+}
+
+@Test func gitLogToolNormalizesCount() throws {
+    #expect(GitLogTool.normalizedCount(nil) == 10)
+    #expect(GitLogTool.normalizedCount(-5) == 1)
+    #expect(GitLogTool.normalizedCount(0) == 1)
+    #expect(GitLogTool.normalizedCount(12) == 12)
+    #expect(GitLogTool.normalizedCount(500) == 50)
+
+    let schema = GitLogTool().inputSchema(for: .english)
+    let properties = try #require(schema["properties"] as? [String: [String: Any]])
+    #expect(properties["count"]?["type"] as? String == "integer")
+    #expect(properties["count"]?["minimum"] as? Int == 1)
+    #expect(properties["count"]?["maximum"] as? Int == 50)
 }
 
 @Test func validatePathRequiresAllowedDirectoryBoundary() throws {
