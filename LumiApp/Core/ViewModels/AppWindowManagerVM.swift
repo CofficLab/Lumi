@@ -37,6 +37,7 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
     private var containerMap: [UUID: WindowContainer] = [:]
 
     private var isTerminating = false
+    private var hasRegisteredWindow = false
 
     // MARK: - Initialization
 
@@ -58,6 +59,7 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
             return
         }
 
+        hasRegisteredWindow = true
         windowContainers.append(container)
         containerMap[container.id] = container
         setActiveWindow(container.id)
@@ -238,7 +240,16 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
     }
 
     private func persistWindowIds() {
-        CoreWindowIDStore.saveWindowIds(windowContainers.map(\.id))
+        let ids = windowContainers.map(\.id)
+        guard Self.shouldPersistWindowIds(ids, hasRegisteredWindow: hasRegisteredWindow) else {
+            return
+        }
+
+        CoreWindowIDStore.saveWindowIds(ids)
+    }
+
+    nonisolated static func shouldPersistWindowIds(_ ids: [UUID], hasRegisteredWindow: Bool) -> Bool {
+        hasRegisteredWindow || !ids.isEmpty
     }
 
     private func removeWindowObservers(for window: NSWindow) {

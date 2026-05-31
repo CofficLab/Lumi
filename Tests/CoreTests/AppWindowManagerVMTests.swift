@@ -55,5 +55,23 @@ final class AppWindowManagerVMTests: XCTestCase {
 
         XCTAssertFalse(manager.activatePreferredWindow())
     }
+
+    func testWindowIdsAreNotPersistedEmptyBeforeAnyWindowRegisters() {
+        XCTAssertFalse(
+            AppWindowManagerVM.shouldPersistWindowIds([], hasRegisteredWindow: false)
+        )
+    }
+
+    func testWindowIdsCanPersistEmptyAfterAWindowRegistered() {
+        XCTAssertTrue(
+            AppWindowManagerVM.shouldPersistWindowIds([], hasRegisteredWindow: true)
+        )
+    }
+
+    func testWindowIdsCanPersistNonEmptyBeforeRegistrationFlagUpdates() {
+        XCTAssertTrue(
+            AppWindowManagerVM.shouldPersistWindowIds([UUID()], hasRegisteredWindow: false)
+        )
+    }
 }
 #endif
