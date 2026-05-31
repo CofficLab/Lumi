@@ -313,6 +313,31 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertEqual(profile.dependencies, ["serde", "tokio"])
     }
 
+    func testCargoTomlIgnoresCommentsAndDetectsDependencyTables() throws {
+        let root = try makeProject()
+        try write(
+            """
+            [package]
+            name = "server"
+
+            [dependencies]
+            # Keep serde pinned with backend services.
+            serde = "1" # inline comment
+            "tower-http" = "0.6"
+
+            [dependencies.tokio]
+            version = "1"
+            features = ["full"]
+            """,
+            to: root.appendingPathComponent("Cargo.toml")
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "Rust")
+        XCTAssertEqual(profile.dependencies, ["serde", "tokio", "tower-http"])
+    }
+
     func testPythonRequirementsDetectsDependencies() throws {
         let root = try makeProject()
         try write(

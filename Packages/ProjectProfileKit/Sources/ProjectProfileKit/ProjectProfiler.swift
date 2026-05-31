@@ -233,13 +233,20 @@ public struct ProjectProfiler {
         var inDependencies = false
         var names: [String] = []
         for line in text.split(separator: "\n") {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let trimmed = stripTOMLComment(String(line)).trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty { continue }
             if trimmed.hasPrefix("[") {
-                inDependencies = trimmed == "[dependencies]"
+                let section = String(trimmed.dropFirst().dropLast())
+                inDependencies = section == "dependencies"
+                if section.hasPrefix("dependencies.") {
+                    names.append(String(section.dropFirst("dependencies.".count)))
+                }
                 continue
             }
-            if inDependencies, let name = trimmed.split(separator: "=").first {
-                names.append(String(name).trimmingCharacters(in: .whitespaces))
+            if inDependencies,
+               let name = tomlKeyValue(from: trimmed)?.key,
+               !name.isEmpty {
+                names.append(name.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")))
             }
         }
         return names
