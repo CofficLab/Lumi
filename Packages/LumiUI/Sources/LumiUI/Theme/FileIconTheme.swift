@@ -281,10 +281,10 @@ public enum LumiFileIconThemeBuilder {
     }
 
     private static func normalizeIcons(_ icons: [String: LumiFileIcon]) -> [String: LumiFileIcon] {
-        Dictionary(uniqueKeysWithValues: icons.map { ($0.key.lowercased(), $0.value) })
+        Dictionary(icons.map { ($0.key.lowercased(), $0.value) }, uniquingKeysWith: { _, new in new })
     }
 
     private static func normalizeFolderIcons(_ icons: [String: LumiFolderFileIcon]) -> [String: LumiFolderFileIcon] {
-        Dictionary(uniqueKeysWithValues: icons.map { ($0.key.lowercased(), $0.value) })
+        Dictionary(icons.map { ($0.key.lowercased(), $0.value) }, uniquingKeysWith: { _, new in new })
     }
 }
