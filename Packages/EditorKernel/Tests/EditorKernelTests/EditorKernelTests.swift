@@ -883,6 +883,17 @@ struct EditorKernelTests {
     }
 
     @Test
+    func findReplaceControllerTreatsStaleSelectedIndexAsNoSelection() {
+        let matches = [
+            EditorFindMatch(range: .init(location: 0, length: 3), matchedText: "foo"),
+            EditorFindMatch(range: .init(location: 8, length: 3), matchedText: "foo")
+        ]
+
+        #expect(EditorFindReplaceController.nextMatchIndex(in: matches, selectedMatchIndex: 5) == 0)
+        #expect(EditorFindReplaceController.previousMatchIndex(in: matches, selectedMatchIndex: 5) == 1)
+    }
+
+    @Test
     @MainActor
     func findControllerStateAndMatchUpdatesRemainStable() {
         let controller = EditorFindController()

@@ -53,7 +53,7 @@ public enum EditorFindReplaceController {
         selectedMatchIndex: Int?
     ) -> Int? {
         guard !matches.isEmpty else { return nil }
-        guard let selectedMatchIndex else { return 0 }
+        guard let selectedMatchIndex, matches.indices.contains(selectedMatchIndex) else { return 0 }
         return (selectedMatchIndex + 1) % matches.count
     }
 
@@ -62,7 +62,7 @@ public enum EditorFindReplaceController {
         selectedMatchIndex: Int?
     ) -> Int? {
         guard !matches.isEmpty else { return nil }
-        guard let selectedMatchIndex else { return matches.count - 1 }
+        guard let selectedMatchIndex, matches.indices.contains(selectedMatchIndex) else { return matches.count - 1 }
         return (selectedMatchIndex - 1 + matches.count) % matches.count
     }
 
