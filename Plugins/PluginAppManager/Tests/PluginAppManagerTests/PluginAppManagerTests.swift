@@ -44,6 +44,21 @@ struct PluginAppManagerTests {
     }
 
     @Test
+    func appCleanerReturnsNoRelatedFilesWhenLibraryDirectoryIsUnavailable() {
+        let helper = AppCleanerHelper(libraryDirectoryURL: nil)
+        let app = AppModel(
+            bundleURL: URL(fileURLWithPath: "/Applications/Test.app"),
+            name: "Test",
+            identifier: "com.example.test",
+            version: "1.0",
+            iconFileName: nil,
+            size: 0
+        )
+
+        #expect(helper.scanRelatedFiles(for: app).isEmpty)
+    }
+
+    @Test
     func cacheStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("app-manager-cache-\(UUID().uuidString)", isDirectory: true)

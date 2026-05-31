@@ -5,7 +5,16 @@ import SuperLogKit
 class AppCleanerHelper: SuperLog {
     nonisolated static let emoji = "🗑️"
     nonisolated static let verbose: Bool = true
-    private let fileManager = FileManager.default
+    private let fileManager: FileManager
+    private let libraryDirectoryURL: URL?
+
+    init(
+        fileManager: FileManager = .default,
+        libraryDirectoryURL: URL? = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+    ) {
+        self.fileManager = fileManager
+        self.libraryDirectoryURL = libraryDirectoryURL
+    }
 
     // 常见的关联文件搜索路径
     private let searchPaths: [FileManager.SearchPathDirectory] = [
@@ -39,7 +48,14 @@ class AppCleanerHelper: SuperLog {
         }
 
         // 1. 扫描 Application Support 和 Caches
-        let userLibURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first!
+        guard let userLibURL = libraryDirectoryURL else {
+            if Self.verbose {
+                if AppManagerPlugin.verbose {
+                    AppManagerPlugin.logger.warning("\(self.t) 无法定位用户 Library 目录，跳过关联文件扫描")
+                }
+            }
+            return []
+        }
 
         let targetDirs: [String] = [
             "Application Support",
