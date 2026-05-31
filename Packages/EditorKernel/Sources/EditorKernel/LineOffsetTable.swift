@@ -71,13 +71,29 @@ public struct LineOffsetTable: Sendable {
     ///   - newContent: The new content that was inserted (if any)
     /// - Returns: A new LineOffsetTable with the updates applied
     public func update(editRange: NSRange, changeInLength: Int, newContent: String? = nil) -> LineOffsetTable {
+        guard editRange.location >= 0,
+              editRange.length >= 0,
+              editRange.location <= totalUTF16Length,
+              editRange.location <= Int.max - editRange.length else {
+            return self
+        }
+
+        let editEndLocation = editRange.location + editRange.length
+        guard editEndLocation <= totalUTF16Length else {
+            return self
+        }
+
+        let (updatedTotalLength, totalLengthOverflow) = totalUTF16Length.addingReportingOverflow(changeInLength)
+        guard !totalLengthOverflow, updatedTotalLength >= 0 else {
+            return self
+        }
+
         // Find the line containing the edit start
         guard let startLine = lineContaining(utf16Offset: editRange.location) else {
             return self
         }
         
         // Find the line containing the edit end
-        let editEndLocation = editRange.location + editRange.length
         let endLine = lineContaining(utf16Offset: editEndLocation) ?? startLine
         
         // Calculate new line starts
@@ -119,7 +135,7 @@ public struct LineOffsetTable: Sendable {
         
         return LineOffsetTable(
             lineStarts: newLineStarts,
-            totalUTF16Length: totalUTF16Length + changeInLength
+            totalUTF16Length: updatedTotalLength
         )
     }
 }

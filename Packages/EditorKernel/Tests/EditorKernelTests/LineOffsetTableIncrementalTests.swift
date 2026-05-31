@@ -44,6 +44,32 @@ struct LineOffsetTableIncrementalTests {
         #expect(table.totalUTF16Length == 6)
     }
 
+    @Test
+    func updateRejectsInvalidEditRangesWithoutChangingTable() {
+        let table = LineOffsetTable(content: "abc\ndef\n")
+
+        let negativeLength = table.update(
+            editRange: NSRange(location: 1, length: -1),
+            changeInLength: 0
+        )
+        #expect(negativeLength.lineCount == table.lineCount)
+        #expect(negativeLength.totalUTF16Length == table.totalUTF16Length)
+
+        let overflowingRange = table.update(
+            editRange: NSRange(location: Int.max, length: 1),
+            changeInLength: 1
+        )
+        #expect(overflowingRange.lineCount == table.lineCount)
+        #expect(overflowingRange.totalUTF16Length == table.totalUTF16Length)
+
+        let negativeTotal = table.update(
+            editRange: NSRange(location: 0, length: 1),
+            changeInLength: -100
+        )
+        #expect(negativeTotal.lineCount == table.lineCount)
+        #expect(negativeTotal.totalUTF16Length == table.totalUTF16Length)
+    }
+
     // MARK: - Incremental update: single character insertion (no newline)
 
     @Test
