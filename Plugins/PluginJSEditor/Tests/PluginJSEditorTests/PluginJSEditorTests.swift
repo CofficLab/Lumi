@@ -75,3 +75,30 @@ import Foundation
 
     #expect(sourceMapURL.lastPathComponent == "bundle.js.map")
 }
+
+@Test func sourceMapResolverResolvesRelativeMappingURLAgainstGeneratedFile() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let generatedURL = directory.appendingPathComponent("dist/bundle.js")
+    try FileManager.default.createDirectory(at: generatedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try """
+    console.log("ready");
+    //# sourceMappingURL=maps/bundle.js.map
+    """.write(to: generatedURL, atomically: true, encoding: .utf8)
+
+    let sourceMapURL = try #require(SourceMapResolver.sourceMapURL(for: generatedURL))
+
+    #expect(sourceMapURL.isFileURL)
+    #expect(sourceMapURL.path == generatedURL.deletingLastPathComponent().appendingPathComponent("maps/bundle.js.map").path)
+}
+
+@Test func sourceMapResolverKeepsAbsoluteMappingURL() throws {
+    let generatedURL = URL(fileURLWithPath: "/tmp/dist/bundle.js")
+
+    let sourceMapURL = try #require(SourceMapResolver.resolveSourceMapTail("https://example.com/bundle.js.map", relativeTo: generatedURL))
+
+    #expect(sourceMapURL.absoluteString == "https://example.com/bundle.js.map")
+}

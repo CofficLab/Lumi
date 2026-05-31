@@ -19,6 +19,18 @@ public enum SourceMapResolver {
             .map(String.init)?
             .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
         guard let tail else { return nil }
-        return URL(string: tail) ?? generatedFileURL.deletingLastPathComponent().appendingPathComponent(tail)
+        return resolveSourceMapTail(tail, relativeTo: generatedFileURL)
+    }
+
+    static func resolveSourceMapTail(_ tail: String, relativeTo generatedFileURL: URL) -> URL? {
+        if tail.hasPrefix("/") {
+            return URL(fileURLWithPath: tail)
+        }
+
+        if let url = URL(string: tail), url.scheme != nil {
+            return url
+        }
+
+        return generatedFileURL.deletingLastPathComponent().appendingPathComponent(tail)
     }
 }
