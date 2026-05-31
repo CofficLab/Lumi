@@ -16,6 +16,12 @@ actor ContextService: Sendable, SuperLog {
         let recentCommits: [String]
     }
 
+    struct CapturedProcessResult: Sendable, Equatable {
+        let terminationStatus: Int32
+        let stdout: String
+        let stderr: String
+    }
+
     private(set) var projectRoot: URL?
     private(set) var openFiles: [URL] = []
     private var filePreviewCache: [String: CachedFilePreview] = [:]
@@ -180,26 +186,64 @@ actor ContextService: Sendable, SuperLog {
     }
 
     private func runGit(_ args: [String], in root: URL) -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["git"] + args
-        process.currentDirectoryURL = root
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
+        let result: CapturedProcessResult
         do {
-            try process.run()
-            process.waitUntilExit()
+            result = try Self.runProcessCapturingOutput(
+                executableURL: URL(fileURLWithPath: "/usr/bin/env"),
+                arguments: ["git"] + args,
+                currentDirectoryURL: root
+            )
         } catch {
             AppLogger.core.warning("\(self.t)Git command failed to start: \(args.joined(separator: " "))")
             return nil
         }
 
-        guard process.terminationStatus == 0 else { return nil }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
+        guard result.terminationStatus == 0 else { return nil }
+        return result.stdout
+    }
+
+    nonisolated static func runProcessCapturingOutput(
+        executableURL: URL,
+        arguments: [String],
+        currentDirectoryURL: URL?
+    ) throws -> CapturedProcessResult {
+        let process = Process()
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.currentDirectoryURL = currentDirectoryURL
+
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiContextProcess-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: outputDirectory) }
+
+        let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
+        let stderrURL = outputDirectory.appendingPathComponent("stderr.log")
+        FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
+        FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
+
+        let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
+        let stderrHandle = try FileHandle(forWritingTo: stderrURL)
+        process.standardOutput = stdoutHandle
+        process.standardError = stderrHandle
+
+        do {
+            try process.run()
+        } catch {
+            try? stdoutHandle.close()
+            try? stderrHandle.close()
+            throw error
+        }
+
+        process.waitUntilExit()
+        try? stdoutHandle.close()
+        try? stderrHandle.close()
+
+        return CapturedProcessResult(
+            terminationStatus: process.terminationStatus,
+            stdout: (try? String(contentsOf: stdoutURL, encoding: .utf8)) ?? "",
+            stderr: (try? String(contentsOf: stderrURL, encoding: .utf8)) ?? ""
+        )
     }
 
     private func getFilePreview(for url: URL) -> String? {
