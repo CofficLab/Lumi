@@ -103,6 +103,48 @@ import Testing
     #expect(items.first?.content.hasPrefix(imageDirectory.path) == true)
 }
 
+@MainActor
+@Test func monitorTreatsFileURLStringsAsFiles() throws {
+    let firstURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-url-\(UUID().uuidString).txt")
+    let secondURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-path-\(UUID().uuidString).txt")
+    try "first".write(to: firstURL, atomically: true, encoding: .utf8)
+    try "second".write(to: secondURL, atomically: true, encoding: .utf8)
+    defer {
+        try? FileManager.default.removeItem(at: firstURL)
+        try? FileManager.default.removeItem(at: secondURL)
+    }
+
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("\(firstURL.absoluteString)\n\(secondURL.path)", forType: .string)
+
+    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+
+    #expect(items.map(\.type) == [.file, .file])
+    #expect(items.map(\.content) == [firstURL.path, secondURL.path])
+}
+
+@MainActor
+@Test func monitorKeepsMixedPathTextAsText() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard-mixed-\(UUID().uuidString).txt")
+    try "file".write(to: fileURL, atomically: true, encoding: .utf8)
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let text = "\(fileURL.path)\nnot a file path"
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString(text, forType: .string)
+
+    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+
+    #expect(items.count == 1)
+    #expect(items.first?.type == .text)
+    #expect(items.first?.content == text)
+}
+
 @Test func historyStoreFallsBackWhenDatabaseDirectoryIsBlocked() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-store-\(UUID().uuidString)", isDirectory: true)

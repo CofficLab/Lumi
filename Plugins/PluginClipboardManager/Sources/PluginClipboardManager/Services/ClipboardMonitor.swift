@@ -91,10 +91,46 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         }
 
         if let str = pasteboard.string(forType: .string), !str.isEmpty {
+            if let fileItems = fileItems(fromString: str, appName: appName), !fileItems.isEmpty {
+                return fileItems
+            }
             return [ClipboardItem(type: .text, content: str, appName: appName)]
         }
 
         return []
+    }
+
+    private static func fileItems(fromString string: String, appName: String?) -> [ClipboardItem]? {
+        let lines = string
+            .split(whereSeparator: \.isNewline)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !lines.isEmpty else { return nil }
+
+        var urls: [URL] = []
+        for line in lines {
+            guard let url = fileURL(fromClipboardString: line),
+                  FileManager.default.fileExists(atPath: url.path) else {
+                return nil
+            }
+            urls.append(url)
+        }
+
+        return urls.map { ClipboardItem(type: .file, content: $0.path, appName: appName) }
+    }
+
+    private static func fileURL(fromClipboardString string: String) -> URL? {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), url.isFileURL {
+            return url
+        }
+        if trimmed.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmed)
+        }
+        if trimmed.hasPrefix("~") {
+            return URL(fileURLWithPath: NSString(string: trimmed).expandingTildeInPath)
+        }
+        return nil
     }
 
     private static func saveImage(_ image: NSImage, to directory: URL) -> String? {
