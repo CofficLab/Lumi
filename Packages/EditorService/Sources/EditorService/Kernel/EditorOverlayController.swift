@@ -433,6 +433,10 @@ final class EditorOverlayController {
         visibleRect: CGRect
     ) -> [EditorMultiCursorHighlight] {
         selections.compactMap { selection in
+            guard selection.location >= 0, selection.length >= 0 else {
+                return nil
+            }
+
             if selection.length == 0 {
                 guard let caretRect = textView.layoutManager.rectForOffset(selection.location) else {
                     return nil
@@ -465,13 +469,18 @@ final class EditorOverlayController {
         in textView: TextView,
         visibleRect: CGRect
     ) -> CGRect? {
+        guard range.location >= 0, range.length >= 0 else {
+            return nil
+        }
+
         guard let startRect = textView.layoutManager.rectForOffset(range.location) else {
             return nil
         }
 
         let contentRect: CGRect
         if range.length > 0,
-           let endRect = textView.layoutManager.rectForOffset(max(range.location + range.length - 1, range.location)) {
+           let endOffset = Self.inclusiveEndOffset(for: range),
+           let endRect = textView.layoutManager.rectForOffset(endOffset) {
             if abs(startRect.minY - endRect.minY) < 1.0 {
                 contentRect = CGRect(
                     x: startRect.minX,
@@ -494,6 +503,24 @@ final class EditorOverlayController {
             width: contentRect.width,
             height: contentRect.height
         )
+    }
+
+    static func inclusiveEndOffset(for range: EditorRange) -> Int? {
+        guard range.location >= 0, range.length > 0 else {
+            return nil
+        }
+
+        let end = range.location.addingReportingOverflow(range.length)
+        guard !end.overflow else {
+            return nil
+        }
+
+        let endOffset = end.partialValue - 1
+        guard endOffset >= range.location else {
+            return nil
+        }
+
+        return endOffset
     }
 
     private func buildInlinePresentation(

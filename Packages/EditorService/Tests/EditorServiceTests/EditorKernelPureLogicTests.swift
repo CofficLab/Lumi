@@ -224,6 +224,18 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertEqual(state.cursorPositions.first?.end, nil)
     }
 
+    func testEditorOverlayControllerRejectsInvalidSelectionEndOffsets() {
+        XCTAssertEqual(
+            EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: 3, length: 4)),
+            6
+        )
+        XCTAssertNil(EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: 3, length: 0)))
+        XCTAssertNil(EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: -1, length: 4)))
+        XCTAssertNil(EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: 3, length: -1)))
+        XCTAssertNil(EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: Int.max, length: 1)))
+        XCTAssertNil(EditorOverlayController.inclusiveEndOffset(for: EditorRange(location: 1, length: Int.max)))
+    }
+
     func testFindReplaceTransactionBuilderReplaceCurrentPreservesUppercaseMatch() {
         let state = EditorFindReplaceState(
             replaceText: "hello",
