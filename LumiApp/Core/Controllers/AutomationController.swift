@@ -163,7 +163,11 @@ final class AutomationController: SuperLog {
             return
         }
 
-        let url = URL(fileURLWithPath: path)
+        guard let url = Self.existingRegularFileURL(path: path) else {
+            Self.logger.warning("🤖 editor.openFile: path is not an existing file: \(path, privacy: .public)")
+            return
+        }
+
         Self.logger.info("🤖 Opening file: \(url.path, privacy: .public)")
 
         ensureEditorPanelActive()
@@ -176,6 +180,19 @@ final class AutomationController: SuperLog {
         editorService.open(at: url)
 
         Self.logger.info("🤖 File opened: \(url.lastPathComponent, privacy: .public)")
+    }
+
+    static func existingRegularFileURL(path: String, fileManager: FileManager = .default) -> URL? {
+        let expandedPath = (path as NSString).expandingTildeInPath
+        guard !expandedPath.isEmpty else { return nil }
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDirectory),
+              !isDirectory.boolValue else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: expandedPath).standardizedFileURL
     }
 
     /// 模拟用户选择当前窗口项目并触发持久化
