@@ -127,6 +127,23 @@ import Testing
 }
 
 @MainActor
+@Test func monitorTreatsUnescapedFileURLStringsAsFiles() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("clipboard url \(UUID().uuidString).txt")
+    try "file".write(to: fileURL, atomically: true, encoding: .utf8)
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("file://\(fileURL.path)", forType: .string)
+
+    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+
+    #expect(items.map(\.type) == [.file])
+    #expect(items.map(\.content) == [fileURL.path])
+}
+
+@MainActor
 @Test func monitorKeepsMixedPathTextAsText() throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-mixed-\(UUID().uuidString).txt")
