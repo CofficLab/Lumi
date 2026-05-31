@@ -254,3 +254,65 @@ import Foundation
     #expect(roots.contains(previousRoot.standardizedFileURL.path))
     #expect(!roots.contains(unrelatedRoot.standardizedFileURL.path))
 }
+
+@Test func stringCatalogSourceReadsUTF16CatalogFiles() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PreviewStringCatalog-\(UUID().uuidString).xcstrings")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    try sampleStringCatalogWithStaleEntry.write(to: fileURL, atomically: true, encoding: .utf16)
+
+    let source = try EditorPreviewViewModel.stringCatalogSource(from: fileURL)
+
+    #expect(source.contains("\"Stale\""))
+}
+
+@MainActor
+@Test func cleanCurrentStringCatalogReadsUTF16FilesWhenEditorTextIsUnavailable() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PreviewStringCatalogClean-\(UUID().uuidString).xcstrings")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    try sampleStringCatalogWithStaleEntry.write(to: fileURL, atomically: true, encoding: .utf16)
+
+    let editorService = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
+    let removedCount = try EditorPreviewViewModel().cleanCurrentStringCatalog(
+        fileURL: fileURL,
+        sourceText: nil,
+        editorService: editorService
+    )
+    let cleanedSource = try String(contentsOf: fileURL, encoding: .utf8)
+
+    #expect(removedCount == 1)
+    #expect(!cleanedSource.contains("\"Stale\""))
+    #expect(cleanedSource.contains("\"Active\""))
+}
+
+private let sampleStringCatalogWithStaleEntry = """
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Active": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        }
+      }
+    },
+    "Stale": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stale"
+          }
+        }
+      }
+    }
+  }
+}
+"""

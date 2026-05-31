@@ -1134,7 +1134,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         if let sourceText {
             source = sourceText
         } else {
-            source = try String(contentsOf: fileURL, encoding: .utf8)
+            source = try Self.stringCatalogSource(from: fileURL)
         }
         let result = try StringCatalogCleaner.removingStaleEntries(from: source)
         guard result.removedCount > 0 else {
@@ -1237,7 +1237,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             if standardizedURL == currentFileURL, let currentSourceText {
                 source = currentSourceText
             } else {
-                source = try String(contentsOf: fileURL, encoding: .utf8)
+                source = try stringCatalogSource(from: fileURL)
             }
 
             let result = try StringCatalogCleaner.removingStaleEntries(from: source)
@@ -1259,6 +1259,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             ),
             currentCleanedSource: currentCleanedSource
         )
+    }
+
+    nonisolated static func stringCatalogSource(from fileURL: URL) throws -> String {
+        var detectedEncoding = String.Encoding.utf8
+        return try String(contentsOf: fileURL, usedEncoding: &detectedEncoding)
     }
 
     // MARK: - 截图
