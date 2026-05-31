@@ -30,8 +30,10 @@ let package = Package(
             exclude: [
                 "Package.swift",
                 "Mermaid",
+                "README.md",
                 "Tests",
-                "Views"
+                "Views",
+                "merged.profdata"
             ],
             sources: [
                 "Models",
@@ -49,7 +51,9 @@ let package = Package(
                 "Package.swift",
                 "Tests",
                 "Models",
-                "Parsers"
+                "Parsers",
+                "README.md",
+                "merged.profdata"
             ],
             sources: [
                 "Mermaid",
