@@ -1,6 +1,10 @@
 import Foundation
 
 enum MemoryToolInput {
+    static let defaultMaxResults = 5
+    static let minMaxResults = 0
+    static let maxMaxResults = 20
+
     static func string(_ value: Any?) -> String? {
         guard let string = value as? String else { return nil }
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -15,8 +19,13 @@ enum MemoryToolInput {
         return scope
     }
 
-    static func maxResults(_ value: Any?, default defaultValue: Int = 5, upperBound: Int = 20) -> Int {
+    static func maxResults(
+        _ value: Any?,
+        default defaultValue: Int = defaultMaxResults,
+        lowerBound: Int = minMaxResults,
+        upperBound: Int = maxMaxResults
+    ) -> Int {
         let requested = value as? Int ?? defaultValue
-        return min(max(requested, 0), upperBound)
+        return min(max(requested, lowerBound), upperBound)
     }
 }

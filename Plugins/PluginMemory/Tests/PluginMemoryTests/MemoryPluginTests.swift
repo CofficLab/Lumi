@@ -49,6 +49,11 @@ struct PluginMemoryTests {
 
         let required = try #require(schema["required"] as? [String])
         #expect(required == ["query"])
+
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        #expect(properties["max_results"]?["type"] as? String == "integer")
+        #expect(properties["max_results"]?["minimum"] as? Int == MemoryToolInput.minMaxResults)
+        #expect(properties["max_results"]?["maximum"] as? Int == MemoryToolInput.maxMaxResults)
     }
 
     @Test("all tools have low risk level")
@@ -96,10 +101,10 @@ struct PluginMemoryTests {
 
     @Test("recall max results are clamped to a safe range")
     func recallMaxResultsAreClamped() {
-        #expect(MemoryToolInput.maxResults(-3) == 0)
+        #expect(MemoryToolInput.maxResults(-3) == MemoryToolInput.minMaxResults)
         #expect(MemoryToolInput.maxResults(8) == 8)
-        #expect(MemoryToolInput.maxResults(99) == 20)
-        #expect(MemoryToolInput.maxResults(nil) == 5)
+        #expect(MemoryToolInput.maxResults(99) == MemoryToolInput.maxMaxResults)
+        #expect(MemoryToolInput.maxResults(nil) == MemoryToolInput.defaultMaxResults)
     }
 
     @Test("local store reports save result and reloads values")
