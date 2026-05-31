@@ -62,8 +62,6 @@ extension ToolContext {
     }
 }
 
-extension EditorExtensionRegistry: LumiCoreKit.EditorExtensionRegistryProtocol {}
-
 struct PackageMessageRendererAdapter: SuperMessageRenderer {
     private let renderer: any LumiCoreKit.SuperMessageRenderer
 
