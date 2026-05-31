@@ -20,9 +20,17 @@ struct ChatInputEditorRulesTests {
 
         #expect(ChatInputEditorRules.utf16ToSwiftIndex(0, in: text) == 0)
         #expect(ChatInputEditorRules.utf16ToSwiftIndex(1, in: text) == 1)
-        #expect(ChatInputEditorRules.utf16ToSwiftIndex(2, in: text) == 3)
+        #expect(ChatInputEditorRules.utf16ToSwiftIndex(2, in: text) == 1)
         #expect(ChatInputEditorRules.utf16ToSwiftIndex(3, in: text) == 2)
         #expect(ChatInputEditorRules.utf16ToSwiftIndex(4, in: text) == 3)
+    }
+
+    @Test("UTF-16 offsets inside composed characters stay near the cursor")
+    func utf16ToSwiftIndexInsideComposedCharacter() {
+        let text = "cafe\u{301} noir"
+
+        #expect(ChatInputEditorRules.utf16ToSwiftIndex(4, in: text) == 3)
+        #expect(ChatInputEditorRules.utf16ToSwiftIndex(5, in: text) == 4)
     }
 
     @Test("Index conversion clamps out-of-range input")

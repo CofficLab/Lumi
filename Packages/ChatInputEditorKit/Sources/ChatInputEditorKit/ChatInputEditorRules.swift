@@ -20,7 +20,16 @@ public enum ChatInputEditorRules {
         guard let utf16Target = string.utf16.index(utf16Start, offsetBy: utf16Clamped, limitedBy: string.utf16.endIndex) else {
             return string.count
         }
-        let swiftTarget = String.Index(utf16Target, within: string) ?? string.endIndex
+
+        let swiftTarget: String.Index
+        if let exactIndex = String.Index(utf16Target, within: string) {
+            swiftTarget = exactIndex
+        } else {
+            swiftTarget = string.indices.last { index in
+                string.utf16.distance(from: string.startIndex, to: index) <= utf16Clamped
+            } ?? string.startIndex
+        }
+
         return string.distance(from: string.startIndex, to: swiftTarget)
     }
 
