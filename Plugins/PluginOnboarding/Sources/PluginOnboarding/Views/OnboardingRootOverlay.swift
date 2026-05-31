@@ -114,6 +114,7 @@ public final class OnboardingPluginStore {
     private let fileManager = FileManager.default
     private let settingsURL: URL
     private let stateFileURL: URL
+    private let corruptStateFileURL: URL
 
     // MARK: - 初始化
 
@@ -122,12 +123,14 @@ public final class OnboardingPluginStore {
             .appendingPathComponent(pluginId, isDirectory: true)
         self.settingsURL = root.appendingPathComponent("settings", isDirectory: true)
         self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
+        self.corruptStateFileURL = settingsURL.appendingPathComponent("onboarding_state.corrupt.plist")
         prepareDirectories()
     }
 
     init(settingsDirectory: URL) {
         self.settingsURL = settingsDirectory
         self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
+        self.corruptStateFileURL = settingsURL.appendingPathComponent("onboarding_state.corrupt.plist")
         prepareDirectories()
     }
 
@@ -163,11 +166,13 @@ public final class OnboardingPluginStore {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 Self.logger.error("Read onboarding state failed: root plist is not a dictionary")
+                quarantineCorruptState()
                 return false
             }
             return dict["completed"] as? Bool ?? false
         } catch {
             Self.logger.error("Read onboarding state failed: \(error.localizedDescription)")
+            quarantineCorruptState()
             return false
         }
     }
@@ -201,6 +206,19 @@ public final class OnboardingPluginStore {
             Self.logger.error("Persist onboarding state failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tempURL)
             return false
+        }
+    }
+
+    private func quarantineCorruptState() {
+        guard fileManager.fileExists(atPath: stateFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptStateFileURL.path) {
+                try fileManager.removeItem(at: corruptStateFileURL)
+            }
+            try fileManager.moveItem(at: stateFileURL, to: corruptStateFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt onboarding state failed: \(error.localizedDescription)")
         }
     }
 }

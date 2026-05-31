@@ -19,6 +19,27 @@ import Testing
     #expect(reloadedStore.completed == true)
 }
 
+@Test func onboardingStoreQuarantinesInvalidStateFileAndRecovers() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("OnboardingStore-Invalid-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let stateURL = directory.appendingPathComponent("onboarding_state.plist")
+    let corruptURL = directory.appendingPathComponent("onboarding_state.corrupt.plist")
+    let invalidData = Data("not a plist".utf8)
+    try invalidData.write(to: stateURL)
+
+    let store = OnboardingPluginStore(settingsDirectory: directory)
+
+    #expect(store.completed == false)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect(store.setCompleted(true) == true)
+
+    let reloadedStore = OnboardingPluginStore(settingsDirectory: directory)
+    #expect(reloadedStore.completed == true)
+}
+
 @Test func onboardingStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingStore-Blocked-\(UUID().uuidString)", isDirectory: true)
