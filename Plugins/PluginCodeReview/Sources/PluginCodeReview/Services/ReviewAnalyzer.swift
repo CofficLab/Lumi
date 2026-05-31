@@ -135,7 +135,7 @@ public struct ReviewAnalyzer: Sendable {
             }
 
             for file in files where file.pathExtension == "md" {
-                guard let content = try? String(contentsOf: file, encoding: .utf8) else { continue }
+                guard let content = try? ReviewTextReader.read(file) else { continue }
                 sections.append("## \(dir)/\(file.lastPathComponent)\n\(content)")
             }
         }
