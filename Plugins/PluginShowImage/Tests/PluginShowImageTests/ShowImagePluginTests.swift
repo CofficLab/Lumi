@@ -4,7 +4,7 @@ import LumiCoreKit
 import Testing
 @testable import PluginShowImage
 
-@Suite("PluginShowImage")
+@Suite("PluginShowImage", .serialized)
 struct PluginShowImageTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
@@ -32,8 +32,11 @@ struct PluginShowImageTests {
         let required = try #require(schema["required"] as? [String])
         #expect(required == ["source"])
 
-        let properties = try #require(schema["properties"] as? [String: [String: String]])
-        #expect(properties["source"]?["type"] == "string")
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        #expect(properties["source"]?["type"] as? String == "string")
+        #expect(properties["maxWidth"]?["type"] as? String == "integer")
+        #expect(properties["maxWidth"]?["minimum"] as? Int == ShowImageTool.minMaxWidth)
+        #expect(properties["maxWidth"]?["maximum"] as? Int == ShowImageTool.maxMaxWidth)
     }
 
     @Test("tool risk level is low")
@@ -41,6 +44,15 @@ struct PluginShowImageTests {
         let tool = ShowImageTool()
 
         #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
+    }
+
+    @Test("max width is clamped to supported range")
+    func maxWidthIsClampedToSupportedRange() {
+        #expect(ShowImageTool.normalizedMaxWidth(nil) == ShowImageTool.defaultMaxWidth)
+        #expect(ShowImageTool.normalizedMaxWidth(-1) == ShowImageTool.minMaxWidth)
+        #expect(ShowImageTool.normalizedMaxWidth(50) == ShowImageTool.minMaxWidth)
+        #expect(ShowImageTool.normalizedMaxWidth(320) == 320)
+        #expect(ShowImageTool.normalizedMaxWidth(9_999) == ShowImageTool.maxMaxWidth)
     }
 
     @MainActor
@@ -57,6 +69,25 @@ struct PluginShowImageTests {
 
         #expect(result == "Image displayed successfully. Source: https://example.com/image.png")
         #expect(ShowImageState.shared.displayItem?.source == .remote("https://example.com/image.png"))
+        ShowImageState.shared.clear()
+    }
+
+    @MainActor
+    @Test("tool clamps displayed remote max width")
+    func toolClampsDisplayedRemoteMaxWidth() async throws {
+        ShowImageState.shared.clear()
+        let tool = ShowImageTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_2", toolName: tool.name)
+
+        _ = try await tool.execute(
+            arguments: [
+                "source": ToolArgument("https://example.com/image.png"),
+                "maxWidth": ToolArgument(9_999),
+            ],
+            context: context
+        )
+
+        #expect(ShowImageState.shared.displayItem?.maxWidth == ShowImageTool.maxMaxWidth)
         ShowImageState.shared.clear()
     }
 

@@ -68,6 +68,9 @@ public final class ShowImageState: ObservableObject {
 public struct ShowImageTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🖼️"
     public nonisolated static let verbose: Bool = true
+    static let defaultMaxWidth = 400
+    static let minMaxWidth = 100
+    static let maxMaxWidth = 800
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")
 
     public let name = "show_image"
@@ -100,8 +103,10 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
                     "description": "Optional caption/description for the image, displayed below the image",
                 ],
                 "maxWidth": [
-                    "type": "number",
+                    "type": "integer",
                     "description": "Optional maximum width of the displayed image in pixels (default: 400, range: 100-800)",
+                    "minimum": Self.minMaxWidth,
+                    "maximum": Self.maxMaxWidth,
                 ],
             ],
             "required": ["source"],
@@ -127,8 +132,7 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
 
         let title = (arguments["title"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let caption = (arguments["caption"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        var maxWidth = arguments["maxWidth"]?.value as? Int ?? 400
-        maxWidth = max(100, min(800, maxWidth))
+        let maxWidth = Self.normalizedMaxWidth(arguments["maxWidth"]?.value as? Int)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🖼️ 显示图片：\(source)")
@@ -163,5 +167,9 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
         }
 
         return "Image displayed successfully. Source: \(source)"
+    }
+
+    static func normalizedMaxWidth(_ rawMaxWidth: Int?) -> Int {
+        min(max(rawMaxWidth ?? defaultMaxWidth, minMaxWidth), maxMaxWidth)
     }
 }
