@@ -123,6 +123,10 @@ public final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog
                     outputParts.append("[Image: \(mimeType)]")
                 case .resource(let uri, _, _):
                     outputParts.append("[Resource: \(uri)]")
+                case .resourceLink(let uri, let name, let title, let description, let mimeType, _):
+                    let label = title ?? name
+                    let details = [description, mimeType].compactMap { $0 }.joined(separator: ", ")
+                    outputParts.append(details.isEmpty ? "[Resource: \(label) \(uri)]" : "[Resource: \(label) \(uri) - \(details)]")
                 case .audio(_, let mimeType, _, _):
                     outputParts.append("[Audio: \(mimeType)]")
                 @unknown default:
