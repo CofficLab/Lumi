@@ -55,6 +55,13 @@ import Testing
     #expect(store.completed == false)
 }
 
+@Test func onboardingPageIndexingClampsInvalidSteps() {
+    #expect(OnboardingPageIndexing.clampedIndex(-2, pageCount: 5) == 0)
+    #expect(OnboardingPageIndexing.clampedIndex(2, pageCount: 5) == 2)
+    #expect(OnboardingPageIndexing.clampedIndex(7, pageCount: 5) == 4)
+    #expect(OnboardingPageIndexing.clampedIndex(7, pageCount: 0) == 0)
+}
+
 @MainActor
 @Test func onboardingViewModelKeepsOnboardingVisibleWhenCompletionCannotBeSaved() throws {
     let tempRoot = FileManager.default.temporaryDirectory
@@ -71,4 +78,21 @@ import Testing
 
     #expect(viewModel.isPresentingOnboarding == true)
     #expect(viewModel.persistenceErrorMessage?.isEmpty == false)
+}
+
+@MainActor
+@Test func onboardingViewModelIgnoresRepeatedNextStepDuringTransition() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("OnboardingViewModel-RepeatedNext-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let viewModel = OnboardingPluginViewModel(store: OnboardingPluginStore(settingsDirectory: directory))
+    viewModel.start()
+
+    viewModel.nextStep(totalSteps: 2)
+    viewModel.nextStep(totalSteps: 2)
+    try await Task.sleep(nanoseconds: 250_000_000)
+
+    #expect(viewModel.currentStep == 1)
+    #expect(viewModel.isPresentingOnboarding == true)
 }

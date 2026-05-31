@@ -9,6 +9,13 @@ private enum OnboardingNotification {
     public static let show = Notification.Name("Onboarding.Show")
 }
 
+enum OnboardingPageIndexing {
+    static func clampedIndex(_ index: Int, pageCount: Int) -> Int {
+        guard pageCount > 0 else { return 0 }
+        return min(max(index, 0), pageCount - 1)
+    }
+}
+
 // MARK: - ViewModel
 
 @MainActor
@@ -75,7 +82,9 @@ public final class OnboardingPluginViewModel: ObservableObject {
             complete()
             return
         }
+        guard !isTransitioning else { return }
 
+        currentStep = OnboardingPageIndexing.clampedIndex(currentStep, pageCount: totalSteps)
         if currentStep >= totalSteps - 1 {
             complete()
         } else {
@@ -83,7 +92,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
                 isTransitioning = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                self.currentStep += 1
+                self.currentStep = OnboardingPageIndexing.clampedIndex(self.currentStep + 1, pageCount: totalSteps)
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     self.isTransitioning = false
                 }
@@ -92,12 +101,13 @@ public final class OnboardingPluginViewModel: ObservableObject {
     }
 
     public func previousStep() {
+        guard !isTransitioning else { return }
         guard currentStep > 0 else { return }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             isTransitioning = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            self.currentStep -= 1
+            self.currentStep = max(self.currentStep - 1, 0)
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 self.isTransitioning = false
             }
@@ -434,8 +444,9 @@ private struct OnboardingSheetView: View {
     // MARK: - Body
 
     public var body: some View {
-        let page = pages[viewModel.currentStep]
-        let isLastPage = viewModel.currentStep == pages.count - 1
+        let pageIndex = safePageIndex
+        let page = pages[pageIndex]
+        let isLastPage = pageIndex == pages.count - 1
 
         ZStack {
             // 背景渐变
@@ -514,7 +525,7 @@ private struct OnboardingSheetView: View {
 
     /// 背景渐变
     private var backgroundGradient: some View {
-        let page = pages[viewModel.currentStep]
+        let page = pages[safePageIndex]
         return LinearGradient(
             colors: [
                 page.iconGradient[0].opacity(colorScheme == .dark ? 0.08 : 0.04),
@@ -559,18 +570,20 @@ private struct OnboardingSheetView: View {
 
     /// 步骤指示器
     private var stepIndicator: some View {
-        HStack(spacing: 6) {
+        let pageIndex = safePageIndex
+
+        return HStack(spacing: 6) {
             ForEach(0..<pages.count, id: \.self) { index in
                 Capsule()
                     .fill(
-                        index == viewModel.currentStep
-                            ? pages[viewModel.currentStep].iconGradient[0]
-                            : index < viewModel.currentStep
+                        index == pageIndex
+                            ? pages[pageIndex].iconGradient[0]
+                            : index < pageIndex
                                 ? .secondary.opacity(0.4)
                                 : .secondary.opacity(0.15)
                     )
                     .frame(
-                        width: index == viewModel.currentStep ? 24 : 8,
+                        width: index == pageIndex ? 24 : 8,
                         height: 6
                     )
                     .animation(
@@ -819,7 +832,7 @@ private struct OnboardingSheetView: View {
                 .padding(.vertical, 10)
                 .background(
                     LinearGradient(
-                        colors: pages[viewModel.currentStep].iconGradient,
+                        colors: pages[safePageIndex].iconGradient,
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -852,6 +865,10 @@ private struct OnboardingSheetView: View {
     private func completeOnboarding() {
         applyPluginSelection()
         viewModel.complete()
+    }
+
+    private var safePageIndex: Int {
+        OnboardingPageIndexing.clampedIndex(viewModel.currentStep, pageCount: pages.count)
     }
 }
 
