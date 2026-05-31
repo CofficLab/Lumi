@@ -51,4 +51,40 @@ final class CodeEditTextViewCoreTests: XCTestCase {
             XCTAssertTrue(points.allSatisfy { $0.x.isFinite && $0.y.isFinite })
         }
     }
+
+    func testDragSelectionRangeBuildsCharacterRangeBetweenOffsets() {
+        XCTAssertEqual(
+            TextViewDragSelectionRange.betweenOffsets(12, 4),
+            NSRange(location: 4, length: 8)
+        )
+    }
+
+    func testDragSelectionRangeRejectsNegativeOffsets() {
+        XCTAssertNil(TextViewDragSelectionRange.betweenOffsets(-1, 4))
+        XCTAssertNil(TextViewDragSelectionRange.betweenOffsets(4, -1))
+    }
+
+    func testDragSelectionRangeEnclosesWordOrLineRanges() {
+        let range = TextViewDragSelectionRange.enclosing(
+            NSRange(location: 10, length: 4),
+            NSRange(location: 2, length: 3)
+        )
+
+        XCTAssertEqual(range, NSRange(location: 2, length: 12))
+    }
+
+    func testDragSelectionRangeRejectsOverflowingRanges() {
+        XCTAssertNil(
+            TextViewDragSelectionRange.enclosing(
+                NSRange(location: Int.max, length: 1),
+                NSRange(location: 0, length: 1)
+            )
+        )
+        XCTAssertNil(
+            TextViewDragSelectionRange.enclosing(
+                NSRange(location: 1, length: Int.max),
+                NSRange(location: 0, length: 1)
+            )
+        )
+    }
 }

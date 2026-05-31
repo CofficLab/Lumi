@@ -200,42 +200,63 @@ extension TextView {
     private func dragSelection(startPosition: Int, endPosition: Int, mouseDragAnchor: CGPoint) {
         switch cursorSelectionMode {
         case .character:
-            selectionManager.setSelectedRange(
-                NSRange(
-                    location: min(startPosition, endPosition),
-                    length: max(startPosition, endPosition) - min(startPosition, endPosition)
-                )
-            )
+            guard let range = TextViewDragSelectionRange.betweenOffsets(startPosition, endPosition) else { return }
+            selectionManager.setSelectedRange(range)
 
         case .word:
             let startWordRange = findWordBoundary(at: startPosition)
             let endWordRange = findWordBoundary(at: endPosition)
 
-            selectionManager.setSelectedRange(
-                NSRange(
-                    location: min(startWordRange.location, endWordRange.location),
-                    length: max(startWordRange.location + startWordRange.length,
-                                endWordRange.location + endWordRange.length) -
-                    min(startWordRange.location, endWordRange.location)
-                )
-            )
+            guard let range = TextViewDragSelectionRange.enclosing(startWordRange, endWordRange) else { return }
+            selectionManager.setSelectedRange(range)
 
         case .line:
             let startLineRange = findLineBoundary(at: startPosition)
             let endLineRange = findLineBoundary(at: endPosition)
 
-            selectionManager.setSelectedRange(
-                NSRange(
-                    location: min(startLineRange.location, endLineRange.location),
-                    length: max(startLineRange.location + startLineRange.length,
-                                endLineRange.location + endLineRange.length) -
-                    min(startLineRange.location, endLineRange.location)
-                )
-            )
+            guard let range = TextViewDragSelectionRange.enclosing(startLineRange, endLineRange) else { return }
+            selectionManager.setSelectedRange(range)
         }
     }
 
     private func dragColumnSelection(mouseDragAnchor: CGPoint, locationInView: CGPoint) {
         selectColumns(betweenPointA: mouseDragAnchor, pointB: locationInView)
+    }
+}
+
+enum TextViewDragSelectionRange {
+    static func betweenOffsets(_ lhs: Int, _ rhs: Int) -> NSRange? {
+        guard lhs >= 0, rhs >= 0 else {
+            return nil
+        }
+
+        let lowerBound = min(lhs, rhs)
+        let upperBound = max(lhs, rhs)
+        return NSRange(location: lowerBound, length: upperBound - lowerBound)
+    }
+
+    static func enclosing(_ lhs: NSRange, _ rhs: NSRange) -> NSRange? {
+        guard lhs.location >= 0, lhs.length >= 0, rhs.location >= 0, rhs.length >= 0,
+              let lhsUpperBound = upperBound(for: lhs),
+              let rhsUpperBound = upperBound(for: rhs) else {
+            return nil
+        }
+
+        let lowerBound = min(lhs.location, rhs.location)
+        let upperBound = max(lhsUpperBound, rhsUpperBound)
+        guard upperBound >= lowerBound else {
+            return nil
+        }
+
+        return NSRange(location: lowerBound, length: upperBound - lowerBound)
+    }
+
+    private static func upperBound(for range: NSRange) -> Int? {
+        let upperBound = range.location.addingReportingOverflow(range.length)
+        guard !upperBound.overflow else {
+            return nil
+        }
+
+        return upperBound.partialValue
     }
 }
