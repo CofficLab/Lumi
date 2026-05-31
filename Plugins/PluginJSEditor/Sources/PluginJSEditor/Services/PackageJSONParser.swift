@@ -27,6 +27,8 @@ public struct PackageJSONParser: SuperLog {
             let scripts = json["scripts"] as? [String: String] ?? [:]
             let dependencies = json["dependencies"] as? [String: String] ?? [:]
             let devDependencies = json["devDependencies"] as? [String: String] ?? [:]
+            let peerDependencies = json["peerDependencies"] as? [String: String] ?? [:]
+            let optionalDependencies = json["optionalDependencies"] as? [String: String] ?? [:]
             let engines = json["engines"] as? [String: String] ?? [:]
             let packageManager = json["packageManager"] as? String
 
@@ -36,6 +38,8 @@ public struct PackageJSONParser: SuperLog {
                 scripts: scripts,
                 dependencies: dependencies,
                 devDependencies: devDependencies,
+                peerDependencies: peerDependencies,
+                optionalDependencies: optionalDependencies,
                 engines: engines,
                 packageManager: packageManager
             )

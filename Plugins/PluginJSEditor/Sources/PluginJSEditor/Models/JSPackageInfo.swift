@@ -7,8 +7,17 @@ public struct JSPackageInfo: Sendable {
     public let scripts: [String: String]
     public let dependencies: [String: String]
     public let devDependencies: [String: String]
+    public let peerDependencies: [String: String]
+    public let optionalDependencies: [String: String]
     public let engines: [String: String]
     public let packageManager: String?
+
+    private var allDependencies: [String: String] {
+        dependencies
+            .merging(devDependencies) { current, _ in current }
+            .merging(peerDependencies) { current, _ in current }
+            .merging(optionalDependencies) { current, _ in current }
+    }
 
     /// 已识别的脚本分类
     public var devScripts: [String] {
@@ -52,30 +61,30 @@ public struct JSPackageInfo: Sendable {
 
     /// 推断的测试框架
     public var inferredTestFramework: TestFramework? {
-        if devDependencies["vitest"] != nil { return .vitest }
-        if devDependencies["jest"] != nil { return .jest }
-        if devDependencies["@playwright/test"] != nil { return .playwright }
-        if devDependencies["mocha"] != nil { return .mocha }
+        if allDependencies["vitest"] != nil { return .vitest }
+        if allDependencies["jest"] != nil { return .jest }
+        if allDependencies["@playwright/test"] != nil { return .playwright }
+        if allDependencies["mocha"] != nil { return .mocha }
         return nil
     }
 
     /// 推断的构建工具
     public var inferredBuilder: Builder? {
-        if devDependencies["vite"] != nil { return .vite }
-        if devDependencies["next"] != nil || dependencies["next"] != nil { return .nextjs }
-        if devDependencies["webpack"] != nil { return .webpack }
-        if devDependencies["esbuild"] != nil { return .esbuild }
-        if devDependencies["turbo"] != nil { return .turbo }
+        if allDependencies["vite"] != nil { return .vite }
+        if allDependencies["next"] != nil { return .nextjs }
+        if allDependencies["webpack"] != nil { return .webpack }
+        if allDependencies["esbuild"] != nil { return .esbuild }
+        if allDependencies["turbo"] != nil { return .turbo }
         return nil
     }
 
     /// 推断的前端框架
     public var inferredFramework: JSFramework? {
-        if dependencies["react"] != nil { return .react }
-        if dependencies["vue"] != nil { return .vue }
-        if dependencies["@angular/core"] != nil { return .angular }
-        if dependencies["svelte"] != nil { return .svelte }
-        if dependencies["solid-js"] != nil { return .solid }
+        if allDependencies["react"] != nil { return .react }
+        if allDependencies["vue"] != nil { return .vue }
+        if allDependencies["@angular/core"] != nil { return .angular }
+        if allDependencies["svelte"] != nil { return .svelte }
+        if allDependencies["solid-js"] != nil { return .solid }
         return nil
     }
 

@@ -6,6 +6,34 @@ import Foundation
     #expect(true)
 }
 
+@Test func packageJSONParserReadsPeerAndOptionalDependenciesForInference() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try """
+    {
+      "name": "component-library",
+      "peerDependencies": {
+        "vue": "^3.4.0",
+        "vitest": "^1.6.0"
+      },
+      "optionalDependencies": {
+        "vite": "^5.0.0"
+      }
+    }
+    """.write(to: directory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+
+    let package = try #require(PackageJSONParser.parse(projectPath: directory.path))
+
+    #expect(package.peerDependencies["vue"] == "^3.4.0")
+    #expect(package.optionalDependencies["vite"] == "^5.0.0")
+    #expect(package.inferredFramework == .vue)
+    #expect(package.inferredBuilder == .vite)
+    #expect(package.inferredTestFramework == .vitest)
+}
+
 @Test func tsConfigResolverParsesJSONCCommentsAndTrailingCommas() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
