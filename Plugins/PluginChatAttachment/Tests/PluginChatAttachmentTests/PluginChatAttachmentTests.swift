@@ -13,6 +13,12 @@ import Testing
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "relative/a.png") == nil)
 }
 
+@Test func multilineDroppedFileURLStringsBecomeFileURLs() {
+    let urls = ChatAttachmentDropRules.fileURLs(fromDroppedString: "file:///tmp/a%201.png\n/tmp/b.png\nrelative/c.png")
+
+    #expect(urls.map(\.path) == ["/tmp/a 1.png", "/tmp/b.png"])
+}
+
 @Test func imageFileDetectionIsCaseInsensitive() {
     #expect(ChatAttachmentDropRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.PNG")))
     #expect(ChatAttachmentDropRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.heic")))

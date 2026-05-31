@@ -95,4 +95,11 @@ struct ChatInputEditorRulesTests {
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "relative/a.png") == nil)
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "") == nil)
     }
+
+    @Test("Dropped multiline path strings become multiple file URLs")
+    func droppedMultilinePathStringConversion() {
+        let urls = ChatInputEditorRules.fileURLs(fromDroppedString: "file:///tmp/a%201.png\n/tmp/b.png\nrelative/c.png")
+
+        #expect(urls.map(\.path) == ["/tmp/a 1.png", "/tmp/b.png"])
+    }
 }

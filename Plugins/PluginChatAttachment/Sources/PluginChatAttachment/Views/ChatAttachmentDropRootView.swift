@@ -79,27 +79,37 @@ public struct ChatAttachmentDropRootView: View {
     }
 
     private func acceptChatFileDropFromProviders(_ providers: [NSItemProvider]) -> Bool {
-        guard canChat, let provider = providers.first else { return false }
-        if provider.canLoadObject(ofClass: URL.self) {
-            _ = provider.loadObject(ofClass: URL.self) { item, _ in
-                guard let url = item else { return }
-                Task { @MainActor in
-                    handleFileDrop(fileURL: url)
+        guard canChat, !providers.isEmpty else { return false }
+
+        var didAcceptProvider = false
+        for provider in providers {
+            if provider.canLoadObject(ofClass: URL.self) {
+                didAcceptProvider = true
+                _ = provider.loadObject(ofClass: URL.self) { item, _ in
+                    guard let url = item else { return }
+                    Task { @MainActor in
+                        handleFileDrop(fileURL: url)
+                    }
+                }
+                continue
+            }
+
+            if provider.canLoadObject(ofClass: String.self) {
+                didAcceptProvider = true
+                _ = provider.loadObject(ofClass: String.self) { item, _ in
+                    guard let path = item else { return }
+                    let urls = ChatAttachmentDropRules.fileURLs(fromDroppedString: path)
+                    guard !urls.isEmpty else { return }
+                    Task { @MainActor in
+                        for url in urls {
+                            handleFileDrop(fileURL: url)
+                        }
+                    }
                 }
             }
-            return true
         }
-        if provider.canLoadObject(ofClass: String.self) {
-            _ = provider.loadObject(ofClass: String.self) { item, _ in
-                guard let path = item,
-                      let url = ChatAttachmentDropRules.fileURL(fromDroppedString: path) else { return }
-                Task { @MainActor in
-                    handleFileDrop(fileURL: url)
-                }
-            }
-            return true
-        }
-        return false
+
+        return didAcceptProvider
     }
 
     private func handleFileDrop(fileURL: URL) {

@@ -50,6 +50,24 @@ public enum ChatInputEditorRules {
     }
 
     public static func fileURL(fromDroppedString string: String) -> URL? {
+        fileURLs(fromDroppedString: string).first
+    }
+
+    public static func fileURLs(fromDroppedString string: String) -> [URL] {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        let lineURLs = trimmed
+            .split(whereSeparator: \.isNewline)
+            .compactMap { fileURL(fromSingleDroppedString: String($0)) }
+        if !lineURLs.isEmpty {
+            return lineURLs
+        }
+
+        return fileURL(fromSingleDroppedString: trimmed).map { [$0] } ?? []
+    }
+
+    private static func fileURL(fromSingleDroppedString string: String) -> URL? {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         if let url = URL(string: trimmed), url.isFileURL {
             return url

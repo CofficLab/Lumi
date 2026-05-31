@@ -300,17 +300,21 @@ final class EditorTextView: NSTextView {
         let pasteboard = sender.draggingPasteboard
 
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
-           let url = urls.first
-        {
-            fileDropHandler?(url)
+           !urls.isEmpty {
+            for url in urls {
+                fileDropHandler?(url)
+            }
             return true
         }
 
-        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String],
-           let firstString = strings.first,
-           let url = ChatInputEditorRules.fileURL(fromDroppedString: firstString)
-        {
-            fileDropHandler?(url)
+        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String] {
+            let urls = strings.flatMap(ChatInputEditorRules.fileURLs(fromDroppedString:))
+            guard !urls.isEmpty else {
+                return super.performDragOperation(sender)
+            }
+            for url in urls {
+                fileDropHandler?(url)
+            }
             return true
         }
 
@@ -322,11 +326,10 @@ final class EditorTextView: NSTextView {
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
             return urls.contains(where: ChatInputEditorRules.isChatImageFileURL)
         }
-        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String],
-           let first = strings.first,
-           let url = ChatInputEditorRules.fileURL(fromDroppedString: first)
-        {
-            return ChatInputEditorRules.isChatImageFileURL(url)
+        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String] {
+            return strings
+                .flatMap(ChatInputEditorRules.fileURLs(fromDroppedString:))
+                .contains(where: ChatInputEditorRules.isChatImageFileURL)
         }
         return false
     }
