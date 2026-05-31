@@ -172,11 +172,12 @@ struct ComponentRenamer: Sendable {
 
         // 2. 更新所有引用文件
         for affected in plan.affectedFiles {
-            guard let content = try? String(contentsOfFile: affected.path, encoding: .utf8) else {
+            guard let fileText = try? VueTextFileIO.read(path: affected.path) else {
                 failures.append((affected.path, "Cannot read file"))
                 continue
             }
 
+            let content = fileText.content
             var updated = content
             for replacement in affected.replacements {
                 updated = updated.replacingOccurrences(of: replacement.oldText, with: replacement.newText)
@@ -185,7 +186,7 @@ struct ComponentRenamer: Sendable {
 
             if updated != content {
                 do {
-                    try updated.write(toFile: affected.path, atomically: true, encoding: .utf8)
+                    try VueTextFileIO.write(updated, to: affected.path, encoding: fileText.encoding)
                     filesModified += 1
                     if VueEditorPlugin.verbose {
                         logger.info("\(emoji) 更新引用: \(affected.path) (\(affected.replacements.count) 处)")
@@ -245,7 +246,7 @@ struct ComponentRenamer: Sendable {
             if filePath == oldPath { continue }
 
             // 读取文件并查找引用
-            guard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else { continue }
+            guard let content = try? VueTextFileIO.readContent(path: filePath) else { continue }
 
             var replacements: [TextReplacement] = []
 

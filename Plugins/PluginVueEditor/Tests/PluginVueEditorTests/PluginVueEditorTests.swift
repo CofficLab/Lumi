@@ -132,6 +132,78 @@ import Testing
     #expect(options.jsxEnabled == true)
 }
 
+@Test func autoImportRegistryReadsUTF16DeclarationFiles() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try """
+    declare module '@vue/runtime-core' {
+      export interface GlobalComponents {
+        UserCard: typeof import('./src/components/UserCard.vue')['default']
+      }
+    }
+    """.write(
+        to: projectURL.appendingPathComponent("components.d.ts"),
+        atomically: true,
+        encoding: .utf16
+    )
+    try """
+    export {}
+    declare global {
+      const useUserStore: typeof import('./src/stores/user')['useUserStore']
+    }
+    """.write(
+        to: projectURL.appendingPathComponent("auto-imports.d.ts"),
+        atomically: true,
+        encoding: .utf16
+    )
+
+    let registry = AutoImportRegistry.scan(projectPath: projectURL.path)
+
+    #expect(registry.components["UserCard"]?.importFrom == "./src/components/UserCard.vue")
+    #expect(registry.apis["useUserStore"]?.importFrom == "./src/stores/user")
+}
+
+@Test func componentRenamerUpdatesUTF16ReferenceFilesAndPreservesEncoding() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let oldURL = projectURL.appendingPathComponent("src/components/UserCard.vue")
+    try FileManager.default.createDirectory(at: oldURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try "<template><section /></template>\n".write(to: oldURL, atomically: true, encoding: .utf8)
+
+    let viewURL = projectURL.appendingPathComponent("src/views/Home.vue")
+    try FileManager.default.createDirectory(at: viewURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try """
+    <script setup>
+    import UserCard from '../components/UserCard.vue'
+    </script>
+    <template>
+      <UserCard />
+      <user-card />
+    </template>
+    """.write(to: viewURL, atomically: true, encoding: .utf16)
+
+    let plan = ComponentRenamer.plan(
+        oldPath: oldURL.path,
+        newName: "AccountCard",
+        projectPath: projectURL.path
+    )
+    #expect(plan.affectedFiles.contains { URL(fileURLWithPath: $0.path).lastPathComponent == "Home.vue" })
+
+    let result = ComponentRenamer.rename(plan: plan)
+
+    #expect(result.success)
+    #expect(FileManager.default.fileExists(atPath: plan.newPath))
+
+    var encoding = String.Encoding.utf8
+    let updated = try String(contentsOf: viewURL, usedEncoding: &encoding)
+    #expect(encoding == .utf16)
+    #expect(updated.contains("import AccountCard from '../components/AccountCard.vue'"))
+    #expect(updated.contains("<AccountCard />"))
+    #expect(updated.contains("<account-card />"))
+}
+
 private func makeTemporaryVueProject() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginVueEditorTests-\(UUID().uuidString)", isDirectory: true)

@@ -79,7 +79,7 @@ struct AutoImportRegistry: Sendable {
 
         // 1. 解析 components.d.ts
         let componentsPath = (projectPath as NSString).appendingPathComponent(componentsFileName)
-        if let content = try? String(contentsOfFile: componentsPath, encoding: .utf8) {
+        if let content = try? VueTextFileIO.readContent(path: componentsPath) {
             components = parseComponentsDTS(content)
             if VueEditorPlugin.verbose {
                 logger.info("\(emoji) 解析 components.d.ts: \(components.count) 个组件")
@@ -88,7 +88,7 @@ struct AutoImportRegistry: Sendable {
 
         // 2. 解析 auto-imports.d.ts
         let autoImportsPath = (projectPath as NSString).appendingPathComponent(autoImportsFileName)
-        if let content = try? String(contentsOfFile: autoImportsPath, encoding: .utf8) {
+        if let content = try? VueTextFileIO.readContent(path: autoImportsPath) {
             apis = parseAutoImportsDTS(content)
             if VueEditorPlugin.verbose {
                 logger.info("\(emoji) 解析 auto-imports.d.ts: \(apis.count) 个 API")
@@ -101,7 +101,7 @@ struct AutoImportRegistry: Sendable {
                 .appendingPathComponent("src")
                 .appendingPathComponent(componentsFileName)
                 .path
-            if let content = try? String(contentsOfFile: srcComponentsPath, encoding: .utf8) {
+            if let content = try? VueTextFileIO.readContent(path: srcComponentsPath) {
                 components = parseComponentsDTS(content)
             }
 
@@ -109,7 +109,7 @@ struct AutoImportRegistry: Sendable {
                 .appendingPathComponent("src")
                 .appendingPathComponent(autoImportsFileName)
                 .path
-            if let content = try? String(contentsOfFile: srcAutoImportsPath, encoding: .utf8) {
+            if let content = try? VueTextFileIO.readContent(path: srcAutoImportsPath) {
                 apis = parseAutoImportsDTS(content)
             }
         }
