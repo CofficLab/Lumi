@@ -56,6 +56,16 @@ import Foundation
     #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/building/App.swift")))
 }
 
+@Test func staleSearchResultsDoNotApplyToChangedQuery() {
+    #expect(FileSearchService.shouldApplySearchResults(currentQuery: "App", completedQuery: " app "))
+    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "Application", completedQuery: "App"))
+    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "", completedQuery: "App"))
+}
+
+@Test func fuzzyMatchRejectsEmptyQuery() {
+    #expect(!FileSearchHelpers.fuzzyMatch("Application.swift", query: ""))
+}
+
 @Test func fileSearchResultRowMapsCommonFileIconsWithoutDuplicateCases() {
     #expect(FileSearchResultRow.iconName(for: "App.swift") == "swift")
     #expect(FileSearchResultRow.iconName(for: "Bridge.h") == "doc.text")

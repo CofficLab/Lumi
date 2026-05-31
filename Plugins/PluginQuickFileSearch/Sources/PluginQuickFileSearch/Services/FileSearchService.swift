@@ -163,7 +163,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         // 取消之前的搜索任务
         searchTask?.cancel()
 
-        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        let query = Self.normalizedQuery(searchQuery)
 
         guard !query.isEmpty else {
             searchResults = []
@@ -194,6 +194,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         await MainActor.run { [weak self] in
             guard let self else { return }
             guard !Task.isCancelled else { return }
+            guard Self.shouldApplySearchResults(currentQuery: self.searchQuery, completedQuery: query) else { return }
             self.searchResults = results
 
             let duration = Date().timeIntervalSince(startTime)
@@ -201,6 +202,14 @@ public final class FileSearchService: ObservableObject, SuperLog {
                 QuickFileSearchPlugin.logger.info("\(Self.t)🔍 搜索完成: '\(query)' -> \(results.count) 个结果，耗时 \(String(format: "%.2f", duration * 1000))ms")
             }
         }
+    }
+
+    nonisolated static func normalizedQuery(_ query: String) -> String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    nonisolated static func shouldApplySearchResults(currentQuery: String, completedQuery: String) -> Bool {
+        normalizedQuery(currentQuery) == normalizedQuery(completedQuery)
     }
 }
 
@@ -380,6 +389,8 @@ public enum FileSearchHelpers {
     /// 模糊匹配算法
     /// 检查 text 是否按顺序包含 query 的所有字符
     public static func fuzzyMatch(_ text: String, query: String) -> Bool {
+        guard !query.isEmpty else { return false }
+
         var queryIndex = query.startIndex
 
         for char in text {
