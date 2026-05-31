@@ -91,7 +91,11 @@ public struct WebFetchService: Sendable {
         duration: Double,
         prompt: String? = nil
     ) -> String {
-        let mimeType = contentType.split(separator: ";").first?.trimmingCharacters(in: .whitespaces) ?? "text/plain"
+        let mimeType = contentType
+            .split(separator: ";")
+            .first?
+            .trimmingCharacters(in: .whitespaces)
+            .lowercased() ?? "text/plain"
 
         switch mimeType {
         case "text/html", "application/xhtml+xml":

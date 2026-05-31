@@ -99,6 +99,30 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertTrue(result.contains("(Note: Invalid JSON format)"))
     }
 
+    func testContentTypeMatchingIsCaseInsensitive() {
+        let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
+
+        let htmlResult = service.processContent(
+            data: Data("<html><body><h1>Hello</h1></body></html>".utf8),
+            contentType: "Text/HTML; Charset=UTF-8",
+            url: URL(string: "https://example.com/page")!,
+            statusCode: 200,
+            duration: 1
+        )
+        let jsonResult = service.processContent(
+            data: Data(#"{"ok":true}"#.utf8),
+            contentType: "Application/JSON",
+            url: URL(string: "https://example.com/data")!,
+            statusCode: 200,
+            duration: 1
+        )
+
+        XCTAssertTrue(htmlResult.contains("### Content (Markdown)"))
+        XCTAssertTrue(htmlResult.contains("# Hello"))
+        XCTAssertTrue(jsonResult.contains("**Content-Type**: JSON"))
+        XCTAssertTrue(jsonResult.contains("\"ok\" : true"))
+    }
+
     func testPromptExtractionReturnsMatchingParagraphsOnly() {
         let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
         let markdown = """
