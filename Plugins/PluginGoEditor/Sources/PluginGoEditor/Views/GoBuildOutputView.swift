@@ -185,16 +185,35 @@ public struct GoBuildOutputView: View {
     // MARK: - Helpers
 
     private func openFile(at file: String, line: Int) {
-        let url: URL
-        if file.hasPrefix("/") {
-            url = URL(fileURLWithPath: file)
-        } else if let root = projectRoot {
-            url = URL(fileURLWithPath: root).appendingPathComponent(file)
-        } else {
-            url = URL(fileURLWithPath: file)
-        }
+        let url = GoIssueFileResolver.url(for: file, projectRoot: projectRoot)
         Task { @MainActor in
             await GoEditorBridge.openFileHandler?(url, projectRoot)
         }
+    }
+}
+
+enum GoIssueFileResolver {
+    static func url(for file: String, projectRoot: String?) -> URL {
+        let trimmed = file.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), url.isFileURL {
+            return url
+        }
+        if trimmed.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmed.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path)
+        }
+        if trimmed == "~" || trimmed.hasPrefix("~/") {
+            return URL(fileURLWithPath: (trimmed as NSString).expandingTildeInPath)
+        }
+        if trimmed.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmed)
+        }
+        if let root = projectRoot {
+            return URL(fileURLWithPath: root).appendingPathComponent(trimmed)
+        }
+        return URL(fileURLWithPath: trimmed)
     }
 }

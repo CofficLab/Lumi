@@ -146,17 +146,36 @@ public struct TaskOutputView: View {
     }
 
     private func openFile(at file: String, line: Int) {
-        let url: URL
-        if file.hasPrefix("/") {
-            url = URL(fileURLWithPath: file)
-        } else if let projectRoot {
-            url = URL(fileURLWithPath: projectRoot).appendingPathComponent(file)
-        } else {
-            url = URL(fileURLWithPath: file)
-        }
+        let url = JSIssueFileResolver.url(for: file, projectRoot: projectRoot)
         Task { @MainActor in
             await JSEditorBridge.openFileHandler?(url, projectRoot)
         }
         _ = line
+    }
+}
+
+enum JSIssueFileResolver {
+    static func url(for file: String, projectRoot: String?) -> URL {
+        let trimmed = file.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), url.isFileURL {
+            return url
+        }
+        if trimmed.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmed.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path)
+        }
+        if trimmed == "~" || trimmed.hasPrefix("~/") {
+            return URL(fileURLWithPath: (trimmed as NSString).expandingTildeInPath)
+        }
+        if trimmed.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmed)
+        }
+        if let projectRoot {
+            return URL(fileURLWithPath: projectRoot).appendingPathComponent(trimmed)
+        }
+        return URL(fileURLWithPath: trimmed)
     }
 }

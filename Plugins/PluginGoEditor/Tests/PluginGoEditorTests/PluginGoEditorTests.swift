@@ -16,3 +16,12 @@ import Testing
 
     #expect(await collected == payload)
 }
+
+@Test func goIssueFileResolverKeepsFileURLsAndExpandsLocalPaths() {
+    let projectRoot = "/tmp/project"
+
+    #expect(GoIssueFileResolver.url(for: "file:///tmp/project/main.go", projectRoot: projectRoot).path == "/tmp/project/main.go")
+    #expect(GoIssueFileResolver.url(for: "file:///tmp/project/main with space.go", projectRoot: projectRoot).path == "/tmp/project/main with space.go")
+    #expect(GoIssueFileResolver.url(for: "~/main.go", projectRoot: projectRoot).path == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("main.go").path)
+    #expect(GoIssueFileResolver.url(for: "cmd/app/main.go", projectRoot: projectRoot).path == "/tmp/project/cmd/app/main.go")
+}

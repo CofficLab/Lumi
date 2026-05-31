@@ -126,3 +126,12 @@ import Foundation
     #expect(events.map(\.status) == [.failed, .passed])
     #expect(events.map(\.name) == ["failing.test.ts", "renders dashboard (20ms)"])
 }
+
+@Test func jsIssueFileResolverKeepsFileURLsAndExpandsLocalPaths() {
+    let projectRoot = "/tmp/project"
+
+    #expect(JSIssueFileResolver.url(for: "file:///tmp/project/src/app.ts", projectRoot: projectRoot).path == "/tmp/project/src/app.ts")
+    #expect(JSIssueFileResolver.url(for: "file:///tmp/project/src/app with space.ts", projectRoot: projectRoot).path == "/tmp/project/src/app with space.ts")
+    #expect(JSIssueFileResolver.url(for: "~/src/app.ts", projectRoot: projectRoot).path == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("src/app.ts").path)
+    #expect(JSIssueFileResolver.url(for: "src/app.ts", projectRoot: projectRoot).path == "/tmp/project/src/app.ts")
+}
