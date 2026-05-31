@@ -112,6 +112,12 @@ public struct ProjectProfiler {
         return json
     }
 
+    /// 读取用户项目中的文本文件，允许 Foundation 根据 BOM 或内容检测编码。
+    private func readTextFile(_ url: URL) -> String? {
+        var detectedEncoding = String.Encoding.utf8
+        return try? String(contentsOf: url, usedEncoding: &detectedEncoding)
+    }
+
     /// 从选定的 package JSON key 中提取依赖名称。
     private func dependencyNames(from json: [String: Any], keys: [String]) -> [String] {
         keys.flatMap { key -> [String] in
@@ -153,7 +159,7 @@ public struct ProjectProfiler {
 
     /// 从 `Package.swift` 提取 Swift 包依赖仓库名称。
     private func swiftPackageDependencies(at url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let text = readTextFile(url) else { return [] }
         var result = Set<String>()
         let pattern = #"url:\s*"[^"]*/([^/"]+?)(?:\.git)?""#
         for match in regexMatches(pattern: pattern, text: text) {
@@ -166,13 +172,13 @@ public struct ProjectProfiler {
 
     /// 从 `Podfile` 提取 CocoaPods 依赖名称。
     private func podDependencies(at url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let text = readTextFile(url) else { return [] }
         return regexMatches(pattern: #"pod\s+['"]([^'"]+)['"]"#, text: text)
     }
 
     /// 从 `Podfile` 提取平台声明。
     private func podPlatform(at url: URL) -> String? {
-        guard let text = try? String(contentsOf: url, encoding: .utf8),
+        guard let text = readTextFile(url),
               let value = regexMatches(pattern: #"platform\s+:(\w+),\s*['"]([^'"]+)['"]"#, text: text).first else {
             return nil
         }
@@ -181,7 +187,7 @@ public struct ProjectProfiler {
 
     /// 从 `go.mod` 提取直接 Go 模块依赖。
     private func goDependencies(at url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let text = readTextFile(url) else { return [] }
         return text.split(separator: "\n").compactMap { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard trimmed.hasPrefix("require ") else { return nil }
@@ -191,7 +197,7 @@ public struct ProjectProfiler {
 
     /// 从 TOML 文件的 `[dependencies]` 段提取依赖名称。
     private func tomlDependencyNames(at url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let text = readTextFile(url) else { return [] }
         var inDependencies = false
         var names: [String] = []
         for line in text.split(separator: "\n") {
@@ -211,7 +217,7 @@ public struct ProjectProfiler {
     private func pythonDependencies(at root: URL) -> [String] {
         var result: [String] = []
         let requirements = root.appendingPathComponent("requirements.txt")
-        if let text = try? String(contentsOf: requirements, encoding: .utf8) {
+        if let text = readTextFile(requirements) {
             result += text.split(separator: "\n").compactMap { line in
                 let clean = line
                     .split(separator: "#", omittingEmptySubsequences: false)
@@ -273,7 +279,7 @@ public struct ProjectProfiler {
 
     /// 从 Swift 源码 import 声明中提取常见框架。
     private func swiftFrameworkImports(at url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let text = readTextFile(url) else { return [] }
         let imports = regexMatches(pattern: #"(?m)^\s*import\s+([A-Za-z_][A-Za-z0-9_]*)"#, text: text)
         return imports.filter { Self.swiftFrameworkNames.contains($0) }
     }
@@ -282,7 +288,7 @@ public struct ProjectProfiler {
     private func readReadme(at root: URL) -> (description: String, keywords: [String]) {
         let candidates = ["README.md", "README_zh.md", "Readme.md", "readme.md"]
         guard let url = candidates.map({ root.appendingPathComponent($0) }).first(where: { fileManager.fileExists(atPath: $0.path) }),
-              let text = try? String(contentsOf: url, encoding: .utf8) else {
+              let text = readTextFile(url) else {
             return ("", [])
         }
         let lines = text.split(separator: "\n").map(String.init)

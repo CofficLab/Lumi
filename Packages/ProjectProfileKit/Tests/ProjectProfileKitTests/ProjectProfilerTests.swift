@@ -102,6 +102,34 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertTrue(profile.dependencies.contains("Combine"))
     }
 
+    func testSwiftPackageReadsUTF16ManifestDependencies() throws {
+        let root = try makeProject()
+        try write(
+            #"""
+            // swift-tools-version: 6.0
+            import PackageDescription
+
+            let package = Package(
+                name: "PreviewKit",
+                dependencies: [
+                    .package(url: "https://github.com/example/RenderKit.git", from: "1.0.0")
+                ]
+            )
+
+            import SwiftUI
+            """#,
+            to: root.appendingPathComponent("Package.swift"),
+            encoding: .utf16
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "Swift")
+        XCTAssertTrue(profile.dependencies.contains("RenderKit"))
+        XCTAssertTrue(profile.dependencies.contains("SwiftUI"))
+        XCTAssertEqual(profile.platform, "Apple platforms")
+    }
+
     func testXcodeProjectAndSwiftSourcesDetectSwiftAppleFrameworksAndMobileType() throws {
         let root = try makeProject()
         try FileManager.default.createDirectory(
@@ -310,6 +338,26 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertTrue(profile.keywords.contains("heading"))
     }
 
+    func testReadmeReadsUTF16DescriptionAndKeywords() throws {
+        let root = try makeProject()
+        try write(
+            """
+            # UTF16 README
+
+            A focused preview dashboard for workflows.
+            Dashboard dashboard workflows workflows.
+            """,
+            to: root.appendingPathComponent("README.md"),
+            encoding: .utf16
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.description, "A focused preview dashboard for workflows.")
+        XCTAssertTrue(profile.keywords.contains("dashboard"))
+        XCTAssertTrue(profile.keywords.contains("workflows"))
+    }
+
     func testReadmeDescriptionIsLimitedToTwoHundredFortyCharacters() throws {
         let root = try makeProject()
         let description = String(repeating: "a", count: 300)
@@ -347,7 +395,7 @@ final class ProjectProfilerTests: XCTestCase {
         return root
     }
 
-    private func write(_ text: String, to url: URL) throws {
-        try text.write(to: url, atomically: true, encoding: .utf8)
+    private func write(_ text: String, to url: URL, encoding: String.Encoding = .utf8) throws {
+        try text.write(to: url, atomically: true, encoding: encoding)
     }
 }
