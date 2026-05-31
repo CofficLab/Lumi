@@ -122,6 +122,20 @@ final class XcodeBuildContextProviderTests: XCTestCase {
         
         XCTAssertEqual(result?.name, "MainApp")
     }
+
+    func testBuildableTargetOrderToleratesDuplicates() {
+        let order = XcodeBuildContextProvider.buildableTargetOrder([
+            "App",
+            "Tests",
+            "App",
+            "UITests",
+            "Tests",
+        ])
+
+        XCTAssertEqual(order["App"], 0)
+        XCTAssertEqual(order["Tests"], 1)
+        XCTAssertEqual(order["UITests"], 3)
+    }
     
     // MARK: - defaultDestination Tests
     

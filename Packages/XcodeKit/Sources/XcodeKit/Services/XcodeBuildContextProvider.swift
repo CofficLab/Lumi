@@ -615,7 +615,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         let schemeName = activeScheme?.name
         let buildableTargets = activeScheme?.buildableTargets ?? []
-        let buildableOrder = Dictionary(uniqueKeysWithValues: buildableTargets.enumerated().map { ($1, $0) })
+        let buildableOrder = Self.buildableTargetOrder(buildableTargets)
 
         return matches.sorted { lhs, rhs in
             let lhsPriority = targetPriority(lhs, schemeName: schemeName, buildableOrder: buildableOrder)
@@ -625,6 +625,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+    }
+
+    static func buildableTargetOrder(_ buildableTargets: [String]) -> [String: Int] {
+        var orderByTarget: [String: Int] = [:]
+        for (index, target) in buildableTargets.enumerated() where orderByTarget[target] == nil {
+            orderByTarget[target] = index
+        }
+        return orderByTarget
     }
 
     private func targetPriority(
