@@ -10,13 +10,16 @@ final class MockHistoryQueryService: HistoryQueryService {
     var conversationCount: Int = 0
     var messagePages: [Int: [HistoryMessageRow]] = [:]   // offset → rows
     var conversationPages: [Int: [HistoryConversationRow]] = [:]
+    var messagePageRequests: [(limit: Int, offset: Int)] = []
+    var conversationPageRequests: [(limit: Int, offset: Int)] = []
 
     func fetchMessageCount() async -> Int {
         messageCount
     }
 
     func fetchMessagePage(limit: Int, offset: Int) async -> [HistoryMessageRow] {
-        messagePages[offset] ?? []
+        messagePageRequests.append((limit: limit, offset: offset))
+        return messagePages[offset] ?? []
     }
 
     func fetchConversationCount() async -> Int {
@@ -24,6 +27,7 @@ final class MockHistoryQueryService: HistoryQueryService {
     }
 
     func fetchConversationPage(limit: Int, offset: Int) async -> [HistoryConversationRow] {
-        conversationPages[offset] ?? []
+        conversationPageRequests.append((limit: limit, offset: offset))
+        return conversationPages[offset] ?? []
     }
 }

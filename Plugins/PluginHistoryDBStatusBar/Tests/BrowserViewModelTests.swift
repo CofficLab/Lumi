@@ -114,4 +114,40 @@ struct BrowserViewModelTests {
         vm.nextPage()
         #expect(vm.currentPage == 1)
     }
+
+    @Test func viewModelClampsInvalidPageSizeBeforeQuerying() async {
+        let mock = MockHistoryQueryService()
+        mock.messageCount = 1000
+
+        let vm = BrowserViewModel(historyService: mock)
+        vm.pageSize = 0
+        await vm.reload()
+
+        #expect(mock.messagePageRequests.last?.limit == 1)
+        #expect(vm.totalPages == 1000)
+
+        vm.pageSize = 10_000
+        await vm.reload()
+
+        #expect(mock.messagePageRequests.last?.limit == 500)
+        #expect(vm.totalPages == 2)
+    }
+
+    @Test func viewModelClampsCurrentPageAfterCountShrinks() async {
+        let mock = MockHistoryQueryService()
+        mock.messageCount = 120
+
+        let vm = BrowserViewModel(historyService: mock)
+        vm.pageSize = 50
+        await vm.reload()
+        vm.nextPage()
+        vm.nextPage()
+        #expect(vm.currentPage == 3)
+
+        mock.messageCount = 20
+        await vm.reload()
+
+        #expect(vm.currentPage == 1)
+        #expect(mock.messagePageRequests.last?.offset == 0)
+    }
 }

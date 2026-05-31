@@ -3,6 +3,9 @@ import LumiCoreKit
 
 @MainActor
 public final class BrowserViewModel: ObservableObject {
+    static let defaultPageSize = 50
+    static let maxPageSize = 500
+
     // MARK: - Dependencies
 
     private let historyService: (any HistoryQueryService)?
@@ -18,7 +21,7 @@ public final class BrowserViewModel: ObservableObject {
         }
     }
 
-    @Published var pageSize: Int = 50 {
+    @Published var pageSize: Int = defaultPageSize {
         didSet {
             if oldValue != pageSize {
                 currentPage = 1
@@ -38,12 +41,13 @@ public final class BrowserViewModel: ObservableObject {
     }
 
     public var totalPages: Int {
-        let pages = Int(ceil(Double(totalCount) / Double(max(pageSize, 1))))
+        let pages = Int(ceil(Double(totalCount) / Double(effectivePageSize)))
         return max(pages, 1)
     }
 
     public var offset: Int {
-        max((currentPage - 1) * pageSize, 0)
+        let page = Self.normalizedPage(currentPage, totalPages: totalPages)
+        return max((page - 1) * effectivePageSize, 0)
     }
 
     public func nextPage() {
@@ -87,13 +91,34 @@ public final class BrowserViewModel: ObservableObject {
 
     private func loadMessageRows(service: any HistoryQueryService) async {
         totalCount = await service.fetchMessageCount()
-        messageRows = await service.fetchMessagePage(limit: pageSize, offset: offset)
+        normalizeCurrentPageForLoadedCount()
+        messageRows = await service.fetchMessagePage(limit: effectivePageSize, offset: offset)
         conversationRows = []
     }
 
     private func loadConversationRows(service: any HistoryQueryService) async {
         totalCount = await service.fetchConversationCount()
-        conversationRows = await service.fetchConversationPage(limit: pageSize, offset: offset)
+        normalizeCurrentPageForLoadedCount()
+        conversationRows = await service.fetchConversationPage(limit: effectivePageSize, offset: offset)
         messageRows = []
+    }
+
+    private var effectivePageSize: Int {
+        Self.normalizedPageSize(pageSize)
+    }
+
+    private func normalizeCurrentPageForLoadedCount() {
+        let normalized = Self.normalizedPage(currentPage, totalPages: totalPages)
+        if normalized != currentPage {
+            currentPage = normalized
+        }
+    }
+
+    static func normalizedPageSize(_ rawValue: Int) -> Int {
+        min(max(rawValue, 1), maxPageSize)
+    }
+
+    static func normalizedPage(_ rawValue: Int, totalPages: Int) -> Int {
+        min(max(rawValue, 1), max(totalPages, 1))
     }
 }
