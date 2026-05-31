@@ -5,7 +5,6 @@ import EditorKernel
 enum EditorConfigStore {
     private static var pluginDirName: String { EditorHostEnvironment.current.storageDirectoryName }
     private static let settingsFileName = "editor_config.plist"
-    private static let tmpFileName = "editor_config.tmp"
 
     private static func resolvedSettingsDirectoryURL() -> URL {
         let base = EditorSettingsLifecycle.hostPersistenceRootURL?()
@@ -18,8 +17,7 @@ enum EditorConfigStore {
 
     private static let store = EditorConfigFileStore(
         settingsDirectoryURL: resolvedSettingsDirectoryURL(),
-        settingsFileName: settingsFileName,
-        temporaryFileName: tmpFileName
+        settingsFileName: settingsFileName
     )
 
     // MARK: - Keys

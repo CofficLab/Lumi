@@ -39,14 +39,7 @@ public struct EditorConfigFileStore: Sendable {
 
         do {
             try fileManager.createDirectory(at: settingsDirectoryURL, withIntermediateDirectories: true, attributes: nil)
-            let tmpURL = settingsDirectoryURL.appendingPathComponent(temporaryFileName, isDirectory: false)
-            try data.write(to: tmpURL, options: .atomic)
-            let fileURL = settingsFileURL()
-            if fileManager.fileExists(atPath: fileURL.path) {
-                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
-            } else {
-                try fileManager.moveItem(at: tmpURL, to: fileURL)
-            }
+            try data.write(to: settingsFileURL(), options: .atomic)
         } catch {
             // Persistence failures should not break the editor workflow.
         }
