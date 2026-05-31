@@ -103,6 +103,34 @@ import Foundation
     #expect(sourceMapURL.absoluteString == "https://example.com/bundle.js.map")
 }
 
+@Test func sourceMapResolverKeepsQuotedMappingURLWithSpaces() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let generatedURL = directory.appendingPathComponent("dist/bundle.js")
+    try FileManager.default.createDirectory(at: generatedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try """
+    console.log("ready");
+    //# sourceMappingURL="maps/bundle debug.js.map"
+    """.write(to: generatedURL, atomically: true, encoding: .utf8)
+
+    let sourceMapURL = try #require(SourceMapResolver.sourceMapURL(for: generatedURL))
+
+    #expect(sourceMapURL.path == generatedURL.deletingLastPathComponent().appendingPathComponent("maps/bundle debug.js.map").path)
+}
+
+@Test func sourceMapResolverAcceptsUnescapedFileURLMappingURLWithSpaces() throws {
+    let generatedURL = URL(fileURLWithPath: "/tmp/dist/bundle.js")
+    let sourceMapURL = try #require(SourceMapResolver.resolveSourceMapTail(
+        "file:///tmp/project/My Map.js.map",
+        relativeTo: generatedURL
+    ))
+
+    #expect(sourceMapURL.path == "/tmp/project/My Map.js.map")
+}
+
 @Test func buildOutputAdapterKeepsStdoutAndStderrLineBoundaryWithoutTrailingNewline() throws {
     let issues = BuildOutputAdapter.issues(
         stdout: "src/app.ts:2:3 - warning unused variable",
