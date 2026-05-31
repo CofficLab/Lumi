@@ -22,15 +22,18 @@ extension EditorState {
     func performWorkspaceSearch() async {
         let query = panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
+            workspaceSearchRequestGeneration.invalidate()
             panelController.setWorkspaceSearchResults([], summary: nil, errorMessage: nil)
             return
         }
         guard let projectRootPath else {
+            workspaceSearchRequestGeneration.invalidate()
             panelController.setWorkspaceSearchResults([], summary: nil, errorMessage: "Project root unavailable")
             presentBottomPanel(.searchResults)
             return
         }
 
+        let requestGeneration = workspaceSearchRequestGeneration.next()
         presentBottomPanel(.searchResults)
         panelController.setWorkspaceSearchLoading(true)
         panelController.setWorkspaceSearchResults([], summary: nil, errorMessage: nil)
@@ -40,6 +43,7 @@ extension EditorState {
                 query: query,
                 projectRootPath: projectRootPath
             )
+            guard workspaceSearchRequestGeneration.isCurrent(requestGeneration) else { return }
             panelController.setWorkspaceSearchLoading(false)
             panelController.setWorkspaceSearchResults(
                 response.fileResults,
@@ -47,6 +51,7 @@ extension EditorState {
                 errorMessage: nil
             )
         } catch {
+            guard workspaceSearchRequestGeneration.isCurrent(requestGeneration) else { return }
             panelController.setWorkspaceSearchLoading(false)
             panelController.setWorkspaceSearchResults(
                 [],

@@ -2762,6 +2762,40 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func workspaceSearchControllerSkipsBuildDirectory() async throws {
+        guard Self.isRipgrepAvailable() else { return }
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-workspace-search-\(UUID().uuidString)", isDirectory: true)
+        let sources = root.appendingPathComponent("Sources", isDirectory: true)
+        let build = root.appendingPathComponent("build", isDirectory: true)
+        try FileManager.default.createDirectory(at: sources, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: build, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try "needle in source".write(
+            to: sources.appendingPathComponent("App.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "needle in build output".write(
+            to: build.appendingPathComponent("Generated.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let response = try await EditorWorkspaceSearchController().search(
+            query: "needle",
+            projectRootPath: root.path,
+            limit: 200
+        )
+
+        #expect(response.summary.totalMatches == 1)
+        #expect(response.fileResults.map(\.path) == ["Sources/App.swift"])
+    }
+
+    @Test
+    @MainActor
     func statusToastPolicyNormalizesDurationsByLevel() {
         let info = EditorStatusToastPolicy.presentation(level: .info, duration: 0.2)
         #expect(info == .init(level: .info, duration: 1.0, autoDismiss: false))

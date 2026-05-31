@@ -72,6 +72,7 @@ public final class EditorWorkspaceSearchController {
             "--hidden",
             "--glob", "!.git",
             "--glob", "!node_modules",
+            "--glob", "!build",
             "--glob", "!.build",
             query,
             projectRootPath

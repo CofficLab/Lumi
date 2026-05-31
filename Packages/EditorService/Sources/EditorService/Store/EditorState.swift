@@ -124,6 +124,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private let sessionSyncGate = SessionSyncGate()
     private var isRestoringUndoState = false
     let referencesRequestGeneration = RequestGeneration()
+    let workspaceSearchRequestGeneration = RequestGeneration()
     private let editorUndoManager = EditorUndoManager()
     private var lastSemanticReadinessState: EditorSemanticReadinessState = .idle
 
