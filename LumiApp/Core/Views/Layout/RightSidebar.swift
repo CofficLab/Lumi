@@ -63,7 +63,7 @@ struct RightSidebarContainerView: View {
 /// 右侧栏底部工具栏
 ///
 /// 水平排列所有插件提供的 leading/trailing SidebarToolbarItem。
-/// 优先使用插件自定义视图（`addSidebarToolbarItemView`），否则使用默认图标按钮。
+/// 优先使用插件自定义视图（`addSidebarToolbarItemView`），否则使用非交互图标占位。
 private struct SidebarToolbarBar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
@@ -107,16 +107,13 @@ private struct SidebarToolbarBar: View {
                 .help(item.title)
                 .accessibilityLabel(item.title)
         } else {
-            // 默认图标按钮
-            Button(action: {}) {
-                Image(systemName: item.systemImage)
-                    .font(.appCallout)
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                    .frame(width: 28, height: 28)
-                    .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
+            Image(systemName: item.systemImage)
+                .font(.appCallout)
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .frame(width: 28, height: 28)
+                .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.06))
+                .clipShape(Circle())
+                .opacity(0.55)
             .help(item.title)
             .accessibilityLabel(item.title)
         }

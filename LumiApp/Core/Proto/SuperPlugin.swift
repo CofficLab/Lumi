@@ -27,8 +27,8 @@ struct RailTab: Identifiable, Equatable {
 ///
 /// 插件通过 `addSidebarLeadingToolbarItems()` 或 `addSidebarTrailingToolbarItems()` 返回此结构体，
 /// 由内核聚合渲染为右侧栏底部的水平工具栏。
-/// 每个工具栏项是一个小按钮（如模式切换、模型选择器），点击后可展示 Popover 或执行操作。
-/// 当工具栏项需要展示自定义内容时，内核会调用 `addSidebarToolbarItemView()` 获取对应视图。
+/// 每个工具栏项通常由插件通过 `addSidebarToolbarItemView()` 提供完整可交互视图。
+/// `SidebarToolbarItem` 本身只携带展示元数据，不携带点击动作。
 struct SidebarToolbarItem: Identifiable, Equatable {
     /// 唯一标识
     let id: String
@@ -315,7 +315,7 @@ protocol SuperPlugin: Actor {
     /// 提供右侧栏底部工具栏左侧项列表
     ///
     /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏左侧。
-    /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），按 `priority` 升序排列。
+    /// 每个工具栏项按 `priority` 升序排列，交互由 `addSidebarToolbarItemView()` 提供。
     ///
     /// - Parameter context: 插件视图构建上下文。
     @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
@@ -331,7 +331,7 @@ protocol SuperPlugin: Actor {
     /// 提供指定右侧栏工具栏项对应的自定义按钮视图
     ///
     /// 内核在渲染工具栏时，优先使用此方法返回的自定义视图作为按钮内容。
-    /// 如果返回 nil，内核会使用 `SidebarToolbarItem` 的 `systemImage` 渲染默认图标按钮。
+    /// 如果返回 nil，内核会使用 `SidebarToolbarItem` 的 `systemImage` 渲染非交互占位图标。
     ///
     /// - Parameter itemId: 工具栏项 id，与 leading/trailing toolbar items 返回的 `SidebarToolbarItem.id` 对应。
     /// - Parameter context: 插件视图构建上下文。
