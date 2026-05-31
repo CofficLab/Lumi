@@ -2,10 +2,6 @@ import Foundation
 import Testing
 @testable import PluginHTMLEditor
 
-@Test func packageLoads() async throws {
-    #expect(true)
-}
-
 @Test func colorParserFindsHSLAndHSLAColors() async throws {
     let css = "color: hsl(120, 100%, 25%); background: hsla(240, 100%, 50%, 0.4);"
 
@@ -82,6 +78,29 @@ import Testing
     let matches = ColorParser.findColors(in: css)
 
     #expect(matches.isEmpty)
+}
+
+@Test func colorParserFindsStandaloneNamedColors() async throws {
+    let css = "color: red; box-shadow: 0 0 2px blue, inset 0 0 1px green;"
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values.contains("red"))
+    #expect(values.contains("blue"))
+    #expect(values.contains("green"))
+}
+
+@Test func colorParserIgnoresNamedColorsInsideIdentifiers() async throws {
+    let css = """
+    .blue-button { --red-color: #123456; }
+    .card[data-tone="greenish"] { color: #red; }
+    """
+
+    let matches = ColorParser.findColors(in: css)
+    let values = matches.map(\.hexString)
+
+    #expect(values == ["#123456"])
 }
 
 @Test func colorParserIgnoresInvalidHSLAAlphaWithoutCrashing() async throws {

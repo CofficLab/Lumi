@@ -73,22 +73,25 @@ public enum ColorParser {
     // MARK: - 颜色匹配正则
 
     /// 匹配十六进制颜色
-    public static let hexPattern = try! NSRegularExpression(
+    public static let hexPattern = makeRegex(
         pattern: "#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b",
         options: .caseInsensitive
     )
 
     /// 匹配 rgb/rgba 颜色
-    public static let rgbPattern = try! NSRegularExpression(
+    public static let rgbPattern = makeRegex(
         pattern: "rgba?\\(\\s*[^)]*\\)",
         options: .caseInsensitive
     )
 
     /// 匹配 hsl/hsla 颜色
-    public static let hslPattern = try! NSRegularExpression(
+    public static let hslPattern = makeRegex(
         pattern: "hsla?\\(\\s*[^)]*\\)",
         options: .caseInsensitive
     )
+
+    /// 匹配候选 CSS 标识符，再用边界检查过滤变量名、类名等上下文。
+    public static let wordPattern = makeRegex(pattern: "\\b[a-zA-Z]+\\b", options: [])
 
     // MARK: - 查找颜色
 
@@ -128,11 +131,12 @@ public enum ColorParser {
         }
 
         // 查找命名颜色
-        let wordPattern = try! NSRegularExpression(pattern: "\\b[a-zA-Z]+\\b", options: [])
         wordPattern.enumerateMatches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) { match, _, _ in
             guard let match = match else { return }
             let word = nsText.substring(with: match.range).lowercased()
-            if let hexValue = namedColors[word], let color = color(fromHex: hexValue) {
+            if isStandaloneNamedColor(in: nsText, range: match.range),
+               let hexValue = namedColors[word],
+               let color = color(fromHex: hexValue) {
                 results.append((range: match.range, hexString: word, color: color))
             }
         }
@@ -156,6 +160,41 @@ public enum ColorParser {
         }
 
         return nil
+    }
+
+    private static func makeRegex(pattern: String, options: NSRegularExpression.Options) -> NSRegularExpression {
+        do {
+            return try NSRegularExpression(pattern: pattern, options: options)
+        } catch {
+            preconditionFailure("Invalid color parser regex: \(pattern)")
+        }
+    }
+
+    private static func isStandaloneNamedColor(in text: NSString, range: NSRange) -> Bool {
+        !hasCSSIdentifierCharacter(in: text, before: range.location)
+            && !hasCSSIdentifierCharacter(in: text, at: NSMaxRange(range))
+            && !hasCharacter("#", in: text, before: range.location)
+    }
+
+    private static func hasCSSIdentifierCharacter(in text: NSString, before location: Int) -> Bool {
+        guard location > 0 else { return false }
+        return isCSSIdentifierCharacter(text.character(at: location - 1))
+    }
+
+    private static func hasCSSIdentifierCharacter(in text: NSString, at location: Int) -> Bool {
+        guard location < text.length else { return false }
+        return isCSSIdentifierCharacter(text.character(at: location))
+    }
+
+    private static func hasCharacter(_ character: Character, in text: NSString, before location: Int) -> Bool {
+        guard location > 0 else { return false }
+        guard let scalar = UnicodeScalar(text.character(at: location - 1)) else { return false }
+        return String(scalar) == String(character)
+    }
+
+    private static func isCSSIdentifierCharacter(_ codeUnit: unichar) -> Bool {
+        guard let scalar = UnicodeScalar(codeUnit) else { return false }
+        return CharacterSet.alphanumerics.contains(scalar) || scalar == "_" || scalar == "-"
     }
 
     /// 从十六进制字符串创建颜色
