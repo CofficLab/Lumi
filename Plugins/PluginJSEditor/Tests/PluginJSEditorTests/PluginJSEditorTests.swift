@@ -190,6 +190,31 @@ import Foundation
     #expect(result.stderr.contains("stderr-300-"))
 }
 
+@Test func scriptTaskRunnerCancelStopsRunningProcessPromptly() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let runner = ScriptTaskRunner()
+    let start = Date()
+    let task = Task {
+        await runner.runExecutable(
+            "sh",
+            arguments: ["-c", "sleep 5; echo should-not-complete"],
+            projectPath: directory.path
+        )
+    }
+
+    try await Task.sleep(nanoseconds: 100_000_000)
+    await runner.cancel()
+    let result = await task.value
+
+    #expect(Date().timeIntervalSince(start) < 2)
+    #expect(result.exitCode != 0)
+    #expect(!result.stdout.contains("should-not-complete"))
+}
+
 @Test func runtimeBridgeHandlesLargeNodeOutput() async throws {
     guard JSEnvResolver.nodePath != nil else { return }
 

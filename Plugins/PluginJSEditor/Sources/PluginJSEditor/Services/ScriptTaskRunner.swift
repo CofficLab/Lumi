@@ -84,9 +84,9 @@ public actor ScriptTaskRunner: SuperLog {
             stderrBuffer.append(handle.availableData)
         }
 
+        let exitCode: Int32
         do {
-            try process.run()
-            process.waitUntilExit()
+            exitCode = try await Self.runAndWait(process)
         } catch {
             stdoutPipe.fileHandleForReading.readabilityHandler = nil
             stderrPipe.fileHandleForReading.readabilityHandler = nil
@@ -110,11 +110,25 @@ public actor ScriptTaskRunner: SuperLog {
         currentProcess = nil
 
         return JSScriptResult(
-            exitCode: process.terminationStatus,
+            exitCode: exitCode,
             stdout: stdout,
             stderr: stderr,
             duration: Date().timeIntervalSince(start)
         )
+    }
+
+    private nonisolated static func runAndWait(_ process: Process) async throws -> Int32 {
+        try await withCheckedThrowingContinuation { continuation in
+            process.terminationHandler = { terminatedProcess in
+                continuation.resume(returning: terminatedProcess.terminationStatus)
+            }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                continuation.resume(throwing: error)
+            }
+        }
     }
 
     private func localBin(_ name: String, projectPath: String) -> String? {
