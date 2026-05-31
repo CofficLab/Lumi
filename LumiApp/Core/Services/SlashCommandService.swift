@@ -62,7 +62,7 @@ actor SlashCommandService: SuperLog {
     func isSlashCommand(_ input: String) async -> Bool {
         guard input.hasPrefix("/") else { return false }
 
-        let command = input.dropFirst().split(separator: " ", maxSplits: 1).first.map(String.init) ?? ""
+        let command = Self.extractCommandName(from: input)
 
         // 检查内置命令
         if builtInCommands.contains(command) {
@@ -128,9 +128,9 @@ actor SlashCommandService: SuperLog {
     func handle(input: String) async -> SlashCommandResult {
         guard input.hasPrefix("/") else { return .notHandled }
 
-        let components = input.dropFirst().split(separator: " ", maxSplits: 1).map(String.init)
-        guard let command = components.first else { return .notHandled }
-        let arguments = components.count > 1 ? components[1] : ""
+        let command = Self.extractCommandName(from: input)
+        guard !command.isEmpty else { return .notHandled }
+        let arguments = Self.extractArguments(from: input)
 
         // 优先处理内置命令
         switch command {
@@ -147,7 +147,7 @@ actor SlashCommandService: SuperLog {
             return .triggerPlanning(arguments)
 
         case "mcp":
-            let mcpComponents = arguments.split(separator: " ", maxSplits: 1).map(String.init)
+            let mcpComponents = Self.splitCommandArguments(arguments)
             let subCommand = mcpComponents.first ?? "help"
             let param = mcpComponents.count > 1 ? mcpComponents[1] : ""
             return .mcpCommand(subCommand: subCommand, param: param)
@@ -163,6 +163,33 @@ actor SlashCommandService: SuperLog {
 
         // 不支持的命令
         return .notHandled
+    }
+
+    private static func extractCommandName(from input: String) -> String {
+        let body = input.dropFirst()
+        return body
+            .split(maxSplits: 1, whereSeparator: \.isWhitespace)
+            .first
+            .map(String.init) ?? ""
+    }
+
+    private static func extractArguments(from input: String) -> String {
+        let body = input.dropFirst()
+        guard let firstWhitespace = body.firstIndex(where: \.isWhitespace) else {
+            return ""
+        }
+
+        let argumentsStart = body[firstWhitespace...]
+            .firstIndex(where: { !$0.isWhitespace }) ?? body.endIndex
+        return String(body[argumentsStart...])
+    }
+
+    private static func splitCommandArguments(_ arguments: String) -> [String] {
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        let parts = trimmed.split(maxSplits: 1, whereSeparator: \.isWhitespace)
+        return parts.map(String.init)
     }
 }
 

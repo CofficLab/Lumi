@@ -257,13 +257,21 @@ actor ProjectCommandExecutor: SuperLog {
     // MARK: - 私有方法
     
     private func extractCommandName(from input: String) -> String {
-        let components = input.dropFirst().split(separator: " ", maxSplits: 1).map(String.init)
-        return components.first ?? ""
+        input.dropFirst()
+            .split(maxSplits: 1, whereSeparator: \.isWhitespace)
+            .first
+            .map(String.init) ?? ""
     }
     
     private func extractArguments(from input: String) -> String {
-        let components = input.dropFirst().split(separator: " ", maxSplits: 1).map(String.init)
-        return components.count > 1 ? components[1] : ""
+        let body = input.dropFirst()
+        guard let firstWhitespace = body.firstIndex(where: \.isWhitespace) else {
+            return ""
+        }
+
+        let argumentsStart = body[firstWhitespace...]
+            .firstIndex(where: { !$0.isWhitespace }) ?? body.endIndex
+        return String(body[argumentsStart...])
     }
     
     private func categoryForSource(_ source: ProjectCommand.Source) -> String {

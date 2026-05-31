@@ -36,5 +36,30 @@ final class SlashCommandServiceTests: XCTestCase {
 
         XCTAssertTrue(suggestions.contains { $0.name == "/cmd" })
     }
+
+    func testBuiltInCommandsAcceptTabsBetweenCommandAndArguments() async {
+        let service = SlashCommandService()
+
+        let result = await service.handle(input: "/plan\tFix pasted command")
+
+        guard case .triggerPlanning(let task) = result else {
+            return XCTFail("Expected /plan with tab separator to trigger planning, got \(result)")
+        }
+
+        XCTAssertEqual(task, "Fix pasted command")
+    }
+
+    func testMCPCommandAcceptsTabsBetweenSubcommandAndParameter() async {
+        let service = SlashCommandService()
+
+        let result = await service.handle(input: "/mcp\tinstall\tvision")
+
+        guard case .mcpCommand(let subCommand, let param) = result else {
+            return XCTFail("Expected /mcp with tabs to parse, got \(result)")
+        }
+
+        XCTAssertEqual(subCommand, "install")
+        XCTAssertEqual(param, "vision")
+    }
 }
 #endif

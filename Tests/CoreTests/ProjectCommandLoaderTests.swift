@@ -312,5 +312,34 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertTrue(message.contains("Actual=release"))
         XCTAssertFalse(message.contains("Literal=\\$1"))
     }
+
+    func testProjectCommandAcceptsTabSeparatedArguments() async throws {
+        let commandName = "tab-args-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "Args=$ARGUMENTS\nFirst=$1".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName)\talpha beta")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("Args=alpha beta"))
+        XCTAssertTrue(message.contains("First=alpha"))
+    }
 }
 #endif
