@@ -254,6 +254,23 @@ import Foundation
     #expect(destinationURL.lastPathComponent == "Icon (2).SVG")
 }
 
+@Test func exportPolicyBuildsUniqueScreenshotDestination() {
+    let directoryURL = URL(fileURLWithPath: "/tmp/Downloads", isDirectory: true)
+    let sourceURL = directoryURL.appendingPathComponent("Preview_2026-06-01_08-30-00.png")
+    let existing = Set([
+        directoryURL.appendingPathComponent("Preview_2026-06-01_08-30-00.png"),
+        directoryURL.appendingPathComponent("Preview_2026-06-01_08-30-00 (1).png"),
+    ])
+
+    let destinationURL = EditorPreviewExportPolicy.uniqueDestinationURL(
+        for: sourceURL,
+        in: directoryURL,
+        fileExists: { existing.contains($0) }
+    )
+
+    #expect(destinationURL.lastPathComponent == "Preview_2026-06-01_08-30-00 (2).png")
+}
+
 @Test func jsonPreviewParserKeepsValidJSONLLines() throws {
     let parsed = JSONPreviewParser.parse("""
     {"name":"Ada"}

@@ -534,17 +534,23 @@ public struct EditorPreviewDetailView: View, SuperLog {
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         let timestamp = formatter.string(from: Date())
 
-        let fileName = "Preview_\(timestamp).png"
         let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-        let fileURL = downloadsURL?.appendingPathComponent(fileName)
 
-        guard let fileURL,
+        guard let downloadsURL,
               let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
             alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
             return
         }
+
+        let fileName = "Preview_\(timestamp).png"
+        let sourceURL = downloadsURL.appendingPathComponent(fileName)
+        let fileURL = EditorPreviewExportPolicy.uniqueDestinationURL(
+            for: sourceURL,
+            in: downloadsURL,
+            fileExists: { FileManager.default.fileExists(atPath: $0.path) }
+        )
 
         do {
             try pngData.write(to: fileURL)
@@ -557,7 +563,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             alert_success(
                 String(
                     format: String(localized: "Screenshot saved to Downloads and copied to clipboard: %@", table: "EditorPreview"),
-                    fileName
+                    fileURL.lastPathComponent
                 )
             )
 
