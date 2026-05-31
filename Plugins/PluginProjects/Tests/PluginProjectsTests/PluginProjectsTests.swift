@@ -18,6 +18,14 @@ import Testing
     #expect(AddProjectTool.normalizedPath(from: " \n\t ") == nil)
 }
 
+@Test func listProjectsToolClampsLimitBeforePrefixingProjects() {
+    #expect(ListProjectsTool.normalizedLimit(nil) == 5)
+    #expect(ListProjectsTool.normalizedLimit(-10) == 1)
+    #expect(ListProjectsTool.normalizedLimit(0) == 1)
+    #expect(ListProjectsTool.normalizedLimit(25) == 25)
+    #expect(ListProjectsTool.normalizedLimit(999) == 500)
+}
+
 @Test func projectsStoreQuarantinesInvalidStateFileAndRecovers() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("ProjectsStore-\(UUID().uuidString)", isDirectory: true)
