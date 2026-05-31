@@ -45,5 +45,24 @@ final class EditorJumpToDefinitionDelegateTests: XCTestCase {
             targetURL: targetURL
         ))
     }
+
+    @MainActor
+    func testReferencePreviewLineReadsUTF16File() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorJumpToDefinitionDelegateTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let url = directory.appendingPathComponent("Reference.swift")
+        try """
+        struct Reference {
+            let localized = true
+        }
+        """.write(to: url, atomically: true, encoding: .utf16)
+
+        let controller = EditorLSPActionController()
+
+        XCTAssertEqual(controller.previewLine(from: url, at: 2), "let localized = true")
+    }
 }
 #endif

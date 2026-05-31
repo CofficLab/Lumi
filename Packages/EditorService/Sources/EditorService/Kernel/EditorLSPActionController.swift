@@ -50,7 +50,7 @@ final class EditorLSPActionController: EditorLSPActionProviding {
 
     func previewLine(from url: URL, at lineNumber: Int) -> String? {
         guard lineNumber > 0 else { return nil }
-        guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        guard let content = try? EditorTextFileReader.read(url) else { return nil }
         let lines = content.components(separatedBy: .newlines)
         guard lineNumber - 1 < lines.count else { return nil }
         return lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)

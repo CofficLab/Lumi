@@ -806,7 +806,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
     private static func previewLine(from fileURL: URL, at position: Position) -> String? {
         guard fileURL.isFileURL,
-              let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return nil }
+              let content = try? EditorTextFileReader.read(fileURL) else { return nil }
         let lines = content.split(separator: "\n", omittingEmptySubsequences: false)
         let lineIndex = Int(position.line)
         guard lines.indices.contains(lineIndex) else { return nil }
