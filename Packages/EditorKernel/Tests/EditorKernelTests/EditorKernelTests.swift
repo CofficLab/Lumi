@@ -2737,6 +2737,31 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func workspaceSearchControllerHandlesLargeRipgrepOutput() async throws {
+        guard Self.isRipgrepAvailable() else { return }
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-workspace-search-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let line = "needle " + String(repeating: "x", count: 512)
+        let contents = Array(repeating: line, count: 300).joined(separator: "\n")
+        try contents.write(to: root.appendingPathComponent("Large.txt"), atomically: true, encoding: .utf8)
+
+        let response = try await EditorWorkspaceSearchController().search(
+            query: "needle",
+            projectRootPath: root.path,
+            limit: 500
+        )
+
+        #expect(response.summary.totalMatches == 300)
+        #expect(response.fileResults.first?.path == "Large.txt")
+        #expect(response.fileResults.first?.matches.count == 300)
+    }
+
+    @Test
+    @MainActor
     func statusToastPolicyNormalizesDurationsByLevel() {
         let info = EditorStatusToastPolicy.presentation(level: .info, duration: 0.2)
         #expect(info == .init(level: .info, duration: 1.0, autoDismiss: false))
@@ -3175,4 +3200,19 @@ struct EditorKernelTests {
         #expect(text.getLastLines(10) == nil)
     }
 
+    private static func isRipgrepAvailable() -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["rg", "--version"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
+    }
 }

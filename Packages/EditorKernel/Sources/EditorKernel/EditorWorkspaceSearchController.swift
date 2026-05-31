@@ -82,17 +82,51 @@ public final class EditorWorkspaceSearchController {
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
+        let outputBuffer = LockedProcessOutputBuffer()
+        let errorBuffer = LockedProcessOutputBuffer()
+
+        outputPipe.fileHandleForReading.readabilityHandler = { handle in
+            outputBuffer.append(handle.availableData)
+        }
+        errorPipe.fileHandleForReading.readabilityHandler = { handle in
+            errorBuffer.append(handle.availableData)
+        }
+
         try process.run()
         process.waitUntilExit()
 
-        let output = String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-        let error = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        outputPipe.fileHandleForReading.readabilityHandler = nil
+        errorPipe.fileHandleForReading.readabilityHandler = nil
+
+        outputBuffer.append(outputPipe.fileHandleForReading.readDataToEndOfFile())
+        errorBuffer.append(errorPipe.fileHandleForReading.readDataToEndOfFile())
+
+        let output = String(data: outputBuffer.data(), encoding: .utf8) ?? ""
+        let error = String(data: errorBuffer.data(), encoding: .utf8) ?? ""
 
         if process.terminationStatus == 0 || process.terminationStatus == 1 {
             return output
         }
 
         throw WorkspaceSearchError.processFailed(error.isEmpty ? "rg exited with \(process.terminationStatus)" : error)
+    }
+}
+
+private final class LockedProcessOutputBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage = Data()
+
+    func append(_ data: Data) {
+        guard !data.isEmpty else { return }
+        lock.lock()
+        storage.append(data)
+        lock.unlock()
+    }
+
+    func data() -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
 
