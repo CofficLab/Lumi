@@ -1,8 +1,10 @@
 import EditorKernel
 import Foundation
+import os
 import SwiftUI
 
 private let editorKeybindingsFileName = "editor_keybindings.json"
+private let corruptEditorKeybindingsFileName = "editor_keybindings.corrupt.json"
 
 // MARK: - Editor Keybinding Store
 //
@@ -25,10 +27,14 @@ private let editorKeybindingsFileName = "editor_keybindings.json"
 /// 优先级：用户自定义 > 默认绑定
 @MainActor
 public final class EditorKeybindingStore: ObservableObject {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.keybinding-store")
+
     public static let shared = EditorKeybindingStore()
 
     /// 用户自定义的快捷键映射（commandID → entry）
     @Published public private(set) var customBindings: [String: EditorKeybindingEntry] = [:]
+
+    private let customBindingsFileURL: URL?
 
     // MARK: - Persistence
 
@@ -53,7 +59,18 @@ public final class EditorKeybindingStore: ObservableObject {
             .appendingPathComponent(editorKeybindingsFileName)
     }
 
-    private init() {
+    nonisolated static func corruptBindingsFileURL(for bindingsFileURL: URL) -> URL {
+        bindingsFileURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(corruptEditorKeybindingsFileName)
+    }
+
+    private convenience init() {
+        self.init(bindingsFileURL: nil)
+    }
+
+    init(bindingsFileURL: URL?) {
+        self.customBindingsFileURL = bindingsFileURL
         load()
     }
 
@@ -68,26 +85,29 @@ public final class EditorKeybindingStore: ObservableObject {
     }
 
     /// 设置自定义快捷键
-    public func setBinding(commandID: String, key: String, modifiers: [EditorCommandShortcut.Modifier]) {
+    @discardableResult
+    public func setBinding(commandID: String, key: String, modifiers: [EditorCommandShortcut.Modifier]) -> Bool {
         let entry = EditorKeybindingEntry(
             commandID: commandID,
             key: key,
             modifiers: modifiers
         )
         customBindings[commandID] = entry
-        save()
+        return save()
     }
 
     /// 移除自定义快捷键（恢复默认）
-    public func removeBinding(commandID: String) {
+    @discardableResult
+    public func removeBinding(commandID: String) -> Bool {
         customBindings.removeValue(forKey: commandID)
-        save()
+        return save()
     }
 
     /// 重置所有快捷键为默认
-    public func resetAll() {
+    @discardableResult
+    public func resetAll() -> Bool {
         customBindings.removeAll()
-        save()
+        return save()
     }
 
     /// 检查某个快捷键是否已被其他命令占用
@@ -106,13 +126,13 @@ public final class EditorKeybindingStore: ObservableObject {
     // MARK: - Load / Save
 
     private func load() {
-        let url = bindingsFileURL
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url) else {
+        let url = storageURL
+        guard FileManager.default.fileExists(atPath: url.path) else {
             return
         }
 
         do {
+            let data = try Data(contentsOf: url)
             let entries = try JSONDecoder().decode([EditorKeybindingEntry].self, from: data)
             var bindings: [String: EditorKeybindingEntry] = [:]
             for entry in entries {
@@ -120,19 +140,42 @@ public final class EditorKeybindingStore: ObservableObject {
             }
             customBindings = bindings
         } catch {
-            // 解析失败时不影响功能，使用默认绑定
+            Self.logger.error("Load editor keybindings failed: \(error.localizedDescription)")
+            quarantineCorruptBindings(at: url)
         }
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
         let entries = Array(customBindings.values)
+        let url = storageURL
         do {
             let data = try JSONEncoder().encode(entries)
-            let dir = bindingsFileURL.deletingLastPathComponent()
+            let dir = url.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try data.write(to: bindingsFileURL, options: .atomic)
+            try data.write(to: url, options: .atomic)
+            return true
         } catch {
-            // 保存失败不影响主流程
+            Self.logger.error("Save editor keybindings failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private var storageURL: URL {
+        customBindingsFileURL ?? bindingsFileURL
+    }
+
+    private func quarantineCorruptBindings(at url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        let corruptURL = Self.corruptBindingsFileURL(for: url)
+        do {
+            if FileManager.default.fileExists(atPath: corruptURL.path) {
+                try FileManager.default.removeItem(at: corruptURL)
+            }
+            try FileManager.default.moveItem(at: url, to: corruptURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt editor keybindings failed: \(error.localizedDescription)")
         }
     }
 }
