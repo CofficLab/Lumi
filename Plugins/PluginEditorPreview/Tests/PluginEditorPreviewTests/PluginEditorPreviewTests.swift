@@ -128,6 +128,30 @@ import Foundation
     }
 }
 
+@Test func markdownTODOScannerHandlesCommonTaskListSyntax() {
+    let stats = MarkdownTODOScanner.scan("""
+    - [ ] Ship app
+    - [X] Write release notes
+    * [x] Update docs
+    + [ ] Follow up
+    """)
+
+    #expect(stats == MarkdownTODOStats(total: 4, completed: 2))
+}
+
+@Test func markdownTODOScannerIgnoresFencedCodeBlocks() {
+    let stats = MarkdownTODOScanner.scan("""
+    - [x] Real task
+
+    ```markdown
+    - [ ] Example unchecked task
+    - [x] Example checked task
+    ```
+    """)
+
+    #expect(stats == MarkdownTODOStats(total: 1, completed: 1))
+}
+
 @Test func previewStorageFindsLegacyCacheRootsAcrossDBVersions() throws {
     let appSupport = FileManager.default.temporaryDirectory
         .appendingPathComponent("EditorPreviewStorageTests-\(UUID().uuidString)", isDirectory: true)

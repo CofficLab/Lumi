@@ -926,7 +926,7 @@ private struct EditorPreviewDebugStateView: View {
     }
 }
 
-private struct MarkdownTODOStats: Equatable {
+struct MarkdownTODOStats: Equatable {
     public let total: Int
     public let completed: Int
 
@@ -939,23 +939,67 @@ private struct MarkdownTODOStats: Equatable {
     }
 }
 
-private enum MarkdownTODOScanner {
+enum MarkdownTODOScanner {
     public static func scan(_ markdown: String) -> MarkdownTODOStats? {
         var total = 0
         var completed = 0
+        var fenceMarker: String?
 
         for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
             let trimmed = line.drop { $0 == " " || $0 == "\t" }
-            if trimmed.hasPrefix("- [ ]") {
+
+            if let activeFenceMarker = fenceMarker {
+                if trimmed.hasPrefix(activeFenceMarker) {
+                    fenceMarker = nil
+                }
+                continue
+            }
+
+            if let openingFenceMarker = openingFenceMarker(in: trimmed) {
+                fenceMarker = openingFenceMarker
+                continue
+            }
+
+            if let isCompleted = taskListItemCompletion(in: trimmed) {
                 total += 1
-            } else if trimmed.hasPrefix("- [x]") {
-                total += 1
-                completed += 1
+                if isCompleted {
+                    completed += 1
+                }
             }
         }
 
         guard total > 0 else { return nil }
         return MarkdownTODOStats(total: total, completed: completed)
+    }
+
+    private static func openingFenceMarker(in trimmedLine: Substring) -> String? {
+        guard let first = trimmedLine.first, first == "`" || first == "~" else {
+            return nil
+        }
+
+        let markerLength = trimmedLine.prefix { $0 == first }.count
+        guard markerLength >= 3 else { return nil }
+        return String(repeating: String(first), count: markerLength)
+    }
+
+    private static func taskListItemCompletion(in trimmedLine: Substring) -> Bool? {
+        guard let listMarker = trimmedLine.first, listMarker == "-" || listMarker == "*" || listMarker == "+" else {
+            return nil
+        }
+
+        var remainder = trimmedLine.dropFirst()
+        guard let separator = remainder.first, separator == " " || separator == "\t" else {
+            return nil
+        }
+
+        remainder = remainder.drop { $0 == " " || $0 == "\t" }
+        if remainder.hasPrefix("[ ]") {
+            return false
+        }
+        if remainder.hasPrefix("[x]") || remainder.hasPrefix("[X]") {
+            return true
+        }
+        return nil
     }
 }
 
