@@ -169,6 +169,38 @@ struct XcodeCompilerTests {
         #expect(discovered[0].lastPathComponent == "module.modulemap")
     }
 
+    @Test("common-args.resp 使用 UTF-16 编码时仍能发现 ObjC modulemap")
+    func commonArgsRespReadsUTF16Content() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CommonArgs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let includeDir = tmp.appendingPathComponent("include", isDirectory: true)
+        try FileManager.default.createDirectory(at: includeDir, withIntermediateDirectories: true)
+
+        try """
+        module MyCLib {
+            header "mylib.h"
+        }
+        """.write(
+            to: includeDir.appendingPathComponent("module.modulemap"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let respURL = tmp.appendingPathComponent("test-common-args.resp")
+        try "-fobjc-arc -fmodules -I\(includeDir.path) -O0".write(
+            to: respURL,
+            atomically: true,
+            encoding: .utf16
+        )
+
+        let discovered = LumiPreviewFacade.XcodeCompiler.moduleMapURLsFromCommonArgs(respURL)
+
+        #expect(discovered.count == 1)
+        #expect(discovered[0].lastPathComponent == "module.modulemap")
+    }
+
     @Test("common-args.resp 中不含 include 目录时返回空列表")
     func commonArgsRespReturnsEmptyWhenNoModuleMaps() throws {
         let tmp = FileManager.default.temporaryDirectory

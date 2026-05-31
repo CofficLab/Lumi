@@ -417,10 +417,15 @@ final class SPMCompiler: Sendable {
     }
 
     private static func packageLinkedLibraries(in packageManifest: URL) -> [String] {
-        guard let source = try? String(contentsOf: packageManifest, encoding: .utf8) else {
+        guard let source = readTextFile(packageManifest) else {
             return []
         }
         return linkedLibraries(in: source)
+    }
+
+    private static func readTextFile(_ url: URL) -> String? {
+        var encoding = String.Encoding.utf8
+        return try? String(contentsOf: url, usedEncoding: &encoding)
     }
 
     private static func linkedLibraries(in packageManifest: String) -> [String] {

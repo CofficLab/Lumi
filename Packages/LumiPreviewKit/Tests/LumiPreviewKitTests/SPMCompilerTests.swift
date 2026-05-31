@@ -195,6 +195,83 @@ struct SPMCompilerTests {
         #expect(arguments.contains("-lz"))
     }
 
+    @Test("previewCompilerArguments 读取 UTF-16 根 package 的 linkedLibrary")
+    func previewCompilerArgumentsReadUTF16RootManifestLinkedLibraries() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "PreviewTargetPackage",
+            targets: [
+                .executableTarget(
+                    name: "PreviewTarget",
+                    linkerSettings: [.linkedLibrary("sqlite3")]
+                )
+            ]
+        )
+        """.write(
+            to: packageDirectory.appendingPathComponent("Package.swift"),
+            atomically: true,
+            encoding: .utf16
+        )
+
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
+
+        #expect(arguments.contains("-lsqlite3"))
+    }
+
+    @Test("previewCompilerArguments 读取 UTF-16 checkout package 的 linkedLibrary")
+    func previewCompilerArgumentsReadUTF16CheckoutManifestLinkedLibraries() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let checkoutDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("checkouts", isDirectory: true)
+            .appendingPathComponent("NativeDependency", isDirectory: true)
+        try FileManager.default.createDirectory(at: checkoutDirectory, withIntermediateDirectories: true)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "NativeDependency",
+            targets: [
+                .target(
+                    name: "NativeDependency",
+                    linkerSettings: [.linkedLibrary("z")]
+                )
+            ]
+        )
+        """.write(to: checkoutDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf16)
+
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
+
+        #expect(arguments.contains("-lz"))
+    }
+
     @Test("previewCompilerArguments 排除测试 target 的对象文件")
     func previewCompilerArgumentsExcludeTestTargetObjects() throws {
         let packageDirectory = try makeTemporaryPackage(

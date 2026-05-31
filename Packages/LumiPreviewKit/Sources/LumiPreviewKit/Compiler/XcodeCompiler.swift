@@ -434,7 +434,7 @@ final class XcodeCompiler: Sendable {
     /// 文件会包含 `-I /path/to/Sources/TargetName/include` 这样的参数，
     /// 而 modulemap 就在该 include 目录中。
     static func moduleMapURLsFromCommonArgs(_ respURL: URL) -> [URL] {
-        guard let content = try? String(contentsOf: respURL, encoding: .utf8) else { return [] }
+        guard let content = readTextFile(respURL) else { return [] }
         var urls: [URL] = []
 
         // 提取 -I 参数中的路径
@@ -703,11 +703,16 @@ final class XcodeCompiler: Sendable {
 
         return packages.flatMap { packageDirectory -> [String] in
             let packageManifest = packageDirectory.appendingPathComponent("Package.swift")
-            guard let source = try? String(contentsOf: packageManifest, encoding: .utf8) else {
+            guard let source = readTextFile(packageManifest) else {
                 return []
             }
             return linkedLibraries(in: source)
         }
+    }
+
+    private static func readTextFile(_ url: URL) -> String? {
+        var encoding = String.Encoding.utf8
+        return try? String(contentsOf: url, usedEncoding: &encoding)
     }
 
     private static func linkedLibraries(in packageManifest: String) -> [String] {
