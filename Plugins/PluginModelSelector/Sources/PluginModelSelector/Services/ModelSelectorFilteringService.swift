@@ -97,12 +97,14 @@ public enum ModelSelectorFilteringService {
 
     public static func filteredFrequentModels(
         _ models: [FrequentModelEntry],
+        availableProviderIds: Set<String>,
         searchText: String
     ) -> [FrequentModelEntry] {
+        let visibleModels = models.filter { availableProviderIds.contains($0.providerId) }
         let keyword = normalizedSearchText(searchText)
-        guard !keyword.isEmpty else { return models }
+        guard !keyword.isEmpty else { return visibleModels }
 
-        return models.filter { entry in
+        return visibleModels.filter { entry in
             entry.modelName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerId.localizedCaseInsensitiveContains(keyword)
@@ -111,12 +113,14 @@ public enum ModelSelectorFilteringService {
 
     public static func filteredFastModels(
         _ models: [FastModelEntry],
+        availableProviderIds: Set<String>,
         searchText: String
     ) -> [FastModelEntry] {
+        let visibleModels = models.filter { availableProviderIds.contains($0.providerId) }
         let keyword = normalizedSearchText(searchText)
-        guard !keyword.isEmpty else { return models }
+        guard !keyword.isEmpty else { return visibleModels }
 
-        return models.filter { entry in
+        return visibleModels.filter { entry in
             entry.modelName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerId.localizedCaseInsensitiveContains(keyword)

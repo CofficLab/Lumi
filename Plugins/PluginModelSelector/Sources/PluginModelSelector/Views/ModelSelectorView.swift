@@ -193,7 +193,12 @@ public struct ModelSelectorView: View, SuperLog {
     /// 常用模型列表（跨供应商，按使用频率排序）
     @ViewBuilder
     private var frequentModelsList: some View {
-        let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(frequentModels, searchText: searchText)
+        let availableProviderIds = Set(llmVM.allProviders.map(\.id))
+        let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(
+            frequentModels,
+            availableProviderIds: availableProviderIds,
+            searchText: searchText
+        )
         if filteredEntries.isEmpty {
             AppEmptyState(
                 icon: "clock.arrow.circlepath",
@@ -228,7 +233,12 @@ public struct ModelSelectorView: View, SuperLog {
     /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
     @ViewBuilder
     private var fastModelsList: some View {
-        let filteredEntries = ModelSelectorFilteringService.filteredFastModels(fastModels, searchText: searchText)
+        let availableProviderIds = Set(llmVM.allProviders.map(\.id))
+        let filteredEntries = ModelSelectorFilteringService.filteredFastModels(
+            fastModels,
+            availableProviderIds: availableProviderIds,
+            searchText: searchText
+        )
         if filteredEntries.isEmpty {
             AppEmptyState(
                 icon: "bolt.fill",
