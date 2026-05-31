@@ -195,9 +195,14 @@ enum MarkdownTableNormalizer {
     
     /// 判断是否为分隔线行（如 `| --- | --- |` 或 `| :--- | ---: |`）
     private static func isSeparatorLine(_ line: String) -> Bool {
-        let normalized = line.trimmingCharacters(in: .whitespaces)
-            .replacingOccurrences(of: " ", with: "")
-        return normalized.range(of: #"^\|:?-{1,}:?\|"#, options: .regularExpression) != nil
+        let cells = parseTableRow(line)
+        guard !cells.isEmpty else { return false }
+
+        return cells.allSatisfy { cell in
+            let normalized = cell.trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: " ", with: "")
+            return normalized.range(of: #"^:?-{1,}:?$"#, options: .regularExpression) != nil
+        }
     }
     
     /// 规范化单个表格块

@@ -190,6 +190,27 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
     }
 
+    @Test
+    func preservesInvalidSeparatorCellsAsData() {
+        let input = """
+            | A | B |
+            | --- | nope |
+            | 1 | 2 |
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == """
+            | A | B |
+            | --- | --- |
+            | --- | nope |
+            | 1 | 2 |
+            """)
+        #expect(blocks.count == 1)
+        #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["—", "nope"], ["1", "2"]]))
+    }
+
     // MARK: - 混合内容（表格前后有其他 Markdown）
 
     @Test
