@@ -110,3 +110,24 @@ import Testing
 
     #expect(matches.isEmpty)
 }
+
+@Test func emmetExpandsNestedRepeatedItems() async throws {
+    let expansion = try #require(EmmetEngine.expand("ul>li.item$*3"))
+
+    #expect(expansion.text == """
+    <ul>
+      <li class="item1"></li>
+      <li class="item2"></li>
+      <li class="item3"></li>
+    </ul>
+    """)
+    #expect(expansion.cursorOffset >= 0)
+}
+
+@Test func emmetExpandsVoidElementsForHTMLAndXHTML() async throws {
+    let html = try #require(EmmetEngine.expand("img.logo[src=logo.png]"))
+    let xhtml = try #require(EmmetEngine.expand("img.logo[src=logo.png]", syntax: .xhtml))
+
+    #expect(html.text == #"<img class="logo" src="logo.png">"#)
+    #expect(xhtml.text == #"<img class="logo" src="logo.png" />"#)
+}

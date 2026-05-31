@@ -183,6 +183,9 @@ private struct EmmetParser {
 
         // 解析重复
         parseRepeat(into: &node)
+        if nodeContainsCounter(node) {
+            node.hasCounter = true
+        }
 
         return node
     }
@@ -309,6 +312,14 @@ private struct EmmetParser {
         }
     }
 
+    private func nodeContainsCounter(_ node: EmmetNode) -> Bool {
+        node.tagName.contains("$")
+            || node.classNames.contains(where: { $0.contains("$") })
+            || node.id?.contains("$") == true
+            || node.attributes.contains(where: { $0.key.contains("$") || $0.value.contains("$") })
+            || node.textContent?.contains("$") == true
+    }
+
     private mutating func advance() {
         if index < input.endIndex {
             index = input.index(after: index)
@@ -333,9 +344,6 @@ private struct EmmetGenerator {
     }
 
     private func generateNode(_ node: EmmetNode, level: Int, counter: Int, hasCounter: Bool) -> (text: String, cursorOffset: Int) {
-        let currentIndent = String(repeating: indent, count: level)
-
-        var parts: [String] = []
         var cursorOffset = -1
 
         // 处理重复
@@ -368,17 +376,15 @@ private struct EmmetGenerator {
 
     private func generateSingleNode(_ node: EmmetNode, level: Int, counter: Int, hasCounter: Bool) -> (text: String, cursorOffset: Int) {
         let currentIndent = String(repeating: indent, count: level)
-        var cursorOffset = -1
 
         // 替换计数器
         var tagName = node.tagName
         if hasCounter {
-            let counterStr = String(counter)
-            tagName = tagName.replacingOccurrences(of: "$", with: counterStr)
+            tagName = replaceCounter(in: tagName, counter: counter)
         }
 
         // 构建属性字符串
-        var attrs = buildAttributes(node: node, counter: counter, hasCounter: hasCounter)
+        let attrs = buildAttributes(node: node, counter: counter, hasCounter: hasCounter)
 
         // 构建开标签
         var openingTag = "<\(tagName)"
@@ -403,6 +409,7 @@ private struct EmmetGenerator {
             localCursorOffset = openingTag.utf16.count
         } else if node.children.isEmpty, node.siblings.isEmpty, node.textContent == nil {
             // 空元素 - 光标放在标签中间
+            openingTag += ">"
             let closingTag = "</\(tagName)>"
             resultText = openingTag + closingTag
             localCursorOffset = openingTag.utf16.count
@@ -413,18 +420,16 @@ private struct EmmetGenerator {
 
             // 文本内容
             if let text = node.textContent {
-                bodyParts.append(text)
-                localCursorOffset = openingTag.utf16.count + text.utf16.count
+                let resolvedText = hasCounter ? replaceCounter(in: text, counter: counter) : text
+                bodyParts.append(resolvedText)
+                localCursorOffset = openingTag.utf16.count + resolvedText.utf16.count
             }
 
             // 子节点
             for child in node.children {
                 let childResult = generateNode(child, level: level + 1, counter: counter, hasCounter: child.hasCounter)
-                if level == 0 {
-                    bodyParts.append("\n" + childResult.text)
-                } else {
-                    bodyParts.append("\n" + String(repeating: indent, count: level + 1) + childResult.text)
-                }
+                let childIndent = String(repeating: indent, count: level + 1)
+                bodyParts.append("\n" + indentLines(childResult.text, with: childIndent))
                 if childResult.cursorOffset >= 0, localCursorOffset < 0 {
                     localCursorOffset = openingTag.utf16.count + bodyParts.joined().utf16.count - (childResult.text.utf16.count - childResult.cursorOffset)
                 }
@@ -459,26 +464,40 @@ private struct EmmetGenerator {
 
         // 类名
         if !node.classNames.isEmpty {
-            var classes = node.classNames.map {
-                hasCounter ? $0.replacingOccurrences(of: "$", with: String(counter)) : $0
+            let classes = node.classNames.map {
+                hasCounter ? replaceCounter(in: $0, counter: counter) : $0
             }
             parts.append("class=\"\(classes.joined(separator: " "))\"")
         }
 
         // ID
         if let id = node.id {
-            parts.append("id=\"\(id)\"")
+            let resolvedID = hasCounter ? replaceCounter(in: id, counter: counter) : id
+            parts.append("id=\"\(resolvedID)\"")
         }
 
         // 自定义属性
         for (key, value) in node.attributes.sorted(by: { $0.key < $1.key }) {
+            let resolvedKey = hasCounter ? replaceCounter(in: key, counter: counter) : key
             if value.isEmpty {
-                parts.append(key)
+                parts.append(resolvedKey)
             } else {
-                parts.append("\(key)=\"\(value)\"")
+                let resolvedValue = hasCounter ? replaceCounter(in: value, counter: counter) : value
+                parts.append("\(resolvedKey)=\"\(resolvedValue)\"")
             }
         }
 
         return parts.joined(separator: " ")
+    }
+
+    private func replaceCounter(in value: String, counter: Int) -> String {
+        value.replacingOccurrences(of: "$", with: String(counter))
+    }
+
+    private func indentLines(_ text: String, with indentation: String) -> String {
+        text
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { indentation + $0 }
+            .joined(separator: "\n")
     }
 }
