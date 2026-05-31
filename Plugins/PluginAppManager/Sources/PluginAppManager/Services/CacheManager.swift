@@ -27,6 +27,10 @@ actor CacheManager: SuperLog {
         self.container = Self.makeContainer(databaseRootURL: AppManagerPlugin.databaseRootURLProvider())
     }
 
+    init(databaseRootURL: URL) {
+        self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
+    }
+
     static func makeContainer(databaseRootURL: URL) -> ModelContainer {
         let schema = Schema([AppCacheItem.self])
         let dbDir = databaseRootURL.appendingPathComponent("AppManagerPlugin", isDirectory: true)
@@ -153,13 +157,14 @@ actor CacheManager: SuperLog {
                 }
             }
             context.delete(item)
-            try? context.save()
+            _ = save(context, operation: "移除过期应用缓存")
             return nil
         }
     }
 
     /// 更新缓存
-    func updateCache(for app: AppModel, size: Int64, modificationDate: Date) async {
+    @discardableResult
+    func updateCache(for app: AppModel, size: Int64, modificationDate: Date) async -> Bool {
         let context = ModelContext(container)
         let path = app.bundleURL.path
 
@@ -187,20 +192,22 @@ actor CacheManager: SuperLog {
             context.insert(item)
         }
 
-        try? context.save()
+        let saved = save(context, operation: "保存应用缓存")
 
-        if Self.verbose {
+        if saved, Self.verbose {
             if AppManagerPlugin.verbose {
                             AppManagerPlugin.logger.info("\(self.t)缓存已更新：\(app.displayName)")
             }
         }
+        return saved
     }
 
     /// 清理无效缓存
-    func cleanInvalidCache(keeping validPaths: Set<String>) async {
+    @discardableResult
+    func cleanInvalidCache(keeping validPaths: Set<String>) async -> Bool {
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<AppCacheItem>()
-        guard let allItems = try? context.fetch(descriptor) else { return }
+        guard let allItems = try? context.fetch(descriptor) else { return false }
 
         var removedCount = 0
         for item in allItems {
@@ -211,13 +218,15 @@ actor CacheManager: SuperLog {
         }
 
         if removedCount > 0 {
-            try? context.save()
-            if Self.verbose {
+            let saved = save(context, operation: "清理无效应用缓存")
+            if saved, Self.verbose {
                 if AppManagerPlugin.verbose {
                                     AppManagerPlugin.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
                 }
             }
+            return saved
         }
+        return true
     }
 
     /// 保存缓存（数据库模式下跌落为 no-op，每次更新已立即持久化）
@@ -226,15 +235,17 @@ actor CacheManager: SuperLog {
     }
 
     /// 清空所有缓存
-    func clearAll() {
+    @discardableResult
+    func clearAll() -> Bool {
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<AppCacheItem>()
-        guard let allItems = try? context.fetch(descriptor) else { return }
+        guard let allItems = try? context.fetch(descriptor) else { return false }
 
         for item in allItems {
             context.delete(item)
         }
-        try? context.save()
+        let saved = save(context, operation: "清空应用缓存")
+        guard saved else { return false }
 
         let oldStats = stats
         stats = CacheStats()
@@ -244,10 +255,23 @@ actor CacheManager: SuperLog {
                             AppManagerPlugin.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
             }
         }
+        return true
     }
 
     /// 获取当前统计信息
     func getStats() async -> CacheStats {
         stats
+    }
+
+    private func save(_ context: ModelContext, operation: StaticString) -> Bool {
+        do {
+            try context.save()
+            return true
+        } catch {
+            if AppManagerPlugin.verbose {
+                AppManagerPlugin.logger.error("\(self.t)\(operation)失败：\(error.localizedDescription)")
+            }
+            return false
+        }
     }
 }

@@ -87,4 +87,37 @@ struct PluginAppManagerTests {
         #expect(fetched.count == 1)
         #expect(fetched.first?.bundlePath == "/Applications/Test.app")
     }
+
+    @Test
+    func cacheManagerReportsPersistenceResults() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-cache-manager-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let manager = CacheManager(databaseRootURL: root)
+        let bundleURL = root.appendingPathComponent("Test.app", isDirectory: true)
+        let modifiedAt = Date()
+        let app = AppModel(
+            bundleURL: bundleURL,
+            name: "Test",
+            identifier: "com.example.test",
+            version: "1.0",
+            iconFileName: nil,
+            size: 0
+        )
+
+        let updated = await manager.updateCache(for: app, size: 42, modificationDate: modifiedAt)
+        let cached = await manager.getCachedApp(at: bundleURL.path, currentModificationDate: modifiedAt)
+        let cleaned = await manager.cleanInvalidCache(keeping: [])
+        let afterClean = await manager.getCachedApp(at: bundleURL.path, currentModificationDate: modifiedAt)
+        let cleared = await manager.clearAll()
+
+        #expect(updated)
+        #expect(cached?.name == "Test")
+        #expect(cached?.size == 42)
+        #expect(cleaned)
+        #expect(afterClean == nil)
+        #expect(cleared)
+    }
 }
