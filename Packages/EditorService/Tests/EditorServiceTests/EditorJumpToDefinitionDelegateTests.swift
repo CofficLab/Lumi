@@ -29,5 +29,21 @@ final class EditorJumpToDefinitionDelegateTests: XCTestCase {
             range: NSRange(location: 4, length: (text as NSString).length)
         ))
     }
+
+    func testLSPFileURLAcceptsUnescapedFileURL() {
+        let url = EditorJumpToDefinitionDelegate.fileURL(fromLSPURI: "file:///tmp/project/My File.swift")
+
+        XCTAssertEqual(url?.path, "/tmp/project/My File.swift")
+    }
+
+    func testSameFileComparisonNormalizesUnescapedLSPFileURL() {
+        let currentURL = URL(fileURLWithPath: "/tmp/project/My File.swift")
+        let targetURL = EditorJumpToDefinitionDelegate.fileURL(fromLSPURI: "file:///tmp/project/My File.swift")
+
+        XCTAssertTrue(EditorJumpToDefinitionDelegate.isSameFile(
+            currentFileURL: currentURL,
+            targetURL: targetURL
+        ))
+    }
 }
 #endif

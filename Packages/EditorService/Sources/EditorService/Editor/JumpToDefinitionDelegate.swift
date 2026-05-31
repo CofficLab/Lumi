@@ -450,7 +450,8 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             logger.warning("\(self.t)LSP 跳转取消: 无法换算 LSP 位置, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), range=\(cursorRange.location)-\(cursorRange.length)")
             return nil
         }
-        let currentURI = currentFileURLProvider?()?.absoluteString
+        let currentFileURL = currentFileURLProvider?()
+        let currentURI = currentFileURL?.absoluteString
         logger.info(
             "\(self.t)LSP 跳转请求: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), currentURI=\(currentURI ?? "<nil>", privacy: .public), utf16Offset=\(cursorRange.location), lspLine=\(lspPosition.line), lspCharacter=\(lspPosition.character)"
         )
@@ -489,7 +490,8 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             "\(self.t)LSP 跳转命中: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), targetURI=\(location.uri, privacy: .public), start=\(location.range.start.line):\(location.range.start.character), end=\(location.range.end.line):\(location.range.end.character)"
         )
 
-        let isSameFile = currentURI == location.uri
+        let targetURL = Self.fileURL(fromLSPURI: location.uri)
+        let isSameFile = Self.isSameFile(currentFileURL: currentFileURL, targetURL: targetURL)
 
         if isSameFile,
            let targetRange = Self.nsRange(from: location.range, in: content) {
@@ -500,7 +502,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             )
         }
 
-        guard let url = URL(string: location.uri) else { return nil }
+        guard let url = targetURL else { return nil }
         let targetPosition = CursorPosition(
             start: CursorPosition.Position(
                 line: Int(location.range.start.line) + 1,
@@ -809,6 +811,15 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         let lineIndex = Int(position.line)
         guard lines.indices.contains(lineIndex) else { return nil }
         return String(lines[lineIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func fileURL(fromLSPURI uri: String) -> URL? {
+        WorkspaceEditFileOperations.fileURL(from: uri)
+    }
+
+    static func isSameFile(currentFileURL: URL?, targetURL: URL?) -> Bool {
+        guard let currentFileURL, let targetURL else { return false }
+        return currentFileURL.standardizedFileURL == targetURL.standardizedFileURL
     }
 }
 
