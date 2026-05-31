@@ -156,7 +156,7 @@ public actor MemoryStorageService {
         let fileURL = memoryFileURL(id: id, scope: scope)
         let markdown: String
         do {
-            markdown = try String(contentsOf: fileURL, encoding: .utf8)
+            markdown = try readTextFile(fileURL).content
         } catch CocoaError.fileReadNoSuchFile {
             throw MemoryError.notFound("'\(id)' in \(scopeDescription(scope))")
         }
@@ -188,7 +188,8 @@ public actor MemoryStorageService {
         )
 
         let fileURL = memoryFileURL(id: id, scope: scope)
-        try markdown.write(to: fileURL, atomically: true, encoding: .utf8)
+        let encoding = (try? readTextFile(fileURL).encoding) ?? .utf8
+        try markdown.write(to: fileURL, atomically: true, encoding: encoding)
 
         let item = MemoryItem(
             id: id,
@@ -240,7 +241,7 @@ public actor MemoryStorageService {
             let fileURL = dir.appendingPathComponent(filename)
 
             do {
-                let markdown = try String(contentsOf: fileURL, encoding: .utf8)
+                let markdown = try readTextFile(fileURL).content
                 let item = try parseMarkdownContent(markdown, filePath: fileURL.path, id: id)
                 items.append(item)
             } catch {
@@ -260,7 +261,7 @@ public actor MemoryStorageService {
     public func readIndex(scope: MemoryScope) async -> String {
         let url = indexURL(scope: scope)
         do {
-            var content = try String(contentsOf: url, encoding: .utf8)
+            var content = try readTextFile(url).content
 
             // 限制大小
             let lines = content.components(separatedBy: .newlines)
@@ -428,6 +429,12 @@ public actor MemoryStorageService {
     }
 
     // MARK: - Helpers
+
+    private func readTextFile(_ url: URL) throws -> (content: String, encoding: String.Encoding) {
+        var encoding = String.Encoding.utf8
+        let content = try String(contentsOf: url, usedEncoding: &encoding)
+        return (content, encoding)
+    }
 
     private func scopeDescription(_ scope: MemoryScope) -> String {
         switch scope {

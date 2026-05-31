@@ -259,6 +259,65 @@ struct MemoryStorageTests {
         try await service.deleteMemory(id: id, scope: .global)
     }
 
+    @Test("读取 UTF-16 记忆文件")
+    func readUTF16MemoryFile() async throws {
+        let (service, tempDir) = createTempStorage()
+        defer { cleanup(tempDir) }
+
+        let globalDir = tempDir.appendingPathComponent("global", isDirectory: true)
+        let fileURL = globalDir.appendingPathComponent("manual-memory.md")
+        try """
+        ---
+        name: Manual Memory
+        description: Created outside Lumi
+        type: reference
+        created: 2026-01-01T00:00:00+0000
+        updated: 2026-01-01T00:00:00+0000
+        ---
+
+        Useful context from another editor.
+        """.write(to: fileURL, atomically: true, encoding: .utf16)
+
+        let memory = try await service.readMemory(id: "manual-memory", scope: .global)
+        #expect(memory.name == "Manual Memory")
+        #expect(memory.content == "Useful context from another editor.")
+
+        let memories = await service.listMemories(scope: .global)
+        #expect(memories.contains { $0.id == "manual-memory" })
+    }
+
+    @Test("更新记忆保留原文件编码")
+    func updatePreservesMemoryFileEncoding() async throws {
+        let (service, tempDir) = createTempStorage()
+        defer { cleanup(tempDir) }
+
+        let globalDir = tempDir.appendingPathComponent("global", isDirectory: true)
+        let fileURL = globalDir.appendingPathComponent("manual-update.md")
+        try """
+        ---
+        name: Manual Update
+        description: Created outside Lumi
+        type: user
+        created: 2026-01-01T00:00:00+0000
+        updated: 2026-01-01T00:00:00+0000
+        ---
+
+        Original content.
+        """.write(to: fileURL, atomically: true, encoding: .utf16)
+
+        let updated = try await service.updateMemory(
+            id: "manual-update",
+            content: "Updated content.",
+            scope: .global
+        )
+        #expect(updated.content == "Updated content.")
+
+        var detectedEncoding = String.Encoding.utf8
+        let onDisk = try String(contentsOf: fileURL, usedEncoding: &detectedEncoding)
+        #expect(onDisk.contains("Updated content."))
+        #expect(detectedEncoding == .utf16)
+    }
+
     // MARK: - Path Sanitization (Regression Test)
 
     @Test("sanitizeProjectPath 不崩溃（溢出修复回归测试）")
