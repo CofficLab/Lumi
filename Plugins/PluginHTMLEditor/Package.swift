@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCodeEditSourceEditor"),
         .package(path: "../../Packages/CodeEditTextView"),
-        .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
         .package(path: "../../Packages/LumiCoreKit"),
     ],
