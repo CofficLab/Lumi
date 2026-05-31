@@ -83,9 +83,8 @@ enum EditorViewStateController {
 
         let positions = selections.compactMap { selection -> CursorPosition? in
             guard let start = positionResolver(selection.location, text) else { return nil }
-            let endOffset = selection.location + selection.length
             let end = selection.length > 0
-                ? positionResolver(endOffset, text)
+                ? positionResolver(selection.upperBound, text)
                 : nil
 
             return CursorPosition(
@@ -112,11 +111,22 @@ enum EditorViewStateController {
             cursorPositions: [
                 CursorPosition(
                     start: .init(line: fallbackLine, column: fallbackColumn),
-                    end: first.length > 0
-                        ? .init(line: fallbackLine, column: fallbackColumn + first.length)
-                        : nil
+                    end: fallbackEndPosition(line: fallbackLine, column: fallbackColumn, length: first.length)
                 )
             ]
         )
+    }
+
+    private static func fallbackEndPosition(line: Int, column: Int, length: Int) -> CursorPosition.Position? {
+        guard length > 0 else {
+            return nil
+        }
+
+        let endColumn = column.addingReportingOverflow(length)
+        guard !endColumn.overflow else {
+            return nil
+        }
+
+        return .init(line: line, column: endColumn.partialValue)
     }
 }

@@ -189,6 +189,41 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertNil(TextEditTransactionBuilder.makeTransaction(edits: edits, in: "abc"))
     }
 
+    func testTextViewBridgeRejectsOverflowingNativeRanges() {
+        let bridge = TextViewBridge()
+
+        XCTAssertNil(bridge.lspRange(from: NSRange(location: Int.max, length: 1), in: "abc"))
+        XCTAssertNil(bridge.lspRange(from: NSRange(location: 1, length: Int.max), in: "abc"))
+    }
+
+    func testEditorViewStateControllerIgnoresOverflowingSelectionEnds() {
+        let state = EditorViewStateController.positions(
+            from: [MultiCursorSelection(location: 1, length: Int.max)],
+            text: "abc",
+            positionResolver: { offset, _ in
+                offset == 1 ? Position(line: 0, character: 1) : nil
+            }
+        )
+
+        XCTAssertEqual(state.primaryCursorLine, 1)
+        XCTAssertEqual(state.primaryCursorColumn, 2)
+        XCTAssertEqual(state.cursorPositions.first?.end, nil)
+    }
+
+    func testEditorViewStateControllerDoesNotOverflowFallbackSelectionEnd() {
+        let state = EditorViewStateController.positions(
+            from: [MultiCursorSelection(location: Int.max, length: Int.max)],
+            text: "abc",
+            fallbackLine: 4,
+            fallbackColumn: Int.max,
+            positionResolver: { _, _ in nil }
+        )
+
+        XCTAssertEqual(state.primaryCursorLine, 4)
+        XCTAssertEqual(state.primaryCursorColumn, Int.max)
+        XCTAssertEqual(state.cursorPositions.first?.end, nil)
+    }
+
     func testFindReplaceTransactionBuilderReplaceCurrentPreservesUppercaseMatch() {
         let state = EditorFindReplaceState(
             replaceText: "hello",

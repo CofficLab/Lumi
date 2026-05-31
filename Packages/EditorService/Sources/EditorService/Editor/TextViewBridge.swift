@@ -154,7 +154,13 @@ final class TextViewBridge {
     func lspRange(from nsRange: NSRange, in text: String) -> LSPRange? {
         let utf16Count = text.utf16.count
         let startOffset = nsRange.location
-        let endOffset = nsRange.location + nsRange.length
+        let endResult = nsRange.location.addingReportingOverflow(nsRange.length)
+
+        guard !endResult.overflow else {
+            return nil
+        }
+
+        let endOffset = endResult.partialValue
 
         guard startOffset >= 0, endOffset >= startOffset, endOffset <= utf16Count else {
             return nil
