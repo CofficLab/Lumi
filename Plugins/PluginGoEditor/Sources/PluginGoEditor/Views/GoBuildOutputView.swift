@@ -61,12 +61,20 @@ public struct GoBuildOutputView: View {
                     themeVM.activeChromeTheme.workspaceSecondaryTextColor()
                 )
 
-            if buildManager.state == .building || buildManager.state == .formatting || buildManager.state == .tidying {
+            if buildManager.state.isRunning {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
                 Text(runningTitle)
                     .font(.system(size: 11, weight: .medium))
+            } else if buildManager.state == .cancelled {
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 10))
+                    Text(String(localized: "Cancelled", table: "GoEditor"))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else if buildManager.errorCount > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "xmark.circle.fill")
@@ -97,6 +105,18 @@ public struct GoBuildOutputView: View {
             }
 
             Spacer()
+
+            if buildManager.state.isRunning {
+                Button {
+                    buildManager.cancel()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .help(String(localized: "Stop", table: "GoEditor"))
+            }
 
             if buildManager.lastBuildDuration > 0 {
                 Text(String(format: "%.1fs", buildManager.lastBuildDuration))

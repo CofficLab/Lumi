@@ -41,12 +41,14 @@ public final class GoBuildManager: ObservableObject, SuperLog {
 
     /// 命令执行器
     private let runner = GoRunner()
+    private var cancelRequested = false
 
     // MARK: - 执行构建
 
     /// 执行 go build
     public func build(workingDirectory: String) async {
         state = .building
+        cancelRequested = false
         resetOutput()
         let startTime = Date()
 
@@ -58,7 +60,9 @@ public final class GoBuildManager: ObservableObject, SuperLog {
         lastBuildDuration = Date().timeIntervalSince(startTime)
         applyBuildResult(result)
 
-        if result.isSuccess {
+        if cancelRequested {
+            state = .cancelled
+        } else if result.isSuccess {
             state = .success
         } else {
             state = .failed
@@ -72,6 +76,7 @@ public final class GoBuildManager: ObservableObject, SuperLog {
     /// 执行 go fmt ./...
     public func format(workingDirectory: String) async {
         state = .formatting
+        cancelRequested = false
         resetOutput()
         let startTime = Date()
 
@@ -82,12 +87,13 @@ public final class GoBuildManager: ObservableObject, SuperLog {
 
         lastBuildDuration = Date().timeIntervalSince(startTime)
         applyBuildResult(result)
-        state = result.isSuccess ? .success : .failed
+        state = cancelRequested ? .cancelled : (result.isSuccess ? .success : .failed)
     }
 
     /// 执行 go mod tidy
     public func tidyModule(workingDirectory: String) async {
         state = .tidying
+        cancelRequested = false
         resetOutput()
         let startTime = Date()
 
@@ -98,7 +104,13 @@ public final class GoBuildManager: ObservableObject, SuperLog {
 
         lastBuildDuration = Date().timeIntervalSince(startTime)
         applyBuildResult(result)
-        state = result.isSuccess ? .success : .failed
+        state = cancelRequested ? .cancelled : (result.isSuccess ? .success : .failed)
+    }
+
+    public func cancel() {
+        guard state.isRunning else { return }
+        cancelRequested = true
+        Task { await runner.cancel() }
     }
 
     private func resetOutput() {
@@ -119,7 +131,12 @@ public final class GoBuildManager: ObservableObject, SuperLog {
         case building
         case formatting
         case tidying
+        case cancelled
         case success
         case failed
+
+        var isRunning: Bool {
+            self == .building || self == .formatting || self == .tidying
+        }
     }
 }

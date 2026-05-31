@@ -96,6 +96,11 @@ private struct GoStatusIndicatorView: View {
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "30D158"))
 
+            case .cancelled:
+                Image(systemName: "stop.circle.fill")
+                    .font(.system(size: 9))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
             case .failed:
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 9))
@@ -134,6 +139,8 @@ private struct GoStatusIndicatorView: View {
     private var displayState: DisplayState {
         if testManager.state == .testing {
             return .testing
+        } else if testManager.state == .cancelled {
+            return .cancelled
         }
         switch buildManager.state {
         case .idle:
@@ -144,6 +151,8 @@ private struct GoStatusIndicatorView: View {
             return .formatting
         case .tidying:
             return .tidying
+        case .cancelled:
+            return .cancelled
         case .success:
             return testManager.state == .success ? .success : .success
         case .failed:
@@ -158,6 +167,7 @@ private struct GoStatusIndicatorView: View {
         case formatting
         case tidying
         case success
+        case cancelled
         case failed
     }
 }

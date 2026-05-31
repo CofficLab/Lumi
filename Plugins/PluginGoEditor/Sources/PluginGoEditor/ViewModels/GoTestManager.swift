@@ -31,9 +31,11 @@ public final class GoTestManager: ObservableObject, SuperLog {
     }
 
     private let runner = GoRunner()
+    private var cancelRequested = false
 
     public func test(workingDirectory: String) async {
         state = .testing
+        cancelRequested = false
         outputLines = []
         testEvents = []
         issues = []
@@ -51,16 +53,23 @@ public final class GoTestManager: ObservableObject, SuperLog {
         issues = result.stderr
             .components(separatedBy: .newlines)
             .compactMap(GoBuildIssue.parse)
-        state = result.isSuccess ? .success : .failed
+        state = cancelRequested ? .cancelled : (result.isSuccess ? .success : .failed)
 
         if GoTestManager.verbose {
             GoTestManager.logger.info("\(GoTestManager.t)测试完成: passed=\(self.passedCount), failed=\(self.failedCount)")
         }
     }
 
+    public func cancel() {
+        guard state == .testing else { return }
+        cancelRequested = true
+        Task { await runner.cancel() }
+    }
+
     enum TestState: Equatable {
         case idle
         case testing
+        case cancelled
         case success
         case failed
     }

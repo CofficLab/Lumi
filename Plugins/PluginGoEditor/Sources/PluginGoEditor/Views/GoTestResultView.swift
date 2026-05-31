@@ -41,6 +41,14 @@ public struct GoTestResultView: View {
                     .frame(width: 12, height: 12)
                 Text(String(localized: "Testing...", table: "GoEditor"))
                     .font(.system(size: 11, weight: .medium))
+            } else if testManager.state == .cancelled {
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 10))
+                    Text(String(localized: "Cancelled", table: "GoEditor"))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else {
                 let passed = testManager.passedCount
                 let failed = testManager.failedCount
@@ -63,6 +71,18 @@ public struct GoTestResultView: View {
             }
 
             Spacer()
+
+            if testManager.state == .testing {
+                Button {
+                    testManager.cancel()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .help(String(localized: "Stop", table: "GoEditor"))
+            }
 
             if testManager.lastTestDuration > 0 {
                 Text(String(format: "%.1fs", testManager.lastTestDuration))
