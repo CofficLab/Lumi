@@ -40,7 +40,7 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
         do {
             let data = try Data(contentsOf: fileURL)
             let decoded = try JSONDecoder().decode([AppSetting].self, from: data)
-            self.settings = Dictionary(uniqueKeysWithValues: decoded.map { ($0.appId, $0) })
+            self.settings = Self.settingsByAppId(decoded)
         } catch {
             logger.error("Failed to load Netto settings, preserving corrupt file: \(error.localizedDescription)")
             preserveCorruptSettingsFile()
@@ -81,6 +81,14 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
     public func setAllowed(appId: String, allowed: Bool) {
         let setting = AppSetting(appId: appId, allowed: allowed)
         updateSetting(setting)
+    }
+
+    private static func settingsByAppId(_ settings: [AppSetting]) -> [String: AppSetting] {
+        var result: [String: AppSetting] = [:]
+        for setting in settings {
+            result[setting.appId] = setting
+        }
+        return result
     }
 
     private func preserveCorruptSettingsFile() {

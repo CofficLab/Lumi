@@ -46,6 +46,25 @@ import Testing
     #expect(repo.getSetting(for: "com.example.Block")?.allowed == false)
 }
 
+@Test func loadSettingsHandlesDuplicateAppIdsWithoutCrashing() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let settingsURL = directory.appendingPathComponent("settings.json")
+    let duplicated = [
+        AppSetting(appId: "com.example.App", allowed: true),
+        AppSetting(appId: "com.example.App", allowed: false),
+    ]
+    try JSONEncoder().encode(duplicated).write(to: settingsURL)
+
+    let repo = AppSettingRepo(fileURL: settingsURL)
+
+    #expect(repo.settings.count == 1)
+    #expect(repo.getSetting(for: "com.example.App")?.allowed == false)
+}
+
 @Test func connectionPromptMessageIncludesDecisionContext() {
     let message = FirewallService.connectionPromptMessage(
         appId: "com.example.App",
