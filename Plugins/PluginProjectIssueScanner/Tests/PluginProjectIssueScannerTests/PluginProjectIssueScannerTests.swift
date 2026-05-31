@@ -139,3 +139,69 @@ import Foundation
     #expect(loadedIssues.first?.createdAt == issue.createdAt)
     #expect(loadedIssues.first?.updatedAt == issue.updatedAt)
 }
+
+@Test func projectIssueStoreDeduplicatesPersistedIssues() async throws {
+    let firstIssue = makeProjectIssue(
+        id: UUID(uuidString: "7F3C2345-AB40-4B14-9F8D-B2BD33E13190")!,
+        status: .confirmed,
+        updatedAt: Date(timeIntervalSince1970: 1_775_235_600)
+    )
+    let duplicateIssue = makeProjectIssue(
+        id: UUID(uuidString: "A9E78102-1550-46B6-9A2B-00C06E510265")!,
+        status: .pending,
+        updatedAt: Date(timeIntervalSince1970: 1_775_239_200)
+    )
+    let tempURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: tempURL) }
+
+    let data = try ProjectIssueStore.makeEncoder().encode([firstIssue, duplicateIssue])
+    try data.write(to: tempURL)
+
+    let store = ProjectIssueStore(issuesFileURL: tempURL)
+
+    let loadedIssues = await store.fetchAll()
+    #expect(loadedIssues.count == 1)
+    #expect(loadedIssues.first?.id == firstIssue.id)
+
+    await store.replaceIssues(
+        projectPath: firstIssue.projectPath,
+        source: firstIssue.source,
+        with: [
+            makeProjectIssue(
+                id: UUID(uuidString: "B9117F6C-36EF-423B-B902-F7AE464BA5F3")!,
+                status: .pending,
+                title: "Updated issue"
+            )
+        ]
+    )
+
+    let savedIssues = try ProjectIssueStore.loadFromDisk(from: tempURL)
+    #expect(savedIssues.count == 1)
+    #expect(savedIssues.first?.status == .confirmed)
+    #expect(savedIssues.first?.title == "Updated issue")
+}
+
+private func makeProjectIssue(
+    id: UUID = UUID(),
+    status: ProjectIssueStatus = .pending,
+    title: String = "Empty catch block",
+    updatedAt: Date = Date(timeIntervalSince1970: 1_775_232_000)
+) -> ProjectIssue {
+    ProjectIssue(
+        id: id,
+        type: .emptyCatch,
+        severity: .warning,
+        status: status,
+        projectPath: "/tmp/project",
+        filePath: "Sources/App.swift",
+        lineNumber: 42,
+        title: title,
+        description: "A catch block swallows errors.",
+        suggestion: "Handle or log the error.",
+        source: .localRule,
+        createdAt: Date(timeIntervalSince1970: 1_775_232_000),
+        updatedAt: updatedAt
+    )
+}

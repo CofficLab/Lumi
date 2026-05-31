@@ -24,6 +24,13 @@ public actor ProjectIssueStore {
         self.issues = (try? Self.loadFromDisk(from: issuesFileURL)) ?? []
     }
 
+    init(issuesFileURL: URL) {
+        let dir = issuesFileURL.deletingLastPathComponent()
+        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        self.issuesFileURL = issuesFileURL
+        self.issues = (try? Self.loadFromDisk(from: issuesFileURL)) ?? []
+    }
+
     // MARK: - Public API
 
     /// 添加问题（自动去重）
@@ -124,7 +131,7 @@ public actor ProjectIssueStore {
     /// 替换某个项目下指定来源的问题，保留用户已确认/忽略的问题状态。
     public func replaceIssues(projectPath: String, source: ProjectIssueSource, with newIssues: [ProjectIssue]) {
         let normalizedPath = normalizeProjectPath(projectPath)
-        let previousByKey = Dictionary(uniqueKeysWithValues: issues.map { ($0.dedupeKey, $0) })
+        let previousByKey = Self.groupByDedupeKey(issues)
         let incomingKeys = Set(newIssues.map(\.dedupeKey))
 
         issues.removeAll { issue in
@@ -166,12 +173,29 @@ public actor ProjectIssueStore {
 
     static func loadFromDisk(from url: URL) throws -> [ProjectIssue] {
         let data = try Data(contentsOf: url)
-        return try makeDecoder().decode([ProjectIssue].self, from: data)
+        let decodedIssues = try makeDecoder().decode([ProjectIssue].self, from: data)
+        return deduplicated(decodedIssues)
     }
 
     private func persist() throws {
+        issues = Self.deduplicated(issues)
         let data = try Self.makeEncoder().encode(issues)
         try data.write(to: issuesFileURL, options: [.atomic])
+    }
+
+    private static func groupByDedupeKey(_ issues: [ProjectIssue]) -> [String: ProjectIssue] {
+        var grouped: [String: ProjectIssue] = [:]
+        for issue in issues where grouped[issue.dedupeKey] == nil {
+            grouped[issue.dedupeKey] = issue
+        }
+        return grouped
+    }
+
+    private static func deduplicated(_ issues: [ProjectIssue]) -> [ProjectIssue] {
+        var seenKeys = Set<String>()
+        return issues.filter { issue in
+            seenKeys.insert(issue.dedupeKey).inserted
+        }
     }
 
     static func makeEncoder() -> JSONEncoder {
