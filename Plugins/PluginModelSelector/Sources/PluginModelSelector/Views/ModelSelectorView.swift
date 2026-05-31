@@ -193,10 +193,10 @@ public struct ModelSelectorView: View, SuperLog {
     /// 常用模型列表（跨供应商，按使用频率排序）
     @ViewBuilder
     private var frequentModelsList: some View {
-        let availableProviderIds = Set(llmVM.allProviders.map(\.id))
+        let providersById = Dictionary(uniqueKeysWithValues: llmVM.allProviders.map { ($0.id, $0) })
         let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(
             frequentModels,
-            availableProviderIds: availableProviderIds,
+            availableProviderIds: Set(providersById.keys),
             searchText: searchText
         )
         if filteredEntries.isEmpty {
@@ -208,24 +208,16 @@ public struct ModelSelectorView: View, SuperLog {
         } else {
             List {
                 ForEach(filteredEntries) { entry in
-                    frequentModelRow(entry: entry)
+                    if let provider = providersById[entry.providerId] {
+                        modelRow(
+                            provider: provider,
+                            model: entry.modelName,
+                            providerDisplayName: entry.providerDisplayName
+                        )
+                    }
                 }
             }
         }
-    }
-
-    /// 常用模型的单行视图
-    private func frequentModelRow(entry: FrequentModelEntry) -> some View {
-        guard let provider = llmVM.allProviders.first(where: { $0.id == entry.providerId }) else {
-            return AnyView(EmptyView())
-        }
-        return AnyView(
-            modelRow(
-                provider: provider,
-                model: entry.modelName,
-                providerDisplayName: entry.providerDisplayName
-            )
-        )
     }
 
     // MARK: - Fast Models List
@@ -233,10 +225,10 @@ public struct ModelSelectorView: View, SuperLog {
     /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
     @ViewBuilder
     private var fastModelsList: some View {
-        let availableProviderIds = Set(llmVM.allProviders.map(\.id))
+        let providersById = Dictionary(uniqueKeysWithValues: llmVM.allProviders.map { ($0.id, $0) })
         let filteredEntries = ModelSelectorFilteringService.filteredFastModels(
             fastModels,
-            availableProviderIds: availableProviderIds,
+            availableProviderIds: Set(providersById.keys),
             searchText: searchText
         )
         if filteredEntries.isEmpty {
@@ -248,24 +240,16 @@ public struct ModelSelectorView: View, SuperLog {
         } else {
             List {
                 ForEach(filteredEntries) { entry in
-                    fastModelRow(entry: entry)
+                    if let provider = providersById[entry.providerId] {
+                        modelRow(
+                            provider: provider,
+                            model: entry.modelName,
+                            providerDisplayName: entry.providerDisplayName
+                        )
+                    }
                 }
             }
         }
-    }
-
-    /// TPS 较快模型单行
-    private func fastModelRow(entry: FastModelEntry) -> some View {
-        guard let provider = llmVM.allProviders.first(where: { $0.id == entry.providerId }) else {
-            return AnyView(EmptyView())
-        }
-        return AnyView(
-            modelRow(
-                provider: provider,
-                model: entry.modelName,
-                providerDisplayName: entry.providerDisplayName
-            )
-        )
     }
 
     /// 供应商与模型列表（共用结构）；本地供应商有缓存时按系列分组展示
