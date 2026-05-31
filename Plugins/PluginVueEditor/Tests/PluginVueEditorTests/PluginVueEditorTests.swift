@@ -132,6 +132,48 @@ import Testing
     #expect(options.jsxEnabled == true)
 }
 
+@Test func viteBridgeDetectsUTF16VueConfig() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try """
+    import vue from '@vitejs/plugin-vue'
+
+    export default {
+      plugins: [vue()],
+      server: {
+        host: '0.0.0.0',
+        port: 4321
+      }
+    }
+    """.write(to: projectURL.appendingPathComponent("vite.config.ts"), atomically: true, encoding: .utf16)
+
+    let config = ViteBridge.detect(projectPath: projectURL.path)
+
+    #expect(config?.isVueProject == true)
+    #expect(config?.devPort == 4321)
+    #expect(config?.devHost == "0.0.0.0")
+}
+
+@Test func vueCompilerOptionsReadsUTF16ViteJSXConfig() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try """
+    import vue from '@vitejs/plugin-vue'
+    import vueJsx from '@vitejs/plugin-vue-jsx'
+
+    export default {
+      plugins: [vue(), vueJsx()]
+    }
+    """.write(to: projectURL.appendingPathComponent("vite.config.ts"), atomically: true, encoding: .utf16)
+
+    let options = VueCompilerOptions.read(from: projectURL.path)
+
+    #expect(options.jsxEnabled == true)
+    #expect(options.sourceDescription.contains("vite.config"))
+}
+
 @Test func autoImportRegistryReadsUTF16DeclarationFiles() throws {
     let projectURL = try makeTemporaryVueProject()
     defer { try? FileManager.default.removeItem(at: projectURL) }
@@ -202,6 +244,44 @@ import Testing
     #expect(updated.contains("import AccountCard from '../components/AccountCard.vue'"))
     #expect(updated.contains("<AccountCard />"))
     #expect(updated.contains("<account-card />"))
+}
+
+@Test func propDrillingAssistantReadsUTF16ParentComponents() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let childURL = projectURL.appendingPathComponent("src/components/UserCard.vue")
+    try FileManager.default.createDirectory(at: childURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    let childContent = """
+    <script setup lang="ts">
+    defineProps<{ title: string }>()
+    </script>
+    <template><section>{{ title }}</section></template>
+    """
+    try childContent.write(to: childURL, atomically: true, encoding: .utf8)
+
+    let parentURL = projectURL.appendingPathComponent("src/views/Home.vue")
+    try FileManager.default.createDirectory(at: parentURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try """
+    <template>
+      <UserCard :title="pageTitle" />
+    </template>
+    """.write(to: parentURL, atomically: true, encoding: .utf16)
+
+    let info = VueComponentInfo.parse(from: childContent, filePath: childURL.path, vueVersion: .vue3)
+    #expect(info.props.contains { $0.name == "title" })
+
+    let analysis = PropDrillingAssistant.analyze(
+        propName: "title",
+        componentInfo: info,
+        projectPath: projectURL.path
+    )
+
+    let resolvedParentPath = parentURL.resolvingSymlinksInPath().path
+    #expect(analysis?.path.contains {
+        URL(fileURLWithPath: $0.filePath).resolvingSymlinksInPath().path == resolvedParentPath
+            && $0.passType == .templateBinding
+    } == true)
 }
 
 private func makeTemporaryVueProject() throws -> URL {

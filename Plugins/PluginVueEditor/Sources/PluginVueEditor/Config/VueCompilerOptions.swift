@@ -103,7 +103,7 @@ struct VueCompilerOptions: Sendable {
         // 2. 从 vite.config 检测 JSX
         if let viteConfig = ViteBridge.detect(projectPath: projectPath) {
             let viteConfigPath = viteConfig.configPath
-            if let content = try? String(contentsOfFile: viteConfigPath, encoding: .utf8) {
+            if let content = try? VueTextFileIO.readContent(path: viteConfigPath) {
                 if content.contains("vueJsx") || content.contains("@vitejs/plugin-vue-jsx") {
                     options = options.with(jsxEnabled: true)
                     sources.append("vite.config")

@@ -166,7 +166,7 @@ struct PropDrillingAssistant: Sendable {
         let entries = VueProjectScanner.scan(projectPath: projectPath, maxResults: 200)
 
         for entry in entries {
-            guard let content = try? String(contentsOfFile: entry.path, encoding: .utf8) else { continue }
+            guard let content = try? VueTextFileIO.readContent(path: entry.path) else { continue }
 
             // 检查是否在 Template 中使用了该组件
             let pascalUsed = content.contains("<\(componentName)")

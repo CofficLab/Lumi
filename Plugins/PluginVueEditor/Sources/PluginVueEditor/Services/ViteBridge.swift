@@ -59,7 +59,7 @@ struct ViteBridge: Sendable {
         guard let configPath = findConfigFile(in: projectPath) else { return nil }
 
         // 2. 读取配置文件内容，检测是否使用了 Vue 插件
-        guard let content = try? String(contentsOfFile: configPath, encoding: .utf8) else {
+        guard let content = try? VueTextFileIO.readContent(path: configPath) else {
             // 配置文件存在但无法读取，返回基本信息
             return ViteConfig(
                 configPath: configPath,
