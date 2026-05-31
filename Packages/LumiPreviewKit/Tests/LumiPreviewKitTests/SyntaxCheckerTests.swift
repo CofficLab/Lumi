@@ -61,6 +61,29 @@ struct SyntaxCheckerTests {
         #expect(issues.count == 1)
         #expect(!issues[0].message.isEmpty)
     }
+
+    @Test("process runner captures large stdout and stderr without blocking")
+    func processRunnerCapturesLargeOutputWithoutBlocking() async throws {
+        let runner = LumiPreviewFacade.ProcessCommandRunner()
+        let result = try await runner.run([
+            "/bin/sh",
+            "-c",
+            """
+            i=1
+            while [ "$i" -le 300 ]; do
+              printf 'stdout-%03d-%0512d\\n' "$i" 0
+              printf 'stderr-%03d-%0512d\\n' "$i" 0 >&2
+              i=$((i + 1))
+            done
+            """
+        ])
+
+        #expect(result.exitCode == 0)
+        #expect(result.standardOutput.contains("stdout-300-"))
+        #expect(result.standardError.contains("stderr-300-"))
+        #expect(result.standardOutput.count > 150_000)
+        #expect(result.standardError.count > 150_000)
+    }
 }
 
 private enum TestError: Error {

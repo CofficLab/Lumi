@@ -38,32 +38,42 @@ public extension LumiPreviewFacade {
                 return CommandResult(exitCode: 127, standardError: "Missing executable.")
             }
 
-            return try await withCheckedThrowingContinuation { continuation in
+            return try await Task.detached {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: executable)
                 process.arguments = Array(command.dropFirst())
 
-                let stdout = Pipe()
-                let stderr = Pipe()
-                process.standardOutput = stdout
-                process.standardError = stderr
+                let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: "syntax-checker")
+                defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
-                process.terminationHandler = { process in
-                    let output = String(data: stdout.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                    let error = String(data: stderr.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                    continuation.resume(returning: CommandResult(
-                        exitCode: process.terminationStatus,
-                        standardOutput: output,
-                        standardError: error
-                    ))
-                }
+                let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
+                let stderrURL = outputDirectory.appendingPathComponent("stderr.log")
+                FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
+                FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
+
+                let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
+                let stderrHandle = try FileHandle(forWritingTo: stderrURL)
+                process.standardOutput = stdoutHandle
+                process.standardError = stderrHandle
 
                 do {
                     try process.run()
                 } catch {
-                    continuation.resume(throwing: error)
+                    try? stdoutHandle.close()
+                    try? stderrHandle.close()
+                    throw error
                 }
-            }
+
+                process.waitUntilExit()
+                try? stdoutHandle.close()
+                try? stderrHandle.close()
+
+                return CommandResult(
+                    exitCode: process.terminationStatus,
+                    standardOutput: (try? String(contentsOf: stdoutURL, encoding: .utf8)) ?? "",
+                    standardError: (try? String(contentsOf: stderrURL, encoding: .utf8)) ?? ""
+                )
+            }.value
         }
     }
 
