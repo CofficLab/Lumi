@@ -383,7 +383,7 @@ public enum XcodeSemanticAvailability {
             return .buildContextUnavailable("Build context needs to be resynchronized")
         }
 
-        guard let uri = context.uri, let url = URL(string: uri) else {
+        guard let uri = context.uri, let url = fileURL(fromURI: uri) else {
             return nil
         }
 
@@ -464,7 +464,7 @@ public enum XcodeSemanticAvailability {
     }
 
     private static func makeFileInspectionInput(uri: String?, contextProvider: any XcodeContextProviding) -> FileInspectionInput? {
-        guard let uri, let url = URL(string: uri) else {
+        guard let uri, let url = fileURL(fromURI: uri) else {
             return nil
         }
 
@@ -477,5 +477,23 @@ public enum XcodeSemanticAvailability {
             compatibleTargets: contextProvider.buildContextProvider?.targetsCompatibleWithActiveScheme(for: url).map(\.name).sorted() ?? [],
             preferredTarget: contextProvider.buildContextProvider?.resolvePreferredTarget(for: url)?.name
         )
+    }
+
+    static func fileURL(fromURI uri: String) -> URL? {
+        let trimmedURI = uri.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedURI.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmedURI).standardizedFileURL
+        }
+        if let url = URL(string: trimmedURI), url.isFileURL {
+            return url.standardizedFileURL
+        }
+        if trimmedURI.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmedURI.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path).standardizedFileURL
+        }
+        return nil
     }
 }

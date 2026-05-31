@@ -232,4 +232,13 @@ final class XcodeSemanticAvailabilityTests: XCTestCase {
         let rhs = XcodeSemanticAvailability.FileInspectionInput(workspace: ws, fileName: "A.swift", activeScheme: "App", activeDestinationName: "Mac", matchedTargets: ["App"], compatibleTargets: ["App"], preferredTarget: "App")
         XCTAssertEqual(lhs, rhs)
     }
+
+    func testFileURLFromURIAcceptsUnescapedFileURL() {
+        let expected = URL(fileURLWithPath: "/tmp/project/My File.swift").standardizedFileURL
+
+        XCTAssertEqual(
+            XcodeSemanticAvailability.fileURL(fromURI: "file:///tmp/project/My File.swift"),
+            expected
+        )
+    }
 }
