@@ -19,15 +19,35 @@ public struct EditorConfigFileStore: Sendable {
         settingsDirectoryURL.appendingPathComponent(settingsFileName, isDirectory: false)
     }
 
+    public func corruptSettingsFileURL() -> URL {
+        let baseName = (settingsFileName as NSString).deletingPathExtension
+        return settingsDirectoryURL.appendingPathComponent("\(baseName).corrupt.plist", isDirectory: false)
+    }
+
     public func loadDict(fileManager: FileManager = .default) -> [String: Any] {
         let fileURL = settingsFileURL()
-        guard fileManager.fileExists(atPath: fileURL.path),
-              let data = try? Data(contentsOf: fileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+        guard fileManager.fileExists(atPath: fileURL.path) else {
             return [:]
         }
-        return dict
+
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            return [:]
+        }
+
+        do {
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                quarantineCorruptSettings(fileManager: fileManager)
+                return [:]
+            }
+            return dict
+        } catch {
+            quarantineCorruptSettings(fileManager: fileManager)
+            return [:]
+        }
     }
 
     public func saveDict(_ dict: [String: Any], fileManager: FileManager = .default) {
@@ -59,5 +79,20 @@ public struct EditorConfigFileStore: Sendable {
         var dict = loadDict()
         dict.removeValue(forKey: key)
         saveDict(dict)
+    }
+
+    private func quarantineCorruptSettings(fileManager: FileManager) {
+        let sourceURL = settingsFileURL()
+        let quarantineURL = corruptSettingsFileURL()
+        guard fileManager.fileExists(atPath: sourceURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: quarantineURL.path) {
+                try fileManager.removeItem(at: quarantineURL)
+            }
+            try fileManager.moveItem(at: sourceURL, to: quarantineURL)
+        } catch {
+            // Persistence recovery should not break the editor workflow.
+        }
     }
 }

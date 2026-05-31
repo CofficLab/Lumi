@@ -359,6 +359,29 @@ struct EditorKernelTests {
     }
 
     @Test
+    func configFileStoreQuarantinesCorruptSettingsAndRecovers() throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let store = EditorConfigFileStore(settingsDirectoryURL: root)
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+
+        let invalidData = Data("not a plist".utf8)
+        try invalidData.write(to: store.settingsFileURL())
+
+        #expect(store.loadDict(fileManager: fileManager).isEmpty)
+        #expect((try? Data(contentsOf: store.corruptSettingsFileURL())) == invalidData)
+
+        store.savingValue(16.0, forKey: "fontSize")
+        #expect(store.loadingValue(forKey: "fontSize", as: Double.self) == 16.0)
+
+        let reloadedStore = EditorConfigFileStore(settingsDirectoryURL: root)
+        #expect(reloadedStore.loadingValue(forKey: "fontSize", as: Double.self) == 16.0)
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)
