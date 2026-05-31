@@ -7,11 +7,23 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "RAG"
     public nonisolated static let verbose: Bool = true
 
+    /// 默认返回结果数量
+    static let defaultTopK = 8
+
+    /// 最少返回结果数量
+    static let minTopK = 1
+
+    /// 最多返回结果数量
+    static let maxTopK = 20
+
     /// 默认超时时间（秒）
-    private static let defaultTimeoutSeconds: TimeInterval = 15
+    static let defaultTimeoutSeconds: TimeInterval = 15
+
+    /// 最小容忍超时时间（秒）
+    static let minTimeoutSeconds: TimeInterval = 1
 
     /// 最大容忍超时时间（秒）
-    private static let maxTimeoutSeconds: TimeInterval = 60
+    static let maxTimeoutSeconds: TimeInterval = 60
 
     public let name = "search_code"
 
@@ -81,6 +93,8 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 "topK": [
                     "type": "integer",
                     "description": topKDescription,
+                    "minimum": Self.minTopK,
+                    "maximum": Self.maxTopK,
                 ],
                 "pathFilter": [
                     "type": "string",
@@ -93,6 +107,8 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 "timeout": [
                     "type": "integer",
                     "description": timeoutDescription,
+                    "minimum": Int(Self.minTimeoutSeconds),
+                    "maximum": Int(Self.maxTimeoutSeconds),
                 ],
             ],
             "required": ["query"],
@@ -120,9 +136,9 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         }
 
         let mode = SearchMode(rawValue: (arguments["mode"]?.value as? String)?.lowercased() ?? "") ?? .hybrid
-        let topK = normalizedTopK(arguments["topK"]?.value)
+        let topK = Self.normalizedTopK(arguments["topK"]?.value)
         let pathFilter = trimmedNonEmpty(arguments["pathFilter"]?.value as? String)
-        let timeoutSeconds = normalizedTimeout(arguments["timeout"]?.value)
+        let timeoutSeconds = Self.normalizedTimeout(arguments["timeout"]?.value)
 
         guard let projectPath = resolveProjectPath(arguments: arguments, context: context) else {
             return """
@@ -474,7 +490,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         return RAGPathUtils.normalizeProjectPath(path)
     }
 
-    private func normalizedTopK(_ value: Any?) -> Int {
+    static func normalizedTopK(_ value: Any?) -> Int {
         let raw: Int
         if let int = value as? Int {
             raw = int
@@ -483,12 +499,12 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         } else if let string = value as? String, let int = Int(string) {
             raw = int
         } else {
-            raw = 8
+            raw = Self.defaultTopK
         }
-        return min(max(raw, 1), 20)
+        return min(max(raw, Self.minTopK), Self.maxTopK)
     }
 
-    private func normalizedTimeout(_ value: Any?) -> TimeInterval {
+    static func normalizedTimeout(_ value: Any?) -> TimeInterval {
         let raw: Double
         if let int = value as? Int {
             raw = Double(int)
@@ -499,7 +515,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         } else {
             raw = Self.defaultTimeoutSeconds
         }
-        return min(max(raw, 1), Self.maxTimeoutSeconds)
+        return min(max(raw, Self.minTimeoutSeconds), Self.maxTimeoutSeconds)
     }
 
     private func trimmedNonEmpty(_ value: String?) -> String? {
