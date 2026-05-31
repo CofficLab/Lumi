@@ -1,5 +1,6 @@
 import Testing
 import Combine
+import Foundation
 @testable import PluginNetworkManager
 
 @MainActor
@@ -70,6 +71,36 @@ import Combine
     #expect(viewModel.networkState.uploadSpeed == 34)
     #expect(viewModel.networkState.totalDownload == 1_000)
     #expect(viewModel.networkState.totalUpload == 500)
+}
+
+@MainActor
+@Test func networkHistoryQuarantinesInvalidStorageAndRecovers() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("NetworkHistoryService-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let historyURL = directory.appendingPathComponent("history.json")
+    let corruptURL = directory.appendingPathComponent("history.corrupt.json")
+    let invalidData = Data("not json".utf8)
+    try invalidData.write(to: historyURL)
+
+    let service = NetworkHistoryService(storageURL: historyURL, autoStartRecording: false)
+
+    #expect(service.longTermHistory.isEmpty)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+
+    let point = NetworkDataPoint(timestamp: Date().timeIntervalSince1970, downloadSpeed: 120, uploadSpeed: 34)
+    service.longTermHistory = [point]
+    service.saveHistorySynchronouslyForTesting()
+
+    let reloadedService = NetworkHistoryService(storageURL: historyURL, autoStartRecording: false)
+    #expect(reloadedService.longTermHistory.count == 1)
+    #expect(reloadedService.longTermHistory.first?.timestamp == point.timestamp)
+    #expect(reloadedService.longTermHistory.first?.downloadSpeed == point.downloadSpeed)
+    #expect(reloadedService.longTermHistory.first?.uploadSpeed == point.uploadSpeed)
 }
 
 private actor PublicIPFetcherStub {

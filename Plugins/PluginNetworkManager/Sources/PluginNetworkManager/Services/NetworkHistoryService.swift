@@ -59,16 +59,32 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
     private let maxLongTermPoints = 43200 // 30 days at 1m interval
     
     // Persistence
-    private let storageURL: URL? = {
+    private let storageURL: URL?
+
+    private static func defaultStorageURL() -> URL? {
         guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
         let dir = url.appendingPathComponent("Lumi/NetworkManager")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            if NetworkManagerPlugin.verbose {
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to create network history directory: \(error.localizedDescription)")
+            }
+            return nil
+        }
         return dir.appendingPathComponent("history.json")
-    }()
-    
-    private init() {
+    }
+
+    private convenience init() {
+        self.init(storageURL: Self.defaultStorageURL(), autoStartRecording: true)
+    }
+
+    init(storageURL: URL?, autoStartRecording: Bool) {
+        self.storageURL = storageURL
         loadHistory()
-        startRecording()
+        if autoStartRecording {
+            startRecording()
+        }
     }
     
     public func startRecording() {
@@ -175,23 +191,57 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
     private func saveHistory() {
         guard let url = storageURL else { return }
         Task.detached(priority: .background) { [history = self.longTermHistory] in
-            do {
-                let data = try JSONEncoder().encode(history)
-                try data.write(to: url)
-            } catch {
-                if NetworkManagerPlugin.verbose {
-                                    NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to save network history: \(error.localizedDescription)")
-                }
-            }
+            Self.persistHistory(history, to: url)
         }
+    }
+
+    func saveHistorySynchronouslyForTesting() {
+        guard let url = storageURL else { return }
+        Self.persistHistory(longTermHistory, to: url)
     }
     
     private func loadHistory() {
-        guard let url = storageURL, let data = try? Data(contentsOf: url) else { return }
-        if let loaded = try? JSONDecoder().decode([NetworkDataPoint].self, from: data) {
+        guard let url = storageURL, FileManager.default.fileExists(atPath: url.path) else { return }
+        do {
+            let data = try Data(contentsOf: url)
+            let loaded = try JSONDecoder().decode([NetworkDataPoint].self, from: data)
             // Filter out too old data
             let cutoff = Date().timeIntervalSince1970 - 2592000 // 30 days
             self.longTermHistory = loaded.filter { $0.timestamp >= cutoff }
+        } catch {
+            if NetworkManagerPlugin.verbose {
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to load network history: \(error.localizedDescription)")
+            }
+            quarantineCorruptHistory(at: url)
+        }
+    }
+
+    nonisolated private static func persistHistory(_ history: [NetworkDataPoint], to url: URL) {
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let data = try JSONEncoder().encode(history)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            if NetworkManagerPlugin.verbose {
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to save network history: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func quarantineCorruptHistory(at url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        let corruptURL = url.deletingLastPathComponent()
+            .appendingPathComponent("history.corrupt.json", isDirectory: false)
+        do {
+            if FileManager.default.fileExists(atPath: corruptURL.path) {
+                try FileManager.default.removeItem(at: corruptURL)
+            }
+            try FileManager.default.moveItem(at: url, to: corruptURL)
+        } catch {
+            if NetworkManagerPlugin.verbose {
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to quarantine corrupt network history: \(error.localizedDescription)")
+            }
         }
     }
 }
