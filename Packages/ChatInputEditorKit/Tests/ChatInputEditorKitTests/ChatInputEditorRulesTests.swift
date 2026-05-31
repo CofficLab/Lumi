@@ -90,6 +90,8 @@ struct ChatInputEditorRulesTests {
     @Test("Dropped path strings become file URLs only for absolute paths")
     func droppedPathStringConversion() {
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "/tmp/a.png")?.path == "/tmp/a.png")
+        #expect(ChatInputEditorRules.fileURL(fromDroppedString: " file:///tmp/a%20b.png\n")?.path == "/tmp/a b.png")
+        #expect(ChatInputEditorRules.fileURL(fromDroppedString: "https://example.com/a.png") == nil)
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "relative/a.png") == nil)
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "") == nil)
     }

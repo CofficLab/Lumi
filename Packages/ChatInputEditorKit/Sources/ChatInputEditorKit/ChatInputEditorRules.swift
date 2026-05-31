@@ -50,7 +50,11 @@ public enum ChatInputEditorRules {
     }
 
     public static func fileURL(fromDroppedString string: String) -> URL? {
-        guard string.hasPrefix("/") else { return nil }
-        return URL(fileURLWithPath: string)
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), url.isFileURL {
+            return url
+        }
+        guard trimmed.hasPrefix("/") else { return nil }
+        return URL(fileURLWithPath: trimmed)
     }
 }

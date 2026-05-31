@@ -91,9 +91,10 @@ public struct ChatAttachmentDropRootView: View {
         }
         if provider.canLoadObject(ofClass: String.self) {
             _ = provider.loadObject(ofClass: String.self) { item, _ in
-                guard let path = item, path.hasPrefix("/") else { return }
+                guard let path = item,
+                      let url = ChatAttachmentDropRules.fileURL(fromDroppedString: path) else { return }
                 Task { @MainActor in
-                    handleFileDrop(fileURL: URL(fileURLWithPath: path))
+                    handleFileDrop(fileURL: url)
                 }
             }
             return true
@@ -102,16 +103,12 @@ public struct ChatAttachmentDropRootView: View {
     }
 
     private func handleFileDrop(fileURL: URL) {
-        if Self.chatImagePathExtensions.contains(fileURL.pathExtension.lowercased()) {
+        if ChatAttachmentDropRules.isChatImageFileURL(fileURL) {
             ChatAttachmentRuntime.handleImageUpload(fileURL)
         } else {
             ChatAttachmentRuntime.appendDraftText(fileURL.path)
         }
     }
-
-    private static let chatImagePathExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
-    ]
 
     private static func dropInfoSuggestsChatImage(_ info: DropInfo) -> Bool {
         let imageUTTypes: [UTType] = [.image, .jpeg, .png, .gif, .webP, .heic, .tiff, .bmp]
@@ -121,7 +118,7 @@ public struct ChatAttachmentDropRootView: View {
         for provider in info.itemProviders(for: [.item]) {
             if let suggested = provider.suggestedName {
                 let ext = (suggested as NSString).pathExtension.lowercased()
-                if chatImagePathExtensions.contains(ext) {
+                if ChatAttachmentDropRules.imagePathExtensions.contains(ext) {
                     return true
                 }
             }
