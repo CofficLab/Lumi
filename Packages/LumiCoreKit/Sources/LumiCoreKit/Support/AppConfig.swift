@@ -30,14 +30,19 @@ public enum AppConfig {
 
     public static func getCurrentAppSupportDir() -> URL {
         let fileManager = FileManager.default
-        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("Unable to locate Application Support directory")
-        }
-
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
-        let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
+        let appDirectory = currentAppSupportDir(
+            appSupportURL: fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+            homeDirectory: fileManager.homeDirectoryForCurrentUser,
+            bundleID: Bundle.main.bundleIdentifier
+        )
         try? fileManager.createDirectory(at: appDirectory, withIntermediateDirectories: true)
         return appDirectory
+    }
+
+    static func currentAppSupportDir(appSupportURL: URL?, homeDirectory: URL, bundleID: String?) -> URL {
+        let base = appSupportURL
+            ?? homeDirectory.appendingPathComponent("Library/Application Support", isDirectory: true)
+        return base.appendingPathComponent(bundleID ?? "com.coffic.Lumi", isDirectory: true)
     }
 
     private static func getAppVersion() -> String {

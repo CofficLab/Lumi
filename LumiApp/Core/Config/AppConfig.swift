@@ -63,12 +63,11 @@ enum AppConfig {
     /// - Returns: App Support 目录的 URL
     static func getCurrentAppSupportDir() -> URL {
         let fileManager = FileManager.default
-        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("无法获取 App Support 目录")
-        }
-
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
-        let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
+        let appDirectory = currentAppSupportDir(
+            appSupportURL: fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+            homeDirectory: fileManager.homeDirectoryForCurrentUser,
+            bundleID: Bundle.main.bundleIdentifier
+        )
 
         // 确保目录存在
         if !fileManager.fileExists(atPath: appDirectory.path) {
@@ -76,6 +75,12 @@ enum AppConfig {
         }
 
         return appDirectory
+    }
+
+    static func currentAppSupportDir(appSupportURL: URL?, homeDirectory: URL, bundleID: String?) -> URL {
+        let base = appSupportURL
+            ?? homeDirectory.appendingPathComponent("Library/Application Support", isDirectory: true)
+        return base.appendingPathComponent(bundleID ?? "com.coffic.Lumi", isDirectory: true)
     }
 
     /// 获取本地容器目录

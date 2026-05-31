@@ -108,6 +108,33 @@ struct LumiCoreKitTests {
         #expect(info.series == nil)
     }
 
+    @Test("AppConfig App Support 路径优先使用系统目录")
+    func appConfigAppSupportDirectoryUsesSystemDirectory() {
+        let appSupportURL = URL(fileURLWithPath: "/tmp/Application Support", isDirectory: true)
+        let homeDirectory = URL(fileURLWithPath: "/tmp/Home", isDirectory: true)
+
+        let url = AppConfig.currentAppSupportDir(
+            appSupportURL: appSupportURL,
+            homeDirectory: homeDirectory,
+            bundleID: "com.example.Lumi"
+        )
+
+        #expect(url.path == "/tmp/Application Support/com.example.Lumi")
+    }
+
+    @Test("AppConfig App Support 路径缺失时回退到用户目录")
+    func appConfigAppSupportDirectoryFallsBackToHomeDirectory() {
+        let homeDirectory = URL(fileURLWithPath: "/tmp/Home", isDirectory: true)
+
+        let url = AppConfig.currentAppSupportDir(
+            appSupportURL: nil,
+            homeDirectory: homeDirectory,
+            bundleID: nil
+        )
+
+        #expect(url.path == "/tmp/Home/Library/Application Support/com.coffic.Lumi")
+    }
+
     @Test("RailTab Equatable")
     func railTabEquatable() {
         let tab1 = RailTab(id: "tab1", title: "Tab 1", systemImage: "star", priority: 0)
