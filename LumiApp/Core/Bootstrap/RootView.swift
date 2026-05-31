@@ -4,6 +4,7 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
+import PluginAgentTurnNotification
 import PluginEditorStickySymbolBar
 import PluginEditorTabStrip
 import PluginEditorRailWorkspaceSymbols
@@ -201,6 +202,7 @@ struct RootView<Content>: View where Content: View {
         configurePluginQuickFileSearchBridge()
         configurePluginProjectsBridge()
         configurePluginAutoTaskBridge()
+        configurePluginAgentTurnNotificationBridge()
     }
 
     private func syncPluginProjectContext() {
@@ -316,6 +318,12 @@ struct RootView<Content>: View where Content: View {
                 projectPath: projectPath,
                 languagePreference: languagePreference
             )
+        }
+    }
+
+    private func configurePluginAgentTurnNotificationBridge() {
+        PluginAgentTurnNotification.AgentTurnNotificationRuntime.selectConversation = { [windowContainer] conversationId in
+            windowContainer.switchToConversation(conversationId, reason: "agentTurnNotification")
         }
     }
 

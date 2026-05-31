@@ -9,9 +9,19 @@ public struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
     public nonisolated static var verbose: Bool { false }
 
     public let content: Content
+    @StateObject private var handler = AgentTurnNotificationHandler()
 
     public var body: some View {
         content
+            .onAppear {
+                handler.bind()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AgentTurnNotificationRuntime.turnFinishedNotificationName)) { notification in
+                guard let conversationId = AgentTurnNotificationRuntime.conversationId(from: notification) else {
+                    return
+                }
+                handler.postTurnFinishedNotification(conversationId: conversationId)
+            }
     }
 }
 
