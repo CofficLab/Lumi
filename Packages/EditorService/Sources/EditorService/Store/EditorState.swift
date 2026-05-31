@@ -3402,46 +3402,89 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     func currentSymbolNameForRename() -> String? {
-        if let selected = currentSelectedPlainText()?.trimmingCharacters(in: .whitespacesAndNewlines),
+        Self.symbolNameForRename(in: content?.string ?? "", selection: multiCursorState.all.first)
+    }
+
+    static func symbolNameForRename(in text: String, selection: MultiCursorSelection?) -> String? {
+        guard let selection else { return nil }
+
+        if selection.length > 0,
+           let selected = selectedPlainText(in: text, selection: selection)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
            !selected.isEmpty {
             return selected
         }
 
-        guard let text = content?.string as NSString?,
-              let selection = multiCursorState.all.first else {
+        guard !text.isEmpty else { return nil }
+
+        let nsText = text as NSString
+        let cursor = max(0, min(selection.location, nsText.length))
+        guard let cursorIndex = String.Index(utf16Offset: cursor, in: text, clampedTo: text.startIndex...text.endIndex)
+        else { return nil }
+
+        let startIndex: String.Index
+        if cursorIndex < text.endIndex, isIdentifierCharacter(text[cursorIndex]) {
+            startIndex = cursorIndex
+        } else if cursorIndex > text.startIndex {
+            let previousIndex = text.index(before: cursorIndex)
+            guard isIdentifierCharacter(text[previousIndex]) else { return nil }
+            startIndex = previousIndex
+        } else {
             return nil
         }
 
-        let cursor = max(0, min(selection.location, text.length))
-        guard text.length > 0 else { return nil }
-        let characterSet = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-
-        var start = min(cursor, text.length - 1)
-        if selection.length == 0, start > 0, !isIdentifierCharacter(text.character(at: start), set: characterSet) {
-            start -= 1
+        var lowerBound = startIndex
+        while lowerBound > text.startIndex {
+            let previousIndex = text.index(before: lowerBound)
+            guard isIdentifierCharacter(text[previousIndex]) else { break }
+            lowerBound = previousIndex
         }
 
-        guard isIdentifierCharacter(text.character(at: start), set: characterSet) else { return nil }
-
-        var lowerBound = start
-        while lowerBound > 0, isIdentifierCharacter(text.character(at: lowerBound - 1), set: characterSet) {
-            lowerBound -= 1
+        var upperBound = text.index(after: startIndex)
+        while upperBound < text.endIndex, isIdentifierCharacter(text[upperBound]) {
+            upperBound = text.index(after: upperBound)
         }
 
-        var upperBound = start
-        while upperBound + 1 < text.length, isIdentifierCharacter(text.character(at: upperBound + 1), set: characterSet) {
-            upperBound += 1
-        }
-
-        let range = NSRange(location: lowerBound, length: upperBound - lowerBound + 1)
-        let symbol = text.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+        let symbol = text[lowerBound..<upperBound].trimmingCharacters(in: .whitespacesAndNewlines)
         return symbol.isEmpty ? nil : symbol
     }
 
-    private func isIdentifierCharacter(_ value: unichar, set: CharacterSet) -> Bool {
-        UnicodeScalar(Int(value)).map(set.contains) ?? false
+    private static func selectedPlainText(in text: String, selection: MultiCursorSelection) -> String? {
+        let nsText = text as NSString
+        let clampedLocation = max(0, min(selection.location, nsText.length))
+        let clampedLength = max(0, min(selection.length, nsText.length - clampedLocation))
+        guard clampedLength > 0 else { return nil }
+        return nsText.substring(with: NSRange(location: clampedLocation, length: clampedLength))
     }
 
+    private static func isIdentifierCharacter(_ character: Character) -> Bool {
+        let baseCharacterSet = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        let allowedCharacterSet = baseCharacterSet.union(.nonBaseCharacters)
+        var containsBaseIdentifierScalar = false
+
+        for scalar in character.unicodeScalars {
+            if baseCharacterSet.contains(scalar) {
+                containsBaseIdentifierScalar = true
+            } else if !allowedCharacterSet.contains(scalar) {
+                return false
+            }
+        }
+
+        return containsBaseIdentifierScalar
+    }
+
+}
+
+private extension String.Index {
+    init?(utf16Offset: Int, in string: String, clampedTo bounds: ClosedRange<String.Index>) {
+        let utf16View = string.utf16
+        guard let utf16Index = utf16View.index(utf16View.startIndex, offsetBy: utf16Offset, limitedBy: utf16View.endIndex),
+              let samePosition = utf16Index.samePosition(in: string) else {
+            return nil
+        }
+
+        self = min(max(samePosition, bounds.lowerBound), bounds.upperBound)
+    }
 }
 
 private enum EditorSemanticReadinessState: Equatable {

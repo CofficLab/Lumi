@@ -209,6 +209,44 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertNil(TextViewBridge.lastCharacter(before: 4, in: "abc"))
     }
 
+    func testEditorStateSymbolNameForRenameKeepsComposedIdentifierCharacters() {
+        let text = "let cafe\u{301} = 1"
+        let range = (text as NSString).range(of: "cafe\u{301}")
+
+        XCTAssertEqual(
+            EditorState.symbolNameForRename(
+                in: text,
+                selection: MultiCursorSelection(location: NSMaxRange(range), length: 0)
+            ),
+            "cafe\u{301}"
+        )
+    }
+
+    func testEditorStateSymbolNameForRenameSupportsNonLatinIdentifiers() {
+        let text = "let 名称 = 1"
+        let range = (text as NSString).range(of: "名称")
+
+        XCTAssertEqual(
+            EditorState.symbolNameForRename(
+                in: text,
+                selection: MultiCursorSelection(location: range.location, length: 0)
+            ),
+            "名称"
+        )
+    }
+
+    func testEditorStateSymbolNameForRenameRejectsNonIdentifierCharacters() {
+        let text = "let value = 😀"
+        let range = (text as NSString).range(of: "😀")
+
+        XCTAssertNil(
+            EditorState.symbolNameForRename(
+                in: text,
+                selection: MultiCursorSelection(location: range.location, length: 0)
+            )
+        )
+    }
+
     func testEditorViewStateControllerIgnoresOverflowingSelectionEnds() {
         let state = EditorViewStateController.positions(
             from: [MultiCursorSelection(location: 1, length: Int.max)],
