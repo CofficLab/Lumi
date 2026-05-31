@@ -29,3 +29,12 @@ import LumiCoreKit
 
     #expect(submittedTexts == ["hello"])
 }
+
+@MainActor
+@Test func commandSuggestionsFilterSlashCommands() throws {
+    #expect(CommandSuggestionView.suggestions(for: "").isEmpty)
+    #expect(CommandSuggestionView.suggestions(for: "help").isEmpty)
+    #expect(CommandSuggestionView.suggestions(for: "/c").map(\.command).contains("/clear"))
+    #expect(CommandSuggestionView.suggestions(for: "/cmd").map(\.command) == ["/cmd"])
+    #expect(CommandSuggestionView.suggestions(for: "/missing").isEmpty)
+}

@@ -21,6 +21,11 @@ public struct InputView: View {
                 .background(theme.textSecondary.opacity(0.06))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
+            CommandSuggestionView(input: conversationVM.draftText) { command in
+                conversationVM.setDraftText(command + " ")
+                isFocused = true
+            }
+
             HStack {
                 Spacer()
                 AppButton(
