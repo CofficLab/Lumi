@@ -2428,6 +2428,35 @@ struct EditorKernelTests {
 
     @Test
     @MainActor
+    func peekControllerAcceptsUnescapedFileURLs() {
+        let location = Location(
+            uri: "file:///tmp/Editor Kernel Peek.swift",
+            range: LSPRange(
+                start: Position(line: 2, character: 1),
+                end: Position(line: 2, character: 4)
+            )
+        )
+        let controller = EditorPeekController()
+
+        let presentation = controller.buildDefinitionPresentation(
+            location: location,
+            currentFileURL: URL(fileURLWithPath: "/tmp/Editor Kernel Peek.swift"),
+            projectRootPath: "/tmp",
+            currentContent: "one\ntwo\nthree\n"
+        )
+
+        #expect(presentation?.summary == "Editor Kernel Peek.swift:3:2")
+        #expect(presentation?.items.first?.target == .init(
+            url: URL(fileURLWithPath: "/tmp/Editor Kernel Peek.swift"),
+            line: 3,
+            column: 2,
+            highlightLine: true
+        ))
+        #expect(presentation?.items.first?.preview == "three")
+    }
+
+    @Test
+    @MainActor
     func peekControllerRejectsSiblingProjectWithSharedPrefix() {
         let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelPeek2.swift")
         let location = Location(

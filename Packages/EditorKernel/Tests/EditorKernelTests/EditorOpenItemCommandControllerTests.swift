@@ -25,6 +25,25 @@ struct EditorOpenItemCommandControllerTests {
         }
     }
 
+    @Test("workspace symbol command accepts unescaped file URLs")
+    func resolveWorkspaceSymbolCommandWithUnescapedFileURL() {
+        let symbol = EditorWorkspaceSymbolTarget(
+            uri: "file:///tmp/project/My File.swift",
+            line: 2,
+            character: 5
+        )
+
+        let resolved = EditorOpenItemCommandController.resolve(.workspaceSymbol(symbol))
+
+        if case let .workspaceSymbol(url, target)? = resolved?.navigationRequest {
+            #expect(url.path == "/tmp/project/My File.swift")
+            #expect(target.start.line == 3)
+            #expect(target.start.column == 6)
+        } else {
+            Issue.record("Expected workspace symbol navigation request")
+        }
+    }
+
     @Test("problem command keeps diagnostic and opens problems panel")
     func resolveProblemCommand() {
         let diagnostic = Diagnostic(

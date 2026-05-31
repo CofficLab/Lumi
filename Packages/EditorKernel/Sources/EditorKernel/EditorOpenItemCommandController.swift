@@ -27,7 +27,7 @@ public enum EditorOpenItemCommandController {
             )
 
         case let .workspaceSymbol(symbol):
-            guard let url = URL(string: symbol.uri), url.isFileURL else {
+            guard let url = WorkspaceEditFileOperations.fileURL(from: symbol.uri) else {
                 return nil
             }
 

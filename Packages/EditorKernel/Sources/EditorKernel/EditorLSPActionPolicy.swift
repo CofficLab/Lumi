@@ -70,7 +70,7 @@ public enum EditorLSPActionPolicy {
         previewLine: (URL, Int) -> String?
     ) -> [ReferenceResult] {
         let items = locations.compactMap { location -> ReferenceResult? in
-            guard let url = URL(string: location.uri) else { return nil }
+            guard let url = WorkspaceEditFileOperations.fileURL(from: location.uri) else { return nil }
             let line = Int(location.range.start.line) + 1
             let column = Int(location.range.start.character) + 1
             return ReferenceResult(

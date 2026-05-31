@@ -135,7 +135,7 @@ public struct EditorPeekController {
         badgeText: String,
         highlightLine: Bool
     ) -> EditorPeekItem? {
-        guard let url = URL(string: location.uri), url.isFileURL else { return nil }
+        guard let url = WorkspaceEditFileOperations.fileURL(from: location.uri) else { return nil }
         let line = Int(location.range.start.line) + 1
         let column = Int(location.range.start.character) + 1
         let previewContent = previewText(

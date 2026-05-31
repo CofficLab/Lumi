@@ -56,6 +56,33 @@ struct EditorLSPActionPolicyTests {
         #expect(results[1].line == 10)
     }
 
+    @Test("reference results accept unescaped file URLs")
+    func referenceResultsAcceptUnescapedFileURLs() {
+        let currentFile = URL(fileURLWithPath: "/tmp/project/main.swift")
+        let locations: [Location] = [
+            .init(
+                uri: "file:///tmp/project/My File.swift",
+                range: .init(
+                    start: .init(line: 4, character: 6),
+                    end: .init(line: 4, character: 9)
+                )
+            )
+        ]
+
+        let results = EditorLSPActionPolicy.referenceResults(
+            from: locations,
+            currentFileURL: currentFile,
+            relativeFilePath: "main.swift",
+            projectRootPath: "/tmp/project",
+            previewLine: { url, line in "\(url.path):\(line)" }
+        )
+
+        #expect(results.count == 1)
+        #expect(results.first?.url.path == "/tmp/project/My File.swift")
+        #expect(results.first?.path == "My File.swift")
+        #expect(results.first?.preview == "/tmp/project/My File.swift:5")
+    }
+
     @Test("reference display paths reject sibling projects with shared prefixes")
     func referenceResultDisplayPathRejectsSiblingProjectPrefix() {
         let currentFile = URL(fileURLWithPath: "/tmp/project/main.swift")
