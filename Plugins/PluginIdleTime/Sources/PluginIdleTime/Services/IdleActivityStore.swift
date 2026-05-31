@@ -87,9 +87,20 @@ public actor IdleActivityStore {
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
     }
 
+    static func corruptFileURL(for url: URL) -> URL {
+        url.deletingPathExtension()
+            .appendingPathExtension("corrupt.json")
+    }
+
     private func quarantineCorruptFile(_ url: URL) {
-        let quarantineURL = url.deletingPathExtension()
-            .appendingPathExtension("corrupt-\(Int(Date().timeIntervalSince1970))")
-        try? fileManager.moveItem(at: url, to: quarantineURL)
+        let quarantineURL = Self.corruptFileURL(for: url)
+        do {
+            if fileManager.fileExists(atPath: quarantineURL.path) {
+                try fileManager.removeItem(at: quarantineURL)
+            }
+            try fileManager.moveItem(at: url, to: quarantineURL)
+        } catch {
+            // Recovery is best-effort; a stale activity cache should not break app usage.
+        }
     }
 }
