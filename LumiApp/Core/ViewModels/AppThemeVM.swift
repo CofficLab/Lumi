@@ -86,11 +86,13 @@ final class AppThemeVM: ObservableObject {
         postThemeDidChange()
     }
 
-    func selectTheme(_ themeId: String) {
-        guard themes.contains(where: { $0.id == themeId }) else { return }
+    @discardableResult
+    func selectTheme(_ themeId: String) -> Bool {
+        guard themes.contains(where: { $0.id == themeId }) else { return false }
         if currentThemeId != themeId {
             currentThemeId = themeId
         }
+        return true
     }
 
     static func editorThemeID(for themeId: String, registry: LumiUIThemeRegistry = .shared) -> String {

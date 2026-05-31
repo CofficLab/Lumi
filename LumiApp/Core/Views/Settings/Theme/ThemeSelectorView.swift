@@ -18,7 +18,7 @@ struct ThemeSelectorView: View {
                     isSelected: themeVM.currentThemeId == theme.id
                 ) {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        themeVM.selectTheme(theme.id)
+                        _ = themeVM.selectTheme(theme.id)
                     }
                 }
             }

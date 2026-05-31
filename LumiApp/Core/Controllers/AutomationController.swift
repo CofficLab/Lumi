@@ -217,7 +217,10 @@ final class AutomationController: SuperLog {
 
         // 直接通过 AppThemeVM 切换主题
         let themeVM = RootContainer.shared.themeVM
-        themeVM.selectTheme(themeId)
+        guard themeVM.selectTheme(themeId) else {
+            Self.logger.warning("🤖 theme.switch: unknown themeId '\(themeId, privacy: .public)'")
+            return
+        }
 
         Self.logger.info("🤖 Theme switched to: \(themeId, privacy: .public)")
     }

@@ -61,9 +61,32 @@ final class AppThemeVMTests: XCTestCase {
             postThemeDidChangeNotification: { _, _ in }
         )
 
-        vm.selectTheme("other-app")
+        let didSelect = vm.selectTheme("other-app")
 
+        XCTAssertTrue(didSelect)
         XCTAssertEqual(savedThemeId, "other-app")
+    }
+
+    @MainActor
+    func testSelectingUnknownThemeReportsFailureWithoutPersisting() throws {
+        let registry = LumiUIThemeRegistry()
+        try registry.replaceAll([
+            contribution(pluginOrder: 10, themeId: "default-app", editorThemeId: "default-editor")
+        ])
+        var savedThemeIds: [String] = []
+        let vm = AppThemeVM(
+            registry: registry,
+            syncThemes: { _ in },
+            loadSelectedThemeID: { nil },
+            saveSelectedThemeID: { savedThemeIds.append($0) },
+            postThemeDidChangeNotification: { _, _ in }
+        )
+
+        let didSelect = vm.selectTheme("missing-app")
+
+        XCTAssertFalse(didSelect)
+        XCTAssertEqual(vm.currentThemeId, "default-app")
+        XCTAssertEqual(savedThemeIds, [])
     }
 
     @MainActor
