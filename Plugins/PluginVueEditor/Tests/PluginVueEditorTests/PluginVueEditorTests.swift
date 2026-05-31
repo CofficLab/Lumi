@@ -92,6 +92,26 @@ import Testing
     #expect(info.slots.first?.props == ["(scoped)"])
 }
 
+@Test func vueComponentInfoParsesObjectEmitNames() {
+    let content = """
+    <script setup>
+    const emit = defineEmits({
+        submit: null,
+        'save-item': null,
+        "update:modelValue": null
+    })
+    </script>
+    """
+
+    let info = VueComponentInfo.parse(
+        from: content,
+        filePath: "/tmp/vue-app/src/components/UserCard.vue",
+        vueVersion: .vue3
+    )
+
+    #expect(info.emits.map(\.name) == ["submit", "save-item", "update:modelValue"])
+}
+
 @Test func vueCompilerOptionsIgnoreEmptyTSConfigJSX() throws {
     let projectURL = try makeTemporaryVueProject()
     defer { try? FileManager.default.removeItem(at: projectURL) }

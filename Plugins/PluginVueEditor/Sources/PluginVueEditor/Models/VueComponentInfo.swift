@@ -165,18 +165,34 @@ struct VueComponentInfo: Sendable {
                 let lines = objectContent.components(separatedBy: ",")
                 for line in lines {
                     let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if let colonIndex = trimmed.firstIndex(of: ":") ?? trimmed.firstIndex(of: "'") {
-                        let namePart = String(trimmed[..<colonIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
-                        let cleaned = namePart.trimmingCharacters(in: CharacterSet(charactersIn: "'\"`"))
-                        if !cleaned.isEmpty && cleaned.allSatisfy({ $0.isLetter }) {
-                            emits.append(EmitDefinition(name: cleaned, parameters: [], source: .defineEmits))
-                        }
+                    if let name = parseObjectEmitName(from: trimmed),
+                       !emits.contains(where: { $0.name == name }) {
+                        emits.append(EmitDefinition(name: name, parameters: [], source: .defineEmits))
                     }
                 }
             }
         }
 
         return emits
+    }
+
+    private static func parseObjectEmitName(from entry: String) -> String? {
+        let patterns = [
+            #"^\s*["'`]([^"'`]+)["'`]\s*:"#,
+            #"^\s*([A-Za-z_$][\w$]*)\s*:"#,
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(in: entry, range: NSRange(entry.startIndex..., in: entry)),
+                  let range = Range(match.range(at: 1), in: entry) else {
+                continue
+            }
+            let name = String(entry[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return name.isEmpty ? nil : name
+        }
+
+        return nil
     }
 
     // MARK: - Slots 解析
