@@ -14,7 +14,7 @@ public final class RequestLogBrowserViewModel: ObservableObject {
     private let pageSize = 50
 
     public var totalPages: Int {
-        let total = stats.totalRequests
+        let total = filteredTotalCount
         return max(1, (total + pageSize - 1) / pageSize)
     }
 
@@ -48,7 +48,8 @@ public final class RequestLogBrowserViewModel: ObservableObject {
     }
 
     private func fetchItems() async {
-        let offset = (currentPage - 1) * pageSize
+        normalizeCurrentPage()
+        let offset = max((currentPage - 1) * pageSize, 0)
         if let filter = filterSuccess {
             items = await RequestLogHistoryManager.shared.query(
                 isSuccess: filter,
@@ -60,6 +61,24 @@ public final class RequestLogBrowserViewModel: ObservableObject {
                 limit: pageSize,
                 offset: offset
             )
+        }
+    }
+
+    private var filteredTotalCount: Int {
+        switch filterSuccess {
+        case nil:
+            stats.totalRequests
+        case true:
+            stats.successCount
+        case false:
+            stats.failedCount
+        }
+    }
+
+    private func normalizeCurrentPage() {
+        let normalized = min(max(currentPage, 1), totalPages)
+        if currentPage != normalized {
+            currentPage = normalized
         }
     }
 }

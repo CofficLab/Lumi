@@ -9,6 +9,7 @@ import os
 public actor RequestLogHistoryManager: SuperLog {
     public nonisolated static let emoji = "📝"
     public nonisolated static let verbose: Bool = true
+    static let maxPageLimit = 1000
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "request-log.history")
     public static let shared = RequestLogHistoryManager()
 
@@ -157,23 +158,25 @@ public actor RequestLogHistoryManager: SuperLog {
 
     public func getLatest(limit: Int = 100, offset: Int = 0) async -> [RequestLogItemDTO] {
         let context = ModelContext(container)
+        let pagination = Self.normalizedPagination(limit: limit, offset: offset)
         var descriptor = FetchDescriptor<RequestLogItem>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        descriptor.fetchLimit = limit
-        descriptor.fetchOffset = offset
+        descriptor.fetchLimit = pagination.limit
+        descriptor.fetchOffset = pagination.offset
         let items = (try? context.fetch(descriptor)) ?? []
         return items.map { RequestLogItemDTO(from: $0) }
     }
 
     public func query(isSuccess: Bool, limit: Int, offset: Int = 0) async -> [RequestLogItemDTO] {
         let context = ModelContext(container)
+        let pagination = Self.normalizedPagination(limit: limit, offset: offset)
         var descriptor = FetchDescriptor<RequestLogItem>(
             predicate: RequestLogItem.predicate(isSuccess: isSuccess),
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        descriptor.fetchLimit = limit
-        descriptor.fetchOffset = offset
+        descriptor.fetchLimit = pagination.limit
+        descriptor.fetchOffset = pagination.offset
         let items = (try? context.fetch(descriptor)) ?? []
         return items.map { RequestLogItemDTO(from: $0) }
     }
@@ -274,5 +277,12 @@ public actor RequestLogHistoryManager: SuperLog {
         guard let dict else { return nil }
         guard let data = try? JSONSerialization.data(withJSONObject: dict, options: [.sortedKeys]) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+
+    static func normalizedPagination(limit: Int, offset: Int) -> (limit: Int, offset: Int) {
+        (
+            limit: min(max(limit, 1), maxPageLimit),
+            offset: max(offset, 0)
+        )
     }
 }
