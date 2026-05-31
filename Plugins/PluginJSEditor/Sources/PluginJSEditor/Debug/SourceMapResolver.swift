@@ -8,7 +8,7 @@ public enum SourceMapResolver {
             return sibling
         }
 
-        guard let content = try? String(contentsOf: generatedFileURL, encoding: .utf8),
+        guard let content = try? generatedFileContent(from: generatedFileURL),
               let markerRange = content.range(of: "sourceMappingURL=", options: .backwards) else {
             return nil
         }
@@ -16,6 +16,11 @@ public enum SourceMapResolver {
         let tail = sourceMapTail(in: content[markerRange.upperBound...])
         guard let tail else { return nil }
         return resolveSourceMapTail(tail, relativeTo: generatedFileURL)
+    }
+
+    static func generatedFileContent(from url: URL) throws -> String {
+        var detectedEncoding = String.Encoding.utf8
+        return try String(contentsOf: url, usedEncoding: &detectedEncoding)
     }
 
     static func sourceMapTail(in content: Substring) -> String? {
