@@ -7,11 +7,79 @@ import SwiftUI
 
 public typealias ModelPreference = (providerId: String, model: String)
 
-public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
+public enum ChatMode: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+    case chat
     case build
-    case ask
+    case autonomous
 
     public var id: String { rawValue }
+
+    public var rawValue: String {
+        switch self {
+        case .chat:
+            return "a1"
+        case .build:
+            return "a2"
+        case .autonomous:
+            return "a3"
+        }
+    }
+
+    public init?(rawValue: String) {
+        switch rawValue.lowercased() {
+        case "a1", "ask", "chat":
+            self = .chat
+        case "a2", "build":
+            self = .build
+        case "a3", "autonomous":
+            self = .autonomous
+        default:
+            return nil
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let value = Self(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Invalid chat mode: \(rawValue)"
+            )
+        }
+        self = value
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public var levelCode: String {
+        rawValue.uppercased()
+    }
+
+    public var iconName: String {
+        switch self {
+        case .chat:
+            return "bubble.left.and.bubble.right"
+        case .build:
+            return "hammer"
+        case .autonomous:
+            return "bolt"
+        }
+    }
+
+    public var displayName: String {
+        switch self {
+        case .chat:
+            return "Chat"
+        case .build:
+            return "Build"
+        case .autonomous:
+            return "Auto"
+        }
+    }
 }
 
 @MainActor
@@ -27,6 +95,7 @@ public final class AppLLMVM: ObservableObject {
     public var providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
     public var providerFactory: @MainActor (String) -> (any SuperLLMProvider)?
     public var apiKeyProvider: @MainActor (String) -> String
+    public var chatModeSetter: @MainActor (ChatMode) -> Void
 
     public init(
         selectedProviderId: String = "",
@@ -38,7 +107,8 @@ public final class AppLLMVM: ObservableObject {
         providersProvider: @escaping @MainActor () -> [LLMProviderInfo] = { [] },
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
         providerFactory: @escaping @MainActor (String) -> (any SuperLLMProvider)? = { _ in nil },
-        apiKeyProvider: @escaping @MainActor (String) -> String = { _ in "" }
+        apiKeyProvider: @escaping @MainActor (String) -> String = { _ in "" },
+        chatModeSetter: @escaping @MainActor (ChatMode) -> Void = { _ in }
     ) {
         self.selectedProviderId = selectedProviderId
         self.currentModel = currentModel
@@ -50,6 +120,7 @@ public final class AppLLMVM: ObservableObject {
         self.providerTypeProvider = providerTypeProvider
         self.providerFactory = providerFactory
         self.apiKeyProvider = apiKeyProvider
+        self.chatModeSetter = chatModeSetter
     }
 
     public var availableProviders: [LLMProviderInfo] { providersProvider() }
@@ -77,6 +148,13 @@ public final class AppLLMVM: ObservableObject {
     }
 
     public func setChatMode(_ chatMode: ChatMode) {
+        guard self.chatMode != chatMode else { return }
+        self.chatMode = chatMode
+        chatModeSetter(chatMode)
+    }
+
+    public func updateChatModeFromHost(_ chatMode: ChatMode) {
+        guard self.chatMode != chatMode else { return }
         self.chatMode = chatMode
     }
 }

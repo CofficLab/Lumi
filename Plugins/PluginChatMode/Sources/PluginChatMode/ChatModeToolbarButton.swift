@@ -1,7 +1,9 @@
 import LumiUI
+import LumiCoreKit
 import SwiftUI
 
 public struct ChatModeToolbarButton: View {
+    @EnvironmentObject private var llmVM: AppLLMVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPopoverPresented = false
 
@@ -12,9 +14,9 @@ public struct ChatModeToolbarButton: View {
             isPopoverPresented.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: ChatModeRuntime.mode.iconName)
+                Image(systemName: llmVM.chatMode.iconName)
                     .font(.system(size: 13))
-                Text(ChatModeRuntime.mode.levelCode)
+                Text(llmVM.chatMode.levelCode)
                     .font(.system(size: 11, weight: .medium))
             }
             .foregroundColor(foregroundColor)
@@ -26,9 +28,9 @@ public struct ChatModeToolbarButton: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(ChatModeValue.allCases) { mode in
+                ForEach(ChatMode.allCases) { mode in
                     Button {
-                        ChatModeRuntime.setMode(mode)
+                        llmVM.setChatMode(mode)
                         isPopoverPresented = false
                     } label: {
                         HStack {
@@ -36,7 +38,7 @@ public struct ChatModeToolbarButton: View {
                             Text(mode.levelCode)
                             Text(mode.displayName)
                             Spacer()
-                            if mode == ChatModeRuntime.mode {
+                            if mode == llmVM.chatMode {
                                 Image(systemName: "checkmark")
                             }
                         }
@@ -52,7 +54,7 @@ public struct ChatModeToolbarButton: View {
     }
 
     private var foregroundColor: Color {
-        switch ChatModeRuntime.mode {
+        switch llmVM.chatMode {
         case .chat: return .orange
         case .build: return theme.textSecondary
         case .autonomous: return .red

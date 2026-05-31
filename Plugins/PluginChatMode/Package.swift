@@ -31,7 +31,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginChatModeTests",
-            dependencies: ["PluginChatMode"],
+            dependencies: [
+                "PluginChatMode",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests/PluginChatModeTests"
         )
     ]

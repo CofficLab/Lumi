@@ -259,7 +259,12 @@ struct RootView<Content>: View where Content: View {
         pluginLLMVM.currentModel = container.agentSessionConfig.currentModel
         pluginLLMVM.isAutoMode = container.agentSessionConfig.isAutoMode
         pluginLLMVM.lastAutoRouteSummary = container.agentSessionConfig.lastAutoRouteSummary
-        pluginLLMVM.chatMode = LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build
+        pluginLLMVM.updateChatModeFromHost(LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build)
+        pluginLLMVM.chatModeSetter = { [container, windowContainer] chatMode in
+            guard let appChatMode = ChatMode(rawValue: chatMode.rawValue) else { return }
+            container.agentSessionConfig.setChatMode(appChatMode)
+            windowContainer.conversationVM.saveChatModePreference(appChatMode)
+        }
     }
 
     private func syncPluginLayoutContext() {
