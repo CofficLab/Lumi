@@ -283,6 +283,7 @@ struct ContextPruner: SuperLog {
                     continue
                 }
                 result.append(current)
+                activeToolCallIDs.remove(toolCallID)
 
             default:
                 activeToolCallIDs.removeAll()

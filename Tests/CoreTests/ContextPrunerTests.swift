@@ -78,5 +78,37 @@ final class ContextPrunerTests: XCTestCase {
         XCTAssertEqual(result.messages.first?.content, "summary")
         XCTAssertFalse(result.messages.contains { $0.content == "Late instruction" })
     }
+
+    func testPruneDropsDuplicateToolResultsForSameCall() {
+        let conversationId = UUID()
+        let messages = [
+            ChatMessage(role: .user, conversationId: conversationId, content: "Run it"),
+            ChatMessage(
+                role: .assistant,
+                conversationId: conversationId,
+                content: "",
+                toolCalls: [
+                    ToolCall(id: "call_1", name: "shell", arguments: "{}")
+                ]
+            ),
+            ChatMessage(role: .tool, conversationId: conversationId, content: "first", toolCallID: "call_1"),
+            ChatMessage(role: .tool, conversationId: conversationId, content: "duplicate", toolCallID: "call_1"),
+            ChatMessage(role: .user, conversationId: conversationId, content: "Continue")
+        ]
+
+        let result = ContextPruner.prune(
+            messages,
+            config: ContextPruner.Configuration(
+                maxMessages: 4,
+                tokenUsageThreshold: 0.8,
+                tighteningFactor: 0.6,
+                summaryPlaceholder: "summary"
+            )
+        )
+
+        XCTAssertEqual(result.messages.map(\.role), [.system, .user, .assistant, .tool, .assistant, .user])
+        XCTAssertTrue(result.messages.contains { $0.content == "first" })
+        XCTAssertFalse(result.messages.contains { $0.content == "duplicate" })
+    }
 }
 #endif
