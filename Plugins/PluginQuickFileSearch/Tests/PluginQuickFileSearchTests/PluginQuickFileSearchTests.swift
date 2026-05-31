@@ -55,3 +55,10 @@ import Foundation
     #expect(FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/node_modules")))
     #expect(!FileSearchHelpers.shouldSkipPath(URL(fileURLWithPath: "/tmp/project/building/App.swift")))
 }
+
+@Test func fileSearchResultRowMapsCommonFileIconsWithoutDuplicateCases() {
+    #expect(FileSearchResultRow.iconName(for: "App.swift") == "swift")
+    #expect(FileSearchResultRow.iconName(for: "Bridge.h") == "doc.text")
+    #expect(FileSearchResultRow.iconName(for: "View.mm") == "doc.text")
+    #expect(FileSearchResultRow.iconName(for: "Archive.zip") == "archivebox")
+}

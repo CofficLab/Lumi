@@ -48,7 +48,7 @@ public struct FileSearchResultRow: View {
                 Image(systemName: "folder.fill")
                     .foregroundColor(.accentColor)
             } else {
-                Image(systemName: iconName(for: result.name))
+                Image(systemName: FileSearchResultRow.iconName(for: result.name))
                     .foregroundColor(.secondary)
             }
         }
@@ -67,7 +67,7 @@ public struct FileSearchResultRow: View {
     }
 
     /// 根据文件扩展名返回对应图标
-    private func iconName(for filename: String) -> String {
+    nonisolated static func iconName(for filename: String) -> String {
         let ext = (filename as NSString).pathExtension.lowercased()
 
         switch ext {
@@ -82,7 +82,7 @@ public struct FileSearchResultRow: View {
         case "rs": return "doc.text"
         case "cpp", "cc", "cxx": return "doc.text"
         case "c", "h": return "doc.text"
-        case "m", "mm", "h": return "doc.text"
+        case "m", "mm": return "doc.text"
 
         // 标记语言
         case "md", "markdown": return "doc.text"
