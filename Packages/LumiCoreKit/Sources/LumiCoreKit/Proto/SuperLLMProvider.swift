@@ -169,9 +169,9 @@ extension SuperLLMProvider {
     public static var isEnabled: Bool { true }
     public static var websiteURL: String? { nil }
     public static var modelCatalog: [LLMModelCatalogItem] { [] }
-    public static var availableModels: [String] { modelCatalog.map(\.id) }
+    public static var availableModels: [String] { uniqueModelCatalog.map(\.id) }
     public static var modelSpecs: [String: LLMModelSpec] {
-        Dictionary(uniqueKeysWithValues: modelCatalog.map { ($0.id, $0.spec) })
+        Dictionary(uniqueKeysWithValues: uniqueModelCatalog.map { ($0.id, $0.spec) })
     }
     public static var contextWindowSizes: [String: Int] {
         var result: [String: Int] = [:]
@@ -186,7 +186,14 @@ extension SuperLLMProvider {
         Dictionary(uniqueKeysWithValues: modelSpecs.map { ($0.key, $0.value.capabilities) })
     }
     public static var modelDescriptions: [String: String] {
-        Dictionary(uniqueKeysWithValues: modelCatalog.map { ($0.id, $0.description) })
+        Dictionary(uniqueKeysWithValues: uniqueModelCatalog.map { ($0.id, $0.description) })
+    }
+
+    private static var uniqueModelCatalog: [LLMModelCatalogItem] {
+        var seen = Set<String>()
+        return modelCatalog.filter { item in
+            seen.insert(item.id).inserted
+        }
     }
 
     public func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {

@@ -93,6 +93,15 @@ struct LumiCoreKitTests {
         #expect(specWithCtx.contextWindowSize == 128000)
     }
 
+    @Test("SuperLLMProvider 默认模型目录处理重复模型 ID")
+    func providerModelCatalogDeduplicatesModelIDs() {
+        #expect(DuplicateModelProvider.availableModels == ["model-a", "model-b"])
+        #expect(DuplicateModelProvider.modelSpecs["model-a"]?.contextWindowSize == 100)
+        #expect(DuplicateModelProvider.modelCapabilities["model-a"]?.supportsTools == true)
+        #expect(DuplicateModelProvider.modelDescriptions["model-a"] == "First model")
+        #expect(DuplicateModelProvider.modelDescriptions["model-b"] == "Second model")
+    }
+
     @Test("LocalModelInfo 初始化")
     func localModelInfo() {
         let info = LocalModelInfo(
@@ -158,6 +167,70 @@ private actor LocalizedDescriptionPlugin: SuperPlugin {
         case .chinese: "中文描述"
         case .english: description
         }
+    }
+}
+
+private struct DuplicateModelProvider: SuperLLMProvider {
+    static let id = "duplicate-model-provider"
+    static let displayName = "Duplicate Model Provider"
+    static let shortName = "DMP"
+    static let description = "Provider with repeated model IDs"
+    static let apiKeyStorageKey = "DuplicateModelProviderAPIKey"
+    static let defaultModel = "model-a"
+    static let modelCatalog = [
+        LLMModelCatalogItem(
+            id: "model-a",
+            description: "First model",
+            spec: LLMModelSpec(contextWindowSize: 100, supportsVision: false, supportsTools: true)
+        ),
+        LLMModelCatalogItem(
+            id: "model-a",
+            description: "Duplicate model",
+            spec: LLMModelSpec(contextWindowSize: 200, supportsVision: true, supportsTools: false)
+        ),
+        LLMModelCatalogItem(
+            id: "model-b",
+            description: "Second model",
+            spec: LLMModelSpec(contextWindowSize: 300, supportsVision: true, supportsTools: true)
+        )
+    ]
+
+    let baseURL = "https://example.invalid"
+
+    init() {}
+
+    func buildRequest(url: URL, apiKey: String) -> URLRequest {
+        URLRequest(url: url)
+    }
+
+    func buildRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [SuperAgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        [:]
+    }
+
+    func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
+        ("", nil)
+    }
+
+    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+        nil
+    }
+
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [SuperAgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        [:]
+    }
+
+    func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
+        .apiKeyOnly
     }
 }
 
