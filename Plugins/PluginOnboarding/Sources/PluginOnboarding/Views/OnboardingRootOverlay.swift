@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import os
 import SwiftUI
 
 // MARK: - 通知
@@ -17,6 +18,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
     @Published var isPresentingOnboarding = false
     @Published var currentStep = 0
     @Published var isTransitioning = false
+    @Published var persistenceErrorMessage: String?
 
     private let store: OnboardingPluginStore
 
@@ -47,7 +49,10 @@ public final class OnboardingPluginViewModel: ObservableObject {
 
     public func show(forceReset: Bool) {
         if forceReset {
-            store.completed = false
+            guard store.setCompleted(false) else {
+                persistenceErrorMessage = String(localized: "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", table: "OnboardingPlugin")
+                return
+            }
         }
         start()
     }
@@ -57,7 +62,10 @@ public final class OnboardingPluginViewModel: ObservableObject {
     }
 
     public func complete() {
-        store.completed = true
+        guard store.setCompleted(true) else {
+            persistenceErrorMessage = String(localized: "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", table: "OnboardingPlugin")
+            return
+        }
         isPresentingOnboarding = false
         currentStep = 0
     }
@@ -102,6 +110,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
 public final class OnboardingPluginStore {
     // MARK: - 属性
 
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.onboarding.store")
     private let fileManager = FileManager.default
     private let settingsURL: URL
     private let stateFileURL: URL
@@ -116,50 +125,82 @@ public final class OnboardingPluginStore {
         prepareDirectories()
     }
 
+    init(settingsDirectory: URL) {
+        self.settingsURL = settingsDirectory
+        self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
+        prepareDirectories()
+    }
+
     // MARK: - 公开方法
 
     public var completed: Bool {
         get { readCompletedFlag() }
-        set { writeCompletedFlag(newValue) }
+        set { setCompleted(newValue) }
+    }
+
+    @discardableResult
+    public func setCompleted(_ completed: Bool) -> Bool {
+        writeCompletedFlag(completed)
     }
 
     // MARK: - 私有方法
 
     private func prepareDirectories() {
-        try? fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
+        do {
+            try fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create onboarding settings directory failed: \(error.localizedDescription)")
+        }
     }
 
     private func readCompletedFlag() -> Bool {
-        guard fileManager.fileExists(atPath: stateFileURL.path),
-              let data = try? Data(contentsOf: stateFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any],
-              let completed = dict["completed"] as? Bool else {
+        guard fileManager.fileExists(atPath: stateFileURL.path) else {
             return false
         }
-        return completed
+
+        do {
+            let data = try Data(contentsOf: stateFileURL)
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                Self.logger.error("Read onboarding state failed: root plist is not a dictionary")
+                return false
+            }
+            return dict["completed"] as? Bool ?? false
+        } catch {
+            Self.logger.error("Read onboarding state failed: \(error.localizedDescription)")
+            return false
+        }
     }
 
-    private func writeCompletedFlag(_ completed: Bool) {
+    @discardableResult
+    private func writeCompletedFlag(_ completed: Bool) -> Bool {
         let payload: [String: Any] = [
             "completed": completed,
             "updatedAt": Date()
         ]
 
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: payload, format: .binary, options: 0) else {
-            return
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(fromPropertyList: payload, format: .binary, options: 0)
+        } catch {
+            Self.logger.error("Encode onboarding state failed: \(error.localizedDescription)")
+            return false
         }
 
         let tempURL = settingsURL.appendingPathComponent("onboarding_state.tmp")
         do {
+            try fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
             try data.write(to: tempURL, options: .atomic)
             if fileManager.fileExists(atPath: stateFileURL.path) {
-                _ = try? fileManager.replaceItemAt(stateFileURL, withItemAt: tempURL)
+                _ = try fileManager.replaceItemAt(stateFileURL, withItemAt: tempURL)
             } else {
                 try fileManager.moveItem(at: tempURL, to: stateFileURL)
             }
+            return true
         } catch {
+            Self.logger.error("Persist onboarding state failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tempURL)
+            return false
         }
     }
 }
@@ -431,9 +472,24 @@ private struct OnboardingSheetView: View {
             y: 20
         )
         .interactiveDismissDisabled()
-        .onAppear {
-            loadPluginSelectionIfNeeded()
-        }
+            .onAppear {
+                loadPluginSelectionIfNeeded()
+            }
+            .alert(
+                String(localized: "无法保存新手引导状态", table: "OnboardingPlugin"),
+                isPresented: Binding(
+                    get: { viewModel.persistenceErrorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            viewModel.persistenceErrorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button(String(localized: "好", table: "OnboardingPlugin"), role: .cancel) {}
+            } message: {
+                Text(viewModel.persistenceErrorMessage ?? "")
+            }
     }
 
     // MARK: - 子视图
