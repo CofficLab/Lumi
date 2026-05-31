@@ -6,6 +6,13 @@ public enum WorkspacePathResolver {
         if let url = URL(string: trimmedPath), url.isFileURL {
             return url
         }
+        if trimmedPath.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmedPath.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path)
+        }
 
         let expandedPath = (trimmedPath as NSString).expandingTildeInPath
         return URL(fileURLWithPath: expandedPath)
