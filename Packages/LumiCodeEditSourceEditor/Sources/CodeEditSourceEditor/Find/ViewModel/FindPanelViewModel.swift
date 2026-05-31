@@ -62,6 +62,15 @@ class FindPanelViewModel: ObservableObject {
         target?.findPanelTargetView.window?.firstResponder === target?.findPanelTargetView
     }
 
+    func validCurrentFindMatchIndex() -> Int? {
+        guard let currentFindMatchIndex else { return nil }
+        guard findMatches.indices.contains(currentFindMatchIndex) else {
+            self.currentFindMatchIndex = nil
+            return nil
+        }
+        return currentFindMatchIndex
+    }
+
     init(target: FindPanelTarget) {
         self.target = target
 

@@ -17,6 +17,27 @@ final class SourceEditorCoreTests: XCTestCase {
         XCTAssertEqual(FindPanelMode.replace.displayName, "Replace")
     }
 
+    func testFindPanelClearsStaleCurrentMatchIndex() {
+        let viewModel = FindPanelViewModel(target: MockFindPanelTarget())
+        viewModel.findMatches = [NSRange(location: 0, length: 4)]
+        viewModel.currentFindMatchIndex = 4
+
+        XCTAssertNil(viewModel.validCurrentFindMatchIndex())
+        XCTAssertNil(viewModel.currentFindMatchIndex)
+    }
+
+    func testFindPanelKeepsValidCurrentMatchIndex() {
+        let viewModel = FindPanelViewModel(target: MockFindPanelTarget())
+        viewModel.findMatches = [
+            NSRange(location: 0, length: 4),
+            NSRange(location: 10, length: 4)
+        ]
+        viewModel.currentFindMatchIndex = 1
+
+        XCTAssertEqual(viewModel.validCurrentFindMatchIndex(), 1)
+        XCTAssertEqual(viewModel.currentFindMatchIndex, 1)
+    }
+
     func testInvisibleCharactersEmptyDisablesAllTriggers() {
         let config = InvisibleCharactersConfiguration.empty
 

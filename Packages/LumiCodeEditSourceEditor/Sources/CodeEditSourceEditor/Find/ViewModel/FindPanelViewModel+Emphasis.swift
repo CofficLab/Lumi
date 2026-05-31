@@ -34,7 +34,7 @@ extension FindPanelViewModel {
     func flashCurrentMatch() {
         guard let target = target,
               let emphasisManager = target.textView.emphasisManager,
-              let currentFindMatchIndex else {
+              let currentFindMatchIndex = validCurrentFindMatchIndex() else {
             return
         }
 

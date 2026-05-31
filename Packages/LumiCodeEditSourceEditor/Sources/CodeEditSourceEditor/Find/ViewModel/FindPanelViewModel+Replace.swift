@@ -13,7 +13,7 @@ extension FindPanelViewModel {
     /// - Parameter all: If true, replaces all matches instead of just the selected one.
     func replace() {
         guard let target = target,
-              let currentFindMatchIndex,
+              let currentFindMatchIndex = validCurrentFindMatchIndex(),
               !findMatches.isEmpty else {
             return
         }
