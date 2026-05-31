@@ -290,14 +290,16 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
 
         var ptr = ifaddr
         while ptr != nil {
-            if (ptr!.pointee.ifa_flags & UInt32(IFF_LOOPBACK)) == 0 && (ptr!.pointee.ifa_flags & UInt32(IFF_UP)) != 0 {
-                if let data = ptr!.pointee.ifa_data {
+            let interface = ptr!.pointee
+            let addressFamily = interface.ifa_addr?.pointee.sa_family
+            if Self.shouldReadNetworkCounters(flags: interface.ifa_flags, addressFamily: addressFamily) {
+                if let data = interface.ifa_data {
                     let stats = data.assumingMemoryBound(to: if_data.self).pointee
                     totalIn += UInt64(stats.ifi_ibytes)
                     totalOut += UInt64(stats.ifi_obytes)
                 }
             }
-            ptr = ptr!.pointee.ifa_next
+            ptr = interface.ifa_next
         }
 
         let now = Date().timeIntervalSince1970
@@ -320,6 +322,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         lastCheckTime = now
 
         return (speedIn, speedOut)
+    }
+
+    package nonisolated static func shouldReadNetworkCounters(flags: UInt32, addressFamily: UInt8?) -> Bool {
+        guard addressFamily == UInt8(AF_LINK) else { return false }
+        guard (flags & UInt32(IFF_LOOPBACK)) == 0 else { return false }
+        return (flags & UInt32(IFF_UP)) != 0
     }
 
     // MARK: - Disk Usage

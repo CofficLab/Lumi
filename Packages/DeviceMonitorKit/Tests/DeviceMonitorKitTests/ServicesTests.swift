@@ -214,6 +214,17 @@ struct SystemMonitorServiceTests {
     }
 
     @Test
+    func networkCounterFilterOnlyAcceptsActiveLinkInterfaces() {
+        let activeLinkFlags = UInt32(IFF_UP)
+
+        #expect(SystemMonitorService.shouldReadNetworkCounters(flags: activeLinkFlags, addressFamily: UInt8(AF_LINK)))
+        #expect(!SystemMonitorService.shouldReadNetworkCounters(flags: activeLinkFlags, addressFamily: nil))
+        #expect(!SystemMonitorService.shouldReadNetworkCounters(flags: activeLinkFlags, addressFamily: UInt8(AF_INET)))
+        #expect(!SystemMonitorService.shouldReadNetworkCounters(flags: activeLinkFlags | UInt32(IFF_LOOPBACK), addressFamily: UInt8(AF_LINK)))
+        #expect(!SystemMonitorService.shouldReadNetworkCounters(flags: 0, addressFamily: UInt8(AF_LINK)))
+    }
+
+    @Test
     @MainActor
     func diskMetricsUseCounterDeltas() {
         let counter = DiskCounterSequence()
