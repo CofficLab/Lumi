@@ -1,10 +1,13 @@
 import Foundation
 import LumiCoreKit
+import os
 
 /// 项目存储
 /// 负责全局项目列表的持久化。
 public final class ProjectsStore: @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
     private let queue = DispatchQueue(label: "ProjectsStore.queue", qos: .userInitiated)
+    private let dbFolderURLProvider: @Sendable () -> URL
 
     private static let legacyKey = "Agent_Projects"
 
@@ -12,12 +15,19 @@ public final class ProjectsStore: @unchecked Sendable {
     private static let pluginDirName = "Projects"
     private static let settingsDirName = "settings"
     private static let stateFileName = "projects.json"
+    private static let corruptStateFileName = "projects.corrupt.json"
     private static let tmpFileName = "projects.tmp"
 
     /// 最大保存项目数量
     private static let maxProjectsCount = 500
 
-    public init() {}
+    public convenience init() {
+        self.init(dbFolderURLProvider: { AppConfig.getDBFolderURL() })
+    }
+
+    init(dbFolderURLProvider: @escaping @Sendable () -> URL) {
+        self.dbFolderURLProvider = dbFolderURLProvider
+    }
 
     // MARK: - Public API
 
@@ -81,30 +91,58 @@ public final class ProjectsStore: @unchecked Sendable {
     private func loadProjectsFromCurrentFile() -> [Project]? {
         let fileURL = currentStateFileURL()
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        guard let projects = try? JSONDecoder().decode([Project].self, from: data) else { return nil }
-        return projects
+        do {
+            let data = try Data(contentsOf: fileURL)
+            return try JSONDecoder().decode([Project].self, from: data)
+        } catch {
+            Self.logger.error("Read projects state failed: \(error.localizedDescription)")
+            quarantineCorruptCurrentState()
+            return nil
+        }
     }
 
     private func persistProjectsToCurrentFile(projects: [Project]) {
         let fileManager = FileManager.default
         let settingsDir = currentSettingsDirURL()
-        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
 
         let fileURL = currentStateFileURL()
         let tmpURL = settingsDir.appendingPathComponent(Self.tmpFileName, isDirectory: false)
 
-        guard let data = try? JSONEncoder().encode(projects) else { return }
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(projects)
+        } catch {
+            Self.logger.error("Encode projects state failed: \(error.localizedDescription)")
+            return
+        }
 
         do {
+            try fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
             try data.write(to: tmpURL, options: .atomic)
             if fileManager.fileExists(atPath: fileURL.path) {
-                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+                _ = try fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
             } else {
                 try fileManager.moveItem(at: tmpURL, to: fileURL)
             }
         } catch {
+            Self.logger.error("Persist projects state failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
+        }
+    }
+
+    private func quarantineCorruptCurrentState() {
+        let fileManager = FileManager.default
+        let fileURL = currentStateFileURL()
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+
+        do {
+            let corruptURL = currentCorruptStateFileURL()
+            if fileManager.fileExists(atPath: corruptURL.path) {
+                try fileManager.removeItem(at: corruptURL)
+            }
+            try fileManager.moveItem(at: fileURL, to: corruptURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt projects state failed: \(error.localizedDescription)")
         }
     }
 
@@ -127,7 +165,7 @@ public final class ProjectsStore: @unchecked Sendable {
     }
 
     private func currentSettingsDirURL() -> URL {
-        AppConfig.getDBFolderURL()
+        dbFolderURLProvider()
             .appendingPathComponent(Self.pluginDirName, isDirectory: true)
             .appendingPathComponent(Self.settingsDirName, isDirectory: true)
     }
@@ -135,5 +173,10 @@ public final class ProjectsStore: @unchecked Sendable {
     private func currentStateFileURL() -> URL {
         currentSettingsDirURL()
             .appendingPathComponent(Self.stateFileName, isDirectory: false)
+    }
+
+    private func currentCorruptStateFileURL() -> URL {
+        currentSettingsDirURL()
+            .appendingPathComponent(Self.corruptStateFileName, isDirectory: false)
     }
 }
