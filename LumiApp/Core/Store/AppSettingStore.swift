@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// 应用核心设置的存储管理（plist 字典存取）。
 ///
@@ -7,16 +8,17 @@ import Foundation
 /// - 不依赖 Keychain（仅用于非敏感配置）
 /// - 写入使用原子替换，避免半写状态
 enum AppSettingStore {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.app-setting-store")
     private static let settingsFileName = "app_settings.plist"
 
-    private static let settingsDirURL: URL = {
+    nonisolated(unsafe) private static var settingsDirectoryProvider: () -> URL = {
         AppConfig.getDBFolderURL()
             .appendingPathComponent("Core", isDirectory: true)
             .appendingPathComponent("AppSettings", isDirectory: true)
-    }()
+    }
 
     private static func settingsFileURL() -> URL {
-        settingsDirURL.appendingPathComponent(settingsFileName, isDirectory: false)
+        settingsDirURL().appendingPathComponent(settingsFileName, isDirectory: false)
     }
 
     // MARK: - Private (Core)
@@ -25,24 +27,46 @@ enum AppSettingStore {
         guard !key.isEmpty else { return nil }
         let fileURL = settingsFileURL()
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        guard let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            logger.error("Read app settings failed: \(error.localizedDescription)")
             return nil
         }
-        return dict[key]
+
+        do {
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                logger.error("Read app settings failed: root plist is not a dictionary")
+                return nil
+            }
+            return dict[key]
+        } catch {
+            logger.error("Decode app settings failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
-    private static func set(_ value: Any?, forKey key: String) {
-        guard !key.isEmpty else { return }
+    @discardableResult
+    private static func set(_ value: Any?, forKey key: String) -> Bool {
+        guard !key.isEmpty else { return false }
         let fileURL = settingsFileURL()
 
         var dict: [String: Any] = [:]
-        if FileManager.default.fileExists(atPath: fileURL.path),
-           let data = try? Data(contentsOf: fileURL),
-           let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-           let existing = plist as? [String: Any] {
-            dict = existing
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            do {
+                let data = try Data(contentsOf: fileURL)
+                let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+                guard let existing = plist as? [String: Any] else {
+                    logger.error("Save app setting failed: root plist is not a dictionary")
+                    return false
+                }
+                dict = existing
+            } catch {
+                logger.error("Load existing app settings before save failed: \(error.localizedDescription)")
+                return false
+            }
         }
 
         if let value {
@@ -51,14 +75,26 @@ enum AppSettingStore {
             dict.removeValue(forKey: key)
         }
 
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else { return }
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
+        } catch {
+            logger.error("Encode app settings failed: \(error.localizedDescription)")
+            return false
+        }
 
         do {
-            try FileManager.default.createDirectory(at: settingsDirURL, withIntermediateDirectories: true, attributes: nil)
+            try FileManager.default.createDirectory(at: settingsDirURL(), withIntermediateDirectories: true, attributes: nil)
             try data.write(to: fileURL, options: .atomic)
+            return true
         } catch {
-            // 静默失败：仅用于持久化应用级非敏感配置
+            logger.error("Persist app settings failed: \(error.localizedDescription)")
+            return false
         }
+    }
+
+    private static func settingsDirURL() -> URL {
+        settingsDirectoryProvider()
     }
 
     // MARK: - Settings Selection
@@ -84,22 +120,27 @@ enum AppSettingStore {
     /// - Parameters:
     ///   - type: 类型，"core" 或 "plugin"
     ///   - value: 值，核心设置的 tab rawValue 或插件 id
-    static func saveSettingsSelection(type: String, value: String) {
-        set(type, forKey: settingsSelectionTypeKey)
-        set(value, forKey: settingsSelectionValueKey)
+    @discardableResult
+    static func saveSettingsSelection(type: String, value: String) -> Bool {
+        let typeSaved = set(type, forKey: settingsSelectionTypeKey)
+        let valueSaved = set(value, forKey: settingsSelectionValueKey)
+        return typeSaved && valueSaved
     }
 
     /// 清除设置界面的选中项
-    static func clearSettingsSelection() {
-        set(nil, forKey: settingsSelectionTypeKey)
-        set(nil, forKey: settingsSelectionValueKey)
+    @discardableResult
+    static func clearSettingsSelection() -> Bool {
+        let typeCleared = set(nil, forKey: settingsSelectionTypeKey)
+        let valueCleared = set(nil, forKey: settingsSelectionValueKey)
+        return typeCleared && valueCleared
     }
 
     static func loadPendingEditorSettingsSearchQuery() -> String? {
         object(forKey: pendingEditorSettingsSearchQueryKey) as? String
     }
 
-    static func savePendingEditorSettingsSearchQuery(_ query: String?) {
+    @discardableResult
+    static func savePendingEditorSettingsSearchQuery(_ query: String?) -> Bool {
         set(query, forKey: pendingEditorSettingsSearchQueryKey)
     }
 
@@ -113,7 +154,8 @@ enum AppSettingStore {
         object(forKey: editorRecentCommandIDsKey) as? [String] ?? []
     }
 
-    static func saveEditorRecentCommandIDs(_ ids: [String]) {
+    @discardableResult
+    static func saveEditorRecentCommandIDs(_ ids: [String]) -> Bool {
         set(ids, forKey: editorRecentCommandIDsKey)
     }
 
@@ -121,7 +163,8 @@ enum AppSettingStore {
         object(forKey: editorCommandUsageCountsKey) as? [String: Int] ?? [:]
     }
 
-    static func saveEditorCommandUsageCounts(_ counts: [String: Int]) {
+    @discardableResult
+    static func saveEditorCommandUsageCounts(_ counts: [String: Int]) -> Bool {
         set(counts, forKey: editorCommandUsageCountsKey)
     }
 
@@ -129,7 +172,8 @@ enum AppSettingStore {
         object(forKey: editorCommandPaletteCategoryKey) as? String
     }
 
-    static func saveEditorCommandPaletteCategory(_ rawValue: String?) {
+    @discardableResult
+    static func saveEditorCommandPaletteCategory(_ rawValue: String?) -> Bool {
         set(rawValue, forKey: editorCommandPaletteCategoryKey)
     }
 
@@ -145,7 +189,8 @@ enum AppSettingStore {
 
     /// 保存插件启用状态
     /// - Parameter settings: 插件 ID 到启用状态的字典
-    static func savePluginSettings(_ settings: [String: Bool]) {
+    @discardableResult
+    static func savePluginSettings(_ settings: [String: Bool]) -> Bool {
         set(settings, forKey: pluginSettingsKey)
     }
 
@@ -161,10 +206,11 @@ enum AppSettingStore {
     /// - Parameters:
     ///   - pluginId: 插件 ID
     ///   - enabled: 启用状态
-    static func savePluginEnabled(_ pluginId: String, enabled: Bool) {
+    @discardableResult
+    static func savePluginEnabled(_ pluginId: String, enabled: Bool) -> Bool {
         var settings = loadPluginSettings()
         settings[pluginId] = enabled
-        savePluginSettings(settings)
+        return savePluginSettings(settings)
     }
 
     // MARK: - Remote Provider
@@ -181,7 +227,8 @@ enum AppSettingStore {
 
     /// 保存选中的云端供应商 ID
     /// - Parameter id: 供应商 ID，为 nil 时清除保存的值
-    static func saveSelectedRemoteProviderId(_ id: String?) {
+    @discardableResult
+    static func saveSelectedRemoteProviderId(_ id: String?) -> Bool {
         set(id, forKey: selectedRemoteProviderIdKey)
     }
 
@@ -199,7 +246,8 @@ enum AppSettingStore {
     /// - Parameters:
     ///   - providerId: 供应商 ID
     ///   - modelId: 模型 ID
-    static func saveRemoteProviderModel(providerId: String, modelId: String?) {
+    @discardableResult
+    static func saveRemoteProviderModel(providerId: String, modelId: String?) -> Bool {
         var modelsDict: [String: String] = [:]
         if let existing = object(forKey: remoteProviderModelsKey) as? [String: String] {
             modelsDict = existing
@@ -211,7 +259,7 @@ enum AppSettingStore {
             modelsDict.removeValue(forKey: providerId)
         }
 
-        set(modelsDict, forKey: remoteProviderModelsKey)
+        return set(modelsDict, forKey: remoteProviderModelsKey)
     }
 
     // MARK: - Last Selected Model
@@ -227,7 +275,8 @@ enum AppSettingStore {
 
     /// 保存上次选择的供应商 ID
     /// - Parameter providerId: 供应商 ID，为 nil 时清除
-    static func saveLastSelectedProviderId(_ providerId: String?) {
+    @discardableResult
+    static func saveLastSelectedProviderId(_ providerId: String?) -> Bool {
         set(providerId, forKey: lastSelectedProviderIdKey)
     }
 
@@ -239,7 +288,20 @@ enum AppSettingStore {
 
     /// 保存上次选择的模型 ID
     /// - Parameter model: 模型 ID，为 nil 时清除
-    static func saveLastSelectedModel(_ model: String?) {
+    @discardableResult
+    static func saveLastSelectedModel(_ model: String?) -> Bool {
         set(model, forKey: lastSelectedModelKey)
+    }
+
+    static func configureForTesting(settingsDirectory: URL) {
+        settingsDirectoryProvider = { settingsDirectory }
+    }
+
+    static func resetTestingConfiguration() {
+        settingsDirectoryProvider = {
+            AppConfig.getDBFolderURL()
+                .appendingPathComponent("Core", isDirectory: true)
+                .appendingPathComponent("AppSettings", isDirectory: true)
+        }
     }
 }
