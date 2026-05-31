@@ -75,10 +75,21 @@ public actor ScriptTaskRunner: SuperLog {
         process.standardError = stderrPipe
         currentProcess = process
 
+        let stdoutBuffer = ProcessOutputBuffer()
+        let stderrBuffer = ProcessOutputBuffer()
+        stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+            stdoutBuffer.append(handle.availableData)
+        }
+        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+            stderrBuffer.append(handle.availableData)
+        }
+
         do {
             try process.run()
             process.waitUntilExit()
         } catch {
+            stdoutPipe.fileHandleForReading.readabilityHandler = nil
+            stderrPipe.fileHandleForReading.readabilityHandler = nil
             currentProcess = nil
             return JSScriptResult(
                 exitCode: -1,
@@ -88,8 +99,14 @@ public actor ScriptTaskRunner: SuperLog {
             )
         }
 
-        let stdout = String(data: stdoutPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-        let stderr = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        stdoutPipe.fileHandleForReading.readabilityHandler = nil
+        stderrPipe.fileHandleForReading.readabilityHandler = nil
+
+        stdoutBuffer.append(stdoutPipe.fileHandleForReading.readDataToEndOfFile())
+        stderrBuffer.append(stderrPipe.fileHandleForReading.readDataToEndOfFile())
+
+        let stdout = String(data: stdoutBuffer.data(), encoding: .utf8) ?? ""
+        let stderr = String(data: stderrBuffer.data(), encoding: .utf8) ?? ""
         currentProcess = nil
 
         return JSScriptResult(

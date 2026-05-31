@@ -100,17 +100,31 @@ public actor RuntimeBridge: SuperLog {
             process.standardOutput = outPipe
             process.standardError = errPipe
 
+            let outputBuffer = ProcessOutputBuffer()
+            let errorBuffer = ProcessOutputBuffer()
+            outPipe.fileHandleForReading.readabilityHandler = { handle in
+                outputBuffer.append(handle.availableData)
+            }
+            errPipe.fileHandleForReading.readabilityHandler = { handle in
+                errorBuffer.append(handle.availableData)
+            }
+
             process.terminationHandler = { _ in
-                let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
-                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-                let stdout = String(data: outData, encoding: .utf8) ?? ""
-                let stderr = String(data: errData, encoding: .utf8) ?? ""
+                outPipe.fileHandleForReading.readabilityHandler = nil
+                errPipe.fileHandleForReading.readabilityHandler = nil
+                outputBuffer.append(outPipe.fileHandleForReading.readDataToEndOfFile())
+                errorBuffer.append(errPipe.fileHandleForReading.readDataToEndOfFile())
+
+                let stdout = String(data: outputBuffer.data(), encoding: .utf8) ?? ""
+                let stderr = String(data: errorBuffer.data(), encoding: .utf8) ?? ""
                 continuation.resume(returning: (process.terminationStatus, stdout, stderr))
             }
 
             do {
                 try process.run()
             } catch {
+                outPipe.fileHandleForReading.readabilityHandler = nil
+                errPipe.fileHandleForReading.readabilityHandler = nil
                 continuation.resume(returning: (-1, "", error.localizedDescription))
             }
         }

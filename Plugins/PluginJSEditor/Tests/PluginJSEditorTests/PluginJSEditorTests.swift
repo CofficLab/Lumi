@@ -173,6 +173,46 @@ import Foundation
     #expect(events.map(\.name) == ["failing.test.ts", "renders dashboard (20ms)"])
 }
 
+@Test func scriptTaskRunnerHandlesLargeProcessOutput() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let result = await ScriptTaskRunner().runExecutable(
+        "sh",
+        arguments: ["-c", "for i in $(seq 1 300); do printf 'stdout-%03d-%0512d\\n' \"$i\" 0; printf 'stderr-%03d-%0512d\\n' \"$i\" 0 >&2; done"],
+        projectPath: directory.path
+    )
+
+    #expect(result.exitCode == 0)
+    #expect(result.stdout.contains("stdout-300-"))
+    #expect(result.stderr.contains("stderr-300-"))
+}
+
+@Test func runtimeBridgeHandlesLargeNodeOutput() async throws {
+    guard JSEnvResolver.nodePath != nil else { return }
+
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let scriptURL = directory.appendingPathComponent("large-output.js")
+    try """
+    for (let i = 1; i <= 300; i += 1) {
+      console.log(`stdout-${String(i).padStart(3, "0")}-${"x".repeat(512)}`);
+      console.error(`stderr-${String(i).padStart(3, "0")}-${"y".repeat(512)}`);
+    }
+    """.write(to: scriptURL, atomically: true, encoding: .utf8)
+
+    let result = await RuntimeBridge().runNode(script: scriptURL.path, projectPath: directory.path)
+
+    #expect(result.exitCode == 0)
+    #expect(result.stdout.contains("stdout-300-"))
+    #expect(result.stderr.contains("stderr-300-"))
+}
+
 @Test func jsIssueFileResolverKeepsFileURLsAndExpandsLocalPaths() {
     let projectRoot = "/tmp/project"
 
