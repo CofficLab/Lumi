@@ -36,6 +36,7 @@ public extension LumiPreviewFacade {
             self.encoder.dateEncodingStrategy = .iso8601
             self.decoder.dateDecodingStrategy = .iso8601
             self.commandsByFingerprint = Self.loadCommands(
+                fileManager: fileManager,
                 from: self.storageURL,
                 decoder: self.decoder
             )
@@ -118,12 +119,47 @@ public extension LumiPreviewFacade {
             }
         }
 
-        private static func loadCommands(from storageURL: URL, decoder: JSONDecoder) -> [String: StoredCommand] {
-            guard let data = try? Data(contentsOf: storageURL),
-                  let decoded = try? decoder.decode([StoredCommand].self, from: data) else {
+        static func corruptStorageURL(for storageURL: URL) -> URL {
+            storageURL
+                .deletingPathExtension()
+                .appendingPathExtension("corrupt.json")
+        }
+
+        private static func loadCommands(
+            fileManager: FileManager,
+            from storageURL: URL,
+            decoder: JSONDecoder
+        ) -> [String: StoredCommand] {
+            guard fileManager.fileExists(atPath: storageURL.path) else {
                 return [:]
             }
-            return Dictionary(uniqueKeysWithValues: decoded.map { ($0.fingerprint, $0) })
+
+            do {
+                let data = try Data(contentsOf: storageURL)
+                let decoded = try decoder.decode([StoredCommand].self, from: data)
+                var commands: [String: StoredCommand] = [:]
+                for command in decoded {
+                    commands[command.fingerprint] = command
+                }
+                return commands
+            } catch {
+                quarantineCorruptStorage(fileManager: fileManager, storageURL: storageURL)
+                return [:]
+            }
+        }
+
+        private static func quarantineCorruptStorage(fileManager: FileManager, storageURL: URL) {
+            guard fileManager.fileExists(atPath: storageURL.path) else { return }
+
+            let corruptURL = corruptStorageURL(for: storageURL)
+            do {
+                if fileManager.fileExists(atPath: corruptURL.path) {
+                    try fileManager.removeItem(at: corruptURL)
+                }
+                try fileManager.moveItem(at: storageURL, to: corruptURL)
+            } catch {
+                // Cache recovery is best-effort; a failed quarantine should not block previews.
+            }
         }
 
         private static func defaultCacheDirectory() -> URL {

@@ -139,19 +139,26 @@ public extension LumiPreviewFacade {
             metadataURL: URL,
             decoder: JSONDecoder
         ) -> [String: EntryMetadata] {
-            guard let data = try? Data(contentsOf: metadataURL),
-                  let decoded = try? decoder.decode([EntryMetadata].self, from: data) else {
+            guard fileManager.fileExists(atPath: metadataURL.path) else {
                 return [:]
             }
 
-            var loaded: [String: EntryMetadata] = [:]
-            for entry in decoded {
-                let url = URL(fileURLWithPath: entry.dylibPath)
-                if fileManager.fileExists(atPath: url.path) {
-                    loaded[entry.fingerprint] = entry
+            do {
+                let data = try Data(contentsOf: metadataURL)
+                let decoded = try decoder.decode([EntryMetadata].self, from: data)
+
+                var loaded: [String: EntryMetadata] = [:]
+                for entry in decoded {
+                    let url = URL(fileURLWithPath: entry.dylibPath)
+                    if fileManager.fileExists(atPath: url.path) {
+                        loaded[entry.fingerprint] = entry
+                    }
                 }
+                return loaded
+            } catch {
+                quarantineCorruptMetadata(fileManager: fileManager, metadataURL: metadataURL)
+                return [:]
             }
-            return loaded
         }
 
         private func persistMetadata() {
@@ -176,6 +183,26 @@ public extension LumiPreviewFacade {
             SHA256.hash(data: Data(text.utf8))
                 .map { String(format: "%02x", $0) }
                 .joined()
+        }
+
+        static func corruptMetadataURL(for metadataURL: URL) -> URL {
+            metadataURL
+                .deletingPathExtension()
+                .appendingPathExtension("corrupt.json")
+        }
+
+        private static func quarantineCorruptMetadata(fileManager: FileManager, metadataURL: URL) {
+            guard fileManager.fileExists(atPath: metadataURL.path) else { return }
+
+            let corruptURL = corruptMetadataURL(for: metadataURL)
+            do {
+                if fileManager.fileExists(atPath: corruptURL.path) {
+                    try fileManager.removeItem(at: corruptURL)
+                }
+                try fileManager.moveItem(at: metadataURL, to: corruptURL)
+            } catch {
+                // Cache recovery is best-effort; a failed quarantine should not block previews.
+            }
         }
 
         private static func defaultCacheRootDirectory() -> URL {

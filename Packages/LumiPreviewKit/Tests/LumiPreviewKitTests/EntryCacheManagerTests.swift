@@ -117,6 +117,24 @@ struct EntryCacheManagerTests {
         #expect(await manager.cachedEntryCount() == 2)
     }
 
+    @Test("quarantines corrupt persisted metadata and recovers")
+    func quarantinesCorruptPersistedMetadata() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let metadataURL = directory.appendingPathComponent("entry-cache.json")
+        let corruptURL = LumiPreviewFacade.EntryCacheManager.corruptMetadataURL(for: metadataURL)
+        let invalidData = Data("not json".utf8)
+        try invalidData.write(to: metadataURL)
+
+        let manager = LumiPreviewFacade.EntryCacheManager(
+            cacheRootDirectory: directory,
+            maximumEntryCount: 4
+        )
+
+        #expect(await manager.cachedEntryCount() == 0)
+        #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKitTests-\(UUID().uuidString)", isDirectory: true)

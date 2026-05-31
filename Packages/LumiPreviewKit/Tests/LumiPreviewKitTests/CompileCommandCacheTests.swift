@@ -94,6 +94,51 @@ struct CompileCommandCacheTests {
         #expect(await cache.entryCount() == 0)
     }
 
+    @Test("quarantines corrupt persisted commands and recovers")
+    func quarantinesCorruptPersistedCommands() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storageURL = directory.appendingPathComponent("compile-commands.json")
+        let corruptURL = LumiPreviewFacade.CompileCommandCache.corruptStorageURL(for: storageURL)
+        let invalidData = Data("not json".utf8)
+        try invalidData.write(to: storageURL)
+
+        let cache = LumiPreviewFacade.CompileCommandCache(cacheDirectory: directory)
+
+        #expect(await cache.entryCount() == 0)
+        #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    }
+
+    @Test("loads duplicate fingerprints without crashing")
+    func loadsDuplicateFingerprintsWithoutCrashing() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storageURL = directory.appendingPathComponent("compile-commands.json")
+        let date = ISO8601DateFormatter().string(from: Date())
+        let payload = """
+        [
+          {
+            "fingerprint": "same",
+            "filePath": "/tmp/First.swift",
+            "command": "swiftc first",
+            "updatedAt": "\(date)"
+          },
+          {
+            "fingerprint": "same",
+            "filePath": "/tmp/Second.swift",
+            "command": "swiftc second",
+            "updatedAt": "\(date)"
+          }
+        ]
+        """
+        try Data(payload.utf8).write(to: storageURL)
+
+        let cache = LumiPreviewFacade.CompileCommandCache(cacheDirectory: directory)
+
+        #expect(await cache.entryCount() == 1)
+        #expect(await cache.command(for: .init(fingerprint: "same")) == "swiftc second")
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKitTests-\(UUID().uuidString)", isDirectory: true)
