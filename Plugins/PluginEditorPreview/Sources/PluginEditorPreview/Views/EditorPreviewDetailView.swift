@@ -983,11 +983,11 @@ enum MarkdownTODOScanner {
     }
 
     private static func taskListItemCompletion(in trimmedLine: Substring) -> Bool? {
-        guard let listMarker = trimmedLine.first, listMarker == "-" || listMarker == "*" || listMarker == "+" else {
+        guard let markerEnd = listMarkerEnd(in: trimmedLine) else {
             return nil
         }
 
-        var remainder = trimmedLine.dropFirst()
+        var remainder = trimmedLine[markerEnd...]
         guard let separator = remainder.first, separator == " " || separator == "\t" else {
             return nil
         }
@@ -1000,6 +1000,26 @@ enum MarkdownTODOScanner {
             return true
         }
         return nil
+    }
+
+    private static func listMarkerEnd(in trimmedLine: Substring) -> Substring.Index? {
+        guard let first = trimmedLine.first else { return nil }
+        if first == "-" || first == "*" || first == "+" {
+            return trimmedLine.index(after: trimmedLine.startIndex)
+        }
+
+        guard first.isNumber else { return nil }
+
+        var cursor = trimmedLine.startIndex
+        while cursor < trimmedLine.endIndex, trimmedLine[cursor].isNumber {
+            cursor = trimmedLine.index(after: cursor)
+        }
+
+        guard cursor < trimmedLine.endIndex, trimmedLine[cursor] == "." || trimmedLine[cursor] == ")" else {
+            return nil
+        }
+
+        return trimmedLine.index(after: cursor)
     }
 }
 

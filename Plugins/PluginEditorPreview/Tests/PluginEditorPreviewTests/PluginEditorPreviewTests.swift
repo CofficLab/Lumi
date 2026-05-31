@@ -152,6 +152,16 @@ import Foundation
     #expect(stats == MarkdownTODOStats(total: 1, completed: 1))
 }
 
+@Test func markdownTODOScannerHandlesOrderedTaskLists() {
+    let stats = MarkdownTODOScanner.scan("""
+    1. [x] Draft outline
+    2. [ ] Fill details
+    3) [X] Publish
+    """)
+
+    #expect(stats == MarkdownTODOStats(total: 3, completed: 2))
+}
+
 @Test func jsonPreviewParserKeepsValidJSONLLines() throws {
     let parsed = JSONPreviewParser.parse("""
     {"name":"Ada"}
