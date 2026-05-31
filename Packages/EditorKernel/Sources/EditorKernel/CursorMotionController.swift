@@ -18,7 +18,7 @@ public enum CursorMotionController: Sendable {
 
     public static func moveRight(location: Int, text: String) -> CursorMotionTarget {
         let length = (text as NSString).length
-        let target = min(length, location + 1)
+        let target = min(length, clampedLocation(location, length: length) + 1)
         return CursorMotionTarget(location: target)
     }
 
@@ -92,14 +92,15 @@ public enum CursorMotionController: Sendable {
 
     public static func moveToBeginningOfLine(location: Int, text: String) -> CursorMotionTarget {
         let nsText = text as NSString
-        let lineRange = nsText.lineRange(for: NSRange(location: min(location, nsText.length), length: 0))
+        let safeLocation = clampedLocation(location, length: nsText.length)
+        let lineRange = nsText.lineRange(for: NSRange(location: safeLocation, length: 0))
         return CursorMotionTarget(location: lineRange.location)
     }
 
     public static func moveToEndOfLine(location: Int, text: String) -> CursorMotionTarget {
         let nsText = text as NSString
         let textLength = nsText.length
-        let safeLocation = min(location, textLength)
+        let safeLocation = clampedLocation(location, length: textLength)
         let lineRange = nsText.lineRange(for: NSRange(location: safeLocation, length: 0))
         let lineEnd = NSMaxRange(lineRange)
         let target: Int
@@ -123,7 +124,7 @@ public enum CursorMotionController: Sendable {
     public static func smartHome(location: Int, text: String) -> CursorMotionTarget {
         let nsText = text as NSString
         let textLength = nsText.length
-        let safeLocation = min(location, textLength)
+        let safeLocation = clampedLocation(location, length: textLength)
         let lineRange = nsText.lineRange(for: NSRange(location: safeLocation, length: 0))
         let lineStart = lineRange.location
 
@@ -154,7 +155,7 @@ public enum CursorMotionController: Sendable {
     public static func moveUp(location: Int, text: String, desiredColumn: Int?) -> CursorMotionTarget {
         let nsText = text as NSString
         let textLength = nsText.length
-        let safeLocation = min(location, textLength)
+        let safeLocation = clampedLocation(location, length: textLength)
         let lineRange = nsText.lineRange(for: NSRange(location: safeLocation, length: 0))
 
         guard lineRange.location > 0 else {
@@ -175,7 +176,7 @@ public enum CursorMotionController: Sendable {
     public static func moveDown(location: Int, text: String, desiredColumn: Int?) -> CursorMotionTarget {
         let nsText = text as NSString
         let textLength = nsText.length
-        let safeLocation = min(location, textLength)
+        let safeLocation = clampedLocation(location, length: textLength)
         let lineRange = nsText.lineRange(for: NSRange(location: safeLocation, length: 0))
         let lineEnd = NSMaxRange(lineRange)
 
@@ -206,7 +207,7 @@ public enum CursorMotionController: Sendable {
         let textLength = nsText.length
         guard textLength > 0 else { return CursorMotionTarget(location: 0) }
 
-        let currentLineStart = lineStart(containing: min(location, textLength), in: nsText)
+        let currentLineStart = lineStart(containing: clampedLocation(location, length: textLength), in: nsText)
 
         if isLineEmpty(nsText, at: currentLineStart) {
             var pos = currentLineStart
@@ -257,7 +258,7 @@ public enum CursorMotionController: Sendable {
         let textLength = nsText.length
         guard textLength > 0 else { return CursorMotionTarget(location: textLength) }
 
-        let currentLineStart = lineStart(containing: min(location, textLength), in: nsText)
+        let currentLineStart = lineStart(containing: clampedLocation(location, length: textLength), in: nsText)
         let currentLineRange = nsText.lineRange(for: NSRange(location: currentLineStart, length: 0))
 
         if isLineEmpty(nsText, at: currentLineStart) {
@@ -362,7 +363,7 @@ public enum CursorMotionController: Sendable {
 
     private static func lineStart(containing location: Int, in nsText: NSString) -> Int {
         guard nsText.length > 0 else { return 0 }
-        let safeLocation = min(location, nsText.length)
+        let safeLocation = clampedLocation(location, length: nsText.length)
         let anchor = safeLocation == nsText.length ? max(0, safeLocation - 1) : safeLocation
         return nsText.lineRange(for: NSRange(location: anchor, length: 0)).location
     }

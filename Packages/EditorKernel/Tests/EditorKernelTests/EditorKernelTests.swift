@@ -612,6 +612,20 @@ struct EditorKernelTests {
     }
 
     @Test
+    func cursorLineAndParagraphMotionClampNegativeLocations() {
+        let text = "abc\n\ndef"
+
+        #expect(CursorMotionController.moveRight(location: -10, text: text).location == 1)
+        #expect(CursorMotionController.moveToBeginningOfLine(location: -10, text: text).location == 0)
+        #expect(CursorMotionController.moveToEndOfLine(location: -10, text: text).location == 3)
+        #expect(CursorMotionController.smartHome(location: -10, text: "    value").location == 4)
+        #expect(CursorMotionController.moveUp(location: -10, text: text, desiredColumn: nil).location == 0)
+        #expect(CursorMotionController.moveDown(location: -10, text: text, desiredColumn: nil).location == 4)
+        #expect(CursorMotionController.moveParagraphBackward(location: -10, text: text).location == 0)
+        #expect(CursorMotionController.moveParagraphForward(location: -10, text: text).location == 4)
+    }
+
+    @Test
     func snippetParserSeedsRepeatedPlaceholdersAndImplicitExit() {
         let repeated = EditorSnippetParser.parse("${1:name} = $1$0")
         #expect(repeated.text == "name = name")
