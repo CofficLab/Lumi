@@ -82,7 +82,7 @@ public struct EditorCallHierarchyPanelView: View {
                                 panelCard(
                                     title: call.item.name,
                                     subtitle: call.item.kindDisplayName,
-                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? String(localized: "Symbol", table: "EditorCallHierarchyRail")
+                                    badge: call.item.fileBadge
                                 )
                             }
                             .buttonStyle(.plain)

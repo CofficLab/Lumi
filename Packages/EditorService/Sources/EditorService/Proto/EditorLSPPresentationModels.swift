@@ -238,6 +238,10 @@ public struct EditorCallHierarchyItem: Identifiable, Equatable {
         }
     }
 
+    public var fileBadge: String {
+        WorkspaceEditFileOperations.fileURL(from: uri)?.lastPathComponent ?? "Symbol"
+    }
+
     public var iconSymbol: String {
         switch kind {
         case .function: return "f.cursive"

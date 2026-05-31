@@ -80,7 +80,7 @@ public struct BottomEditorCallHierarchyPanelView: View {
                                 panelCard(
                                     title: call.item.name,
                                     subtitle: call.item.kindDisplayName,
-                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? "Symbol"
+                                    badge: call.item.fileBadge
                                 )
                             }
                             .buttonStyle(.plain)
