@@ -94,7 +94,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
     // MARK: - Background Data Collection
 
     /// 后台线程执行：遍历目录、读取文件、匹配键
-    private nonisolated static func collectRawMatches(
+    nonisolated static func collectRawMatches(
         query normalizedQuery: String,
         projectRootPath: String
     ) -> [RawQuickOpenMatch] {
@@ -113,7 +113,8 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
             guard results.count < 24 else { break }
             let ext = fileURL.pathExtension.lowercased()
             guard ext == "xcconfig" || ext == "plist" || ext == "entitlements" else { continue }
-            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
+            var encoding = String.Encoding.utf8
+            guard let content = try? String(contentsOf: fileURL, usedEncoding: &encoding) else { continue }
 
             let matches: [(key: String, line: Int)] = if ext == "xcconfig" {
                 XCConfigSyntax.keyOccurrences(in: content)
@@ -149,11 +150,11 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
 // MARK: - Raw Match Model
 
 /// 后台线程收集的匹配结果（Sendable，用于跨线程传递）
-private struct RawQuickOpenMatch: Sendable {
-    public let key: String
-    public let line: Int
-    public let filePath: String
-    public let relativePath: String
-    public let fileExtension: String
-    public let isXCConfig: Bool
+struct RawQuickOpenMatch: Equatable, Sendable {
+    let key: String
+    let line: Int
+    let filePath: String
+    let relativePath: String
+    let fileExtension: String
+    let isXCConfig: Bool
 }
