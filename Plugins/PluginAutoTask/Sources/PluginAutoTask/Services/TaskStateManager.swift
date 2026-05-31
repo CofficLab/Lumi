@@ -21,7 +21,7 @@ public actor TaskStateManager: SuperLog {
     private let container: ModelContainer
 
     /// 单个会话最大任务数
-    private let maxTasksPerConversation = 50
+    nonisolated static let maxTasksPerConversation = 50
 
     // MARK: - Initialization
 
@@ -160,8 +160,10 @@ public actor TaskStateManager: SuperLog {
         // 先清除该会话的所有旧任务
         try deleteAllForConversation(conversationId, context: context, saveImmediately: false)
 
+        let limitedItems = items.prefix(Self.maxTasksPerConversation)
+
         var created: [TaskItem] = []
-        for (index, item) in items.enumerated() {
+        for (index, item) in limitedItems.enumerated() {
             let task = TaskItem(
                 conversationId: conversationId,
                 title: item.title,
@@ -179,7 +181,7 @@ public actor TaskStateManager: SuperLog {
         try context.save()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)批量创建 \(items.count) 个任务 (会话: \(conversationId))")
+            Self.logger.info("\(Self.t)批量创建 \(created.count) 个任务 (会话: \(conversationId))")
         }
 
         return created
@@ -193,11 +195,15 @@ public actor TaskStateManager: SuperLog {
         let context = ModelContext(container)
 
         // 获取当前最大 order
-        let existingTasks = fetchTasks(conversationId: conversationId)
+        let existingTasks = fetchAllTasks(conversationId: conversationId, context: context)
+        let remainingCapacity = max(0, Self.maxTasksPerConversation - existingTasks.count)
+        guard remainingCapacity > 0 else { return [] }
+
+        let limitedItems = items.prefix(remainingCapacity)
         let maxOrder = existingTasks.map(\.order).max() ?? 0
 
         var created: [TaskItem] = []
-        for (index, item) in items.enumerated() {
+        for (index, item) in limitedItems.enumerated() {
             let task = TaskItem(
                 conversationId: conversationId,
                 title: item.title,
@@ -211,7 +217,7 @@ public actor TaskStateManager: SuperLog {
         try context.save()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)追加 \(items.count) 个任务 (会话: \(conversationId))")
+            Self.logger.info("\(Self.t)追加 \(created.count) 个任务 (会话: \(conversationId))")
         }
 
         return created
@@ -227,12 +233,26 @@ public actor TaskStateManager: SuperLog {
             predicate: #Predicate<TaskItem> { $0.conversationId == conversationId },
             sortBy: [SortDescriptor(\.order, order: .forward)]
         )
-        descriptor.fetchLimit = maxTasksPerConversation
+        descriptor.fetchLimit = Self.maxTasksPerConversation
 
         do {
             return try context.fetch(descriptor)
         } catch {
             Self.logger.error("\(Self.t)查询任务失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    private func fetchAllTasks(conversationId: String, context: ModelContext) -> [TaskItem] {
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate<TaskItem> { $0.conversationId == conversationId },
+            sortBy: [SortDescriptor(\.order, order: .forward)]
+        )
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            Self.logger.error("\(Self.t)查询全部任务失败：\(error.localizedDescription)")
             return []
         }
     }

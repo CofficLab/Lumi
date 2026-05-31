@@ -36,6 +36,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
                     "type": "array",
                     "description": "Array of tasks to create. Each task has a title and optional detail.",
                     "minItems": 1,
+                    "maxItems": TaskStateManager.maxTasksPerConversation,
                     "items": [
                         "type": "object",
                         "properties": [
@@ -103,7 +104,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
 
         let createdLabel = String(
             format: String(localized: "Created %lld tasks:", table: "AutoTask"),
-            items.count
+            createdTasks.count
         )
         var result = "✅ \(createdLabel)\n\n"
         for (index, task) in createdTasks.enumerated() {

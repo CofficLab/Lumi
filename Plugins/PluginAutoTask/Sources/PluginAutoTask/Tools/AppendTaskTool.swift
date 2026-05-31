@@ -34,6 +34,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
                     "type": "array",
                     "description": "Array of tasks to append. Each task has a title and optional detail.",
                     "minItems": 1,
+                    "maxItems": TaskStateManager.maxTasksPerConversation,
                     "items": [
                         "type": "object",
                         "properties": [
@@ -89,7 +90,11 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Appended \(items.count) tasks for cid=\(conversationId.prefix(8))")
+            AutoTaskPlugin.logger.info("\(Self.t)Appended \(appendedTasks.count) tasks for cid=\(conversationId.prefix(8))")
+        }
+
+        guard !appendedTasks.isEmpty else {
+            return String(localized: "No tasks appended: task list already reached the maximum size.", table: "AutoTask")
         }
 
         // 通知 UI 刷新
@@ -101,7 +106,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
 
         let appendedLabel = String(
             format: String(localized: "Appended %lld tasks:", table: "AutoTask"),
-            items.count
+            appendedTasks.count
         )
         var result = "✅ \(appendedLabel)\n\n"
         for task in appendedTasks {
@@ -113,7 +118,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Appended \(items.count) tasks for conversation \(conversationId)")
+            AutoTaskPlugin.logger.info("\(Self.t)Appended \(appendedTasks.count) tasks for conversation \(conversationId)")
         }
 
         return result

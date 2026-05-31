@@ -70,6 +70,7 @@ struct AutoTaskPluginTests {
     let createProperties = try #require(createSchema["properties"] as? [String: Any])
     let createTasks = try #require(createProperties["tasks"] as? [String: Any])
     #expect(try #require(createTasks["minItems"] as? Int) == 1)
+    #expect(try #require(createTasks["maxItems"] as? Int) == TaskStateManager.maxTasksPerConversation)
     let createTaskItems = try #require(createTasks["items"] as? [String: Any])
     let createTaskProperties = try #require(createTaskItems["properties"] as? [String: Any])
     let createTaskTitle = try #require(createTaskProperties["title"] as? [String: Any])
@@ -80,6 +81,7 @@ struct AutoTaskPluginTests {
     let appendProperties = try #require(appendSchema["properties"] as? [String: Any])
     let appendTasks = try #require(appendProperties["tasks"] as? [String: Any])
     #expect(try #require(appendTasks["minItems"] as? Int) == 1)
+    #expect(try #require(appendTasks["maxItems"] as? Int) == TaskStateManager.maxTasksPerConversation)
     let appendTaskItems = try #require(appendTasks["items"] as? [String: Any])
     let appendTaskProperties = try #require(appendTaskItems["properties"] as? [String: Any])
     let appendTaskTitle = try #require(appendTaskProperties["title"] as? [String: Any])
@@ -93,6 +95,58 @@ struct AutoTaskPluginTests {
     #expect(UpdateTaskTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(ListTasksTool().permissionRiskLevel(arguments: [:]) == .low)
     #expect(CheckProgressTool().permissionRiskLevel(arguments: [:]) == .low)
+}
+
+@Test func testCreateTasksClampsToConversationLimit() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("auto-task-create-limit-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = TaskStateManager(databaseRootURL: root)
+    let items = (1...(TaskStateManager.maxTasksPerConversation + 10)).map {
+        (title: "Task \($0)", detail: nil as String?)
+    }
+
+    let created = try await manager.createTasks(conversationId: "conversation", items: items)
+    let fetched = await manager.fetchTasks(conversationId: "conversation")
+
+    #expect(created.count == TaskStateManager.maxTasksPerConversation)
+    #expect(fetched.count == TaskStateManager.maxTasksPerConversation)
+    #expect(fetched.first?.status == .inProgress)
+    #expect(fetched.last?.title == "Task \(TaskStateManager.maxTasksPerConversation)")
+}
+
+@Test func testAppendTasksRespectsRemainingConversationCapacity() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("auto-task-append-limit-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = TaskStateManager(databaseRootURL: root)
+    let initialItems = (1...(TaskStateManager.maxTasksPerConversation - 2)).map {
+        (title: "Existing \($0)", detail: nil as String?)
+    }
+    _ = try await manager.createTasks(conversationId: "conversation", items: initialItems)
+
+    let appended = try await manager.appendTasks(
+        conversationId: "conversation",
+        items: [
+            (title: "Appended 1", detail: nil),
+            (title: "Appended 2", detail: nil),
+            (title: "Overflow", detail: nil),
+        ]
+    )
+    let overflowAppend = try await manager.appendTasks(
+        conversationId: "conversation",
+        items: [(title: "Should not append", detail: nil)]
+    )
+    let fetched = await manager.fetchTasks(conversationId: "conversation")
+
+    #expect(appended.map(\.title) == ["Appended 1", "Appended 2"])
+    #expect(overflowAppend.isEmpty)
+    #expect(fetched.count == TaskStateManager.maxTasksPerConversation)
+    #expect(fetched.suffix(2).map(\.title) == ["Appended 1", "Appended 2"])
 }
 
 @Test func testTaskToolInputNormalizerTrimsTitlesAndDetails() {
