@@ -30,10 +30,10 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
         switch language {
         case .chinese:
             agentIdsDesc = String(localized: "Comma-separated list of agent IDs returned by spawn_agent", table: "MultiAgent")
-            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120)", table: "MultiAgent")
+            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120, range: 1-3600)", table: "MultiAgent")
         case .english:
             agentIdsDesc = String(localized: "Comma-separated list of agent IDs returned by spawn_agent", table: "MultiAgent")
-            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120)", table: "MultiAgent")
+            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120, range: 1-3600)", table: "MultiAgent")
         }
 
         return [
@@ -46,6 +46,8 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
                 "timeout": [
                     "type": "integer",
                     "description": timeoutDesc,
+                    "minimum": 1,
+                    "maximum": 3600,
                 ],
             ],
             "required": ["agent_ids"],
@@ -74,7 +76,7 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
             return "Error: No valid agent IDs provided."
         }
 
-        let timeout = (arguments["timeout"]?.value as? Int).map { Double($0) } ?? 120.0
+        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value as? Int)
 
         if Self.verbose {
             MultiAgentPlugin.logger.info("\(self.t)等待 \(agentIds.count) 个子智能体完成（超时: \(Int(timeout))s）")
@@ -109,5 +111,9 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
         output += "**Summary**: \(completedCount)/\(results.count) agents completed successfully."
 
         return output
+    }
+
+    static func normalizedTimeout(_ rawTimeout: Int?) -> TimeInterval {
+        TimeInterval(min(max(rawTimeout ?? 120, 1), 3600))
     }
 }

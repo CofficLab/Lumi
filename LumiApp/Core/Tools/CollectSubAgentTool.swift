@@ -22,10 +22,10 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
         switch language {
         case .chinese:
             taskIdsDesc = "spawn_subagent 返回的 task_id，多个 ID 用逗号分隔"
-            timeoutDesc = "最长等待秒数，默认 120"
+            timeoutDesc = "最长等待秒数，默认 120，范围 1-3600"
         case .english:
             taskIdsDesc = "task_id values returned by spawn_subagent, comma-separated for multiple IDs"
-            timeoutDesc = "Maximum seconds to wait, default 120"
+            timeoutDesc = "Maximum seconds to wait, default 120, range: 1-3600"
         }
 
         return [
@@ -38,6 +38,8 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
                 "timeout": [
                     "type": "integer",
                     "description": timeoutDesc,
+                    "minimum": 1,
+                    "maximum": 3600,
                 ],
             ],
             "required": ["task_ids"],
@@ -64,7 +66,7 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
             return "Error: No valid task IDs provided."
         }
 
-        let timeout = (arguments["timeout"]?.value as? Int).map(Double.init) ?? 120
+        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value as? Int)
         let results = await SubAgentScheduler.shared.collect(taskIds: taskIds, timeout: timeout)
 
         return format(results: results)
@@ -112,5 +114,9 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
         let completed = results.filter { $0.status == .completed }.count
         output += "Summary: \(completed)/\(results.count) sub-agents completed successfully."
         return output
+    }
+
+    static func normalizedTimeout(_ rawTimeout: Int?) -> TimeInterval {
+        TimeInterval(min(max(rawTimeout ?? 120, 1), 3600))
     }
 }
