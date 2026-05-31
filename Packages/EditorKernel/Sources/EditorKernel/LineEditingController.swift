@@ -288,6 +288,16 @@ public enum LineEditingController: Sendable {
         return merged
     }
 
+    static func rangesAreContiguous(_ ranges: [NSRange]) -> Bool {
+        guard ranges.count > 1 else { return true }
+        for (previous, current) in zip(ranges, ranges.dropFirst()) {
+            if current.location != NSMaxRange(previous) {
+                return false
+            }
+        }
+        return true
+    }
+
     private enum CopyDirection {
         case up, down
     }
@@ -396,6 +406,7 @@ public enum LineEditingController: Sendable {
             fullLineRange(for: selection, in: nsText)
         }
         let mergedRanges = mergeOverlappingRanges(lineRanges)
+        guard rangesAreContiguous(mergedRanges) else { return nil }
 
         switch direction {
         case .up:

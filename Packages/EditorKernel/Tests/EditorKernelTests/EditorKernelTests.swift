@@ -1444,6 +1444,29 @@ struct EditorKernelTests {
     }
 
     @Test
+    func lineEditingControllerRejectsNonContiguousMultiCursorLineMoves() {
+        let text = "one\ntwo\nthree\nfour"
+
+        let moveDown = LineEditingController.moveLineDown(
+            in: text,
+            selections: [
+                NSRange(location: 0, length: 0),
+                NSRange(location: 8, length: 0),
+            ]
+        )
+        #expect(moveDown == nil)
+
+        let moveUp = LineEditingController.moveLineUp(
+            in: text,
+            selections: [
+                NSRange(location: 4, length: 0),
+                NSRange(location: 14, length: 0),
+            ]
+        )
+        #expect(moveUp == nil)
+    }
+
+    @Test
     func lineEditingControllerRejectsStaleSelectionsWithoutCrashing() {
         let staleCursor = NSRange(location: 50, length: 0)
         let staleRange = NSRange(location: 1, length: 50)
