@@ -4,6 +4,28 @@ import AgentToolKit
 @testable import Lumi
 
 final class ContextPrunerTests: XCTestCase {
+    func testPruneDropsLeadingOrphanToolMessage() {
+        let conversationId = UUID()
+        let messages = [
+            ChatMessage(role: .tool, conversationId: conversationId, content: "orphan", toolCallID: "call_1"),
+            ChatMessage(role: .user, conversationId: conversationId, content: "Continue")
+        ]
+
+        let result = ContextPruner.prune(
+            messages,
+            config: ContextPruner.Configuration(
+                maxMessages: 10,
+                tokenUsageThreshold: 0.8,
+                tighteningFactor: 0.6,
+                summaryPlaceholder: "summary"
+            )
+        )
+
+        XCTAssertNil(result.reason)
+        XCTAssertEqual(result.messages.map(\.role), [.user])
+        XCTAssertEqual(result.messages.first?.content, "Continue")
+    }
+
     func testPruneKeepsUserContinuationWhenOnlyOrphanToolRemains() {
         let conversationId = UUID()
         let messages = [

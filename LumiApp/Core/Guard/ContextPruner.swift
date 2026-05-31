@@ -298,7 +298,11 @@ struct ContextPruner: SuperLog {
                 }
 
             case .tool:
-                let lastRole = result.last!.role
+                guard let lastRole = result.last?.role else {
+                    // 孤立的 tool 消息，跳过
+                    i += 1
+                    continue
+                }
                 // tool 消息必须紧跟在带有 tool_calls 的 assistant 之后；
                 // 一个 assistant 可对应多条连续 tool 结果。
                 guard lastRole == .assistant || lastRole == .tool else {
