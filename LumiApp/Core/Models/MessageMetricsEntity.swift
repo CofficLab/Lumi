@@ -106,7 +106,7 @@ final class MessageMetricsEntity {
             temperature: message.temperature,
             maxTokens: message.maxTokens,
             thinkingContent: message.thinkingContent,
-            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+            hasThinking: message.hasNonEmptyThinkingContent
         )
     }
     
@@ -124,5 +124,11 @@ final class MessageMetricsEntity {
         message.temperature = temperature
         message.maxTokens = maxTokens
         message.thinkingContent = thinkingContent
+    }
+}
+
+extension ChatMessage {
+    var hasNonEmptyThinkingContent: Bool {
+        thinkingContent?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     }
 }

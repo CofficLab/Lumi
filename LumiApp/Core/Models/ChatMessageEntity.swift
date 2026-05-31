@@ -205,7 +205,7 @@ final class ChatMessageEntity {
                 existingMetrics.temperature = message.temperature
                 existingMetrics.maxTokens = message.maxTokens
                 existingMetrics.thinkingContent = message.thinkingContent
-                existingMetrics.hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+                existingMetrics.hasThinking = message.hasNonEmptyThinkingContent
             } else {
                 // 创建新指标
                 let newMetrics = MessageMetricsEntity.from(message)
@@ -263,6 +263,6 @@ private extension ChatMessage {
         requestId != nil ||
         temperature != nil ||
         maxTokens != nil ||
-        (thinkingContent != nil && !thinkingContent!.isEmpty)
+        hasNonEmptyThinkingContent
     }
 }

@@ -97,6 +97,26 @@ final class ChatHistoryServiceTests: XCTestCase {
     }
 
     @MainActor
+    func testBlankThinkingContentDoesNotCreateMetrics() throws {
+        let service = try makeService()
+        let conversation = service.createConversation(title: "thinking")
+        let message = ChatMessage(
+            id: UUID(),
+            role: .assistant,
+            conversationId: conversation.id,
+            content: "Done",
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000),
+            thinkingContent: "   \n\t"
+        )
+
+        _ = service.saveMessage(message, to: conversation)
+
+        let loaded = service.loadMessages(for: conversation)
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertNil(loaded.first?.thinkingContent)
+    }
+
+    @MainActor
     private func makeService() throws -> ChatHistoryService {
         let schema = DBConfig.getSchema()
         let config = ModelConfiguration(
