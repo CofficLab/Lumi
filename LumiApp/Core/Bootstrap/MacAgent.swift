@@ -251,7 +251,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     }
 
     private func ensureMainWindowPresented() {
-        if !RootContainer.shared.windowManagerVM.windowContainers.isEmpty {
+        if RootContainer.shared.windowManagerVM.activatePreferredWindow() {
             didPresentInitialMainWindow = true
             return
         }
@@ -263,14 +263,12 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self else { return }
-            if !RootContainer.shared.windowManagerVM.windowContainers.isEmpty {
+            if RootContainer.shared.windowManagerVM.activatePreferredWindow() || !self.mainWindows.isEmpty {
                 self.didPresentInitialMainWindow = true
                 return
             }
-            if !self.didPresentInitialMainWindow {
-                self.presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
-                self.didPresentInitialMainWindow = true
-            }
+            self.presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
+            self.didPresentInitialMainWindow = true
         }
     }
 
