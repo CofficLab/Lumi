@@ -34,5 +34,37 @@ final class AutomationControllerTests: XCTestCase {
             fileURL.standardizedFileURL
         )
     }
+
+    @MainActor
+    func testExistingDirectoryURLRejectsMissingPath() {
+        let missingPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .path
+
+        XCTAssertNil(AutomationController.existingDirectoryURL(path: missingPath))
+    }
+
+    @MainActor
+    func testExistingDirectoryURLRejectsFile() throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        try "content".write(to: fileURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        XCTAssertNil(AutomationController.existingDirectoryURL(path: fileURL.path))
+    }
+
+    @MainActor
+    func testExistingDirectoryURLReturnsExistingDirectory() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        XCTAssertEqual(
+            AutomationController.existingDirectoryURL(path: directoryURL.path),
+            directoryURL.standardizedFileURL
+        )
+    }
 }
 #endif

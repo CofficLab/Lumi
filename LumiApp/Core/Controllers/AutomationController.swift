@@ -207,15 +207,34 @@ final class AutomationController: SuperLog {
             return
         }
 
-        let name = URL(fileURLWithPath: path).lastPathComponent
+        guard let projectURL = Self.existingDirectoryURL(path: path) else {
+            Self.logger.warning("🤖 project.select: path is not an existing directory: \(path, privacy: .public)")
+            return
+        }
+
+        let projectPath = projectURL.path
+        let name = projectURL.lastPathComponent
         scope.projectVM.switchProject(
-            to: Project(name: name, path: path, lastUsed: Date()),
+            to: Project(name: name, path: projectPath, lastUsed: Date()),
             reason: "automationSelectProject"
         )
         NotificationCenter.default.post(name: .windowStateShouldPersist, object: nil)
-        NotificationCenter.postCurrentProjectDidChange(name: name, path: path)
+        NotificationCenter.postCurrentProjectDidChange(name: name, path: projectPath)
 
-        Self.logger.info("🤖 project.select: \(path, privacy: .public)")
+        Self.logger.info("🤖 project.select: \(projectPath, privacy: .public)")
+    }
+
+    static func existingDirectoryURL(path: String, fileManager: FileManager = .default) -> URL? {
+        let expandedPath = (path as NSString).expandingTildeInPath
+        guard !expandedPath.isEmpty else { return nil }
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: expandedPath, isDirectory: true).standardizedFileURL
     }
 
     private func handleAppTerminate() {
