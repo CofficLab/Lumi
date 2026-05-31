@@ -24,7 +24,7 @@ public struct EditorPreviewJSONView: View, SuperLog {
             if jsonText.isEmpty {
                 emptyView
             } else {
-                switch parsedValue {
+                switch JSONPreviewParser.parse(jsonText) {
                 case let .success(value):
                     jsonScrollView(value)
                 case let .failure(error):
@@ -33,65 +33,6 @@ public struct EditorPreviewJSONView: View, SuperLog {
             }
         }
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
-    }
-
-    // MARK: - 解析
-
-    private enum ParsedValue: Equatable {
-        case object([[String: Any]])
-        case array([Any])
-        case single(Any)
-
-        static func == (lhs: ParsedValue, rhs: ParsedValue) -> Bool {
-            switch (lhs, rhs) {
-            case (.single, .single), (.array, .array), (.object, .object):
-                return true
-            default:
-                return false
-            }
-        }
-    }
-
-    private var parsedValue: Result<Any, Error> {
-        // 先尝试标准 JSON 解析
-        let trimmed = jsonText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let data = trimmed.data(using: .utf8) {
-            do {
-                let value = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
-                return .success(value)
-            } catch {
-                // 如果标准解析失败，尝试 JSONL
-                let jsonlResult = parseJSONL(trimmed)
-                if !jsonlResult.isEmpty {
-                    return .success(jsonlResult)
-                }
-                return .failure(error)
-            }
-        }
-        return .failure(JSONParseError.invalidData)
-    }
-
-    private func parseJSONL(_ text: String) -> [Any] {
-        var results: [Any] = []
-        for line in text.components(separatedBy: .newlines) {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { continue }
-            if let value = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) {
-                results.append(value)
-            }
-        }
-        return results
-    }
-
-    private enum JSONParseError: LocalizedError {
-        case invalidData
-
-        var errorDescription: String? {
-            switch self {
-            case .invalidData:
-                return String(localized: "Invalid JSON data", table: "EditorPreview")
-            }
-        }
     }
 
     // MARK: - 视图
@@ -136,6 +77,74 @@ public struct EditorPreviewJSONView: View, SuperLog {
             )
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - JSON 解析
+
+enum JSONPreviewParser {
+    static func parse(_ text: String) -> Result<Any, Error> {
+        let trimmed = stripByteOrderMark(from: text).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8) else {
+            return .failure(JSONParseError.invalidData)
+        }
+
+        do {
+            let value = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+            return .success(value)
+        } catch let standardJSONError {
+            do {
+                let jsonlResult = try parseJSONL(trimmed)
+                if jsonlResult.count > 1 {
+                    return .success(jsonlResult)
+                }
+                return .failure(standardJSONError)
+            } catch JSONParseError.invalidJSONLLine(1) {
+                return .failure(standardJSONError)
+            } catch {
+                return .failure(error)
+            }
+        }
+    }
+
+    private static func parseJSONL(_ text: String) throws -> [Any] {
+        var results: [Any] = []
+
+        for (index, line) in text.components(separatedBy: .newlines).enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            guard let data = trimmed.data(using: .utf8) else {
+                throw JSONParseError.invalidJSONLLine(index + 1)
+            }
+
+            do {
+                let value = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+                results.append(value)
+            } catch {
+                throw JSONParseError.invalidJSONLLine(index + 1)
+            }
+        }
+
+        return results
+    }
+
+    private static func stripByteOrderMark(from text: String) -> String {
+        guard text.first == "\u{FEFF}" else { return text }
+        return String(text.dropFirst())
+    }
+}
+
+enum JSONParseError: LocalizedError, Equatable {
+    case invalidData
+    case invalidJSONLLine(Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidData:
+            return String(localized: "Invalid JSON data", table: "EditorPreview")
+        case let .invalidJSONLLine(line):
+            return String(localized: "Invalid JSONL at line \(line)", table: "EditorPreview")
         }
     }
 }

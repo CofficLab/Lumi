@@ -152,6 +152,37 @@ import Foundation
     #expect(stats == MarkdownTODOStats(total: 1, completed: 1))
 }
 
+@Test func jsonPreviewParserKeepsValidJSONLLines() throws {
+    let parsed = JSONPreviewParser.parse("""
+    {"name":"Ada"}
+    {"name":"Grace"}
+    """)
+
+    guard case let .success(value) = parsed,
+          let rows = value as? [[String: String]] else {
+        Issue.record("Expected JSONL rows to parse")
+        return
+    }
+
+    #expect(rows == [["name": "Ada"], ["name": "Grace"]])
+}
+
+@Test func jsonPreviewParserRejectsPartiallyInvalidJSONL() {
+    let parsed = JSONPreviewParser.parse("""
+    {"name":"Ada"}
+    {"name":
+    {"name":"Grace"}
+    """)
+
+    guard case let .failure(error) = parsed,
+          let parseError = error as? JSONParseError else {
+        Issue.record("Expected JSONL parse failure")
+        return
+    }
+
+    #expect(parseError == .invalidJSONLLine(2))
+}
+
 @Test func previewStorageFindsLegacyCacheRootsAcrossDBVersions() throws {
     let appSupport = FileManager.default.temporaryDirectory
         .appendingPathComponent("EditorPreviewStorageTests-\(UUID().uuidString)", isDirectory: true)
