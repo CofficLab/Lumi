@@ -677,7 +677,7 @@ public struct HTMLToMarkdownConverter {
         if let absoluteURL = URL(string: normalizedURL),
            let scheme = absoluteURL.scheme?.lowercased(),
            scheme == "http" || scheme == "https" {
-            return url
+            return normalizedURL
         }
 
         if normalizedURL.hasPrefix("//"),

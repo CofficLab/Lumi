@@ -60,6 +60,23 @@ final class HTMLToMarkdownConverterTests: XCTestCase {
         XCTAssertFalse(markdown.contains("https://example.com/base/HTTP://cdn.example.com/logo.png"))
     }
 
+    func testTrimsWhitespaceAroundAbsoluteURLs() {
+        let html = """
+        <a href=" https://docs.example.com/start ">Docs</a>
+        <img src=" \nhttps://cdn.example.com/logo.png\t" alt="Logo">
+        """
+
+        let markdown = HTMLToMarkdownConverter.convert(
+            html,
+            baseURL: URL(string: "https://example.com/base/")
+        )
+
+        XCTAssertTrue(markdown.contains("[Docs](https://docs.example.com/start)"))
+        XCTAssertTrue(markdown.contains("![Logo](https://cdn.example.com/logo.png)"))
+        XCTAssertFalse(markdown.contains("]( https://docs.example.com/start )"))
+        XCTAssertFalse(markdown.contains("]( \nhttps://cdn.example.com/logo.png\t)"))
+    }
+
     func testProtocolRelativeURLsUseBaseScheme() {
         let html = """
         <a href="//docs.example.com/start">Docs</a>
