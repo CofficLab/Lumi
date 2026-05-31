@@ -38,7 +38,7 @@ public final class EditorWorkspaceEditController {
                     changedFiles += 1
                     continue
                 }
-                guard let url = URL(string: uri), url.isFileURL else { continue }
+                guard let url = WorkspaceEditFileOperations.fileURL(from: uri) else { continue }
                 if applyExternalFileEdits(textEdits, url) {
                     changedFiles += 1
                 }
@@ -56,7 +56,7 @@ public final class EditorWorkspaceEditController {
                     if uri == currentURI {
                         applyCurrentDocumentEdits(edits, "lsp_document_edit")
                         changedFiles += 1
-                    } else if let url = URL(string: uri), url.isFileURL, applyExternalFileEdits(edits, url) {
+                    } else if let url = WorkspaceEditFileOperations.fileURL(from: uri), applyExternalFileEdits(edits, url) {
                         changedFiles += 1
                     }
                 case .createFile(let operation):

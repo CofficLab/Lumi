@@ -1945,6 +1945,29 @@ struct EditorKernelTests {
     }
 
     @Test
+    func workspaceEditSummaryUsesUnescapedFileURLsForLabels() {
+        let edit = WorkspaceEdit(
+            changes: [
+                "file:///tmp/project/has space.swift": [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 1)),
+                        newText: "x"
+                    )
+                ],
+            ],
+            documentChanges: nil
+        )
+
+        let summary = EditorWorkspaceEditSummaryBuilder.summarize(
+            edit,
+            currentURI: "file:///tmp/project/current.swift",
+            projectRootPath: "/tmp/project"
+        )
+
+        #expect(summary.fileLabels == ["has space.swift"])
+    }
+
+    @Test
     @MainActor
     func workspaceEditControllerAppliesDocumentAndFileOperations() throws {
         let currentURI = "file:///tmp/project/file.swift"
@@ -2022,6 +2045,56 @@ struct EditorKernelTests {
         #expect(createCount == 1)
         #expect(renameCount == 1)
         #expect(deleteCount == 1)
+    }
+
+    @Test
+    @MainActor
+    func workspaceEditControllerAppliesUnescapedExternalFileURLs() throws {
+        let currentURI = "file:///tmp/project/file.swift"
+        let externalURI = "file:///tmp/project/other file.swift"
+        let edit = WorkspaceEdit(
+            changes: [
+                externalURI: [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 1)),
+                        newText: "a"
+                    )
+                ],
+            ],
+            documentChanges: [
+                .textDocumentEdit(
+                    TextDocumentEdit(
+                        textDocument: VersionedTextDocumentIdentifier(uri: "file://localhost/tmp/project/doc file.swift", version: 1),
+                        edits: [
+                            TextEdit(
+                                range: LSPRange(start: Position(line: 1, character: 0), end: Position(line: 1, character: 1)),
+                                newText: "b"
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+
+        let controller = EditorWorkspaceEditController()
+        var externalPaths: [String] = []
+
+        let changed = controller.apply(
+            changes: edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI,
+            applyCurrentDocumentEdits: { _, _ in },
+            applyExternalFileEdits: { _, url in
+                externalPaths.append(url.path)
+                return true
+            },
+            applyCreateFile: { _ in false },
+            applyRenameFile: { _ in false },
+            applyDeleteFile: { _ in false }
+        )
+
+        #expect(changed == 2)
+        #expect(externalPaths == ["/tmp/project/other file.swift", "/tmp/project/doc file.swift"])
     }
 
     @Test

@@ -76,7 +76,7 @@ public enum EditorWorkspaceEditSummaryBuilder {
                 fileLabels.append("Current File")
                 return
             }
-            guard let url = URL(string: uri), url.isFileURL else {
+            guard let url = WorkspaceEditFileOperations.fileURL(from: uri) else {
                 fileLabels.append(uri)
                 return
             }
