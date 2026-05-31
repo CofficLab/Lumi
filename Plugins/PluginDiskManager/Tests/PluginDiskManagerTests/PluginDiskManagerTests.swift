@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 import LumiCoreKit
 @testable import PluginDiskManager
 
@@ -29,5 +30,22 @@ struct PluginDiskManagerTests {
     func localizationCatalogIsPackaged() {
         #expect(PluginDiskManagerLocalization.bundle.url(forResource: "DiskManager", withExtension: "xcstrings") != nil)
         #expect(PluginDiskManagerLocalization.string("Disk Manager").isEmpty == false)
+    }
+
+    @Test
+    func scanURLAcceptsUnescapedFileURL() {
+        #expect(
+            DiskManagerViewModel.scanURL(from: "file:///tmp/project/My Folder").path
+                == "/tmp/project/My Folder"
+        )
+    }
+
+    @Test
+    func scanURLAcceptsLocalPathAndTilde() {
+        #expect(DiskManagerViewModel.scanURL(from: " /tmp/project ").path == "/tmp/project")
+        #expect(
+            DiskManagerViewModel.scanURL(from: "~/Downloads").path
+                == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads").path
+        )
     }
 }

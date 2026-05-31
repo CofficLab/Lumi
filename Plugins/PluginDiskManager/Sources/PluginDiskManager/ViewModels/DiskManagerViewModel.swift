@@ -53,15 +53,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
     func startScan() {
         guard !isScanning else { return }
 
-        let url: URL
-        if scanPath.hasPrefix("/") {
-             url = URL(fileURLWithPath: scanPath)
-        } else if let validUrl = URL(string: scanPath) {
-             url = validUrl
-        } else {
-             // Fallback
-             url = URL(fileURLWithPath: scanPath)
-        }
+        let url = Self.scanURL(from: scanPath)
 
         if Self.verbose {
             if DiskManagerPlugin.verbose {
@@ -99,6 +91,27 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 }
             }
         }
+    }
+
+    nonisolated static func scanURL(from path: String) -> URL {
+        let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedPath.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmedPath)
+        }
+        if trimmedPath == "~" || trimmedPath.hasPrefix("~/") {
+            return URL(fileURLWithPath: (trimmedPath as NSString).expandingTildeInPath)
+        }
+        if let url = URL(string: trimmedPath), url.isFileURL {
+            return url
+        }
+        if trimmedPath.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmedPath.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path)
+        }
+        return URL(fileURLWithPath: trimmedPath)
     }
 
     func stopScan() {
