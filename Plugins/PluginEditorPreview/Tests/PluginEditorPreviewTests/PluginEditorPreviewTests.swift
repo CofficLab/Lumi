@@ -1,5 +1,6 @@
 import Testing
 import EditorService
+import Foundation
 @testable import PluginEditorPreview
 
 @Test func packageLoads() async throws {
@@ -81,4 +82,31 @@ import EditorService
 
     #expect(table.headers == ["Name", "Score"])
     #expect(table.rows == [["Ada", "42"], ["Grace", "39"]])
+}
+
+@Test func previewStorageFindsLegacyCacheRootsAcrossDBVersions() throws {
+    let appSupport = FileManager.default.temporaryDirectory
+        .appendingPathComponent("EditorPreviewStorageTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: appSupport) }
+
+    let currentRoot = appSupport
+        .appendingPathComponent("db_debug_v3", isDirectory: true)
+        .appendingPathComponent("EditorPreviewPlugin", isDirectory: true)
+    let previousRoot = appSupport
+        .appendingPathComponent("db_debug_v2", isDirectory: true)
+        .appendingPathComponent("EditorInlinePreviewPlugin", isDirectory: true)
+    let unrelatedRoot = appSupport
+        .appendingPathComponent("db_debug_v2", isDirectory: true)
+        .appendingPathComponent("OtherPlugin", isDirectory: true)
+
+    for directory in [currentRoot, previousRoot, unrelatedRoot] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    let roots = EditorPreviewStorage.cacheRootCandidates(currentRoot: currentRoot)
+        .map(\.standardizedFileURL.path)
+
+    #expect(roots.contains(currentRoot.standardizedFileURL.path))
+    #expect(roots.contains(previousRoot.standardizedFileURL.path))
+    #expect(!roots.contains(unrelatedRoot.standardizedFileURL.path))
 }

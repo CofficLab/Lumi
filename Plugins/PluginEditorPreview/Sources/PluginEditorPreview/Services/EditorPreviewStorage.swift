@@ -23,6 +23,7 @@ public enum EditorPreviewStorage {
     }
 
     public static let pluginName = "EditorPreviewPlugin"
+    static let legacyPluginNames = ["EditorPreviewPlugin", "EditorInlinePreviewPlugin"]
     public static let autoCleanupPolicy = LumiPreviewFacade.PreviewStorageAutoCleaner.Policy(
         maximumAge: 14 * 24 * 60 * 60,
         maximumSizeBytes: 2 * 1024 * 1024 * 1024,
@@ -115,10 +116,51 @@ public enum EditorPreviewStorage {
         cacheManagedDirectories(paths: LumiPreviewFacade.PreviewStorage.paths)
     }
 
-    private static func cacheManagedDirectories(
+    static func cacheManagedDirectories(
         paths: LumiPreviewFacade.PreviewStoragePaths
     ) -> [URL] {
-        let root = paths.rootDirectory
+        cacheRootCandidates(currentRoot: paths.rootDirectory).flatMap { root in
+            cacheManagedDirectories(root: root)
+        }
+    }
+
+    static func cacheRootCandidates(
+        currentRoot: URL,
+        fileManager: FileManager = .default
+    ) -> [URL] {
+        var roots = [currentRoot]
+        let currentDBDirectory = currentRoot.deletingLastPathComponent()
+        let appSupportDirectory = currentDBDirectory.deletingLastPathComponent()
+
+        guard let dbDirectories = try? fileManager.contentsOfDirectory(
+            at: appSupportDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return uniqueURLs(roots)
+        }
+
+        for dbDirectory in dbDirectories {
+            guard dbDirectory.lastPathComponent.hasPrefix("db_"),
+                  (try? dbDirectory.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
+                continue
+            }
+
+            for pluginName in legacyPluginNames {
+                let candidate = dbDirectory.appendingPathComponent(pluginName, isDirectory: true)
+                var isDirectory: ObjCBool = false
+                if fileManager.fileExists(atPath: candidate.path, isDirectory: &isDirectory),
+                   isDirectory.boolValue {
+                    roots.append(candidate)
+                }
+            }
+        }
+
+        return uniqueURLs(roots)
+    }
+
+    private static func cacheManagedDirectories(root: URL) -> [URL] {
+        let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         return [
             root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
             root.appendingPathComponent("DerivedData", isDirectory: true),
@@ -128,6 +170,13 @@ public enum EditorPreviewStorage {
             paths.compileCommandCacheDirectory,
             paths.workDirectory
         ]
+    }
+
+    private static func uniqueURLs(_ urls: [URL]) -> [URL] {
+        var seen = Set<String>()
+        return urls.filter { url in
+            seen.insert(url.standardizedFileURL.path).inserted
+        }
     }
 
     private static func summarize(directories: [URL]) -> CacheSummary {
