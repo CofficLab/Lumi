@@ -108,6 +108,7 @@ public enum MultiCursorEditEngine {
         }
 
         let adjustedSelections = selections
+            .map { normalized($0, maxLength: nsText.length) }
             .map { adjustedSelection($0, forInsertedLineStarts: lineStarts, indentLength: indentLength) }
             .sorted { $0.location < $1.location }
 
@@ -140,6 +141,7 @@ public enum MultiCursorEditEngine {
         }
 
         let adjustedSelections = selections
+            .map { normalized($0, maxLength: nsText.length) }
             .map { adjustedSelection($0, removedRanges: removedRanges) }
             .sorted { $0.location < $1.location }
 
@@ -148,7 +150,7 @@ public enum MultiCursorEditEngine {
 
     private static func normalized(_ selection: MultiCursorSelection, maxLength: Int) -> MultiCursorSelection {
         let location = min(max(selection.location, 0), maxLength)
-        let upperBound = min(max(selection.location + selection.length, location), maxLength)
+        let upperBound = min(max(selection.upperBound, location), maxLength)
         return .init(location: location, length: upperBound - location)
     }
 

@@ -697,6 +697,27 @@ struct EditorKernelTests {
     }
 
     @Test
+    func multiCursorEditEngineClampsOverflowingSelections() {
+        let inserted = MultiCursorEditEngine.apply(
+            text: "abc",
+            selections: [.init(location: Int.max, length: 1)],
+            operation: .insert("x")
+        )
+
+        #expect(inserted.text == "abcx")
+        #expect(inserted.selections == [.init(location: 4, length: 0)])
+
+        let indented = MultiCursorEditEngine.apply(
+            text: "abc",
+            selections: [.init(location: Int.max, length: 1)],
+            operation: .indent("  ")
+        )
+
+        #expect(indented.text == "  abc")
+        #expect(indented.selections == [.init(location: 5, length: 0)])
+    }
+
+    @Test
     func textEditApplierHandlesMultipleEditsAndRejectsInvalidRanges() {
         let edits = [
             TextEdit(
