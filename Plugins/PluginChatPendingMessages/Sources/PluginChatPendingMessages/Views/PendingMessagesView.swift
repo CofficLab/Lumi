@@ -2,10 +2,12 @@ import LumiCoreKit
 import SwiftUI
 
 public struct PendingMessagesView: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+
     public init() {}
 
     public var body: some View {
-        let messages = PendingMessagesRuntime.messages
+        let messages = conversationVM.currentPendingMessages()
         if messages.isEmpty {
             EmptyView()
         } else {
@@ -24,7 +26,7 @@ public struct PendingMessagesView: View {
 
                 ForEach(messages, id: \.id) { message in
                     PendingMessageRow(message: message) {
-                        PendingMessagesRuntime.removeMessage(message.id)
+                        conversationVM.removePendingMessage(id: message.id)
                     }
                 }
             }

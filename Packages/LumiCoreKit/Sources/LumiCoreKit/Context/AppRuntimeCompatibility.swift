@@ -167,31 +167,40 @@ public final class ToolService: @unchecked Sendable {
 @MainActor
 public final class WindowConversationVM: ObservableObject {
     @Published public var selectedConversationId: UUID?
+    @Published public private(set) var pendingMessagesVersion: Int
 
     public var currentPreferenceProvider: @MainActor () -> ModelPreference?
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
     public var preferenceSaver: @MainActor (UUID?, String, String) -> Void
     public var chatModePreferenceProvider: @MainActor () -> ChatMode?
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
+    public var pendingMessagesProvider: @MainActor (UUID) -> [ChatMessage]
+    public var pendingMessageRemover: @MainActor (UUID) -> Void
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
     public init(
         selectedConversationId: UUID? = nil,
+        pendingMessagesVersion: Int = 0,
         currentPreferenceProvider: @escaping @MainActor () -> ModelPreference? = { nil },
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
         chatModePreferenceProvider: @escaping @MainActor () -> ChatMode? = { nil },
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        pendingMessagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        pendingMessageRemover: @escaping @MainActor (UUID) -> Void = { _ in },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
         self.selectedConversationId = selectedConversationId
+        self.pendingMessagesVersion = pendingMessagesVersion
         self.currentPreferenceProvider = currentPreferenceProvider
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
         self.chatModePreferenceProvider = chatModePreferenceProvider
         self.messagesProvider = messagesProvider
+        self.pendingMessagesProvider = pendingMessagesProvider
+        self.pendingMessageRemover = pendingMessageRemover
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
     }
@@ -227,6 +236,23 @@ public final class WindowConversationVM: ObservableObject {
     public func currentMessages() -> [ChatMessage] {
         guard let selectedConversationId else { return [] }
         return messages(for: selectedConversationId)
+    }
+
+    public func pendingMessages(for conversationId: UUID) -> [ChatMessage] {
+        pendingMessagesProvider(conversationId)
+    }
+
+    public func currentPendingMessages() -> [ChatMessage] {
+        guard let selectedConversationId else { return [] }
+        return pendingMessages(for: selectedConversationId)
+    }
+
+    public func removePendingMessage(id messageId: UUID) {
+        pendingMessageRemover(messageId)
+    }
+
+    public func notifyPendingMessagesChanged() {
+        pendingMessagesVersion += 1
     }
 
     @discardableResult

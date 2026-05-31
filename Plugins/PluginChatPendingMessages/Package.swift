@@ -28,7 +28,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginChatPendingMessagesTests",
-            dependencies: ["PluginChatPendingMessages"],
+            dependencies: [
+                "PluginChatPendingMessages",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests/PluginChatPendingMessagesTests"
         )
     ]

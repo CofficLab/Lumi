@@ -84,6 +84,10 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
             syncPluginConversationContext()
         }
+        .onChange(of: windowContainer.messageQueueVM.queueVersion) { _, _ in
+            syncPluginConversationContext()
+            pluginConversationVM.notifyPendingMessagesChanged()
+        }
     }
 
     private var llmLifecycleScene: some View {
@@ -212,6 +216,12 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.selectedConversationId = windowContainer.conversationVM.selectedConversationId
         pluginConversationVM.messagesProvider = { [container] conversationId in
             container.chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) ?? []
+        }
+        pluginConversationVM.pendingMessagesProvider = { [windowContainer] conversationId in
+            windowContainer.messageQueueVM.pendingMessages(for: conversationId)
+        }
+        pluginConversationVM.pendingMessageRemover = { [windowContainer] messageId in
+            windowContainer.messageQueueVM.removeMessage(id: messageId)
         }
     }
 
