@@ -32,7 +32,7 @@ actor SlashCommandService: SuperLog {
     nonisolated static let emoji = "⌨️"
     nonisolated static let verbose: Bool = true
     /// 内置命令列表
-    private let builtInCommands = ["clear", "help", "plan", "mcp"]
+    private let builtInCommands = Set(["clear", "help", "commands", "cmd", "plan", "mcp"])
 
     /// 项目命令执行器
     private let commandExecutor: ProjectCommandExecutor
@@ -177,6 +177,7 @@ extension SlashCommandService {
             SlashCommandInfo(name: "/plan", description: "Generate a detailed implementation plan for a task", category: "Productivity"),
             SlashCommandInfo(name: "/mcp", description: "Manage MCP servers and tools", category: "MCP"),
             SlashCommandInfo(name: "/commands", description: "List all available commands (built-in + project)", category: "System"),
+            SlashCommandInfo(name: "/cmd", description: "List all available commands (built-in + project)", category: "System"),
         ]
     }
 

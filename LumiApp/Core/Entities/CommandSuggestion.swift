@@ -14,5 +14,6 @@ struct CommandSuggestion: Identifiable, Equatable {
         CommandSuggestion(command: "/mcp list", description: "List connected MCP servers", category: "MCP"),
         CommandSuggestion(command: "/mcp install vision", description: "Install Vision MCP Server", category: "MCP"),
         CommandSuggestion(command: "/commands", description: "List all available commands", category: "System"),
+        CommandSuggestion(command: "/cmd", description: "List all available commands", category: "System"),
     ]
 }
