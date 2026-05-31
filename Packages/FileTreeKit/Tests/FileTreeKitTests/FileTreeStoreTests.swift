@@ -172,22 +172,26 @@ struct FileTreeStoreTests {
         #expect(store2.lastProjectPath() == "/project")
     }
 
-    @Test("set reports failure and preserves invalid settings file")
-    func setReportsFailureAndPreservesInvalidSettingsFile() throws {
+    @Test("set quarantines invalid settings file and recovers")
+    func setQuarantinesInvalidSettingsFileAndRecovers() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("FileTreeKitTest-Invalid-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: tempDir) }
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let settingsURL = tempDir.appendingPathComponent("settings.plist")
+        let corruptURL = tempDir.appendingPathComponent("settings.corrupt.plist")
         let invalidData = Data("not a plist".utf8)
         try invalidData.write(to: settingsURL)
 
         let store = FileTreeStore(directory: tempDir)
 
-        #expect(store.setLastProjectPath("/project") == false)
-        #expect((try? Data(contentsOf: settingsURL)) == invalidData)
-        #expect(store.lastProjectPath() == nil)
+        #expect(store.setLastProjectPath("/project") == true)
+        #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+        #expect(store.lastProjectPath() == "/project")
+
+        let reloadedStore = FileTreeStore(directory: tempDir)
+        #expect(reloadedStore.lastProjectPath() == "/project")
     }
 
     @Test("set reports failure when settings directory is blocked")

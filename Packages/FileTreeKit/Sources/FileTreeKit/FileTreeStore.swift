@@ -21,6 +21,7 @@ public final class FileTreeStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "FileTreeStore.queue", qos: .userInitiated)
     private let pluginDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
     // MARK: - Keys
 
@@ -36,6 +37,7 @@ public final class FileTreeStore: @unchecked Sendable {
     public init(directory: URL) {
         self.pluginDirectory = directory
         self.settingsFileURL = directory.appendingPathComponent("settings.plist")
+        self.corruptSettingsFileURL = directory.appendingPathComponent("settings.corrupt.plist")
         do {
             try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
@@ -151,12 +153,14 @@ public final class FileTreeStore: @unchecked Sendable {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 Self.logger.error("Read file tree settings failed: root plist is not a dictionary")
-                return nil
+                quarantineCorruptSettings()
+                return [:]
             }
             return dict
         } catch {
             Self.logger.error("Read file tree settings failed: \(error.localizedDescription)")
-            return nil
+            quarantineCorruptSettings()
+            return [:]
         }
     }
 
@@ -190,6 +194,19 @@ public final class FileTreeStore: @unchecked Sendable {
             Self.logger.error("Persist file tree settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
             return false
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt file tree settings failed: \(error.localizedDescription)")
         }
     }
 }
