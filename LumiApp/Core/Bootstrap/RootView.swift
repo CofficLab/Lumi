@@ -88,6 +88,10 @@ struct RootView<Content>: View where Content: View {
             syncPluginConversationContext()
             pluginConversationVM.notifyPendingMessagesChanged()
         }
+        .onChange(of: windowContainer.agentAttachmentsVM.pendingAttachments) { _, _ in
+            syncPluginConversationContext()
+            pluginConversationVM.notifyAttachmentsChanged()
+        }
     }
 
     private var llmLifecycleScene: some View {
@@ -222,6 +226,21 @@ struct RootView<Content>: View where Content: View {
         }
         pluginConversationVM.pendingMessageRemover = { [windowContainer] messageId in
             windowContainer.messageQueueVM.removeMessage(id: messageId)
+        }
+        pluginConversationVM.pendingAttachmentsProvider = { [windowContainer] in
+            windowContainer.agentAttachmentsVM.pendingAttachments
+        }
+        pluginConversationVM.attachmentRemover = { [windowContainer] attachmentId in
+            windowContainer.agentAttachmentsVM.removeAttachment(id: attachmentId)
+        }
+        pluginConversationVM.imageUploadHandler = { [windowContainer] url in
+            windowContainer.agentAttachmentsVM.handleImageUpload(url: url)
+        }
+        pluginConversationVM.screenshotDataHandler = { [windowContainer] data in
+            windowContainer.agentAttachmentsVM.handleScreenshotData(data)
+        }
+        pluginConversationVM.draftTextAppender = { [windowContainer] text in
+            windowContainer.chatDraftVM.append(text)
         }
     }
 

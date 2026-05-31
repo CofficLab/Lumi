@@ -57,6 +57,7 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
 /// 弹出 NSOpenPanel 选择本地图片，添加到聊天附件。
 private struct ImageUploadToolbarButton: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     public var body: some View {
         Button(action: {
@@ -69,6 +70,7 @@ private struct ImageUploadToolbarButton: View {
                 .background(Circle().fill(theme.textPrimary.opacity(0.06)))
         }
         .buttonStyle(.plain)
+        .disabled(!conversationVM.canAttachToCurrentConversation)
         .help(String(localized: "Upload Image", table: "AgentChat"))
         .accessibilityLabel(String(localized: "Upload Image", table: "AgentChat"))
         .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentChat"))
@@ -83,7 +85,7 @@ private struct ImageUploadToolbarButton: View {
 
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                ChatAttachmentRuntime.handleImageUpload(url)
+                conversationVM.handleImageUpload(url: url)
             }
         }
     }

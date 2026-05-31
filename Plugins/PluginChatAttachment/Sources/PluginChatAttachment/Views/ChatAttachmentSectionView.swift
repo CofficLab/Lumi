@@ -1,16 +1,19 @@
 import SwiftUI
 import AgentToolKit
+import LumiCoreKit
 
 /// 右侧栏中的待发送附件列表。
 public struct ChatAttachmentSectionView: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+
     public var body: some View {
-        if ChatAttachmentRuntime.pendingAttachments.isEmpty {
+        if conversationVM.pendingAttachments.isEmpty {
             EmptyView()
         } else {
             AttachmentPreviewView(
-                attachments: ChatAttachmentRuntime.pendingAttachments,
+                attachments: conversationVM.pendingAttachments,
                 onRemove: { id in
-                    ChatAttachmentRuntime.removeAttachment(id)
+                    conversationVM.removeAttachment(id: id)
                 }
             )
             .frame(maxWidth: .infinity)

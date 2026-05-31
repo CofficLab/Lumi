@@ -168,6 +168,7 @@ public final class ToolService: @unchecked Sendable {
 public final class WindowConversationVM: ObservableObject {
     @Published public var selectedConversationId: UUID?
     @Published public private(set) var pendingMessagesVersion: Int
+    @Published public private(set) var attachmentVersion: Int
 
     public var currentPreferenceProvider: @MainActor () -> ModelPreference?
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
@@ -176,12 +177,18 @@ public final class WindowConversationVM: ObservableObject {
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var pendingMessagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var pendingMessageRemover: @MainActor (UUID) -> Void
+    public var pendingAttachmentsProvider: @MainActor () -> [AgentPendingImageAttachment]
+    public var attachmentRemover: @MainActor (UUID) -> Void
+    public var imageUploadHandler: @MainActor (URL) -> Void
+    public var screenshotDataHandler: @MainActor (Data) -> Void
+    public var draftTextAppender: @MainActor (String) -> Void
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
     public init(
         selectedConversationId: UUID? = nil,
         pendingMessagesVersion: Int = 0,
+        attachmentVersion: Int = 0,
         currentPreferenceProvider: @escaping @MainActor () -> ModelPreference? = { nil },
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
@@ -189,11 +196,17 @@ public final class WindowConversationVM: ObservableObject {
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         pendingMessagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         pendingMessageRemover: @escaping @MainActor (UUID) -> Void = { _ in },
+        pendingAttachmentsProvider: @escaping @MainActor () -> [AgentPendingImageAttachment] = { [] },
+        attachmentRemover: @escaping @MainActor (UUID) -> Void = { _ in },
+        imageUploadHandler: @escaping @MainActor (URL) -> Void = { _ in },
+        screenshotDataHandler: @escaping @MainActor (Data) -> Void = { _ in },
+        draftTextAppender: @escaping @MainActor (String) -> Void = { _ in },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
         self.selectedConversationId = selectedConversationId
         self.pendingMessagesVersion = pendingMessagesVersion
+        self.attachmentVersion = attachmentVersion
         self.currentPreferenceProvider = currentPreferenceProvider
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
@@ -201,6 +214,11 @@ public final class WindowConversationVM: ObservableObject {
         self.messagesProvider = messagesProvider
         self.pendingMessagesProvider = pendingMessagesProvider
         self.pendingMessageRemover = pendingMessageRemover
+        self.pendingAttachmentsProvider = pendingAttachmentsProvider
+        self.attachmentRemover = attachmentRemover
+        self.imageUploadHandler = imageUploadHandler
+        self.screenshotDataHandler = screenshotDataHandler
+        self.draftTextAppender = draftTextAppender
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
     }
@@ -253,6 +271,34 @@ public final class WindowConversationVM: ObservableObject {
 
     public func notifyPendingMessagesChanged() {
         pendingMessagesVersion += 1
+    }
+
+    public var pendingAttachments: [AgentPendingImageAttachment] {
+        pendingAttachmentsProvider()
+    }
+
+    public var canAttachToCurrentConversation: Bool {
+        hasSelectedConversation
+    }
+
+    public func removeAttachment(id attachmentId: UUID) {
+        attachmentRemover(attachmentId)
+    }
+
+    public func handleImageUpload(url: URL) {
+        imageUploadHandler(url)
+    }
+
+    public func handleScreenshotData(_ data: Data) {
+        screenshotDataHandler(data)
+    }
+
+    public func appendDraftText(_ text: String) {
+        draftTextAppender(text)
+    }
+
+    public func notifyAttachmentsChanged() {
+        attachmentVersion += 1
     }
 
     @discardableResult

@@ -32,7 +32,11 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginChatAttachmentTests",
-            dependencies: ["PluginChatAttachment"],
+            dependencies: [
+                "PluginChatAttachment",
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests/PluginChatAttachmentTests"
         )
     ]

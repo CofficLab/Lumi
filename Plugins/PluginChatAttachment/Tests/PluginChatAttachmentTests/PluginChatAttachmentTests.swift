@@ -1,5 +1,7 @@
 import Foundation
 import Testing
+import AgentToolKit
+import LumiCoreKit
 @testable import PluginChatAttachment
 
 @Test func packageLoads() async throws {
@@ -23,4 +25,59 @@ import Testing
     #expect(ChatAttachmentDropRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.PNG")))
     #expect(ChatAttachmentDropRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.heic")))
     #expect(!ChatAttachmentDropRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.txt")))
+}
+
+@MainActor
+@Test func windowConversationVMProvidesAndMutatesPendingAttachments() {
+    let conversationId = UUID()
+    let attachmentId = UUID()
+    let attachment = AgentPendingImageAttachment.image(
+        id: attachmentId,
+        data: Data([1, 2, 3]),
+        mimeType: "image/png",
+        url: URL(fileURLWithPath: "/tmp/a.png")
+    )
+    let imageURL = URL(fileURLWithPath: "/tmp/upload.png")
+    let screenshotData = Data([4, 5, 6])
+    var removedAttachmentIds: [UUID] = []
+    var uploadedImageURLs: [URL] = []
+    var screenshotPayloads: [Data] = []
+    var appendedDrafts: [String] = []
+
+    let conversationVM = WindowConversationVM(
+        selectedConversationId: conversationId,
+        pendingAttachmentsProvider: { [attachment] in [attachment] },
+        attachmentRemover: { attachmentId in
+            removedAttachmentIds.append(attachmentId)
+        },
+        imageUploadHandler: { url in
+            uploadedImageURLs.append(url)
+        },
+        screenshotDataHandler: { data in
+            screenshotPayloads.append(data)
+        },
+        draftTextAppender: { text in
+            appendedDrafts.append(text)
+        }
+    )
+
+    #expect(conversationVM.canAttachToCurrentConversation)
+    #expect(conversationVM.pendingAttachments == [attachment])
+
+    conversationVM.removeAttachment(id: attachmentId)
+    conversationVM.handleImageUpload(url: imageURL)
+    conversationVM.handleScreenshotData(screenshotData)
+    conversationVM.appendDraftText("/tmp/file.txt")
+
+    #expect(removedAttachmentIds == [attachmentId])
+    #expect(uploadedImageURLs == [imageURL])
+    #expect(screenshotPayloads == [screenshotData])
+    #expect(appendedDrafts == ["/tmp/file.txt"])
+
+    let version = conversationVM.attachmentVersion
+    conversationVM.notifyAttachmentsChanged()
+    #expect(conversationVM.attachmentVersion == version + 1)
+
+    conversationVM.selectedConversationId = nil
+    #expect(!conversationVM.canAttachToCurrentConversation)
 }

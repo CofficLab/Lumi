@@ -1,10 +1,12 @@
 import LumiUI
+import LumiCoreKit
 import SwiftUI
 import UniformTypeIdentifiers
 
 /// 包裹右侧栏，提供文件拖放入口。
 public struct ChatAttachmentDropRootView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     public let content: AnyView
 
@@ -15,7 +17,7 @@ public struct ChatAttachmentDropRootView: View {
     }
 
     private var canChat: Bool {
-        ChatAttachmentRuntime.canChat
+        conversationVM.canAttachToCurrentConversation
     }
 
     public var body: some View {
@@ -114,9 +116,9 @@ public struct ChatAttachmentDropRootView: View {
 
     private func handleFileDrop(fileURL: URL) {
         if ChatAttachmentDropRules.isChatImageFileURL(fileURL) {
-            ChatAttachmentRuntime.handleImageUpload(fileURL)
+            conversationVM.handleImageUpload(url: fileURL)
         } else {
-            ChatAttachmentRuntime.appendDraftText(fileURL.path)
+            conversationVM.appendDraftText(fileURL.path)
         }
     }
 
