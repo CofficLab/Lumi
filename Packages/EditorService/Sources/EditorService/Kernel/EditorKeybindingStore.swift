@@ -2,6 +2,8 @@ import EditorKernel
 import Foundation
 import SwiftUI
 
+private let editorKeybindingsFileName = "editor_keybindings.json"
+
 // MARK: - Editor Keybinding Store
 //
 // 后续方向：键位可配置化。
@@ -30,20 +32,25 @@ public final class EditorKeybindingStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private static let bindingsFileName = "editor_keybindings.json"
-
     private var bindingsFileURL: URL {
-        let dir: URL
-        if let root = EditorSettingsLifecycle.hostPersistenceRootURL?() {
-            dir = root
-                .appendingPathComponent(EditorHostEnvironment.current.storageDirectoryName, isDirectory: true)
-                .appendingPathComponent("settings", isDirectory: true)
-        } else {
-            dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent(EditorHostEnvironment.current.storageDirectoryName, isDirectory: true)
-                .appendingPathComponent("settings", isDirectory: true)
-        }
-        return dir.appendingPathComponent(Self.bindingsFileName)
+        Self.bindingsFileURL(
+            persistenceRootURL: EditorSettingsLifecycle.hostPersistenceRootURL?(),
+            applicationSupportURL: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? FileManager.default.temporaryDirectory,
+            storageDirectoryName: EditorHostEnvironment.current.storageDirectoryName
+        )
+    }
+
+    nonisolated static func bindingsFileURL(
+        persistenceRootURL: URL?,
+        applicationSupportURL: URL,
+        storageDirectoryName: String
+    ) -> URL {
+        let base = persistenceRootURL ?? applicationSupportURL
+        return base
+            .appendingPathComponent(storageDirectoryName, isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true)
+            .appendingPathComponent(editorKeybindingsFileName)
     }
 
     private init() {
