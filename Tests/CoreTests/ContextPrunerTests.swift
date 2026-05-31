@@ -53,5 +53,30 @@ final class ContextPrunerTests: XCTestCase {
         XCTAssertEqual(result.messages.map(\.role), [.system, .user])
         XCTAssertEqual(result.messages.last?.conversationId, conversationId)
     }
+
+    func testPruneDropsSystemMessagesFromContinuationWindow() {
+        let conversationId = UUID()
+        let messages = [
+            ChatMessage(role: .system, conversationId: conversationId, content: "Root instruction"),
+            ChatMessage(role: .user, conversationId: conversationId, content: "Hello"),
+            ChatMessage(role: .assistant, conversationId: conversationId, content: "Hi"),
+            ChatMessage(role: .system, conversationId: conversationId, content: "Late instruction"),
+            ChatMessage(role: .assistant, conversationId: conversationId, content: "Still here")
+        ]
+
+        let result = ContextPruner.prune(
+            messages,
+            config: ContextPruner.Configuration(
+                maxMessages: 2,
+                tokenUsageThreshold: 0.8,
+                tighteningFactor: 0.6,
+                summaryPlaceholder: "summary"
+            )
+        )
+
+        XCTAssertEqual(result.messages.map(\.role), [.system, .user, .assistant])
+        XCTAssertEqual(result.messages.first?.content, "summary")
+        XCTAssertFalse(result.messages.contains { $0.content == "Late instruction" })
+    }
 }
 #endif

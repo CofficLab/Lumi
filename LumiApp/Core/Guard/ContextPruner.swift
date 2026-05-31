@@ -181,7 +181,14 @@ struct ContextPruner: SuperLog {
                 break
             }
         }
-        var working = Array(messages.dropFirst(startIndex))
+        var working = messages.dropFirst(startIndex).filter { message in
+            switch message.role {
+            case .user, .assistant, .tool:
+                true
+            default:
+                false
+            }
+        }
         guard !working.isEmpty else { return [] }
 
         // Phase 2: 如果第一条不是 user，插入一个空的 user 消息
@@ -279,8 +286,6 @@ struct ContextPruner: SuperLog {
 
             default:
                 activeToolCallIDs.removeAll()
-                // system/status/error/unknown 消息，正常添加
-                result.append(current)
             }
 
             i += 1
