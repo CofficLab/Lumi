@@ -24,7 +24,7 @@ enum CSVPreviewParser {
     }
 
     static func parse(_ text: String) throws -> ParsedTable {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = stripByteOrderMark(from: text).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw ParseError.emptyData
         }
@@ -66,6 +66,11 @@ enum CSVPreviewParser {
             return ";"
         }
         return ","
+    }
+
+    private static func stripByteOrderMark(from text: String) -> String {
+        guard text.first == "\u{FEFF}" else { return text }
+        return String(text.dropFirst())
     }
 
     private static func firstRecord(in text: String) -> String {

@@ -115,6 +115,13 @@ import Foundation
     #expect(table.rows == [["Ada", "", ""], ["Grace", "39", "passed"]])
 }
 
+@Test func csvParserIgnoresUTF8ByteOrderMark() throws {
+    let table = try CSVPreviewParser.parse("\u{FEFF}Name,Score\nAda,42")
+
+    #expect(table.headers == ["Name", "Score"])
+    #expect(table.rows == [["Ada", "42"]])
+}
+
 @Test func csvParserRejectsUnclosedQuotedFields() throws {
     #expect(throws: CSVPreviewParser.ParseError.unclosedQuote) {
         try CSVPreviewParser.parse("Name,Note\nAda,\"unfinished")
