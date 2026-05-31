@@ -8,6 +8,7 @@ enum CoreWindowIDStore {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.window-id-store")
     private static let directoryName = "WindowIDs"
     private static let fileName = "window_ids.json"
+    private static let corruptFileName = "window_ids.corrupt.json"
     private static let maxWindowCount = 20
 
     private static var storeDirectoryProvider: () -> URL = {
@@ -77,9 +78,18 @@ enum CoreWindowIDStore {
         }
 
         let fileURL = storeFileURL()
-        guard FileManager.default.fileExists(atPath: fileURL.path),
-              let data = try? Data(contentsOf: fileURL),
-              let ids = try? JSONDecoder().decode([UUID].self, from: data) else {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            launchWindowIds = []
+            return []
+        }
+
+        let ids: [UUID]
+        do {
+            let data = try Data(contentsOf: fileURL)
+            ids = try JSONDecoder().decode([UUID].self, from: data)
+        } catch {
+            logger.error("Load window IDs failed: \(error.localizedDescription)")
+            quarantineCorruptStore(at: fileURL)
             launchWindowIds = []
             return []
         }
@@ -124,6 +134,23 @@ enum CoreWindowIDStore {
     private static func storeFileURL() -> URL {
         storeDirectoryURL()
             .appendingPathComponent(fileName, isDirectory: false)
+    }
+
+    private static func corruptStoreFileURL() -> URL {
+        storeDirectoryURL()
+            .appendingPathComponent(corruptFileName, isDirectory: false)
+    }
+
+    private static func quarantineCorruptStore(at fileURL: URL) {
+        let quarantineURL = corruptStoreFileURL()
+        do {
+            if FileManager.default.fileExists(atPath: quarantineURL.path) {
+                try FileManager.default.removeItem(at: quarantineURL)
+            }
+            try FileManager.default.moveItem(at: fileURL, to: quarantineURL)
+        } catch {
+            logger.error("Quarantine corrupt window IDs failed: \(error.localizedDescription)")
+        }
     }
 
     static func configureForTesting(storeDirectory: URL) {

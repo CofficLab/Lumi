@@ -86,5 +86,34 @@ final class MacAgentRestorationTests: XCTestCase {
 
         XCTAssertFalse(CoreWindowIDStore.saveWindowIds([UUID()]))
     }
+
+    @MainActor
+    func testCoreWindowIDStoreQuarantinesCorruptSavedIDsAndCanRecover() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-window-ids-corrupt-\(UUID().uuidString)", isDirectory: true)
+        let storeURL = tempRoot.appendingPathComponent("window_ids.json", isDirectory: false)
+        let corruptURL = tempRoot.appendingPathComponent("window_ids.corrupt.json", isDirectory: false)
+        defer {
+            CoreWindowIDStore.resetTestingConfiguration()
+            try? FileManager.default.removeItem(at: tempRoot)
+        }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        try Data("not json".utf8).write(to: storeURL)
+
+        CoreWindowIDStore.configureForTesting(storeDirectory: tempRoot)
+
+        _ = CoreWindowIDStore.consumeNextWindowRoute()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: storeURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: corruptURL.path))
+
+        let recoveredID = UUID()
+        XCTAssertTrue(CoreWindowIDStore.saveWindowIds([recoveredID]))
+
+        CoreWindowIDStore.resetTestingConfiguration()
+        CoreWindowIDStore.configureForTesting(storeDirectory: tempRoot)
+
+        XCTAssertEqual(CoreWindowIDStore.consumeNextWindowRoute().id, recoveredID)
+    }
 }
 #endif
