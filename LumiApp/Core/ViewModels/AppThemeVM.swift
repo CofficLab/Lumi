@@ -60,6 +60,9 @@ final class AppThemeVM: ObservableObject {
         self.saveSelectedThemeID = saveSelectedThemeID
         self.postThemeDidChangeNotification = postThemeDidChangeNotification
         syncThemes(registry)
+        if registry.themes.isEmpty {
+            try? registry.replaceAll([LumiUIThemeContribution.builtInFallback()])
+        }
         let initialId = Self.initialSelectedId(registry: registry, savedThemeId: loadSelectedThemeID())
         if registry.selectedThemeId != initialId {
             try? registry.select(themeId: initialId)
@@ -168,16 +171,12 @@ final class AppThemeVM: ObservableObject {
         if let contribution = currentTheme ?? themes.first {
             return contribution
         }
-        fatalError(
-            "No theme contributions from any plugin. Enable at least one theme plugin (e.g. ThemeLumiPlugin)."
-        )
+        return .builtInFallback()
     }
 
     private static func requireSelectedId(registry: LumiUIThemeRegistry) -> String {
         guard let id = registry.selectedThemeId else {
-            fatalError(
-                "No theme contributions from any plugin. Enable at least one theme plugin (e.g. ThemeLumiPlugin)."
-            )
+            return LumiUIThemeContribution.builtInFallback().id
         }
         return id
     }
