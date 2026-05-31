@@ -43,5 +43,48 @@ final class MacAgentRestorationTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: "ApplePersistenceIgnoreState"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: savedStateURL.path))
     }
+
+    @MainActor
+    func testCoreWindowIDStoreReportsPersistenceResultAndRestoresRoutes() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-window-ids-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            CoreWindowIDStore.resetTestingConfiguration()
+            try? FileManager.default.removeItem(at: tempRoot)
+        }
+
+        CoreWindowIDStore.configureForTesting(storeDirectory: tempRoot)
+
+        let first = UUID()
+        let second = UUID()
+        XCTAssertTrue(CoreWindowIDStore.saveWindowIds([first, second, first]))
+
+        CoreWindowIDStore.resetTestingConfiguration()
+        CoreWindowIDStore.configureForTesting(storeDirectory: tempRoot)
+
+        XCTAssertEqual(CoreWindowIDStore.consumeNextWindowRoute().id, first)
+        XCTAssertEqual(
+            CoreWindowIDStore.consumeAdditionalWindowRoutes(excluding: [first]).map(\.id),
+            [second]
+        )
+    }
+
+    @MainActor
+    func testCoreWindowIDStoreReportsPersistenceFailureWhenDirectoryIsBlocked() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-window-ids-blocked-\(UUID().uuidString)", isDirectory: true)
+        let blockedDirectory = tempRoot.appendingPathComponent("WindowIDs", isDirectory: true)
+        defer {
+            CoreWindowIDStore.resetTestingConfiguration()
+            try? FileManager.default.removeItem(at: tempRoot)
+        }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        CoreWindowIDStore.configureForTesting(storeDirectory: blockedDirectory)
+
+        XCTAssertFalse(CoreWindowIDStore.saveWindowIds([UUID()]))
+    }
 }
 #endif

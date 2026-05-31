@@ -1,12 +1,19 @@
 import Foundation
+import os
 
 /// Persists main-window IDs so runtime window containers can be re-created
 /// with stable identities across app launches.
 @MainActor
 enum CoreWindowIDStore {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.window-id-store")
     private static let directoryName = "WindowIDs"
     private static let fileName = "window_ids.json"
     private static let maxWindowCount = 20
+
+    private static var storeDirectoryProvider: () -> URL = {
+        AppConfig.getCoreDBFolderURL()
+            .appendingPathComponent(directoryName, isDirectory: true)
+    }
 
     private static var launchWindowIds: [UUID]?
     private static var didConsumeDefaultWindowRoute = false
@@ -57,10 +64,11 @@ enum CoreWindowIDStore {
             .map { LumiWindowRoute(id: $0) }
     }
 
-    static func saveWindowIds(_ ids: [UUID]) {
+    @discardableResult
+    static func saveWindowIds(_ ids: [UUID]) -> Bool {
         let uniqueIds = unique(ids).prefix(maxWindowCount)
         let idsToSave = Array(uniqueIds)
-        persist(idsToSave)
+        return persist(idsToSave)
     }
 
     private static func loadLaunchWindowIds() -> [UUID] {
@@ -81,8 +89,14 @@ enum CoreWindowIDStore {
         return loadedIds
     }
 
-    private static func persist(_ ids: [UUID]) {
-        guard let data = try? JSONEncoder().encode(ids) else { return }
+    private static func persist(_ ids: [UUID]) -> Bool {
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(ids)
+        } catch {
+            logger.error("Encode window IDs failed: \(error.localizedDescription)")
+            return false
+        }
 
         do {
             try FileManager.default.createDirectory(
@@ -91,8 +105,10 @@ enum CoreWindowIDStore {
                 attributes: nil
             )
             try data.write(to: storeFileURL(), options: .atomic)
+            return true
         } catch {
-            // Window identity persistence is best-effort and non-critical.
+            logger.error("Persist window IDs failed: \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -102,12 +118,30 @@ enum CoreWindowIDStore {
     }
 
     private static func storeDirectoryURL() -> URL {
-        AppConfig.getCoreDBFolderURL()
-            .appendingPathComponent(directoryName, isDirectory: true)
+        storeDirectoryProvider()
     }
 
     private static func storeFileURL() -> URL {
         storeDirectoryURL()
             .appendingPathComponent(fileName, isDirectory: false)
+    }
+
+    static func configureForTesting(storeDirectory: URL) {
+        storeDirectoryProvider = { storeDirectory }
+        launchWindowIds = nil
+        didConsumeDefaultWindowRoute = false
+        didConsumeAdditionalWindowRoutes = false
+        pendingWindowRoutes = []
+    }
+
+    static func resetTestingConfiguration() {
+        storeDirectoryProvider = {
+            AppConfig.getCoreDBFolderURL()
+                .appendingPathComponent(directoryName, isDirectory: true)
+        }
+        launchWindowIds = nil
+        didConsumeDefaultWindowRoute = false
+        didConsumeAdditionalWindowRoutes = false
+        pendingWindowRoutes = []
     }
 }
