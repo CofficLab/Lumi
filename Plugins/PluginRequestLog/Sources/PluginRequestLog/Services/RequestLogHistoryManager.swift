@@ -20,6 +20,10 @@ public actor RequestLogHistoryManager: SuperLog {
         self.container = Self.makeContainer(databaseRootURL: AppConfig.getDBFolderURL())
     }
 
+    init(databaseRootURL: URL) {
+        self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
+    }
+
     static func makeContainer(databaseRootURL: URL) -> ModelContainer {
         let schema = Schema([RequestLogItem.self])
         let dbDir = databaseRootURL.appendingPathComponent("RequestLogPlugin", isDirectory: true)
@@ -112,7 +116,8 @@ public actor RequestLogHistoryManager: SuperLog {
         }
     }
 
-    public func add(metadata: HTTPRequestMetadata) async {
+    @discardableResult
+    public func add(metadata: HTTPRequestMetadata) async -> Bool {
         let context = ModelContext(container)
         let item = RequestLogItem(
             requestId: metadata.requestId,
@@ -136,7 +141,7 @@ public actor RequestLogHistoryManager: SuperLog {
         if let count = try? context.fetchCount(descriptor), count > maxRecords {
             await cleanupOldData(context: context)
         }
-        try? context.save()
+        return save(context, operation: "保存请求日志")
     }
 
     public func query(from startTime: Date, to endTime: Date) async -> [RequestLogItemDTO] {
@@ -197,13 +202,14 @@ public actor RequestLogHistoryManager: SuperLog {
         await cleanupOldData(context: context)
     }
 
-    public func clearAll() async {
+    @discardableResult
+    public func clearAll() async -> Bool {
         let context = ModelContext(container)
         let allItems = (try? context.fetch(FetchDescriptor<RequestLogItem>())) ?? []
         for item in allItems {
             context.delete(item)
         }
-        try? context.save()
+        return save(context, operation: "清空请求日志")
     }
 
     private func cleanupOldData(context: ModelContext) async {
@@ -217,7 +223,19 @@ public actor RequestLogHistoryManager: SuperLog {
         for item in oldItems {
             context.delete(item)
         }
-        try? context.save()
+        _ = save(context, operation: "清理过期请求日志")
+    }
+
+    private func save(_ context: ModelContext, operation: StaticString) -> Bool {
+        do {
+            try context.save()
+            return true
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)\(operation)失败：\(error.localizedDescription)")
+            }
+            return false
+        }
     }
 
     private func fetchDurationSummary(context: ModelContext) -> (sum: Double, count: Int) {
