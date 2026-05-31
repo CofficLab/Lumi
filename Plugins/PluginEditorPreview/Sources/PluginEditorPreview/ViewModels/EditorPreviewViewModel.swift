@@ -434,15 +434,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             clearRenderedPreview()
             entryStatus = .noPreview
             lastBuildInfo = nil
+            selectedPreviewIndex = 0
+            lastLoadedFingerprint = nil
+            entryDebugState = nil
+            cursorShape = .arrow
         }
         activeFileURL = url
         latestSourceText = sourceText
         publishAutomationDebugState()
         updatePreviewMode(for: url)
-        selectedPreviewIndex = 0
-        lastLoadedFingerprint = nil
-        entryDebugState = nil
-        cursorShape = .arrow
         guard previewMode == .swift else {
             resetInlineStateForStaticPreview()
             return

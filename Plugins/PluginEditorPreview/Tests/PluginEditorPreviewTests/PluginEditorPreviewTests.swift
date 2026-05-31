@@ -63,6 +63,29 @@ import Foundation
     ))
 }
 
+@MainActor
+@Test func previewViewModelKeepsSelectedPreviewWhenSameFileIsReapplied() {
+    let viewModel = EditorPreviewViewModel()
+    let fileURL = URL(fileURLWithPath: "/tmp/MultiplePreviews.swift")
+    let source = """
+    import SwiftUI
+
+    #Preview("First") {
+        Text("first")
+    }
+
+    #Preview("Second") {
+        Text("second")
+    }
+    """
+
+    viewModel.setActiveFile(fileURL, sourceText: source)
+    viewModel.selectPreview(index: 1)
+    viewModel.setActiveFile(fileURL, sourceText: source)
+
+    #expect(viewModel.selectedPreviewIndex == 1)
+}
+
 @Test func csvParserIgnoresQuotedDelimitersWhenDetectingSeparator() throws {
     let text = """
     "Company, legal name";Amount
