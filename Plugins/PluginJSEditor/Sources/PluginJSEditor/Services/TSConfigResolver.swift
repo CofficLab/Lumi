@@ -30,7 +30,8 @@ public struct TSConfigResolver: SuperLog {
 
         do {
             let data = try Data(contentsOf: fileURL)
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let jsonData = dataWithoutJSONCExtras(data) ?? data
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
             guard let json else { return nil }
 
             let compilerOptions = json["compilerOptions"] as? [String: Any] ?? [:]
@@ -59,5 +60,123 @@ public struct TSConfigResolver: SuperLog {
         } catch {
             return nil
         }
+    }
+
+    private static func dataWithoutJSONCExtras(_ data: Data) -> Data? {
+        guard let source = String(data: data, encoding: .utf8) else { return nil }
+        let withoutComments = removeJSONCComments(from: source)
+        let withoutTrailingCommas = removeTrailingCommas(from: withoutComments)
+        return withoutTrailingCommas.data(using: .utf8)
+    }
+
+    private static func removeJSONCComments(from source: String) -> String {
+        var result = ""
+        var index = source.startIndex
+        var isInString = false
+        var isEscaping = false
+
+        while index < source.endIndex {
+            let character = source[index]
+
+            if isInString {
+                result.append(character)
+                if isEscaping {
+                    isEscaping = false
+                } else if character == "\\" {
+                    isEscaping = true
+                } else if character == "\"" {
+                    isInString = false
+                }
+                index = source.index(after: index)
+                continue
+            }
+
+            if character == "\"" {
+                isInString = true
+                result.append(character)
+                index = source.index(after: index)
+                continue
+            }
+
+            if character == "/" {
+                let next = source.index(after: index)
+                if next < source.endIndex {
+                    if source[next] == "/" {
+                        index = source.index(after: next)
+                        while index < source.endIndex, !source[index].isNewline {
+                            index = source.index(after: index)
+                        }
+                        continue
+                    }
+
+                    if source[next] == "*" {
+                        index = source.index(after: next)
+                        while index < source.endIndex {
+                            let current = source[index]
+                            let following = source.index(after: index)
+                            if current == "*", following < source.endIndex, source[following] == "/" {
+                                index = source.index(after: following)
+                                break
+                            }
+                            result.append(current.isNewline ? current : " ")
+                            index = following
+                        }
+                        continue
+                    }
+                }
+            }
+
+            result.append(character)
+            index = source.index(after: index)
+        }
+
+        return result
+    }
+
+    private static func removeTrailingCommas(from source: String) -> String {
+        var result = ""
+        var index = source.startIndex
+        var isInString = false
+        var isEscaping = false
+
+        while index < source.endIndex {
+            let character = source[index]
+
+            if isInString {
+                result.append(character)
+                if isEscaping {
+                    isEscaping = false
+                } else if character == "\\" {
+                    isEscaping = true
+                } else if character == "\"" {
+                    isInString = false
+                }
+                index = source.index(after: index)
+                continue
+            }
+
+            if character == "\"" {
+                isInString = true
+                result.append(character)
+                index = source.index(after: index)
+                continue
+            }
+
+            if character == "," {
+                var lookahead = source.index(after: index)
+                while lookahead < source.endIndex, source[lookahead].isWhitespace {
+                    lookahead = source.index(after: lookahead)
+                }
+                if lookahead < source.endIndex, (source[lookahead] == "}" || source[lookahead] == "]") {
+                    index = source.index(after: index)
+                    continue
+                }
+            }
+
+            result.append(character)
+            index = source.index(after: index)
+        }
+
+        return result
     }
 }
