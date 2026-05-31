@@ -126,7 +126,7 @@ extension LumiPreviewFacade {
       else {
         guard
           metadata.fileSize == entry.fileSize,
-          let sourceText = try? String(contentsOf: fileURL, encoding: .utf8),
+          let sourceText = try? Self.sourceText(from: fileURL),
           Self.sourceFingerprint(sourceText) == entry.sourceFingerprint
         else {
           return nil
@@ -321,7 +321,7 @@ extension LumiPreviewFacade {
           guard !Task.isCancelled else { break }
           let metadata = metadata(for: fileURL)
           guard metadata.fileSize <= maxFileSize,
-            let sourceText = try? String(contentsOf: fileURL, encoding: .utf8),
+            let sourceText = try? sourceText(from: fileURL),
             sourceText.contains("#Preview")
           else {
             continue
@@ -343,6 +343,11 @@ extension LumiPreviewFacade {
         return ScanResult(
           entries: entries, scannedFileCount: fileURLs.count, scannedSwiftFileURLs: fileURLs)
       }.value
+    }
+
+    nonisolated private static func sourceText(from fileURL: URL) throws -> String {
+      var encoding = String.Encoding.utf8
+      return try String(contentsOf: fileURL, usedEncoding: &encoding)
     }
 
     private func updateDirectoryWatches(rootURL: URL) {

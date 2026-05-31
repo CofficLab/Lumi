@@ -29,6 +29,29 @@ struct ProjectPreviewIndexServiceTests {
         #expect((snapshot?.scannedFileCount ?? 0) >= 2)
     }
 
+    @Test("1.1b prepareIndex finds previews in UTF-16 Swift files")
+    func prepareIndexFindsUTF16Previews() async throws {
+        let root = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let (packageDirectory, sourceFiles) = try TemporaryProjectFixtures.makeSPMPackage(
+            in: root,
+            previewFiles: [("ContentView", "Main")]
+        )
+        let fileURL = try #require(sourceFiles.first)
+        let sourceText = try String(contentsOf: fileURL, encoding: .utf8)
+        try sourceText.write(to: fileURL, atomically: true, encoding: .utf16)
+
+        let service = LumiPreviewFacade.ProjectPreviewIndexService()
+        let snapshots = SnapshotCollector()
+        service.onSnapshotChanged = { snapshots.append($0) }
+
+        service.prepareIndex(projectRootPath: packageDirectory.path, currentFileURL: fileURL)
+        let snapshot = try await snapshots.waitForSnapshot(timeoutNanoseconds: 3_000_000_000)
+
+        #expect((snapshot?.previewCount ?? 0) >= 1)
+        #expect(service.bestPrewarmCandidate(preferredFileURL: fileURL)?.title == "Main")
+    }
+
     @Test("1.2 switching project root clears snapshot before re-indexing")
     func switchingProjectRootResetsSnapshot() async throws {
         let firstRoot = try TemporaryProjectFixtures.makeTemporaryDirectory()
