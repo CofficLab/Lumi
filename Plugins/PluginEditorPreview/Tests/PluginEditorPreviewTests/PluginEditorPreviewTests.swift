@@ -39,6 +39,30 @@ import Foundation
     #expect(String(describing: viewModel.status) == "idle")
 }
 
+@MainActor
+@Test func previewViewModelRestartsAfterStopOnlyWhenVisibleSwiftPreviewRemainsActive() {
+    #expect(EditorPreviewViewModel.shouldRestartAfterStop(
+        isViewVisible: true,
+        previewMode: .swift,
+        sourceText: "import SwiftUI\n#Preview { Text(\"Hi\") }"
+    ))
+    #expect(!EditorPreviewViewModel.shouldRestartAfterStop(
+        isViewVisible: false,
+        previewMode: .swift,
+        sourceText: "import SwiftUI\n#Preview { Text(\"Hi\") }"
+    ))
+    #expect(!EditorPreviewViewModel.shouldRestartAfterStop(
+        isViewVisible: true,
+        previewMode: .csv(URL(fileURLWithPath: "/tmp/data.csv")),
+        sourceText: "name,value"
+    ))
+    #expect(!EditorPreviewViewModel.shouldRestartAfterStop(
+        isViewVisible: true,
+        previewMode: .swift,
+        sourceText: "import SwiftUI\nstruct ContentView: View {}"
+    ))
+}
+
 @Test func csvParserIgnoresQuotedDelimitersWhenDetectingSeparator() throws {
     let text = """
     "Company, legal name";Amount

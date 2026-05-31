@@ -342,6 +342,10 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     public func stopSession() {
+        stopSession(restartIfStillNeeded: false)
+    }
+
+    private func stopSession(restartIfStillNeeded: Bool) {
         let currentStatus = status
         guard currentStatus == .running ||
               currentStatus == .starting ||
@@ -371,6 +375,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             self?.lastLoadedFingerprint = nil
             self?.entryDebugState = nil
             self?.cursorShape = .arrow
+            if restartIfStillNeeded,
+               let self,
+               Self.shouldRestartAfterStop(
+                   isViewVisible: self.isViewVisible,
+                   previewMode: self.previewMode,
+                   sourceText: self.latestSourceText
+               ) {
+                self.startSessionIfNeededForActiveFile()
+            }
             if Self.verbose {
                             Self.logger.info("\(Self.t)✅ Session 已停止")
             }
@@ -733,8 +746,17 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     private func stopSessionIfNeeded() {
         if status == .running || status == .starting || status == .warming || status == .ready {
-            stopSession()
+            stopSession(restartIfStillNeeded: true)
         }
+    }
+
+    static func shouldRestartAfterStop(
+        isViewVisible: Bool,
+        previewMode: PreviewMode,
+        sourceText: String?
+    ) -> Bool {
+        guard isViewVisible, previewMode == .swift else { return false }
+        return sourceText?.contains("#Preview") == true
     }
 
     /// 当前 entryStatus 是否对应自动 build 流程。
