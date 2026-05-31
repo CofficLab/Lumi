@@ -158,7 +158,9 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
     
     private func saveSettings() {
         // 保存 hiddenItems 到插件目录
-        settingsStore.set(Array(hiddenItems), forKey: hiddenItemsKey)
+        if !settingsStore.set(Array(hiddenItems), forKey: hiddenItemsKey), MenuBarManagerPlugin.verbose {
+            MenuBarManagerPlugin.logger.error("\(self.t)Failed to persist hidden menu bar items")
+        }
     }
     
     private func loadSettings() {
