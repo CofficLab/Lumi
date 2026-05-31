@@ -92,15 +92,15 @@ public enum LineEditingController: Sendable {
         for selection in selections {
             let lineRange = nsText.lineRange(for: selection)
             let lineText = nsText.substring(with: lineRange)
-            let lineContent = lineText.hasSuffix("\n")
-                ? String(lineText.dropLast())
-                : lineText
+            let existingLineEnding = lineEndingSuffix(from: lineText)
+            let lineEnding = existingLineEnding ?? preferredLineEnding(in: text)
+            let lineContent = stripTrailingLineEnding(from: lineText)
             let indent = String(lineContent.prefix(while: { $0 == " " || $0 == "\t" }))
 
-            let insertLocation = NSMaxRange(lineRange) - (lineText.hasSuffix("\n") ? 1 : 0)
-            let newText = "\n" + indent
+            let insertLocation = NSMaxRange(lineRange) - ((existingLineEnding as NSString?)?.length ?? 0)
+            let newText = lineEnding + indent
             edits.append((range: NSRange(location: insertLocation, length: 0), text: newText))
-            newCursors.append(NSRange(location: insertLocation + newText.count, length: 0))
+            newCursors.append(NSRange(location: insertLocation + (newText as NSString).length, length: 0))
         }
 
         return applyEditsFromBack(
@@ -126,15 +126,14 @@ public enum LineEditingController: Sendable {
                 location: lineRange.location,
                 length: min(lineRange.length, nsText.length - lineRange.location)
             ))
-            let lineContent = lineText.hasSuffix("\n")
-                ? String(lineText.dropLast())
-                : lineText
+            let lineEnding = lineEndingSuffix(from: lineText) ?? preferredLineEnding(in: text)
+            let lineContent = stripTrailingLineEnding(from: lineText)
             let indent = String(lineContent.prefix(while: { $0 == " " || $0 == "\t" }))
 
             let insertLocation = lineRange.location
-            let newText = indent + "\n"
+            let newText = indent + lineEnding
             edits.append((range: NSRange(location: insertLocation, length: 0), text: newText))
-            newCursors.append(NSRange(location: insertLocation + indent.count, length: 0))
+            newCursors.append(NSRange(location: insertLocation + (indent as NSString).length, length: 0))
         }
 
         return applyEditsFromBack(
@@ -157,9 +156,10 @@ public enum LineEditingController: Sendable {
         let lineRange = nsText.lineRange(for: selection)
         let selectedText = nsText.substring(with: lineRange)
 
-        var lines = selectedText.components(separatedBy: "\n")
-        let hasTrailingNewline = selectedText.hasSuffix("\n")
-        if hasTrailingNewline && lines.last == "" {
+        let lineEnding = preferredLineEnding(in: selectedText)
+        var lines = selectedText.components(separatedBy: lineEnding)
+        let trailingLineEnding = lineEndingSuffix(from: selectedText)
+        if trailingLineEnding != nil && lines.last == "" {
             lines.removeLast()
         }
 
@@ -171,7 +171,7 @@ public enum LineEditingController: Sendable {
             lines.sort { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         }
 
-        let sortedText = lines.joined(separator: "\n") + (hasTrailingNewline ? "\n" : "")
+        let sortedText = lines.joined(separator: lineEnding) + (trailingLineEnding ?? "")
         let newSelectionLength = (sortedText as NSString).length
 
         return LineEditResult(
@@ -195,7 +195,7 @@ public enum LineEditingController: Sendable {
         let before = nsText.substring(with: NSRange(location: location - 1, length: 1))
         let after = nsText.substring(with: NSRange(location: location, length: 1))
 
-        if before != "\n" && after != "\n" {
+        if !isLineEndingCharacter(before) && !isLineEndingCharacter(after) {
             let swapped = after + before
             return LineEditResult(
                 replacementRange: NSRange(location: location - 1, length: 2),
@@ -329,9 +329,11 @@ public enum LineEditingController: Sendable {
             let cursorLocation: Int
             let originalSelection = selections[index]
             let originalColumn = originalSelection.location - range.location
-            let lineContentLength = (lineText as NSString).length - (lineText.hasSuffix("\n") ? 1 : 0)
+            let lineEnding = lineEndingSuffix(from: lineText)
+            let fallbackLineEnding = preferredLineEnding(in: text)
+            let lineContentLength = (lineText as NSString).length - ((lineEnding as NSString?)?.length ?? 0)
 
-            if lineText.hasSuffix("\n") {
+            if lineEnding != nil {
                 switch direction {
                 case .up:
                     insertText = lineText
@@ -345,13 +347,13 @@ public enum LineEditingController: Sendable {
             } else {
                 switch direction {
                 case .up:
-                    insertText = lineText + "\n"
+                    insertText = lineText + fallbackLineEnding
                     insertLocation = range.location
                     cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
                 case .down:
-                    insertText = "\n" + lineText
+                    insertText = fallbackLineEnding + lineText
                     insertLocation = NSMaxRange(range)
-                    cursorLocation = insertLocation + 1 + min(originalColumn, max(lineContentLength, 0))
+                    cursorLocation = insertLocation + (fallbackLineEnding as NSString).length + min(originalColumn, max(lineContentLength, 0))
                 }
             }
 
@@ -392,9 +394,12 @@ public enum LineEditingController: Sendable {
 
             let aboveText = nsText.substring(with: aboveLineRange)
             let blockText = mergedRanges.map { nsText.substring(with: $0) }.joined()
-            let aboveContent = stripTrailingNewline(from: aboveText)
-            let blockContent = stripTrailingNewline(from: blockText)
-            let newText = blockContent + "\n" + aboveContent
+            let lineEnding = lineEndingSuffix(from: blockText)
+                ?? lineEndingSuffix(from: aboveText)
+                ?? preferredLineEnding(in: text)
+            let aboveContent = stripTrailingLineEnding(from: aboveText)
+            let blockContent = stripTrailingLineEnding(from: blockText)
+            let newText = blockContent + lineEnding + aboveContent
 
             let newCursors = selections.map { selection in
                 let offset = selection.location - mergedRanges.first!.location
@@ -422,13 +427,16 @@ public enum LineEditingController: Sendable {
 
             let blockText = mergedRanges.map { nsText.substring(with: $0) }.joined()
             let belowText = nsText.substring(with: belowLineRange)
-            let blockContent = stripTrailingNewline(from: blockText)
-            let belowContent = stripTrailingNewline(from: belowText)
-            let trailingNewline = belowText.hasSuffix("\n") ? "\n" : ""
-            let newText = belowContent + "\n" + blockContent + trailingNewline
+            let lineEnding = lineEndingSuffix(from: belowText)
+                ?? lineEndingSuffix(from: blockText)
+                ?? preferredLineEnding(in: text)
+            let blockContent = stripTrailingLineEnding(from: blockText)
+            let belowContent = stripTrailingLineEnding(from: belowText)
+            let trailingLineEnding = lineEndingSuffix(from: belowText) ?? ""
+            let newText = belowContent + lineEnding + blockContent + trailingLineEnding
 
             let blockSize = (blockContent as NSString).length
-            let movedBlockStart = swapRange.location + (belowContent as NSString).length + 1
+            let movedBlockStart = swapRange.location + (belowContent as NSString).length + (lineEnding as NSString).length
 
             let newCursors = selections.map { selection in
                 let offset = selection.location - mergedRanges.first!.location
@@ -568,9 +576,27 @@ public enum LineEditingController: Sendable {
         )
     }
 
-    private static func stripTrailingNewline(from text: String) -> String {
-        guard text.hasSuffix("\n") else { return text }
-        return String(text.dropLast())
+    private static func lineEndingSuffix(from text: String) -> String? {
+        if text.hasSuffix("\r\n") { return "\r\n" }
+        if text.hasSuffix("\n") { return "\n" }
+        if text.hasSuffix("\r") { return "\r" }
+        return nil
+    }
+
+    private static func stripTrailingLineEnding(from text: String) -> String {
+        guard let suffix = lineEndingSuffix(from: text) else { return text }
+        return String(text.dropLast(suffix.count))
+    }
+
+    private static func preferredLineEnding(in text: String) -> String {
+        if text.contains("\r\n") { return "\r\n" }
+        if text.contains("\n") { return "\n" }
+        if text.contains("\r") { return "\r" }
+        return "\n"
+    }
+
+    private static func isLineEndingCharacter(_ text: String) -> Bool {
+        text == "\n" || text == "\r"
     }
 
     private static func replacing(text: String, range: NSRange, with replacement: String) -> String {

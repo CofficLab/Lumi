@@ -1377,6 +1377,37 @@ struct EditorKernelTests {
     }
 
     @Test
+    func lineEditingControllerPreservesCRLFLineEndings() {
+        let insertedBelow = LineEditingController.insertLineBelow(
+            in: "    alpha\r\nbeta",
+            selections: [NSRange(location: 4, length: 0)]
+        )
+        #expect(insertedBelow?.replacementText == "    alpha\r\n    \r\nbeta")
+        #expect(insertedBelow?.selectedRanges == [NSRange(location: 15, length: 0)])
+
+        let copiedDown = LineEditingController.copyLineDown(
+            in: "one\r\ntwo",
+            selections: [NSRange(location: 5, length: 0)]
+        )
+        #expect(copiedDown?.replacementText == "one\r\ntwo\r\ntwo")
+        #expect(copiedDown?.selectedRanges == [NSRange(location: 10, length: 0)])
+
+        let movedDown = LineEditingController.moveLineDown(
+            in: "one\r\ntwo\r\nthree",
+            selections: [NSRange(location: 5, length: 0)]
+        )
+        #expect(movedDown?.replacementText == "one\r\nthree\r\ntwo")
+        #expect(movedDown?.selectedRanges == [NSRange(location: 12, length: 0)])
+
+        let sorted = LineEditingController.sortLines(
+            in: "b\r\na\r\n",
+            selections: [NSRange(location: 0, length: 6)],
+            descending: false
+        )
+        #expect(sorted?.replacementText == "a\r\nb\r\n")
+    }
+
+    @Test
     func lineEditingControllerMovesLineDownWithoutAddingTrailingNewline() {
         let moved = LineEditingController.moveLineDown(
             in: "one\ntwo\nthree",
