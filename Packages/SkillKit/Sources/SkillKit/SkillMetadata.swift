@@ -73,7 +73,9 @@ public struct SkillMetadata: Identifiable, Equatable, Sendable {
         guard !contentPath.isEmpty else {
             throw SkillError.invalidContentPath("Content path is empty for skill '\(name)'")
         }
-        return try String(contentsOfFile: contentPath, encoding: .utf8)
+
+        var encoding = String.Encoding.utf8
+        return try String(contentsOfFile: contentPath, usedEncoding: &encoding)
     }
 }
 

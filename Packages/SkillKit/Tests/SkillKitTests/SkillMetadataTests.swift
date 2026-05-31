@@ -103,6 +103,26 @@ struct SkillMetadataTests {
         }
     }
 
+    @Test
+    func loadContentReadsUTF16SkillMarkdown() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SkillMetadataTests-\(UUID().uuidString).md")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        try "# Skill\n\n处理中文说明。".write(to: url, atomically: true, encoding: .utf16)
+
+        let skill = SkillMetadata(
+            name: "localized",
+            title: "Localized",
+            description: "Reads non-UTF8 markdown",
+            contentPath: url.path
+        )
+
+        let content = try skill.loadContent()
+
+        #expect(content.contains("处理中文说明。"))
+    }
+
     // MARK: Codable
 
     @Test
