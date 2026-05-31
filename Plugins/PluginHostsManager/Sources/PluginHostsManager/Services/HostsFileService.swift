@@ -23,7 +23,7 @@ public class HostsFileService: SuperLog {
                             HostsManagerPlugin.logger.info("\(self.t)Reading hosts file")
             }
         }
-        return try String(contentsOfFile: hostsPath, encoding: .utf8)
+        return try Self.readTextFile(at: URL(fileURLWithPath: hostsPath))
     }
 
     public func saveHosts(content: String) async throws {
@@ -72,7 +72,7 @@ public class HostsFileService: SuperLog {
                             HostsManagerPlugin.logger.info("\(self.t)Backing up hosts file to: \(url.path)")
             }
         }
-        let content = try String(contentsOfFile: hostsPath, encoding: .utf8)
+        let content = try Self.readTextFile(at: URL(fileURLWithPath: hostsPath))
         try content.write(to: url, atomically: true, encoding: .utf8)
     }
 
@@ -82,7 +82,12 @@ public class HostsFileService: SuperLog {
                             HostsManagerPlugin.logger.info("\(self.t)Importing hosts from file: \(url.path)")
             }
         }
-        let content = try String(contentsOf: url, encoding: .utf8)
+        let content = try Self.readTextFile(at: url)
         try await saveHosts(content: content)
+    }
+
+    nonisolated static func readTextFile(at url: URL) throws -> String {
+        var encoding = String.Encoding.utf8
+        return try String(contentsOf: url, usedEncoding: &encoding)
     }
 }

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import PluginHostsManager
 
@@ -55,4 +56,14 @@ import Testing
 
     #expect(entries.count == 1)
     #expect(HostsParser.serialize(entries: entries) == "\n")
+}
+
+@Test func hostsFileReaderDetectsUTF16Input() throws {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("lumi_hosts_utf16_\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let content = "127.0.0.1 localhost\n::1 localhost\n"
+    try content.write(to: url, atomically: true, encoding: .utf16)
+
+    #expect(try HostsFileService.readTextFile(at: url) == content)
 }
