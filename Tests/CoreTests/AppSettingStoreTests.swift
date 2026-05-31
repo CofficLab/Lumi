@@ -42,5 +42,31 @@ final class AppSettingStoreTests: XCTestCase {
         XCTAssertFalse(AppSettingStore.savePluginEnabled("PluginA", enabled: true))
         XCTAssertNil(AppSettingStore.loadPluginEnabled("PluginA"))
     }
+
+    func testQuarantinesCorruptSettingsAndRecoversOnSave() throws {
+        let settingsDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-app-settings-corrupt-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            AppSettingStore.resetTestingConfiguration()
+            try? FileManager.default.removeItem(at: settingsDirectory)
+        }
+
+        try FileManager.default.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+        let settingsURL = settingsDirectory.appendingPathComponent("app_settings.plist")
+        let corruptURL = settingsDirectory.appendingPathComponent("app_settings.corrupt.plist")
+        let invalidData = Data("not a plist".utf8)
+        try invalidData.write(to: settingsURL)
+
+        AppSettingStore.configureForTesting(settingsDirectory: settingsDirectory)
+
+        XCTAssertTrue(AppSettingStore.savePluginEnabled("PluginA", enabled: false))
+        XCTAssertEqual(try Data(contentsOf: corruptURL), invalidData)
+        XCTAssertEqual(AppSettingStore.loadPluginEnabled("PluginA"), false)
+
+        AppSettingStore.resetTestingConfiguration()
+        AppSettingStore.configureForTesting(settingsDirectory: settingsDirectory)
+
+        XCTAssertEqual(AppSettingStore.loadPluginEnabled("PluginA"), false)
+    }
 }
 #endif

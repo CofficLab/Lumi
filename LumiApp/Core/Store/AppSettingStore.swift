@@ -21,6 +21,10 @@ enum AppSettingStore {
         settingsDirURL().appendingPathComponent(settingsFileName, isDirectory: false)
     }
 
+    private static func corruptSettingsFileURL() -> URL {
+        settingsDirURL().appendingPathComponent("app_settings.corrupt.plist", isDirectory: false)
+    }
+
     // MARK: - Private (Core)
 
     private static func object(forKey key: String) -> Any? {
@@ -39,11 +43,13 @@ enum AppSettingStore {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 logger.error("Read app settings failed: root plist is not a dictionary")
+                quarantineCorruptSettingsFile()
                 return nil
             }
             return dict[key]
         } catch {
             logger.error("Decode app settings failed: \(error.localizedDescription)")
+            quarantineCorruptSettingsFile()
             return nil
         }
     }
@@ -55,17 +61,27 @@ enum AppSettingStore {
 
         var dict: [String: Any] = [:]
         if FileManager.default.fileExists(atPath: fileURL.path) {
+            let data: Data
             do {
-                let data = try Data(contentsOf: fileURL)
-                let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
-                guard let existing = plist as? [String: Any] else {
-                    logger.error("Save app setting failed: root plist is not a dictionary")
-                    return false
-                }
-                dict = existing
+                data = try Data(contentsOf: fileURL)
             } catch {
-                logger.error("Load existing app settings before save failed: \(error.localizedDescription)")
+                logger.error("Read existing app settings before save failed: \(error.localizedDescription)")
                 return false
+            }
+
+            do {
+                let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+                if let existing = plist as? [String: Any] {
+                    dict = existing
+                } else {
+                    logger.error("Save app setting failed: root plist is not a dictionary")
+                    quarantineCorruptSettingsFile()
+                    dict = [:]
+                }
+            } catch {
+                logger.error("Decode existing app settings before save failed: \(error.localizedDescription)")
+                quarantineCorruptSettingsFile()
+                dict = [:]
             }
         }
 
@@ -95,6 +111,21 @@ enum AppSettingStore {
 
     private static func settingsDirURL() -> URL {
         settingsDirectoryProvider()
+    }
+
+    private static func quarantineCorruptSettingsFile() {
+        let sourceURL = settingsFileURL()
+        let quarantineURL = corruptSettingsFileURL()
+        guard FileManager.default.fileExists(atPath: sourceURL.path) else { return }
+
+        do {
+            if FileManager.default.fileExists(atPath: quarantineURL.path) {
+                try FileManager.default.removeItem(at: quarantineURL)
+            }
+            try FileManager.default.moveItem(at: sourceURL, to: quarantineURL)
+        } catch {
+            logger.error("Quarantine corrupt app settings failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Settings Selection
