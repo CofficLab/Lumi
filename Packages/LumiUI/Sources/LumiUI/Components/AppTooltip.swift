@@ -8,35 +8,40 @@ public extension View {
     func appTooltip(_ text: LocalizedStringKey, shortcut: KeyboardShortcut?) -> some View {
         Group {
             if let shortcut {
-                let shortcutStr = shortcutText(shortcut)
-                let tooltipText = Text("\(text) (\(shortcutStr))")
-                help(tooltipText)
+                help(Text(text) + Text(" (\(shortcut.appDisplayText))"))
             } else {
                 help(text)
             }
         }
     }
-
-    private func shortcutText(_ shortcut: KeyboardShortcut) -> String {
-        var parts: [String] = []
-
-        if shortcut.modifiers.contains(.command) { parts.append("⌘") }
-        if shortcut.modifiers.contains(.option) { parts.append("⌥") }
-        if shortcut.modifiers.contains(.control) { parts.append("⌃") }
-        if shortcut.modifiers.contains(.shift) { parts.append("⇧") }
-
-        parts.append(shortcut.key)
-
-        return parts.joined()
-    }
 }
 
 extension KeyboardShortcut {
-    var key: String {
-        switch self {
-        case .defaultAction: "↩"
-        case .cancelAction: "⌘."
-        default: ""
+    var appDisplayText: String {
+        modifierDisplayText + keyDisplayText
+    }
+
+    private var modifierDisplayText: String {
+        var parts: [String] = []
+
+        if modifiers.contains(.command) { parts.append("⌘") }
+        if modifiers.contains(.option) { parts.append("⌥") }
+        if modifiers.contains(.control) { parts.append("⌃") }
+        if modifiers.contains(.shift) { parts.append("⇧") }
+
+        return parts.joined()
+    }
+
+    private var keyDisplayText: String {
+        switch key.character {
+        case "\r": return "↩"
+        case "\u{1B}": return "Esc"
+        case " ": return "Space"
+        case "\u{7F}": return "⌫"
+        case "\u{8}": return "⌦"
+        case "\t": return "⇥"
+        default:
+            return String(key.character).uppercased()
         }
     }
 }
