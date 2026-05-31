@@ -58,3 +58,20 @@ import Foundation
     #expect(config.baseURL == "https://example.com/project")
     #expect(config.paths["/*"] == ["src/*,literal"])
 }
+
+@Test func sourceMapResolverUsesLastMappingURLMarker() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let generatedURL = directory.appendingPathComponent("bundle.js")
+    try """
+    const text = "sourceMappingURL=wrong.map";
+    //# sourceMappingURL=bundle.js.map
+    """.write(to: generatedURL, atomically: true, encoding: .utf8)
+
+    let sourceMapURL = try #require(SourceMapResolver.sourceMapURL(for: generatedURL))
+
+    #expect(sourceMapURL.lastPathComponent == "bundle.js.map")
+}

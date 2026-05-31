@@ -9,7 +9,7 @@ public enum SourceMapResolver {
         }
 
         guard let content = try? String(contentsOf: generatedFileURL, encoding: .utf8),
-              let markerRange = content.range(of: "sourceMappingURL=") else {
+              let markerRange = content.range(of: "sourceMappingURL=", options: .backwards) else {
             return nil
         }
 
