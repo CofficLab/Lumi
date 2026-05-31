@@ -79,3 +79,41 @@ import Testing
     #expect(GitHubTrendingTool.normalizedSince("MONTHLY") == "monthly")
     #expect(GitHubTrendingTool.normalizedSince("yearly") == "daily")
 }
+
+@Test func githubIssueListToolNormalizesPagination() throws {
+    #expect(GitHubIssueListTool.normalizedPage(nil) == 1)
+    #expect(GitHubIssueListTool.normalizedPage(-3) == 1)
+    #expect(GitHubIssueListTool.normalizedPage(0) == 1)
+    #expect(GitHubIssueListTool.normalizedPage(4) == 4)
+
+    #expect(GitHubIssueListTool.normalizedPerPage(nil) == 10)
+    #expect(GitHubIssueListTool.normalizedPerPage(-20) == 1)
+    #expect(GitHubIssueListTool.normalizedPerPage(0) == 1)
+    #expect(GitHubIssueListTool.normalizedPerPage(25) == 25)
+    #expect(GitHubIssueListTool.normalizedPerPage(250) == 100)
+
+    let schema = GitHubIssueListTool().inputSchema(for: .english)
+    let properties = try #require(schema["properties"] as? [String: [String: Any]])
+    #expect(properties["page"]?["minimum"] as? Int == 1)
+    #expect(properties["perPage"]?["minimum"] as? Int == 1)
+    #expect(properties["perPage"]?["maximum"] as? Int == 100)
+}
+
+@Test func githubIssueCommentsToolNormalizesPagination() throws {
+    #expect(GitHubIssueCommentsTool.normalizedPage(nil) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPage(-3) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPage(0) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPage(4) == 4)
+
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(nil) == 10)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(-20) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(0) == 1)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(25) == 25)
+    #expect(GitHubIssueCommentsTool.normalizedPerPage(250) == 100)
+
+    let schema = GitHubIssueCommentsTool().inputSchema(for: .english)
+    let properties = try #require(schema["properties"] as? [String: [String: Any]])
+    #expect(properties["page"]?["minimum"] as? Int == 1)
+    #expect(properties["perPage"]?["minimum"] as? Int == 1)
+    #expect(properties["perPage"]?["maximum"] as? Int == 100)
+}
