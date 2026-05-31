@@ -38,6 +38,26 @@ final class SourceEditorCoreTests: XCTestCase {
         XCTAssertEqual(viewModel.currentFindMatchIndex, 1)
     }
 
+    func testFindPanelReplacementShiftsLaterMatchesByReplacementDelta() {
+        var ranges = [
+            NSRange(location: 0, length: 3),
+            NSRange(location: 8, length: 3),
+            NSRange(location: 16, length: 3)
+        ]
+
+        FindPanelViewModel.updateMatchesAfterReplacement(
+            index: 1,
+            replacementLength: 5,
+            matches: &ranges
+        )
+
+        XCTAssertEqual(ranges, [
+            NSRange(location: 0, length: 3),
+            NSRange(location: 8, length: 3),
+            NSRange(location: 18, length: 3)
+        ])
+    }
+
     func testInvisibleCharactersEmptyDisablesAllTriggers() {
         let config = InvisibleCharactersConfiguration.empty
 

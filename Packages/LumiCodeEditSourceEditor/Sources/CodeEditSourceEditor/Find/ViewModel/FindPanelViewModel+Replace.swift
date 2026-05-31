@@ -77,12 +77,23 @@ extension FindPanelViewModel {
         // Set cursor positions to the match range
         textView.replaceCharacters(in: range, with: replaceText)
 
-        // Adjust the length of the replacement
-        let lengthDiff = replaceText.utf16.count - range.length
+        Self.updateMatchesAfterReplacement(
+            index: index,
+            replacementLength: replaceText.utf16.count,
+            matches: &matches
+        )
+    }
 
-        // Update all match ranges after the current match
+    static func updateMatchesAfterReplacement(
+        index: Int,
+        replacementLength: Int,
+        matches: inout [NSRange]
+    ) {
+        guard matches.indices.contains(index), replacementLength >= 0 else { return }
+
+        let lengthDiff = replacementLength - matches[index].length
         for idx in matches.dropFirst(index + 1).indices {
-            matches[idx].location -= lengthDiff
+            matches[idx].location += lengthDiff
         }
     }
 }
