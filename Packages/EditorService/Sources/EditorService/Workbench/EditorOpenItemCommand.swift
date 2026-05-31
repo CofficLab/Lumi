@@ -36,7 +36,7 @@ extension EditorOpenItemCommand {
                 )
             )
         case let .callHierarchyItem(item):
-            guard let url = URL(string: item.uri), url.isFileURL else { return nil }
+            guard let url = WorkspaceEditFileOperations.fileURL(from: item.uri) else { return nil }
             let start = item.selectionRange.start
             return .callHierarchyItem(
                 url,
