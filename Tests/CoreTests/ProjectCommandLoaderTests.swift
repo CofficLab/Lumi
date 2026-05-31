@@ -49,6 +49,37 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertEqual(result.body, "Ship $ARGUMENTS\n")
     }
 
+    func testLoaderReadsUTF16CommandFiles() async throws {
+        let commandName = "utf16-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try """
+        ---
+        description: UTF16 command
+        ---
+        Summarize $ARGUMENTS
+        """.write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf16
+        )
+
+        let loader = ProjectCommandLoader()
+        let commands = await loader.loadCommands(for: projectURL.path)
+        let command = try XCTUnwrap(commands.first)
+
+        XCTAssertEqual(command.name, commandName)
+        XCTAssertEqual(command.description, "UTF16 command")
+        XCTAssertEqual(command.content, "Summarize $ARGUMENTS")
+    }
+
     func testFileReferenceKeepsSentencePunctuationOutsidePath() async throws {
         let commandName = "review-\(UUID().uuidString)"
         let projectURL = FileManager.default.temporaryDirectory
@@ -82,6 +113,41 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertTrue(message.contains("// File: README.md"))
         XCTAssertTrue(message.contains("Important release notes"))
         XCTAssertTrue(message.hasSuffix("```."))
+        XCTAssertFalse(message.contains("[文件不存在]"))
+    }
+
+    func testFileReferenceReadsUTF16Files() async throws {
+        let commandName = "reference-utf16-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "Important UTF16 notes".write(
+            to: projectURL.appendingPathComponent("README.md"),
+            atomically: true,
+            encoding: .utf16
+        )
+        try "Summarize @README.md".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName)")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("// File: README.md"))
+        XCTAssertTrue(message.contains("Important UTF16 notes"))
         XCTAssertFalse(message.contains("[文件不存在]"))
     }
 

@@ -87,7 +87,7 @@ actor ProjectCommandLoader: SuperLog {
             
             let finalCommandName = Self.commandName(for: fileURL, in: directory)
             
-            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
+            guard let content = try? Self.readTextFile(at: fileURL) else {
                 if Self.verbose {
                     AppLogger.core.info("\(Self.t)❌ 无法读取命令文件：\(fileURL.path)")
                 }
@@ -156,6 +156,11 @@ actor ProjectCommandLoader: SuperLog {
         let standardized = (path as NSString).standardizingPath
         guard standardized.count > 1 else { return standardized }
         return standardized.hasSuffix("/") ? String(standardized.dropLast()) : standardized
+    }
+
+    static func readTextFile(at url: URL) throws -> String {
+        var detectedEncoding = String.Encoding.utf8
+        return try String(contentsOf: url, usedEncoding: &detectedEncoding)
     }
     
     private func sourceDescription(_ source: ProjectCommand.Source) -> String {
@@ -453,7 +458,7 @@ actor ProjectCommandExecutor: SuperLog {
             let resolvedReference = resolveFileReference(filePath, projectPath: projectPath)
 
             // 读取文件内容
-            if let fileContent = try? String(contentsOf: resolvedReference.url, encoding: .utf8) {
+            if let fileContent = try? ProjectCommandLoader.readTextFile(at: resolvedReference.url) {
                 let replacement = "```\n// File: \(resolvedReference.path)\n\(fileContent)\n```\(resolvedReference.trailingText)"
                 if let fullMatchRange = Range(match.range, in: result) {
                     result.replaceSubrange(fullMatchRange, with: replacement)
