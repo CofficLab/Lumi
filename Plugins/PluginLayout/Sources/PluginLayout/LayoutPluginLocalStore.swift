@@ -22,14 +22,20 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "LayoutPluginLocalStore.queue", qos: .userInitiated)
     private let pluginDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
     // MARK: - Initialization
 
-    private init() {
+    convenience private init() {
         let root = AppConfig.getDBFolderURL()
             .appendingPathComponent("LayoutPlugin", isDirectory: true)
-        self.pluginDirectory = root
-        self.settingsFileURL = root.appendingPathComponent("settings.plist")
+        self.init(pluginDirectory: root)
+    }
+
+    init(pluginDirectory: URL) {
+        self.pluginDirectory = pluginDirectory
+        self.settingsFileURL = pluginDirectory.appendingPathComponent("settings.plist")
+        self.corruptSettingsFileURL = pluginDirectory.appendingPathComponent("settings.corrupt.plist")
         try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
     }
 
@@ -223,13 +229,28 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
 
     /// 从文件读取字典
     private func readDict() -> [String: Any] {
-        guard fileManager.fileExists(atPath: settingsFileURL.path),
-              let data = try? Data(contentsOf: settingsFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else {
             return [:]
         }
-        return dict
+
+        let data: Data
+        do {
+            data = try Data(contentsOf: settingsFileURL)
+        } catch {
+            return [:]
+        }
+
+        do {
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                quarantineCorruptSettings()
+                return [:]
+            }
+            return dict
+        } catch {
+            quarantineCorruptSettings()
+            return [:]
+        }
     }
 
     /// 写入字典到文件（原子操作）
@@ -254,6 +275,19 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
             }
         } catch {
             try? fileManager.removeItem(at: tmpURL)
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            try? fileManager.removeItem(at: corruptSettingsFileURL)
         }
     }
 }
