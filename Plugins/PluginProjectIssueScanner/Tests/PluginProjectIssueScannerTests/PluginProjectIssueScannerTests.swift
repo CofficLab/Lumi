@@ -183,9 +183,28 @@ import Foundation
     #expect(savedIssues.first?.title == "Updated issue")
 }
 
+@Test func projectIssueStoreNonPositiveLimitReturnsNoIssues() async throws {
+    let issue = makeProjectIssue(projectPath: "/tmp/project-limit")
+    let tempURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: tempURL) }
+
+    let data = try ProjectIssueStore.makeEncoder().encode([issue])
+    try data.write(to: tempURL)
+    let store = ProjectIssueStore(issuesFileURL: tempURL)
+
+    let zeroLimitIssues = await store.fetchOpen(projectPath: issue.projectPath, limit: 0)
+    let negativeLimitIssues = await store.fetchOpen(projectPath: issue.projectPath, limit: -5)
+
+    #expect(zeroLimitIssues.isEmpty)
+    #expect(negativeLimitIssues.isEmpty)
+}
+
 private func makeProjectIssue(
     id: UUID = UUID(),
     status: ProjectIssueStatus = .pending,
+    projectPath: String = "/tmp/project",
     title: String = "Empty catch block",
     updatedAt: Date = Date(timeIntervalSince1970: 1_775_232_000)
 ) -> ProjectIssue {
@@ -194,7 +213,7 @@ private func makeProjectIssue(
         type: .emptyCatch,
         severity: .warning,
         status: status,
-        projectPath: "/tmp/project",
+        projectPath: projectPath,
         filePath: "Sources/App.swift",
         lineNumber: 42,
         title: title,

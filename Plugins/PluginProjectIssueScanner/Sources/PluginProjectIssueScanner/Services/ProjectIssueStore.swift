@@ -85,7 +85,9 @@ public actor ProjectIssueStore {
         }
 
         if let limit {
-            return Array(sorted.prefix(limit))
+            let normalizedLimit = max(0, limit)
+            guard normalizedLimit > 0 else { return [] }
+            return Array(sorted.prefix(normalizedLimit))
         }
         return sorted
     }
