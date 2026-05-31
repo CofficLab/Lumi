@@ -10,8 +10,8 @@ public struct WorkspaceFileEditor: Sendable {
     public init() {}
 
     public func edit(filePath: String, oldString: String, newString: String, replaceAll: Bool = false) throws -> WorkspaceFileEditOutcome {
-        let expandedPath = (filePath as NSString).expandingTildeInPath
-        let fileURL = URL(fileURLWithPath: expandedPath)
+        let fileURL = WorkspacePathResolver.fileURL(from: filePath)
+        let resolvedPath = fileURL.path
 
         guard oldString != newString else {
             throw WorkspaceFileError("No changes to make — old_string and new_string are exactly the same.")
@@ -21,7 +21,7 @@ public struct WorkspaceFileEditor: Sendable {
         var originalContent = ""
         var fileExists = false
 
-        if fileManager.fileExists(atPath: expandedPath) {
+        if fileManager.fileExists(atPath: resolvedPath) {
             let data = try Data(contentsOf: fileURL)
             guard let content = String(data: data, encoding: .utf8) else {
                 throw WorkspaceFileError("File content is not valid UTF-8 text.")

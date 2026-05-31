@@ -97,6 +97,26 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "filled")
     }
 
+    func testEditAcceptsFileURLString() throws {
+        let url = temporaryDirectory.appendingPathComponent("file-url.txt")
+        try "before".write(to: url, atomically: true, encoding: .utf8)
+
+        let outcome = try WorkspaceFileEditor().edit(
+            filePath: url.absoluteString,
+            oldString: "before",
+            newString: "after"
+        )
+
+        if case .updated(let path, let matchCount, let replaceAll, _) = outcome {
+            XCTAssertEqual(path, url.absoluteString)
+            XCTAssertEqual(matchCount, 1)
+            XCTAssertFalse(replaceAll)
+        } else {
+            XCTFail("Expected updated outcome")
+        }
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "after")
+    }
+
     func testListDirectorySkipsHiddenFiles() throws {
         try "visible".write(to: temporaryDirectory.appendingPathComponent("visible.txt"), atomically: true, encoding: .utf8)
         try "hidden".write(to: temporaryDirectory.appendingPathComponent(".hidden"), atomically: true, encoding: .utf8)
