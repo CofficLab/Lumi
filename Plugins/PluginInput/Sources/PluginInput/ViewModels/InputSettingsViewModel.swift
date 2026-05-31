@@ -41,7 +41,9 @@ public class InputSettingsViewModel: ObservableObject {
     }
     
     public func removeRule(at offsets: IndexSet) {
-        offsets.map { rules[$0] }.forEach { rule in
+        offsets.compactMap { index in
+            rules.indices.contains(index) ? rules[index] : nil
+        }.forEach { rule in
             service.removeRule(id: rule.id)
         }
     }
