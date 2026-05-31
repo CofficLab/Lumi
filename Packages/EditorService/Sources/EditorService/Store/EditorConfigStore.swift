@@ -7,11 +7,22 @@ enum EditorConfigStore {
     private static let settingsFileName = "editor_config.plist"
 
     private static func resolvedSettingsDirectoryURL() -> URL {
-        let base = EditorSettingsLifecycle.hostPersistenceRootURL?()
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent(pluginDirName, isDirectory: true)
+        settingsDirectoryURL(
+            persistenceRootURL: EditorSettingsLifecycle.hostPersistenceRootURL?(),
+            applicationSupportURL: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? FileManager.default.temporaryDirectory,
+            storageDirectoryName: pluginDirName
+        )
+    }
+
+    static func settingsDirectoryURL(
+        persistenceRootURL: URL?,
+        applicationSupportURL: URL,
+        storageDirectoryName: String
+    ) -> URL {
+        let base = persistenceRootURL ?? applicationSupportURL
         return base
-            .appendingPathComponent(pluginDirName, isDirectory: true)
+            .appendingPathComponent(storageDirectoryName, isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true)
     }
 
