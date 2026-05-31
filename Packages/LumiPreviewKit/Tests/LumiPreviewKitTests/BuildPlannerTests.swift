@@ -448,6 +448,92 @@ struct BuildPlannerTests {
         #expect(sources.contains(siblingFile.standardizedFileURL.resolvingSymlinksInPath()))
     }
 
+    @Test("Xcode workspace 可读取 UTF-16 contents.xcworkspacedata")
+    func xcodeWorkspaceReadsUTF16ContentsFile() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-UTF16Workspace-\(UUID().uuidString)", isDirectory: true)
+        let workspaceURL = rootDirectory.appendingPathComponent("App.xcworkspace", isDirectory: true)
+        let nestedDirectory = rootDirectory.appendingPathComponent("Nested", isDirectory: true)
+        let projectURL = nestedDirectory.appendingPathComponent("WorkspaceApp.xcodeproj", isDirectory: true)
+        let sourceFile = nestedDirectory.appendingPathComponent("Sources/AppView.swift")
+        let siblingFile = sourceFile.deletingLastPathComponent().appendingPathComponent("PreviewSibling.swift")
+
+        try FileManager.default.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+        try writeXcodeProject(
+            at: projectURL,
+            targetName: "AppTarget",
+            sourceFiles: [sourceFile],
+            sourceTree: "SOURCE_ROOT"
+        )
+        try "struct PreviewSibling {}\n".write(to: siblingFile, atomically: true, encoding: .utf8)
+        try """
+        <?xml version="1.0" encoding="UTF-16"?>
+        <Workspace version = "1.0">
+           <FileRef location = "group:Nested/WorkspaceApp.xcodeproj"></FileRef>
+        </Workspace>
+        """.write(to: workspaceURL.appendingPathComponent("contents.xcworkspacedata"), atomically: true, encoding: .utf16)
+        try writeScheme(named: "SharedScheme", targetName: "AppTarget", in: projectURL)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: workspaceURL,
+            scheme: "SharedScheme",
+            containing: siblingFile
+        )
+
+        #expect(sources.contains(sourceFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(sources.contains(siblingFile.standardizedFileURL.resolvingSymlinksInPath()))
+    }
+
+    @Test("Xcode scheme 可读取 UTF-16 xcscheme")
+    func xcodeSourcesUseUTF16SchemeTargetName() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-UTF16Scheme-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("SchemeApp.xcodeproj", isDirectory: true)
+        let sourceFile = rootDirectory.appendingPathComponent("Sources/AppView.swift")
+        let fallbackFile = rootDirectory.appendingPathComponent("Other/Fallback.swift")
+
+        try writeXcodeProject(at: projectURL, targetName: "ActualTarget", sourceFiles: [sourceFile])
+        try FileManager.default.createDirectory(at: fallbackFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "struct Fallback {}\n".write(to: fallbackFile, atomically: true, encoding: .utf8)
+        try writeScheme(named: "SharedScheme", targetName: "ActualTarget", in: projectURL, encoding: .utf16)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "SharedScheme",
+            containing: fallbackFile
+        )
+
+        #expect(sources.contains(sourceFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(sources.contains(fallbackFile.standardizedFileURL.resolvingSymlinksInPath()))
+    }
+
+    @Test("Xcode project 可读取 UTF-16 project.pbxproj")
+    func xcodeSourcesReadUTF16ProjectFile() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-UTF16PBXProj-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("UTF16App.xcodeproj", isDirectory: true)
+        let sourceFile = rootDirectory.appendingPathComponent("Sources/AppView.swift")
+
+        try writeXcodeProject(
+            at: projectURL,
+            targetName: "UTF16App",
+            sourceFiles: [sourceFile],
+            projectEncoding: .utf16
+        )
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "UTF16App",
+            containing: sourceFile
+        )
+
+        #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
+    }
+
     @Test("Xcode workspace 缺少 contents 时回退到同级 project")
     func xcodeWorkspaceFallsBackToSiblingProjects() throws {
         let rootDirectory = FileManager.default.temporaryDirectory
@@ -513,13 +599,18 @@ struct BuildPlannerTests {
         return (rootDirectory, sourceFile)
     }
 
-    private func writeScheme(named schemeName: String, targetName: String, in projectURL: URL) throws {
+    private func writeScheme(
+        named schemeName: String,
+        targetName: String,
+        in projectURL: URL,
+        encoding: String.Encoding = .utf8
+    ) throws {
         let schemesDirectory = projectURL
             .appendingPathComponent("xcshareddata", isDirectory: true)
             .appendingPathComponent("xcschemes", isDirectory: true)
         try FileManager.default.createDirectory(at: schemesDirectory, withIntermediateDirectories: true)
         try """
-        <?xml version="1.0" encoding="UTF-8"?>
+        <?xml version="1.0" encoding="\(encoding == .utf16 ? "UTF-16" : "UTF-8")"?>
         <Scheme LastUpgradeVersion = "1600" version = "1.7">
            <BuildAction>
               <BuildActionEntries>
@@ -534,7 +625,7 @@ struct BuildPlannerTests {
         """.write(
             to: schemesDirectory.appendingPathComponent("\(schemeName).xcscheme"),
             atomically: true,
-            encoding: .utf8
+            encoding: encoding
         )
     }
 
@@ -651,7 +742,8 @@ struct BuildPlannerTests {
         at projectURL: URL,
         targetName: String,
         sourceFiles: [URL],
-        sourceTree: String = "<group>"
+        sourceTree: String = "<group>",
+        projectEncoding: String.Encoding = .utf8
     ) throws {
         let sourceDirectory = sourceFiles[0].deletingLastPathComponent()
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
@@ -727,7 +819,7 @@ struct BuildPlannerTests {
         \t};
         \trootObject = EEEEEEEE;
         }
-        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: projectEncoding)
     }
 
     // MARK: - skipDescendants 回归测试

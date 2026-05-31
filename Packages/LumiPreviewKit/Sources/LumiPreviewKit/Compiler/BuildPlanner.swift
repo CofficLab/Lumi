@@ -149,7 +149,7 @@ final class BuildPlanner: Sendable {
             .appendingPathComponent("xcschemes", isDirectory: true)
             .appendingPathComponent("\(scheme).xcscheme")
 
-        guard let content = try? String(contentsOf: schemeURL, encoding: .utf8) else {
+        guard let content = readTextFile(schemeURL) else {
             return nil
         }
 
@@ -167,7 +167,7 @@ final class BuildPlanner: Sendable {
         }
 
         let workspaceContentURL = containerURL.appendingPathComponent("contents.xcworkspacedata")
-        if let content = try? String(contentsOf: workspaceContentURL, encoding: .utf8) {
+        if let content = readTextFile(workspaceContentURL) {
             let pattern = /location\s*=\s*"([^"]+\.xcodeproj)"/
             let projects = content.matches(of: pattern).compactMap { match -> URL? in
                 let location = String(match.1)
@@ -559,6 +559,11 @@ final class BuildPlanner: Sendable {
             "Tests/\(target.name)"
         }
     }
+
+    fileprivate static func readTextFile(_ url: URL) -> String? {
+        var encoding = String.Encoding.utf8
+        return try? String(contentsOf: url, usedEncoding: &encoding)
+    }
 }
 
 private struct XcodeProjectSourceIndex {
@@ -626,7 +631,7 @@ private struct XcodeProjectSourceIndex {
 
     init?(projectURL: URL) {
         let projectFileURL = projectURL.appendingPathComponent("project.pbxproj")
-        guard let content = try? String(contentsOf: projectFileURL, encoding: .utf8) else {
+        guard let content = LumiPreviewFacade.BuildPlanner.readTextFile(projectFileURL) else {
             return nil
         }
 
