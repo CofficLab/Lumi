@@ -32,6 +32,13 @@ enum ChatAttachmentDropRules {
         if let url = URL(string: trimmed), url.isFileURL {
             return url
         }
+        if trimmed.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmed.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path)
+        }
         if trimmed == "~" || trimmed.hasPrefix("~/") {
             return URL(fileURLWithPath: (trimmed as NSString).expandingTildeInPath)
         }

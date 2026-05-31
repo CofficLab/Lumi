@@ -99,6 +99,8 @@ struct ChatInputEditorRulesTests {
     func droppedPathStringConversion() {
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "/tmp/a.png")?.path == "/tmp/a.png")
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: " file:///tmp/a%20b.png\n")?.path == "/tmp/a b.png")
+        #expect(ChatInputEditorRules.fileURL(fromDroppedString: "file:///tmp/a b.png")?.path == "/tmp/a b.png")
+        #expect(ChatInputEditorRules.fileURL(fromDroppedString: "file://localhost/tmp/a.png")?.path == "/tmp/a.png")
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "~/Desktop/a.png")?.path == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop/a.png").path)
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "https://example.com/a.png") == nil)
         #expect(ChatInputEditorRules.fileURL(fromDroppedString: "relative/a.png") == nil)
@@ -107,7 +109,7 @@ struct ChatInputEditorRulesTests {
 
     @Test("Dropped multiline path strings become multiple file URLs")
     func droppedMultilinePathStringConversion() {
-        let urls = ChatInputEditorRules.fileURLs(fromDroppedString: "file:///tmp/a%201.png\n/tmp/b.png\nrelative/c.png")
+        let urls = ChatInputEditorRules.fileURLs(fromDroppedString: "file:///tmp/a 1.png\n/tmp/b.png\nrelative/c.png")
 
         #expect(urls.map(\.path) == ["/tmp/a 1.png", "/tmp/b.png"])
     }
