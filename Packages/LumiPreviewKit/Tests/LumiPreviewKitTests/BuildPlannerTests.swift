@@ -154,6 +154,45 @@ struct BuildPlannerTests {
         #expect(targetName == "NestedTarget")
     }
 
+    @Test("SPM Package.swift 可用检测到的文本编码解析")
+    func planSPMFileWithUTF16Manifest() throws {
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-UTF16Manifest-\(UUID().uuidString)", isDirectory: true)
+        let sourceDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("UTF16Target", isDirectory: true)
+        let sourceFile = sourceDirectory.appendingPathComponent("View.swift")
+
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "UTF16Manifest",
+            targets: [.target(name: "UTF16Target")]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf16)
+        try "import SwiftUI\nstruct ViewPreview {}\n".write(to: sourceFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let result = LumiPreviewFacade.BuildPlanner().plan(for: sourceFile)
+
+        guard case let .spm(packageURL, targetName) = result else {
+            Issue.record("Expected .spm strategy, got \(String(describing: result))")
+            return
+        }
+
+        #expect(packageURL == packageDirectory)
+        #expect(targetName == "UTF16Target")
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            packageDirectory: packageDirectory,
+            targetName: "UTF16Target"
+        )
+        #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
+    }
+
     @Test("SPM target 支持自定义 path 和 sources")
     func spmTargetWithCustomPathAndSources() throws {
         let packageDirectory = FileManager.default.temporaryDirectory

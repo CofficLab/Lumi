@@ -209,8 +209,8 @@ final class BuildPlanner: Sendable {
         for fileURL: URL,
         in packageDirectory: URL
     ) -> String? {
-        let packageSwiftPath = packageDirectory.appendingPathComponent("Package.swift").path
-        guard let packageContent = try? String(contentsOfFile: packageSwiftPath, encoding: .utf8) else {
+        let packageSwiftURL = packageDirectory.appendingPathComponent("Package.swift")
+        guard let packageContent = readTextFile(packageSwiftURL) else {
             return nil
         }
 
@@ -235,8 +235,8 @@ final class BuildPlanner: Sendable {
     }
 
     static func swiftSourceFiles(packageDirectory: URL, targetName: String) -> [URL] {
-        let packageSwiftPath = packageDirectory.appendingPathComponent("Package.swift").path
-        guard let packageContent = try? String(contentsOfFile: packageSwiftPath, encoding: .utf8),
+        let packageSwiftURL = packageDirectory.appendingPathComponent("Package.swift")
+        guard let packageContent = readTextFile(packageSwiftURL),
               let target = parseTargets(from: packageContent).first(where: { $0.name == targetName }) else {
             return []
         }
