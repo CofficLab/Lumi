@@ -66,7 +66,7 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
             return "Error: No valid task IDs provided."
         }
 
-        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value as? Int)
+        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value)
         let results = await SubAgentScheduler.shared.collect(taskIds: taskIds, timeout: timeout)
 
         return format(results: results)
@@ -116,7 +116,18 @@ struct CollectSubAgentTool: SuperAgentTool, SuperLog {
         return output
     }
 
-    static func normalizedTimeout(_ rawTimeout: Int?) -> TimeInterval {
-        TimeInterval(min(max(rawTimeout ?? 120, 1), 3600))
+    static func normalizedTimeout(_ value: Any?) -> TimeInterval {
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = 120
+        }
+
+        return TimeInterval(min(max(requested, 1), 3600))
     }
 }
