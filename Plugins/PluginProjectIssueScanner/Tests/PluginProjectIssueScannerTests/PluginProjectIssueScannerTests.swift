@@ -81,6 +81,32 @@ import Foundation
     )
 }
 
+@Test func scannerModelPreferenceRemovesCorruptStoredData() throws {
+    let suiteName = "ProjectIssueScannerTests-\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+    defaults.set(Data("not json".utf8), forKey: ScannerModelPreference.userDefaultsKey)
+
+    let preference = ScannerModelPreference.load(from: defaults)
+
+    #expect(preference == .auto)
+    #expect(defaults.data(forKey: ScannerModelPreference.userDefaultsKey) == nil)
+}
+
+@Test func scannerModelPreferenceSavesAndLoadsManualSelection() throws {
+    let suiteName = "ProjectIssueScannerTests-\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+    let preference = ScannerModelPreference.manual(providerId: "openai", model: "gpt-5")
+
+    #expect(preference.save(to: defaults))
+    #expect(ScannerModelPreference.load(from: defaults) == preference)
+}
+
 @Test func projectIssueStoreLoadsPersistedISO8601Dates() throws {
     let issue = ProjectIssue(
         id: UUID(uuidString: "2E87F59C-1C80-49A8-84D7-0546F43B28C1")!,

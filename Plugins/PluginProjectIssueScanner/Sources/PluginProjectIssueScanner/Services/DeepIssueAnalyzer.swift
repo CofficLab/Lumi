@@ -18,20 +18,39 @@ public enum ScannerModelPreference: Codable, Equatable, Hashable, Sendable {
     case manual(providerId: String, model: String)
 
     /// UserDefaults 键
-    private static let userDefaultsKey = "ProjectIssueScanner.ModelPreference"
+    static let userDefaultsKey = "ProjectIssueScanner.ModelPreference"
 
     /// 从 UserDefaults 加载偏好设置
     public static func load() -> ScannerModelPreference {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
+        load(from: .standard)
+    }
+
+    static func load(from userDefaults: UserDefaults) -> ScannerModelPreference {
+        guard let data = userDefaults.data(forKey: userDefaultsKey) else {
             return .auto
         }
-        return (try? JSONDecoder().decode(ScannerModelPreference.self, from: data)) ?? .auto
+        do {
+            return try JSONDecoder().decode(ScannerModelPreference.self, from: data)
+        } catch {
+            userDefaults.removeObject(forKey: userDefaultsKey)
+            return .auto
+        }
     }
 
     /// 保存偏好设置到 UserDefaults
     public func save() {
-        guard let data = try? JSONEncoder().encode(self) else { return }
-        UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
+        save(to: .standard)
+    }
+
+    @discardableResult
+    func save(to userDefaults: UserDefaults) -> Bool {
+        do {
+            let data = try JSONEncoder().encode(self)
+            userDefaults.set(data, forKey: Self.userDefaultsKey)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// 显示名称
