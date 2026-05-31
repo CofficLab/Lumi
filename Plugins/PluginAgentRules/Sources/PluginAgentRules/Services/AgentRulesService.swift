@@ -46,7 +46,7 @@ public actor AgentRulesService {
             _ = resourceValues.creationDate ?? Date()
 
             // 读取文件内容以提取标题和描述
-            let content = try String(contentsOf: file, encoding: .utf8)
+            let content = try readTextFile(at: file)
             let (title, description) = extractTitleAndDescription(from: content)
 
             let filename = file.lastPathComponent
@@ -82,7 +82,7 @@ public actor AgentRulesService {
         }
 
         // 读取文件内容
-        let content = try String(contentsOf: fileURL, encoding: .utf8)
+        let content = try readTextFile(at: fileURL)
 
         // 获取文件属性
         let resourceValues = try fileURL.resourceValues(forKeys: [
@@ -169,6 +169,12 @@ public actor AgentRulesService {
     }
 
     // MARK: - Private Helpers
+
+    /// 读取用户编辑的规则文件，允许系统按 BOM 或文件内容检测编码。
+    private func readTextFile(at url: URL) throws -> String {
+        var detectedEncoding = String.Encoding.utf8
+        return try String(contentsOf: url, usedEncoding: &detectedEncoding)
+    }
 
     /// 从 Markdown 内容中提取标题和描述
     private func extractTitleAndDescription(from content: String) -> (title: String, description: String) {
