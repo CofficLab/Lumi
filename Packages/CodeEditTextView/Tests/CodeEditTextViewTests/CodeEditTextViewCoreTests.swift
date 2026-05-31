@@ -87,4 +87,29 @@ final class CodeEditTextViewCoreTests: XCTestCase {
             )
         )
     }
+
+    func testTextLayoutRangeValidatorClampsOverflowingDocumentRanges() {
+        XCTAssertEqual(
+            TextLayoutRangeValidator.clampedRange(NSRange(location: 3, length: 20), upperBound: 10),
+            NSRange(location: 3, length: 7)
+        )
+    }
+
+    func testTextLayoutRangeValidatorRejectsInvalidRanges() {
+        XCTAssertNil(TextLayoutRangeValidator.clampedRange(NSRange(location: -1, length: 2), upperBound: 10))
+        XCTAssertNil(TextLayoutRangeValidator.clampedRange(NSRange(location: 2, length: -1), upperBound: 10))
+        XCTAssertNil(TextLayoutRangeValidator.clampedRange(NSRange(location: Int.max, length: 1), upperBound: 10))
+        XCTAssertNil(TextLayoutRangeValidator.clampedRange(NSRange(location: 10, length: 1), upperBound: 10))
+    }
+
+    func testTextLayoutRangeValidatorKeepsValidEmptyRangesWhenAllowed() {
+        XCTAssertNil(TextLayoutRangeValidator.clampedRange(NSRange(location: 10, length: 0), upperBound: 10))
+        XCTAssertEqual(
+            TextLayoutRangeValidator.clampedRange(NSRange(location: 10, length: 0), upperBound: 10, allowEmpty: true),
+            NSRange(location: 10, length: 0)
+        )
+        XCTAssertNil(
+            TextLayoutRangeValidator.clampedRange(NSRange(location: 11, length: 0), upperBound: 10, allowEmpty: true)
+        )
+    }
 }

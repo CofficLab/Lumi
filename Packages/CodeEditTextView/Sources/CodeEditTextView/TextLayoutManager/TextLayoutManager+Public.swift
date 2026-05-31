@@ -7,6 +7,24 @@
 
 import AppKit
 
+enum TextLayoutRangeValidator {
+    static func clampedRange(_ range: NSRange, upperBound documentUpperBound: Int, allowEmpty: Bool = false) -> NSRange? {
+        guard documentUpperBound >= 0,
+              range.location >= 0,
+              range.location <= documentUpperBound,
+              range.length >= 0 else { return nil }
+
+        let rangeEnd = range.location.addingReportingOverflow(range.length)
+        guard !rangeEnd.overflow else { return nil }
+
+        let lowerBound = min(range.location, documentUpperBound)
+        let upperBound = min(rangeEnd.partialValue, documentUpperBound)
+        guard allowEmpty ? lowerBound <= upperBound : lowerBound < upperBound else { return nil }
+
+        return NSRange(start: lowerBound, end: upperBound)
+    }
+}
+
 extension TextLayoutManager {
     // MARK: - Estimate
 
@@ -212,7 +230,12 @@ extension TextLayoutManager {
     ///   - line: The line to calculate rects for.
     /// - Returns: Multiple bounding rects. Will return one rect for each line fragment that overlaps the given range.
     public func rectsFor(range: NSRange) -> [CGRect] {
-        return linesInRange(range).flatMap { self.rectsFor(range: range, in: $0) }
+        let upperBound = min(lineStorage.length, textStorage?.length ?? 0)
+        guard let validRange = TextLayoutRangeValidator.clampedRange(range, upperBound: upperBound) else {
+            return []
+        }
+
+        return linesInRange(validRange).flatMap { self.rectsFor(range: validRange, in: $0) }
     }
 
     /// Calculates all text bounding rects that intersect with a given range, with a given line position.
@@ -221,7 +244,10 @@ extension TextLayoutManager {
     ///   - line: The line to calculate rects for.
     /// - Returns: Multiple bounding rects. Will return one rect for each line fragment that overlaps the given range.
     private func rectsFor(range: NSRange, in line: borrowing TextLineStorage<TextLine>.TextLinePosition) -> [CGRect] {
-        guard let textStorage = (textStorage?.string as? NSString) else { return [] }
+        guard let textStorage = (textStorage?.string as? NSString),
+              range.location >= 0,
+              range.length > 0,
+              range.upperBound <= textStorage.length else { return [] }
 
         // Don't make rects in between characters
         let realRangeStart = textStorage.rangeOfComposedCharacterSequence(at: range.lowerBound)
@@ -257,18 +283,16 @@ extension TextLayoutManager {
     ///   - cornerRadius: The radius of the edges when rounding. Defaults to four.
     /// - Returns: An `NSBezierPath` representing the visual shape for the text range, or `nil` if the range is invalid.
     public func roundedPathForRange(_ range: NSRange, cornerRadius: CGFloat = 4) -> NSBezierPath? {
-        // Ensure the range is within the bounds of the text storage
-        let validRange = NSRange(
-            location: range.lowerBound,
-            length: min(range.length, lineStorage.length - range.lowerBound)
-        )
+        let upperBound = min(lineStorage.length, textStorage?.length ?? 0)
+        let validRange = TextLayoutRangeValidator.clampedRange(range, upperBound: upperBound, allowEmpty: true)
 
+        guard let validRange else { return nil }
         guard validRange.length > 0 else { return rectForEndOffset().map { NSBezierPath(rect: $0) } }
 
         var rightSidePoints: [CGPoint] = [] // Points for Bottom-right → Top-right
         var leftSidePoints: [CGPoint] = []  // Points for Bottom-left → Top-left
 
-        for fragmentRect in rectsFor(range: range) {
+        for fragmentRect in rectsFor(range: validRange) {
             rightSidePoints.append(
                 contentsOf: [
                     CGPoint(x: fragmentRect.maxX, y: fragmentRect.minY), // Bottom-right
