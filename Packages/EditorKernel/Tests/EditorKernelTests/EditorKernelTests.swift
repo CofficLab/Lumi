@@ -1592,6 +1592,21 @@ struct EditorKernelTests {
     }
 
     @Test
+    @MainActor
+    func editorPerformanceRecentSlowEventsClampsNonPositiveLimits() {
+        let performance = EditorPerformance()
+        performance.clear()
+
+        let slowToken = performance.begin(.renderBracketMatch)
+        Thread.sleep(forTimeInterval: 0.02)
+        performance.end(slowToken)
+
+        #expect(performance.recentSlowEvents(limit: 1).count == 1)
+        #expect(performance.recentSlowEvents(limit: 0).isEmpty)
+        #expect(performance.recentSlowEvents(limit: -3).isEmpty)
+    }
+
+    @Test
     func externalFileReloadPolicyChoosesConflictOrApplyBasedOnDirtyState() {
         let modDate = Date(timeIntervalSince1970: 123)
         #expect(

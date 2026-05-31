@@ -196,7 +196,9 @@ public final class EditorPerformance {
     }
 
     public func recentSlowEvents(limit: Int = 20) -> [EditorPerfResult] {
-        recentResults.filter(\.isSlow).suffix(limit).map { $0 }
+        let normalizedLimit = max(0, limit)
+        guard normalizedLimit > 0 else { return [] }
+        return recentResults.filter(\.isSlow).suffix(normalizedLimit).map { $0 }
     }
 
     public func clear() {
