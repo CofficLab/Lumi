@@ -13,7 +13,10 @@ import Testing
     #expect(CollectAgentsTool.normalizedTimeout(-10) == 1)
     #expect(CollectAgentsTool.normalizedTimeout(0) == 1)
     #expect(CollectAgentsTool.normalizedTimeout(30) == 30)
+    #expect(CollectAgentsTool.normalizedTimeout(30.0) == 30)
+    #expect(CollectAgentsTool.normalizedTimeout("30") == 30)
     #expect(CollectAgentsTool.normalizedTimeout(10_000) == 3600)
+    #expect(CollectAgentsTool.normalizedTimeout("not-a-number") == 120)
 
     let schema = CollectAgentsTool().inputSchema(for: .english)
     let properties = try #require(schema["properties"] as? [String: [String: Any]])
