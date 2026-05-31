@@ -11,7 +11,6 @@ import Testing
     defer { try? FileManager.default.removeItem(at: directory) }
     let location = directory.appendingPathComponent("download.tmp")
     let destination = directory.appendingPathComponent("model.safetensors")
-    let incomplete = destination.appendingPathExtension("incomplete")
 
     try "old".write(to: destination, atomically: true, encoding: .utf8)
     try "complete".write(to: location, atomically: true, encoding: .utf8)
@@ -56,6 +55,7 @@ import Testing
     defer { try? FileManager.default.removeItem(at: directory) }
     let location = directory.appendingPathComponent("download.tmp")
     let destination = directory.appendingPathComponent("model.safetensors")
+    let incomplete = destination.appendingPathExtension("incomplete")
 
     try "short".write(to: location, atomically: true, encoding: .utf8)
 
