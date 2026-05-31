@@ -129,3 +129,29 @@ struct AutoTaskPluginTests {
     #expect(fetched.count == 1)
     #expect(fetched.first?.title == "Recovered task")
 }
+
+@Test func testTaskManagerReportsUpdateAndDeletePersistenceResults() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("auto-task-manager-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = TaskStateManager(databaseRootURL: root)
+    let created = try await manager.createTask(
+        conversationId: "conversation",
+        title: "Original",
+        detail: "Old detail",
+        order: 1
+    )
+
+    let updated = await manager.updateTask(id: created.id, title: "Updated", detail: "New detail")
+    let fetchedAfterUpdate = try #require(await manager.fetchTask(id: created.id))
+    let deleted = await manager.deleteTask(id: created.id)
+    let fetchedAfterDelete = await manager.fetchTask(id: created.id)
+
+    #expect(updated)
+    #expect(fetchedAfterUpdate.title == "Updated")
+    #expect(fetchedAfterUpdate.detail == "New detail")
+    #expect(deleted)
+    #expect(fetchedAfterDelete == nil)
+}

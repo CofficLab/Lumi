@@ -29,6 +29,10 @@ public actor TaskStateManager: SuperLog {
         self.container = Self.makeContainer(databaseRootURL: AutoTaskPlugin.configuration.databaseDirectory())
     }
 
+    init(databaseRootURL: URL) {
+        self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
+    }
+
     static func makeContainer(databaseRootURL: URL) -> ModelContainer {
         let schema = Schema([TaskItem.self])
         let dbDir = databaseRootURL.appendingPathComponent("AutoTaskPlugin", isDirectory: true)
@@ -334,12 +338,19 @@ public actor TaskStateManager: SuperLog {
             predicate: #Predicate<TaskItem> { $0.id == id }
         )
 
-        guard let task = try? context.fetch(descriptor).first else { return false }
+        let task: TaskItem
+        do {
+            guard let fetched = try context.fetch(descriptor).first else { return false }
+            task = fetched
+        } catch {
+            Self.logger.error("\(Self.t)查询待更新任务失败：\(error.localizedDescription)")
+            return false
+        }
 
         if let title { task.title = title }
         if let detail { task.detail = detail }
         task.updatedAt = Date().timeIntervalSince1970
-        try? context.save()
+        guard save(context, operation: "更新任务内容") else { return false }
 
         return true
     }
@@ -353,16 +364,31 @@ public actor TaskStateManager: SuperLog {
             predicate: #Predicate<TaskItem> { $0.id == id }
         )
 
-        guard let task = try? context.fetch(descriptor).first else { return false }
+        let task: TaskItem
+        do {
+            guard let fetched = try context.fetch(descriptor).first else { return false }
+            task = fetched
+        } catch {
+            Self.logger.error("\(Self.t)查询待删除任务失败：\(error.localizedDescription)")
+            return false
+        }
+
         context.delete(task)
-        try? context.save()
+        guard save(context, operation: "删除任务") else { return false }
         return true
     }
 
     /// 删除指定会话的所有任务
-    func deleteAllForConversation(_ conversationId: String) {
+    @discardableResult
+    func deleteAllForConversation(_ conversationId: String) -> Bool {
         let context = ModelContext(container)
-        try? deleteAllForConversation(conversationId, context: context)
+        do {
+            try deleteAllForConversation(conversationId, context: context)
+            return true
+        } catch {
+            Self.logger.error("\(Self.t)删除会话任务失败：\(error.localizedDescription)")
+            return false
+        }
     }
 
     // MARK: - Private
@@ -382,6 +408,16 @@ public actor TaskStateManager: SuperLog {
         }
         if saveImmediately {
             try context.save()
+        }
+    }
+
+    private func save(_ context: ModelContext, operation: StaticString) -> Bool {
+        do {
+            try context.save()
+            return true
+        } catch {
+            Self.logger.error("\(Self.t)\(operation)失败：\(error.localizedDescription)")
+            return false
         }
     }
 }
