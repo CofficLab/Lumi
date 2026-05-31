@@ -32,7 +32,7 @@ enum CSVPreviewParser {
             throw ParseError.noData
         }
 
-        return ParsedTable(headers: headers, rows: Array(lines.dropFirst()))
+        return normalizedTable(headers: headers, rows: Array(lines.dropFirst()))
     }
 
     static func detectSeparator(_ text: String) -> Character {
@@ -151,5 +151,23 @@ enum CSVPreviewParser {
         if !line.isEmpty && !(line.count == 1 && line[0].isEmpty) {
             result.append(line)
         }
+    }
+
+    private static func normalizedTable(headers: [String], rows: [[String]]) -> ParsedTable {
+        let columnCount = max(headers.count, rows.map(\.count).max() ?? 0)
+        guard columnCount > headers.count else {
+            return ParsedTable(headers: headers, rows: rows.map { padded($0, to: columnCount) })
+        }
+
+        let extraHeaders = (headers.count..<columnCount).map { "Column \($0 + 1)" }
+        return ParsedTable(
+            headers: headers + extraHeaders,
+            rows: rows.map { padded($0, to: columnCount) }
+        )
+    }
+
+    private static func padded(_ row: [String], to columnCount: Int) -> [String] {
+        guard row.count < columnCount else { return row }
+        return row + Array(repeating: "", count: columnCount - row.count)
     }
 }

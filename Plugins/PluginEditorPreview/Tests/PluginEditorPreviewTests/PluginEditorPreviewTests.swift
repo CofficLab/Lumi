@@ -84,6 +84,13 @@ import Foundation
     #expect(table.rows == [["Ada", "42"], ["Grace", "39"]])
 }
 
+@Test func csvParserNormalizesRaggedRowsForStablePreviewColumns() throws {
+    let table = try CSVPreviewParser.parse("Name,Score\nAda\nGrace,39,passed")
+
+    #expect(table.headers == ["Name", "Score", "Column 3"])
+    #expect(table.rows == [["Ada", "", ""], ["Grace", "39", "passed"]])
+}
+
 @Test func previewStorageFindsLegacyCacheRootsAcrossDBVersions() throws {
     let appSupport = FileManager.default.temporaryDirectory
         .appendingPathComponent("EditorPreviewStorageTests-\(UUID().uuidString)", isDirectory: true)
