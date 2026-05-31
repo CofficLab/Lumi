@@ -1419,6 +1419,31 @@ struct EditorKernelTests {
     }
 
     @Test
+    func lineEditingControllerPreservesAdjacentMultiCursorsWhenCopyingLines() {
+        let selections = [
+            NSRange(location: 0, length: 0),
+            NSRange(location: 4, length: 0),
+        ]
+
+        let copiedDown = LineEditingController.copyLineDown(
+            in: "one\ntwo\nthree",
+            selections: selections
+        )
+        #expect(copiedDown?.replacementText == "one\ntwo\none\ntwo\nthree")
+        #expect(copiedDown?.selectedRanges == [
+            NSRange(location: 8, length: 0),
+            NSRange(location: 12, length: 0),
+        ])
+
+        let copiedUp = LineEditingController.copyLineUp(
+            in: "one\ntwo\nthree",
+            selections: selections
+        )
+        #expect(copiedUp?.replacementText == "one\ntwo\none\ntwo\nthree")
+        #expect(copiedUp?.selectedRanges == selections)
+    }
+
+    @Test
     func lineEditingControllerRejectsStaleSelectionsWithoutCrashing() {
         let staleCursor = NSRange(location: 50, length: 0)
         let staleRange = NSRange(location: 1, length: 50)

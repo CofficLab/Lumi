@@ -320,46 +320,62 @@ public enum LineEditingController: Sendable {
         }
 
         var edits: [(range: NSRange, text: String)] = []
-        var newCursors: [NSRange] = []
+        var cursorPlans: [(sourceRange: NSRange, destinationStart: Int, contentLength: Int)] = []
 
         for (index, range) in mergedRanges.enumerated() {
             let lineText = copiedTexts[index]
             let insertText: String
             let insertLocation: Int
-            let cursorLocation: Int
-            let originalSelection = selections[index]
-            let originalColumn = originalSelection.location - range.location
             let lineEnding = lineEndingSuffix(from: lineText)
             let fallbackLineEnding = preferredLineEnding(in: text)
             let lineContentLength = (lineText as NSString).length - ((lineEnding as NSString?)?.length ?? 0)
+            let destinationStart: Int
 
             if lineEnding != nil {
                 switch direction {
                 case .up:
                     insertText = lineText
                     insertLocation = range.location
-                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                    destinationStart = insertLocation
                 case .down:
                     insertText = lineText
                     insertLocation = NSMaxRange(range)
-                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                    destinationStart = insertLocation
                 }
             } else {
                 switch direction {
                 case .up:
                     insertText = lineText + fallbackLineEnding
                     insertLocation = range.location
-                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                    destinationStart = insertLocation
                 case .down:
                     insertText = fallbackLineEnding + lineText
                     insertLocation = NSMaxRange(range)
-                    cursorLocation = insertLocation + (fallbackLineEnding as NSString).length + min(originalColumn, max(lineContentLength, 0))
+                    destinationStart = insertLocation + (fallbackLineEnding as NSString).length
                 }
             }
 
             edits.append((range: NSRange(location: insertLocation, length: 0), text: insertText))
-            newCursors.append(NSRange(location: cursorLocation, length: 0))
+            cursorPlans.append((
+                sourceRange: range,
+                destinationStart: destinationStart,
+                contentLength: max(lineContentLength, 0)
+            ))
         }
+
+        let newCursors = selections.compactMap { selection -> NSRange? in
+            guard let plan = cursorPlans.first(where: {
+                selection.location >= $0.sourceRange.location && selection.location <= NSMaxRange($0.sourceRange)
+            }) else {
+                return nil
+            }
+            let offset = selection.location - plan.sourceRange.location
+            return NSRange(
+                location: plan.destinationStart + min(offset, plan.contentLength),
+                length: selection.length
+            )
+        }
+        guard newCursors.count == selections.count else { return nil }
 
         return applyEditsFromBack(
             text: text,
