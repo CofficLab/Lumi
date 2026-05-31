@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Memory Plugin 本地存储
 ///
@@ -6,6 +7,7 @@ import Foundation
 public final class MemoryPluginLocalStore: @unchecked Sendable {
     public static let shared = MemoryPluginLocalStore()
 
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.memory.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "com.coffic.lumi.memory.store", qos: .userInitiated)
     private let settingsDirectory: URL
@@ -26,7 +28,8 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
 
     // MARK: - 初始化
 
-    private init() {
+    private convenience init() {
+        let fileManager = FileManager.default
         let applicationSupportURL = fileManager.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
@@ -34,29 +37,38 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
 
         let lumiDirectory = applicationSupportURL.appending(path: "Lumi")
         let settingsDir = lumiDirectory.appending(path: "PluginSettings")
+        self.init(settingsDirectory: settingsDir)
+    }
 
-        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true)
-
-        self.settingsDirectory = settingsDir
-        self.settingsFileURL = settingsDir.appending(path: "Memory.plist")
+    init(settingsDirectory: URL) {
+        self.settingsDirectory = settingsDirectory
+        self.settingsFileURL = settingsDirectory.appending(path: "Memory.plist")
+        do {
+            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create memory settings directory failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - 公共 API
 
-    public func set(_ value: Any?, forKey key: Key) {
+    @discardableResult
+    public func set(_ value: Any?, forKey key: Key) -> Bool {
         queue.sync {
-            var dict = readDict()
+            guard var dict = readDict() else {
+                return false
+            }
             if let value {
                 dict[key.rawValue] = value
             } else {
                 dict.removeValue(forKey: key.rawValue)
             }
-            writeDict(dict)
+            return writeDict(dict)
         }
     }
 
     public func object(forKey key: Key) -> Any? {
-        queue.sync { readDict()[key.rawValue] }
+        queue.sync { readDict()?[key.rawValue] }
     }
 
     public func bool(forKey key: Key, defaultValue: Bool = false) -> Bool {
@@ -107,30 +119,49 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
 
     // MARK: - 私有辅助方法
 
-    private func readDict() -> [String: Any] {
-        guard fileManager.fileExists(atPath: settingsFileURL.path),
-              let data = try? Data(contentsOf: settingsFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+    private func readDict() -> [String: Any]? {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else {
             return [:]
         }
-        return dict
+
+        do {
+            let data = try Data(contentsOf: settingsFileURL)
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                Self.logger.error("Read memory settings failed: root plist is not a dictionary")
+                return nil
+            }
+            return dict
+        } catch {
+            Self.logger.error("Read memory settings failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
-    private func writeDict(_ dict: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else {
-            return
+    @discardableResult
+    private func writeDict(_ dict: [String: Any]) -> Bool {
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
+        } catch {
+            Self.logger.error("Encode memory settings failed: \(error.localizedDescription)")
+            return false
         }
+
         let tmp = settingsDirectory.appending(path: "Memory.tmp")
         do {
+            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
             try data.write(to: tmp, options: .atomic)
             if fileManager.fileExists(atPath: settingsFileURL.path) {
-                _ = try? fileManager.replaceItemAt(settingsFileURL, withItemAt: tmp)
+                _ = try fileManager.replaceItemAt(settingsFileURL, withItemAt: tmp)
             } else {
                 try fileManager.moveItem(at: tmp, to: settingsFileURL)
             }
+            return true
         } catch {
+            Self.logger.error("Persist memory settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
+            return false
         }
     }
 }

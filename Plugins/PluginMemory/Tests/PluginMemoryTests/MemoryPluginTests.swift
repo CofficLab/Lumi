@@ -1,4 +1,5 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
 import MemoryKit
 import Testing
@@ -99,5 +100,55 @@ struct PluginMemoryTests {
         #expect(MemoryToolInput.maxResults(8) == 8)
         #expect(MemoryToolInput.maxResults(99) == 20)
         #expect(MemoryToolInput.maxResults(nil) == 5)
+    }
+
+    @Test("local store reports save result and reloads values")
+    func localStoreReportsSaveResultAndReloadsValues() {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = MemoryPluginLocalStore(settingsDirectory: directory)
+
+        #expect(store.set(8, forKey: .maxRelevantMemories) == true)
+        #expect(store.set(true, forKey: .injectGlobalIndex) == true)
+
+        let reloadedStore = MemoryPluginLocalStore(settingsDirectory: directory)
+        #expect(reloadedStore.maxRelevantMemories == 8)
+        #expect(reloadedStore.shouldInjectGlobalIndex == true)
+    }
+
+    @Test("local store reports failure and preserves invalid settings file")
+    func localStoreReportsFailureAndPreservesInvalidSettingsFile() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-Invalid-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let settingsURL = directory.appending(path: "Memory.plist")
+        let invalidData = Data("not a plist".utf8)
+        try invalidData.write(to: settingsURL)
+
+        let store = MemoryPluginLocalStore(settingsDirectory: directory)
+
+        #expect(store.set(10, forKey: .maxRelevantMemories) == false)
+        #expect((try? Data(contentsOf: settingsURL)) == invalidData)
+        #expect(store.maxRelevantMemories == 3)
+    }
+
+    @Test("local store reports failure when settings directory is blocked")
+    func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-Blocked-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let blockedDirectory = tempRoot.appending(path: "PluginSettings", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let store = MemoryPluginLocalStore(settingsDirectory: blockedDirectory)
+
+        #expect(store.set(10, forKey: .maxRelevantMemories) == false)
+        #expect(store.maxRelevantMemories == 3)
     }
 }
