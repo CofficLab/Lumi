@@ -136,26 +136,7 @@ public enum GitCommitDetailService {
 
         guard !branch.isEmpty else { return nil }
 
-        // 解析 remote：取第一行的第一个 URL 部分
-        let remote: String
-        if let firstLine = remoteRaw.components(separatedBy: "\n").first {
-            // 格式: "origin\tgit@github.com:user/repo.git (fetch)"
-            let parts = firstLine.components(separatedBy: "\t")
-            if parts.count > 1 {
-                let urlString = parts[1].components(separatedBy: " ").first ?? parts[1]
-                // 提取简洁的路径部分 (user/repo)
-                if urlString.hasSuffix(".git") {
-                    remote = String(urlString.dropLast(4))
-                        .components(separatedBy: ":").last ?? urlString
-                } else {
-                    remote = urlString
-                }
-            } else {
-                remote = firstLine
-            }
-        } else {
-            remote = "—"
-        }
+        let remote = parseRemoteDisplayName(from: remoteRaw)
 
         // 解析贡献者
         let contributors = shortlog.components(separatedBy: "\n")
@@ -178,6 +159,31 @@ public enum GitCommitDetailService {
             lastCommitAuthor: lastAuthor.isEmpty ? "—" : lastAuthor,
             lastCommitDate: lastDate.isEmpty ? "—" : formattedDate(lastDate)
         )
+    }
+
+    static func parseRemoteDisplayName(from remoteRaw: String) -> String {
+        guard let firstLine = remoteRaw.components(separatedBy: "\n").first,
+              !firstLine.isEmpty else {
+            return "—"
+        }
+
+        // 格式: "origin\tgit@github.com:user/repo.git (fetch)"
+        let parts = firstLine.components(separatedBy: "\t")
+        guard parts.count > 1 else {
+            return firstLine
+        }
+
+        let urlString = parts[1]
+            .replacingOccurrences(of: " (fetch)", with: "")
+            .replacingOccurrences(of: " (push)", with: "")
+
+        // 提取简洁的路径部分 (user/repo)
+        if urlString.hasSuffix(".git") {
+            return String(urlString.dropLast(4))
+                .components(separatedBy: ":").last ?? urlString
+        }
+
+        return urlString
     }
 
     // MARK: - Git Command Helper

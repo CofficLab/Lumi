@@ -14,3 +14,15 @@ import Testing
         try GitService.validatePath("/tmp/Lumi-Other/Repo", allowedDirectories: [allowed])
     }
 }
+
+@Test func remoteDisplayNamePreservesSpacesInLocalRemotePath() {
+    let remote = GitCommitDetailService.parseRemoteDisplayName(from: "origin\t/tmp/My Repo.git (fetch)\norigin\t/tmp/My Repo.git (push)")
+
+    #expect(remote == "/tmp/My Repo")
+}
+
+@Test func remoteDisplayNameKeepsSshRepositoryPath() {
+    let remote = GitCommitDetailService.parseRemoteDisplayName(from: "origin\tgit@github.com:CofficLab/Lumi.git (fetch)")
+
+    #expect(remote == "CofficLab/Lumi")
+}
