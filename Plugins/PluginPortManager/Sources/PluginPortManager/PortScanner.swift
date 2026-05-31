@@ -76,23 +76,41 @@ public final class PortScanner: Sendable, SuperLog {
                 guard let protoIndex = parts.firstIndex(where: { $0 == "TCP" || $0 == "UDP" }) else { continue }
                 let proto = parts[protoIndex]
 
-                // Address is usually after "TCP" (skipping DEVICE, SIZE/OFF, NODE)
-                // But lsof output is fixed width-ish but separated by spaces.
-                // Let's look for the part that contains ":" and starts with a digit or "*" or "[" (IPv6)
-
-                if let addressPart = parts.first(where: { $0.contains(":") && ($0.first?.isNumber == true || $0.first == "*" || $0.first == "[") }) {
-                    let subParts = addressPart.components(separatedBy: ":")
-                    if let last = subParts.last, let _ = Int(last) {
-                        let port = last
-
-                        // Check if we already have this port (sometimes lsof lists IPv4 and IPv6 separately for same port)
-                        // We might want to keep both or dedup. Let's keep all for now.
-                        ports.append(PortInfo(command: command, pid: pid, user: user, protocolName: proto, port: port, address: addressPart))
-                    }
+                if let address = Self.listeningAddress(in: parts[(protoIndex + 1)...]) {
+                    // Check if we already have this port (sometimes lsof lists IPv4 and IPv6 separately for same port)
+                    // We might want to keep both or dedup. Let's keep all for now.
+                    ports.append(PortInfo(command: command, pid: pid, user: user, protocolName: proto, port: address.port, address: address.raw))
                 }
             }
         }
         return ports
+    }
+
+    private static func listeningAddress(in parts: ArraySlice<String>) -> (raw: String, port: String)? {
+        for part in parts {
+            let address = part.trimmingCharacters(in: CharacterSet(charactersIn: ","))
+            guard let port = port(from: address) else { continue }
+            return (address, port)
+        }
+        return nil
+    }
+
+    private static func port(from address: String) -> String? {
+        if address.hasPrefix("[") {
+            guard let closeBracket = address.lastIndex(of: "]") else { return nil }
+            let separatorIndex = address.index(after: closeBracket)
+            guard separatorIndex < address.endIndex, address[separatorIndex] == ":" else { return nil }
+            let portStart = address.index(after: separatorIndex)
+            guard portStart < address.endIndex else { return nil }
+            let port = String(address[portStart...])
+            return Int(port) == nil ? nil : port
+        }
+
+        guard let separatorIndex = address.lastIndex(of: ":") else { return nil }
+        let portStart = address.index(after: separatorIndex)
+        guard portStart < address.endIndex else { return nil }
+        let port = String(address[portStart...])
+        return Int(port) == nil ? nil : port
     }
 
     public func killProcess(pid: String) async throws {
