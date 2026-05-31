@@ -225,10 +225,19 @@ struct ContextPruner: SuperLog {
                 continue
             }
 
-            let lastRole = result.last!.role
-
             switch current.role {
             case .user:
+                if !activeToolCallIDs.isEmpty {
+                    removeUnresolvedToolCallsFromLastAssistant(&result, unresolvedIDs: activeToolCallIDs)
+                    activeToolCallIDs.removeAll()
+                }
+
+                guard let lastRole = result.last?.role else {
+                    result.append(current)
+                    i += 1
+                    continue
+                }
+
                 if lastRole == .user {
                     // 连续 user → 合并内容到上一条
                     var merged = result.removeLast()
@@ -251,6 +260,18 @@ struct ContextPruner: SuperLog {
                 }
 
             case .assistant:
+                if !activeToolCallIDs.isEmpty {
+                    removeUnresolvedToolCallsFromLastAssistant(&result, unresolvedIDs: activeToolCallIDs)
+                    activeToolCallIDs.removeAll()
+                }
+
+                guard let lastRole = result.last?.role else {
+                    result.append(current)
+                    activeToolCallIDs = Set(current.toolCalls?.map(\.id) ?? [])
+                    i += 1
+                    continue
+                }
+
                 if lastRole == .assistant {
                     // 连续 assistant → 合并内容到上一条
                     var merged = result.removeLast()
@@ -277,6 +298,7 @@ struct ContextPruner: SuperLog {
                 }
 
             case .tool:
+                let lastRole = result.last!.role
                 // tool 消息必须紧跟在带有 tool_calls 的 assistant 之后；
                 // 一个 assistant 可对应多条连续 tool 结果。
                 guard lastRole == .assistant || lastRole == .tool else {
@@ -301,6 +323,31 @@ struct ContextPruner: SuperLog {
             i += 1
         }
 
+        if !activeToolCallIDs.isEmpty {
+            removeUnresolvedToolCallsFromLastAssistant(&result, unresolvedIDs: activeToolCallIDs)
+        }
+
         return result
+    }
+
+    private static func removeUnresolvedToolCallsFromLastAssistant(
+        _ messages: inout [ChatMessage],
+        unresolvedIDs: Set<String>
+    ) {
+        guard !unresolvedIDs.isEmpty,
+              let index = messages.lastIndex(where: { $0.role == .assistant }),
+              var toolCalls = messages[index].toolCalls,
+              !toolCalls.isEmpty else {
+            return
+        }
+
+        toolCalls.removeAll { unresolvedIDs.contains($0.id) }
+        messages[index].toolCalls = toolCalls.isEmpty ? nil : toolCalls
+
+        if messages[index].content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           messages[index].toolCalls?.isEmpty ?? true,
+           index == messages.indices.last {
+            messages.remove(at: index)
+        }
     }
 }
