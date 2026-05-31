@@ -2,6 +2,45 @@ import Testing
 import Foundation
 @testable import PluginProjectIssueScanner
 
+@Test func localRuleScannerOnlyReportsTodoMarkersFromComments() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("issue-scanner-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let source = """
+    let todoValue = "not a marker"
+    let message = "TODO: this is user-facing text, not a comment"
+    // TODO: wire up the final action
+    /* FIXME: handle error details */
+    """
+    try source.write(to: root.appendingPathComponent("Example.swift"), atomically: true, encoding: .utf8)
+
+    let issues = LocalRuleScanner().scan(projectPath: root.path)
+
+    #expect(issues.map(\.type) == [.todo, .fixme])
+    #expect(issues.map(\.lineNumber) == [3, 4])
+}
+
+@Test func localRuleScannerDoesNotMatchTodoInsideLongerWords() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("issue-scanner-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let source = """
+    // notodo should not be treated as a marker
+    // TODO(later): this is a marker
+    """
+    try source.write(to: root.appendingPathComponent("Example.swift"), atomically: true, encoding: .utf8)
+
+    let issues = LocalRuleScanner().scan(projectPath: root.path)
+
+    #expect(issues.count == 1)
+    #expect(issues.first?.type == .todo)
+    #expect(issues.first?.lineNumber == 2)
+}
+
 @Test func projectIssueStoreLoadsPersistedISO8601Dates() throws {
     let issue = ProjectIssue(
         id: UUID(uuidString: "2E87F59C-1C80-49A8-84D7-0546F43B28C1")!,

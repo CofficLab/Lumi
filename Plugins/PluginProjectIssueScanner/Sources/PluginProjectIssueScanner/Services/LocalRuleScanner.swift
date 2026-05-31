@@ -86,38 +86,41 @@ public struct LocalRuleScanner: Sendable {
         let now = Date()
         var issues: [ProjectIssue] = []
 
+        let fileExtension = fileURL.pathExtension.lowercased()
         for (offset, line) in lines.enumerated() {
             let lineNumber = offset + 1
-            let uppercasedLine = line.uppercased()
+            guard let comment = commentFragment(in: line, fileExtension: fileExtension) else {
+                continue
+            }
 
-            if uppercasedLine.contains("FIXME") {
+            if containsMarker("FIXME", in: comment) {
                 issues.append(commentIssue(
                     type: .fixme,
                     severity: .warning,
                     marker: "FIXME",
-                    line: line,
+                    line: comment,
                     lineNumber: lineNumber,
                     relativePath: relativePath,
                     rootURL: rootURL,
                     now: now
                 ))
-            } else if uppercasedLine.contains("HACK") {
+            } else if containsMarker("HACK", in: comment) {
                 issues.append(commentIssue(
                     type: .hack,
                     severity: .info,
                     marker: "HACK",
-                    line: line,
+                    line: comment,
                     lineNumber: lineNumber,
                     relativePath: relativePath,
                     rootURL: rootURL,
                     now: now
                 ))
-            } else if uppercasedLine.contains("TODO") {
+            } else if containsMarker("TODO", in: comment) {
                 issues.append(commentIssue(
                     type: .todo,
                     severity: .info,
                     marker: "TODO",
-                    line: line,
+                    line: comment,
                     lineNumber: lineNumber,
                     relativePath: relativePath,
                     rootURL: rootURL,
@@ -145,6 +148,50 @@ public struct LocalRuleScanner: Sendable {
         issues.append(contentsOf: emptyCatchIssues(lines: lines, relativePath: relativePath, rootURL: rootURL, now: now))
 
         return issues
+    }
+
+    private func commentFragment(in line: String, fileExtension: String) -> String? {
+        if fileExtension == "md" {
+            return line
+        }
+
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("*") {
+            return trimmed
+        }
+
+        let markers = ["//", "#", "/*", "<!--"]
+        let ranges = markers.compactMap { marker in
+            line.range(of: marker).map { (range: $0, marker: marker) }
+        }
+
+        guard let first = ranges.min(by: { $0.range.lowerBound < $1.range.lowerBound }) else {
+            return nil
+        }
+
+        return String(line[first.range.lowerBound...])
+    }
+
+    private func containsMarker(_ marker: String, in text: String) -> Bool {
+        var searchStart = text.startIndex
+        while let range = text.range(of: marker, options: [.caseInsensitive], range: searchStart..<text.endIndex) {
+            let hasValidPrefix = range.lowerBound == text.startIndex
+                || !isMarkerCharacter(text[text.index(before: range.lowerBound)])
+            let hasValidSuffix = range.upperBound == text.endIndex
+                || !isMarkerCharacter(text[range.upperBound])
+
+            if hasValidPrefix && hasValidSuffix {
+                return true
+            }
+
+            searchStart = range.upperBound
+        }
+
+        return false
+    }
+
+    private func isMarkerCharacter(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber || character == "_"
     }
 
     private func commentIssue(
