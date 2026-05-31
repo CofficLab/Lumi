@@ -45,6 +45,38 @@ struct AppIconExportServiceTests {
         #expect(result.appIconSetURL.lastPathComponent == "Bad-Name.appiconset")
     }
 
+    @Test("keeps previous appiconset when replacement fails")
+    func keepsPreviousAppIconSetWhenReplacementFails() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginAppIconDesignerReplacementTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        let sourceURL = tempRoot.appendingPathComponent("source.png")
+        try makeSourceImage().write(to: sourceURL)
+
+        let existingAppIconSetURL = tempRoot.appendingPathComponent("AppIcon.appiconset", isDirectory: true)
+        try FileManager.default.createDirectory(at: existingAppIconSetURL, withIntermediateDirectories: true)
+        let sentinelURL = existingAppIconSetURL.appendingPathComponent("existing.txt")
+        try "keep me".write(to: sentinelURL, atomically: true, encoding: .utf8)
+
+        let service = AppIconExportService(
+            replaceItem: { _, _ in
+                throw CocoaError(.fileWriteUnknown)
+            }
+        )
+
+        #expect(throws: CocoaError.self) {
+            _ = try service.exportAppIconSet(
+                sourceImagePath: sourceURL.path,
+                outputDirectory: tempRoot
+            )
+        }
+
+        #expect(FileManager.default.fileExists(atPath: existingAppIconSetURL.path))
+        #expect(FileManager.default.fileExists(atPath: sentinelURL.path))
+    }
+
     @MainActor
     @Test("registers generated artifact")
     func registersArtifact() throws {

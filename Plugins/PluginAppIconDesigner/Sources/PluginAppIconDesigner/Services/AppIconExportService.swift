@@ -46,9 +46,23 @@ public struct AppIconExportService {
     ]
 
     private let fileManager: FileManager
+    private let replaceItem: (URL, URL) throws -> URL?
 
     public init(fileManager: FileManager = .default) {
+        self.init(
+            fileManager: fileManager,
+            replaceItem: { originalURL, newURL in
+                try fileManager.replaceItemAt(originalURL, withItemAt: newURL)
+            }
+        )
+    }
+
+    init(
+        fileManager: FileManager = .default,
+        replaceItem: @escaping (URL, URL) throws -> URL?
+    ) {
         self.fileManager = fileManager
+        self.replaceItem = replaceItem
     }
 
     public func exportAppIconSet(
@@ -62,23 +76,29 @@ public struct AppIconExportService {
         }
 
         let appIconSetURL = outputDirectory.appendingPathComponent("\(Self.safeSetName(setName)).appiconset", isDirectory: true)
-        if fileManager.fileExists(atPath: appIconSetURL.path) {
-            try fileManager.removeItem(at: appIconSetURL)
+        let temporaryAppIconSetURL = try createTemporaryAppIconSetURL(for: appIconSetURL)
+        var installedAppIconSet = false
+        defer {
+            if !installedAppIconSet {
+                try? fileManager.removeItem(at: temporaryAppIconSetURL)
+            }
         }
-        try fileManager.createDirectory(at: appIconSetURL, withIntermediateDirectories: true)
 
         for slot in Self.macSlots {
             let pixelSize = slot.size * slot.scale
             let data = try renderPNG(cgImage: cgImage, pixelSize: pixelSize)
-            try data.write(to: appIconSetURL.appendingPathComponent(slot.filename))
+            try data.write(to: temporaryAppIconSetURL.appendingPathComponent(slot.filename))
         }
 
         let contents = contentsJSON(for: Self.macSlots)
         try contents.write(
-            to: appIconSetURL.appendingPathComponent("Contents.json"),
+            to: temporaryAppIconSetURL.appendingPathComponent("Contents.json"),
             atomically: true,
             encoding: .utf8
         )
+
+        try installTemporaryAppIconSet(temporaryAppIconSetURL, at: appIconSetURL)
+        installedAppIconSet = true
 
         return ExportResult(appIconSetURL: appIconSetURL, imageCount: Self.macSlots.count)
     }
@@ -96,10 +116,13 @@ public struct AppIconExportService {
         }
 
         let appIconSetURL = outputDirectory.appendingPathComponent("\(Self.safeSetName(setName)).appiconset", isDirectory: true)
-        if fileManager.fileExists(atPath: appIconSetURL.path) {
-            try fileManager.removeItem(at: appIconSetURL)
+        let temporaryAppIconSetURL = try createTemporaryAppIconSetURL(for: appIconSetURL)
+        var installedAppIconSet = false
+        defer {
+            if !installedAppIconSet {
+                try? fileManager.removeItem(at: temporaryAppIconSetURL)
+            }
         }
-        try fileManager.createDirectory(at: appIconSetURL, withIntermediateDirectories: true)
 
         for slot in Self.macSlots {
             let pixelSize = slot.size * slot.scale
@@ -113,15 +136,18 @@ public struct AppIconExportService {
             }
 
             let data = try pngData(cgImage: cgImage)
-            try data.write(to: appIconSetURL.appendingPathComponent(slot.filename))
+            try data.write(to: temporaryAppIconSetURL.appendingPathComponent(slot.filename))
         }
 
         let contents = contentsJSON(for: Self.macSlots)
         try contents.write(
-            to: appIconSetURL.appendingPathComponent("Contents.json"),
+            to: temporaryAppIconSetURL.appendingPathComponent("Contents.json"),
             atomically: true,
             encoding: .utf8
         )
+
+        try installTemporaryAppIconSet(temporaryAppIconSetURL, at: appIconSetURL)
+        installedAppIconSet = true
 
         return ExportResult(
             appIconSetURL: appIconSetURL,
@@ -138,6 +164,26 @@ public struct AppIconExportService {
             .reduce(into: "") { $0.append($1) }
             .trimmingCharacters(in: CharacterSet(charactersIn: "-_"))
         return safe.isEmpty ? "AppIcon" : safe
+    }
+
+    private func createTemporaryAppIconSetURL(for appIconSetURL: URL) throws -> URL {
+        let parentURL = appIconSetURL.deletingLastPathComponent()
+        try fileManager.createDirectory(at: parentURL, withIntermediateDirectories: true)
+
+        let temporaryURL = parentURL.appendingPathComponent(
+            ".\(appIconSetURL.lastPathComponent).\(UUID().uuidString).tmp",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: temporaryURL, withIntermediateDirectories: true)
+        return temporaryURL
+    }
+
+    private func installTemporaryAppIconSet(_ temporaryURL: URL, at appIconSetURL: URL) throws {
+        if fileManager.fileExists(atPath: appIconSetURL.path) {
+            _ = try replaceItem(appIconSetURL, temporaryURL)
+        } else {
+            try fileManager.moveItem(at: temporaryURL, to: appIconSetURL)
+        }
     }
 
     private func renderPNG(cgImage: CGImage, pixelSize: Int) throws -> Data {
