@@ -7,6 +7,7 @@ import GitHubKit
 public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔥"
     public nonisolated static let verbose: Bool = true
+    static let minLimit = 1
     static let defaultLimit = 10
     static let maxLimit = 100
     public let name = "github_trending"
@@ -39,8 +40,10 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
                     "enum": ["daily", "weekly", "monthly"]
                 ],
                 "limit": [
-                    "type": "number",
-                    "description": limitDesc
+                    "type": "integer",
+                    "description": limitDesc,
+                    "minimum": Self.minLimit,
+                    "maximum": Self.maxLimit
                 ]
             ]
         ]
@@ -53,7 +56,7 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let since = Self.normalizedSince(arguments["since"]?.value as? String)
-        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
+        let limit = Self.normalizedLimit(arguments["limit"]?.value)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {
@@ -91,8 +94,19 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         return output
     }
 
-    static func normalizedLimit(_ rawLimit: Int?) -> Int {
-        min(max(rawLimit ?? defaultLimit, 1), maxLimit)
+    static func normalizedLimit(_ value: Any?) -> Int {
+        let rawLimit: Int?
+        if let int = value as? Int {
+            rawLimit = int
+        } else if let double = value as? Double {
+            rawLimit = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            rawLimit = int
+        } else {
+            rawLimit = nil
+        }
+
+        return min(max(rawLimit ?? defaultLimit, minLimit), maxLimit)
     }
 
     static func normalizedSince(_ rawSince: String?) -> String {

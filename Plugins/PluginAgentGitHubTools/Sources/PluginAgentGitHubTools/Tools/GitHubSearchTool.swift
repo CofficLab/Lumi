@@ -7,6 +7,7 @@ import GitHubKit
 public struct GitHubSearchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
+    static let minLimit = 1
     static let defaultLimit = 5
     static let maxLimit = 100
     public let name = "github_search"
@@ -52,8 +53,10 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
                     "description": minStarsDesc
                 ],
                 "limit": [
-                    "type": "number",
-                    "description": limitDesc
+                    "type": "integer",
+                    "description": limitDesc,
+                    "minimum": Self.minLimit,
+                    "maximum": Self.maxLimit
                 ]
             ],
             "required": ["query"]
@@ -76,7 +79,7 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
 
         let language = arguments["language"]?.value as? String
         let minStars = arguments["minStars"]?.value as? Int ?? 0
-        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
+        let limit = Self.normalizedLimit(arguments["limit"]?.value)
 
         // 构建搜索查询
         var searchQuery = query
@@ -98,20 +101,20 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
                 query: searchQuery,
                 perPage: limit
             )
-            return formatSearchResult(result)
+            return Self.formatSearchResult(result)
         } catch {
             return "搜索失败：\(error.localizedDescription)"
         }
     }
 
-    private func formatSearchResult(_ result: GitHubSearchResult) -> String {
+    static func formatSearchResult(_ result: GitHubSearchResult) -> String {
         guard !result.items.isEmpty else {
             return "未找到匹配的仓库"
         }
 
         var output = "🔍 找到 \(result.totalCount) 个结果，显示前 \(result.items.count) 个：\n\n"
 
-        for (index, repo) in result.items.enumerated().prefix(5) {
+        for (index, repo) in result.items.enumerated() {
             output += """
             \(index + 1). **\(repo.fullName)**
                \(repo.description ?? "无描述")
@@ -125,7 +128,18 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
         return output
     }
 
-    static func normalizedLimit(_ rawLimit: Int?) -> Int {
-        min(max(rawLimit ?? defaultLimit, 1), maxLimit)
+    static func normalizedLimit(_ value: Any?) -> Int {
+        let rawLimit: Int?
+        if let int = value as? Int {
+            rawLimit = int
+        } else if let double = value as? Double {
+            rawLimit = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            rawLimit = int
+        } else {
+            rawLimit = nil
+        }
+
+        return min(max(rawLimit ?? defaultLimit, minLimit), maxLimit)
     }
 }
