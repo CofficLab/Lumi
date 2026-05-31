@@ -2092,6 +2092,15 @@ struct EditorKernelTests {
     }
 
     @Test
+    func multiCursorMatcherRejectsInvalidSelectionRanges() {
+        let text = "cat" as NSString
+
+        #expect(EditorMultiCursorMatcher.selectionText(for: NSRange(location: -1, length: 1), in: text) == nil)
+        #expect(EditorMultiCursorMatcher.selectionText(for: NSRange(location: 1, length: -1), in: text) == nil)
+        #expect(EditorMultiCursorMatcher.selectionText(for: NSRange(location: 2, length: 2), in: text) == nil)
+    }
+
+    @Test
     @MainActor
     func multiCursorWorkflowControllerRemainsStable() {
         let controller = EditorMultiCursorWorkflowController()

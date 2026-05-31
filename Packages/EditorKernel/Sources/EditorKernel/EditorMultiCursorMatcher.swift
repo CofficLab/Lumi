@@ -5,7 +5,11 @@ public enum EditorMultiCursorMatcher {
         for range: NSRange,
         in text: NSString
     ) -> String? {
-        guard range.location != NSNotFound, NSMaxRange(range) <= text.length else { return nil }
+        guard range.location != NSNotFound,
+              range.location >= 0,
+              range.length >= 0,
+              range.location <= Int.max - range.length,
+              NSMaxRange(range) <= text.length else { return nil }
         return text.substring(with: range)
     }
 
