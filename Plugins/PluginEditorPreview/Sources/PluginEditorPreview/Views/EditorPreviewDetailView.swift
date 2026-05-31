@@ -707,10 +707,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
             case .stringCatalog:
                 EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
                     .environmentObject(themeVM)
-            case let .json(url):
+            case .json:
                 EditorPreviewJSONView(jsonText: sourceText ?? "")
                     .environmentObject(themeVM)
-            case let .plist(url):
+            case .plist:
                 EditorPreviewPlistView(plistText: sourceText ?? "")
                     .environmentObject(themeVM)
             case let .csv(url):
@@ -1267,7 +1267,7 @@ private struct EditorPreviewMarkdownView: View {
 
     /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。
     private func deleteHeadingAndContent(heading: MarkdownTOCHeading) {
-        guard let editorService, let fileURL else { return }
+        guard let editorService else { return }
 
         let lines = markdown.components(separatedBy: .newlines)
         let startLine = heading.lineNumber

@@ -187,7 +187,7 @@ private struct PlistTreeNode: View {
             }
 
             // 类型标记
-            let (typeName, count) = collectionInfo
+            let (typeName, _) = collectionInfo
             Text(typeName)
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundColor(theme.workspaceSecondaryTextColor())
