@@ -31,7 +31,7 @@ public struct JSEnvResolver: SuperLog {
         findCommand("npm")
     }
 
-    /// 根据项目目录的锁文件推断包管理器
+    /// 根据项目目录的锁文件和 package.json 推断包管理器
     public static func detectPackageManager(projectPath: String) -> JSPackageInfo.PackageManager {
         let fm = FileManager.default
         let dir = URL(fileURLWithPath: projectPath)
@@ -45,6 +45,9 @@ public struct JSEnvResolver: SuperLog {
         }
         if fm.fileExists(atPath: dir.appendingPathComponent("yarn.lock").path) {
             return .yarn
+        }
+        if let package = PackageJSONParser.parse(projectPath: projectPath) {
+            return package.inferredPackageManager
         }
         return .npm
     }

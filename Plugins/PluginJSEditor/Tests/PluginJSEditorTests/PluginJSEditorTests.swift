@@ -63,6 +63,39 @@ import Foundation
     #expect(workspace.packagePaths == expectedPaths)
 }
 
+@Test func envResolverUsesPackageManagerFieldWithoutLockfile() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try """
+    {
+      "name": "pnpm-project",
+      "packageManager": "pnpm@9.15.0"
+    }
+    """.write(to: directory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+
+    #expect(JSEnvResolver.detectPackageManager(projectPath: directory.path) == .pnpm)
+}
+
+@Test func envResolverPrefersLockfileOverPackageManagerField() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try """
+    {
+      "name": "lockfile-project",
+      "packageManager": "npm@10.0.0"
+    }
+    """.write(to: directory.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+    try "".write(to: directory.appendingPathComponent("yarn.lock"), atomically: true, encoding: .utf8)
+
+    #expect(JSEnvResolver.detectPackageManager(projectPath: directory.path) == .yarn)
+}
+
 @Test func tsConfigResolverParsesJSONCCommentsAndTrailingCommas() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("JSEditorTests-\(UUID().uuidString)", isDirectory: true)
