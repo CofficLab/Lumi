@@ -10,25 +10,54 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
     private let fileURL: URL
     
     private init() {
+        self.fileURL = Self.defaultSettingsFileURL()
+        load()
+    }
+
+    init(fileURL: URL, loadImmediately: Bool = true) {
+        self.fileURL = fileURL
+        if loadImmediately {
+            load()
+        }
+    }
+
+    private static func defaultSettingsFileURL() -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let pluginDir = appSupport.appendingPathComponent("Lumi/NettoPlugin")
-        try? FileManager.default.createDirectory(at: pluginDir, withIntermediateDirectories: true)
-        self.fileURL = pluginDir.appendingPathComponent("settings.json")
-        
-        load()
+        do {
+            try FileManager.default.createDirectory(at: pluginDir, withIntermediateDirectories: true)
+        } catch {
+            Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
+                .error("Failed to create Netto settings directory: \(error.localizedDescription)")
+        }
+        return pluginDir.appendingPathComponent("settings.json")
     }
     
     public func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        if let decoded = try? JSONDecoder().decode([AppSetting].self, from: data) {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decoded = try JSONDecoder().decode([AppSetting].self, from: data)
             self.settings = Dictionary(uniqueKeysWithValues: decoded.map { ($0.appId, $0) })
+        } catch {
+            logger.error("Failed to load Netto settings, preserving corrupt file: \(error.localizedDescription)")
+            preserveCorruptSettingsFile()
+            self.settings = [:]
         }
     }
     
     public func save() {
         let array = Array(settings.values)
-        if let data = try? JSONEncoder().encode(array) {
-            try? data.write(to: fileURL)
+        do {
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let data = try JSONEncoder().encode(array)
+            try data.write(to: fileURL, options: [.atomic])
+        } catch {
+            logger.error("Failed to save Netto settings: \(error.localizedDescription)")
         }
     }
     
@@ -51,5 +80,19 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
     public func setAllowed(appId: String, allowed: Bool) {
         let setting = AppSetting(appId: appId, allowed: allowed)
         updateSetting(setting)
+    }
+
+    private func preserveCorruptSettingsFile() {
+        let backupURL = fileURL.appendingPathExtension("corrupt")
+        let fileManager = FileManager.default
+
+        do {
+            if fileManager.fileExists(atPath: backupURL.path) {
+                try fileManager.removeItem(at: backupURL)
+            }
+            try fileManager.moveItem(at: fileURL, to: backupURL)
+        } catch {
+            logger.error("Failed to move corrupt Netto settings aside: \(error.localizedDescription)")
+        }
     }
 }
