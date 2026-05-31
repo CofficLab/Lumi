@@ -93,7 +93,7 @@ struct VueCompilerOptions: Sendable {
             }
 
             // 从 tsconfig compilerOptions 读取 jsx
-            if let jsx = tsconfig.jsx, jsx != "preserve" || jsx != "" {
+            if let jsx = tsconfig.jsx, !jsx.isEmpty, jsx != "preserve" {
                 options = options.with(jsxEnabled: true)
             }
 

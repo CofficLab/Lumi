@@ -92,9 +92,40 @@ import Testing
     #expect(info.slots.first?.props == ["(scoped)"])
 }
 
+@Test func vueCompilerOptionsIgnoreEmptyTSConfigJSX() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+    try writeTSConfig(jsx: "", to: projectURL)
+
+    let options = VueCompilerOptions.read(from: projectURL.path)
+
+    #expect(options.jsxEnabled == false)
+}
+
+@Test func vueCompilerOptionsEnableTSConfigJSXWhenExplicit() throws {
+    let projectURL = try makeTemporaryVueProject()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+    try writeTSConfig(jsx: "react-jsx", to: projectURL)
+
+    let options = VueCompilerOptions.read(from: projectURL.path)
+
+    #expect(options.jsxEnabled == true)
+}
+
 private func makeTemporaryVueProject() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginVueEditorTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
+}
+
+private func writeTSConfig(jsx: String, to projectURL: URL) throws {
+    let json = """
+    {
+      "compilerOptions": {
+        "jsx": "\(jsx)"
+      }
+    }
+    """
+    try json.write(to: projectURL.appendingPathComponent("tsconfig.json"), atomically: true, encoding: .utf8)
 }
