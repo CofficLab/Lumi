@@ -71,3 +71,53 @@ import Testing
     #expect(reloaded.first?.editorActiveFilePath == record.editorActiveFilePath)
     #expect(reloaded.first?.sidebarVisibility == record.sidebarVisibility)
 }
+
+@Test func duplicateWindowRecordsAreCollapsedOnLoadAndSave() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("WindowStateStoreDuplicateTests-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = WindowStateStore(databaseRootURLProvider: { directory })
+    let windowId = UUID()
+    let latest = WindowPersistenceRecord(
+        windowId: windowId,
+        conversationId: UUID(),
+        projectPath: "/tmp/NewProject",
+        editorOpenFilePaths: ["/tmp/NewProject/App.swift"],
+        editorActiveFilePath: "/tmp/NewProject/App.swift",
+        sidebarVisibility: true,
+        createdAt: Date(timeIntervalSince1970: 1_700_000_100)
+    )
+    let stale = WindowPersistenceRecord(
+        windowId: windowId,
+        conversationId: UUID(),
+        projectPath: "/tmp/OldProject",
+        editorOpenFilePaths: ["/tmp/OldProject/App.swift"],
+        editorActiveFilePath: "/tmp/OldProject/App.swift",
+        sidebarVisibility: false,
+        createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+    )
+    let other = WindowPersistenceRecord(
+        windowId: UUID(),
+        conversationId: nil,
+        projectPath: "/tmp/OtherProject",
+        editorOpenFilePaths: nil,
+        editorActiveFilePath: nil,
+        sidebarVisibility: nil,
+        createdAt: Date(timeIntervalSince1970: 1_700_000_200)
+    )
+
+    store.saveAllSynchronously([latest, stale, other])
+
+    let loaded = store.loadAll()
+    #expect(loaded.count == 2)
+    #expect(loaded.first?.windowId == windowId)
+    #expect(loaded.first?.projectPath == latest.projectPath)
+    #expect(store.record(for: windowId)?.projectPath == latest.projectPath)
+
+    store.saveAllSynchronously(loaded)
+    let reloaded = store.loadAll()
+    #expect(reloaded.map(\.windowId) == [latest.windowId, other.windowId])
+}

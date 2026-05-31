@@ -96,14 +96,14 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     }
 
     public func saveAll(_ records: [WindowPersistenceRecord]) {
-        let capped = Array(records.prefix(Self.maxPersistedWindowCount))
+        let capped = sanitizedRecords(records)
         queue.async { [self] in
             persist(capped)
         }
     }
 
     public func saveAllSynchronously(_ records: [WindowPersistenceRecord]) {
-        let capped = Array(records.prefix(Self.maxPersistedWindowCount))
+        let capped = sanitizedRecords(records)
         queue.sync { [self] in
             persist(capped)
         }
@@ -112,7 +112,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     // MARK: - Load
 
     public func loadAll() -> [WindowPersistenceRecord] {
-        Array(loadWindowStates().prefix(Self.maxPersistedWindowCount))
+        sanitizedRecords(loadWindowStates())
     }
 
     public func record(for windowId: UUID) -> WindowPersistenceRecord? {
@@ -162,7 +162,7 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)decoded \(records.count, privacy: .public) window state record(s)")
             }
-            return records
+            return sanitizedRecords(records)
         } catch {
             if Self.verbose {
                 Self.logger.error(
@@ -175,7 +175,8 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     }
 
     private func persist(_ records: [WindowPersistenceRecord]) {
-        guard let data = try? JSONEncoder().encode(records) else {
+        let sanitized = sanitizedRecords(records)
+        guard let data = try? JSONEncoder().encode(sanitized) else {
             if Self.verbose {
                 Self.logger.error("\(Self.t)failed to encode window state records")
             }
@@ -199,11 +200,11 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
         do {
             try data.write(to: fileURL, options: .atomic)
             if Self.verbose {
-                let projectSummary = records
+                let projectSummary = sanitized
                     .map { $0.projectPath ?? "nil" }
                     .joined(separator: ", ")
                 Self.logger.info(
-                    "\(Self.t)persisted \(records.count, privacy: .public) record(s) at \(fileURL.path, privacy: .public); projects=[\(projectSummary, privacy: .public)]"
+                    "\(Self.t)persisted \(sanitized.count, privacy: .public) record(s) at \(fileURL.path, privacy: .public); projects=[\(projectSummary, privacy: .public)]"
                 )
             }
         } catch {
@@ -229,6 +230,21 @@ public final class WindowStateStore: @unchecked Sendable, SuperLog {
     private func corruptStatesFileURL() -> URL {
         settingsDirURL()
             .appendingPathComponent(Self.corruptStatesFileName, isDirectory: false)
+    }
+
+    private func sanitizedRecords(_ records: [WindowPersistenceRecord]) -> [WindowPersistenceRecord] {
+        var seen = Set<UUID>()
+        var sanitized: [WindowPersistenceRecord] = []
+        sanitized.reserveCapacity(min(records.count, Self.maxPersistedWindowCount))
+
+        for record in records where seen.insert(record.windowId).inserted {
+            sanitized.append(record)
+            if sanitized.count == Self.maxPersistedWindowCount {
+                break
+            }
+        }
+
+        return sanitized
     }
 
     private func quarantineCorruptStatesFile() {
