@@ -320,12 +320,7 @@ public actor DeepIssueAnalyzer: SuperLog {
     }
 
     private func relativePath(for fileURL: URL, rootURL: URL) -> String {
-        let rootPath = rootURL.path
-        let filePath = fileURL.standardizedFileURL.path
-        guard filePath.hasPrefix(rootPath) else { return filePath }
-
-        let start = filePath.index(filePath.startIndex, offsetBy: rootPath.count)
-        return String(filePath[start...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        ProjectIssuePathFormatter.relativePath(for: fileURL, rootURL: rootURL)
     }
 
     // MARK: - Parsing

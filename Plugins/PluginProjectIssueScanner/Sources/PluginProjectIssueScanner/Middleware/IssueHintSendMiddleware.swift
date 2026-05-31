@@ -109,11 +109,6 @@ public struct IssueHintSendMiddleware: SuperSendMiddleware {
     }
 
     private func relativePath(for fileURL: URL, projectPath: String) -> String {
-        let rootPath = URL(fileURLWithPath: projectPath).standardizedFileURL.path
-        let filePath = fileURL.standardizedFileURL.path
-        guard filePath.hasPrefix(rootPath) else { return filePath }
-
-        let start = filePath.index(filePath.startIndex, offsetBy: rootPath.count)
-        return String(filePath[start...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        ProjectIssuePathFormatter.relativePath(for: fileURL, projectPath: projectPath)
     }
 }

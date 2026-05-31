@@ -41,6 +41,23 @@ import Foundation
     #expect(issues.first?.lineNumber == 2)
 }
 
+@Test func relativePathRequiresProjectDirectoryBoundary() {
+    let projectURL = URL(fileURLWithPath: "/tmp/Lumi")
+
+    #expect(
+        ProjectIssuePathFormatter.relativePath(
+            for: URL(fileURLWithPath: "/tmp/Lumi/Sources/App.swift"),
+            rootURL: projectURL
+        ) == "Sources/App.swift"
+    )
+    #expect(
+        ProjectIssuePathFormatter.relativePath(
+            for: URL(fileURLWithPath: "/tmp/Lumi-Other/Sources/App.swift"),
+            rootURL: projectURL
+        ) == "/tmp/Lumi-Other/Sources/App.swift"
+    )
+}
+
 @Test func projectIssueStoreLoadsPersistedISO8601Dates() throws {
     let issue = ProjectIssue(
         id: UUID(uuidString: "2E87F59C-1C80-49A8-84D7-0546F43B28C1")!,
