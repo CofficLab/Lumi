@@ -98,6 +98,24 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertFalse(result.contains("find \"release notes\"\nand changelog"))
     }
 
+    func testUnsupportedRedirectTargetDoesNotSuggestRefetch() {
+        let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
+
+        let result = service.handleRedirect(
+            originalURL: URL(string: "https://example.com/download")!,
+            redirectURL: "ftp://files.example.com/archive.zip",
+            statusCode: 302,
+            prompt: "download"
+        )
+
+        XCTAssertTrue(result.contains("## Redirect Detected"))
+        XCTAssertTrue(result.contains("**Redirect URL**: ftp://files.example.com/archive.zip"))
+        XCTAssertTrue(result.contains("unsupported URL scheme"))
+        XCTAssertFalse(result.contains("Please use `web_fetch` again"))
+        XCTAssertFalse(result.contains(#"- url: "ftp://files.example.com/archive.zip""#))
+        XCTAssertFalse(result.contains(#"- prompt: "download""#))
+    }
+
     func testProcessJSONPrettyPrintsValidJSON() {
         let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
 

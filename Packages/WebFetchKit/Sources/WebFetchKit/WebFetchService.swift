@@ -138,16 +138,22 @@ public struct WebFetchService: Sendable {
             resolvedRedirectURL = originalURL
         }
 
-        let isCrossDomain = originalURL.host != resolvedRedirectURL.host
-        let statusText: String
-        switch statusCode {
-        case 301: statusText = "Moved Permanently"
-        case 302: statusText = "Found"
-        case 303: statusText = "See Other"
-        case 307: statusText = "Temporary Redirect"
-        case 308: statusText = "Permanent Redirect"
-        default: statusText = "Redirect"
+        guard Self.isSupportedHTTPURL(resolvedRedirectURL) else {
+            return """
+## Redirect Detected
+
+**Original URL**: \(originalURL.absoluteString)
+**Redirect URL**: \(resolvedRedirectURL.absoluteString)
+**Status**: \(statusCode) \(redirectStatusText(statusCode))
+
+---
+
+Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can be fetched.
+"""
         }
+
+        let isCrossDomain = originalURL.host != resolvedRedirectURL.host
+        let statusText = redirectStatusText(statusCode)
 
         let redirectKind = isCrossDomain
             ? "⚠️ **Cross-domain redirect detected**\n\nThe URL redirects to a different domain."
@@ -167,6 +173,17 @@ public struct WebFetchService: Sendable {
 \(redirectPromptLine(prompt))
 
 """
+    }
+
+    private func redirectStatusText(_ statusCode: Int) -> String {
+        switch statusCode {
+        case 301: return "Moved Permanently"
+        case 302: return "Found"
+        case 303: return "See Other"
+        case 307: return "Temporary Redirect"
+        case 308: return "Permanent Redirect"
+        default: return "Redirect"
+        }
     }
 
     public func extractWithPrompt(markdown: String, prompt: String) -> String {
