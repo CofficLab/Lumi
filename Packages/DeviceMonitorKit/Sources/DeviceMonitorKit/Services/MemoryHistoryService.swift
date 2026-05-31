@@ -22,15 +22,18 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
 
     private let storageFileName = "memory_history.json"
     private let fileManager = FileManager.default
+    private let storageFileURLOverride: URL?
 
     /// Storage file URL. Configurable for testing.
     public var storageFileURL: URL? {
-        fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
+        if let storageFileURLOverride { return storageFileURLOverride }
+        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("com.coffic.lumi/MemoryHistory")
             .appendingPathComponent(storageFileName)
     }
 
-    package init() {
+    package init(storageFileURL: URL? = nil) {
+        self.storageFileURLOverride = storageFileURL
         createStorageDirectoryIfNeeded()
         loadHistory()
     }
@@ -114,29 +117,42 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
 
     // MARK: - Persistence
 
-    func saveHistory() {
+    @discardableResult
+    func saveHistory() -> Task<Bool, Never>? {
         let historyToSave = longTermHistory
         let url = storageFileURL
-        guard let url else { return }
+        guard let url else { return nil }
 
-        Task.detached(priority: .background) {
-            try? JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
+        return Task.detached(priority: .background) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
+                return true
+            } catch {
+                Self.logger.error("Persist memory history failed: \(error.localizedDescription)")
+                return false
+            }
         }
     }
 
     func loadHistory() {
         let url = storageFileURL
         guard let url,
-              FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url) else {
+              FileManager.default.fileExists(atPath: url.path) else {
             return
         }
 
         do {
+            let data = try Data(contentsOf: url)
             let history = try JSONDecoder().decode([MemoryDataPoint].self, from: data)
             let cutoff = Date().timeIntervalSince1970 - MemoryTimeRange.month1.duration
             longTermHistory = history.filter { $0.timestamp >= cutoff }
-        } catch {}
+        } catch {
+            Self.logger.error("Load memory history failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Private Methods
@@ -144,7 +160,11 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     private func createStorageDirectoryIfNeeded() {
         guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
         if !fileManager.fileExists(atPath: directory.path) {
-            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            do {
+                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            } catch {
+                Self.logger.error("Create memory history directory failed: \(error.localizedDescription)")
+            }
         }
     }
 }

@@ -387,6 +387,58 @@ struct CPUHistoryServiceTests {
         // We can't easily test this synchronously, so just verify recording works
         #expect(service.recentHistory.count >= 1)
     }
+
+    @Test
+    @MainActor
+    func saveHistoryPersistsAndReloadsLongTermPoints() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CPUHistoryService-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("cpu_history.json")
+
+        let point = CPUDataPoint(timestamp: Date().timeIntervalSince1970, usage: 42.5)
+        let service = CPUHistoryService(storageFileURL: fileURL)
+        service.longTermHistory = [point]
+
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == true)
+
+        let reloadedService = CPUHistoryService(storageFileURL: fileURL)
+        #expect(reloadedService.longTermHistory == [point])
+    }
+
+    @Test
+    @MainActor
+    func saveHistoryReportsFailureWhenDirectoryIsBlocked() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CPUHistoryService-Blocked-\(UUID().uuidString)", isDirectory: true)
+        let blockedDirectory = directory.appendingPathComponent("CPUHistory", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let service = CPUHistoryService(storageFileURL: blockedDirectory.appendingPathComponent("cpu_history.json"))
+        service.longTermHistory = [CPUDataPoint(timestamp: Date().timeIntervalSince1970, usage: 10)]
+
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == false)
+    }
+
+    @Test
+    @MainActor
+    func invalidSavedHistoryDoesNotReplaceCurrentCPUHistory() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CPUHistoryService-Invalid-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let fileURL = directory.appendingPathComponent("cpu_history.json")
+        try Data("not json".utf8).write(to: fileURL)
+
+        let service = CPUHistoryService(storageFileURL: fileURL)
+        #expect(service.longTermHistory.isEmpty)
+    }
 }
 
 // MARK: - Memory History Service Tests
@@ -444,6 +496,64 @@ struct MemoryHistoryServiceTests {
         // Long-term requires minute boundaries, but recent data works
         let data = service.getData(for: MemoryTimeRange.hour4)
         #expect(data.isEmpty || data.count > 0) // Should not crash
+    }
+
+    @Test
+    @MainActor
+    func saveHistoryPersistsAndReloadsLongTermPoints() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MemoryHistoryService-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("memory_history.json")
+
+        let point = MemoryDataPoint(
+            timestamp: Date().timeIntervalSince1970,
+            usagePercentage: 62.5,
+            usedBytes: 6 * 1024 * 1024 * 1024
+        )
+        let service = MemoryHistoryService(storageFileURL: fileURL)
+        service.longTermHistory = [point]
+
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == true)
+
+        let reloadedService = MemoryHistoryService(storageFileURL: fileURL)
+        #expect(reloadedService.longTermHistory == [point])
+    }
+
+    @Test
+    @MainActor
+    func saveHistoryReportsFailureWhenDirectoryIsBlocked() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MemoryHistoryService-Blocked-\(UUID().uuidString)", isDirectory: true)
+        let blockedDirectory = directory.appendingPathComponent("MemoryHistory", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let service = MemoryHistoryService(storageFileURL: blockedDirectory.appendingPathComponent("memory_history.json"))
+        service.longTermHistory = [
+            MemoryDataPoint(timestamp: Date().timeIntervalSince1970, usagePercentage: 10, usedBytes: 1024)
+        ]
+
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == false)
+    }
+
+    @Test
+    @MainActor
+    func invalidSavedHistoryDoesNotReplaceCurrentMemoryHistory() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MemoryHistoryService-Invalid-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let fileURL = directory.appendingPathComponent("memory_history.json")
+        try Data("not json".utf8).write(to: fileURL)
+
+        let service = MemoryHistoryService(storageFileURL: fileURL)
+        #expect(service.longTermHistory.isEmpty)
     }
 }
 
