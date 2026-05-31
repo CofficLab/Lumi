@@ -370,13 +370,19 @@ public actor MemoryStorageService {
 
     /// 解析 Markdown 内容
     private func parseMarkdownContent(_ markdown: String, filePath: String, id: String) throws -> MemoryItem {
+        let openingMarker = "---\n"
+        guard markdown.hasPrefix(openingMarker) else {
+            throw MemoryError.invalidFormat("Missing frontmatter start marker")
+        }
+
+        let frontmatterStart = markdown.index(markdown.startIndex, offsetBy: openingMarker.count)
+
         // 查找 frontmatter 结束标记 "\n---\n"
-        guard let closingMarkerRange = markdown.range(of: "\n---\n", options: .backwards) else {
+        guard let closingMarkerRange = markdown.range(of: "\n---\n", range: frontmatterStart..<markdown.endIndex) else {
             throw MemoryError.invalidFormat("Missing frontmatter end marker")
         }
 
-        // frontmatter 内容：从第 4 个字符（跳过开头的 "---\n"）到结束标记之前
-        let frontmatterStart = markdown.index(markdown.startIndex, offsetBy: 4)
+        // frontmatter 内容：跳过开头的 "---\n" 到结束标记之前
         let frontmatter = String(markdown[frontmatterStart..<closingMarkerRange.lowerBound])
         let content = String(markdown[closingMarkerRange.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
 

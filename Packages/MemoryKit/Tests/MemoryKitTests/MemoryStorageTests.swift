@@ -46,6 +46,30 @@ struct MemoryStorageTests {
         try await service.deleteMemory(id: id, scope: .global)
     }
 
+    @Test("正文中的 Markdown 分隔线不会截断记忆")
+    func readPreservesMarkdownDividerInContent() async throws {
+        let (service, tempDir) = createTempStorage()
+        defer { cleanup(tempDir) }
+
+        let content = """
+        Before divider
+        ---
+        After divider
+        """
+
+        _ = try await service.createMemory(
+            id: "divider-content",
+            type: .reference,
+            name: "Divider Content",
+            description: "Contains a markdown divider",
+            content: content,
+            scope: .global
+        )
+
+        let read = try await service.readMemory(id: "divider-content", scope: .global)
+        #expect(read.content == content)
+    }
+
     @Test("更新记忆")
     func update() async throws {
         let (service, tempDir) = createTempStorage()
