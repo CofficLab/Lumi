@@ -5,6 +5,9 @@ import AgentToolKit
 ///
 /// 返回指定项目 .agent/rules 目录中所有规则文档的列表
 public struct ListAgentRulesTool: SuperAgentTool {
+    static let minLimit = 0
+    static let maxLimit = 100
+
     public let name: String = "list_agent_rules"
     public func description(for language: LanguagePreference) -> String {
         switch language {
@@ -26,7 +29,8 @@ public struct ListAgentRulesTool: SuperAgentTool {
                 "limit": [
                     "type": "integer",
                     "description": String(localized: "Maximum number of rules to return (default: all).", table: "AgentRules"),
-                    "minimum": 1
+                    "minimum": Self.minLimit,
+                    "maximum": Self.maxLimit
                 ]
             ],
             "required": ["project_path"]
@@ -43,7 +47,7 @@ public struct ListAgentRulesTool: SuperAgentTool {
             throw AgentRulesError.invalidFileFormat("project_path is required")
         }
 
-        let limitValue = arguments["limit"]?.value as? Int
+        let limitValue = Self.normalizedLimit(arguments["limit"]?.value)
         var rules = try await AgentRulesService.shared.listRules(projectPath: projectPath)
 
         // 应用限制
@@ -56,6 +60,22 @@ public struct ListAgentRulesTool: SuperAgentTool {
         }
 
         return try encodedRulesPayload(for: rules)
+    }
+
+    static func normalizedLimit(_ value: Any?) -> Int? {
+        let raw: Int?
+        if let int = value as? Int {
+            raw = int
+        } else if let double = value as? Double {
+            raw = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            raw = int
+        } else {
+            raw = nil
+        }
+
+        guard let raw else { return nil }
+        return min(max(raw, Self.minLimit), Self.maxLimit)
     }
 
     private func encodedRulesPayload(for rules: [AgentRuleMetadata]) throws -> String {
