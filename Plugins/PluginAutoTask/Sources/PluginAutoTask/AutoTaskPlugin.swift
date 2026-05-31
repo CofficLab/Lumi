@@ -87,7 +87,8 @@ private struct AutoTaskSidebarViewWrapper: View {
 private struct DefaultAutoTaskConfiguration: AutoTaskConfiguration {
     func databaseDirectory() -> URL {
         // Fallback：使用标准 App Support 目录
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent("db", isDirectory: true)
