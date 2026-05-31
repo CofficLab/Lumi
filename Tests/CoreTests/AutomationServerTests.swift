@@ -37,6 +37,23 @@ final class AutomationServerTests: XCTestCase {
         XCTAssertEqual(request, Data(fullRequest.utf8))
     }
 
+    func testSplitHTTPRequestKeepsBlankLinesInJSONBody() throws {
+        let body = "{\r\n\r\n\"action\":\"automation.debug_state\"}"
+        let request = [
+            "POST /api/action HTTP/1.1",
+            "Host: localhost",
+            "Content-Length: \(body.utf8.count)",
+            "",
+            body,
+        ].joined(separator: "\r\n")
+
+        let parts = try XCTUnwrap(AutomationServer.splitHTTPRequest(Data(request.utf8)))
+
+        XCTAssertTrue(parts.header.contains("POST /api/action HTTP/1.1"))
+        XCTAssertEqual(parts.body, Data(body.utf8))
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: parts.body))
+    }
+
     func testCompleteHTTPRequestHandlesHeaderOnlyRequest() {
         let request = [
             "GET /api/action HTTP/1.1",

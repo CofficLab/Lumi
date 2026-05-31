@@ -392,21 +392,12 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
     /// - Returns: 响应数据
     @MainActor
     private func handleRequest(_ data: Data) -> Data {
-        guard let requestString = String(data: data, encoding: .utf8) else {
-            return makeResponse(statusCode: 400, message: "Invalid request encoding")
-        }
-
-        // 解析 HTTP 请求行和头部
-        let components = requestString.components(separatedBy: "\r\n\r\n")
-        guard !components.isEmpty else {
+        guard let requestParts = Self.splitHTTPRequest(data) else {
             return makeResponse(statusCode: 400, message: "Malformed request")
         }
 
-        let headPart = components[0]
-        let bodyPart = components.count > 1 ? components[1] : ""
-
         // 解析请求行
-        let lines = headPart.components(separatedBy: "\r\n")
+        let lines = requestParts.header.components(separatedBy: "\r\n")
         guard let requestLine = lines.first else {
             return makeResponse(statusCode: 400, message: "Missing request line")
         }
@@ -424,13 +415,8 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
             return makeResponse(statusCode: 404, message: "Not found. Use POST /api/action")
         }
 
-        // 解析 JSON body
-        guard let bodyData = bodyPart.data(using: .utf8) else {
-            return makeResponse(statusCode: 400, message: "Invalid body encoding")
-        }
-
         do {
-            guard let jsonObject = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any] else {
+            guard let jsonObject = try JSONSerialization.jsonObject(with: requestParts.body) as? [String: Any] else {
                 return makeResponse(statusCode: 400, message: "Invalid JSON: expected object")
             }
 
@@ -483,6 +469,15 @@ final class AutomationServer: @unchecked Sendable, SuperLog {
         }
 
         return data.prefix(expectedLength)
+    }
+
+    static func splitHTTPRequest(_ data: Data) -> (header: String, body: Data)? {
+        guard let headerRange = data.range(of: Data("\r\n\r\n".utf8)),
+              let header = String(data: data[..<headerRange.lowerBound], encoding: .utf8) else {
+            return nil
+        }
+
+        return (header, Data(data[headerRange.upperBound...]))
     }
 
     private static func contentLength(from header: String) -> Int? {
