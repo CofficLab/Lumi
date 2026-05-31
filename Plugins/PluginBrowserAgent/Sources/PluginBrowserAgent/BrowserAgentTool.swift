@@ -102,7 +102,7 @@ Note: Requires agent-browser CLI to be installed.
             return "Error: Missing required 'command' parameter"
         }
 
-        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value as? Int)
+        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value)
 
         if Self.verbose {
             Self.logger.info("\(self.t)🌐 Executing: agent-browser \(command)")
@@ -150,8 +150,19 @@ Note: Requires agent-browser CLI to be installed.
         }
     }
 
-    static func normalizedTimeout(_ rawTimeout: Int?) -> TimeInterval {
-        TimeInterval(min(max(rawTimeout ?? 30, 1), 300))
+    static func normalizedTimeout(_ value: Any?) -> TimeInterval {
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = 30
+        }
+
+        return TimeInterval(min(max(requested, 1), 300))
     }
 
     static func parseCommandArguments(_ command: String) -> [String]? {

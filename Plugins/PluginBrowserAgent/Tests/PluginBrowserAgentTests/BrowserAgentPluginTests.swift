@@ -60,7 +60,10 @@ struct PluginBrowserAgentTests {
         #expect(BrowserAgentTool.normalizedTimeout(-10) == 1)
         #expect(BrowserAgentTool.normalizedTimeout(0) == 1)
         #expect(BrowserAgentTool.normalizedTimeout(45) == 45)
+        #expect(BrowserAgentTool.normalizedTimeout(45.0) == 45)
+        #expect(BrowserAgentTool.normalizedTimeout("45") == 45)
         #expect(BrowserAgentTool.normalizedTimeout(999) == 300)
+        #expect(BrowserAgentTool.normalizedTimeout("not-a-number") == 30)
     }
 
     @Test("localization catalog is packaged")
