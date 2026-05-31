@@ -113,3 +113,16 @@ import Foundation
     #expect(issues.map(\.severity) == [.error, .warning])
     #expect(issues.map(\.line) == [1, 2])
 }
+
+@Test func testOutputParserKeepsStreamBoundaryWithoutTrailingNewline() throws {
+    let output = BuildOutputAdapter.combinedOutput(
+        stdout: "✓ renders dashboard (20ms)",
+        stderr: "FAIL failing.test.ts"
+    )
+
+    let events = TestOutputParser.parse(output: output)
+
+    #expect(events.count == 2)
+    #expect(events.map(\.status) == [.failed, .passed])
+    #expect(events.map(\.name) == ["failing.test.ts", "renders dashboard (20ms)"])
+}

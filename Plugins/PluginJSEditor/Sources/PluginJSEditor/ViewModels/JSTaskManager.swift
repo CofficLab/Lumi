@@ -39,7 +39,7 @@ public final class JSTaskManager: ObservableObject, SuperLog {
         apply(result: result)
 
         if mode == .testing {
-            testEvents = TestOutputParser.parse(output: result.stdout + result.stderr)
+            testEvents = TestOutputParser.parse(output: BuildOutputAdapter.combinedOutput(stdout: result.stdout, stderr: result.stderr))
             state = .idle
         } else {
             state = result.isSuccess ? .success : .failed

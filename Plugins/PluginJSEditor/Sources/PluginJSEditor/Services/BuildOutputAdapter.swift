@@ -12,7 +12,7 @@ public enum BuildOutputAdapter {
         outputLines(stdout: stdout, stderr: stderr).compactMap(JSBuildIssue.parse)
     }
 
-    private static func combinedOutput(stdout: String, stderr: String) -> String {
+    static func combinedOutput(stdout: String, stderr: String) -> String {
         guard !stderr.isEmpty else { return stdout }
         guard !stdout.isEmpty else { return stderr }
         guard stderr.unicodeScalars.last.map(CharacterSet.newlines.contains) != true else {
