@@ -98,7 +98,15 @@ struct ContextPruner: SuperLog {
 
         // 2. 不需要裁剪
         guard messages.count > effectiveMax else {
-            return PruneResult(messages: messages, prunedCount: 0, reason: nil)
+            let fixed = fixMessageSequence(messages)
+            guard fixed != messages else {
+                return PruneResult(messages: messages, prunedCount: 0, reason: nil)
+            }
+            return PruneResult(
+                messages: fixed.isEmpty ? [makeContinuationPlaceholder(conversationId: messages.first?.conversationId)] : fixed,
+                prunedCount: max(messages.count - fixed.count, 0),
+                reason: nil
+            )
         }
 
         // 3. 执行裁剪
@@ -127,7 +135,6 @@ struct ContextPruner: SuperLog {
         // 1. 跳过开头的孤立 tool 消息
         // 2. 确保首条非 system 消息是 user
         // 3. 确保角色交替（不能连续 user 或连续 assistant）
-        // 4. 确保 tool 消息与 assistant.tool_calls 配对
         let fixed = fixMessageSequence(kept)
 
         // 在头部插入摘要占位
@@ -139,13 +146,7 @@ struct ContextPruner: SuperLog {
 
         let continuationMessages: [ChatMessage]
         if fixed.isEmpty {
-            continuationMessages = [
-                ChatMessage(
-                    role: .user,
-                    conversationId: messages.first?.conversationId ?? UUID(),
-                    content: "(Previous conversation was summarized. Continue from here.)"
-                )
-            ]
+            continuationMessages = [makeContinuationPlaceholder(conversationId: messages.first?.conversationId)]
         } else {
             continuationMessages = fixed
         }
@@ -158,6 +159,14 @@ struct ContextPruner: SuperLog {
         }
 
         return PruneResult(messages: result, prunedCount: prunedCount, reason: reason)
+    }
+
+    private static func makeContinuationPlaceholder(conversationId: UUID?) -> ChatMessage {
+        ChatMessage(
+            role: .user,
+            conversationId: conversationId ?? UUID(),
+            content: "(Previous conversation was summarized. Continue from here.)"
+        )
     }
 
     /// 修复消息序列，使其符合 Anthropic/Zhipu API 的结构要求
