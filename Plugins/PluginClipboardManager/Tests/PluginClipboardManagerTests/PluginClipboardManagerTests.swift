@@ -162,6 +162,57 @@ import Testing
     #expect(items.first?.content == text)
 }
 
+@Test func localStoreSavesAndReloadsSettings() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ClipboardManagerLocalStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = ClipboardManagerPluginLocalStore(settingsDirectory: directory)
+
+    #expect(store.set(false, forKey: "ClipboardMonitoringEnabled") == true)
+    #expect(store.set(1000, forKey: "ClipboardHistorySize") == true)
+
+    let reloadedStore = ClipboardManagerPluginLocalStore(settingsDirectory: directory)
+    #expect(reloadedStore.bool(forKey: "ClipboardMonitoringEnabled") == false)
+    #expect(reloadedStore.integer(forKey: "ClipboardHistorySize") == 1000)
+}
+
+@Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ClipboardManagerLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let settingsURL = directory.appendingPathComponent("settings.plist")
+    let corruptURL = directory.appendingPathComponent("settings.corrupt.plist")
+    let invalidData = Data("not a plist".utf8)
+    try invalidData.write(to: settingsURL)
+
+    let store = ClipboardManagerPluginLocalStore(settingsDirectory: directory)
+
+    #expect(store.set(false, forKey: "ClipboardMonitoringEnabled") == true)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect(store.bool(forKey: "ClipboardMonitoringEnabled") == false)
+
+    let reloadedStore = ClipboardManagerPluginLocalStore(settingsDirectory: directory)
+    #expect(reloadedStore.bool(forKey: "ClipboardMonitoringEnabled") == false)
+}
+
+@Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ClipboardManagerLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)
+    let blockedDirectory = tempRoot.appendingPathComponent("settings", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+    let store = ClipboardManagerPluginLocalStore(settingsDirectory: blockedDirectory)
+
+    #expect(store.set(false, forKey: "ClipboardMonitoringEnabled") == false)
+    #expect(store.object(forKey: "ClipboardMonitoringEnabled") == nil)
+}
+
 @Test func historyStoreFallsBackWhenDatabaseDirectoryIsBlocked() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-store-\(UUID().uuidString)", isDirectory: true)
