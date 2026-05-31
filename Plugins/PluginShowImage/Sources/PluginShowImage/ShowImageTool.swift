@@ -139,10 +139,10 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
         }
 
         let imageSource: ShowImageSource
-        if source.hasPrefix("http://") || source.hasPrefix("https://") {
-            imageSource = .remote(source)
-        } else {
-            imageSource = .local(source)
+        do {
+            imageSource = try Self.normalizedSource(from: source)
+        } catch {
+            return error.localizedDescription
         }
 
         if case .local(let path) = imageSource {
@@ -182,5 +182,39 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
         }
 
         return min(max(rawMaxWidth ?? defaultMaxWidth, minMaxWidth), maxMaxWidth)
+    }
+
+    static func normalizedSource(from source: String) throws -> ShowImageSource {
+        let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SourceError.missingSource
+        }
+
+        if let url = URL(string: trimmed), let scheme = url.scheme {
+            switch scheme.lowercased() {
+            case "http", "https":
+                return .remote(url.absoluteString)
+            case "file":
+                return .local(url.path)
+            default:
+                throw SourceError.unsupportedScheme(scheme)
+            }
+        }
+
+        return .local(trimmed)
+    }
+
+    enum SourceError: LocalizedError, Equatable {
+        case missingSource
+        case unsupportedScheme(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .missingSource:
+                return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
+            case .unsupportedScheme(let scheme):
+                return "Error: Unsupported image URL scheme '\(scheme)'. Only HTTP/HTTPS URLs are supported."
+            }
+        }
     }
 }

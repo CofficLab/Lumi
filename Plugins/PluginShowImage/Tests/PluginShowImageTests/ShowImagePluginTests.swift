@@ -75,6 +75,52 @@ struct PluginShowImageTests {
         ShowImageState.shared.clear()
     }
 
+    @Test("tool resolves URL schemes case-insensitively")
+    func toolResolvesURLSchemesCaseInsensitively() throws {
+        #expect(try ShowImageTool.normalizedSource(from: " HTTPS://example.com/image.png ") == .remote("HTTPS://example.com/image.png"))
+        #expect(try ShowImageTool.normalizedSource(from: "http://example.com/image.png") == .remote("http://example.com/image.png"))
+    }
+
+    @Test("tool rejects unsupported URL schemes clearly")
+    func toolRejectsUnsupportedURLSchemesClearly() {
+        #expect(throws: ShowImageTool.SourceError.unsupportedScheme("ftp")) {
+            try ShowImageTool.normalizedSource(from: "ftp://example.com/image.png")
+        }
+    }
+
+    @MainActor
+    @Test("tool accepts uppercase HTTPS remote source")
+    func toolAcceptsUppercaseHTTPSRemoteSource() async throws {
+        ShowImageState.shared.clear()
+        let tool = ShowImageTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_upper_https", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["source": ToolArgument("HTTPS://example.com/image.png")],
+            context: context
+        )
+
+        #expect(result == "Image displayed successfully. Source: HTTPS://example.com/image.png")
+        #expect(ShowImageState.shared.displayItem?.source == .remote("HTTPS://example.com/image.png"))
+        ShowImageState.shared.clear()
+    }
+
+    @MainActor
+    @Test("tool reports unsupported remote URL scheme")
+    func toolReportsUnsupportedRemoteURLScheme() async throws {
+        ShowImageState.shared.clear()
+        let tool = ShowImageTool()
+        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_ftp", toolName: tool.name)
+
+        let result = try await tool.execute(
+            arguments: ["source": ToolArgument("ftp://example.com/image.png")],
+            context: context
+        )
+
+        #expect(result == "Error: Unsupported image URL scheme 'ftp'. Only HTTP/HTTPS URLs are supported.")
+        #expect(ShowImageState.shared.displayItem == nil)
+    }
+
     @MainActor
     @Test("tool clamps displayed remote max width")
     func toolClampsDisplayedRemoteMaxWidth() async throws {
