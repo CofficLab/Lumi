@@ -219,7 +219,15 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             pathFilter: pathFilter,
             limit: limit
         ) {
-            return grepResults
+            guard grepResults.count < limit else { return grepResults }
+            let fallbackResults = swiftFallbackSearch(
+                query: query,
+                projectPath: projectPath,
+                pathFilter: pathFilter,
+                limit: limit,
+                context: context
+            )
+            return mergeResults(grepResults + fallbackResults, limit: limit)
         }
 
         // 回退：逐文件搜索
@@ -353,7 +361,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         for filePath in files {
             if Task.isCancelled { break }
             guard matches.count < limit else { break }
-            guard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else { continue }
+            guard let content = try? RAGTextFileReader.read(path: filePath) else { continue }
             guard let matchRange = content.range(of: lowerQuery, options: [.caseInsensitive, .diacriticInsensitive]) else { continue }
 
             let lineNumber = lineNumber(in: content, at: matchRange.lowerBound)

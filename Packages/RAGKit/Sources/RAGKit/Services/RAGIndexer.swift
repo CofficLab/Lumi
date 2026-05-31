@@ -100,7 +100,7 @@ public struct RAGIndexer {
                 continue
             }
 
-            guard let content = try? String(contentsOfFile: filePath, encoding: .utf8),
+            guard let content = try? RAGTextFileReader.read(path: filePath),
                   !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 stats.skippedFiles += 1
                 logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)

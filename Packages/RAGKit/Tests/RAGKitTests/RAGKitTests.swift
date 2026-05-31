@@ -947,6 +947,38 @@ import Testing
     #expect(try store.countProjectChunks(projectPath: projectURL.path) == 0)
 }
 
+@Test func testIndexerReadsUTF16SourceFiles() throws {
+    let projectURL = try makeTemporaryDirectory()
+    let dbURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RAGKitTests/\(UUID().uuidString)/utf16-indexer.sqlite")
+    defer {
+        try? FileManager.default.removeItem(at: projectURL)
+        try? FileManager.default.removeItem(at: dbURL.deletingLastPathComponent())
+    }
+
+    let indexedFile = projectURL.appendingPathComponent("Sources/UTF16Searchable.swift")
+    try writeFile(
+        indexedFile,
+        """
+        struct UTF16Searchable {
+            let marker = "needle utf16 retrieval target"
+        }
+        """,
+        encoding: .utf16
+    )
+
+    let store = try RAGSQLiteStore(dbURL: dbURL)
+    try store.migrate()
+    let indexer = RAGIndexer(store: store, embeddingProvider: MockEmbeddingProvider(dimension: 16))
+
+    let stats = try indexer.rebuildProjectIndex(at: projectURL.path)
+    #expect(stats.scannedFiles == 1)
+    #expect(stats.indexedFiles == 1)
+    #expect(stats.skippedFiles == 0)
+    #expect(try store.countProjectFiles(projectPath: projectURL.path) == 1)
+    #expect(try store.countProjectChunks(projectPath: projectURL.path) > 0)
+}
+
 // MARK: - RAGService Integration
 
 @Test func testRAGServiceInitialize() async throws {
@@ -1193,12 +1225,16 @@ private func makeTemporaryDirectory() throws -> URL {
     return url
 }
 
-private func writeFile(_ url: URL, _ content: String) throws {
+private func writeFile(
+    _ url: URL,
+    _ content: String,
+    encoding: String.Encoding = .utf8
+) throws {
     try FileManager.default.createDirectory(
         at: url.deletingLastPathComponent(),
         withIntermediateDirectories: true
     )
-    try content.write(to: url, atomically: true, encoding: .utf8)
+    try content.write(to: url, atomically: true, encoding: encoding)
 }
 
 private func waitForIndexStatus(
