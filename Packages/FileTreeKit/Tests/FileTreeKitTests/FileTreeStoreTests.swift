@@ -159,6 +159,7 @@ struct FileTreeStoreTests {
     func dataPersistsAcrossInstances() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("FileTreeKitTest-Persist-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let store1 = FileTreeStore(directory: tempDir)
@@ -169,6 +170,40 @@ struct FileTreeStoreTests {
         let store2 = FileTreeStore(directory: tempDir)
         #expect(store2.expandedPaths(for: "/project") == ["/src", "/lib"])
         #expect(store2.lastProjectPath() == "/project")
+    }
+
+    @Test("set reports failure and preserves invalid settings file")
+    func setReportsFailureAndPreservesInvalidSettingsFile() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-Invalid-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let settingsURL = tempDir.appendingPathComponent("settings.plist")
+        let invalidData = Data("not a plist".utf8)
+        try invalidData.write(to: settingsURL)
+
+        let store = FileTreeStore(directory: tempDir)
+
+        #expect(store.setLastProjectPath("/project") == false)
+        #expect((try? Data(contentsOf: settingsURL)) == invalidData)
+        #expect(store.lastProjectPath() == nil)
+    }
+
+    @Test("set reports failure when settings directory is blocked")
+    func setReportsFailureWhenSettingsDirectoryIsBlocked() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-Blocked-\(UUID().uuidString)", isDirectory: true)
+        let blockedDirectory = tempRoot.appendingPathComponent("FileTreeSettings", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let store = FileTreeStore(directory: blockedDirectory)
+
+        #expect(store.setExpandedPaths(["/src"], for: "/project") == false)
+        #expect(store.expandedPaths(for: "/project").isEmpty)
     }
 
     // MARK: - Key Sanitization

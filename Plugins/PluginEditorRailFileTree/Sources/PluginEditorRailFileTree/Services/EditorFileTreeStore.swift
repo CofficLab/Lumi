@@ -35,17 +35,20 @@ public final class EditorFileTreeStore: @unchecked Sendable {
     }
 
     /// 保存已展开的文件夹相对路径集合
-    public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) {
+    @discardableResult
+    public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
         store.setExpandedPaths(paths, for: projectRoot)
     }
 
     /// 添加一个展开的文件夹路径
-    public func addExpandedPath(_ relativePath: String, for projectRoot: String) {
+    @discardableResult
+    public func addExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         store.addExpandedPath(relativePath, for: projectRoot)
     }
 
     /// 移除一个折叠的文件夹路径
-    public func removeExpandedPath(_ relativePath: String, for projectRoot: String) {
+    @discardableResult
+    public func removeExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         store.removeExpandedPath(relativePath, for: projectRoot)
     }
 
@@ -60,7 +63,8 @@ public final class EditorFileTreeStore: @unchecked Sendable {
     }
 
     /// 记录上次打开的项目路径
-    public func setLastProjectPath(_ path: String) {
+    @discardableResult
+    public func setLastProjectPath(_ path: String) -> Bool {
         store.setLastProjectPath(path)
     }
 

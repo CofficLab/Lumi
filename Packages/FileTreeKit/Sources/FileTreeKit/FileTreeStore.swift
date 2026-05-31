@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// 文件树状态持久化存储
 ///
@@ -15,6 +16,7 @@ public final class FileTreeStore: @unchecked Sendable {
 
     // MARK: - Properties
 
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "file-tree-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "FileTreeStore.queue", qos: .userInitiated)
     private let pluginDirectory: URL
@@ -34,27 +36,36 @@ public final class FileTreeStore: @unchecked Sendable {
     public init(directory: URL) {
         self.pluginDirectory = directory
         self.settingsFileURL = directory.appendingPathComponent("settings.plist")
-        try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
+        do {
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("Create file tree settings directory failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Public API
 
     /// 存储值
-    public func set(_ value: Any?, forKey key: String) {
+    @discardableResult
+    public func set(_ value: Any?, forKey key: String) -> Bool {
         queue.sync {
-            var dict = readDict()
-            if let value {
-                dict[key] = value
-            } else {
-                dict.removeValue(forKey: key)
+            guard let dict = readDict() else {
+                return false
             }
-            writeDict(dict)
+
+            var nextDict = dict
+            if let value {
+                nextDict[key] = value
+            } else {
+                nextDict.removeValue(forKey: key)
+            }
+            return writeDict(nextDict)
         }
     }
 
     /// 获取值
     public func object(forKey key: String) -> Any? {
-        queue.sync { readDict()[key] }
+        queue.sync { readDict()?[key] }
     }
 
     /// 获取字符串
@@ -79,27 +90,31 @@ public final class FileTreeStore: @unchecked Sendable {
     /// - Parameters:
     ///   - paths: 相对路径集合
     ///   - projectRoot: 项目根目录的绝对路径
-    public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) {
+    @discardableResult
+    public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
         let key = expandedPathsKey(for: projectRoot)
-        set(Array(paths), forKey: key)
+        return set(Array(paths), forKey: key)
     }
 
     /// 添加一个展开的文件夹路径
-    public func addExpandedPath(_ relativePath: String, for projectRoot: String) {
+    @discardableResult
+    public func addExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         var paths = expandedPaths(for: projectRoot)
         paths.insert(relativePath)
-        setExpandedPaths(paths, for: projectRoot)
+        return setExpandedPaths(paths, for: projectRoot)
     }
 
     /// 移除一个折叠的文件夹路径
-    public func removeExpandedPath(_ relativePath: String, for projectRoot: String) {
+    @discardableResult
+    public func removeExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         var paths = expandedPaths(for: projectRoot)
         paths.remove(relativePath)
-        setExpandedPaths(paths, for: projectRoot)
+        return setExpandedPaths(paths, for: projectRoot)
     }
 
     /// 记录上次打开的项目路径
-    public func setLastProjectPath(_ path: String) {
+    @discardableResult
+    public func setLastProjectPath(_ path: String) -> Bool {
         set(path, forKey: Keys.lastProjectPath)
     }
 
@@ -126,35 +141,55 @@ public final class FileTreeStore: @unchecked Sendable {
     }
 
     /// 从文件读取字典
-    private func readDict() -> [String: Any] {
-        guard fileManager.fileExists(atPath: settingsFileURL.path),
-              let data = try? Data(contentsOf: settingsFileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
+    private func readDict() -> [String: Any]? {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else {
             return [:]
         }
-        return dict
+
+        do {
+            let data = try Data(contentsOf: settingsFileURL)
+            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+            guard let dict = plist as? [String: Any] else {
+                Self.logger.error("Read file tree settings failed: root plist is not a dictionary")
+                return nil
+            }
+            return dict
+        } catch {
+            Self.logger.error("Read file tree settings failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// 写入字典到文件（原子操作）
-    private func writeDict(_ dict: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(
-            fromPropertyList: dict,
-            format: .binary,
-            options: 0
-        ) else { return }
+    @discardableResult
+    private func writeDict(_ dict: [String: Any]) -> Bool {
+        let data: Data
+        do {
+            data = try PropertyListSerialization.data(
+                fromPropertyList: dict,
+                format: .binary,
+                options: 0
+            )
+        } catch {
+            Self.logger.error("Encode file tree settings failed: \(error.localizedDescription)")
+            return false
+        }
 
         let tmpURL = pluginDirectory.appendingPathComponent("settings.tmp")
 
         do {
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
             try data.write(to: tmpURL, options: .atomic)
             if fileManager.fileExists(atPath: settingsFileURL.path) {
-                _ = try? fileManager.replaceItemAt(settingsFileURL, withItemAt: tmpURL)
+                _ = try fileManager.replaceItemAt(settingsFileURL, withItemAt: tmpURL)
             } else {
                 try fileManager.moveItem(at: tmpURL, to: settingsFileURL)
             }
+            return true
         } catch {
+            Self.logger.error("Persist file tree settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
+            return false
         }
     }
 }
