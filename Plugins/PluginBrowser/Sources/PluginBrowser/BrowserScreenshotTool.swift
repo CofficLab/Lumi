@@ -86,7 +86,7 @@ Returns the file path of the saved screenshot image (PNG format).
             return "Error: Invalid URL format: \(rawURLString)"
         }
 
-        guard url.scheme == "http" || url.scheme == "https" else {
+        guard Self.isSupportedHTTPURL(url) else {
             return "Error: Only HTTP/HTTPS URLs are supported"
         }
 
@@ -119,6 +119,11 @@ Returns the file path of the saved screenshot image (PNG format).
         let urlString = rawURLString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !urlString.isEmpty else { return nil }
         return URL(string: urlString)
+    }
+
+    static func isSupportedHTTPURL(_ url: URL) -> Bool {
+        let scheme = url.scheme?.lowercased()
+        return scheme == "http" || scheme == "https"
     }
 
     static func normalizedViewportWidth(from value: Any?) -> Int {

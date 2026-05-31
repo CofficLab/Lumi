@@ -68,6 +68,22 @@ struct PluginBrowserTests {
         #expect(BrowserScreenshotTool.normalizedURL(from: " \n\t ") == nil)
     }
 
+    @Test("tool accepts uppercase HTTP schemes")
+    func toolAcceptsUppercaseHTTPSchemes() throws {
+        let httpsURL = try #require(BrowserScreenshotTool.normalizedURL(from: " HTTPS://example.com/page "))
+        let httpURL = try #require(BrowserScreenshotTool.normalizedURL(from: "HTTP://example.com/page"))
+
+        #expect(BrowserScreenshotTool.isSupportedHTTPURL(httpsURL))
+        #expect(BrowserScreenshotTool.isSupportedHTTPURL(httpURL))
+    }
+
+    @Test("tool rejects unsupported URL schemes")
+    func toolRejectsUnsupportedURLSchemes() throws {
+        let url = try #require(BrowserScreenshotTool.normalizedURL(from: "ftp://example.com/page"))
+
+        #expect(!BrowserScreenshotTool.isSupportedHTTPURL(url))
+    }
+
     @Test("tool normalizes unsafe viewport widths")
     func toolNormalizesUnsafeViewportWidths() {
         #expect(BrowserScreenshotTool.normalizedViewportWidth(from: nil) == 1280)
