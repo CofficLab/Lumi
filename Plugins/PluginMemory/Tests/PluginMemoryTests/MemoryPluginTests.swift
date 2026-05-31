@@ -103,8 +103,11 @@ struct PluginMemoryTests {
     func recallMaxResultsAreClamped() {
         #expect(MemoryToolInput.maxResults(-3) == MemoryToolInput.minMaxResults)
         #expect(MemoryToolInput.maxResults(8) == 8)
+        #expect(MemoryToolInput.maxResults(8.0) == 8)
+        #expect(MemoryToolInput.maxResults("9") == 9)
         #expect(MemoryToolInput.maxResults(99) == MemoryToolInput.maxMaxResults)
         #expect(MemoryToolInput.maxResults(nil) == MemoryToolInput.defaultMaxResults)
+        #expect(MemoryToolInput.maxResults("not-a-number") == MemoryToolInput.defaultMaxResults)
     }
 
     @Test("local store reports save result and reloads values")

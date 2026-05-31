@@ -25,7 +25,17 @@ enum MemoryToolInput {
         lowerBound: Int = minMaxResults,
         upperBound: Int = maxMaxResults
     ) -> Int {
-        let requested = value as? Int ?? defaultValue
+        let requested: Int
+        if let int = value as? Int {
+            requested = int
+        } else if let double = value as? Double {
+            requested = Int(double)
+        } else if let string = value as? String, let int = Int(string) {
+            requested = int
+        } else {
+            requested = defaultValue
+        }
+
         return min(max(requested, lowerBound), upperBound)
     }
 }
