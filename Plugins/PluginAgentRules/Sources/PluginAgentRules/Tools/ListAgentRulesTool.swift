@@ -47,10 +47,18 @@ public struct ListAgentRulesTool: SuperAgentTool {
         var rules = try await AgentRulesService.shared.listRules(projectPath: projectPath)
 
         // 应用限制
-        if let limit = limitValue, limit > 0 {
+        if let limit = limitValue {
+            guard limit > 0 else {
+                rules = []
+                return try encodedRulesPayload(for: rules)
+            }
             rules = Array(rules.prefix(limit))
         }
 
+        return try encodedRulesPayload(for: rules)
+    }
+
+    private func encodedRulesPayload(for rules: [AgentRuleMetadata]) throws -> String {
         // 转换为 JSON 格式
         let payload: [[String: Any]] = rules.map { rule in
             [

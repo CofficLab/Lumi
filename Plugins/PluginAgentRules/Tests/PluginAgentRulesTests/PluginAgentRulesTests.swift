@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import AgentToolKit
 @testable import PluginAgentRules
 
 @Test func packageLoads() async throws {
@@ -64,6 +65,38 @@ import Foundation
     #expect(rule.description == "Prefer clear names.")
 }
 
+@Test func listAgentRulesToolClampsNonPositiveLimits() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesToolTests-\(UUID().uuidString)", isDirectory: true)
+    let rulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try "# One\n\nFirst rule.".write(to: rulesURL.appending(path: "one.md"), atomically: true, encoding: .utf8)
+    try "# Two\n\nSecond rule.".write(to: rulesURL.appending(path: "two.md"), atomically: true, encoding: .utf8)
+
+    let tool = ListAgentRulesTool()
+    let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+
+    let zeroLimitResult = try await tool.execute(
+        arguments: [
+            "project_path": ToolArgument(projectURL.path()),
+            "limit": ToolArgument(0)
+        ],
+        context: context
+    )
+    let negativeLimitResult = try await tool.execute(
+        arguments: [
+            "project_path": ToolArgument(projectURL.path()),
+            "limit": ToolArgument(-2)
+        ],
+        context: context
+    )
+
+    #expect(try decodedRuleCount(from: zeroLimitResult) == 0)
+    #expect(try decodedRuleCount(from: negativeLimitResult) == 0)
+}
+
 @Test func readRuleReturnsUTF16MarkdownContent() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
@@ -83,4 +116,10 @@ import Foundation
     #expect(rule.title == "Review Rules")
     #expect(rule.description == "Check edge cases before shipping.")
     #expect(rule.content == content)
+}
+
+private func decodedRuleCount(from json: String) throws -> Int {
+    let data = try #require(json.data(using: .utf8))
+    let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    return try #require(object?["count"] as? Int)
 }
