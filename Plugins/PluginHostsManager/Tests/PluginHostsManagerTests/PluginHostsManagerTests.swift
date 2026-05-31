@@ -35,3 +35,24 @@ import Testing
         return false
     })
 }
+
+@Test func parserDoesNotTreatTerminatingNewlineAsBlankEntry() {
+    let entries = HostsParser.parse(content: "127.0.0.1 localhost\n")
+
+    #expect(entries.count == 1)
+    #expect(HostsParser.serialize(entries: entries) == "127.0.0.1 localhost\n")
+}
+
+@Test func parserPreservesIntentionalBlankLinesBeforeTerminatingNewline() {
+    let entries = HostsParser.parse(content: "127.0.0.1 localhost\n\n")
+
+    #expect(entries.count == 2)
+    #expect(HostsParser.serialize(entries: entries) == "127.0.0.1 localhost\n\n")
+}
+
+@Test func parserPreservesSingleBlankLineWithoutTerminatingNewline() {
+    let entries = HostsParser.parse(content: "   ")
+
+    #expect(entries.count == 1)
+    #expect(HostsParser.serialize(entries: entries) == "\n")
+}

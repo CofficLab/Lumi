@@ -38,9 +38,14 @@ public class HostsParser {
     public static func parse(content: String) -> [HostEntry] {
         var entries: [HostEntry] = []
         let lines = content.components(separatedBy: .newlines)
+        let hasTerminatingNewline = content.unicodeScalars.last.map(CharacterSet.newlines.contains) ?? false
         
-        for line in lines {
+        for (index, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if hasTerminatingNewline, index == lines.indices.last, trimmed.isEmpty {
+                continue
+            }
             
             if trimmed.isEmpty {
                 entries.append(HostEntry(type: .empty))
