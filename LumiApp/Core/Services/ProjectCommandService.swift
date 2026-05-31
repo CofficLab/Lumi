@@ -441,8 +441,8 @@ actor ProjectCommandExecutor: SuperLog {
     private func processFileReferences(in content: String, projectPath: String) async -> String {
         var result = content
         
-        // 查找所有 @file-path 模式
-        let pattern = #"@([^\s\`]+)"#
+        // 查找所有 @file-path 模式，支持 @"file with spaces.md" 和 @'file with spaces.md'
+        let pattern = #"@(?:"([^"`]+)"|'([^'`]+)'|([^\s`]+))"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
             return result
         }
@@ -453,7 +453,7 @@ actor ProjectCommandExecutor: SuperLog {
         // 从后向前替换
         for match in matches.reversed() {
             guard shouldProcessFileReference(match.range, in: result) else { continue }
-            guard let pathRange = Range(match.range(at: 1), in: result) else { continue }
+            guard let pathRange = fileReferencePathRange(in: match, result: result) else { continue }
             let filePath = String(result[pathRange])
             let resolvedReference = resolveFileReference(filePath, projectPath: projectPath)
 
@@ -472,6 +472,18 @@ actor ProjectCommandExecutor: SuperLog {
         }
         
         return result
+    }
+
+    private func fileReferencePathRange(in match: NSTextCheckingResult, result: String) -> Range<String.Index>? {
+        for captureIndex in 1..<match.numberOfRanges {
+            let nsRange = match.range(at: captureIndex)
+            guard nsRange.location != NSNotFound,
+                  let pathRange = Range(nsRange, in: result) else {
+                continue
+            }
+            return pathRange
+        }
+        return nil
     }
 
     private func shouldProcessFileReference(_ matchRange: NSRange, in content: String) -> Bool {

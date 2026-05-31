@@ -151,6 +151,42 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertFalse(message.contains("[文件不存在]"))
     }
 
+    func testQuotedFileReferenceReadsPathsWithSpaces() async throws {
+        let commandName = "quoted-reference-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "Release notes with spaces".write(
+            to: projectURL.appendingPathComponent("Release Notes.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "Summarize @\"Release Notes.md\".".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName)")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("// File: Release Notes.md"))
+        XCTAssertTrue(message.contains("Release notes with spaces"))
+        XCTAssertTrue(message.hasSuffix("```."))
+        XCTAssertFalse(message.contains("[文件不存在]"))
+    }
+
     func testFileReferenceDoesNotRewriteEmailAddresses() async throws {
         let commandName = "email-\(UUID().uuidString)"
         let projectURL = FileManager.default.temporaryDirectory
