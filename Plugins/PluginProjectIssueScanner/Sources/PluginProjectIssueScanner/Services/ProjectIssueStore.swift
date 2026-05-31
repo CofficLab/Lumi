@@ -164,17 +164,27 @@ public actor ProjectIssueStore {
 
     // MARK: - Private
 
-    private static func loadFromDisk(from url: URL) throws -> [ProjectIssue] {
+    static func loadFromDisk(from url: URL) throws -> [ProjectIssue] {
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode([ProjectIssue].self, from: data)
+        return try makeDecoder().decode([ProjectIssue].self, from: data)
     }
 
     private func persist() throws {
+        let data = try Self.makeEncoder().encode(issues)
+        try data.write(to: issuesFileURL, options: [.atomic])
+    }
+
+    static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(issues)
-        try data.write(to: issuesFileURL, options: [.atomic])
+        return encoder
+    }
+
+    static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 
     private func normalizeProjectPath(_ path: String) -> String {
