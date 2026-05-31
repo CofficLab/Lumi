@@ -12,6 +12,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.coffic.lumi.memory.store", qos: .userInitiated)
     private let settingsDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
     // MARK: - 配置键
 
@@ -43,6 +44,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
     init(settingsDirectory: URL) {
         self.settingsDirectory = settingsDirectory
         self.settingsFileURL = settingsDirectory.appending(path: "Memory.plist")
+        self.corruptSettingsFileURL = settingsDirectory.appending(path: "Memory.corrupt.plist")
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
@@ -129,12 +131,14 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 Self.logger.error("Read memory settings failed: root plist is not a dictionary")
-                return nil
+                quarantineCorruptSettings()
+                return [:]
             }
             return dict
         } catch {
             Self.logger.error("Read memory settings failed: \(error.localizedDescription)")
-            return nil
+            quarantineCorruptSettings()
+            return [:]
         }
     }
 
@@ -162,6 +166,17 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
             Self.logger.error("Persist memory settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
+        }
+    }
+
+    private func quarantineCorruptSettings() {
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt memory settings failed: \(error.localizedDescription)")
         }
     }
 }

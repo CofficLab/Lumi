@@ -118,22 +118,26 @@ struct PluginMemoryTests {
         #expect(reloadedStore.shouldInjectGlobalIndex == true)
     }
 
-    @Test("local store reports failure and preserves invalid settings file")
-    func localStoreReportsFailureAndPreservesInvalidSettingsFile() throws {
+    @Test("local store quarantines invalid settings file and recovers")
+    func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "MemoryPluginLocalStore-Invalid-\(UUID().uuidString)", directoryHint: .isDirectory)
         defer { try? FileManager.default.removeItem(at: directory) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let settingsURL = directory.appending(path: "Memory.plist")
+        let corruptURL = directory.appending(path: "Memory.corrupt.plist")
         let invalidData = Data("not a plist".utf8)
         try invalidData.write(to: settingsURL)
 
         let store = MemoryPluginLocalStore(settingsDirectory: directory)
 
-        #expect(store.set(10, forKey: .maxRelevantMemories) == false)
-        #expect((try? Data(contentsOf: settingsURL)) == invalidData)
-        #expect(store.maxRelevantMemories == 3)
+        #expect(store.set(10, forKey: .maxRelevantMemories) == true)
+        #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+        #expect(store.maxRelevantMemories == 10)
+
+        let reloadedStore = MemoryPluginLocalStore(settingsDirectory: directory)
+        #expect(reloadedStore.maxRelevantMemories == 10)
     }
 
     @Test("local store reports failure when settings directory is blocked")
