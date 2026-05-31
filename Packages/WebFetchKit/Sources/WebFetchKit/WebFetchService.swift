@@ -164,7 +164,7 @@ public struct WebFetchService: Sendable {
 
 \(redirectKind) Please use `web_fetch` again with the new URL:
 - url: "\(resolvedRedirectURL.absoluteString)"
-\(prompt != nil ? "- prompt: \"\(prompt!)\"" : "")
+\(redirectPromptLine(prompt))
 
 """
     }
@@ -248,6 +248,21 @@ public struct WebFetchService: Sendable {
         )
 
         return result
+    }
+
+    private func redirectPromptLine(_ prompt: String?) -> String {
+        guard let prompt else { return "" }
+        return "- prompt: \(Self.jsonStringLiteral(prompt))"
+    }
+
+    private static func jsonStringLiteral(_ value: String) -> String {
+        guard
+            let data = try? JSONEncoder().encode(value),
+            let encoded = String(data: data, encoding: .utf8)
+        else {
+            return "\"\(value)\""
+        }
+        return encoded
     }
 
     private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double, prompt: String?) -> String {

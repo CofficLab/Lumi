@@ -68,6 +68,20 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertTrue(result.contains("- prompt: \"release notes\""))
     }
 
+    func testRedirectInstructionEscapesPromptForReuse() {
+        let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
+
+        let result = service.handleRedirect(
+            originalURL: URL(string: "https://example.com/old")!,
+            redirectURL: "https://example.com/new",
+            statusCode: 302,
+            prompt: "find \"release notes\"\nand changelog"
+        )
+
+        XCTAssertTrue(result.contains(#"- prompt: "find \"release notes\"\nand changelog""#))
+        XCTAssertFalse(result.contains("find \"release notes\"\nand changelog"))
+    }
+
     func testProcessJSONPrettyPrintsValidJSON() {
         let service = WebFetchService(fetcher: MockFetcher(), cache: nil)
 
