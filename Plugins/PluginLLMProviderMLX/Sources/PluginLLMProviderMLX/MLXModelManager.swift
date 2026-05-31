@@ -16,7 +16,7 @@ private typealias _MLXModels = MLXModels
 /// - 删除模型
 ///
 /// 使用 Combine 发布事件，UI 可以订阅变化。
-public final class MLXModelManager: ObservableObject, SuperLog {
+public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "📦"
     nonisolated public static let verbose: Bool = false
@@ -211,8 +211,10 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         stopMonitoring()
 
         monitoringTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.refreshCachedModels()
-            self?.updateCacheSize()
+            Task { @MainActor in
+                self?.refreshCachedModels()
+                self?.updateCacheSize()
+            }
         }
 
         monitoringTimer?.tolerance = 1.0
