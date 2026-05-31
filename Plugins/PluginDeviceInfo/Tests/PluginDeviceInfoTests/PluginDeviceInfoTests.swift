@@ -1,5 +1,6 @@
 import Testing
 import LumiCoreKit
+import SwiftUI
 @testable import PluginDeviceInfo
 
 @MainActor
@@ -14,7 +15,7 @@ struct PluginDeviceInfoTests {
         #expect(DeviceInfoPlugin.isConfigurable == false)
         #expect(DeviceInfoPlugin.category == .general)
         #expect(DeviceInfoPlugin.order == 10)
-        #expect(DeviceInfoPlugin.enable == true)
+        #expect(DeviceInfoPlugin.policy == .alwaysOn)
         #expect(DeviceInfoPlugin.shared.instanceLabel == DeviceInfoPlugin.id)
     }
 
@@ -85,6 +86,21 @@ struct PluginDeviceInfoTests {
         data.stopMonitoring()
         data.stopMonitoring()
         #expect(counter.stops == 1)
+    }
+
+    @Test
+    func historyGraphsIgnoreInvalidScales() {
+        let rect = CGRect(x: 0, y: 0, width: 120, height: 60)
+
+        let cpuLine = CPUGraphLine(data: [0, 0], maxValue: 0).path(in: rect)
+        let cpuArea = CPUGraphArea(data: [0, 0], maxValue: .infinity).path(in: rect)
+        let memoryLine = MemoryGraphLine(data: [0, 0], maxValue: 0).path(in: rect)
+        let memoryArea = MemoryGraphArea(data: [0, 0], maxValue: .nan).path(in: rect)
+
+        #expect(cpuLine.isEmpty)
+        #expect(cpuArea.isEmpty)
+        #expect(memoryLine.isEmpty)
+        #expect(memoryArea.isEmpty)
     }
 }
 

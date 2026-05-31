@@ -198,7 +198,7 @@ struct CPUGraphLine: Shape {
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard data.count > 1 else { return path }
+        guard data.count > 1, maxValue.isFinite, maxValue > 0 else { return path }
         
         let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(maxValue)
@@ -221,7 +221,7 @@ struct CPUGraphArea: Shape {
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard data.count > 1 else { return path }
+        guard data.count > 1, maxValue.isFinite, maxValue > 0 else { return path }
         
         let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(maxValue)
@@ -282,4 +282,3 @@ struct CPUTooltipView: View {
         return formatter.string(from: date)
     }
 }
-

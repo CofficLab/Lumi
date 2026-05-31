@@ -120,10 +120,15 @@ class DeviceData: ObservableObject {
 
     private static func getProcessorName() -> String {
         var size: Int = 0
-        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+        guard sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0) == 0, size > 0 else {
+            return ""
+        }
         var model = [CChar](repeating: 0, count: size)
-        sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0)
-        return String(cString: model)
+        guard sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0) == 0 else {
+            return ""
+        }
+        let bytes = model.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     private func getCPUUsage() -> Double {
