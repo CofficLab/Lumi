@@ -14,6 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
@@ -31,7 +32,11 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationNewTests",
-            dependencies: ["PluginConversationNew"],
+            dependencies: [
+                "PluginConversationNew",
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests/PluginConversationNewTests"
         )
     ]
