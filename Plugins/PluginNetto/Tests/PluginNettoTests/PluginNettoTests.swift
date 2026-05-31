@@ -1,4 +1,5 @@
 import Foundation
+import NetworkExtension
 import Testing
 @testable import PluginNetto
 
@@ -43,4 +44,17 @@ import Testing
 
     #expect(repo.getSetting(for: "com.example.Allow")?.allowed == true)
     #expect(repo.getSetting(for: "com.example.Block")?.allowed == false)
+}
+
+@Test func connectionPromptMessageIncludesDecisionContext() {
+    let message = FirewallService.connectionPromptMessage(
+        appId: "com.example.App",
+        hostname: "example.com",
+        port: "443",
+        direction: .outbound
+    )
+
+    #expect(message.contains("com.example.App"))
+    #expect(message.contains("example.com:443"))
+    #expect(message.contains("Outgoing"))
 }

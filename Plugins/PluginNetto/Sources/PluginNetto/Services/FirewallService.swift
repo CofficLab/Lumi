@@ -143,31 +143,19 @@ extension FirewallService: AppCommunication {
             logEvent(id: id, hostname: hostname, port: port, direction: direction, allowed: setting.allowed)
             return
         }
-        
-        // If no setting, prompt user (or default allow for now to avoid blocking)
-        // Ideally we show a notification with actions.
-        // For simplicity in this plugin version, we default to ALLOW and log it.
-        // User can then change it in the UI.
-        
-        let defaultAction = true // Allow by default
-        settingRepo.setAllowed(appId: id, allowed: defaultAction)
-        responseHandler(defaultAction)
-        logEvent(id: id, hostname: hostname, port: port, direction: direction, allowed: defaultAction)
-        
-        // TODO: Implement proper User Notification or Alert
-        /*
+
+        let responder = FirewallPromptResponder(responseHandler)
         DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = "New Connection Request"
-            alert.informativeText = "\(id) wants to connect to \(hostname):\(port)"
-            alert.addButton(withTitle: "Allow")
-            alert.addButton(withTitle: "Block")
-            let response = alert.runModal()
-            let allowed = (response == .alertFirstButtonReturn)
+            let allowed = self.presentConnectionPrompt(
+                appId: id,
+                hostname: hostname,
+                port: port,
+                direction: direction
+            )
             self.settingRepo.setAllowed(appId: id, allowed: allowed)
-            responseHandler(allowed)
+            responder.respond(allowed)
+            self.logEvent(id: id, hostname: hostname, port: port, direction: direction, allowed: allowed)
         }
-        */
     }
     
     public func needApproval() {
@@ -190,5 +178,63 @@ extension FirewallService: AppCommunication {
             self.events.insert(event, at: 0)
             if self.events.count > 100 { self.events.removeLast() }
         }
+    }
+
+    @MainActor
+    private func presentConnectionPrompt(
+        appId: String,
+        hostname: String,
+        port: String,
+        direction: NETrafficDirection
+    ) -> Bool {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "New Connection Request", table: "Netto")
+        alert.informativeText = Self.connectionPromptMessage(
+            appId: appId,
+            hostname: hostname,
+            port: port,
+            direction: direction
+        )
+        alert.addButton(withTitle: String(localized: "Allow", table: "Netto"))
+        alert.addButton(withTitle: String(localized: "Block", table: "Netto"))
+
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    static func connectionPromptMessage(
+        appId: String,
+        hostname: String,
+        port: String,
+        direction: NETrafficDirection
+    ) -> String {
+        let endpoint = port.isEmpty ? hostname : "\(hostname):\(port)"
+        let directionText: String
+        switch direction {
+        case .inbound:
+            directionText = String(localized: "Incoming", table: "Netto")
+        case .outbound:
+            directionText = String(localized: "Outgoing", table: "Netto")
+        case .any:
+            directionText = String(localized: "Any", table: "Netto")
+        @unknown default:
+            directionText = String(localized: "Unknown", table: "Netto")
+        }
+
+        return "\(appId)\n\(directionText): \(endpoint)"
+    }
+}
+
+private struct FirewallPromptResponder: @unchecked Sendable {
+    private let responseHandler: (Bool) -> Void
+
+    init(_ responseHandler: @escaping (Bool) -> Void) {
+        self.responseHandler = responseHandler
+    }
+
+    func respond(_ allowed: Bool) {
+        responseHandler(allowed)
     }
 }
