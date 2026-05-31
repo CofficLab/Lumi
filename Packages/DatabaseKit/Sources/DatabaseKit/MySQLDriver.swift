@@ -15,9 +15,7 @@ public final class MySQLDriver: DatabaseDriver, Sendable {
         guard let host = config.host, !host.isEmpty else {
             throw DatabaseError.invalidConfiguration("MySQL 需要有效的主机地址")
         }
-        guard let port = config.port, port > 0 else {
-            throw DatabaseError.invalidConfiguration("MySQL 需要有效的端口")
-        }
+        let port = try config.validatedNetworkPort(serviceName: "MySQL")
         guard !config.database.isEmpty else {
             throw DatabaseError.invalidConfiguration("MySQL 需要指定数据库名")
         }

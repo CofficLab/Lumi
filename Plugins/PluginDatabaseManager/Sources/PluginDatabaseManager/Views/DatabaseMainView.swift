@@ -342,10 +342,15 @@ public struct AddConnectionView: View {
         case .sqlite:
             return !sqlitePath.isEmpty
         case .redis:
-            return !host.isEmpty && (Int(portText) ?? 0) > 0
+            return !host.isEmpty && isValidPortText()
         case .postgresql, .mysql:
-            return !host.isEmpty && (Int(portText) ?? 0) > 0 && !database.isEmpty && !username.isEmpty
+            return !host.isEmpty && isValidPortText() && !database.isEmpty && !username.isEmpty
         }
+    }
+
+    private func isValidPortText() -> Bool {
+        guard let port = Int(portText) else { return false }
+        return (1...65535).contains(port)
     }
 }
 

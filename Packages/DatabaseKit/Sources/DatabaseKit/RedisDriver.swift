@@ -268,7 +268,7 @@ public final class RedisDriver: DatabaseDriver, Sendable {
         guard let host = config.host, !host.isEmpty else {
             throw DatabaseError.invalidConfiguration("Redis 需要有效的主机地址")
         }
-        let port = config.port ?? 6379
+        let port = try config.validatedNetworkPort(default: 6379, serviceName: "Redis")
         return try await RedisConnection(host: host, port: port, password: config.password)
     }
 }
@@ -278,9 +278,12 @@ public actor RedisConnection: DatabaseConnection {
     private var alive = false
 
     public init(host: String, port: Int = 6379, password: String? = nil) async throws {
+        guard let networkPort = UInt16(exactly: port), networkPort > 0 else {
+            throw DatabaseError.invalidConfiguration("Redis 需要 1 到 65535 之间的端口")
+        }
         connection = NWConnection(
             host: NWEndpoint.Host(host),
-            port: NWEndpoint.Port(integerLiteral: UInt16(port)),
+            port: NWEndpoint.Port(integerLiteral: networkPort),
             using: .tcp
         )
 

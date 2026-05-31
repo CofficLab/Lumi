@@ -41,6 +41,15 @@ public struct DatabaseConfig: Codable, Hashable, Sendable {
     }
 }
 
+extension DatabaseConfig {
+    func validatedNetworkPort(default defaultPort: Int? = nil, serviceName: String) throws -> Int {
+        guard let port = port ?? defaultPort, (1...65535).contains(port) else {
+            throw DatabaseError.invalidConfiguration("\(serviceName) 需要 1 到 65535 之间的端口")
+        }
+        return port
+    }
+}
+
 public enum DatabaseError: Error, LocalizedError, Sendable {
     case connectionFailed(String)
     case queryFailed(String)

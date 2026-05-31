@@ -78,6 +78,23 @@ struct PostgreSQLDriverTests {
     }
 
     @Test
+    func postgresqlDriverRejectsPortAboveTCPRange() async throws {
+        let driver = PostgreSQLDriver()
+        let config = DatabaseConfig(
+            name: "Invalid Port",
+            type: .postgresql,
+            host: "localhost",
+            port: 70000,
+            database: "mydb",
+            username: "user"
+        )
+
+        await #expect(throws: DatabaseError.self) {
+            _ = try await driver.connect(config: config)
+        }
+    }
+
+    @Test
     func postgresqlDriverRejectsMissingDatabase() async throws {
         let driver = PostgreSQLDriver()
         let config = DatabaseConfig(

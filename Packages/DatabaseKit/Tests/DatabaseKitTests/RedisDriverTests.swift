@@ -47,6 +47,35 @@ struct RedisDriverTests {
     }
 
     @Test
+    func redisDriverRejectsPortAboveTCPRange() async throws {
+        let driver = RedisDriver()
+        let config = DatabaseConfig(
+            name: "Invalid Port",
+            type: .redis,
+            host: "localhost",
+            port: 70000,
+            database: "redis"
+        )
+
+        do {
+            _ = try await driver.connect(config: config)
+            Issue.record("Expected Redis to reject an out-of-range port")
+        } catch DatabaseError.invalidConfiguration(let message) {
+            #expect(message.contains("端口"))
+        }
+    }
+
+    @Test
+    func redisConnectionRejectsPortAboveTCPRangeBeforeOpeningSocket() async throws {
+        do {
+            _ = try await RedisConnection(host: "localhost", port: 70000)
+            Issue.record("Expected Redis connection to reject an out-of-range port")
+        } catch DatabaseError.invalidConfiguration(let message) {
+            #expect(message.contains("端口"))
+        }
+    }
+
+    @Test
     func redisIntegrationExecutesQuotedSetAndGetWhenConfigured() async throws {
         guard let config = DatabaseKitIntegrationConfig.redis else {
             return

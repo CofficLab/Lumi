@@ -15,9 +15,7 @@ public final class PostgreSQLDriver: DatabaseDriver, Sendable {
         guard let host = config.host, !host.isEmpty else {
             throw DatabaseError.invalidConfiguration("PostgreSQL 需要有效的主机地址")
         }
-        guard let port = config.port, port > 0 else {
-            throw DatabaseError.invalidConfiguration("PostgreSQL 需要有效的端口")
-        }
+        let port = try config.validatedNetworkPort(serviceName: "PostgreSQL")
         guard !config.database.isEmpty else {
             throw DatabaseError.invalidConfiguration("PostgreSQL 需要指定数据库名")
         }

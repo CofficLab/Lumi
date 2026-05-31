@@ -78,6 +78,23 @@ struct MySQLDriverTests {
     }
 
     @Test
+    func mysqlDriverRejectsPortAboveTCPRange() async throws {
+        let driver = MySQLDriver()
+        let config = DatabaseConfig(
+            name: "Invalid Port",
+            type: .mysql,
+            host: "localhost",
+            port: 70000,
+            database: "mydb",
+            username: "user"
+        )
+
+        await #expect(throws: DatabaseError.self) {
+            _ = try await driver.connect(config: config)
+        }
+    }
+
+    @Test
     func mysqlDriverRejectsMissingDatabase() async throws {
         let driver = MySQLDriver()
         let config = DatabaseConfig(
