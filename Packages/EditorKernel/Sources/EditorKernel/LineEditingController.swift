@@ -424,15 +424,15 @@ public enum LineEditingController: Sendable {
             let belowText = nsText.substring(with: belowLineRange)
             let blockContent = stripTrailingNewline(from: blockText)
             let belowContent = stripTrailingNewline(from: belowText)
-            let trailingNewline = blockText.hasSuffix("\n") ? "\n" : ""
+            let trailingNewline = belowText.hasSuffix("\n") ? "\n" : ""
             let newText = belowContent + "\n" + blockContent + trailingNewline
 
             let blockSize = (blockContent as NSString).length
-            let belowSize = (belowText as NSString).length
+            let movedBlockStart = swapRange.location + (belowContent as NSString).length + 1
 
             let newCursors = selections.map { selection in
                 let offset = selection.location - mergedRanges.first!.location
-                let newLocation = swapRange.location + belowSize + min(offset, max(blockSize - 1, 0))
+                let newLocation = movedBlockStart + min(offset, max(blockSize - 1, 0))
                 return NSRange(location: newLocation, length: selection.length)
             }
 

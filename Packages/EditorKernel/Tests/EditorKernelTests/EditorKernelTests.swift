@@ -1305,6 +1305,17 @@ struct EditorKernelTests {
     }
 
     @Test
+    func lineEditingControllerMovesLineDownWithoutAddingTrailingNewline() {
+        let moved = LineEditingController.moveLineDown(
+            in: "one\ntwo\nthree",
+            selections: [NSRange(location: 4, length: 0)]
+        )
+
+        #expect(moved?.replacementText == "one\nthree\ntwo")
+        #expect(moved?.selectedRanges == [NSRange(location: 10, length: 0)])
+    }
+
+    @Test
     func lineEditingControllerRejectsStaleSelectionsWithoutCrashing() {
         let staleCursor = NSRange(location: 50, length: 0)
         let staleRange = NSRange(location: 1, length: 50)
