@@ -19,6 +19,7 @@ final class HostExecutableResolverTests: XCTestCase {
         XCTAssertEqual(candidates[1], "/App/Lumi.app/Contents/MacOS/LumiPreviewHostApp")
         XCTAssertEqual(candidates[2], "/App/Lumi.app/Contents/Helpers/LumiPreviewHostApp")
         XCTAssertEqual(candidates[3], "/App/Lumi.app/Contents/Resources/LumiPreviewHostApp")
+        XCTAssertEqual(candidates[4], "/App/LumiPreviewHostApp")
         XCTAssertTrue(candidates.contains("/package/.build/arm64-apple-macosx/debug/LumiPreviewHostApp"))
         XCTAssertTrue(candidates.contains("/package/.build/x86_64-apple-macosx/release/LumiPreviewHostApp"))
         XCTAssertTrue(candidates.contains("/cwd/.build/arm64-apple-macosx/debug/LumiPreviewHostApp"))
@@ -39,7 +40,9 @@ final class HostExecutableResolverTests: XCTestCase {
 
         XCTAssertFalse(candidates.contains(""))
         XCTAssertEqual(candidates.first, "/App/Lumi.app/Contents/Helpers/LumiPreviewHostApp")
+        XCTAssertTrue(candidates.contains("/App/LumiPreviewHostApp"))
         XCTAssertFalse(candidates.contains("/package/.build/arm64-apple-macosx/debug/LumiPreviewHostApp"))
+        XCTAssertTrue(candidates.contains { $0.hasSuffix("/Packages/LumiPreviewKit/.build/arm64-apple-macosx/debug/LumiPreviewHostApp") })
         XCTAssertTrue(candidates.contains("/cwd/.build/arm64-apple-macosx/debug/LumiPreviewHostApp"))
     }
 

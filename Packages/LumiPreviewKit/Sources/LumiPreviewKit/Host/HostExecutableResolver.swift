@@ -8,8 +8,9 @@ public extension LumiPreviewFacade {
     /// 2. 主 bundle 同目录（生产期：`Lumi.app/Contents/MacOS/LumiPreviewHostApp`）。
     /// 3. 主 bundle 的 `Helpers/` 目录（嵌入脚本目标位置）。
     /// 4. 主 bundle 的 `Resources/` 目录（备用：嵌入资源拷贝）。
-    /// 5. 包目录（Xcode 本地 SPM 构建产物）。
-    /// 6. SwiftPM 默认构建目录（仅用于本地 `swift test`）。
+    /// 5. Xcode 产品目录（Debug 运行：`Build/Products/Debug/LumiPreviewHostApp`）。
+    /// 6. 包目录（SwiftPM 构建产物）。
+    /// 7. SwiftPM 默认构建目录（仅用于本地 `swift test`）。
     enum HostExecutableResolver {
         public static let executableName = "LumiPreviewHostApp"
         public static let environmentKey = "LUMI_INLINE_PREVIEW_HOST_PATH"
@@ -77,9 +78,17 @@ public extension LumiPreviewFacade {
                 result.append(resources.appendingPathComponent(executableName))
             }
 
-            // 5. 通过 bundle 定位 SPM 包目录下的构建产物
-            // LumiPreviewKit 作为 Xcode 本地包依赖时，Xcode 直接编译产物到
-            // DerivedData，不走 swift build；所以尝试从包源码目录的 .build 查找。
+            // 5. Xcode Debug 运行时，executable target 会落在 app bundle 的父级产品目录。
+            if bundleURL.pathExtension == "app" {
+                result.append(
+                    bundleURL
+                        .deletingLastPathComponent()
+                        .appendingPathComponent(executableName)
+                )
+            }
+
+            // 6. 通过包源码目录定位 SwiftPM 构建产物。Xcode 运行 app 时 cwd 通常是 `/`，
+            // 不能依赖 cwd 找到本地包的 `.build`。
             if let packageURL = packageDirectory(environment: environment) {
                 for arch in ["arm64-apple-macosx", "x86_64-apple-macosx"] {
                     for config in ["debug", "release"] {
@@ -94,7 +103,7 @@ public extension LumiPreviewFacade {
                 }
             }
 
-            // 6. SwiftPM 本地测试 fallback：基于 cwd
+            // 7. SwiftPM 本地测试 fallback：基于 cwd
             let cwd = URL(fileURLWithPath: currentDirectoryPath)
             for arch in ["arm64-apple-macosx", "x86_64-apple-macosx"] {
                 for config in ["debug", "release"] {
@@ -119,7 +128,18 @@ public extension LumiPreviewFacade {
                 return URL(fileURLWithPath: envPath)
             }
 
-            return nil
+            return sourcePackageDirectory()
+        }
+
+        private static func sourcePackageDirectory(filePath: String = #filePath) -> URL? {
+            let fileURL = URL(fileURLWithPath: filePath)
+            let packageURL = fileURL
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+
+            return packageURL.lastPathComponent == "LumiPreviewKit" ? packageURL : nil
         }
     }
 }
