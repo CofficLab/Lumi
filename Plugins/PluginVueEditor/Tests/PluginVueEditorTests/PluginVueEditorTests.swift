@@ -75,6 +75,23 @@ import Testing
     #expect(VueProjectScanner.importPath(for: component, relativeTo: currentFile) == "./UserCard")
 }
 
+@Test func vueComponentInfoDetectsScopedSlotProps() {
+    let content = """
+    <template>
+        <slot :item="item" v-bind:state="state" />
+    </template>
+    """
+
+    let info = VueComponentInfo.parse(
+        from: content,
+        filePath: "/tmp/vue-app/src/components/UserCard.vue",
+        vueVersion: .vue3
+    )
+
+    #expect(info.slots.first?.name == "default")
+    #expect(info.slots.first?.props == ["(scoped)"])
+}
+
 private func makeTemporaryVueProject() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginVueEditorTests-\(UUID().uuidString)", isDirectory: true)

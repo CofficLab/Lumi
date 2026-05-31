@@ -204,7 +204,7 @@ struct VueComponentInfo: Sendable {
 
             // 简单检测作用域插槽 props: <slot :item="item">
             let fullMatch = String(content[Range(match.range, in: content)!])
-            let hasProps = fullMatch.contains(":") && !fullMatch.contains(":")
+            let hasProps = hasScopedSlotProps(in: fullMatch)
 
             slots.append(SlotDefinition(
                 name: name,
@@ -220,6 +220,18 @@ struct VueComponentInfo: Sendable {
         }
 
         return slots
+    }
+
+    static func hasScopedSlotProps(in slotTag: String) -> Bool {
+        let patterns = [
+            #"\s:[A-Za-z_][\w-]*\s*="#,
+            #"\sv-bind(?::[A-Za-z_][\w-]*)?\s*="#,
+        ]
+
+        return patterns.contains { pattern in
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+            return regex.firstMatch(in: slotTag, range: NSRange(slotTag.startIndex..., in: slotTag)) != nil
+        }
     }
 
     // MARK: - Display Name 解析
