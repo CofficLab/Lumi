@@ -5,6 +5,9 @@ import AgentToolKit
 ///
 /// 该工具会对缓存仓库条目执行离线搜索，并返回匹配的相关 GitHub 仓库。
 public struct QueryEcoKBTool: SuperAgentTool {
+    static let defaultResultLimit = 5
+    static let maxResultLimit = 20
+
     /// 暴露给 Agent 的工具名称。
     public let name = "query_eco_kb"
 
@@ -32,8 +35,10 @@ public struct QueryEcoKBTool: SuperAgentTool {
                     "description": "Optional project path. If omitted, all cached project knowledge bases are searched."
                 ],
                 "limit": [
-                    "type": "number",
-                    "description": "Maximum number of entries to return. Default 5."
+                    "type": "integer",
+                    "description": "Maximum number of entries to return. Default 5, range: 1-20.",
+                    "minimum": 1,
+                    "maximum": Self.maxResultLimit
                 ]
             ],
             "required": ["query"]
@@ -53,7 +58,7 @@ public struct QueryEcoKBTool: SuperAgentTool {
             return String(localized: "Missing required parameter: query", table: "GitHubInsight")
         }
 
-        let limit = arguments["limit"]?.value as? Int ?? 5
+        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
         let projectPath = (arguments["project_path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let entries: [GitHubInsightKBEntry]
@@ -73,7 +78,7 @@ public struct QueryEcoKBTool: SuperAgentTool {
                 if lhs.relevanceScore != rhs.relevanceScore { return lhs.relevanceScore > rhs.relevanceScore }
                 return lhs.stars > rhs.stars
             }
-            .prefix(max(limit, 1))
+            .prefix(limit)
 
         guard !matches.isEmpty else {
             return String(format: String(localized: "No cached GitHub ecosystem entries matched `%@`.", table: "GitHubInsight"), query)
@@ -94,5 +99,9 @@ public struct QueryEcoKBTool: SuperAgentTool {
             lines.append("")
         }
         return lines.joined(separator: "\n")
+    }
+
+    static func normalizedLimit(_ rawLimit: Int?) -> Int {
+        min(max(rawLimit ?? defaultResultLimit, 1), maxResultLimit)
     }
 }

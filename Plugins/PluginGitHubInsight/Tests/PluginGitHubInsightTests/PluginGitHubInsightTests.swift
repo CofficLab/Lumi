@@ -7,6 +7,24 @@ import Testing
     #expect(GitHubInsightPlugin.id == "GitHubInsight")
 }
 
+@Test func queryEcoKBToolSchemaClampsLimit() throws {
+    let schema = QueryEcoKBTool().inputSchema(for: .english)
+    let properties = try #require(schema["properties"] as? [String: Any])
+    let limit = try #require(properties["limit"] as? [String: Any])
+
+    #expect(limit["type"] as? String == "integer")
+    #expect(limit["minimum"] as? Int == 1)
+    #expect(limit["maximum"] as? Int == QueryEcoKBTool.maxResultLimit)
+}
+
+@Test func queryEcoKBToolNormalizesLimit() {
+    #expect(QueryEcoKBTool.normalizedLimit(nil) == QueryEcoKBTool.defaultResultLimit)
+    #expect(QueryEcoKBTool.normalizedLimit(-10) == 1)
+    #expect(QueryEcoKBTool.normalizedLimit(0) == 1)
+    #expect(QueryEcoKBTool.normalizedLimit(8) == 8)
+    #expect(QueryEcoKBTool.normalizedLimit(999) == QueryEcoKBTool.maxResultLimit)
+}
+
 @Test func knowledgeBaseSavesAndReloadsProjectStore() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("GitHubInsightKB-\(UUID().uuidString)", isDirectory: true)
