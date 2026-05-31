@@ -114,7 +114,9 @@ Note: Requires agent-browser CLI to be installed.
         do {
             try context.checkCancellation()
 
-            let args = command.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+            guard let args = Self.parseCommandArguments(command), !args.isEmpty else {
+                return "Error: Command contains an unterminated quote or no arguments"
+            }
             let options = ShellOptions(
                 timeout: TimeInterval(timeout),
                 throwsOnError: false
@@ -144,6 +146,67 @@ Note: Requires agent-browser CLI to be installed.
             Self.logger.error("\(self.t)❌ Command failed: \(error.localizedDescription)")
             return "Error: \(error.localizedDescription)"
         }
+    }
+
+    static func parseCommandArguments(_ command: String) -> [String]? {
+        var args: [String] = []
+        var current = ""
+        var activeQuote: Character?
+        var isEscaping = false
+        var hasCurrentArgument = false
+
+        for character in command {
+            if isEscaping {
+                current.append(character)
+                hasCurrentArgument = true
+                isEscaping = false
+                continue
+            }
+
+            if character == "\\" {
+                isEscaping = true
+                hasCurrentArgument = true
+                continue
+            }
+
+            if let quote = activeQuote {
+                if character == quote {
+                    activeQuote = nil
+                } else {
+                    current.append(character)
+                    hasCurrentArgument = true
+                }
+                continue
+            }
+
+            if character == "\"" || character == "'" {
+                activeQuote = character
+                hasCurrentArgument = true
+            } else if character.isWhitespace {
+                if hasCurrentArgument {
+                    args.append(current)
+                    current = ""
+                    hasCurrentArgument = false
+                }
+            } else {
+                current.append(character)
+                hasCurrentArgument = true
+            }
+        }
+
+        if activeQuote != nil {
+            return nil
+        }
+
+        if isEscaping {
+            current.append("\\")
+        }
+
+        if hasCurrentArgument {
+            args.append(current)
+        }
+
+        return args
     }
 
     // MARK: - Command Discovery

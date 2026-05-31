@@ -42,6 +42,15 @@ struct PluginBrowserAgentTests {
         #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
     }
 
+    @Test("command parser preserves quoted browser arguments")
+    func commandParserPreservesQuotedBrowserArguments() {
+        #expect(BrowserAgentTool.parseCommandArguments(#"fill @field "hello world""#) == ["fill", "@field", "hello world"])
+        #expect(BrowserAgentTool.parseCommandArguments(#"type 'hello world'"#) == ["type", "hello world"])
+        #expect(BrowserAgentTool.parseCommandArguments(#"open https://example.com/search\ path"#) == ["open", "https://example.com/search path"])
+        #expect(BrowserAgentTool.parseCommandArguments(#"evaluate """#) == ["evaluate", ""])
+        #expect(BrowserAgentTool.parseCommandArguments(#"fill @field "unterminated"#) == nil)
+    }
+
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
         #expect(PluginBrowserAgentLocalization.bundle.url(forResource: "BrowserAgent", withExtension: "xcstrings") != nil)
