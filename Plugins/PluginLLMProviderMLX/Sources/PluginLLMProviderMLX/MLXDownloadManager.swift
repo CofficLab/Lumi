@@ -72,15 +72,20 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     public func download(modelId: String) async {
         guard !isShutdown else { return }
 
-        if self.downloadingModelId == modelId && status == .downloading {
+        let isAlreadyDownloading = await MainActor.run {
+            self.downloadingModelId == modelId && self.status == .downloading
+        }
+        if isAlreadyDownloading {
             return
         }
 
-        cancel()
+        cancel(resetPublishedState: false)
 
-        self.downloadingModelId = modelId
-        status = .downloading
-        progress = DownloadProgress()
+        await MainActor.run {
+            self.downloadingModelId = modelId
+            self.status = .downloading
+            self.progress = DownloadProgress()
+        }
 
         let task = Task { [weak self] in
             guard let self else { return }
@@ -117,16 +122,20 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     /// 取消下载
     public func cancel() {
-        guard status == .downloading else { return }
+        cancel(resetPublishedState: true)
+    }
 
+    private func cancel(resetPublishedState shouldResetPublishedState: Bool) {
         activeDownloadTask?.cancel()
         activeDownloadTask = nil
         downloadTask?.cancel()
         downloadTask = nil
 
-        status = .idle
-        downloadingModelId = nil
-        progress = DownloadProgress()
+        if shouldResetPublishedState {
+            Task { @MainActor [weak self] in
+                self?.resetPublishedState()
+            }
+        }
 
         if Self.verbose {
             Self.logger.info("\(self.t)下载已取消")
@@ -143,15 +152,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadTask = nil
         downloadSession.invalidateAndCancel()
 
-        status = .idle
-        downloadingModelId = nil
-        progress = DownloadProgress()
+        Task { @MainActor [weak self] in
+            self?.resetPublishedState()
+        }
     }
 
     /// 重置状态
     public func reset() {
         cancel()
-        status = .idle
     }
 
     // MARK: - Download Pipeline
@@ -345,6 +353,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         if let db = downloadedBytes, let tb = totalBytes {
             progress.fractionCompleted = Double(db) / Double(tb) * 0.95
         }
+    }
+
+    @MainActor
+    private func resetPublishedState() {
+        status = .idle
+        downloadingModelId = nil
+        progress = DownloadProgress()
     }
 }
 
