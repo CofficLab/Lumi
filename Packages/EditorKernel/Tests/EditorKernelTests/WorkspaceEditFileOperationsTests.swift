@@ -10,6 +10,9 @@ struct WorkspaceEditFileOperationsTests {
         let fileURI = "file:///tmp/test.swift"
         #expect(WorkspaceEditFileOperations.fileURL(from: fileURI)?.path == "/tmp/test.swift")
 
+        #expect(WorkspaceEditFileOperations.fileURL(from: "file:///tmp/test file.swift")?.path == "/tmp/test file.swift")
+        #expect(WorkspaceEditFileOperations.fileURL(from: "file://localhost/tmp/test.swift")?.path == "/tmp/test.swift")
+
         let absolutePath = "/tmp/test-2.swift"
         #expect(WorkspaceEditFileOperations.fileURL(from: absolutePath)?.path == absolutePath)
     }

@@ -367,12 +367,19 @@ public enum WorkspaceEditFileOperations {
     }
 
     public static func fileURL(from uri: String) -> URL? {
-        if uri.hasPrefix("/") {
-            return URL(fileURLWithPath: uri).standardizedFileURL
+        let trimmedURI = uri.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedURI.hasPrefix("/") {
+            return URL(fileURLWithPath: trimmedURI).standardizedFileURL
         }
-        guard let url = URL(string: uri) else { return nil }
-        if url.isFileURL {
+        if let url = URL(string: trimmedURI), url.isFileURL {
             return url.standardizedFileURL
+        }
+        if trimmedURI.lowercased().hasPrefix("file://") {
+            let rawPath = String(trimmedURI.dropFirst("file://".count))
+            let path = rawPath
+                .replacingOccurrences(of: "^localhost", with: "", options: .regularExpression)
+                .removingPercentEncoding ?? rawPath
+            return URL(fileURLWithPath: path).standardizedFileURL
         }
         return nil
     }
