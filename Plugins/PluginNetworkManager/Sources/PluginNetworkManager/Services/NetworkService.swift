@@ -148,9 +148,13 @@ public class NetworkService: SuperLog, ObservableObject {
         var ptr = ifaddr
         while ptr != nil {
             let interface = ptr!.pointee
+            guard let address = interface.ifa_addr else {
+                ptr = interface.ifa_next
+                continue
+            }
             
             // Only look at AF_LINK (link layer) for statistics
-            if interface.ifa_addr.pointee.sa_family == UInt8(AF_LINK) {
+            if address.pointee.sa_family == UInt8(AF_LINK) {
                 let name = String(cString: interface.ifa_name)
                 
                 // Filter loopback and inactive interfaces if needed
@@ -178,13 +182,17 @@ public class NetworkService: SuperLog, ObservableObject {
         var ptr = ifaddr
         while ptr != nil {
             let interface = ptr!.pointee
-            let addrFamily = interface.ifa_addr.pointee.sa_family
+            guard let address = interface.ifa_addr else {
+                ptr = interface.ifa_next
+                continue
+            }
+            let addrFamily = address.pointee.sa_family
             
             if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
                 let name = String(cString: interface.ifa_name)
                 if name == "en0" { // Usually Wi-Fi
                     var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                    getnameinfo(address, socklen_t(address.pointee.sa_len),
                                 &hostname, socklen_t(hostname.count),
                                 nil, socklen_t(0), NI_NUMERICHOST)
                     return String(cString: hostname)
