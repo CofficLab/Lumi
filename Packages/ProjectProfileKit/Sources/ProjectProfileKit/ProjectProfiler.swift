@@ -31,7 +31,10 @@ public struct ProjectProfiler {
 
         if let package = readJSON(root.appendingPathComponent("package.json")) {
             languages["TypeScript", default: 0] += 2
-            let packageDependencies = dependencyNames(from: package, keys: ["dependencies", "devDependencies"])
+            let packageDependencies = dependencyNames(
+                from: package,
+                keys: ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
+            )
             dependencies.formUnion(packageDependencies)
             frameworks.formUnion(detectJSFrameworks(from: packageDependencies))
         }

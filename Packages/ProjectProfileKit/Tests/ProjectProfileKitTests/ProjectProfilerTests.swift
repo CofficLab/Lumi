@@ -62,6 +62,29 @@ final class ProjectProfilerTests: XCTestCase {
         XCTAssertFalse(profile.keywords.contains("the"))
     }
 
+    func testPackageJSONDetectsPeerAndOptionalDependencies() throws {
+        let root = try makeProject()
+        try write(
+            """
+            {
+              "peerDependencies": {
+                "vue": "^3.4.0"
+              },
+              "optionalDependencies": {
+                "svelte": "^5.0.0"
+              }
+            }
+            """,
+            to: root.appendingPathComponent("package.json")
+        )
+
+        let profile = try XCTUnwrap(ProjectProfiler().profile(projectPath: root.path))
+
+        XCTAssertEqual(profile.primaryLanguage, "TypeScript")
+        XCTAssertEqual(profile.frameworks, ["Svelte", "Vue"])
+        XCTAssertEqual(profile.dependencies, ["svelte", "vue"])
+    }
+
     func testSwiftPackageDetectsSwiftDependenciesPlatformAndSDKType() throws {
         let root = try makeProject()
         try FileManager.default.createDirectory(
