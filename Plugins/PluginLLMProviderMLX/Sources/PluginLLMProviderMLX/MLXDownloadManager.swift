@@ -572,12 +572,12 @@ private final class DownloadContext: @unchecked Sendable {
 }
 
 // Thread-safe dictionary wrapper
-private final class LockedDictionary<Key: Hashable, Value>: @unchecked Sendable {
+private final class LockedDictionary<Key: Hashable & Sendable, Value: Sendable>: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.lumi.downloadcontext.lock")
     private var _storage: [Key: Value] = [:]
 
     public func setValue(_ value: Value, forKey key: Key) {
-        queue.async { self._storage[key] = value }
+        queue.sync { self._storage[key] = value }
     }
 
     public func removeValue(forKey key: Key) -> Value? {

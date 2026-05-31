@@ -16,7 +16,10 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(url: "https://github.com/ml-explore/mlx-swift-lm.git", .branch("main")),
+        .package(
+            url: "https://github.com/ml-explore/mlx-swift-lm.git",
+            revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
+        ),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
