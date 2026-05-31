@@ -168,6 +168,10 @@ public actor TaskStateManager: SuperLog {
                 detail: item.detail,
                 order: index + 1
             )
+            if index == 0 {
+                task.status = .inProgress
+                task.updatedAt = Date().timeIntervalSince1970
+            }
             context.insert(task)
             created.append(task)
         }

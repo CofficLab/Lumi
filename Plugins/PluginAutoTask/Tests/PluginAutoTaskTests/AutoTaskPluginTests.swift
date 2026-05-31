@@ -155,3 +155,24 @@ struct AutoTaskPluginTests {
     #expect(deleted)
     #expect(fetchedAfterDelete == nil)
 }
+
+@Test func testCreateTasksStartsFirstTask() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("auto-task-create-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let manager = TaskStateManager(databaseRootURL: root)
+    let created = try await manager.createTasks(
+        conversationId: "conversation",
+        items: [
+            (title: "First", detail: nil),
+            (title: "Second", detail: nil),
+        ]
+    )
+
+    #expect(created.map(\.status) == [.inProgress, .pending])
+
+    let fetched = await manager.fetchTasks(conversationId: "conversation")
+    #expect(fetched.map(\.status) == [.inProgress, .pending])
+}
