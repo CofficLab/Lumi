@@ -40,7 +40,7 @@ extension TreeSitterClient {
                 touchedLayers.insert(layer)
             }
 
-            layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
+            layer.parser.includedRanges = layer.ranges.compactMap { $0.tsRange }
             let ranges = layer.findChangedByteRanges(
                 edits: edits,
                 timeout: Constants.parserTimeout,
@@ -75,7 +75,7 @@ extension TreeSitterClient {
                 layer.ranges[rangeIdx].applyInputEdit(edit)
             }
 
-            if layer.ranges[rangeIdx].length <= 0 {
+            if layer.ranges[rangeIdx].length <= 0 || layer.ranges[rangeIdx].tsRange == nil {
                 layer.ranges.remove(at: rangeIdx)
             }
         }

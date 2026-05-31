@@ -11,21 +11,33 @@ import SwiftTreeSitter
 
 extension InputEdit {
     init?(range: NSRange, delta: Int, oldEndPoint: Point, textView: TextView) {
-        let newEndLocation = NSMaxRange(range) + delta
+        guard let oldEndLocation = range.treeSitterEndLocation,
+              let startByte = range.location.treeSitterUTF16ByteOffset,
+              let oldEndByte = oldEndLocation.treeSitterUTF16ByteOffset else {
+            assertionFailure("Invalid range")
+            return nil
+        }
 
-        if newEndLocation < 0 {
+        let newEnd = oldEndLocation.addingReportingOverflow(delta)
+        let newLength = range.length.addingReportingOverflow(delta)
+
+        guard !newEnd.overflow,
+              !newLength.overflow,
+              newLength.partialValue >= 0,
+              let newEndByte = newEnd.partialValue.treeSitterUTF16ByteOffset else {
             assertionFailure("Invalid range/delta")
             return nil
         }
 
-        let newRange = NSRange(location: range.location, length: range.length + delta)
-        let startPoint = textView.pointForLocation(newRange.location) ?? .zero
+        let newEndLocation = newEnd.partialValue
+
+        let startPoint = textView.pointForLocation(range.location) ?? .zero
         let newEndPoint = textView.pointForLocation(newEndLocation) ?? .zero
 
         self.init(
-            startByte: UInt32(range.location * 2),
-            oldEndByte: UInt32(NSMaxRange(range) * 2),
-            newEndByte: UInt32(newEndLocation * 2),
+            startByte: startByte,
+            oldEndByte: oldEndByte,
+            newEndByte: newEndByte,
             startPoint: startPoint,
             oldEndPoint: oldEndPoint,
             newEndPoint: newEndPoint

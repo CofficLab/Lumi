@@ -47,11 +47,15 @@ extension TreeSitterClient {
     /// - Returns: All pairs of `Language, Node` where Node is the nearest node in the tree in the given range.
     /// - Throws: A ``TreeSitterClient.Error`` error.
     public func nodesAt(range: NSRange) throws -> [NodeResult] {
-        try executor.execSync({
+        guard let byteRange = range.tsRange?.bytes else {
+            return []
+        }
+
+        return try executor.execSync({
             var nodes: [NodeResult] = []
             for layer in self.state?.layers ?? [] {
                 if let language = layer.tsLanguage,
-                   let node = layer.tree?.rootNode?.descendant(in: range.tsRange.bytes) {
+                   let node = layer.tree?.rootNode?.descendant(in: byteRange) {
                     nodes.append(NodeResult(id: layer.id, language: language, node: node))
                 }
             }
@@ -65,11 +69,15 @@ extension TreeSitterClient {
     /// - Returns: All pairs of `Language, Node` where Node is the nearest node in the tree in the given range.
     /// - Throws: A ``TreeSitterClient.Error`` error.
     public func nodesAt(range: NSRange) async throws -> [NodeResult] {
-        try await executor.exec {
+        guard let byteRange = range.tsRange?.bytes else {
+            return []
+        }
+
+        return try await executor.exec {
             var nodes: [NodeResult] = []
             for layer in self.state?.layers ?? [] {
                 if let language = layer.tsLanguage,
-                   let node = layer.tree?.rootNode?.descendant(in: range.tsRange.bytes) {
+                   let node = layer.tree?.rootNode?.descendant(in: byteRange) {
                     nodes.append(NodeResult(id: layer.id, language: language, node: node))
                 }
             }

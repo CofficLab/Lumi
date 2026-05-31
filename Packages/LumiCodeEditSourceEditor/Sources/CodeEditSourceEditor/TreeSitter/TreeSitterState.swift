@@ -251,7 +251,7 @@ public final class TreeSitterState {
                     // New range, make a new layer!
                     if let addedLayer = addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock) {
                         addedLayer.ranges = [range.range]
-                        addedLayer.parser.includedRanges = addedLayer.ranges.map { $0.tsRange }
+                        addedLayer.parser.includedRanges = addedLayer.ranges.compactMap { $0.tsRange }
                         addedLayer.tree = addedLayer.parser.parse(tree: nil as Tree?, readBlock: readBlock)
 
                         layerSet.insert(addedLayer)

@@ -74,4 +74,23 @@ final class SourceEditorCoreTests: XCTestCase {
 
         XCTAssertEqual(decoded, config)
     }
+
+    func testTreeSitterByteRangeDoublesUTF16Offsets() {
+        let range = NSRange(location: 3, length: 5)
+
+        XCTAssertEqual(range.treeSitterByteRange, 6..<16)
+    }
+
+    func testTreeSitterByteRangeRejectsNegativeRanges() {
+        XCTAssertNil(NSRange(location: -1, length: 1).treeSitterByteRange)
+        XCTAssertNil(NSRange(location: 1, length: -1).treeSitterByteRange)
+    }
+
+    func testTreeSitterByteRangeRejectsOverflowingRanges() {
+        let maxUTF16Location = Int(UInt32.max / 2)
+
+        XCTAssertNotNil(NSRange(location: maxUTF16Location, length: 0).treeSitterByteRange)
+        XCTAssertNil(NSRange(location: maxUTF16Location, length: 1).treeSitterByteRange)
+        XCTAssertNil(NSRange(location: Int.max, length: 1).treeSitterByteRange)
+    }
 }
