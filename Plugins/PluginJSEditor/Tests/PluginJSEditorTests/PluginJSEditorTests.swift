@@ -102,3 +102,14 @@ import Foundation
 
     #expect(sourceMapURL.absoluteString == "https://example.com/bundle.js.map")
 }
+
+@Test func buildOutputAdapterKeepsStdoutAndStderrLineBoundaryWithoutTrailingNewline() throws {
+    let issues = BuildOutputAdapter.issues(
+        stdout: "src/app.ts:2:3 - warning unused variable",
+        stderr: "src/app.ts:1:1 - error missing semicolon"
+    )
+
+    #expect(issues.count == 2)
+    #expect(issues.map(\.severity) == [.error, .warning])
+    #expect(issues.map(\.line) == [1, 2])
+}
