@@ -9,6 +9,7 @@ enum CSVPreviewParser {
     enum ParseError: LocalizedError {
         case emptyData
         case noData
+        case unclosedQuote
 
         var errorDescription: String? {
             switch self {
@@ -16,6 +17,8 @@ enum CSVPreviewParser {
                 return String(localized: "Empty CSV data", table: "EditorPreview")
             case .noData:
                 return String(localized: "No data rows found", table: "EditorPreview")
+            case .unclosedQuote:
+                return String(localized: "Unclosed quoted field", table: "EditorPreview")
             }
         }
     }
@@ -27,7 +30,7 @@ enum CSVPreviewParser {
         }
 
         let separator = detectSeparator(trimmed)
-        let lines = parseLines(trimmed, separator: separator)
+        let lines = try parseLines(trimmed, separator: separator)
         guard let headers = lines.first else {
             throw ParseError.noData
         }
@@ -95,7 +98,7 @@ enum CSVPreviewParser {
         return record
     }
 
-    static func parseLines(_ text: String, separator: Character) -> [[String]] {
+    static func parseLines(_ text: String, separator: Character) throws -> [[String]] {
         var result: [[String]] = []
         var currentLine: [String] = []
         var currentField = ""
@@ -137,6 +140,10 @@ enum CSVPreviewParser {
                 }
             }
             index += 1
+        }
+
+        guard !inQuotes else {
+            throw ParseError.unclosedQuote
         }
 
         if !currentField.isEmpty || !currentLine.isEmpty {

@@ -91,6 +91,12 @@ import Foundation
     #expect(table.rows == [["Ada", "", ""], ["Grace", "39", "passed"]])
 }
 
+@Test func csvParserRejectsUnclosedQuotedFields() throws {
+    #expect(throws: CSVPreviewParser.ParseError.unclosedQuote) {
+        try CSVPreviewParser.parse("Name,Note\nAda,\"unfinished")
+    }
+}
+
 @Test func previewStorageFindsLegacyCacheRootsAcrossDBVersions() throws {
     let appSupport = FileManager.default.temporaryDirectory
         .appendingPathComponent("EditorPreviewStorageTests-\(UUID().uuidString)", isDirectory: true)
