@@ -161,6 +161,27 @@ Returns the file path of the saved screenshot image (PNG format).
         return min(max(wait, 0), maxWait)
     }
 
+    static func normalizedContentHeight(from value: Any?, defaultHeight: Int = 800) -> Int {
+        let height: Int?
+        switch value {
+        case let int as Int:
+            height = int
+        case let double as Double where double.isFinite:
+            height = Int(double.rounded(.up))
+        case let number as NSNumber:
+            let double = number.doubleValue
+            height = double.isFinite ? Int(double.rounded(.up)) : nil
+        case let string as String:
+            height = Double(string.trimmingCharacters(in: .whitespacesAndNewlines))
+                .flatMap { $0.isFinite ? Int($0.rounded(.up)) : nil }
+        default:
+            height = nil
+        }
+
+        guard let height, height > 0 else { return defaultHeight }
+        return height
+    }
+
     // MARK: - Screenshot Implementation
 
     /// 加载页面并截取截图
@@ -187,7 +208,16 @@ Returns the file path of the saved screenshot image (PNG format).
         try await Task.sleep(for: .seconds(max(0.1, waitSeconds)))
         try context.checkCancellation()
 
-        let contentHeight = try await webView.evaluateJavaScript("document.body.scrollHeight") as? Int ?? 800
+        let rawContentHeight = try await webView.evaluateJavaScript("""
+        Math.max(
+            document.body ? document.body.scrollHeight : 0,
+            document.body ? document.body.offsetHeight : 0,
+            document.documentElement ? document.documentElement.clientHeight : 0,
+            document.documentElement ? document.documentElement.scrollHeight : 0,
+            document.documentElement ? document.documentElement.offsetHeight : 0
+        )
+        """)
+        let contentHeight = Self.normalizedContentHeight(from: rawContentHeight)
         let finalHeight = max(contentHeight, 200)
 
         webView.frame = CGRect(x: 0, y: 0, width: width, height: finalHeight)

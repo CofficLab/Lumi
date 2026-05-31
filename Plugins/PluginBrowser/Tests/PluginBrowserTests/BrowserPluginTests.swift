@@ -87,6 +87,18 @@ struct PluginBrowserTests {
         #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: " 2.5 ") == 2.5)
     }
 
+    @Test("tool normalizes JavaScript content heights")
+    func toolNormalizesJavaScriptContentHeights() {
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: nil) == 800)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: -10) == 800)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 0) == 800)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 1200) == 1200)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 1200.2) == 1201)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: NSNumber(value: 2400.6)) == 2401)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: " 1600.1 ") == 1601)
+        #expect(BrowserScreenshotTool.normalizedContentHeight(from: "not-a-number") == 800)
+    }
+
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
         #expect(PluginBrowserLocalization.bundle.url(forResource: "Browser", withExtension: "xcstrings") != nil)
