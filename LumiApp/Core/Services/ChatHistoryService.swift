@@ -824,19 +824,35 @@ extension ChatHistoryService {
 
         // 探测是否还有更多可展示消息：从当前页最旧一条消息再往前探一小批。
         if let oldest = oldestVisibleTimestamp {
-            var probeDescriptor: FetchDescriptor<ChatMessageEntity>
-            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
-                predicate: #Predicate<ChatMessageEntity> { msg in
-                    msg.conversation?.id == conversationId && msg.timestamp < oldest
-                },
-                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-            )
-            probeDescriptor.fetchLimit = max(10, min(30, batchSize))
-            if let probeFetched = try? context.fetch(probeDescriptor) {
-                let probeConverted = probeFetched.compactMap { $0.toChatMessage() }
-                hasMoreVisible = probeConverted.contains(where: { $0.shouldDisplayInChatList() })
-            } else {
-                hasMoreVisible = false
+            var probeCursor = oldest
+            hasMoreVisible = false
+
+            while true {
+                var probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                    predicate: #Predicate<ChatMessageEntity> { msg in
+                        msg.conversation?.id == conversationId && msg.timestamp < probeCursor
+                    },
+                    sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                )
+                probeDescriptor.fetchLimit = batchSize
+
+                guard let probeFetched = try? context.fetch(probeDescriptor),
+                      !probeFetched.isEmpty else {
+                    break
+                }
+
+                let probeMessages = probeFetched.compactMap { $0.toChatMessage() }
+                if probeMessages.contains(where: { $0.shouldDisplayInChatList() }) {
+                    hasMoreVisible = true
+                    break
+                }
+
+                guard probeFetched.count == batchSize,
+                      let nextCursor = probeFetched.last?.timestamp,
+                      nextCursor < probeCursor else {
+                    break
+                }
+                probeCursor = nextCursor
             }
         } else {
             hasMoreVisible = false
