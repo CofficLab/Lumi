@@ -67,7 +67,7 @@ public struct WebFetchService: Sendable {
             guard let url = URL(string: normalizedURLString) else {
                 throw WebFetchError.invalidURL(urlString)
             }
-            guard url.scheme == "http" || url.scheme == "https" else {
+            guard Self.isSupportedHTTPURL(url) else {
                 throw WebFetchError.unsupportedScheme(url.scheme)
             }
 
@@ -193,6 +193,11 @@ public struct WebFetchService: Sendable {
         }
 
         return relevantParagraphs.joined(separator: "\n\n")
+    }
+
+    static func isSupportedHTTPURL(_ url: URL) -> Bool {
+        let scheme = url.scheme?.lowercased()
+        return scheme == "http" || scheme == "https"
     }
 
     private func fetchURL(_ url: URL, prompt: String?) async throws -> String {

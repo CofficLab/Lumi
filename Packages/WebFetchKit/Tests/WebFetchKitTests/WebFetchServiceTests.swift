@@ -11,6 +11,22 @@ final class WebFetchServiceTests: XCTestCase {
         XCTAssertEqual(result, "Error: Only HTTP/HTTPS URLs are supported")
     }
 
+    func testFetchAcceptsUppercaseHTTPSchemes() async {
+        let fetcher = MockFetcher(
+            data: Data("<html><body><h1>Hello</h1></body></html>".utf8),
+            statusCode: 200,
+            headers: ["Content-Type": "text/html"]
+        )
+        let service = WebFetchService(fetcher: fetcher, cache: nil)
+
+        let result = await service.fetch(urlString: " \nHTTPS://example.com/page\t")
+
+        XCTAssertTrue(result.contains("### Content (Markdown)"))
+        XCTAssertTrue(result.contains("# Hello"))
+        let requestedURL = await fetcher.lastRequestURL
+        XCTAssertEqual(requestedURL?.absoluteString, "HTTPS://example.com/page")
+    }
+
     func testFetchProcessesHTMLAndCachesResult() async {
         let fetcher = MockFetcher(
             data: Data("<html><body><h1>Hello</h1><p>World</p></body></html>".utf8),
