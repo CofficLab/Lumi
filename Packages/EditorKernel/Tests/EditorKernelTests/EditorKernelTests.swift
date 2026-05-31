@@ -598,6 +598,20 @@ struct EditorKernelTests {
     }
 
     @Test
+    func cursorWordMotionClampsStaleLocations() {
+        #expect(CursorMotionController.moveWordLeft(location: 50, text: "foo bar").location == 4)
+        #expect(CursorMotionController.moveWordRight(location: -10, text: "foo bar").location == 3)
+
+        let leftDelete = CursorMotionController.deleteWordLeft(location: 50, text: "foo bar")
+        #expect(leftDelete.location == 4)
+        #expect(leftDelete.selectionRange == NSRange(location: 4, length: 3))
+
+        let rightDelete = CursorMotionController.deleteWordRight(location: -10, text: "foo bar")
+        #expect(rightDelete.location == 0)
+        #expect(rightDelete.selectionRange == NSRange(location: 0, length: 3))
+    }
+
+    @Test
     func snippetParserSeedsRepeatedPlaceholdersAndImplicitExit() {
         let repeated = EditorSnippetParser.parse("${1:name} = $1$0")
         #expect(repeated.text == "name = name")

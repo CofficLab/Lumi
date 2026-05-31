@@ -25,11 +25,12 @@ public enum CursorMotionController: Sendable {
     public static func moveWordLeft(location: Int, text: String) -> CursorMotionTarget {
         let nsText = text as NSString
         let length = nsText.length
-        guard location > 0, length > 0 else {
+        let safeLocation = clampedLocation(location, length: length)
+        guard safeLocation > 0, length > 0 else {
             return CursorMotionTarget(location: 0)
         }
 
-        var pos = location
+        var pos = safeLocation
         while pos > 0, isWhitespace(nsText.character(at: pos - 1)) {
             pos -= 1
         }
@@ -49,11 +50,12 @@ public enum CursorMotionController: Sendable {
     public static func moveWordRight(location: Int, text: String) -> CursorMotionTarget {
         let nsText = text as NSString
         let length = nsText.length
-        guard location < length, length > 0 else {
+        let safeLocation = clampedLocation(location, length: length)
+        guard safeLocation < length, length > 0 else {
             return CursorMotionTarget(location: length)
         }
 
-        var pos = location
+        var pos = safeLocation
         while pos < length, isWhitespace(nsText.character(at: pos)) {
             pos += 1
         }
@@ -71,18 +73,20 @@ public enum CursorMotionController: Sendable {
     }
 
     public static func deleteWordLeft(location: Int, text: String) -> CursorMotionTarget {
-        let target = moveWordLeft(location: location, text: text)
+        let safeLocation = clampedLocation(location, length: (text as NSString).length)
+        let target = moveWordLeft(location: safeLocation, text: text)
         return CursorMotionTarget(
             location: target.location,
-            selectionRange: NSRange(location: target.location, length: location - target.location)
+            selectionRange: NSRange(location: target.location, length: safeLocation - target.location)
         )
     }
 
     public static func deleteWordRight(location: Int, text: String) -> CursorMotionTarget {
-        let target = moveWordRight(location: location, text: text)
+        let safeLocation = clampedLocation(location, length: (text as NSString).length)
+        let target = moveWordRight(location: safeLocation, text: text)
         return CursorMotionTarget(
-            location: location,
-            selectionRange: NSRange(location: location, length: target.location - location)
+            location: safeLocation,
+            selectionRange: NSRange(location: safeLocation, length: target.location - safeLocation)
         )
     }
 
@@ -305,6 +309,10 @@ public enum CursorMotionController: Sendable {
         (char >= 0x41 && char <= 0x5A) ||
         (char >= 0x61 && char <= 0x7A) ||
         char == 0x5F
+    }
+
+    private static func clampedLocation(_ location: Int, length: Int) -> Int {
+        min(max(location, 0), length)
     }
 
     private static func firstNonWhitespaceOffset(
