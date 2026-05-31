@@ -10,6 +10,11 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
 
+    struct CapturedProcessDataResult: Sendable, Equatable {
+        let terminationStatus: Int32
+        let stdout: Data
+    }
+
     public init() {}
 
     // MARK: - 项目发现
@@ -301,26 +306,60 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     /// 异步执行 xcodebuild
     private func runXcodeBuild(args: [String]) async -> Data? {
-        let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/xcodebuild")
-        process.arguments = args
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-
         do {
-            try process.run()
+            let result = try await Self.runProcessCapturingStdout(
+                executableURL: URL(filePath: "/usr/bin/xcodebuild"),
+                arguments: args
+            )
+            guard result.terminationStatus == 0 else { return nil }
+            return result.stdout
         } catch {
             if Self.verbose {
-                            Self.logger.error("\(Self.t)xcodebuild 启动失败: \(error.localizedDescription, privacy: .public)")
+                Self.logger.error("\(Self.t)xcodebuild 启动失败: \(error.localizedDescription, privacy: .public)")
             }
             return nil
         }
+    }
 
-        return await withCheckedContinuation { continuation in
-            process.terminationHandler = { _ in
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                continuation.resume(returning: data)
+    nonisolated static func runProcessCapturingStdout(
+        executableURL: URL,
+        arguments: [String],
+        currentDirectoryURL: URL? = nil
+    ) async throws -> CapturedProcessDataResult {
+        let process = Process()
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.currentDirectoryURL = currentDirectoryURL
+
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiXcodeProcess-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+
+        let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
+        try Data().write(to: stdoutURL)
+
+        let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
+        process.standardOutput = stdoutHandle
+        process.standardError = FileHandle.nullDevice
+
+        return try await withCheckedThrowingContinuation { continuation in
+            process.terminationHandler = { terminatedProcess in
+                try? stdoutHandle.close()
+                let stdout = (try? Data(contentsOf: stdoutURL)) ?? Data()
+                try? FileManager.default.removeItem(at: outputDirectory)
+                continuation.resume(returning: CapturedProcessDataResult(
+                    terminationStatus: terminatedProcess.terminationStatus,
+                    stdout: stdout
+                ))
+            }
+
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                try? stdoutHandle.close()
+                try? FileManager.default.removeItem(at: outputDirectory)
+                continuation.resume(throwing: error)
             }
         }
     }

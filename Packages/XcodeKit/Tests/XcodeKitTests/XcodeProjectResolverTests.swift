@@ -119,4 +119,25 @@ final class XcodeProjectResolverTests: XCTestCase {
 
         XCTAssertEqual(relativePath, "Feature.swift")
     }
+
+    func testProcessCaptureHandlesLargeStdout() async throws {
+        let result = try await XcodeProjectResolver.runProcessCapturingStdout(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: [
+                "-c",
+                """
+                i=1
+                while [ "$i" -le 300 ]; do
+                  printf 'xcodebuild-json-%03d-%0512d\\n' "$i" 0
+                  i=$((i + 1))
+                done
+                """
+            ]
+        )
+
+        let output = String(data: result.stdout, encoding: .utf8) ?? ""
+        XCTAssertEqual(result.terminationStatus, 0)
+        XCTAssertTrue(output.contains("xcodebuild-json-300-"))
+        XCTAssertGreaterThan(result.stdout.count, 150_000)
+    }
 }
