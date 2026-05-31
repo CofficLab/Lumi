@@ -35,21 +35,27 @@ import MCPKit
     #expect(store.mcpServerConfigs(forKey: "MCPService_Configs").isEmpty)
 }
 
-@Test func localStoreReportsFailureAndPreservesInvalidSettingsFile() throws {
+@Test func localStoreQuarantinesInvalidSettingsFileAndRecoversOnSave() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentMCPLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
     let settingsURL = directory.appendingPathComponent("settings.plist")
+    let corruptURL = directory.appendingPathComponent("settings.corrupt.plist")
     let invalidData = Data("not a plist".utf8)
     try invalidData.write(to: settingsURL)
 
     let store = AgentMCPPluginLocalStore(settingsDirectory: directory)
 
-    #expect(store.set(Data("[]".utf8), forKey: "MCPService_Configs") == false)
-    #expect((try? Data(contentsOf: settingsURL)) == invalidData)
-    #expect(store.mcpServerConfigs(forKey: "MCPService_Configs").isEmpty)
+    let configs = [
+        MCPServerConfig(name: "filesystem", command: "npx", args: ["server"], env: [:])
+    ]
+    let data = try JSONEncoder().encode(configs)
+
+    #expect(store.set(data, forKey: "MCPService_Configs") == true)
+    #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+    #expect(store.mcpServerConfigs(forKey: "MCPService_Configs") == configs)
 }
 
 @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {

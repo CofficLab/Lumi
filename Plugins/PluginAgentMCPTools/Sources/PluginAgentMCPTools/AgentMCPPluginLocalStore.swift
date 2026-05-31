@@ -13,6 +13,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "AgentMCPPluginLocalStore.queue", qos: .userInitiated)
     private let settingsDirectory: URL
     private let settingsFileURL: URL
+    private let corruptSettingsFileURL: URL
 
     public convenience init() {
         self.init(settingsDirectory: Self.dbFolderURLProvider()
@@ -23,6 +24,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
     init(settingsDirectory root: URL) {
         self.settingsDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
+        self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
@@ -66,17 +68,26 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
 
     private func readDict() -> [String: Any]? {
         guard fileManager.fileExists(atPath: settingsFileURL.path) else { return [:] }
+        let data: Data
         do {
-            let data = try Data(contentsOf: settingsFileURL)
+            data = try Data(contentsOf: settingsFileURL)
+        } catch {
+            Self.logger.error("Read MCP settings failed: \(error.localizedDescription)")
+            return nil
+        }
+
+        do {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
                 Self.logger.error("Read MCP settings failed: root plist is not a dictionary")
-                return nil
+                quarantineCorruptSettingsFile()
+                return [:]
             }
             return dict
         } catch {
             Self.logger.error("Read MCP settings failed: \(error.localizedDescription)")
-            return nil
+            quarantineCorruptSettingsFile()
+            return [:]
         }
     }
 
@@ -112,6 +123,18 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
               let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) else { return nil }
         if let dict = plist as? [String: Any], let dataVal = dict["_data"] as? Data { return dataVal }
         return plist
+    }
+
+    private func quarantineCorruptSettingsFile() {
+        guard fileManager.fileExists(atPath: settingsFileURL.path) else { return }
+        do {
+            if fileManager.fileExists(atPath: corruptSettingsFileURL.path) {
+                try fileManager.removeItem(at: corruptSettingsFileURL)
+            }
+            try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt MCP settings failed: \(error.localizedDescription)")
+        }
     }
 
     private func sanitize(_ key: String) -> String {
