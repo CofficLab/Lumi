@@ -330,6 +330,28 @@ actor ProjectCommandExecutor: SuperLog {
             result.replaceSubrange(fullRange, with: arguments[position - 1])
         }
 
+        return unescapingLiteralPositionalPlaceholders(in: result)
+    }
+
+    private static func unescapingLiteralPositionalPlaceholders(in content: String) -> String {
+        let pattern = #"\\\$(\d+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return content
+        }
+
+        var result = content
+        let range = NSRange(result.startIndex..., in: result)
+        let matches = regex.matches(in: result, range: range)
+
+        for match in matches.reversed() {
+            guard let numberRange = Range(match.range(at: 1), in: result),
+                  let fullRange = Range(match.range, in: result) else {
+                continue
+            }
+
+            result.replaceSubrange(fullRange, with: "$\(result[numberRange])")
+        }
+
         return result
     }
 

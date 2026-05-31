@@ -282,5 +282,35 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertTrue(message.contains("Tenth=ten"))
         XCTAssertFalse(message.contains("Tenth=one0"))
     }
+
+    func testEscapedPositionalArgumentStaysLiteral() async throws {
+        let commandName = "literal-args-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "Literal=\\$1\nActual=$1".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName) release")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("Literal=$1"))
+        XCTAssertTrue(message.contains("Actual=release"))
+        XCTAssertFalse(message.contains("Literal=\\$1"))
+    }
 }
 #endif
