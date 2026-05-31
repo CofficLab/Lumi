@@ -26,5 +26,27 @@ final class ProjectCommandLoaderTests: XCTestCase {
 
         XCTAssertEqual(ProjectCommandLoader.commandName(for: fileURL, in: directory), "release.md.notes")
     }
+
+    func testFrontmatterParsesCRLFFiles() {
+        let content = """
+        ---\r
+        description: Run release checks\r
+        allowed-tools: Read, Bash\r
+        model: gpt-5\r
+        argument-hint: version\r
+        disable-model-invocation: true\r
+        ---\r
+        Ship $ARGUMENTS\r
+        """
+
+        let result = CommandFrontmatter.parse(from: content)
+
+        XCTAssertEqual(result.frontmatter?.description, "Run release checks")
+        XCTAssertEqual(result.frontmatter?.allowedTools, ["Read", "Bash"])
+        XCTAssertEqual(result.frontmatter?.model, "gpt-5")
+        XCTAssertEqual(result.frontmatter?.argumentHint, "version")
+        XCTAssertEqual(result.frontmatter?.disableModelInvocation, true)
+        XCTAssertEqual(result.body, "Ship $ARGUMENTS\n")
+    }
 }
 #endif

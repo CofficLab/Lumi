@@ -83,16 +83,20 @@ struct CommandFrontmatter {
     var disableModelInvocation: Bool = false
 
     static func parse(from content: String) -> (frontmatter: CommandFrontmatter?, body: String) {
-        guard content.hasPrefix("---") else {
+        let normalizedContent = content
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        // 查找 frontmatter 结束标记
+        let lines = normalizedContent.split(separator: "\n", omittingEmptySubsequences: false)
+        guard lines.first?.trimmingCharacters(in: .whitespacesAndNewlines) == "---" else {
             return (nil, content)
         }
 
-        // 查找 frontmatter 结束标记
-        let lines = content.split(separator: "\n", omittingEmptySubsequences: false)
         var frontmatterEndIndex = -1
 
         for (index, line) in lines.enumerated() {
-            if index > 0 && line.trimmingCharacters(in: .whitespaces) == "---" {
+            if index > 0 && line.trimmingCharacters(in: .whitespacesAndNewlines) == "---" {
                 frontmatterEndIndex = index
                 break
             }
@@ -116,14 +120,16 @@ struct CommandFrontmatter {
         var frontmatter = CommandFrontmatter()
 
         for line in frontmatterLines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             guard trimmed.contains(":") else { continue }
 
-            let parts = trimmed.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
+            let parts = trimmed.split(separator: ":", maxSplits: 1).map {
+                String($0).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             guard parts.count == 2 else { continue }
 
             let key = parts[0]
-            let value = parts[1].trimmingCharacters(in: .whitespaces)
+            let value = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
 
             // 移除引号
             let cleanValue = value.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
@@ -160,7 +166,7 @@ struct CommandFrontmatter {
         } else {
             // 字符串格式
             return value.split(separator: ",").map {
-                String($0).trimmingCharacters(in: .whitespaces)
+                String($0).trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
     }
