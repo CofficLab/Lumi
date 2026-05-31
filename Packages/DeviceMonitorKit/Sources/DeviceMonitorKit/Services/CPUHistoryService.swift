@@ -35,6 +35,10 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             .appendingPathComponent(storageFileName)
     }
 
+    var corruptStorageFileURL: URL? {
+        storageFileURL?.deletingLastPathComponent().appendingPathComponent("cpu_history.corrupt.json")
+    }
+
     package init(storageFileURL: URL? = nil) {
         self.storageFileURLOverride = storageFileURL
         createStorageDirectoryIfNeeded()
@@ -155,6 +159,7 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {
             Self.logger.error("Load CPU history failed: \(error.localizedDescription)")
+            quarantineCorruptHistory()
         }
     }
 
@@ -168,6 +173,23 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             } catch {
                 Self.logger.error("Create CPU history directory failed: \(error.localizedDescription)")
             }
+        }
+    }
+
+    private func quarantineCorruptHistory() {
+        guard let sourceURL = storageFileURL,
+              let quarantineURL = corruptStorageFileURL,
+              fileManager.fileExists(atPath: sourceURL.path) else {
+            return
+        }
+
+        do {
+            if fileManager.fileExists(atPath: quarantineURL.path) {
+                try fileManager.removeItem(at: quarantineURL)
+            }
+            try fileManager.moveItem(at: sourceURL, to: quarantineURL)
+        } catch {
+            Self.logger.error("Quarantine corrupt CPU history failed: \(error.localizedDescription)")
         }
     }
 }

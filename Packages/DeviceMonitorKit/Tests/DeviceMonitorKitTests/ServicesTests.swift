@@ -439,6 +439,32 @@ struct CPUHistoryServiceTests {
         let service = CPUHistoryService(storageFileURL: fileURL)
         #expect(service.longTermHistory.isEmpty)
     }
+
+    @Test
+    @MainActor
+    func invalidSavedHistoryIsQuarantinedAndCPUHistoryRecovers() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CPUHistoryService-Recovery-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let fileURL = directory.appendingPathComponent("cpu_history.json")
+        let invalidData = Data("not json".utf8)
+        try invalidData.write(to: fileURL)
+
+        let service = CPUHistoryService(storageFileURL: fileURL)
+        #expect(service.longTermHistory.isEmpty)
+        #expect(FileManager.default.fileExists(atPath: fileURL.path) == false)
+        #expect((try? Data(contentsOf: service.corruptStorageFileURL ?? fileURL)) == invalidData)
+
+        let point = CPUDataPoint(timestamp: Date().timeIntervalSince1970, usage: 38.5)
+        service.longTermHistory = [point]
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == true)
+
+        let reloadedService = CPUHistoryService(storageFileURL: fileURL)
+        #expect(reloadedService.longTermHistory == [point])
+    }
 }
 
 // MARK: - Memory History Service Tests
@@ -554,6 +580,36 @@ struct MemoryHistoryServiceTests {
 
         let service = MemoryHistoryService(storageFileURL: fileURL)
         #expect(service.longTermHistory.isEmpty)
+    }
+
+    @Test
+    @MainActor
+    func invalidSavedHistoryIsQuarantinedAndMemoryHistoryRecovers() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MemoryHistoryService-Recovery-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let fileURL = directory.appendingPathComponent("memory_history.json")
+        let invalidData = Data("not json".utf8)
+        try invalidData.write(to: fileURL)
+
+        let service = MemoryHistoryService(storageFileURL: fileURL)
+        #expect(service.longTermHistory.isEmpty)
+        #expect(FileManager.default.fileExists(atPath: fileURL.path) == false)
+        #expect((try? Data(contentsOf: service.corruptStorageFileURL ?? fileURL)) == invalidData)
+
+        let point = MemoryDataPoint(
+            timestamp: Date().timeIntervalSince1970,
+            usagePercentage: 57.5,
+            usedBytes: 7 * 1024 * 1024 * 1024
+        )
+        service.longTermHistory = [point]
+        let task = try #require(service.saveHistory())
+        #expect(await task.value == true)
+
+        let reloadedService = MemoryHistoryService(storageFileURL: fileURL)
+        #expect(reloadedService.longTermHistory == [point])
     }
 }
 
