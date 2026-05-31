@@ -7,6 +7,8 @@ import GitHubKit
 public struct GitHubSearchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
+    static let defaultLimit = 5
+    static let maxLimit = 100
     public let name = "github_search"
     public func description(for language: LanguagePreference) -> String {
         switch language {
@@ -74,7 +76,7 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
 
         let language = arguments["language"]?.value as? String
         let minStars = arguments["minStars"]?.value as? Int ?? 0
-        let limit = arguments["limit"]?.value as? Int ?? 5
+        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
 
         // 构建搜索查询
         var searchQuery = query
@@ -121,5 +123,9 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
         }
 
         return output
+    }
+
+    static func normalizedLimit(_ rawLimit: Int?) -> Int {
+        min(max(rawLimit ?? defaultLimit, 1), maxLimit)
     }
 }

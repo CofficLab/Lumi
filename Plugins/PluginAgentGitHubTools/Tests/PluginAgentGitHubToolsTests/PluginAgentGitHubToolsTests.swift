@@ -58,3 +58,24 @@ import Testing
     #expect(store.set("ghp_test", forKey: "GitHubToken") == false)
     #expect(store.accessToken == nil)
 }
+
+@Test func githubSearchToolClampsLimitToGitHubBounds() {
+    #expect(GitHubSearchTool.normalizedLimit(nil) == 5)
+    #expect(GitHubSearchTool.normalizedLimit(-1) == 1)
+    #expect(GitHubSearchTool.normalizedLimit(0) == 1)
+    #expect(GitHubSearchTool.normalizedLimit(25) == 25)
+    #expect(GitHubSearchTool.normalizedLimit(500) == 100)
+}
+
+@Test func githubTrendingToolNormalizesLimitAndSince() {
+    #expect(GitHubTrendingTool.normalizedLimit(nil) == 10)
+    #expect(GitHubTrendingTool.normalizedLimit(-10) == 1)
+    #expect(GitHubTrendingTool.normalizedLimit(0) == 1)
+    #expect(GitHubTrendingTool.normalizedLimit(12) == 12)
+    #expect(GitHubTrendingTool.normalizedLimit(250) == 100)
+
+    #expect(GitHubTrendingTool.normalizedSince(nil) == "daily")
+    #expect(GitHubTrendingTool.normalizedSince(" weekly ") == "weekly")
+    #expect(GitHubTrendingTool.normalizedSince("MONTHLY") == "monthly")
+    #expect(GitHubTrendingTool.normalizedSince("yearly") == "daily")
+}

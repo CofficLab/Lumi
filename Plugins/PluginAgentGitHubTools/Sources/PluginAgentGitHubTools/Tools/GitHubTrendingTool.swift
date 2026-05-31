@@ -7,6 +7,8 @@ import GitHubKit
 public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔥"
     public nonisolated static let verbose: Bool = true
+    static let defaultLimit = 10
+    static let maxLimit = 100
     public let name = "github_trending"
     public func description(for language: LanguagePreference) -> String {
         switch language {
@@ -50,8 +52,8 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let since = arguments["since"]?.value as? String ?? "daily"
-        let limit = arguments["limit"]?.value as? Int ?? 10
+        let since = Self.normalizedSince(arguments["since"]?.value as? String)
+        let limit = Self.normalizedLimit(arguments["limit"]?.value as? Int)
 
         if Self.verbose {
             if GitHubToolsPlugin.verbose {
@@ -87,5 +89,14 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         }
 
         return output
+    }
+
+    static func normalizedLimit(_ rawLimit: Int?) -> Int {
+        min(max(rawLimit ?? defaultLimit, 1), maxLimit)
+    }
+
+    static func normalizedSince(_ rawSince: String?) -> String {
+        let since = rawSince?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "daily"
+        return ["daily", "weekly", "monthly"].contains(since) ? since : "daily"
     }
 }
