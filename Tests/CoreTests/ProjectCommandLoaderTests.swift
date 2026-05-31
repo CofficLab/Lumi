@@ -120,5 +120,65 @@ final class ProjectCommandLoaderTests: XCTestCase {
         XCTAssertTrue(message.contains("Release context"))
         XCTAssertFalse(message.contains("@example.com [文件不存在]"))
     }
+
+    func testPositionalArgumentsRespectQuotedValues() async throws {
+        let commandName = "args-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "First=$1\nSecond=$2\nAll=$ARGUMENTS".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName) \"release notes\" beta")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("First=release notes"))
+        XCTAssertTrue(message.contains("Second=beta"))
+        XCTAssertTrue(message.contains("All=\"release notes\" beta"))
+    }
+
+    func testPositionalArgumentReplacementKeepsDoubleDigitPlaceholdersDistinct() async throws {
+        let commandName = "args10-\(UUID().uuidString)"
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectCommandLoaderTests-\(UUID().uuidString)")
+        let commandsURL = projectURL
+            .appendingPathComponent(".agent")
+            .appendingPathComponent("commands")
+
+        try FileManager.default.createDirectory(at: commandsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "First=$1\nTenth=$10".write(
+            to: commandsURL.appendingPathComponent("\(commandName).md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let executor = ProjectCommandExecutor()
+        await executor.reloadCommands(for: projectURL.path)
+        let result = await executor.executeSlashCommand("/\(commandName) one two three four five six seven eight nine ten")
+
+        guard case .userMessage(let message, _) = result else {
+            return XCTFail("Expected userMessage, got \(result)")
+        }
+
+        XCTAssertTrue(message.contains("First=one"))
+        XCTAssertTrue(message.contains("Tenth=ten"))
+        XCTAssertFalse(message.contains("Tenth=one0"))
+    }
 }
 #endif

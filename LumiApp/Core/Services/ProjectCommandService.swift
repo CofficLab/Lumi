@@ -285,11 +285,10 @@ actor ProjectCommandExecutor: SuperLog {
         processed = processed.replacingOccurrences(of: "$ARGUMENTS", with: arguments)
         
         // 2. 替换位置参数 $1, $2, $3...
-        let argArray = arguments.split(separator: " ").map(String.init)
-        for (index, arg) in argArray.enumerated() {
-            let placeholder = "$\(index + 1)"
-            processed = processed.replacingOccurrences(of: placeholder, with: arg)
-        }
+        processed = Self.replacingPositionalArguments(
+            in: processed,
+            arguments: Self.parsePositionalArguments(arguments)
+        )
         
         // 3. 处理 Bash 执行 !`command`
         if let cwd = projectPath {
@@ -302,6 +301,88 @@ actor ProjectCommandExecutor: SuperLog {
         }
         
         return processed
+    }
+
+    static func replacingPositionalArguments(in content: String, arguments: [String]) -> String {
+        let pattern = #"(?<!\\)\$(\d+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return content
+        }
+
+        var result = content
+        let range = NSRange(result.startIndex..., in: result)
+        let matches = regex.matches(in: result, range: range)
+
+        for match in matches.reversed() {
+            guard let numberRange = Range(match.range(at: 1), in: result),
+                  let position = Int(result[numberRange]),
+                  position > 0,
+                  position <= arguments.count,
+                  let fullRange = Range(match.range, in: result) else {
+                continue
+            }
+
+            result.replaceSubrange(fullRange, with: arguments[position - 1])
+        }
+
+        return result
+    }
+
+    static func parsePositionalArguments(_ arguments: String) -> [String] {
+        var parsed: [String] = []
+        var current = ""
+        var quote: Character?
+        var isEscaping = false
+        var hasCurrentToken = false
+
+        for character in arguments {
+            if isEscaping {
+                current.append(character)
+                isEscaping = false
+                hasCurrentToken = true
+                continue
+            }
+
+            if character == "\\" {
+                isEscaping = true
+                continue
+            }
+
+            if let activeQuote = quote {
+                if character == activeQuote {
+                    quote = nil
+                } else {
+                    current.append(character)
+                    hasCurrentToken = true
+                }
+                continue
+            }
+
+            if character == "\"" || character == "'" {
+                quote = character
+                hasCurrentToken = true
+            } else if character.isWhitespace {
+                if hasCurrentToken {
+                    parsed.append(current)
+                    current = ""
+                    hasCurrentToken = false
+                }
+            } else {
+                current.append(character)
+                hasCurrentToken = true
+            }
+        }
+
+        if isEscaping {
+            current.append("\\")
+            hasCurrentToken = true
+        }
+
+        if hasCurrentToken {
+            parsed.append(current)
+        }
+
+        return parsed
     }
     
     /// 执行 Bash 命令
