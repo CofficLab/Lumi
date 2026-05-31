@@ -142,9 +142,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
 
         if let window = mainWindows.first {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            activateMainWindow(window)
             return false
         }
 
@@ -294,16 +292,17 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         window.minSize = NSSize(width: 900, height: 640)
         window.setContentSize(NSSize(width: 1000, height: 800))
         window.center()
-        NSApp.unhide(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-        NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        activateMainWindow(window)
         if Self.verbose {
             AppLogger.core.info("\(self.t)已呈现主窗口 \(route.id.uuidString.prefix(8))")
         }
+    }
+
+    private func activateMainWindow(_ window: NSWindow) {
+        NSApp.unhide(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 
     /// 在当前活跃窗口的编辑器中打开文件
