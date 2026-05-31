@@ -386,7 +386,8 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
         // 检查路径是否在允许的目录范围内
         let isAllowed = allowedDirectories.contains { allowedDir in
-            resolvedPath.hasPrefix(allowedDir)
+            let resolvedAllowedDir = Self.resolvePath(allowedDir)
+            return Self.path(resolvedPath, isInsideOrEqualTo: resolvedAllowedDir)
         }
 
         guard isAllowed else {
@@ -407,6 +408,14 @@ public final class GitService: @unchecked Sendable, SuperLog {
         let url = URL(fileURLWithPath: expanded)
         let resolved = url.resolvingSymlinksInPath().path
         return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+
+    private static func path(_ path: String, isInsideOrEqualTo directory: String) -> Bool {
+        if path == directory {
+            return true
+        }
+        let directoryPrefix = directory == "/" ? "/" : directory + "/"
+        return path.hasPrefix(directoryPrefix)
     }
 }
 
