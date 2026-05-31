@@ -243,6 +243,60 @@ struct PluginAppStoreConnectTests {
     }
 
     @Test
+    func listAppsToleratesDuplicateIncludedIconIDs() async throws {
+        let session = MockURLProtocol.makeSession { _ in
+            (
+                200,
+                """
+                {
+                  "data": [{
+                    "id": "app-1",
+                    "type": "apps",
+                    "attributes": {
+                      "name": "Lumi",
+                      "bundleId": "com.coffic.lumi",
+                      "sku": "LUMI",
+                      "primaryLocale": "en-US",
+                      "platform": "IOS"
+                    },
+                    "relationships": {
+                      "appStoreIcon": {
+                        "data": { "type": "buildIcons", "id": "icon-1" }
+                      }
+                    }
+                  }],
+                  "included": [{
+                    "id": "icon-1",
+                    "type": "buildIcons",
+                    "attributes": {
+                      "iconAsset": {
+                        "templateUrl": "https://example.com/first-{w}x{h}.{f}"
+                      }
+                    }
+                  }, {
+                    "id": "icon-1",
+                    "type": "buildIcons",
+                    "attributes": {
+                      "iconAsset": {
+                        "templateUrl": "https://example.com/duplicate-{w}x{h}.{f}"
+                      }
+                    }
+                  }]
+                }
+                """.data(using: .utf8)!
+            )
+        }
+        let client = AppStoreConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let apps = try await client.listApps()
+
+        #expect(apps.first?.iconURL?.absoluteString == "https://example.com/first-64x64.png")
+    }
+
+    @Test
     func clientRejectsMissingCredentialsBeforeSendingRequest() async throws {
         let session = MockURLProtocol.makeSession { _ in
             Issue.record("Request should not be sent when credentials are incomplete")

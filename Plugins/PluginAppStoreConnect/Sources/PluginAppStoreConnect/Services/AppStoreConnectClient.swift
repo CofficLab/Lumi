@@ -58,7 +58,10 @@ final class AppStoreConnectClient: @unchecked Sendable {
             path: "/v1/apps",
             queryItems: query
         )
-        let iconsByID = Dictionary(uniqueKeysWithValues: (response.included ?? []).map { ($0.id, $0) })
+        let iconsByID = Dictionary(
+            (response.included ?? []).map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         return response.data.map { app in
             app.withIconURL(app.appStoreIconID.flatMap { iconsByID[$0]?.iconAsset?.url(width: 64, height: 64) })
         }
