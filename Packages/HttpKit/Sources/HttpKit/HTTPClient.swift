@@ -323,12 +323,17 @@ public final class HTTPClient: @unchecked Sendable {
                 )
             }
 
-            // 手动按 \n 分割行，保留空行（SSE 协议依赖空行分隔事件）。
+            // 手动按 SSE 行结束符分割行，保留空行（SSE 协议依赖空行分隔事件）。
             // bytes.lines 会跳过空行，不适合 SSE 场景。
             var lineBuffer = Data()
+            var previousByteWasCR = false
             for try await byte in bytes {
                 try Task.checkCancellation()
                 if byte == UInt8(ascii: "\n") {
+                    if previousByteWasCR {
+                        previousByteWasCR = false
+                        continue
+                    }
                     let line = String(decoding: lineBuffer, as: UTF8.self)
                     lineBuffer.removeAll(keepingCapacity: true)
                     let shouldContinue = await onLine(line)
@@ -336,9 +341,15 @@ public final class HTTPClient: @unchecked Sendable {
                         return
                     }
                 } else if byte == UInt8(ascii: "\r") {
-                    // 忽略 \r，在下一个 \n 时交付行
-                    continue
+                    let line = String(decoding: lineBuffer, as: UTF8.self)
+                    lineBuffer.removeAll(keepingCapacity: true)
+                    previousByteWasCR = true
+                    let shouldContinue = await onLine(line)
+                    if !shouldContinue {
+                        return
+                    }
                 } else {
+                    previousByteWasCR = false
                     lineBuffer.append(byte)
                 }
             }

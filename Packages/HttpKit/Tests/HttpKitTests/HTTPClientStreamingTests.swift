@@ -348,6 +348,28 @@ struct HTTPClientStreamingTests {
         #expect(receivedLines.value == ["data: 你好 🌟", ""])
     }
 
+    @Test("sendStreamingRequest onLine accepts CR-only line endings")
+    func streamingLineByLineAcceptsCROnlyLineEndings() async throws {
+        StreamingMockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                [Data("line1\rline2\r\r".utf8)]
+            )
+        }
+        defer { StreamingMockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/stream")!)
+
+        let receivedLines = Box<[String]>([])
+        try await client.sendStreamingRequest(request: request) { line in
+            receivedLines.value.append(line)
+            return true
+        }
+
+        #expect(receivedLines.value == ["line1", "line2", ""])
+    }
+
     @Test("sendStreamingRequest onLine stops when callback returns false")
     func streamingLineStopsOnFalse() async throws {
         StreamingMockURLProtocol.setHandler { _ in
@@ -477,6 +499,28 @@ struct HTTPClientStreamingTests {
         }
 
         #expect(receivedData.value == [["你好 🌟"]])
+    }
+
+    @Test("sendStreamingRequest onEvent accepts CR-only event delimiters")
+    func streamingSSEAcceptsCROnlyEventDelimiters() async throws {
+        StreamingMockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                [Data("event: message\rdata: hello\r\r".utf8)]
+            )
+        }
+        defer { StreamingMockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/sse")!)
+
+        let receivedData = Box<[[String]]>([])
+        try await client.sendStreamingRequest(request: request) { _, data, _ in
+            receivedData.value.append(data)
+            return true
+        }
+
+        #expect(receivedData.value == [["hello"]])
     }
 
     @Test("sendStreamingRequest onEvent handles event id")
