@@ -376,16 +376,27 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         openFilePaths: [String]?,
         activeFilePath: String?
     ) -> (openFiles: [URL], activeFile: URL?) {
+        let activeFile = activeFilePath.flatMap { restoredEditorURL(path: $0) }
+        return editorSessionState(
+            tabFileURLs: (openFilePaths ?? []).compactMap(restoredEditorURL(path:)),
+            activeFile: activeFile
+        )
+    }
+
+    static func editorSessionState(
+        tabFileURLs: [URL?],
+        activeFile: URL?
+    ) -> (openFiles: [URL], activeFile: URL?) {
         var seenPaths = Set<String>()
         var openFiles: [URL] = []
 
-        for path in openFilePaths ?? [] {
-            guard let url = restoredEditorURL(path: path),
+        for fileURL in tabFileURLs {
+            guard let url = fileURL?.standardizedFileURL,
                   seenPaths.insert(url.path).inserted else { continue }
             openFiles.append(url)
         }
 
-        let activeFile = activeFilePath.flatMap { restoredEditorURL(path: $0) }
+        let activeFile = activeFile?.standardizedFileURL
 
         if let activeFile, seenPaths.insert(activeFile.path).inserted {
             openFiles.append(activeFile)
@@ -470,6 +481,14 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             }
             .store(in: &cancellables)
 
+        editorVM.service.sessionObjectWillChange
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.syncEditorStateFromServiceSessions()
+                }
+            }
+            .store(in: &cancellables)
+
         NotificationCenter.default.publisher(for: .windowStateShouldPersist)
             .sink { [weak self] _ in
                 self?.persistCurrentStateSynchronously()
@@ -537,6 +556,22 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         editorOpenFileURLs.removeAll { $0 == url }
         if editorActiveFileURL == url {
             editorActiveFileURL = editorOpenFileURLs.last
+        }
+    }
+
+    private func syncEditorStateFromServiceSessions() {
+        let editorState = Self.editorSessionState(
+            tabFileURLs: editorVM.service.tabs.map(\.fileURL),
+            activeFile: editorVM.service.activeSession?.fileURL
+        )
+        let openFiles = editorState.openFiles
+        let activeFile = editorState.activeFile
+
+        if editorOpenFileURLs != openFiles {
+            editorOpenFileURLs = openFiles
+        }
+        if editorActiveFileURL != activeFile {
+            editorActiveFileURL = activeFile
         }
     }
 

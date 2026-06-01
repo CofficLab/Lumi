@@ -56,6 +56,27 @@ final class AppWindowManagerVMTests: XCTestCase {
         XCTAssertEqual(state.activeFile?.path, "/tmp/Lumi/B.swift")
     }
 
+    func testEditorSessionStateFollowsTabOrderAndActiveFile() {
+        let activeURL = URL(fileURLWithPath: "/tmp/Lumi/B.swift")
+        let state = WindowContainer.editorSessionState(
+            tabFileURLs: [
+                URL(fileURLWithPath: "/tmp/Lumi/A.swift"),
+                nil,
+                activeURL,
+            ],
+            activeFile: activeURL
+        )
+
+        XCTAssertEqual(
+            state.openFiles.map(\.path),
+            [
+                "/tmp/Lumi/A.swift",
+                "/tmp/Lumi/B.swift",
+            ]
+        )
+        XCTAssertEqual(state.activeFile, activeURL)
+    }
+
     @MainActor
     func testProjectControllerDirectoryResolutionRejectsInvalidProjectPaths() throws {
         let tempRoot = FileManager.default.temporaryDirectory
