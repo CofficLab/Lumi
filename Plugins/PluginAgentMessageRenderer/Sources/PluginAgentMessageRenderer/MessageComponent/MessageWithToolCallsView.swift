@@ -87,6 +87,10 @@ private struct ToolCallRow: View {
         toolCall.result == nil && toolCall.authorizationState != .userRejected
     }
 
+    private var resultVisualState: ToolCallResultVisualState {
+        ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
+    }
+
     private var shouldShowAuthState: Bool {
         toolCall.authorizationState != .noRisk
     }
@@ -96,11 +100,11 @@ private struct ToolCallRow: View {
             HStack(spacing: 6) {
                 Image(systemName: "wrench.and.screwdriver")
                     .font(.appCaptionEmphasized)
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(resultVisualState.isFailure ? theme.error : theme.textSecondary)
 
                 Text(toolCall.displayName ?? toolCall.name)
                     .font(.appCaption)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(resultVisualState.isFailure ? theme.error : theme.textPrimary)
                     .lineLimit(1)
 
                 if shouldShowAuthState {
@@ -143,10 +147,10 @@ private struct ToolCallRow: View {
             }
 
             AppIconButton(
-                systemImage: isLoadingResult ? "hourglass" : "doc.text.magnifyingglass",
+                systemImage: resultVisualState.systemImage,
                 tint: isResultsPresented
                     ? theme.textPrimary
-                    : theme.textSecondary,
+                    : resultVisualState.isFailure ? theme.error : theme.textSecondary,
                 size: .regular,
                 isActive: isResultsPresented
             ) {
@@ -156,9 +160,14 @@ private struct ToolCallRow: View {
             .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
                     title: String(localized: "调用结果", table: "CoreMessageRenderer"),
-                    systemImage: "doc.text.magnifyingglass"
+                    systemImage: resultVisualState.systemImage,
+                    isError: resultVisualState.isFailure
                 ) {
-                    ToolResultSectionView(result: toolCall.result, isLoading: isLoadingResult)
+                    ToolResultSectionView(
+                        result: toolCall.result,
+                        isLoading: isLoadingResult,
+                        visualState: resultVisualState
+                    )
                 }
             }
         }
@@ -180,9 +189,9 @@ private struct ToolCallRow: View {
     private var hoverBackground: some View {
         Group {
             if isHovering {
-                Color.white.opacity(0.08)
+                resultVisualState.isFailure ? theme.error.opacity(0.12) : Color.white.opacity(0.08)
             } else {
-                theme.textSecondary.opacity(0.06)
+                resultVisualState.isFailure ? theme.error.opacity(0.08) : theme.textSecondary.opacity(0.06)
             }
         }
     }
@@ -190,7 +199,9 @@ private struct ToolCallRow: View {
     private var hoverBorder: some View {
         RoundedRectangle(cornerRadius: 16, style: .continuous)
             .stroke(
-                isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
+                resultVisualState.isFailure
+                    ? theme.error.opacity(isHovering ? 0.45 : 0.28)
+                    : isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
                 lineWidth: 1
             )
     }
@@ -239,6 +250,7 @@ private struct ToolDetailPopoverView<Content: View>: View {
 
     public let title: String
     public let systemImage: String
+    public var isError: Bool = false
     @ViewBuilder let content: Content
 
     public var body: some View {
@@ -246,11 +258,11 @@ private struct ToolDetailPopoverView<Content: View>: View {
             HStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .font(.appCaptionEmphasized)
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(isError ? theme.error : theme.textSecondary)
 
                 Text(title)
                     .font(.appCallout)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(isError ? theme.error : theme.textPrimary)
             }
 
             content
@@ -300,6 +312,7 @@ private struct ToolResultSectionView: View {
 
     public let result: ToolCallResult?
     public let isLoading: Bool
+    public let visualState: ToolCallResultVisualState
 
     public var body: some View {
         if isLoading {
@@ -312,8 +325,23 @@ private struct ToolResultSectionView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
-        } else if let result, !result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            GenericToolSectionView(content: result.content)
+        } else if let result {
+            VStack(alignment: .leading, spacing: 8) {
+                if visualState.isFailure {
+                    ToolFailureNoticeView()
+                }
+
+                if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    EmptyToolSectionView(
+                        systemImage: "info.circle",
+                        text: visualState.isFailure
+                            ? String(localized: "没有错误详情", table: "CoreMessageRenderer")
+                            : String(localized: "暂无工具输出", table: "CoreMessageRenderer")
+                    )
+                } else {
+                    GenericToolSectionView(content: result.content, isError: visualState.isFailure)
+                }
+            }
         } else {
             EmptyToolSectionView(
                 systemImage: "info.circle",
@@ -323,10 +351,27 @@ private struct ToolResultSectionView: View {
     }
 }
 
+private struct ToolFailureNoticeView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
+    public var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(theme.error)
+            Text(String(localized: "工具执行失败", table: "CoreMessageRenderer"))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.error)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(SubtleToolCardModifier())
+    }
+}
+
 private struct GenericToolSectionView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public let content: String
+    public var isError: Bool = false
 
     public var body: some View {
         AppCard(
@@ -336,7 +381,7 @@ private struct GenericToolSectionView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 Text(content)
                     .font(.appMonoCaption)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(isError ? theme.error : theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
