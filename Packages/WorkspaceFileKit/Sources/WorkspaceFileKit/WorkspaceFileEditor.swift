@@ -44,7 +44,12 @@ public struct WorkspaceFileEditor: Sendable {
             }
 
             let directoryURL = fileURL.deletingLastPathComponent()
-            if !fileManager.fileExists(atPath: directoryURL.path) {
+            isDirectory = false
+            if fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory) {
+                guard isDirectory.boolValue else {
+                    throw WorkspaceFileError("Parent path is not a directory: \(directoryURL.path)")
+                }
+            } else {
                 try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
             }
             try newString.write(to: fileURL, atomically: true, encoding: .utf8)

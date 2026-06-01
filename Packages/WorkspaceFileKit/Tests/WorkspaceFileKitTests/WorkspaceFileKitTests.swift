@@ -136,6 +136,21 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "created")
     }
 
+    func testEditCreateWhenParentIsFileReportsParentPathClearly() throws {
+        let parentFile = temporaryDirectory.appendingPathComponent("parent.txt")
+        try "not a directory".write(to: parentFile, atomically: true, encoding: .utf8)
+        let childPath = parentFile.appendingPathComponent("child.txt").path
+
+        XCTAssertThrowsError(try WorkspaceFileEditor().edit(
+            filePath: childPath,
+            oldString: "",
+            newString: "created"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Parent path is not a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(parentFile.path))
+        }
+    }
+
     func testEditWritesExistingEmptyFile() throws {
         let path = temporaryDirectory.appendingPathComponent("empty.txt").path
         FileManager.default.createFile(atPath: path, contents: Data())
