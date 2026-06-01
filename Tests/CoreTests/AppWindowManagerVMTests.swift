@@ -36,6 +36,26 @@ final class AppWindowManagerVMTests: XCTestCase {
         XCTAssertEqual(receivedWindowId, expectedWindowId)
     }
 
+    func testRestoredEditorStateDeduplicatesAndIncludesActiveFile() {
+        let state = WindowContainer.restoredEditorState(
+            openFilePaths: [
+                "/tmp/Lumi/A.swift",
+                "/tmp/Lumi/A.swift",
+                "   ",
+            ],
+            activeFilePath: "/tmp/Lumi/B.swift"
+        )
+
+        XCTAssertEqual(
+            state.openFiles.map(\.path),
+            [
+                "/tmp/Lumi/A.swift",
+                "/tmp/Lumi/B.swift",
+            ]
+        )
+        XCTAssertEqual(state.activeFile?.path, "/tmp/Lumi/B.swift")
+    }
+
     @MainActor
     func testProjectControllerDirectoryResolutionRejectsInvalidProjectPaths() throws {
         let tempRoot = FileManager.default.temporaryDirectory

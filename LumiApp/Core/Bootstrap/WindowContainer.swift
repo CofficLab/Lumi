@@ -357,18 +357,47 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             )
         }
 
-        if let paths = record.editorOpenFilePaths {
-            editorOpenFileURLs = paths.map { URL(fileURLWithPath: $0) }
-        }
-        if let activePath = record.editorActiveFilePath {
-            editorActiveFileURL = URL(fileURLWithPath: activePath)
-        }
+        let restoredEditorState = Self.restoredEditorState(
+            openFilePaths: record.editorOpenFilePaths,
+            activeFilePath: record.editorActiveFilePath
+        )
+        editorOpenFileURLs = restoredEditorState.openFiles
+        editorActiveFileURL = restoredEditorState.activeFile
+        restoreEditorSessions(openFiles: restoredEditorState.openFiles, activeFile: restoredEditorState.activeFile)
 
         if let sidebarVisibility = record.sidebarVisibility {
             self.sidebarVisibility = sidebarVisibility
         }
 
         updateTitle()
+    }
+
+    static func restoredEditorState(
+        openFilePaths: [String]?,
+        activeFilePath: String?
+    ) -> (openFiles: [URL], activeFile: URL?) {
+        var seenPaths = Set<String>()
+        var openFiles: [URL] = []
+
+        for path in openFilePaths ?? [] {
+            guard let url = restoredEditorURL(path: path),
+                  seenPaths.insert(url.path).inserted else { continue }
+            openFiles.append(url)
+        }
+
+        let activeFile = activeFilePath.flatMap { restoredEditorURL(path: $0) }
+
+        if let activeFile, seenPaths.insert(activeFile.path).inserted {
+            openFiles.append(activeFile)
+        }
+
+        return (openFiles, activeFile)
+    }
+
+    private static func restoredEditorURL(path: String) -> URL? {
+        let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPath.isEmpty else { return nil }
+        return URL(fileURLWithPath: trimmedPath).standardizedFileURL
     }
 
     /// 根据稳定窗口 ID 恢复上次保存的窗口状态。
@@ -508,6 +537,16 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         editorOpenFileURLs.removeAll { $0 == url }
         if editorActiveFileURL == url {
             editorActiveFileURL = editorOpenFileURLs.last
+        }
+    }
+
+    private func restoreEditorSessions(openFiles: [URL], activeFile: URL?) {
+        editorVM.service.closeAllSessions()
+        for url in openFiles {
+            editorVM.service.openFile(at: url)
+        }
+        if let activeFile {
+            editorVM.service.open(at: activeFile)
         }
     }
 
