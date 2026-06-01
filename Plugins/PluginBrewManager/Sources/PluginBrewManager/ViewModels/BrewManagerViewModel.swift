@@ -177,6 +177,9 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                     }
                     self.searchResults = results
                     self.isLoading = false
+                } else if !Task.isCancelled {
+                    self.searchResults = []
+                    self.isLoading = false
                 }
             } catch {
                 if !Task.isCancelled {

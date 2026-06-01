@@ -58,6 +58,32 @@ struct PluginBrewManagerTests {
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
     }
+
+    @Test
+    func editingSearchTextAfterSubmitStopsLoadingWhenStaleResultReturns() async throws {
+        let package = BrewPackage(
+            name: "node",
+            desc: "JavaScript runtime",
+            homepage: nil,
+            version: "1.0.0",
+            installedVersion: nil,
+            outdated: false,
+            isCask: false
+        )
+        let service = FakeBrewManagerService(searchResults: [package])
+        let viewModel = BrewManagerViewModel(service: service, autoCheckEnvironment: false)
+
+        viewModel.searchText = "node"
+        viewModel.performSearch()
+
+        try await Task.sleep(nanoseconds: 550_000_000)
+        viewModel.searchText = "python"
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        #expect(viewModel.searchResults.isEmpty)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+    }
 }
 
 private actor FakeBrewManagerService: BrewManagerServicing {
