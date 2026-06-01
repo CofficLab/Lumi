@@ -403,6 +403,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             .dropFirst()
             .sink { [weak self] project in
                 guard let self else { return }
+                self.updateTitle()
                 WindowStateStore.shared.saveProject(
                     windowId: self.id,
                     projectPath: project?.path,
@@ -415,6 +416,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             .dropFirst()
             .sink { [weak self] conversationId in
                 guard let self else { return }
+                self.updateTitle()
                 WindowStateStore.shared.saveConversation(windowId: self.id, conversationId: conversationId)
             }
             .store(in: &cancellables)
