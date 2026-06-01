@@ -1,6 +1,13 @@
 import Foundation
 import SwiftUI
 
+public protocol RegistryManagerServicing: Sendable {
+    func getCurrentRegistry(for type: RegistryType) async throws -> String
+    func setRegistry(for type: RegistryType, url: String) async throws
+}
+
+extension RegistryService: RegistryManagerServicing {}
+
 @MainActor
 public class RegistryManagerViewModel: ObservableObject {
     @Published var registries: [RegistryType: String] = [:]
@@ -8,6 +15,10 @@ public class RegistryManagerViewModel: ObservableObject {
     @Published var errorMsg: String?
     @Published var showToast: Bool = false
     @Published var toastMessage: String = ""
+    private let service: any RegistryManagerServicing
+    private var operationIDs: [RegistryType: UUID] = [:]
+    private var setTasks: [RegistryType: Task<Void, Error>] = [:]
+    private var toastTask: Task<Void, Never>?
     
     // Presets
     public let presets: [RegistryType: [RegistrySource]] = [
@@ -44,9 +55,13 @@ public class RegistryManagerViewModel: ObservableObject {
         ]
     ]
     
-    public init() {
-        Task {
-            await refreshAll()
+    public init(service: any RegistryManagerServicing = RegistryService.shared, autoRefresh: Bool = true) {
+        self.service = service
+
+        if autoRefresh {
+            Task {
+                await refreshAll()
+            }
         }
     }
     
@@ -57,20 +72,36 @@ public class RegistryManagerViewModel: ObservableObject {
     }
     
     public func refresh(_ type: RegistryType) async {
+        let operationID = beginOperation(for: type)
         isLoading[type] = true
         do {
-            let current = try await RegistryService.shared.getCurrentRegistry(for: type)
+            let current = try await service.getCurrentRegistry(for: type)
+            guard isCurrentOperation(operationID, for: type) else { return }
             registries[type] = current
         } catch {
+            guard isCurrentOperation(operationID, for: type) else { return }
             registries[type] = "Unknown"
         }
-        isLoading[type] = false
+        finishOperation(operationID, for: type)
     }
     
     public func setRegistry(_ type: RegistryType, source: RegistrySource) async {
+        let operationID = beginOperation(for: type)
         isLoading[type] = true
+        let previousSetTask = setTasks[type]
+        let setTask = Task { [service, previousSetTask, type, url = source.url] in
+            do {
+                try await previousSetTask?.value
+            } catch {
+                // A newer choice should still be attempted even if an older change failed.
+            }
+            try await service.setRegistry(for: type, url: url)
+        }
+        setTasks[type] = setTask
+
         do {
-            try await RegistryService.shared.setRegistry(for: type, url: source.url)
+            try await setTask.value
+            guard isCurrentOperation(operationID, for: type) else { return }
             registries[type] = source.url
             
             if type == .docker {
@@ -82,6 +113,7 @@ public class RegistryManagerViewModel: ObservableObject {
                 showToast(message: message)
             }
         } catch {
+            guard isCurrentOperation(operationID, for: type) else { return }
             errorMsg = String(localized: "Failed to set {type}: {error}", table: "RegistryManager")
                 .replacingOccurrences(of: "{type}", with: type.name)
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
@@ -89,16 +121,40 @@ public class RegistryManagerViewModel: ObservableObject {
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
             showToast(message: message)
         }
-        isLoading[type] = false
+        setTasks[type] = nil
+        finishOperation(operationID, for: type)
     }
     
     public func showToast(message: String) {
+        toastTask?.cancel()
         toastMessage = message
         showToast = true
         // Auto hide handled by view or simple timer
-        Task {
+        toastTask = Task {
             try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
+            guard !Task.isCancelled else { return }
             showToast = false
         }
+    }
+
+    private func beginOperation(for type: RegistryType) -> UUID {
+        let operationID = UUID()
+        operationIDs[type] = operationID
+        return operationID
+    }
+
+    private func isCurrentOperation(_ operationID: UUID, for type: RegistryType) -> Bool {
+        operationIDs[type] == operationID
+    }
+
+    private func finishOperation(_ operationID: UUID, for type: RegistryType) {
+        guard isCurrentOperation(operationID, for: type) else { return }
+        isLoading[type] = false
+        operationIDs[type] = nil
+    }
+
+    deinit {
+        setTasks.values.forEach { $0.cancel() }
+        toastTask?.cancel()
     }
 }
