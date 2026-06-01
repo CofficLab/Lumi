@@ -23,9 +23,14 @@ public struct WorkspaceDirectoryLister: Sendable {
         let fileManager = FileManager.default
         let rootURL = WorkspacePathResolver.fileURL(from: path)
         let rootPath = rootURL.path
+        var isDirectory: ObjCBool = false
 
-        guard fileManager.fileExists(atPath: rootPath) else {
-            throw WorkspaceFileError("Path does not exist.")
+        guard fileManager.fileExists(atPath: rootPath, isDirectory: &isDirectory) else {
+            throw WorkspaceFileError("Path does not exist: \(rootPath)")
+        }
+
+        guard isDirectory.boolValue else {
+            throw WorkspaceFileError("Path is not a directory: \(rootPath)")
         }
 
         if recursive {

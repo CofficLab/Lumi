@@ -225,6 +225,35 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(listing.itemCount, 1)
     }
 
+    func testListMissingDirectoryReportsPath() {
+        let path = temporaryDirectory.appendingPathComponent("missing").path
+
+        XCTAssertThrowsError(try WorkspaceDirectoryLister().list(path: path)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path does not exist"))
+            XCTAssertTrue(error.localizedDescription.contains(path))
+        }
+    }
+
+    func testListFilePathReportsNotDirectory() throws {
+        let path = temporaryDirectory.appendingPathComponent("file.txt").path
+        try "content".write(toFile: path, atomically: true, encoding: .utf8)
+
+        XCTAssertThrowsError(try WorkspaceDirectoryLister().list(path: path)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path is not a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(path))
+        }
+    }
+
+    func testRecursiveListFilePathReportsNotDirectory() throws {
+        let path = temporaryDirectory.appendingPathComponent("file.txt").path
+        try "content".write(toFile: path, atomically: true, encoding: .utf8)
+
+        XCTAssertThrowsError(try WorkspaceDirectoryLister().list(path: path, recursive: true)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path is not a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(path))
+        }
+    }
+
     func testRecursiveListCanTruncate() throws {
         try "one".write(to: temporaryDirectory.appendingPathComponent("one.txt"), atomically: true, encoding: .utf8)
         try "two".write(to: temporaryDirectory.appendingPathComponent("two.txt"), atomically: true, encoding: .utf8)
