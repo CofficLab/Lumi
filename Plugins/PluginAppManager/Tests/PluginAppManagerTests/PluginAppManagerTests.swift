@@ -120,4 +120,80 @@ struct PluginAppManagerTests {
         #expect(afterClean == nil)
         #expect(cleared)
     }
+
+    @Test
+    func cancelledScanDoesNotClearLoadingForNewerScan() async throws {
+        let staleApp = Self.app(path: "/Applications/Stale.app", name: "Stale", size: 1)
+        let freshApp = Self.app(path: "/Applications/Fresh.app", name: "Fresh", size: 1)
+        let service = FakeAppManagerService(results: [
+            false: (delay: 80_000_000, apps: [staleApp]),
+            true: (delay: 220_000_000, apps: [freshApp]),
+        ])
+        let viewModel = AppManagerViewModel(appService: service)
+
+        let firstScan = Task {
+            await viewModel.scanApps(force: false)
+        }
+        try await Task.sleep(nanoseconds: 20_000_000)
+        let secondScan = Task {
+            await viewModel.scanApps(force: true)
+        }
+
+        try await Task.sleep(nanoseconds: 120_000_000)
+        #expect(viewModel.isLoading)
+        #expect(viewModel.installedApps.isEmpty)
+
+        await firstScan.value
+        await secondScan.value
+
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.installedApps.map(\.displayName) == ["Fresh"])
+    }
+
+    private static func app(path: String, name: String, size: Int64) -> AppModel {
+        AppModel(
+            bundleURL: URL(fileURLWithPath: path),
+            name: name,
+            identifier: "com.example.\(name.lowercased())",
+            version: "1.0",
+            iconFileName: nil,
+            size: size
+        )
+    }
+}
+
+private final class FakeAppManagerService: AppManagerServicing, @unchecked Sendable {
+    let results: [Bool: (delay: UInt64, apps: [AppModel])]
+
+    init(results: [Bool: (delay: UInt64, apps: [AppModel])]) {
+        self.results = results
+    }
+
+    func scanInstalledApps(force: Bool) async -> [AppModel] {
+        if let result = results[force] {
+            try? await Task.sleep(nanoseconds: result.delay)
+            return result.apps
+        }
+        return []
+    }
+
+    func calculateAppSize(for app: AppModel) async -> Int64 {
+        app.size
+    }
+
+    func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
+        []
+    }
+
+    func deleteFiles(_ files: [RelatedFile]) async throws {}
+
+    func saveCache() async {}
+
+    func revealInFinder(_ app: AppModel) {}
+
+    func openApp(_ app: AppModel) {}
+
+    func getAppInfo(_ app: AppModel) -> String {
+        app.displayName
+    }
 }

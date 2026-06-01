@@ -3,12 +3,25 @@ import Combine
 import SuperLogKit
 import SwiftUI
 
+protocol AppManagerServicing: Sendable {
+    func scanInstalledApps(force: Bool) async -> [AppModel]
+    func calculateAppSize(for app: AppModel) async -> Int64
+    func scanRelatedFiles(for app: AppModel) async -> [RelatedFile]
+    func deleteFiles(_ files: [RelatedFile]) async throws
+    func saveCache() async
+    func revealInFinder(_ app: AppModel)
+    func openApp(_ app: AppModel)
+    func getAppInfo(_ app: AppModel) -> String
+}
+
+extension AppService: AppManagerServicing {}
+
 /// 应用管理器视图模型
 @MainActor
 class AppManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
-    private let appService = AppService()
+    private let appService: any AppManagerServicing
 
     @Published var installedApps: [AppModel] = []
     @Published var filteredApps: [AppModel] = []
@@ -23,10 +36,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var showUninstallConfirmation = false
     
     private var scanTask: Task<Void, Never>?
+    private var activeScanID: UUID?
     private var relatedFilesTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(appService: any AppManagerServicing = AppService()) {
+        self.appService = appService
+
         // Setup search debounce
         $searchText
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
@@ -91,20 +107,29 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
         // Cancel previous task if any
         scanTask?.cancel()
+        let scanID = UUID()
+        activeScanID = scanID
 
-        scanTask = Task {
-            await self.performScan(force: force)
+        let task = Task {
+            await self.performScan(force: force, scanID: scanID)
         }
-        await scanTask?.value
+        scanTask = task
+        await task.value
     }
 
-    private func performScan(force: Bool) async {
+    private func performScan(force: Bool, scanID: UUID) async {
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            if activeScanID == scanID {
+                isLoading = false
+                activeScanID = nil
+                scanTask = nil
+            }
+        }
 
         // 先扫描应用列表
         let apps = await appService.scanInstalledApps(force: force)
-        if Task.isCancelled { return }
+        guard !Task.isCancelled, activeScanID == scanID else { return }
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
@@ -116,19 +141,21 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
         // 在后台逐个计算大小，不阻塞 UI
         for index in apps.indices {
-            if Task.isCancelled { break }
+            if Task.isCancelled || activeScanID != scanID { break }
             var sizedApp = apps[index]
 
             // 仅当大小为0（未缓存）时才计算
             if sizedApp.size == 0 {
                 sizedApp.size = await appService.calculateAppSize(for: sizedApp)
                 
-                if Task.isCancelled { break }
+                if Task.isCancelled || activeScanID != scanID { break }
 
                 // 更新单个应用的大小（主线程）
                 await MainActor.run {
                     // 确保索引仍然有效（防止在扫描期间卸载应用导致崩溃）
-                    if index < installedApps.count && installedApps[index].id == sizedApp.id {
+                    if activeScanID == scanID,
+                       index < installedApps.count,
+                       installedApps[index].id == sizedApp.id {
                         installedApps[index] = sizedApp
                     }
                 }
@@ -136,7 +163,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
 
         // 扫描结束后保存缓存
-        if !Task.isCancelled {
+        if !Task.isCancelled, activeScanID == scanID {
             await appService.saveCache()
         }
 
