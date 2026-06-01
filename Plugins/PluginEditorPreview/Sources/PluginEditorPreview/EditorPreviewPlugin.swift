@@ -64,6 +64,6 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
         guard context.isEditorVisible, tabId == Self.bottomPanelTabId else { return nil }
-        return AnyView(EditorPreviewDetailView())
+        return AnyView(EditorPreviewDetailView(context: context))
     }
 }

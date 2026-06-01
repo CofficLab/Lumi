@@ -1,15 +1,16 @@
 import Combine
 import EditorService
 import Foundation
+import LumiCoreKit
 
 /// Runtime hooks supplied by the host app for package-isolated preview views.
 @MainActor
 public enum EditorPreviewRuntimeBridge {
-    public static var editorServiceProvider: (() -> EditorService?)?
-    public static var addToChatHandler: ((String) -> Void)?
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
+    public static var addToChatHandler: ((String, PluginContext) -> Void)?
 
-    static func previewViewModel() -> EditorPreviewViewModel {
-        EditorPreviewViewModelStore.shared.viewModel(for: editorServiceProvider?())
+    static func previewViewModel(context: PluginContext) -> EditorPreviewViewModel {
+        EditorPreviewViewModelStore.shared.viewModel(for: editorServiceProvider?(context))
     }
 }
 

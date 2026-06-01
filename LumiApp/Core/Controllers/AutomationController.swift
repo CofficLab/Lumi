@@ -31,13 +31,13 @@ final class AutomationController: SuperLog {
 
     /// 启动自动化控制器，注册通知监听
     func start() {
-        EditorPreviewRuntimeBridge.editorServiceProvider = {
-            RootContainer.shared.windowManagerVM.activeWindowContainer?.editorVM.service
+        EditorPreviewRuntimeBridge.editorServiceProvider = { context in
+            Self.targetWindowContainer(for: context)?.editorVM.service
         }
-        EditorPreviewRuntimeBridge.addToChatHandler = { text in
+        EditorPreviewRuntimeBridge.addToChatHandler = { text, context in
             NotificationCenter.postAddToChat(
                 text: text,
-                windowId: RootContainer.shared.windowManagerVM.activeWindowId
+                windowId: Self.targetWindowContainer(for: context)?.id
             )
         }
 
@@ -235,6 +235,14 @@ final class AutomationController: SuperLog {
         }
 
         return URL(fileURLWithPath: expandedPath, isDirectory: true).standardizedFileURL
+    }
+
+    private static func targetWindowContainer(for context: PluginContext) -> WindowContainer? {
+        if let windowId = context.windowId,
+           let targetWindow = RootContainer.shared.windowManagerVM.getContainer(windowId) {
+            return targetWindow
+        }
+        return RootContainer.shared.windowManagerVM.activeWindowContainer
     }
 
     private func handleAppTerminate() {

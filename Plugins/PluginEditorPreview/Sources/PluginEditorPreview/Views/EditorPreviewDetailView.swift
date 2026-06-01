@@ -28,6 +28,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
+    private let pluginContext: PluginContext
     @StateObject private var automationState = InlinePreviewAutomationState.shared
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
@@ -36,12 +37,19 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var previewCanvasView: NSView?
     @State private var htmlPreviewWebView: WKWebView?
 
+    @MainActor
+    public init(context: PluginContext, viewModel: EditorPreviewViewModel? = nil) {
+        self.pluginContext = context
+        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel(context: context)
+    }
+
+    @MainActor
     public init(viewModel: EditorPreviewViewModel? = nil) {
-        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel()
+        self.init(context: PluginContext(), viewModel: viewModel)
     }
 
     private var editorService: EditorService? {
-        EditorPreviewRuntimeBridge.editorServiceProvider?()
+        EditorPreviewRuntimeBridge.editorServiceProvider?(pluginContext)
     }
 
     private var sourceText: String? {
@@ -708,7 +716,12 @@ public struct EditorPreviewDetailView: View, SuperLog {
             case let .image(url):
                 EditorPreviewImageView(fileURL: url)
             case .markdown:
-                EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL, editorService: editorService)
+                EditorPreviewMarkdownView(
+                    markdown: sourceText ?? "",
+                    fileURL: currentFileURL,
+                    editorService: editorService,
+                    pluginContext: pluginContext
+                )
                     .environmentObject(themeVM)
             case .stringCatalog:
                 EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
@@ -1140,6 +1153,7 @@ private struct EditorPreviewMarkdownView: View {
     public let markdown: String
     public let fileURL: URL?
     public let editorService: EditorService?
+    public let pluginContext: PluginContext
     @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
@@ -1268,7 +1282,7 @@ private struct EditorPreviewMarkdownView: View {
 
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
-        EditorPreviewRuntimeBridge.addToChatHandler?(text)
+        EditorPreviewRuntimeBridge.addToChatHandler?(text, pluginContext)
     }
 
     /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。
