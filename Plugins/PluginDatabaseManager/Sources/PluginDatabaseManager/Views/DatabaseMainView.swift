@@ -274,20 +274,18 @@ public struct AddConnectionView: View {
             HStack {
                 AppButton("Cancel", style: .ghost, fillsWidth: true, action: { isPresented = false })
                 AppButton("Test Connection", style: .secondary, fillsWidth: true, action: {
+                    let config: DatabaseConfig
+                    do {
+                        config = try makeConnectionConfig(defaultName: "Test")
+                    } catch {
+                        testMessage = error.localizedDescription
+                        testSuccess = false
+                        return
+                    }
+
                     isTesting = true
                     testMessage = nil
                     testSuccess = false
-                    let port = Int(portText)
-                    let config = DatabaseConfig(
-                        name: name.isEmpty ? "Test" : name,
-                        type: type,
-                        host: type == .sqlite ? nil : host,
-                        port: type == .sqlite ? nil : port,
-                        database: type == .sqlite ? sqlitePath : (type == .redis ? "" : database),
-                        username: type == .sqlite || type == .redis ? nil : username,
-                        password: password.isEmpty ? nil : password,
-                        options: nil
-                    )
                     Task {
                         do {
                             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded()
@@ -301,20 +299,15 @@ public struct AddConnectionView: View {
                         isTesting = false
                     }
                 })
+                .disabled(!canTestConnection())
                 AppButton("Add", style: .primary, fillsWidth: true, action: {
-                    let port = Int(portText)
-                    let config = DatabaseConfig(
-                        name: name,
-                        type: type,
-                        host: type == .sqlite ? nil : host,
-                        port: type == .sqlite ? nil : port,
-                        database: type == .sqlite ? sqlitePath : (type == .redis ? "" : database),
-                        username: type == .sqlite || type == .redis ? nil : username,
-                        password: password.isEmpty ? nil : password,
-                        options: nil
-                    )
-                    viewModel.addConfig(config)
-                    isPresented = false
+                    do {
+                        viewModel.addConfig(try makeConnectionConfig())
+                        isPresented = false
+                    } catch {
+                        testMessage = error.localizedDescription
+                        testSuccess = false
+                    }
                 })
                 .disabled(!isValid())
             }
@@ -337,20 +330,24 @@ public struct AddConnectionView: View {
     }
     
     private func isValid() -> Bool {
-        guard !name.isEmpty else { return false }
-        switch type {
-        case .sqlite:
-            return !sqlitePath.isEmpty
-        case .redis:
-            return !host.isEmpty && isValidPortText()
-        case .postgresql, .mysql:
-            return !host.isEmpty && isValidPortText() && !database.isEmpty && !username.isEmpty
-        }
+        (try? makeConnectionConfig()) != nil
     }
 
-    private func isValidPortText() -> Bool {
-        guard let port = Int(portText) else { return false }
-        return (1...65535).contains(port)
+    private func canTestConnection() -> Bool {
+        (try? makeConnectionConfig(defaultName: "Test")) != nil
+    }
+
+    private func makeConnectionConfig(defaultName: String? = nil) throws -> DatabaseConfig {
+        try DatabaseConnectionDraft(
+            name: name,
+            type: type,
+            host: host,
+            portText: portText,
+            database: database,
+            username: username,
+            password: password,
+            sqlitePath: sqlitePath
+        ).makeConfig(defaultName: defaultName)
     }
 }
 

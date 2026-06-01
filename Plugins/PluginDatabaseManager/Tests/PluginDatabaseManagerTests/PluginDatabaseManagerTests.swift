@@ -36,6 +36,85 @@ import DatabaseKit
     #expect(viewModel.queryResult?.rows == [[.integer(2)]])
 }
 
+@Test func connectionDraftTrimsPersistedNetworkConfig() throws {
+    let config = try DatabaseConnectionDraft(
+        name: "  Local Postgres  ",
+        type: .postgresql,
+        host: "  localhost  ",
+        portText: " 5432 ",
+        database: " postgres ",
+        username: " user ",
+        password: "secret",
+        sqlitePath: ""
+    ).makeConfig()
+
+    #expect(config.name == "Local Postgres")
+    #expect(config.host == "localhost")
+    #expect(config.port == 5432)
+    #expect(config.database == "postgres")
+    #expect(config.username == "user")
+    #expect(config.password == "secret")
+}
+
+@Test func connectionDraftRejectsWhitespaceOnlyRequiredFields() {
+    #expect(throws: DatabaseConnectionDraftError.self) {
+        try DatabaseConnectionDraft(
+            name: "   ",
+            type: .redis,
+            host: "localhost",
+            portText: "6379",
+            database: "",
+            username: "",
+            password: "",
+            sqlitePath: ""
+        ).makeConfig()
+    }
+
+    #expect(throws: DatabaseConnectionDraftError.self) {
+        try DatabaseConnectionDraft(
+            name: "Redis",
+            type: .redis,
+            host: "   ",
+            portText: "6379",
+            database: "",
+            username: "",
+            password: "",
+            sqlitePath: ""
+        ).makeConfig()
+    }
+}
+
+@Test func connectionDraftRejectsInvalidPortBeforeConnecting() {
+    #expect(throws: DatabaseConnectionDraftError.self) {
+        try DatabaseConnectionDraft(
+            name: "Redis",
+            type: .redis,
+            host: "localhost",
+            portText: "70000",
+            database: "",
+            username: "",
+            password: "",
+            sqlitePath: ""
+        ).makeConfig()
+    }
+}
+
+@Test func connectionDraftAllowsDefaultNameForTestingOnly() throws {
+    let config = try DatabaseConnectionDraft(
+        name: "",
+        type: .redis,
+        host: "localhost",
+        portText: "6379",
+        database: "",
+        username: "",
+        password: "",
+        sqlitePath: ""
+    ).makeConfig(defaultName: "Test")
+
+    #expect(config.name == "Test")
+    #expect(config.port == 6379)
+}
+
 @MainActor
 @Test func openSQLiteTableEscapesQuotedTableNames() async throws {
     let viewModel = DatabaseViewModel()
