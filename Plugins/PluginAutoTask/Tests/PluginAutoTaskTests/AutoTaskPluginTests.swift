@@ -230,3 +230,60 @@ struct AutoTaskPluginTests {
     let fetched = await manager.fetchTasks(conversationId: "conversation")
     #expect(fetched.map(\.status) == [.inProgress, .pending])
 }
+
+@MainActor
+@Test func testAutoTaskSidebarIgnoresStaleConversationRefresh() async throws {
+    let staleTask = TaskItem(conversationId: "stale", title: "Stale task", order: 1)
+    let freshTask = TaskItem(conversationId: "fresh", title: "Fresh task", order: 1)
+    let service = FakeAutoTaskSidebarService(
+        tasks: [
+            "stale": [staleTask],
+            "fresh": [freshTask],
+        ],
+        delays: [
+            "stale": 200_000_000,
+            "fresh": 20_000_000,
+        ]
+    )
+    let viewModel = AutoTaskSidebarViewModel(service: service)
+
+    let staleRefresh = Task {
+        await viewModel.refresh(conversationId: "stale")
+    }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    await viewModel.refresh(conversationId: "fresh")
+    await staleRefresh.value
+
+    #expect(viewModel.currentConversationId == "fresh")
+    #expect(viewModel.tasks.map(\.title) == ["Fresh task"])
+    #expect(viewModel.summary?.total == 1)
+    #expect(viewModel.isLoading == false)
+}
+
+private actor FakeAutoTaskSidebarService: AutoTaskSidebarServicing {
+    private let tasks: [String: [TaskItem]]
+    private let delays: [String: UInt64]
+
+    init(tasks: [String: [TaskItem]], delays: [String: UInt64]) {
+        self.tasks = tasks
+        self.delays = delays
+    }
+
+    func fetchTasks(conversationId: String) async -> [TaskItem] {
+        if let delay = delays[conversationId] {
+            try? await Task.sleep(nanoseconds: delay)
+        }
+        return tasks[conversationId] ?? []
+    }
+
+    func getProgressSummary(conversationId: String) async -> TaskProgressSummary {
+        let fetchedTasks = tasks[conversationId] ?? []
+        return TaskProgressSummary(
+            total: fetchedTasks.count,
+            completed: fetchedTasks.filter { $0.status == .completed }.count,
+            inProgress: fetchedTasks.filter { $0.status == .inProgress }.count,
+            pending: fetchedTasks.filter { $0.status == .pending }.count,
+            skipped: fetchedTasks.filter { $0.status == .skipped }.count
+        )
+    }
+}

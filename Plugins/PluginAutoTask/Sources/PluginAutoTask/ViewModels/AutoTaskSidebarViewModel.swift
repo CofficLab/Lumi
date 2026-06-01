@@ -27,6 +27,13 @@ private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
     }
 }
 
+public protocol AutoTaskSidebarServicing: Sendable {
+    func fetchTasks(conversationId: String) async -> [TaskItem]
+    func getProgressSummary(conversationId: String) async -> TaskProgressSummary
+}
+
+extension TaskStateManager: AutoTaskSidebarServicing {}
+
 /// AutoTask 右侧栏视图模型
 ///
 /// 负责获取并展示当前会话的任务列表。
@@ -43,6 +50,12 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
     public var currentConversationId: String?
     private nonisolated let notificationObserverHolder = AutoTaskNotificationObserverHolder()
+    private let service: any AutoTaskSidebarServicing
+    private var refreshGeneration: Int = 0
+
+    public init(service: any AutoTaskSidebarServicing = TaskStateManager.shared) {
+        self.service = service
+    }
 
     deinit {
         notificationObserverHolder.remove()
@@ -54,10 +67,14 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
     /// 刷新当前会话的任务列表
     public func refresh(conversationId: String?) async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
+
         guard let conversationId else {
             tasks = []
             summary = nil
             currentConversationId = nil
+            isLoading = false
             return
         }
 
@@ -77,7 +94,7 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     if let changedCid, changedCid == self.currentConversationId {
-                        await self.reloadFromDB()
+                        await self.reloadCurrentConversationFromDB()
                     }
                 }
             }
@@ -88,27 +105,35 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
         if conversationChanged {
             isLoading = true
         }
-        await reloadFromDB()
-        if conversationChanged {
+        await reloadFromDB(conversationId: cid, generation: generation)
+        if conversationChanged && isCurrentRefresh(generation, conversationId: cid) {
             isLoading = false
         }
     }
 
     /// 手动刷新（用于外部事件触发）
     public func forceRefresh() async {
-        await reloadFromDB()
+        guard let cid = currentConversationId else {
+            Self.logger.warning("\(Self.t)forceRefresh: currentConversationId is nil, skip")
+            return
+        }
+        refreshGeneration += 1
+        await reloadFromDB(conversationId: cid, generation: refreshGeneration)
     }
 
     // MARK: - Private
 
-    private func reloadFromDB() async {
-        guard let cid = currentConversationId else {
-            Self.logger.warning("\(Self.t)reloadFromDB: currentConversationId is nil, skip")
-            return
-        }
-        let manager = TaskStateManager.shared
-        let fetchedTasks = await manager.fetchTasks(conversationId: cid)
-        let fetchedSummary = await manager.getProgressSummary(conversationId: cid)
+    private func reloadCurrentConversationFromDB() async {
+        guard let cid = currentConversationId else { return }
+        refreshGeneration += 1
+        await reloadFromDB(conversationId: cid, generation: refreshGeneration)
+    }
+
+    private func reloadFromDB(conversationId cid: String, generation: Int) async {
+        let fetchedTasks = await service.fetchTasks(conversationId: cid)
+        let fetchedSummary = await service.getProgressSummary(conversationId: cid)
+
+        guard isCurrentRefresh(generation, conversationId: cid) else { return }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)reloadFromDB: cid=\(cid.prefix(8)), tasks=\(fetchedTasks.count), summary=\(fetchedSummary.total) total")
@@ -116,6 +141,10 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
         tasks = fetchedTasks.map { TaskDisplayItem(from: $0) }
         summary = fetchedSummary
+    }
+
+    private func isCurrentRefresh(_ generation: Int, conversationId: String) -> Bool {
+        refreshGeneration == generation && currentConversationId == conversationId
     }
 }
 

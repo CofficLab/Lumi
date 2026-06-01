@@ -285,7 +285,7 @@ public actor TaskStateManager: SuperLog {
     }
 
     /// 获取任务进度摘要
-    func getProgressSummary(conversationId: String) -> TaskProgressSummary {
+    public func getProgressSummary(conversationId: String) -> TaskProgressSummary {
         let tasks = fetchTasks(conversationId: conversationId)
 
         guard !tasks.isEmpty else {
