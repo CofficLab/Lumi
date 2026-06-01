@@ -23,7 +23,9 @@ struct LocalMachineInfoView: View {
             return "Intel"
             #endif
         }
-        let name = String(cString: model).trimmingCharacters(in: .whitespacesAndNewlines)
+        let nullTerminatorIndex = model.firstIndex(of: 0) ?? model.endIndex
+        let bytes = model[..<nullTerminatorIndex].map { UInt8(bitPattern: $0) }
+        let name = String(decoding: bytes, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty || name == "Apple processor" {
             #if arch(arm64)
             return "Apple Silicon"
