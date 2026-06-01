@@ -34,3 +34,23 @@ import EditorService
         EditorChatIntegrationRuntime.postAddToChat("hello")
     }
 }
+
+@Test func postsAddToChatNotificationWithWindowId() async throws {
+    let windowId = UUID()
+
+    await confirmation { posted in
+        let observer = NotificationCenter.default.addObserver(
+            forName: EditorChatIntegrationRuntime.addToChatNotificationName,
+            object: nil,
+            queue: nil
+        ) { notification in
+            if notification.userInfo?["text"] as? String == "hello",
+               notification.userInfo?["windowId"] as? UUID == windowId {
+                posted()
+            }
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        EditorChatIntegrationRuntime.postAddToChat("hello", windowId: windowId)
+    }
+}

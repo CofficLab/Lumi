@@ -76,6 +76,7 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var commandUsageCounts: [String: Int] = [:]
     @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
     @Published public private(set) var viewportRenderLineRange: Range<Int> = 0..<0
+    public var windowId: UUID?
     private let runtimeModeController = EditorRuntimeModeController()
     private let commandController = EditorCommandController()
     private let quickOpenController = EditorQuickOpenController()

@@ -196,6 +196,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
         )
+        self.editorVM.service.state.windowId = id
         self._container = container
 
         // 将窗口级 conversationVM 注入全局 toolService，供插件工具构建时使用
