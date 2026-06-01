@@ -44,6 +44,9 @@ public struct EditorFileTreeView: View, SuperLog {
                             onExpansionChange: { relativePath, isExpanded in
                                 handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
                             },
+                            onTreeMutation: {
+                                refreshTreeAfterMutation()
+                            },
                             gitStatusSnapshot: coordinator.gitStatusSnapshot
                         )
 
@@ -135,6 +138,15 @@ public struct EditorFileTreeView: View, SuperLog {
             if Self.verbose {
                             Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
             }
+        }
+    }
+
+    /// 文件树内创建、重命名或删除后立即刷新展开目录，避免 UI 等待文件系统监听回调。
+    private func refreshTreeAfterMutation() {
+        rootRefreshToken += 1
+        packageStore.refresh()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)文件树内容变化，立即刷新，令牌：\(rootRefreshToken)")
         }
     }
 

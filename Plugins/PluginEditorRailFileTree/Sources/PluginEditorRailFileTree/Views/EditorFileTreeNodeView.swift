@@ -21,6 +21,9 @@ public struct EditorFileTreeNodeView: View {
     /// 展开/折叠变化回调，通知协调器更新文件系统监听列表
     public let onExpansionChange: ((String, Bool) -> Void)?
 
+    /// 文件树内容变化回调，通知根视图刷新展开目录
+    public let onTreeMutation: (() -> Void)?
+
     /// Git 状态快照（由协调器提供，节点视图只读查询）
     public let gitStatusSnapshot: EditorFileTreeGitStatusSnapshot
 
@@ -81,6 +84,7 @@ public struct EditorFileTreeNodeView: View {
         refreshToken: Int = 0,
         projectRootPath: String = "",
         onExpansionChange: ((String, Bool) -> Void)? = nil,
+        onTreeMutation: (() -> Void)? = nil,
         gitStatusSnapshot: EditorFileTreeGitStatusSnapshot = .empty
     ) {
         self.url = url
@@ -90,6 +94,7 @@ public struct EditorFileTreeNodeView: View {
         self.refreshToken = refreshToken
         self.projectRootPath = projectRootPath
         self.onExpansionChange = onExpansionChange
+        self.onTreeMutation = onTreeMutation
         self.gitStatusSnapshot = gitStatusSnapshot
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
@@ -208,6 +213,7 @@ public struct EditorFileTreeNodeView: View {
                                 refreshToken: refreshToken,
                                 projectRootPath: projectRootPath,
                                 onExpansionChange: onExpansionChange,
+                                onTreeMutation: onTreeMutation,
                                 gitStatusSnapshot: gitStatusSnapshot
                             )
                         }
@@ -450,25 +456,34 @@ extension EditorFileTreeNodeView {
     private func reloadChildren() { loadChildren() }
 
     private func createNewFile() {
-        EditorFileTreeService.createFile(in: url, name: newItemName)
-        reloadChildren()
+        if EditorFileTreeService.createFile(in: url, name: newItemName) != nil {
+            reloadChildren()
+            notifyTreeMutation()
+        }
     }
 
     private func createNewFolder() {
-        EditorFileTreeService.createFolder(in: url, name: newItemName)
-        reloadChildren()
+        if EditorFileTreeService.createFolder(in: url, name: newItemName) != nil {
+            reloadChildren()
+            notifyTreeMutation()
+        }
     }
 
     private func renameItem() {
         if let newURL = EditorFileTreeService.renameItem(at: url, newName: newItemName) {
             onSelect(newURL)
+            notifyTreeMutation()
         }
-        reloadChildren()
     }
 
     private func deleteItem() {
-        EditorFileTreeService.trashItem(at: url)
-        reloadChildren()
+        if EditorFileTreeService.trashItem(at: url) {
+            notifyTreeMutation()
+        }
+    }
+
+    private func notifyTreeMutation() {
+        onTreeMutation?()
     }
 
     private func openInFinder() {
