@@ -25,6 +25,9 @@ public struct GitPluginPopoverView: View {
     @State private var errorMessage: String?
     @State private var showCreateBranchAlert = false
     @State private var createBranchName = ""
+    @State private var refreshGeneration = 0
+    @State private var detailGeneration = 0
+    @State private var diffGeneration = 0
 
     private let commitPageSize = 25
 
@@ -273,6 +276,8 @@ public struct GitPluginPopoverView: View {
     }
 
     private func refreshAll() async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
         let path = projectVM.currentProjectPath
         guard !path.isEmpty else {
             branches = []
@@ -280,6 +285,7 @@ public struct GitPluginPopoverView: View {
             uncommittedFiles = []
             selectedCommitHash = nil
             selectedFile = nil
+            loading = false
             return
         }
 
@@ -300,6 +306,7 @@ public struct GitPluginPopoverView: View {
             let loadedBranchItems = await branchTask
             let loadedCommits = try await commitTask
             let loadedFiles = try await fileTask
+            guard isCurrentRefresh(generation, path: path) else { return }
             branches = loadedBranchItems.map {
                 GitBranch(id: $0.name, name: $0.name, isCurrent: $0.isCurrent, upstream: nil, latestCommitHash: "", latestCommitMessage: $0.message)
             }
@@ -309,57 +316,101 @@ public struct GitPluginPopoverView: View {
                 selectedFile = loadedFiles.first?.path
             }
         } catch {
+            guard isCurrentRefresh(generation, path: path) else { return }
             errorMessage = error.localizedDescription
         }
 
-        loading = false
+        if isCurrentRefresh(generation, path: path) {
+            loading = false
+        }
     }
 
     private func loadDetail(for hash: String?) async {
+        detailGeneration += 1
+        let generation = detailGeneration
         guard let hash else {
             selectedFile = uncommittedFiles.first?.path
             commitDetail = nil
             commitChangedFiles = []
+            loadingDetail = false
             return
         }
         let path = projectVM.currentProjectPath
-        guard !path.isEmpty else { return }
+        guard !path.isEmpty else {
+            loadingDetail = false
+            return
+        }
 
         loadingDetail = true
         do {
             let detail = try await GitService.shared.getCommitDetail(path: path, hash: hash)
             let files = try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
+            guard isCurrentDetail(generation, path: path, hash: hash) else { return }
             commitDetail = detail
             commitChangedFiles = files
             selectedFile = files.first?.path
         } catch {
+            guard isCurrentDetail(generation, path: path, hash: hash) else { return }
             errorMessage = error.localizedDescription
         }
-        loadingDetail = false
+        if isCurrentDetail(generation, path: path, hash: hash) {
+            loadingDetail = false
+        }
     }
 
     private func loadDiff(for file: String?) async {
-        guard let file else { return }
+        diffGeneration += 1
+        let generation = diffGeneration
+        guard let file else {
+            oldText = ""
+            newText = ""
+            loadingDiff = false
+            return
+        }
         let path = projectVM.currentProjectPath
-        guard !path.isEmpty else { return }
+        guard !path.isEmpty else {
+            loadingDiff = false
+            return
+        }
+        let hash = selectedCommitHash
 
         loadingDiff = true
         do {
-            if let selectedCommitHash {
-                let values = try await GitService.shared.getCommitFileContentChange(path: path, hash: selectedCommitHash, file: file)
+            if let hash {
+                let values = try await GitService.shared.getCommitFileContentChange(path: path, hash: hash, file: file)
+                guard isCurrentDiff(generation, path: path, hash: hash, file: file) else { return }
                 oldText = values.before ?? ""
                 newText = values.after ?? ""
             } else {
                 let values = try await GitService.shared.getUncommittedFileContentChange(path: path, file: file)
+                guard isCurrentDiff(generation, path: path, hash: nil, file: file) else { return }
                 oldText = values.before ?? ""
                 newText = values.after ?? ""
             }
         } catch {
+            guard isCurrentDiff(generation, path: path, hash: hash, file: file) else { return }
             oldText = ""
             newText = ""
             errorMessage = error.localizedDescription
         }
-        loadingDiff = false
+        if isCurrentDiff(generation, path: path, hash: hash, file: file) {
+            loadingDiff = false
+        }
+    }
+
+    private func isCurrentRefresh(_ generation: Int, path: String) -> Bool {
+        refreshGeneration == generation && projectVM.currentProjectPath == path
+    }
+
+    private func isCurrentDetail(_ generation: Int, path: String, hash: String) -> Bool {
+        detailGeneration == generation && projectVM.currentProjectPath == path && selectedCommitHash == hash
+    }
+
+    private func isCurrentDiff(_ generation: Int, path: String, hash: String?, file: String) -> Bool {
+        diffGeneration == generation &&
+            projectVM.currentProjectPath == path &&
+            selectedCommitHash == hash &&
+            selectedFile == file
     }
 
     private func checkout(branch: String) async {
