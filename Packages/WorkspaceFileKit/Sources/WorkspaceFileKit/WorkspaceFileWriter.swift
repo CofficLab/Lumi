@@ -8,7 +8,20 @@ public struct WorkspaceFileWriter: Sendable {
         let directoryURL = fileURL.deletingLastPathComponent()
 
         let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: directoryURL.path) {
+        var isDirectory: ObjCBool = false
+
+        if fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) {
+            guard !isDirectory.boolValue else {
+                throw WorkspaceFileError("Path is a directory, not a file: \(fileURL.path)")
+            }
+        }
+
+        isDirectory = false
+        if fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory) {
+            guard isDirectory.boolValue else {
+                throw WorkspaceFileError("Parent path is not a directory: \(directoryURL.path)")
+            }
+        } else {
             try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         }
 

@@ -26,6 +26,30 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(result, .text(content: "hello", resolvedPath: path, truncated: false))
     }
 
+    func testWriteDirectoryReportsDirectoryInsteadOfSystemError() {
+        XCTAssertThrowsError(try WorkspaceFileWriter().write(
+            path: temporaryDirectory.path,
+            content: "hello"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path is a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(temporaryDirectory.path))
+        }
+    }
+
+    func testWriteWhenParentIsFileReportsParentPathClearly() throws {
+        let parentFile = temporaryDirectory.appendingPathComponent("parent.txt")
+        try "not a directory".write(to: parentFile, atomically: true, encoding: .utf8)
+        let childPath = parentFile.appendingPathComponent("child.txt").path
+
+        XCTAssertThrowsError(try WorkspaceFileWriter().write(
+            path: childPath,
+            content: "hello"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Parent path is not a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(parentFile.path))
+        }
+    }
+
     func testReadTruncatesLongText() throws {
         let path = temporaryDirectory.appendingPathComponent("long.txt").path
         try "abcdef".write(toFile: path, atomically: true, encoding: .utf8)
