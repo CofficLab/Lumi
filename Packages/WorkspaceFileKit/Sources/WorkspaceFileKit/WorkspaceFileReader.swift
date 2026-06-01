@@ -28,6 +28,16 @@ public struct WorkspaceFileReader: Sendable {
         let fileURL = WorkspacePathResolver.fileURL(from: path)
         let resolvedPath = fileURL.path
         let ext = fileURL.pathExtension.lowercased()
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+
+        guard fileManager.fileExists(atPath: resolvedPath, isDirectory: &isDirectory) else {
+            throw WorkspaceFileError("File does not exist: \(resolvedPath)")
+        }
+
+        guard !isDirectory.boolValue else {
+            throw WorkspaceFileError("Path is a directory, not a file: \(resolvedPath)")
+        }
 
         if let mimeType = supportedImageExtensions[ext] {
             let data = try Data(contentsOf: fileURL)

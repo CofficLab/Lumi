@@ -60,6 +60,22 @@ final class WorkspaceFileKitTests: XCTestCase {
         }
     }
 
+    func testReadMissingTextFileReportsMissingFile() {
+        let path = temporaryDirectory.appendingPathComponent("missing.txt").path
+
+        XCTAssertThrowsError(try WorkspaceFileReader().read(path: path)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("File does not exist"))
+            XCTAssertTrue(error.localizedDescription.contains(path))
+        }
+    }
+
+    func testReadDirectoryReportsDirectoryInsteadOfNonUTF8() {
+        XCTAssertThrowsError(try WorkspaceFileReader().read(path: temporaryDirectory.path)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path is a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(temporaryDirectory.path))
+        }
+    }
+
     func testReadDetectsUTF16TextFiles() throws {
         let url = temporaryDirectory.appendingPathComponent("utf16.txt")
         try "hello 中文".write(to: url, atomically: true, encoding: .utf16)
