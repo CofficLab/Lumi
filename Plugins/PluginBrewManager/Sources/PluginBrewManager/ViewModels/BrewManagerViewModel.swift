@@ -4,6 +4,52 @@ import SwiftUI
 import BrewKit
 import SuperLogKit
 
+protocol BrewManagerServicing: Sendable {
+    func checkInstalled() async -> Bool
+    func listInstalled() async throws -> [BrewPackage]
+    func getOutdated() async throws -> [BrewPackage]
+    func search(query: String) async throws -> [BrewPackage]
+    func install(name: String, isCask: Bool) async throws
+    func uninstall(name: String, isCask: Bool) async throws
+    func upgrade(name: String, isCask: Bool) async throws
+}
+
+struct LiveBrewManagerService: BrewManagerServicing {
+    private let service: BrewService
+
+    init(service: BrewService = .shared) {
+        self.service = service
+    }
+
+    func checkInstalled() async -> Bool {
+        await service.checkInstalled()
+    }
+
+    func listInstalled() async throws -> [BrewPackage] {
+        try await service.listInstalled()
+    }
+
+    func getOutdated() async throws -> [BrewPackage] {
+        try await service.getOutdated()
+    }
+
+    func search(query: String) async throws -> [BrewPackage] {
+        try await service.search(query: query)
+    }
+
+    func install(name: String, isCask: Bool) async throws {
+        try await service.install(name: name, isCask: isCask)
+    }
+
+    func uninstall(name: String, isCask: Bool) async throws {
+        try await service.uninstall(name: name, isCask: isCask)
+    }
+
+    func upgrade(name: String, isCask: Bool) async throws {
+        try await service.upgrade(name: name, isCask: isCask)
+    }
+}
+
 @MainActor
 class BrewManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍺"
@@ -18,15 +64,18 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     // 搜索防抖
     private var searchCancellable: AnyCancellable?
-    private let service = BrewService.shared
+    private let service: any BrewManagerServicing
     
-    init() {
+    init(service: any BrewManagerServicing = LiveBrewManagerService(), autoCheckEnvironment: Bool = true) {
+        self.service = service
         if Self.verbose {
             if BrewManagerPlugin.verbose {
                             BrewManagerPlugin.logger.info("\(self.t) 初始化 BrewManagerViewModel")
             }
         }
-        checkEnvironment()
+        if autoCheckEnvironment {
+            checkEnvironment()
+        }
     }
     
     func checkEnvironment() {
@@ -91,8 +140,12 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     }
     
     func performSearch() {
-        guard !searchText.isEmpty else {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        searchCancellable?.cancel()
+
+        guard !query.isEmpty else {
             searchResults = []
+            isLoading = false
             return
         }
         
@@ -102,9 +155,9 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             }
         }
         isLoading = true
-        searchCancellable?.cancel()
+        errorMessage = nil
         
-        searchCancellable = Task {
+        searchCancellable = Task { [service, query] in
             do {
                 // 延迟 0.5s 防抖
                 try await Task.sleep(nanoseconds: 500_000_000)
@@ -114,9 +167,9 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                             BrewManagerPlugin.logger.info("\(self.t) 执行搜索 API 调用: \(self.searchText)")
                     }
                 }
-                let results = try await service.search(query: searchText)
+                let results = try await service.search(query: query)
                 
-                if !Task.isCancelled {
+                if !Task.isCancelled && query == self.searchText.trimmingCharacters(in: .whitespacesAndNewlines) {
                     if Self.verbose {
                         if BrewManagerPlugin.verbose {
                                                     BrewManagerPlugin.logger.info("\(self.t) ✅ 搜索完成: 找到 \(results.count) 个结果")
