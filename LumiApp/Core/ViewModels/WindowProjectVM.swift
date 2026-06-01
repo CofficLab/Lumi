@@ -82,6 +82,10 @@ final class WindowProjectVM: ObservableObject, SuperLog {
 
         currentProject = project
         codeSelectionRange = nil
+        let projectRoot = URL(fileURLWithPath: project.path, isDirectory: true).standardizedFileURL
+        Task {
+            await contextService.setProjectRoot(projectRoot)
+        }
         AppLogger.core.info("\(Self.t)切换项目: \(project.name) (\(project.path)), reason: \(reason)")
     }
 
