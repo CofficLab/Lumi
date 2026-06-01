@@ -34,6 +34,7 @@ extension NotificationCenter {
     /// 发送打开插件设置的通知
     /// - Parameter object: 可选的对象参数
     static func postOpenPluginSettings(object: Any? = nil) {
+        AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.plugins.rawValue)
         NotificationCenter.default.post(name: .openPluginSettings, object: object)
     }
 }

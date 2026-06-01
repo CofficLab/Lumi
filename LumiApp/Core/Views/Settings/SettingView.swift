@@ -55,6 +55,14 @@ struct SettingView: View {
         }
     }
 
+    private func applyStoredOrDefaultSelection() {
+        if let savedSelection = loadSavedSelection() {
+            selection = savedSelection
+        } else {
+            selection = .core(defaultTab)
+        }
+    }
+
     /// 初始化方法
     /// - Parameter defaultTab: 默认选中的标签
     init(defaultTab: SettingTab = .about) {
@@ -184,11 +192,13 @@ struct SettingView: View {
         }
         .onAppear {
             // 加载上次选中的项
-            if let savedSelection = loadSavedSelection() {
-                selection = savedSelection
-            } else {
-                selection = .core(defaultTab)
-            }
+            applyStoredOrDefaultSelection()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
+            applyStoredOrDefaultSelection()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openPluginSettings)) { _ in
+            applyStoredOrDefaultSelection()
         }
         .onChange(of: selection) { _, newValue in
             // 保存选中的项
