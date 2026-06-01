@@ -49,5 +49,27 @@ final class ToolCallExecutorTests: XCTestCase {
         XCTAssertEqual(calls[2].result?.content, "already completed")
         XCTAssertEqual(calls[2].result?.isError, false)
     }
+
+    func testRejectedToolCallCancelsFollowingUnfinishedCalls() {
+        var calls = [
+            ToolCall(id: "first", name: "read_file", arguments: "{}"),
+            ToolCall(id: "second", name: "write_file", arguments: "{}"),
+            ToolCall(
+                id: "third",
+                name: "list_files",
+                arguments: "{}",
+                result: ToolCallResult(content: "already completed")
+            ),
+        ]
+
+        ToolCallExecutor.markRejectedToolCallAndCancelFollowing(&calls, rejectedAt: 0)
+
+        XCTAssertEqual(calls[0].result?.content, "用户拒绝执行此工具")
+        XCTAssertEqual(calls[0].result?.isError, true)
+        XCTAssertEqual(calls[1].result?.content, "执行已取消")
+        XCTAssertEqual(calls[1].result?.isError, true)
+        XCTAssertEqual(calls[2].result?.content, "already completed")
+        XCTAssertEqual(calls[2].result?.isError, false)
+    }
 }
 #endif

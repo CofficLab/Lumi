@@ -31,6 +31,16 @@ final class ToolCallExecutor: SuperLog {
         }
     }
 
+    nonisolated static func markRejectedToolCallAndCancelFollowing(
+        _ calls: inout [ToolCall],
+        rejectedAt rejectedIndex: Int
+    ) {
+        guard calls.indices.contains(rejectedIndex) else { return }
+
+        calls[rejectedIndex].result = userRejectedToolResult()
+        markUnfinishedToolCallsCancelled(&calls, startingAt: rejectedIndex + 1)
+    }
+
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
@@ -163,8 +173,8 @@ final class ToolCallExecutor: SuperLog {
 
             if toolCall.authorizationState == .userRejected {
                 hadUserRejection = true
-                updatedCalls[index].result = Self.userRejectedToolResult()
-                continue
+                Self.markRejectedToolCallAndCancelFollowing(&updatedCalls, rejectedAt: index)
+                break
             }
 
             // 在执行前写入 displayName（由工具自身根据参数生成）
