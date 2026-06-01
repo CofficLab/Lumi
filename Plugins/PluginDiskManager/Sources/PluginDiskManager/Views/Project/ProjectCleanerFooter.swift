@@ -3,6 +3,7 @@ import SwiftUI
 /// 项目清理底部操作栏
 struct ProjectCleanerFooter: View {
     @ObservedObject var viewModel: ProjectCleanerViewModel
+    @Binding var showCleanConfirmation: Bool
 
     var body: some View {
         HStack {
@@ -19,7 +20,7 @@ struct ProjectCleanerFooter: View {
             Spacer()
 
             Button(action: {
-                viewModel.showCleanConfirmation = true
+                showCleanConfirmation = true
             }, label: {
                 Label(title: { Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("清理中...") : PluginDiskManagerLocalization.string("立即清理")) }, icon: {
                     Image(systemName: "trash.fill")
@@ -35,4 +36,3 @@ struct ProjectCleanerFooter: View {
         .padding(.horizontal)
     }
 }
-

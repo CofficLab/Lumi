@@ -11,7 +11,6 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     @Published var selectedItemIds: Set<UUID> = []
     @Published var isScanning = false
     @Published var isCleaning = false
-    @Published var showCleanConfirmation = false
     @Published var scanProgress: String = ""
     @Published var alertMessage: String?
 

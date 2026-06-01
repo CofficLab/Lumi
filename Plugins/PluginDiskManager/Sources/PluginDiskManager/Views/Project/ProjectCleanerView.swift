@@ -38,7 +38,7 @@ struct ProjectCleanerView: View {
 
             // 底部操作栏
             if !viewModel.isScanning {
-                ProjectCleanerFooter(viewModel: viewModel)
+                ProjectCleanerFooter(viewModel: viewModel, showCleanConfirmation: $showCleanConfirmation)
             }
         }
         .onAppear {
