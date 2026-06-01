@@ -32,6 +32,10 @@ public final class GitBranchCache: ObservableObject {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    public nonisolated static func shouldApplyBranchResult(for resultPath: String, currentPath: String) -> Bool {
+        resultPath == currentPath
+    }
+
     /// 批量刷新多个项目路径的分支信息
     public func refresh(paths: [String]) {
         let pathsToLoad = paths.filter { branches[$0] == nil && !loadingPaths.contains($0) }

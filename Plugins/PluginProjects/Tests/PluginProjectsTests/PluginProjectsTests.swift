@@ -10,6 +10,11 @@ import Testing
     #expect(GitBranchCache.displayName(for: "  main\n") == "main")
 }
 
+@Test func branchRefreshResultOnlyAppliesToCurrentProjectPath() {
+    #expect(GitBranchCache.shouldApplyBranchResult(for: "/repo/a", currentPath: "/repo/a"))
+    #expect(!GitBranchCache.shouldApplyBranchResult(for: "/repo/a", currentPath: "/repo/b"))
+}
+
 @Test func addProjectToolTrimsCopiedPathWhitespace() {
     #expect(AddProjectTool.normalizedPath(from: " \n/Users/example/Project\t") == "/Users/example/Project")
 }

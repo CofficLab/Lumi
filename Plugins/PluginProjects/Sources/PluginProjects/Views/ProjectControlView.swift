@@ -139,6 +139,10 @@ public struct ProjectControlView: View {
         Task.detached { [path] in
             let result = (try? LibGit2.getCurrentBranch(at: path)) ?? nil
             await MainActor.run {
+                guard GitBranchCache.shouldApplyBranchResult(
+                    for: path,
+                    currentPath: projectVM.currentProjectPath
+                ) else { return }
                 self.branch = result
             }
         }
