@@ -233,10 +233,15 @@ final class ToolCallExecutor: SuperLog {
                 toolResult = ToolCallResult(
                     content: decoded.content,
                     images: decoded.images,
+                    isError: Self.isToolErrorOutput(decoded.content),
                     duration: elapsedDuration
                 )
             } else {
-                toolResult = ToolCallResult(content: result, duration: elapsedDuration)
+                toolResult = ToolCallResult(
+                    content: result,
+                    isError: Self.isToolErrorOutput(result),
+                    duration: elapsedDuration
+                )
             }
 
             conversationSendStatusVM.applyToolProgressEvent(
@@ -278,6 +283,11 @@ final class ToolCallExecutor: SuperLog {
         }
 
         return ToolCallResult(content: errorContent, isError: true, duration: duration)
+    }
+
+    nonisolated static func isToolErrorOutput(_ output: String) -> Bool {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("Error:") || trimmed.hasPrefix("错误：")
     }
 
     private func launchProgressReporter(
