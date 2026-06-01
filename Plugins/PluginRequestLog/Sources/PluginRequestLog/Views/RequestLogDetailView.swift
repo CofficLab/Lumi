@@ -112,9 +112,7 @@ public struct RequestLogDetailView: View {
         }
 
         return Button {
-            viewModel.filterSuccess = filter
-            viewModel.currentPage = 1
-            Task { await viewModel.reload() }
+            viewModel.setFilterSuccess(filter)
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: icon)

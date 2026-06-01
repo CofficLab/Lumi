@@ -2,6 +2,12 @@ import Foundation
 import SwiftUI
 import SwiftData
 
+public protocol RequestLogHistoryQuerying: Sendable {
+    func getStats() async -> RequestLogStats
+    func getLatest(limit: Int, offset: Int) async -> [RequestLogItemDTO]
+    func query(isSuccess: Bool, limit: Int, offset: Int) async -> [RequestLogItemDTO]
+}
+
 /// 请求日志状态栏数据浏览器 ViewModel
 @MainActor
 public final class RequestLogBrowserViewModel: ObservableObject {
@@ -12,6 +18,12 @@ public final class RequestLogBrowserViewModel: ObservableObject {
     @Published var filterSuccess: Bool? = nil  // nil = all, true = success, false = failed
 
     private let pageSize = 50
+    private let history: any RequestLogHistoryQuerying
+    private var reloadGeneration = 0
+
+    public init(history: any RequestLogHistoryQuerying = RequestLogHistoryManager.shared) {
+        self.history = history
+    }
 
     public var totalPages: Int {
         let total = filteredTotalCount
@@ -23,45 +35,65 @@ public final class RequestLogBrowserViewModel: ObservableObject {
     }
 
     public func reload() async {
+        let generation = nextReloadGeneration()
+        await reload(generation: generation)
+    }
+
+    public func setFilterSuccess(_ filter: Bool?) {
+        guard filterSuccess != filter else { return }
+        filterSuccess = filter
+        currentPage = 1
+        scheduleReload()
+    }
+
+    private func reload(generation: Int) async {
         isLoading = true
-        await fetchStats()
-        await fetchItems()
-        isLoading = false
+        defer {
+            if isCurrentReload(generation) {
+                isLoading = false
+            }
+        }
+
+        let loadedStats = await history.getStats()
+        guard isCurrentReload(generation) else { return }
+
+        stats = loadedStats
+        await fetchItems(generation: generation)
     }
 
     public func nextPage() {
         guard currentPage < totalPages else { return }
         currentPage += 1
-        Task { await fetchItems() }
+        scheduleItemsFetch()
     }
 
     public func previousPage() {
         guard currentPage > 1 else { return }
         currentPage -= 1
-        Task { await fetchItems() }
+        scheduleItemsFetch()
     }
 
     // MARK: - Private
 
-    private func fetchStats() async {
-        stats = await RequestLogHistoryManager.shared.getStats()
-    }
-
-    private func fetchItems() async {
+    private func fetchItems(generation: Int) async {
         normalizeCurrentPage()
         let offset = max((currentPage - 1) * pageSize, 0)
+        let loadedItems: [RequestLogItemDTO]
         if let filter = filterSuccess {
-            items = await RequestLogHistoryManager.shared.query(
+            loadedItems = await history.query(
                 isSuccess: filter,
                 limit: pageSize,
                 offset: offset
             )
         } else {
-            items = await RequestLogHistoryManager.shared.getLatest(
+            loadedItems = await history.getLatest(
                 limit: pageSize,
                 offset: offset
             )
         }
+        guard isCurrentReload(generation) else { return }
+
+        items = loadedItems
     }
 
     private var filteredTotalCount: Int {
@@ -81,4 +113,25 @@ public final class RequestLogBrowserViewModel: ObservableObject {
             currentPage = normalized
         }
     }
+
+    private func scheduleReload() {
+        let generation = nextReloadGeneration()
+        Task { await reload(generation: generation) }
+    }
+
+    private func scheduleItemsFetch() {
+        let generation = nextReloadGeneration()
+        Task { await fetchItems(generation: generation) }
+    }
+
+    private func nextReloadGeneration() -> Int {
+        reloadGeneration += 1
+        return reloadGeneration
+    }
+
+    private func isCurrentReload(_ generation: Int) -> Bool {
+        generation == reloadGeneration
+    }
 }
+
+extension RequestLogHistoryManager: RequestLogHistoryQuerying {}

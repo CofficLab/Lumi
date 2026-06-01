@@ -125,3 +125,89 @@ import Testing
     viewModel.filterSuccess = true
     #expect(viewModel.totalPages == 3)
 }
+
+@MainActor
+@Test func requestLogBrowserIgnoresStaleItemsAfterFilterSwitch() async {
+    let staleItem = RequestLogItemDTO.fixture(requestURL: "https://example.com/stale", isSuccess: true)
+    let currentItem = RequestLogItemDTO.fixture(requestURL: "https://example.com/current", isSuccess: false)
+    let history = MockRequestLogHistory(
+        stats: RequestLogStats(totalRequests: 2, successCount: 1, failedCount: 1),
+        latestItems: [staleItem],
+        failedItems: [currentItem]
+    )
+    history.latestDelayNanoseconds = 100_000_000
+
+    let viewModel = RequestLogBrowserViewModel(history: history)
+    let staleReload = Task { await viewModel.reload() }
+    try? await Task.sleep(nanoseconds: 10_000_000)
+
+    viewModel.setFilterSuccess(false)
+    await viewModel.reload()
+    await staleReload.value
+
+    #expect(viewModel.filterSuccess == false)
+    #expect(viewModel.items.map(\.requestURL) == ["https://example.com/current"])
+}
+
+private final class MockRequestLogHistory: RequestLogHistoryQuerying, @unchecked Sendable {
+    var stats: RequestLogStats
+    var latestItems: [RequestLogItemDTO]
+    var successItems: [RequestLogItemDTO]
+    var failedItems: [RequestLogItemDTO]
+    var latestDelayNanoseconds: UInt64 = 0
+    var queryDelayNanoseconds: UInt64 = 0
+
+    init(
+        stats: RequestLogStats = .init(),
+        latestItems: [RequestLogItemDTO] = [],
+        successItems: [RequestLogItemDTO] = [],
+        failedItems: [RequestLogItemDTO] = []
+    ) {
+        self.stats = stats
+        self.latestItems = latestItems
+        self.successItems = successItems
+        self.failedItems = failedItems
+    }
+
+    func getStats() async -> RequestLogStats {
+        stats
+    }
+
+    func getLatest(limit: Int, offset: Int) async -> [RequestLogItemDTO] {
+        if latestDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: latestDelayNanoseconds)
+        }
+        return latestItems
+    }
+
+    func query(isSuccess: Bool, limit: Int, offset: Int) async -> [RequestLogItemDTO] {
+        if queryDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: queryDelayNanoseconds)
+        }
+        return isSuccess ? successItems : failedItems
+    }
+}
+
+private extension RequestLogItemDTO {
+    static func fixture(
+        requestURL: String,
+        isSuccess: Bool
+    ) -> RequestLogItemDTO {
+        RequestLogItemDTO(from: RequestLogItem(
+            requestId: UUID(),
+            timestamp: Date(),
+            method: "GET",
+            requestURL: requestURL,
+            requestHeadersJSON: nil,
+            requestBodySize: 0,
+            requestBodyPreview: nil,
+            responseStatusCode: isSuccess ? 200 : 500,
+            responseHeadersJSON: nil,
+            responseBodySize: nil,
+            responseBodyPreview: nil,
+            isSuccess: isSuccess,
+            errorMessage: isSuccess ? nil : "failed",
+            duration: 0.1
+        ))
+    }
+}
