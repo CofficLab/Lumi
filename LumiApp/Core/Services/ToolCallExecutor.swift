@@ -20,6 +20,17 @@ final class ToolCallExecutor: SuperLog {
         ToolCallResult(content: "执行已取消", isError: true, duration: duration)
     }
 
+    nonisolated static func markUnfinishedToolCallsCancelled(
+        _ calls: inout [ToolCall],
+        startingAt startIndex: Int
+    ) {
+        guard calls.indices.contains(startIndex) else { return }
+
+        for index in startIndex..<calls.endIndex where calls[index].result == nil {
+            calls[index].result = cancelledToolResult()
+        }
+    }
+
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
@@ -146,6 +157,7 @@ final class ToolCallExecutor: SuperLog {
                     conversationId: conversationId,
                     event: .cancelledAll
                 )
+                Self.markUnfinishedToolCallsCancelled(&updatedCalls, startingAt: index)
                 break
             }
 

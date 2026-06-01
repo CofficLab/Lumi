@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import AgentToolKit
 @testable import Lumi
 
 final class ToolCallExecutorTests: XCTestCase {
@@ -26,6 +27,27 @@ final class ToolCallExecutorTests: XCTestCase {
         XCTAssertEqual(result.content, "执行已取消")
         XCTAssertTrue(result.isError)
         XCTAssertEqual(result.duration, 1.25)
+    }
+
+    func testMarkUnfinishedToolCallsCancelledDoesNotLeavePendingResults() {
+        var calls = [
+            ToolCall(id: "first", name: "read_file", arguments: "{}"),
+            ToolCall(id: "second", name: "write_file", arguments: "{}"),
+            ToolCall(
+                id: "third",
+                name: "list_files",
+                arguments: "{}",
+                result: ToolCallResult(content: "already completed")
+            ),
+        ]
+
+        ToolCallExecutor.markUnfinishedToolCallsCancelled(&calls, startingAt: 1)
+
+        XCTAssertNil(calls[0].result)
+        XCTAssertEqual(calls[1].result?.content, "执行已取消")
+        XCTAssertEqual(calls[1].result?.isError, true)
+        XCTAssertEqual(calls[2].result?.content, "already completed")
+        XCTAssertEqual(calls[2].result?.isError, false)
     }
 }
 #endif
