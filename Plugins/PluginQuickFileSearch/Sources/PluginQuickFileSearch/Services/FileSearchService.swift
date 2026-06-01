@@ -150,6 +150,9 @@ public final class FileSearchService: ObservableObject, SuperLog {
                 self.isLoading = false
                 guard self.currentProjectPath == path else { return }
                 self.indexStore.update(files)
+                if Self.shouldRefreshSearchAfterIndexing(query: self.searchQuery) {
+                    self.onSearchQueryChanged()
+                }
 
                 let duration = Date().timeIntervalSince(startTime)
                 if Self.verbose {
@@ -213,6 +216,10 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     nonisolated static func shouldApplySearchResults(currentQuery: String, completedQuery: String) -> Bool {
         normalizedQuery(currentQuery) == normalizedQuery(completedQuery)
+    }
+
+    nonisolated static func shouldRefreshSearchAfterIndexing(query: String) -> Bool {
+        !normalizedQuery(query).isEmpty
     }
 }
 

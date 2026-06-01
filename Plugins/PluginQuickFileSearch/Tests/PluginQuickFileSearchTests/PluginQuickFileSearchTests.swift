@@ -62,6 +62,12 @@ import Foundation
     #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "", completedQuery: "App"))
 }
 
+@Test func indexCompletionRefreshesOnlyActiveQueries() {
+    #expect(FileSearchService.shouldRefreshSearchAfterIndexing(query: "App"))
+    #expect(FileSearchService.shouldRefreshSearchAfterIndexing(query: " app "))
+    #expect(!FileSearchService.shouldRefreshSearchAfterIndexing(query: " "))
+}
+
 @Test @MainActor func quickOpenResultsClampsNonPositiveLimits() {
     let service = FileSearchService.shared
     service.clearIndex()
