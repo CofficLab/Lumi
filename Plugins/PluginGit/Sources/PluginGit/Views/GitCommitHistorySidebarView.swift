@@ -34,6 +34,9 @@ public struct GitCommitHistorySidebarView: View {
     /// 当前刷新任务
     @State private var currentRefreshTask: Task<Void, Never>? = nil
 
+    /// 当前加载批次。用于丢弃项目切换或刷新后的旧分页结果。
+    @State private var loadGeneration: Int = 0
+
     /// 是否选中了某个 commit
     @State private var selectedCommitHash: String? = nil
 
@@ -229,6 +232,8 @@ public struct GitCommitHistorySidebarView: View {
 
         // 取消之前的刷新任务
         currentRefreshTask?.cancel()
+        loadGeneration += 1
+        let generation = loadGeneration
 
         loading = true
         loadedCount = 0
@@ -245,7 +250,7 @@ public struct GitCommitHistorySidebarView: View {
                 branch: nil,
                 file: nil
             )
-            async let uncommittedTask = loadUncommittedCount(path: path)
+            async let uncommittedTask: Void = loadUncommittedCount(path: path)
 
             // 在后台加载未推送 commit hashes
             let unpushedHashes = await Task.detached(priority: .userInitiated) {
@@ -257,6 +262,8 @@ public struct GitCommitHistorySidebarView: View {
                 if Task.isCancelled { return }
 
                 await MainActor.run {
+                    guard self.loadGeneration == generation,
+                          self.projectVM.currentProjectPath == path else { return }
                     self.commits = newCommits
                     self.loading = false
                     self.loadedCount = newCommits.count
@@ -270,6 +277,8 @@ public struct GitCommitHistorySidebarView: View {
                 if Task.isCancelled { return }
 
                 await MainActor.run {
+                    guard self.loadGeneration == generation,
+                          self.projectVM.currentProjectPath == path else { return }
                     self.commits = []
                     self.loading = false
                     // 即使加载 commit 失败，也尝试更新未推送状态
@@ -319,6 +328,7 @@ public struct GitCommitHistorySidebarView: View {
 
         let skipCount = loadedCount
         let currentPage = pageSize
+        let generation = loadGeneration
 
         Task.detached(priority: .userInitiated) {
             do {
@@ -331,6 +341,8 @@ public struct GitCommitHistorySidebarView: View {
                 )
 
                 await MainActor.run {
+                    guard self.loadGeneration == generation,
+                          self.projectVM.currentProjectPath == path else { return }
                     if !newCommits.isEmpty {
                         // 去重
                         let uniqueNewCommits = newCommits.filter { newCommit in
@@ -350,6 +362,8 @@ public struct GitCommitHistorySidebarView: View {
                 }
             } catch {
                 await MainActor.run {
+                    guard self.loadGeneration == generation,
+                          self.projectVM.currentProjectPath == path else { return }
                     self.loading = false
                 }
                 if GitPlugin.verbose {
