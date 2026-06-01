@@ -131,6 +131,36 @@ final class ChatHistoryServiceTests: XCTestCase {
     }
 
     @MainActor
+    func testLiveHistoryQueryServiceIgnoresMessagesWithoutConversation() async throws {
+        let service = try makeService()
+        let conversation = service.createConversation(title: "visible")
+        let visibleMessage = ChatMessage(
+            id: UUID(),
+            role: .user,
+            conversationId: conversation.id,
+            content: "shown",
+            timestamp: Date(timeIntervalSince1970: 2)
+        )
+        _ = service.saveMessage(visibleMessage, to: conversation)
+
+        let context = service.getContext()
+        context.insert(ChatMessageEntity(
+            role: .user,
+            content: "orphan",
+            timestamp: Date(timeIntervalSince1970: 3)
+        ))
+        try context.save()
+
+        let liveQuery = LiveHistoryQueryService(chatHistoryService: service)
+
+        let count = await liveQuery.fetchMessageCount()
+        let rows = await liveQuery.fetchMessagePage(limit: 10, offset: 0)
+
+        XCTAssertEqual(count, 1)
+        XCTAssertEqual(rows.map(\.contentPreview), ["shown"])
+    }
+
+    @MainActor
     private func makeService() throws -> ChatHistoryService {
         let schema = DBConfig.getSchema()
         let config = ModelConfiguration(

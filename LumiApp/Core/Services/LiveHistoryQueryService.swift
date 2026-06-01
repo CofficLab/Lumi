@@ -18,7 +18,11 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
 
     func fetchMessageCount() async -> Int {
         let context = chatHistoryService.getContext()
-        let descriptor = FetchDescriptor<ChatMessageEntity>()
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation != nil
+            }
+        )
         return (try? context.fetchCount(descriptor)) ?? 0
     }
 
@@ -28,6 +32,9 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
         let context = chatHistoryService.getContext()
 
         var descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation != nil
+            },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = limit
