@@ -139,11 +139,11 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     
     public func addEntry(ip: String, domain: String, comment: String?, group: String?) {
         let normalizedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
-        let domains = domain
-            .split(whereSeparator: { $0.isWhitespace })
-            .map(String.init)
+        let domains = HostsParser.normalizedDomains(from: domain)
 
-        guard isValidIP(normalizedIP), !domains.isEmpty else {
+        guard isValidIP(normalizedIP),
+              !domains.isEmpty,
+              domains.allSatisfy(HostsParser.isValidDomain) else {
             errorMessage = "Invalid host entry"
             return
         }
@@ -192,5 +192,10 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     
     public func isValidIP(_ ip: String) -> Bool {
         return HostsParser.isValidIP(ip)
+    }
+
+    public func isValidDomainList(_ domain: String) -> Bool {
+        let domains = HostsParser.normalizedDomains(from: domain)
+        return !domains.isEmpty && domains.allSatisfy(HostsParser.isValidDomain)
     }
 }

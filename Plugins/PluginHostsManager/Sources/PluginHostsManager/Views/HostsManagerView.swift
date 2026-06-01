@@ -244,6 +244,7 @@ public struct HostAddView: View {
     @State private var comment = ""
     @State private var group = ""
     @State private var showIPError = false
+    @State private var showDomainError = false
 
     public var body: some View {
         VStack(spacing: 20) {
@@ -259,6 +260,9 @@ public struct HostAddView: View {
                     }
 
                     GlassTextField(title: "Domain", text: $domain, placeholder: "dev.example.com")
+                    if showDomainError {
+                        AppErrorBanner(message: LocalizedStringKey(String(localized: "Invalid domain format", table: "HostsManager")))
+                    }
                     GlassTextField(title: "Comment", text: $comment, placeholder: "Optional")
                     GlassTextField(title: "Group", text: $group, placeholder: "Optional")
                 }
@@ -272,11 +276,13 @@ public struct HostAddView: View {
                 AppButton(String(localized: "Save", table: "HostsManager"), style: .primary) {
                     let trimmedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
                     let hasDomain = !domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    if viewModel.isValidIP(trimmedIP) && hasDomain {
+                    let hasValidDomains = viewModel.isValidDomainList(domain)
+                    if viewModel.isValidIP(trimmedIP) && hasDomain && hasValidDomains {
                         viewModel.addEntry(ip: ip, domain: domain, comment: comment.isEmpty ? nil : comment, group: group.isEmpty ? nil : group)
                         isPresented = false
                     } else {
                         showIPError = !viewModel.isValidIP(trimmedIP)
+                        showDomainError = hasDomain && !hasValidDomains
                     }
                 }
                 .keyboardShortcut(.defaultAction)

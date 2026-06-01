@@ -37,6 +37,42 @@ import Testing
     })
 }
 
+@Test func domainValidationRejectsHostsUnsafeAliases() {
+    #expect(HostsParser.isValidDomain("localhost"))
+    #expect(HostsParser.isValidDomain("dev.example.com"))
+    #expect(HostsParser.isValidDomain("api-1.example"))
+    #expect(!HostsParser.isValidDomain(""))
+    #expect(!HostsParser.isValidDomain(" dev.example.com "))
+    #expect(!HostsParser.isValidDomain(".example.com"))
+    #expect(!HostsParser.isValidDomain("example..com"))
+    #expect(!HostsParser.isValidDomain("-example.com"))
+    #expect(!HostsParser.isValidDomain("example-.com"))
+    #expect(!HostsParser.isValidDomain("bad/example.com"))
+    #expect(!HostsParser.isValidDomain("bad#example.com"))
+    #expect(!HostsParser.isValidDomain("例子.test"))
+}
+
+@Test func parserSkipsInvalidHostAliases() {
+    let entries = HostsParser.parse(content: """
+    127.0.0.1 valid.local
+    127.0.0.1 invalid#alias
+    127.0.0.1 bad/path
+    """)
+
+    #expect(entries.contains { entry in
+        if case .entry(let ip, let domains, true, nil) = entry.type {
+            return ip == "127.0.0.1" && domains == ["valid.local"]
+        }
+        return false
+    })
+    #expect(!entries.contains { entry in
+        if case .entry(_, let domains, _, _) = entry.type {
+            return domains.contains("invalid#alias") || domains.contains("bad/path")
+        }
+        return false
+    })
+}
+
 @Test func parserDoesNotTreatTerminatingNewlineAsBlankEntry() {
     let entries = HostsParser.parse(content: "127.0.0.1 localhost\n")
 

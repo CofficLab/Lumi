@@ -96,8 +96,7 @@ public class HostsParser {
         let ip = components[0]
         let domains = Array(components.dropFirst())
         
-        // Basic IP Validation (Loose)
-        if isValidIP(ip) {
+        if isValidIP(ip), domains.allSatisfy(isValidDomain) {
             return .entry(ip: ip, domains: domains, isEnabled: isEnabled, comment: comment)
         }
         
@@ -115,6 +114,45 @@ public class HostsParser {
 
         var ipv6Address = in6_addr()
         return trimmedIP.withCString { inet_pton(AF_INET6, $0, &ipv6Address) } == 1
+    }
+
+    public static func normalizedDomains(from rawValue: String) -> [String] {
+        rawValue
+            .split(whereSeparator: { $0.isWhitespace })
+            .map(String.init)
+    }
+
+    public static func isValidDomain(_ domain: String) -> Bool {
+        let trimmedDomain = domain.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedDomain == domain,
+              !domain.isEmpty,
+              domain.count <= 253,
+              !domain.contains("#"),
+              !domain.contains("/") else {
+            return false
+        }
+
+        let labels = domain.split(separator: ".", omittingEmptySubsequences: false)
+        guard !labels.isEmpty else { return false }
+
+        for label in labels {
+            guard !label.isEmpty,
+                  label.count <= 63,
+                  label.first != "-",
+                  label.last != "-" else {
+                return false
+            }
+            guard label.unicodeScalars.allSatisfy({ scalar in
+                (48...57).contains(scalar.value) ||
+                    (65...90).contains(scalar.value) ||
+                    (97...122).contains(scalar.value) ||
+                    scalar.value == 45
+            }) else {
+                return false
+            }
+        }
+
+        return true
     }
     
     public static func serialize(entries: [HostEntry]) -> String {
