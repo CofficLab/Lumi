@@ -19,8 +19,21 @@ import Testing
     #expect(AddProjectTool.normalizedPath(from: " \n/Users/example/Project\t") == "/Users/example/Project")
 }
 
+@Test func addProjectToolStandardizesCopiedPath() {
+    #expect(AddProjectTool.normalizedPath(from: "/Users/example/Project/../Project/") == "/Users/example/Project")
+}
+
+@Test func addProjectToolExpandsTildePath() {
+    let home = FileManager.default.homeDirectoryForCurrentUser.path
+    #expect(AddProjectTool.normalizedPath(from: "~/Code/Lumi") == "\(home)/Code/Lumi")
+}
+
 @Test func addProjectToolRejectsBlankCopiedPath() {
     #expect(AddProjectTool.normalizedPath(from: " \n\t ") == nil)
+}
+
+@Test func addProjectToolRejectsRelativeCopiedPath() {
+    #expect(AddProjectTool.normalizedPath(from: "Code/Lumi") == nil)
 }
 
 @Test func listProjectsToolClampsLimitBeforePrefixingProjects() {

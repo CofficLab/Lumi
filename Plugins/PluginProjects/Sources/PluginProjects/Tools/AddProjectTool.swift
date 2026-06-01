@@ -98,7 +98,12 @@ public struct AddProjectTool: SuperAgentTool, SuperLog {
     }
 
     static func normalizedPath(from rawPath: String) -> String? {
-        let path = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        return path.isEmpty ? nil : path
+        let trimmed = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        guard expanded.hasPrefix("/") else { return nil }
+
+        return URL(fileURLWithPath: expanded).standardizedFileURL.path
     }
 }
