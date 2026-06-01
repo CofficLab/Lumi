@@ -62,13 +62,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         isLoading = true
         errorMessage = nil
         do {
-            if let previousConfig = selectedConfig, previousConfig.id != config.id {
-                await manager.disconnect(configId: previousConfig.id)
-            }
             _ = try await manager.connect(config: config)
+            let previousConfigId = selectedConfig?.id
             selectedConfig = config
             connectedConfigId = config.id
             isConnected = true
+            queryResult = nil
+            redisKeys = []
+            sqliteTables = []
             
             // 根据类型设置默认查询/命令
             switch config.type {
@@ -80,18 +81,20 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 queryText = "SCAN 0 MATCH * COUNT 50"
                 await loadRedisKeys()
             case .sqlite:
+                if config.database == ":memory:" {
+                    try await initDemoData(configId: config.id)
+                }
                 await loadSQLiteTables()
+            }
+
+            if let previousConfigId, previousConfigId != config.id {
+                await manager.disconnect(configId: previousConfigId)
             }
 
             if Self.verbose {
                 if DatabaseManagerPlugin.verbose {
                                     DatabaseManagerPlugin.logger.info("\(self.t)数据库连接成功: \(config.name)")
                 }
-            }
-
-            // Create some demo data if in-memory
-            if config.database == ":memory:" {
-                try await initDemoData(configId: config.id)
             }
         } catch {
             if DatabaseManagerPlugin.verbose {
@@ -114,6 +117,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         selectedConfig = nil
         connectedConfigId = nil
         queryResult = nil
+        redisKeys = []
+        sqliteTables = []
     }
 
     public func executeQuery() async {
