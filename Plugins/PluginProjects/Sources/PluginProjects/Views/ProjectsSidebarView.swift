@@ -192,7 +192,11 @@ public struct ProjectsSidebarView: View {
         switch result {
         case .success(let urls):
             guard let folderURL = urls.first else { return }
+            guard folderURL.startAccessingSecurityScopedResource() else { return }
             addProjectAndSwitch(to: folderURL.standardizedFileURL)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                folderURL.stopAccessingSecurityScopedResource()
+            }
         case .failure(let error):
             if ProjectsPlugin.verbose {
                             ProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
