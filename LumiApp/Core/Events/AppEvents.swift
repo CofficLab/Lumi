@@ -42,7 +42,7 @@ extension Notification.Name {
     static let openWindowWithRoute = Notification.Name("openWindowWithRoute")
 
     /// 请求在当前活跃窗口的编辑器中打开文件
-    /// userInfo: ["url": URL]
+    /// userInfo: ["url": URL, "windowId": UUID?]
     static let openFileInEditor = Notification.Name("openFileInEditor")
 
     /// 请求将当前窗口状态写入磁盘（如项目切换后）
@@ -151,12 +151,17 @@ extension NotificationCenter {
     }
 
     /// 发送请求在当前活跃窗口编辑器中打开文件的通知
-    /// - Parameter url: 文件 URL
-    static func postOpenFileInEditor(url: URL) {
+    /// - Parameters:
+    ///   - url: 文件 URL
+    ///   - windowId: 目标窗口 ID，用于多窗口场景下的事件隔离
+    static func postOpenFileInEditor(url: URL, windowId: UUID? = nil) {
         NotificationCenter.default.post(
             name: .openFileInEditor,
             object: nil,
-            userInfo: ["url": url]
+            userInfo: [
+                "url": url,
+                "windowId": windowId as Any,
+            ]
         )
     }
 
@@ -276,13 +281,24 @@ extension View {
     }
 
     /// 监听在当前活跃窗口编辑器中打开文件的事件
-    /// - Parameter action: 事件处理闭包，参数为文件 URL
+    /// - Parameters:
+    ///   - windowId: 可选的窗口 ID 过滤，仅处理来自指定窗口的通知
+    ///   - action: 事件处理闭包，参数为文件 URL
     /// - Returns: 修改后的视图
-    func onOpenFileInEditor(perform action: @escaping (URL) -> Void) -> some View {
+    func onOpenFileInEditor(
+        windowId: UUID? = nil,
+        perform action: @escaping (URL) -> Void
+    ) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .openFileInEditor)) { notification in
             guard let userInfo = notification.userInfo,
                   let url = userInfo["url"] as? URL else {
                 return
+            }
+            if let windowId {
+                guard let senderWindowId = userInfo["windowId"] as? UUID,
+                      senderWindowId == windowId else {
+                    return
+                }
             }
             action(url)
         }

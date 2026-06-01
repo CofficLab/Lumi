@@ -11,6 +11,31 @@ final class AppWindowManagerVMTests: XCTestCase {
         XCTAssertFalse(RootView<EmptyView>.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.txt")))
     }
 
+    func testPostOpenFileInEditorIncludesWindowId() throws {
+        let expectedURL = URL(fileURLWithPath: "/tmp/Lumi.md")
+        let expectedWindowId = UUID()
+        let notification = expectation(description: "open file notification")
+        var receivedURL: URL?
+        var receivedWindowId: UUID?
+
+        let observer = NotificationCenter.default.addObserver(
+            forName: .openFileInEditor,
+            object: nil,
+            queue: nil
+        ) { note in
+            receivedURL = note.userInfo?["url"] as? URL
+            receivedWindowId = note.userInfo?["windowId"] as? UUID
+            notification.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        NotificationCenter.postOpenFileInEditor(url: expectedURL, windowId: expectedWindowId)
+        wait(for: [notification], timeout: 1)
+
+        XCTAssertEqual(receivedURL, expectedURL)
+        XCTAssertEqual(receivedWindowId, expectedWindowId)
+    }
+
     @MainActor
     func testProjectControllerDirectoryResolutionRejectsInvalidProjectPaths() throws {
         let tempRoot = FileManager.default.temporaryDirectory

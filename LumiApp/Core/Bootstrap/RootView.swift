@@ -67,6 +67,9 @@ struct RootView<Content>: View where Content: View {
         .onFileDroppedToChat(windowId: windowContainer.id) { url in
             handleFileDroppedToChat(url)
         }
+        .onOpenFileInEditor(windowId: windowContainer.id) { url in
+            handleOpenFileInEditor(url)
+        }
     }
 
     private var initialLifecycleScene: some View {
@@ -274,6 +277,12 @@ struct RootView<Content>: View where Content: View {
             "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
         ]
         return imagePathExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    private func handleOpenFileInEditor(_ url: URL) {
+        let fileURL = url.standardizedFileURL
+        windowContainer.editorVM.service.open(at: fileURL)
+        windowContainer.openFile(fileURL)
     }
 
     private func syncPluginLLMContext() {

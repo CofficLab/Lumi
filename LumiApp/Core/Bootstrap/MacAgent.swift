@@ -307,8 +307,18 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     ///
     /// - Parameter url: 文件 URL
     private func openFileInActiveWindow(url: URL) {
+        let windowManager = RootContainer.shared.windowManagerVM
+        if windowManager.activeWindowId == nil {
+            _ = windowManager.activatePreferredWindow()
+        }
+
+        guard let windowId = windowManager.activeWindowId else {
+            AppLogger.core.warning("\(self.t)无法打开文件，当前没有活跃窗口: \(url.path, privacy: .public)")
+            return
+        }
+
         // 通知活跃窗口打开文件
-        NotificationCenter.postOpenFileInEditor(url: url)
+        NotificationCenter.postOpenFileInEditor(url: url, windowId: windowId)
 
         if Self.verbose {
             AppLogger.core.info("\(self.t)📄 在编辑器中打开文件: \(url.lastPathComponent)")
