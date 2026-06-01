@@ -1,5 +1,4 @@
 import Foundation
-import LumiPreviewKit
 
 public extension LumiPreviewFacade {
 
