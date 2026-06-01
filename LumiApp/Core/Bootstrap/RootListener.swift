@@ -83,33 +83,11 @@ extension RootListener {
 
     @MainActor
     func onInputQueueRequested(_ request: WindowInputQueueVM.InputEnqueueRequest) {
-        guard scope.inputQueueVM.consumePendingRequest(id: request.id) != nil else {
-            return
-        }
-        guard let conversationId = scope.conversationVM.selectedConversationId else {
-            return
-        }
-
-        let pendingImages = scope.agentAttachmentsVM.drainPendingImageAttachments()
-        let allImages = request.images + pendingImages
-        guard !request.text.isEmpty || !allImages.isEmpty else {
-            return
-        }
-
         if Self.verbose {
             AppLogger.core.info("\(Self.t)将用户的输入加入消息队列")
         }
 
-        let message = ChatMessage(
-            role: .user,
-            conversationId: conversationId,
-            content: request.text,
-            images: allImages
-        )
-        scope.messageQueueVM.enqueueMessage(message)
-        Task {
-            await sendController.attemptBeginNextQueuedSend()
-        }
+        scope.handleInputEnqueueRequest(request)
     }
 
     func onTaskCancellationRequested() {
