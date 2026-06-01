@@ -71,79 +71,87 @@ extension Notification.Name {
 // MARK: - NotificationCenter Helpers
 
 extension NotificationCenter {
-    static func postLumiEditorUndo() {
-        NotificationCenter.default.post(name: .lumiEditorUndo, object: nil)
+    private static func postEditorCommand(_ name: Notification.Name, windowId: UUID?) {
+        NotificationCenter.default.post(
+            name: name,
+            object: nil,
+            userInfo: ["windowId": windowId as Any]
+        )
     }
 
-    static func postLumiEditorRedo() {
-        NotificationCenter.default.post(name: .lumiEditorRedo, object: nil)
+    static func postLumiEditorUndo(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorUndo, windowId: windowId)
     }
 
-    static func postLumiEditorSave() {
-        NotificationCenter.default.post(name: .lumiEditorSave, object: nil)
+    static func postLumiEditorRedo(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorRedo, windowId: windowId)
     }
 
-    static func postLumiEditorFormatDocument() {
-        NotificationCenter.default.post(name: .lumiEditorFormatDocument, object: nil)
+    static func postLumiEditorSave(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorSave, windowId: windowId)
     }
 
-    static func postLumiEditorFindReferences() {
-        NotificationCenter.default.post(name: .lumiEditorFindReferences, object: nil)
+    static func postLumiEditorFormatDocument(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorFormatDocument, windowId: windowId)
     }
 
-    static func postLumiEditorQuickFix() {
-        NotificationCenter.default.post(name: .lumiEditorQuickFix, object: nil)
+    static func postLumiEditorFindReferences(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorFindReferences, windowId: windowId)
     }
 
-    static func postLumiEditorRenameSymbol() {
-        NotificationCenter.default.post(name: .lumiEditorRenameSymbol, object: nil)
+    static func postLumiEditorQuickFix(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorQuickFix, windowId: windowId)
     }
 
-    static func postLumiEditorWorkspaceSymbols() {
-        NotificationCenter.default.post(name: .lumiEditorWorkspaceSymbols, object: nil)
+    static func postLumiEditorRenameSymbol(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorRenameSymbol, windowId: windowId)
     }
 
-    static func postLumiEditorCallHierarchy() {
-        NotificationCenter.default.post(name: .lumiEditorCallHierarchy, object: nil)
+    static func postLumiEditorWorkspaceSymbols(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorWorkspaceSymbols, windowId: windowId)
     }
 
-    static func postLumiEditorToggleFind() {
-        NotificationCenter.default.post(name: .lumiEditorToggleFind, object: nil)
+    static func postLumiEditorCallHierarchy(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorCallHierarchy, windowId: windowId)
     }
 
-    static func postLumiEditorSearchInFiles() {
-        NotificationCenter.default.post(name: .lumiEditorSearchInFiles, object: nil)
+    static func postLumiEditorToggleFind(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorToggleFind, windowId: windowId)
     }
 
-    static func postLumiEditorShowCommandPalette() {
-        NotificationCenter.default.post(name: .lumiEditorShowCommandPalette, object: nil)
+    static func postLumiEditorSearchInFiles(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorSearchInFiles, windowId: windowId)
     }
 
-    static func postLumiEditorFindNext() {
-        NotificationCenter.default.post(name: .lumiEditorFindNext, object: nil)
+    static func postLumiEditorShowCommandPalette(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorShowCommandPalette, windowId: windowId)
     }
 
-    static func postLumiEditorFindPrevious() {
-        NotificationCenter.default.post(name: .lumiEditorFindPrevious, object: nil)
+    static func postLumiEditorFindNext(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorFindNext, windowId: windowId)
     }
 
-    static func postLumiEditorReplaceCurrent() {
-        NotificationCenter.default.post(name: .lumiEditorReplaceCurrent, object: nil)
+    static func postLumiEditorFindPrevious(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorFindPrevious, windowId: windowId)
     }
 
-    static func postLumiEditorReplaceAll() {
-        NotificationCenter.default.post(name: .lumiEditorReplaceAll, object: nil)
+    static func postLumiEditorReplaceCurrent(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorReplaceCurrent, windowId: windowId)
+    }
+
+    static func postLumiEditorReplaceAll(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorReplaceAll, windowId: windowId)
     }
 
     static func postLumiEditorSettingsDidChange() {
         NotificationCenter.default.post(name: .lumiEditorSettingsDidChange, object: nil)
     }
 
-    static func postLumiEditorToggleOpenEditorsPanel() {
-        NotificationCenter.default.post(name: .lumiEditorToggleOpenEditorsPanel, object: nil)
+    static func postLumiEditorToggleOpenEditorsPanel(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorToggleOpenEditorsPanel, windowId: windowId)
     }
 
-    static func postLumiEditorToggleOutlinePanel() {
-        NotificationCenter.default.post(name: .lumiEditorToggleOutlinePanel, object: nil)
+    static func postLumiEditorToggleOutlinePanel(windowId: UUID? = nil) {
+        postEditorCommand(.lumiEditorToggleOutlinePanel, windowId: windowId)
     }
 }

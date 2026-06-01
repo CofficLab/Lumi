@@ -157,16 +157,25 @@ public final class EditorPanelCoordinator: ObservableObject {
 
         let commandPublishers = notificationMap.map { name, commandID in
             NotificationCenter.default.publisher(for: name)
-                .map { _ in EditorCommandEvent.command(commandID) }
+                .compactMap { [weak self] notification in
+                    guard self?.isTargeted(notification) == true else { return nil }
+                    return EditorCommandEvent.command(commandID)
+                }
                 .eraseToAnyPublisher()
         }
 
         let commandPalettePublisher = NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)
-            .map { _ in EditorCommandEvent.showCommandPalette }
+            .compactMap { [weak self] notification in
+                guard self?.isTargeted(notification) == true else { return nil }
+                return EditorCommandEvent.showCommandPalette
+            }
             .eraseToAnyPublisher()
 
         let toggleOutlinePublisher = NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)
-            .map { _ in EditorCommandEvent.toggleOutlinePanel }
+            .compactMap { [weak self] notification in
+                guard self?.isTargeted(notification) == true else { return nil }
+                return EditorCommandEvent.toggleOutlinePanel
+            }
             .eraseToAnyPublisher()
 
         return Publishers.MergeMany(commandPublishers + [commandPalettePublisher, toggleOutlinePublisher])
@@ -189,6 +198,13 @@ public final class EditorPanelCoordinator: ObservableObject {
         case .toggleOutlinePanel:
             service.performPanelCommand(.toggleOutline)
         }
+    }
+
+    private func isTargeted(_ notification: Notification) -> Bool {
+        guard let targetWindowId = notification.userInfo?["windowId"] as? UUID else {
+            return true
+        }
+        return service?.state.windowId == targetWindowId
     }
 }
 

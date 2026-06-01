@@ -14,11 +14,16 @@ struct EditorCommand: Commands, SuperLog {
         binding.resolveKernelShortcut(for: commandID)
     }
 
+    @MainActor
+    private var targetWindowId: UUID? {
+        RootContainer.shared.windowManagerVM.activeWindowId
+    }
+
     var body: some Commands {
         #if os(macOS)
         CommandMenu("编辑器") {
             Button("撤销") {
-                NotificationCenter.postLumiEditorUndo()
+                NotificationCenter.postLumiEditorUndo(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.undo, commandID: "builtin.undo").keyEquivalent,
@@ -26,7 +31,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("重做") {
-                NotificationCenter.postLumiEditorRedo()
+                NotificationCenter.postLumiEditorRedo(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.redo, commandID: "builtin.redo").keyEquivalent,
@@ -34,7 +39,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("保存") {
-                NotificationCenter.postLumiEditorSave()
+                NotificationCenter.postLumiEditorSave(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.save, commandID: "builtin.save").keyEquivalent,
@@ -44,7 +49,7 @@ struct EditorCommand: Commands, SuperLog {
             Divider()
 
             Button("命令面板") {
-                NotificationCenter.postLumiEditorShowCommandPalette()
+                NotificationCenter.postLumiEditorShowCommandPalette(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.commandPalette, commandID: "builtin.command-palette").keyEquivalent,
@@ -54,7 +59,7 @@ struct EditorCommand: Commands, SuperLog {
             Divider()
 
             Button("查找") {
-                NotificationCenter.postLumiEditorToggleFind()
+                NotificationCenter.postLumiEditorToggleFind(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.find, commandID: "builtin.find").keyEquivalent,
@@ -62,7 +67,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("在文件中搜索") {
-                NotificationCenter.postLumiEditorSearchInFiles()
+                NotificationCenter.postLumiEditorSearchInFiles(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.searchInFiles, commandID: "builtin.search-in-files").keyEquivalent,
@@ -70,7 +75,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("查找下一个") {
-                NotificationCenter.postLumiEditorFindNext()
+                NotificationCenter.postLumiEditorFindNext(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.findNext, commandID: "builtin.find-next").keyEquivalent,
@@ -78,7 +83,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("查找上一个") {
-                NotificationCenter.postLumiEditorFindPrevious()
+                NotificationCenter.postLumiEditorFindPrevious(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.findPrevious, commandID: "builtin.find-previous").keyEquivalent,
@@ -86,7 +91,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("打开编辑项") {
-                NotificationCenter.postLumiEditorToggleOpenEditorsPanel()
+                NotificationCenter.postLumiEditorToggleOpenEditorsPanel(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.openEditors, commandID: "builtin.open-editors-panel").keyEquivalent,
@@ -96,7 +101,7 @@ struct EditorCommand: Commands, SuperLog {
             Divider()
 
             Button("格式化文档") {
-                NotificationCenter.postLumiEditorFormatDocument()
+                NotificationCenter.postLumiEditorFormatDocument(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.formatDocument, commandID: "builtin.format-document").keyEquivalent,
@@ -104,7 +109,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("查找引用") {
-                NotificationCenter.postLumiEditorFindReferences()
+                NotificationCenter.postLumiEditorFindReferences(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.findReferences, commandID: "builtin.find-references").keyEquivalent,
@@ -112,7 +117,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("快速修复") {
-                NotificationCenter.postLumiEditorQuickFix()
+                NotificationCenter.postLumiEditorQuickFix(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.quickFix, commandID: "builtin.quick-fix").keyEquivalent,
@@ -120,7 +125,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("重命名符号") {
-                NotificationCenter.postLumiEditorRenameSymbol()
+                NotificationCenter.postLumiEditorRenameSymbol(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.renameSymbol, commandID: "builtin.rename-symbol").keyEquivalent,
@@ -128,7 +133,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("工作区符号搜索") {
-                NotificationCenter.postLumiEditorWorkspaceSymbols()
+                NotificationCenter.postLumiEditorWorkspaceSymbols(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.workspaceSymbols, commandID: "builtin.workspace-symbols").keyEquivalent,
@@ -136,7 +141,7 @@ struct EditorCommand: Commands, SuperLog {
             )
 
             Button("调用层级") {
-                NotificationCenter.postLumiEditorCallHierarchy()
+                NotificationCenter.postLumiEditorCallHierarchy(windowId: targetWindowId)
             }
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.callHierarchy, commandID: "builtin.call-hierarchy").keyEquivalent,
