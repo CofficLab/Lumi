@@ -84,9 +84,24 @@ public enum ChatMode: CaseIterable, Codable, Identifiable, RawRepresentable, Sen
 
 @MainActor
 public final class AppLLMVM: ObservableObject {
-    @Published public var selectedProviderId: String
-    @Published public var currentModel: String
-    @Published public var isAutoMode: Bool
+    @Published public var selectedProviderId: String {
+        didSet {
+            guard selectedProviderId != oldValue else { return }
+            selectedProviderIdSetter(selectedProviderId)
+        }
+    }
+    @Published public var currentModel: String {
+        didSet {
+            guard currentModel != oldValue else { return }
+            currentModelSetter(currentModel)
+        }
+    }
+    @Published public var isAutoMode: Bool {
+        didSet {
+            guard isAutoMode != oldValue else { return }
+            isAutoModeSetter(isAutoMode)
+        }
+    }
     @Published public var lastAutoRouteSummary: String?
     @Published public var chatMode: ChatMode
 
@@ -95,6 +110,9 @@ public final class AppLLMVM: ObservableObject {
     public var providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
     public var providerFactory: @MainActor (String) -> (any SuperLLMProvider)?
     public var apiKeyProvider: @MainActor (String) -> String
+    public var selectedProviderIdSetter: @MainActor (String) -> Void
+    public var currentModelSetter: @MainActor (String) -> Void
+    public var isAutoModeSetter: @MainActor (Bool) -> Void
     public var chatModeSetter: @MainActor (ChatMode) -> Void
 
     public init(
@@ -108,6 +126,9 @@ public final class AppLLMVM: ObservableObject {
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
         providerFactory: @escaping @MainActor (String) -> (any SuperLLMProvider)? = { _ in nil },
         apiKeyProvider: @escaping @MainActor (String) -> String = { _ in "" },
+        selectedProviderIdSetter: @escaping @MainActor (String) -> Void = { _ in },
+        currentModelSetter: @escaping @MainActor (String) -> Void = { _ in },
+        isAutoModeSetter: @escaping @MainActor (Bool) -> Void = { _ in },
         chatModeSetter: @escaping @MainActor (ChatMode) -> Void = { _ in }
     ) {
         self.selectedProviderId = selectedProviderId
@@ -120,6 +141,9 @@ public final class AppLLMVM: ObservableObject {
         self.providerTypeProvider = providerTypeProvider
         self.providerFactory = providerFactory
         self.apiKeyProvider = apiKeyProvider
+        self.selectedProviderIdSetter = selectedProviderIdSetter
+        self.currentModelSetter = currentModelSetter
+        self.isAutoModeSetter = isAutoModeSetter
         self.chatModeSetter = chatModeSetter
     }
 

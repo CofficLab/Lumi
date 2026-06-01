@@ -253,6 +253,28 @@ struct LumiCoreKitActorTests {
         #expect(ctx.transientSystemPrompts.count == 1)
     }
 
+    @Test("AppLLMVM direct state changes propagate through setters")
+    func appLLMVMDirectStateChangesPropagateThroughSetters() {
+        var selectedProviderIds: [String] = []
+        var currentModels: [String] = []
+        var autoModeValues: [Bool] = []
+
+        let llmVM = AppLLMVM(
+            selectedProviderIdSetter: { selectedProviderIds.append($0) },
+            currentModelSetter: { currentModels.append($0) },
+            isAutoModeSetter: { autoModeValues.append($0) }
+        )
+
+        llmVM.selectedProviderId = "openai"
+        llmVM.currentModel = "gpt-4o"
+        llmVM.isAutoMode = true
+        llmVM.isAutoMode = false
+
+        #expect(selectedProviderIds == ["openai"])
+        #expect(currentModels == ["gpt-4o"])
+        #expect(autoModeValues == [true, false])
+    }
+
     @Test("旧版菜单栏弹窗入口仍会聚合为数组")
     func legacyMenuBarPopupViewFallback() {
         let views = LegacyMenuBarPopupPlugin.shared.addMenuBarPopupViews()

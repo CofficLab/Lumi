@@ -96,6 +96,15 @@ extension ToolContext {
                 apiKeyProvider: { providerId in
                     vm.getApiKey(for: providerId)
                 },
+                selectedProviderIdSetter: { providerId in
+                    vm.selectedProviderId = providerId
+                },
+                currentModelSetter: { model in
+                    vm.currentModel = model
+                },
+                isAutoModeSetter: { isAutoMode in
+                    vm.isAutoMode = isAutoMode
+                },
                 chatModeSetter: { mode in
                     guard let appMode = ChatMode(rawValue: mode.rawValue) else { return }
                     vm.setChatMode(appMode)
