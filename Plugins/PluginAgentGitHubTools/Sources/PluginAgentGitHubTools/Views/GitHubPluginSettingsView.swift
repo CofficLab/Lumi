@@ -12,6 +12,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     @State private var token: String = ""
     @State private var isSaved: Bool = false
     @State private var apiLimitInfo: String = "未认证"
+    @State private var isLoadingSettings: Bool = false
 
     private let settingsStore = GitHubPluginLocalStore()
     private let tokenKey = "GitHubToken"
@@ -113,9 +114,14 @@ public struct GitHubPluginSettingsView: View, SuperLog {
 
 extension GitHubPluginSettingsView {
     private func loadToken() {
+        isLoadingSettings = true
         settingsStore.migrateLegacyValueIfMissing(forKey: tokenKey)
         token = settingsStore.string(forKey: tokenKey) ?? ""
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
+        isSaved = false
+        DispatchQueue.main.async {
+            isLoadingSettings = false
+        }
 
         if Self.verbose, GitHubToolsPlugin.verbose {
             GitHubToolsPlugin.logger.info("\(self.t)Token 加载状态：\(apiLimitInfo)")
@@ -123,6 +129,7 @@ extension GitHubPluginSettingsView {
     }
 
     private func saveToken() {
+        guard !isLoadingSettings else { return }
         settingsStore.set(token, forKey: tokenKey)
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
