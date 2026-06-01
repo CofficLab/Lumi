@@ -86,19 +86,19 @@ public enum ChatMode: CaseIterable, Codable, Identifiable, RawRepresentable, Sen
 public final class AppLLMVM: ObservableObject {
     @Published public var selectedProviderId: String {
         didSet {
-            guard selectedProviderId != oldValue else { return }
+            guard !isApplyingHostState, selectedProviderId != oldValue else { return }
             selectedProviderIdSetter(selectedProviderId)
         }
     }
     @Published public var currentModel: String {
         didSet {
-            guard currentModel != oldValue else { return }
+            guard !isApplyingHostState, currentModel != oldValue else { return }
             currentModelSetter(currentModel)
         }
     }
     @Published public var isAutoMode: Bool {
         didSet {
-            guard isAutoMode != oldValue else { return }
+            guard !isApplyingHostState, isAutoMode != oldValue else { return }
             isAutoModeSetter(isAutoMode)
         }
     }
@@ -114,6 +114,8 @@ public final class AppLLMVM: ObservableObject {
     public var currentModelSetter: @MainActor (String) -> Void
     public var isAutoModeSetter: @MainActor (Bool) -> Void
     public var chatModeSetter: @MainActor (ChatMode) -> Void
+    private var isApplyingHostState = false
+    private var hostStateCancellables: Set<AnyCancellable> = []
 
     public init(
         selectedProviderId: String = "",
@@ -180,6 +182,40 @@ public final class AppLLMVM: ObservableObject {
     public func updateChatModeFromHost(_ chatMode: ChatMode) {
         guard self.chatMode != chatMode else { return }
         self.chatMode = chatMode
+    }
+
+    public func updateSelectedProviderIdFromHost(_ selectedProviderId: String) {
+        applyHostState {
+            self.selectedProviderId = selectedProviderId
+        }
+    }
+
+    public func updateCurrentModelFromHost(_ currentModel: String) {
+        applyHostState {
+            self.currentModel = currentModel
+        }
+    }
+
+    public func updateIsAutoModeFromHost(_ isAutoMode: Bool) {
+        applyHostState {
+            self.isAutoMode = isAutoMode
+        }
+    }
+
+    public func updateLastAutoRouteSummaryFromHost(_ lastAutoRouteSummary: String?) {
+        applyHostState {
+            self.lastAutoRouteSummary = lastAutoRouteSummary
+        }
+    }
+
+    public func retainHostStateSubscription(_ cancellable: AnyCancellable) {
+        hostStateCancellables.insert(cancellable)
+    }
+
+    private func applyHostState(_ update: () -> Void) {
+        isApplyingHostState = true
+        defer { isApplyingHostState = false }
+        update()
     }
 }
 

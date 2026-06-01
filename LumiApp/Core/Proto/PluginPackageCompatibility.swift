@@ -1,5 +1,6 @@
 import LumiCoreKit
 import EditorService
+import Combine
 import SwiftUI
 
 extension PluginCategory {
@@ -77,7 +78,7 @@ extension ToolContext {
         }
 
         let packageLLMVM = llmVM.map { vm in
-            LumiCoreKit.AppLLMVM(
+            let packageVM = LumiCoreKit.AppLLMVM(
                 selectedProviderId: vm.selectedProviderId,
                 currentModel: vm.currentModel,
                 isAutoMode: vm.isAutoMode,
@@ -110,6 +111,35 @@ extension ToolContext {
                     vm.setChatMode(appMode)
                 }
             )
+            packageVM.retainHostStateSubscription(
+                vm.$selectedProviderId.sink { [weak packageVM] providerId in
+                    Task { @MainActor in
+                        packageVM?.updateSelectedProviderIdFromHost(providerId)
+                    }
+                }
+            )
+            packageVM.retainHostStateSubscription(
+                vm.$currentModel.sink { [weak packageVM] model in
+                    Task { @MainActor in
+                        packageVM?.updateCurrentModelFromHost(model)
+                    }
+                }
+            )
+            packageVM.retainHostStateSubscription(
+                vm.$isAutoMode.sink { [weak packageVM] isAutoMode in
+                    Task { @MainActor in
+                        packageVM?.updateIsAutoModeFromHost(isAutoMode)
+                    }
+                }
+            )
+            packageVM.retainHostStateSubscription(
+                vm.$lastAutoRouteSummary.sink { [weak packageVM] summary in
+                    Task { @MainActor in
+                        packageVM?.updateLastAutoRouteSummaryFromHost(summary)
+                    }
+                }
+            )
+            return packageVM
         }
 
         let packageToolService = LumiCoreKit.ToolService(

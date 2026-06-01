@@ -275,6 +275,35 @@ struct LumiCoreKitActorTests {
         #expect(autoModeValues == [true, false])
     }
 
+    @Test("AppLLMVM host state sync updates values without echoing through setters")
+    func appLLMVMHostStateSyncDoesNotEchoThroughSetters() {
+        var selectedProviderIds: [String] = []
+        var currentModels: [String] = []
+        var autoModeValues: [Bool] = []
+
+        let llmVM = AppLLMVM(
+            selectedProviderId: "anthropic",
+            currentModel: "claude",
+            isAutoMode: true,
+            selectedProviderIdSetter: { selectedProviderIds.append($0) },
+            currentModelSetter: { currentModels.append($0) },
+            isAutoModeSetter: { autoModeValues.append($0) }
+        )
+
+        llmVM.updateSelectedProviderIdFromHost("openai")
+        llmVM.updateCurrentModelFromHost("gpt-4o")
+        llmVM.updateIsAutoModeFromHost(false)
+        llmVM.updateLastAutoRouteSummaryFromHost("routed")
+
+        #expect(llmVM.selectedProviderId == "openai")
+        #expect(llmVM.currentModel == "gpt-4o")
+        #expect(llmVM.isAutoMode == false)
+        #expect(llmVM.lastAutoRouteSummary == "routed")
+        #expect(selectedProviderIds.isEmpty)
+        #expect(currentModels.isEmpty)
+        #expect(autoModeValues.isEmpty)
+    }
+
     @Test("旧版菜单栏弹窗入口仍会聚合为数组")
     func legacyMenuBarPopupViewFallback() {
         let views = LegacyMenuBarPopupPlugin.shared.addMenuBarPopupViews()
