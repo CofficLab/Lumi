@@ -77,6 +77,9 @@ struct PanelBottomView: View {
         // 监听自动化测试请求切换底部面板 Tab
         .onReceive(NotificationCenter.default.publisher(for: .automationActivateBottomTab)) { notification in
             guard let tabId = notification.userInfo?["tabId"] as? String else { return }
+            if let windowId = notification.userInfo?["windowId"] as? UUID {
+                guard windowContainer?.id == windowId else { return }
+            }
             if tabs.contains(where: { $0.id == tabId }) {
                 activeTabId = tabId
             }

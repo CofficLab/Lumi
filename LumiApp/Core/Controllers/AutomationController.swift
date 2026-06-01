@@ -66,25 +66,26 @@ final class AutomationController: SuperLog {
         }
 
         let payload = userInfo["payload"] as? [String: Any]
+        let targetScope = Self.targetWindowContainer(payload: payload)
 
         Self.logger.info("🤖 Routing action: \(action, privacy: .public)")
 
         switch action {
         // Inline Preview 操作
         case "inline_preview.start_stream", "inline_preview.startStream":
-            handleInlinePreviewStartStream(payload: payload)
+            handleInlinePreviewStartStream(payload: payload, scope: targetScope)
         case "inline_preview.stop_stream", "inline_preview.stopStream":
-            handleInlinePreviewStopStream(payload: payload)
+            handleInlinePreviewStopStream(payload: payload, scope: targetScope)
         case "inline_preview.demoFrame", "inline_preview.demo_frame":
-            handleInlinePreviewDemoFrame(payload: payload)
+            handleInlinePreviewDemoFrame(payload: payload, scope: targetScope)
 
         // 导航操作
         case "navigate.to", "navigateTo":
-            handleNavigateTo(payload: payload)
+            handleNavigateTo(payload: payload, scope: targetScope)
 
         // 编辑器操作
         case "editor.openFile", "editor.open_file":
-            handleEditorOpenFile(payload: payload)
+            handleEditorOpenFile(payload: payload, scope: targetScope)
 
         // 通用按钮点击（通过 plugin + view id）
         case "button.click", "buttonClick":
@@ -92,7 +93,7 @@ final class AutomationController: SuperLog {
 
         // 项目持久化自测
         case "project.select", "projectSelect":
-            handleProjectSelect(payload: payload)
+            handleProjectSelect(payload: payload, scope: targetScope)
         case "app.terminate", "appTerminate":
             handleAppTerminate()
 
@@ -108,37 +109,37 @@ final class AutomationController: SuperLog {
     // MARK: - Handlers
 
     /// 处理 Inline Preview 启动流
-    private func handleInlinePreviewStartStream(payload: [String: Any]?) {
+    private func handleInlinePreviewStartStream(payload: [String: Any]?, scope: WindowContainer?) {
         Self.logger.info("🤖 Handling inline_preview.startStream")
 
-        ensureEditorPanelActive()
-        ensureInlinePreviewBottomTabActive()
+        ensureEditorPanelActive(scope: scope)
+        ensureInlinePreviewBottomTabActive(scope: scope)
         InlinePreviewAutomationState.shared.lastSessionActionName = "start"
         InlinePreviewAutomationState.shared.sessionAction = .start
     }
 
     /// 处理 Inline Preview 停止流
-    private func handleInlinePreviewStopStream(payload: [String: Any]?) {
+    private func handleInlinePreviewStopStream(payload: [String: Any]?, scope: WindowContainer?) {
         Self.logger.info("🤖 Handling inline_preview.stopStream")
 
-        ensureEditorPanelActive()
-        ensureInlinePreviewBottomTabActive()
+        ensureEditorPanelActive(scope: scope)
+        ensureInlinePreviewBottomTabActive(scope: scope)
         InlinePreviewAutomationState.shared.lastSessionActionName = "stop"
         InlinePreviewAutomationState.shared.sessionAction = .stop
     }
 
     /// 处理 Inline Preview demo frame 自动化请求。
-    private func handleInlinePreviewDemoFrame(payload: [String: Any]?) {
+    private func handleInlinePreviewDemoFrame(payload: [String: Any]?, scope: WindowContainer?) {
         Self.logger.info("🤖 Handling inline_preview.demoFrame")
 
-        ensureEditorPanelActive()
-        ensureInlinePreviewBottomTabActive()
+        ensureEditorPanelActive(scope: scope)
+        ensureInlinePreviewBottomTabActive(scope: scope)
         InlinePreviewAutomationState.shared.demoFrameRequestCount += 1
         InlinePreviewAutomationState.shared.lastDemoFramePayload = payload ?? [:]
     }
 
     /// 处理导航到指定面板
-    private func handleNavigateTo(payload: [String: Any]?) {
+    private func handleNavigateTo(payload: [String: Any]?, scope: WindowContainer?) {
         guard let panel = payload?["panel"] as? String else {
             Self.logger.warning("🤖 navigate.to: missing 'panel' in payload")
             return
@@ -148,16 +149,16 @@ final class AutomationController: SuperLog {
 
         switch panel {
         case "editor", "code", "codeEditor":
-            ensureEditorPanelActive()
+            ensureEditorPanelActive(scope: scope)
         case "chat", "agent":
-            ensureAgentPanelActive()
+            ensureAgentPanelActive(scope: scope)
         default:
             Self.logger.warning("🤖 Unknown panel: \(panel, privacy: .public)")
         }
     }
 
     /// 处理编辑器打开文件
-    private func handleEditorOpenFile(payload: [String: Any]?) {
+    private func handleEditorOpenFile(payload: [String: Any]?, scope: WindowContainer?) {
         guard let path = payload?["path"] as? String else {
             Self.logger.warning("🤖 editor.openFile: missing 'path' in payload")
             return
@@ -170,13 +171,18 @@ final class AutomationController: SuperLog {
 
         Self.logger.info("🤖 Opening file: \(url.path, privacy: .public)")
 
-        ensureEditorPanelActive()
+        guard let scope else {
+            Self.logger.warning("🤖 editor.openFile: no target window scope")
+            return
+        }
+
+        ensureEditorPanelActive(scope: scope)
 
         // 直接通过 EditorService 打开文件，触发完整流程：
         // 1. EditorService.open(at:) → 创建/激活 session + 加载内容
         // 2. EditorPreviewDetailView.onChange(of: currentFileURL) → setActiveFile
         // 3. EditorPreviewViewModel.autoBuildIfPossible → 扫描 #Preview + 自动编译
-        let editorService = RootContainer.shared.editorVM.service
+        let editorService = scope.editorVM.service
         editorService.open(at: url)
 
         Self.logger.info("🤖 File opened: \(url.lastPathComponent, privacy: .public)")
@@ -196,14 +202,14 @@ final class AutomationController: SuperLog {
     }
 
     /// 模拟用户选择当前窗口项目并触发持久化
-    private func handleProjectSelect(payload: [String: Any]?) {
+    private func handleProjectSelect(payload: [String: Any]?, scope: WindowContainer?) {
         guard let path = payload?["path"] as? String, !path.isEmpty else {
             Self.logger.warning("🤖 project.select: missing 'path' in payload")
             return
         }
 
-        guard let scope = RootContainer.shared.windowManagerVM.activeWindowContainer else {
-            Self.logger.warning("🤖 project.select: no active window scope")
+        guard let scope else {
+            Self.logger.warning("🤖 project.select: no target window scope")
             return
         }
 
@@ -245,6 +251,24 @@ final class AutomationController: SuperLog {
         return RootContainer.shared.windowManagerVM.activeWindowContainer
     }
 
+    private static func targetWindowContainer(payload: [String: Any]?) -> WindowContainer? {
+        if let windowId = windowId(from: payload),
+           let targetWindow = RootContainer.shared.windowManagerVM.getContainer(windowId) {
+            return targetWindow
+        }
+        return RootContainer.shared.windowManagerVM.activeWindowContainer
+    }
+
+    private static func windowId(from payload: [String: Any]?) -> UUID? {
+        if let windowId = payload?["windowId"] as? UUID {
+            return windowId
+        }
+        if let windowIdString = payload?["windowId"] as? String {
+            return UUID(uuidString: windowIdString)
+        }
+        return nil
+    }
+
     private func handleAppTerminate() {
         Self.logger.info("🤖 app.terminate")
         NSApp.terminate(nil)
@@ -282,26 +306,31 @@ final class AutomationController: SuperLog {
     // MARK: - Helpers
 
     /// 确保编辑器面板处于活动状态
-    private func ensureEditorPanelActive() {
-        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = "chevron.left.forwardslash.chevron.right"
+    private func ensureEditorPanelActive(scope: WindowContainer?) {
+        scope?.layoutVM.activeViewContainerIcon = "chevron.left.forwardslash.chevron.right"
         InlinePreviewAutomationState.shared.editorPanelActivationCount += 1
         Self.logger.info("🤖 Activated editor panel")
     }
 
     /// 确保底部面板的 Inline Preview tab 被激活
-    private func ensureInlinePreviewBottomTabActive() {
+    private func ensureInlinePreviewBottomTabActive(scope: WindowContainer?) {
+        var userInfo: [String: Any] = ["tabId": "editor-bottom-inline-preview"]
+        if let windowId = scope?.id {
+            userInfo["windowId"] = windowId
+        }
+
         NotificationCenter.default.post(
             name: .automationActivateBottomTab,
             object: nil,
-            userInfo: ["tabId": "editor-bottom-inline-preview"]
+            userInfo: userInfo
         )
         InlinePreviewAutomationState.shared.inlinePreviewTabActivationCount += 1
         Self.logger.info("🤖 Activated inline preview bottom tab")
     }
 
     /// 确保 Agent 面板处于活动状态
-    private func ensureAgentPanelActive() {
+    private func ensureAgentPanelActive(scope: WindowContainer?) {
         // Agent 面板通常是默认面板
-        RootContainer.shared.windowManagerVM.activeWindowContainer?.layoutVM.activeViewContainerIcon = nil
+        scope?.layoutVM.activeViewContainerIcon = nil
     }
 }
