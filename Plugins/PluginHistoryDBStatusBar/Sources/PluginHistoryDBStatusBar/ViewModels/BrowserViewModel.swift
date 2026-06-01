@@ -9,6 +9,7 @@ public final class BrowserViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let historyService: (any HistoryQueryService)?
+    private var reloadGeneration = 0
 
     // MARK: - UI State
 
@@ -16,7 +17,7 @@ public final class BrowserViewModel: ObservableObject {
         didSet {
             if oldValue != selectedMode {
                 currentPage = 1
-                Task { await reload() }
+                scheduleReload()
             }
         }
     }
@@ -25,7 +26,7 @@ public final class BrowserViewModel: ObservableObject {
         didSet {
             if oldValue != pageSize {
                 currentPage = 1
-                Task { await reload() }
+                scheduleReload()
             }
         }
     }
@@ -53,22 +54,27 @@ public final class BrowserViewModel: ObservableObject {
     public func nextPage() {
         guard currentPage < totalPages else { return }
         currentPage += 1
-        Task { await reload() }
+        scheduleReload()
     }
 
     public func previousPage() {
         guard currentPage > 1 else { return }
         currentPage -= 1
-        Task { await reload() }
+        scheduleReload()
     }
 
     public func goToFirstPage() {
         guard currentPage != 1 else { return }
         currentPage = 1
-        Task { await reload() }
+        scheduleReload()
     }
 
     public func reload() async {
+        let generation = nextReloadGeneration()
+        await reload(generation: generation)
+    }
+
+    private func reload(generation: Int) async {
         guard let service = historyService else {
             totalCount = 0
             messageRows = []
@@ -77,30 +83,60 @@ public final class BrowserViewModel: ObservableObject {
         }
 
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            if isCurrentReload(generation) {
+                isLoading = false
+            }
+        }
 
         switch selectedMode {
         case .messages:
-            await loadMessageRows(service: service)
+            await loadMessageRows(service: service, generation: generation)
         case .conversations:
-            await loadConversationRows(service: service)
+            await loadConversationRows(service: service, generation: generation)
         }
     }
 
     // MARK: - Loaders
 
-    private func loadMessageRows(service: any HistoryQueryService) async {
-        totalCount = await service.fetchMessageCount()
+    private func loadMessageRows(service: any HistoryQueryService, generation: Int) async {
+        let count = await service.fetchMessageCount()
+        guard isCurrentReload(generation) else { return }
+
+        totalCount = count
         normalizeCurrentPageForLoadedCount()
-        messageRows = await service.fetchMessagePage(limit: effectivePageSize, offset: offset)
+        let rows = await service.fetchMessagePage(limit: effectivePageSize, offset: offset)
+        guard isCurrentReload(generation) else { return }
+
+        messageRows = rows
         conversationRows = []
     }
 
-    private func loadConversationRows(service: any HistoryQueryService) async {
-        totalCount = await service.fetchConversationCount()
+    private func loadConversationRows(service: any HistoryQueryService, generation: Int) async {
+        let count = await service.fetchConversationCount()
+        guard isCurrentReload(generation) else { return }
+
+        totalCount = count
         normalizeCurrentPageForLoadedCount()
-        conversationRows = await service.fetchConversationPage(limit: effectivePageSize, offset: offset)
+        let rows = await service.fetchConversationPage(limit: effectivePageSize, offset: offset)
+        guard isCurrentReload(generation) else { return }
+
+        conversationRows = rows
         messageRows = []
+    }
+
+    private func scheduleReload() {
+        let generation = nextReloadGeneration()
+        Task { await reload(generation: generation) }
+    }
+
+    private func nextReloadGeneration() -> Int {
+        reloadGeneration += 1
+        return reloadGeneration
+    }
+
+    private func isCurrentReload(_ generation: Int) -> Bool {
+        generation == reloadGeneration
     }
 
     private var effectivePageSize: Int {

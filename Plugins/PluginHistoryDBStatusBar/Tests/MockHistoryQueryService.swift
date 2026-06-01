@@ -12,6 +12,8 @@ final class MockHistoryQueryService: HistoryQueryService {
     var conversationPages: [Int: [HistoryConversationRow]] = [:]
     var messagePageRequests: [(limit: Int, offset: Int)] = []
     var conversationPageRequests: [(limit: Int, offset: Int)] = []
+    var messagePageDelayNanoseconds: UInt64 = 0
+    var conversationPageDelayNanoseconds: UInt64 = 0
 
     func fetchMessageCount() async -> Int {
         messageCount
@@ -19,6 +21,9 @@ final class MockHistoryQueryService: HistoryQueryService {
 
     func fetchMessagePage(limit: Int, offset: Int) async -> [HistoryMessageRow] {
         messagePageRequests.append((limit: limit, offset: offset))
+        if messagePageDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: messagePageDelayNanoseconds)
+        }
         return messagePages[offset] ?? []
     }
 
@@ -28,6 +33,9 @@ final class MockHistoryQueryService: HistoryQueryService {
 
     func fetchConversationPage(limit: Int, offset: Int) async -> [HistoryConversationRow] {
         conversationPageRequests.append((limit: limit, offset: offset))
+        if conversationPageDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: conversationPageDelayNanoseconds)
+        }
         return conversationPages[offset] ?? []
     }
 }

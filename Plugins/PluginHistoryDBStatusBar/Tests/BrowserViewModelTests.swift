@@ -150,4 +150,28 @@ struct BrowserViewModelTests {
         #expect(vm.currentPage == 1)
         #expect(mock.messagePageRequests.last?.offset == 0)
     }
+
+    @Test func viewModelIgnoresStaleReloadAfterModeSwitch() async {
+        let mock = MockHistoryQueryService()
+        let message = HistoryMessageRow.fixture(contentPreview: "stale message")
+        let conversation = HistoryConversationRow.fixture(title: "Current Chat")
+
+        mock.messageCount = 1
+        mock.conversationCount = 1
+        mock.messagePages = [0: [message]]
+        mock.conversationPages = [0: [conversation]]
+        mock.messagePageDelayNanoseconds = 100_000_000
+
+        let vm = BrowserViewModel(historyService: mock)
+        let staleReload = Task { await vm.reload() }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        vm.selectedMode = .conversations
+        await vm.reload()
+        await staleReload.value
+
+        #expect(vm.selectedMode == .conversations)
+        #expect(vm.messageRows.isEmpty)
+        #expect(vm.conversationRows.map(\.title) == ["Current Chat"])
+    }
 }
