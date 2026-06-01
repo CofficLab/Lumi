@@ -122,6 +122,17 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "filled")
     }
 
+    func testEditDirectoryReportsDirectoryInsteadOfInvalidText() {
+        XCTAssertThrowsError(try WorkspaceFileEditor().edit(
+            filePath: temporaryDirectory.path,
+            oldString: "before",
+            newString: "after"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Path is a directory"))
+            XCTAssertTrue(error.localizedDescription.contains(temporaryDirectory.path))
+        }
+    }
+
     func testEditAcceptsFileURLString() throws {
         let url = temporaryDirectory.appendingPathComponent("file-url.txt")
         try "before".write(to: url, atomically: true, encoding: .utf8)

@@ -21,8 +21,13 @@ public struct WorkspaceFileEditor: Sendable {
         var originalContent = ""
         var originalEncoding = String.Encoding.utf8
         var fileExists = false
+        var isDirectory: ObjCBool = false
 
-        if fileManager.fileExists(atPath: resolvedPath) {
+        if fileManager.fileExists(atPath: resolvedPath, isDirectory: &isDirectory) {
+            guard !isDirectory.boolValue else {
+                throw WorkspaceFileError("Path is a directory, not a file: \(resolvedPath)")
+            }
+
             var detectedEncoding = String.Encoding.utf8
             do {
                 originalContent = try String(contentsOf: fileURL, usedEncoding: &detectedEncoding)
