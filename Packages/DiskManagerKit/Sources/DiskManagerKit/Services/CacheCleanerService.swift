@@ -60,14 +60,16 @@ public final class CacheCleanerService: @unchecked Sendable {
     }
 
     public func cleanup(paths: [CachePath]) async throws -> Int64 {
-        let freedSpace = await Task.detached(priority: .utility) {
+        let freedSpace = try await Task.detached(priority: .utility) {
             var total: Int64 = 0
             let fileManager = FileManager.default
             for item in paths {
                 do {
                     try fileManager.removeItem(atPath: item.path)
                     total += item.size
-                } catch {}
+                } catch {
+                    throw CacheCleanupError(path: item.path, underlyingDescription: error.localizedDescription)
+                }
             }
             return total
         }.value
@@ -188,11 +190,19 @@ actor CacheCleanerScanCoordinator {
     func progressStream() -> AsyncStream<String> {
         let id = UUID()
         return AsyncStream { continuation in
-            Task { await self.addContinuation(id: id, continuation: continuation) }
+            Task { await self.registerContinuation(id: id, continuation: continuation) }
             continuation.onTermination = { _ in
-                Task { await self.removeContinuation(id: id) }
+                Task { await self.unregisterContinuation(id: id) }
             }
         }
+    }
+
+    private func registerContinuation(id: UUID, continuation: AsyncStream<String>.Continuation) async {
+        addContinuation(id: id, continuation: continuation)
+    }
+
+    private func unregisterContinuation(id: UUID) async {
+        removeContinuation(id: id)
     }
 
     private func addContinuation(id: UUID, continuation: AsyncStream<String>.Continuation) {

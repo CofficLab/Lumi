@@ -217,6 +217,50 @@ struct DiskServiceTests {
     }
 }
 
+// MARK: - CacheCleanerService Tests
+
+struct CacheCleanerServiceTests {
+    @Test
+    func cleanupThrowsWhenASelectedPathCannotBeRemoved() async throws {
+        let missingPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DiskManagerKitMissing-\(UUID().uuidString)")
+            .path
+        let item = CachePath(
+            path: missingPath,
+            name: "missing",
+            description: missingPath,
+            size: 1024,
+            fileCount: 1,
+            canDelete: true
+        )
+
+        await #expect(throws: CacheCleanupError.self) {
+            _ = try await CacheCleanerService.shared.cleanup(paths: [item])
+        }
+    }
+
+    @Test
+    func cleanupReturnsFreedSpaceForRemovedPaths() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DiskManagerKitCleanup-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let item = CachePath(
+            path: directory.path,
+            name: directory.lastPathComponent,
+            description: directory.path,
+            size: 2048,
+            fileCount: 1,
+            canDelete: true
+        )
+
+        let freedSpace = try await CacheCleanerService.shared.cleanup(paths: [item])
+
+        #expect(freedSpace == 2048)
+        #expect(!FileManager.default.fileExists(atPath: directory.path))
+    }
+}
+
 // MARK: - ProgressCounter Tests
 
 struct ProgressCounterTests {
