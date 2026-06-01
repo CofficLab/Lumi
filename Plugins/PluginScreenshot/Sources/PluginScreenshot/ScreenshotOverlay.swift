@@ -23,10 +23,11 @@ public final class ScreenshotState: ObservableObject {
     private var overlayWindows: [ScreenshotOverlayWindow] = []
     private var captureImage: CGImage?
     private var captureFrame: CGRect = .zero
+    private var captureWindowId: UUID?
 
     private init() {}
 
-    public func startCapture() {
+    public func startCapture(windowId: UUID? = nil) {
         guard !isCapturing else { return }
 
         guard Self.hasScreenCapturePermission() else {
@@ -36,6 +37,7 @@ public final class ScreenshotState: ObservableObject {
 
         isCapturing = true
         isPreparing = true
+        captureWindowId = windowId ?? ScreenshotBridge.activeWindowIdProvider?()
 
         Task {
             do {
@@ -60,6 +62,7 @@ public final class ScreenshotState: ObservableObject {
         overlayWindows.forEach { $0.orderOut(nil) }
         overlayWindows.removeAll()
         captureImage = nil
+        captureWindowId = nil
         selectionRect = .zero
         isPreparing = false
         isCapturing = false
@@ -86,7 +89,7 @@ public final class ScreenshotState: ObservableObject {
             object: nil,
             userInfo: [
                 "data": pngData,
-                "windowId": ScreenshotBridge.activeWindowIdProvider?() as Any,
+                "windowId": captureWindowId as Any,
             ]
         )
     }

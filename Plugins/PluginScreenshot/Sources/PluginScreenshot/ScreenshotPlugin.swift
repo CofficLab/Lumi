@@ -45,7 +45,7 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "screenshot" else { return nil }
-        return AnyView(ScreenshotToolbarButton())
+        return AnyView(ScreenshotToolbarButton(windowId: context.windowId))
     }
 }
 
@@ -57,13 +57,14 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
 private struct ScreenshotToolbarButton: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @StateObject private var screenshotState = ScreenshotState.shared
+    let windowId: UUID?
 
     public var body: some View {
         sidebarToolbarButton(
             id: "screenshot",
             tooltip: helpText
         ) {
-            screenshotState.startCapture()
+            screenshotState.startCapture(windowId: windowId)
         } content: {
             Group {
                 if screenshotState.isPreparing {
