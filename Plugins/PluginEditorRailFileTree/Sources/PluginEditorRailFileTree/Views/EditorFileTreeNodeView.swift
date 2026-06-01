@@ -12,6 +12,9 @@ public struct EditorFileTreeNodeView: View {
     /// 选中某个文件节点的回调
     public let onSelect: (URL) -> Void
 
+    /// 当前文件树所属窗口 ID，用于将文件添加到对应窗口的聊天输入。
+    public let windowId: UUID?
+
     /// 外部刷新令牌，变化时重新加载子节点
     public let refreshToken: Int
 
@@ -81,6 +84,7 @@ public struct EditorFileTreeNodeView: View {
         depth: Int,
         selectedURL: URL? = nil,
         onSelect: @escaping (URL) -> Void,
+        windowId: UUID? = nil,
         refreshToken: Int = 0,
         projectRootPath: String = "",
         onExpansionChange: ((String, Bool) -> Void)? = nil,
@@ -91,6 +95,7 @@ public struct EditorFileTreeNodeView: View {
         self.depth = depth
         self.selectedURL = selectedURL
         self.onSelect = onSelect
+        self.windowId = windowId
         self.refreshToken = refreshToken
         self.projectRootPath = projectRootPath
         self.onExpansionChange = onExpansionChange
@@ -210,6 +215,7 @@ public struct EditorFileTreeNodeView: View {
                                 depth: depth + 1,
                                 selectedURL: selectedURL,
                                 onSelect: onSelect,
+                                windowId: windowId,
                                 refreshToken: refreshToken,
                                 projectRootPath: projectRootPath,
                                 onExpansionChange: onExpansionChange,
@@ -504,8 +510,6 @@ extension EditorFileTreeNodeView {
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
     private func addToConversation() {
-        // 多窗口隔离：获取当前活跃窗口 ID
-        let windowId = RootContainer.shared.windowManagerVM.activeWindowId
         NotificationCenter.postFileDroppedToChat(fileURL: url, windowId: windowId)
     }
 }

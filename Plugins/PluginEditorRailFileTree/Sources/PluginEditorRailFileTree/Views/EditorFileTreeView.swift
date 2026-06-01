@@ -41,6 +41,7 @@ public struct EditorFileTreeView: View, SuperLog {
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
+                            windowId: conversationVM.windowId,
                             refreshToken: rootRefreshToken,
                             projectRootPath: projectVM.currentProjectPath,
                             onExpansionChange: { relativePath, isExpanded in
