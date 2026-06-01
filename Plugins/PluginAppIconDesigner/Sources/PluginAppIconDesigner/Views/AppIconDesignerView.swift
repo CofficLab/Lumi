@@ -1282,7 +1282,7 @@ public struct AppIconDesignerView: View {
             lintIssues = lintReport.issues
             let result = try AppIconExportService().exportAppIconSet(
                 document: document,
-                outputDirectory: URL(fileURLWithPath: viewModel.exportDirectory, isDirectory: true)
+                outputDirectory: viewModel.outputDirectoryURL()
             )
             lintIssues = result.lintWarnings
             documentStore.setExportURL(result.appIconSetURL)

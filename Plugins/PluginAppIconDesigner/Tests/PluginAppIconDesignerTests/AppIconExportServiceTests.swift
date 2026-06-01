@@ -97,6 +97,52 @@ struct AppIconExportServiceTests {
     }
 
     @MainActor
+    @Test("rejects blank export directory before writing appiconset")
+    func rejectsBlankExportDirectory() async throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginAppIconDesignerBlankDirectoryTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        let sourceURL = tempRoot.appendingPathComponent("candidate.png")
+        try makeSourceImage().write(to: sourceURL)
+
+        let store = AppIconArtifactStore()
+        try store.registerImage(path: sourceURL.path, title: "Candidate")
+        let viewModel = AppIconDesignerViewModel(store: store)
+        viewModel.exportDirectory = "   "
+
+        await viewModel.exportSelected()
+
+        #expect(store.lastError == AppIconExportDirectoryError.empty.localizedDescription)
+        #expect(store.lastExportURL == nil)
+    }
+
+    @MainActor
+    @Test("rejects file export path before writing appiconset")
+    func rejectsFileExportPath() async throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginAppIconDesignerFileDirectoryTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        let sourceURL = tempRoot.appendingPathComponent("candidate.png")
+        try makeSourceImage().write(to: sourceURL)
+        let fileURL = tempRoot.appendingPathComponent("not-a-directory")
+        try "file".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let store = AppIconArtifactStore()
+        try store.registerImage(path: sourceURL.path, title: "Candidate")
+        let viewModel = AppIconDesignerViewModel(store: store)
+        viewModel.exportDirectory = fileURL.path
+
+        await viewModel.exportSelected()
+
+        #expect(store.lastError == AppIconExportDirectoryError.notDirectory(fileURL.path).localizedDescription)
+        #expect(store.lastExportURL == nil)
+    }
+
+    @MainActor
     @Test("exports SwiftUI document appiconset")
     func exportsSwiftUIDocumentAppIconSet() throws {
         let tempRoot = FileManager.default.temporaryDirectory
