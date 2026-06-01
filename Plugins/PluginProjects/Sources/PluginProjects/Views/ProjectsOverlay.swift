@@ -27,6 +27,9 @@ public struct ProjectsOverlay<Content: View>: View, SuperLog {
     public var body: some View {
         ZStack {
             content
+                .disabled(shouldShowNoProjectOverlay)
+                .allowsHitTesting(!shouldShowNoProjectOverlay)
+                .accessibilityHidden(shouldShowNoProjectOverlay)
 
             if shouldShowNoProjectOverlay {
                 NoProjectOverlay()
