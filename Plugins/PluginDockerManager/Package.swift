@@ -35,7 +35,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginDockerManagerTests",
-            dependencies: ["PluginDockerManager"],
+            dependencies: [
+                "PluginDockerManager",
+                .product(name: "DockerKit", package: "DockerKit"),
+            ],
             path: "Tests/PluginDockerManagerTests"
         )
     ]

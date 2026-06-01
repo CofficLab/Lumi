@@ -3,6 +3,62 @@ import Combine
 import DockerKit
 import SuperLogKit
 
+protocol DockerManagerServicing: Sendable {
+    func listImages() async throws -> [DockerImage]
+    func removeImage(_ id: String, force: Bool) async throws
+    func pullImage(_ name: String) async throws -> String
+    func inspectImage(_ id: String) async throws -> DockerInspect
+    func getImageHistory(_ id: String) async throws -> [DockerImageHistory]
+    func tagImage(_ id: String, target: String) async throws
+    func exportImage(_ id: String, to path: String) async throws
+    func loadImage(from path: String) async throws
+    func scanImage(_ id: String) async throws -> String
+}
+
+struct LiveDockerManagerService: DockerManagerServicing {
+    private let service: DockerService
+
+    init(service: DockerService = .shared) {
+        self.service = service
+    }
+
+    func listImages() async throws -> [DockerImage] {
+        try await service.listImages()
+    }
+
+    func removeImage(_ id: String, force: Bool) async throws {
+        try await service.removeImage(id, force: force)
+    }
+
+    func pullImage(_ name: String) async throws -> String {
+        try await service.pullImage(name)
+    }
+
+    func inspectImage(_ id: String) async throws -> DockerInspect {
+        try await service.inspectImage(id)
+    }
+
+    func getImageHistory(_ id: String) async throws -> [DockerImageHistory] {
+        try await service.getImageHistory(id)
+    }
+
+    func tagImage(_ id: String, target: String) async throws {
+        try await service.tagImage(id, target: target)
+    }
+
+    func exportImage(_ id: String, to path: String) async throws {
+        try await service.exportImage(id, to: path)
+    }
+
+    func loadImage(from path: String) async throws {
+        try await service.loadImage(from: path)
+    }
+
+    func scanImage(_ id: String) async throws -> String {
+        try await service.scanImage(id)
+    }
+}
+
 @MainActor
 class DockerManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🐳"
@@ -27,10 +83,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     @Published var sortOption: SortOption = .created
     @Published var sortDescending: Bool = true
     
-    private let service = DockerService.shared
+    private let service: any DockerManagerServicing
+    private var imageDetailsTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(service: any DockerManagerServicing = LiveDockerManagerService()) {
+        self.service = service
+
         // Debounce search
         $searchText
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
@@ -127,8 +186,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     }
 
     func selectImage(_ image: DockerImage) async {
+        imageDetailsTask?.cancel()
         selectedImage = image
+        selectedImageDetail = nil
+        selectedImageHistory = []
         scanResult = nil // Clear previous scan
+        errorMessage = nil
+        let selectedImageID = image.imageID
 
         if Self.verbose {
             if DockerManagerPlugin.verbose {
@@ -136,20 +200,32 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             }
         }
 
-        // Fetch details in parallel
-        async let detail = service.inspectImage(image.imageID)
-        async let history = service.getImageHistory(image.imageID)
+        let task = Task { [service, selectedImageID] in
+            do {
+                // Fetch details in parallel
+                async let detail = service.inspectImage(selectedImageID)
+                async let history = service.getImageHistory(selectedImageID)
+                let (d, h) = try await (detail, history)
 
-        do {
-            let (d, h) = try await (detail, history)
-            self.selectedImageDetail = d
-            self.selectedImageHistory = h
-        } catch {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.error("\(self.t)加载镜像详情失败: \(error.localizedDescription)")
+                await MainActor.run {
+                    guard !Task.isCancelled, self.selectedImage?.imageID == selectedImageID else { return }
+                    self.selectedImageDetail = d
+                    self.selectedImageHistory = h
+                    self.imageDetailsTask = nil
+                }
+            } catch {
+                await MainActor.run {
+                    guard !Task.isCancelled, self.selectedImage?.imageID == selectedImageID else { return }
+                    if DockerManagerPlugin.verbose {
+                        DockerManagerPlugin.logger.error("\(self.t)加载镜像详情失败: \(error.localizedDescription)")
+                    }
+                    self.errorMessage = "Load details failed: \(error.localizedDescription)"
+                    self.imageDetailsTask = nil
+                }
             }
-            errorMessage = "Load details failed: \(error.localizedDescription)"
         }
+        imageDetailsTask = task
+        await task.value
     }
     
     func tagImage(_ image: DockerImage, newTag: String) async {
@@ -206,6 +282,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             return
         }
         errorMessage = "\(action): \(error.localizedDescription)"
+    }
+
+    deinit {
+        imageDetailsTask?.cancel()
     }
     
     private func filterAndSortImages() {
