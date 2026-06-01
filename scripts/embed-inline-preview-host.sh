@@ -21,7 +21,7 @@ fi
 swift build \
   --package-path "$PACKAGE_DIR" \
   --scratch-path "$SCRATCH_DIR" \
-  --skip-update \
+  --disable-automatic-resolution \
   --configuration "$SWIFT_CONFIGURATION" \
   --product LumiPreviewHostApp
 
