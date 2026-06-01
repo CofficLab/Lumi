@@ -550,13 +550,13 @@ final class EditorKernelPureLogicTests: XCTestCase {
             result.selections,
             [
                 .init(location: 0, length: 0),
-                .init(location: 3, length: 0),
+                .init(location: 2, length: 0),
             ]
         )
     }
 
     func testMultiCursorEditEngineIndentExpandsCoveredSelections() {
-        // Mirror core semantics: selection expands to cover all affected lines.
+        // Mirror core semantics: selection expands across the lines covered by the original selection.
         let result = MultiCursorEditEngine.apply(
             text: "one\ntwo",
             selections: [
@@ -566,8 +566,7 @@ final class EditorKernelPureLogicTests: XCTestCase {
         )
 
         XCTAssertEqual(result.text, "  one\n  two")
-        // Kernel implementation keeps the selection spanning the whole edited region.
-        XCTAssertEqual(result.selections, [.init(location: 0, length: 13)])
+        XCTAssertEqual(result.selections, [.init(location: 0, length: 11)])
     }
 
     func testMultiCursorEditEngineOutdentRemovesLeadingSpacesAndShiftsSelections() {
