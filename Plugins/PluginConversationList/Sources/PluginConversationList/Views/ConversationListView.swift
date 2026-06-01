@@ -229,6 +229,7 @@ extension ConversationListView {
         }
 
         didInitialLoad = true
+        restorePersistedSelectionIfNeeded()
         reloadFromFirstPage()
     }
 
@@ -264,7 +265,41 @@ extension ConversationListView {
         hasMore = page.count == pageSize
         isLoadingPage = false
 
+        ensureSelectedConversationVisible()
         syncSelectionFromViewModel()
+    }
+
+    /// 恢复插件本地存储中的最后选中会话。
+    private func restorePersistedSelectionIfNeeded() {
+        guard !didRestoreSelection else { return }
+        didRestoreSelection = true
+
+        guard currentSelectedConversationId == nil,
+              let restoredId = selectionStore.loadSelectedConversationId() else {
+            return
+        }
+
+        guard conversationVM.fetchConversation(id: restoredId) != nil else {
+            selectionStore.saveSelectedConversationId(nil)
+            return
+        }
+
+        if let windowContainer {
+            windowContainer.switchToConversation(restoredId, reason: "conversationListRestoreSelection")
+        } else {
+            conversationVM.setSelectedConversation(restoredId, reason: "conversationListRestoreSelection")
+        }
+    }
+
+    /// 当前选中的会话可能不在第一页；把它补进列表，避免恢复后 UI 看起来没有选中项。
+    private func ensureSelectedConversationVisible() {
+        guard let selectedId = currentSelectedConversationId,
+              conversations.contains(where: { $0.id == selectedId }) == false,
+              let selectedConversation = conversationVM.fetchConversation(id: selectedId) else {
+            return
+        }
+
+        conversations.insert(selectedConversation, at: 0)
     }
 
     /// 增量处理会话变更，避免整页重拉
@@ -462,6 +497,7 @@ extension ConversationListView {
                 }
             }
 
+            ensureSelectedConversationVisible()
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
                 if Self.verbose {
                     if ConversationListPlugin.verbose {
