@@ -45,15 +45,8 @@ public struct InputView: View {
             isFocused = true
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addToChat"))) { notification in
-            guard let value = notification.userInfo?["text"] as? String,
-                  !value.isEmpty else {
-                return
-            }
-            if conversationVM.draftText.isEmpty {
-                conversationVM.setDraftText(value)
-            } else {
-                conversationVM.setDraftText("\(conversationVM.draftText)\n\n\(value)")
-            }
+            guard let value = Self.addToChatText(from: notification, targetWindowId: conversationVM.windowId) else { return }
+            appendToDraft(value)
             isFocused = true
         }
     }
@@ -73,5 +66,31 @@ public struct InputView: View {
         let value = conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
         Task { await conversationVM.submitDraftText(value) }
+    }
+
+    private func appendToDraft(_ value: String) {
+        if conversationVM.draftText.isEmpty {
+            conversationVM.setDraftText(value)
+        } else {
+            conversationVM.setDraftText("\(conversationVM.draftText)\n\n\(value)")
+        }
+    }
+
+    static func addToChatText(from notification: Notification, targetWindowId: UUID?) -> String? {
+        guard let userInfo = notification.userInfo,
+              let value = userInfo["text"] as? String,
+              !value.isEmpty else {
+            return nil
+        }
+
+        guard let senderWindowId = userInfo["windowId"] as? UUID else {
+            return value
+        }
+
+        guard let targetWindowId, senderWindowId == targetWindowId else {
+            return nil
+        }
+
+        return value
     }
 }

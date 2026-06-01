@@ -38,3 +38,33 @@ import LumiCoreKit
     #expect(CommandSuggestionView.suggestions(for: "/cmd").map(\.command) == ["/cmd"])
     #expect(CommandSuggestionView.suggestions(for: "/missing").isEmpty)
 }
+
+@MainActor
+@Test func addToChatNotificationsRespectWindowIdWhenPresent() throws {
+    let targetWindowId = UUID()
+    let otherWindowId = UUID()
+
+    let matching = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["text": "selected code", "windowId": targetWindowId]
+    )
+    #expect(InputView.addToChatText(from: matching, targetWindowId: targetWindowId) == "selected code")
+
+    let otherWindow = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["text": "other code", "windowId": otherWindowId]
+    )
+    #expect(InputView.addToChatText(from: otherWindow, targetWindowId: targetWindowId) == nil)
+
+    let broadcast = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["text": "legacy payload"]
+    )
+    #expect(InputView.addToChatText(from: broadcast, targetWindowId: targetWindowId) == "legacy payload")
+
+    let empty = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["text": ""]
+    )
+    #expect(InputView.addToChatText(from: empty, targetWindowId: targetWindowId) == nil)
+}

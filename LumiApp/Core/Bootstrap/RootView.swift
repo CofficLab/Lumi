@@ -222,6 +222,7 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func syncPluginConversationContext() {
+        pluginConversationVM.windowId = windowContainer.id
         pluginConversationVM.selectedConversationId = windowContainer.conversationVM.selectedConversationId
         pluginConversationVM.updateDraftTextFromHost(windowContainer.chatDraftVM.text)
         pluginConversationVM.messagesProvider = { [container] conversationId in

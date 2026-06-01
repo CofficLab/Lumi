@@ -304,6 +304,7 @@ public final class ToolService: @unchecked Sendable {
 
 @MainActor
 public final class WindowConversationVM: ObservableObject {
+    @Published public var windowId: UUID?
     @Published public var selectedConversationId: UUID?
     @Published public private(set) var pendingMessagesVersion: Int
     @Published public private(set) var attachmentVersion: Int
@@ -327,6 +328,7 @@ public final class WindowConversationVM: ObservableObject {
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
     public init(
+        windowId: UUID? = nil,
         selectedConversationId: UUID? = nil,
         pendingMessagesVersion: Int = 0,
         attachmentVersion: Int = 0,
@@ -348,6 +350,7 @@ public final class WindowConversationVM: ObservableObject {
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
+        self.windowId = windowId
         self.selectedConversationId = selectedConversationId
         self.pendingMessagesVersion = pendingMessagesVersion
         self.attachmentVersion = attachmentVersion
