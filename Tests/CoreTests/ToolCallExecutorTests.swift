@@ -19,5 +19,13 @@ final class ToolCallExecutorTests: XCTestCase {
         XCTAssertEqual(result.content, "用户拒绝执行此工具")
         XCTAssertTrue(result.isError)
     }
+
+    func testCancelledToolResultIsMarkedAsError() {
+        let result = ToolCallExecutor.cancelledToolResult(duration: 1.25)
+
+        XCTAssertEqual(result.content, "执行已取消")
+        XCTAssertTrue(result.isError)
+        XCTAssertEqual(result.duration, 1.25)
+    }
 }
 #endif

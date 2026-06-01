@@ -16,6 +16,10 @@ final class ToolCallExecutor: SuperLog {
         ToolCallResult(content: "用户拒绝执行此工具", isError: true)
     }
 
+    nonisolated static func cancelledToolResult(duration: TimeInterval? = nil) -> ToolCallResult {
+        ToolCallResult(content: "执行已取消", isError: true, duration: duration)
+    }
+
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
@@ -260,7 +264,7 @@ final class ToolCallExecutor: SuperLog {
                 conversationId: conversationId,
                 event: .cancelled(toolName: toolCall.name, current: step, total: total, displayName: displayName)
             )
-            return ToolCallResult(content: "执行已取消", duration: elapsedDuration)
+            return Self.cancelledToolResult(duration: elapsedDuration)
         } catch {
             progressTask.cancel()
             let elapsedDuration = Date().timeIntervalSince(startedAt)
