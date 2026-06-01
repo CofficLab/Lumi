@@ -3053,6 +3053,31 @@ struct EditorKernelTests {
 
         try? await Task.sleep(for: .milliseconds(80))
         #expect(await applied.values == [2])
+
+        let resetLifecycle = LSPRequestLifecycle()
+        let resetApplied = AppliedRecorder()
+        resetLifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(40))
+                return 1
+            },
+            apply: { value in
+                Task { await resetApplied.append(value) }
+            }
+        )
+        resetLifecycle.reset()
+        resetLifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(5))
+                return 2
+            },
+            apply: { value in
+                Task { await resetApplied.append(value) }
+            }
+        )
+
+        try? await Task.sleep(for: .milliseconds(80))
+        #expect(await resetApplied.values == [2])
     }
 
     @Test

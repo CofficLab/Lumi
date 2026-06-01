@@ -93,8 +93,7 @@ public final class LSPRequestLifecycle: @unchecked Sendable {
     }
 
     public func reset() {
-        lock.lock(); defer { lock.unlock() }
-        _generation = 0
+        invalidate()
     }
 
     @discardableResult
