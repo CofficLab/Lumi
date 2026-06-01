@@ -118,7 +118,7 @@ public enum FileTreeService {
     /// - Returns: 创建成功返回新文件 URL，失败返回 nil
     @discardableResult
     public static func createFile(in parentURL: URL, name: String) -> URL? {
-        guard !name.isEmpty else { return nil }
+        guard isValidItemName(name) else { return nil }
         let fileURL = parentURL.appendingPathComponent(name)
         guard !FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
         let success = FileManager.default.createFile(atPath: fileURL.path, contents: nil)
@@ -132,7 +132,7 @@ public enum FileTreeService {
     /// - Returns: 创建成功返回新文件夹 URL，失败返回 nil
     @discardableResult
     public static func createFolder(in parentURL: URL, name: String) -> URL? {
-        guard !name.isEmpty else { return nil }
+        guard isValidItemName(name) else { return nil }
         let folderURL = parentURL.appendingPathComponent(name)
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
@@ -149,7 +149,7 @@ public enum FileTreeService {
     /// - Returns: 重命名成功返回新 URL，失败返回 nil
     @discardableResult
     public static func renameItem(at url: URL, newName: String) -> URL? {
-        guard !newName.isEmpty else { return nil }
+        guard isValidItemName(newName) else { return nil }
         let newURL = url.deletingLastPathComponent().appendingPathComponent(newName)
         do {
             try FileManager.default.moveItem(at: url, to: newURL)
@@ -170,6 +170,12 @@ public enum FileTreeService {
         } catch {
             return false
         }
+    }
+
+    /// Validates a single filesystem item name entered from file-tree prompts.
+    private static func isValidItemName(_ name: String) -> Bool {
+        guard !name.isEmpty, name != ".", name != ".." else { return false }
+        return name.rangeOfCharacter(from: CharacterSet(charactersIn: "/\0")) == nil
     }
 
     // MARK: - Private

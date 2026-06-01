@@ -238,6 +238,14 @@ struct FileTreeServiceTests {
         #expect(result == nil)
     }
 
+    @Test("createFile rejects path-like names")
+    func createFilePathLikeName() throws {
+        let dir = try makeTempDirectory()
+        let result = FileTreeService.createFile(in: dir, name: "../outside.txt")
+        #expect(result == nil)
+        #expect(!FileManager.default.fileExists(atPath: dir.deletingLastPathComponent().appendingPathComponent("outside.txt").path))
+    }
+
     @Test("createFile returns nil if file already exists")
     func createFileAlreadyExists() throws {
         let dir = try makeTempDirectory()
@@ -263,6 +271,13 @@ struct FileTreeServiceTests {
         let dir = try makeTempDirectory()
         let result = FileTreeService.createFolder(in: dir, name: "")
         #expect(result == nil)
+    }
+
+    @Test("createFolder rejects current and parent directory names")
+    func createFolderPathTraversalNames() throws {
+        let dir = try makeTempDirectory()
+        #expect(FileTreeService.createFolder(in: dir, name: ".") == nil)
+        #expect(FileTreeService.createFolder(in: dir, name: "..") == nil)
     }
 
     @Test("createFolder returns nil if folder already exists")
@@ -293,6 +308,16 @@ struct FileTreeServiceTests {
         let file = try createFile(in: dir, name: "test.txt")
         let result = FileTreeService.renameItem(at: file, newName: "")
         #expect(result == nil)
+    }
+
+    @Test("renameItem rejects path-like names")
+    func renameItemPathLikeName() throws {
+        let dir = try makeTempDirectory()
+        let file = try createFile(in: dir, name: "test.txt")
+        let result = FileTreeService.renameItem(at: file, newName: "../escaped.txt")
+        #expect(result == nil)
+        #expect(FileManager.default.fileExists(atPath: file.path))
+        #expect(!FileManager.default.fileExists(atPath: dir.deletingLastPathComponent().appendingPathComponent("escaped.txt").path))
     }
 
     @Test("renameItem returns nil if target already exists")
