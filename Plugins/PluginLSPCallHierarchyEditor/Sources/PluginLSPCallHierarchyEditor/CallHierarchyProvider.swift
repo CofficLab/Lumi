@@ -43,6 +43,8 @@ public final class CallHierarchyProvider: ObservableObject, SuperEditorCallHiera
     public var isAvailable: Bool { lspService.isAvailable }
     
     public func prepareCallHierarchy(uri: String, line: Int, character: Int) async {
+        incomingLifecycle.invalidate()
+        outgoingLifecycle.invalidate()
         isLoading = true
         incomingCalls = []
         outgoingCalls = []
@@ -91,6 +93,7 @@ public final class CallHierarchyProvider: ObservableObject, SuperEditorCallHiera
             },
             apply: { [weak self] calls in
                 guard let self else { return }
+                guard rootItem == item else { return }
                 incomingCalls = calls.compactMap { call in
                     EditorCallHierarchyCall(item: call.from, fromRanges: call.fromRanges)
                 }
@@ -116,6 +119,7 @@ public final class CallHierarchyProvider: ObservableObject, SuperEditorCallHiera
             },
             apply: { [weak self] calls in
                 guard let self else { return }
+                guard rootItem == item else { return }
                 outgoingCalls = calls.compactMap { call in
                     EditorCallHierarchyCall(item: call.to, fromRanges: call.fromRanges)
                 }
