@@ -56,8 +56,101 @@ extension ViewContainerItem {
 
 extension ToolContext {
     var packageContext: LumiCoreKit.ToolContext {
-        LumiCoreKit.ToolContext(
-            languagePreference: languagePreference
+        let packageLLMService = llmService.map { service in
+            LumiCoreKit.LLMService(
+                sendMessageHandler: { messages, config, tools in
+                    try await service.sendMessage(messages: messages, config: config, tools: tools)
+                },
+                providersProvider: {
+                    service.allProviders()
+                },
+                providerTypeProvider: { providerId in
+                    service.providerType(forId: providerId)
+                },
+                providerFactory: { providerId in
+                    service.createProvider(id: providerId)
+                },
+                apiKeyProvider: { [llmVM] providerId in
+                    llmVM?.getApiKey(for: providerId) ?? ""
+                }
+            )
+        }
+
+        let packageLLMVM = llmVM.map { vm in
+            LumiCoreKit.AppLLMVM(
+                selectedProviderId: vm.selectedProviderId,
+                currentModel: vm.currentModel,
+                isAutoMode: vm.isAutoMode,
+                lastAutoRouteSummary: vm.lastAutoRouteSummary,
+                chatMode: LumiCoreKit.ChatMode(rawValue: vm.chatMode.rawValue) ?? .build,
+                llmService: packageLLMService ?? LumiCoreKit.LLMService(),
+                providersProvider: {
+                    vm.allProviders
+                },
+                providerTypeProvider: { providerId in
+                    vm.providerType(forId: providerId)
+                },
+                providerFactory: { providerId in
+                    vm.createProvider(id: providerId)
+                },
+                apiKeyProvider: { providerId in
+                    vm.getApiKey(for: providerId)
+                },
+                chatModeSetter: { mode in
+                    guard let appMode = ChatMode(rawValue: mode.rawValue) else { return }
+                    vm.setChatMode(appMode)
+                }
+            )
+        }
+
+        let packageToolService = LumiCoreKit.ToolService(
+            tools: toolService.tools,
+            executeToolHandler: { [toolService] name, argumentsJSON, executionContext in
+                try await toolService.executeTool(
+                    named: name,
+                    argumentsJSON: argumentsJSON,
+                    context: executionContext
+                )
+            }
+        )
+
+        let packageConversationVM = conversationVM.map { vm in
+            LumiCoreKit.WindowConversationVM(
+                selectedConversationId: vm.selectedConversationId,
+                currentPreferenceProvider: {
+                    vm.getModelPreference().map { ($0.providerId, $0.model) }
+                },
+                preferenceProvider: { conversationId in
+                    vm.getModelPreference(for: conversationId).map { ($0.providerId, $0.model) }
+                },
+                preferenceSaver: { conversationId, providerId, model in
+                    if let conversationId {
+                        vm.saveModelPreference(for: conversationId, providerId: providerId, model: model)
+                    } else {
+                        vm.saveModelPreference(providerId: providerId, model: model)
+                    }
+                },
+                chatModePreferenceProvider: {
+                    vm.getChatModePreference().flatMap { LumiCoreKit.ChatMode(rawValue: $0.rawValue) }
+                }
+            )
+        }
+
+        let packageRecentProjectsVM = recentProjectsVM.map { vm in
+            LumiCoreKit.AppProjectsVM(
+                recentProjects: vm.recentProjects.map {
+                    LumiCoreKit.Project(name: $0.name, path: $0.path, lastUsed: $0.lastUsed)
+                }
+            )
+        }
+
+        return LumiCoreKit.ToolContext(
+            languagePreference: languagePreference,
+            llmService: packageLLMService,
+            toolService: packageToolService,
+            llmVM: packageLLMVM,
+            conversationVM: packageConversationVM,
+            recentProjectsVM: packageRecentProjectsVM
         )
     }
 }
