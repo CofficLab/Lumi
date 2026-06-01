@@ -59,17 +59,35 @@ public final class ProjectsStore: @unchecked Sendable {
     /// 添加或更新项目到列表开头（异步，不阻塞调用线程）
     /// 最多保留 500 条
     public func addProject(name: String, path: String) {
+        guard let normalizedPath = Self.normalizedProjectPath(from: path) else { return }
+        let projectName = Self.normalizedProjectName(name, path: normalizedPath)
+
         queue.async { [self] in
             var projects = self.loadProjectsInternal()
-            projects.removeAll { $0.path == path }
+            projects.removeAll { Self.normalizedProjectPath(from: $0.path) == normalizedPath }
 
-            let newProject = Project(name: name, path: path, lastUsed: Date())
+            let newProject = Project(name: projectName, path: normalizedPath, lastUsed: Date())
             projects.insert(newProject, at: 0)
             projects = Array(projects.prefix(Self.maxProjectsCount))
 
             self.persistProjectsToCurrentFile(projects: projects)
             Self.postProjectsListDidChange()
         }
+    }
+
+    static func normalizedProjectPath(from rawPath: String) -> String? {
+        let trimmed = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        guard expanded.hasPrefix("/") else { return nil }
+
+        return URL(fileURLWithPath: expanded).standardizedFileURL.path
+    }
+
+    private static func normalizedProjectName(_ rawName: String, path: String) -> String {
+        let trimmed = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? URL(fileURLWithPath: path).lastPathComponent : trimmed
     }
 
     /// 删除指定项目（异步，不阻塞调用线程）

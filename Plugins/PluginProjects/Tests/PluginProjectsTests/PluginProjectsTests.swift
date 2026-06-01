@@ -140,6 +140,29 @@ import Testing
     #expect(await probe.waitUntilReceived())
 }
 
+@Test func projectsStoreNormalizesAddedProjectPathsAndDeduplicates() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ProjectsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let projectRoot = root.appendingPathComponent("Repo", isDirectory: true)
+    let noisyPath = projectRoot
+        .appendingPathComponent("Nested", isDirectory: true)
+        .appendingPathComponent("..", isDirectory: true)
+        .standardizedFileURL
+        .path + "/"
+
+    let store = ProjectsStore(dbFolderURLProvider: { root })
+    store.addProject(name: "Noisy", path: noisyPath)
+    store.addProject(name: "Clean", path: projectRoot.path)
+
+    let projects = store.loadProjects()
+
+    #expect(projects.count == 1)
+    #expect(projects.first?.name == "Clean")
+    #expect(projects.first?.path == projectRoot.standardizedFileURL.path)
+}
+
 @MainActor
 private final class NotificationProbe {
     var received = false
