@@ -1,9 +1,16 @@
 #if canImport(XCTest)
 import AppKit
+import SwiftUI
 import XCTest
 @testable import Lumi
 
 final class AppWindowManagerVMTests: XCTestCase {
+    func testRootViewChatImageDetectionIsCaseInsensitive() {
+        XCTAssertTrue(RootView<EmptyView>.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.PNG")))
+        XCTAssertTrue(RootView<EmptyView>.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.heic")))
+        XCTAssertFalse(RootView<EmptyView>.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.txt")))
+    }
+
     @MainActor
     func testProjectControllerDirectoryResolutionRejectsInvalidProjectPaths() throws {
         let tempRoot = FileManager.default.temporaryDirectory

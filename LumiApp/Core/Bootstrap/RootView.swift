@@ -64,6 +64,9 @@ struct RootView<Content>: View where Content: View {
             RootListener(scope: windowContainer)
             configuredContent
         }
+        .onFileDroppedToChat(windowId: windowContainer.id) { url in
+            handleFileDroppedToChat(url)
+        }
     }
 
     private var initialLifecycleScene: some View {
@@ -255,6 +258,22 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.textSubmitter = { [windowContainer] text in
             windowContainer.inputQueueVM.enqueueText(text)
         }
+    }
+
+    private func handleFileDroppedToChat(_ url: URL) {
+        let fileURL = url.standardizedFileURL
+        if Self.isChatImageFileURL(fileURL) {
+            windowContainer.agentAttachmentsVM.handleImageUpload(url: fileURL)
+        } else {
+            windowContainer.chatDraftVM.append(fileURL.path)
+        }
+    }
+
+    static func isChatImageFileURL(_ url: URL) -> Bool {
+        let imagePathExtensions: Set<String> = [
+            "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
+        ]
+        return imagePathExtensions.contains(url.pathExtension.lowercased())
     }
 
     private func syncPluginLLMContext() {
