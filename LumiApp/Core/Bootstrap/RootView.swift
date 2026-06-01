@@ -326,8 +326,9 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginProjectBridge() {
-        PluginProjectContext.switchProjectHandler = { [windowContainer] project, reason in
-            windowContainer.projectVM.switchProject(
+        PluginProjectContext.switchProjectHandler = { [container, windowContainer] project, reason in
+            let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+            targetWindow.projectVM.switchProject(
                 to: Project(name: project.name, path: project.path, lastUsed: project.lastUsed),
                 reason: reason
             )
@@ -335,8 +336,8 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginProjectsBridge() {
-        PluginProjects.ProjectsBridge.currentProjectPathProvider = { [windowContainer] in
-            windowContainer.projectPath
+        PluginProjects.ProjectsBridge.currentProjectPathProvider = { [container, windowContainer] in
+            Self.targetWindowContainer(fallback: windowContainer, rootContainer: container).projectPath
         }
         pluginConversationVM.switchToLatestConversationHandler = { [windowContainer] projectPath in
             windowContainer.conversationVM.switchToLatestConversation(forProject: projectPath)
@@ -351,46 +352,53 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginAgentTurnNotificationBridge() {
-        PluginAgentTurnNotification.AgentTurnNotificationRuntime.selectConversation = { [windowContainer] conversationId in
-            windowContainer.switchToConversation(conversationId, reason: "agentTurnNotification")
+        PluginAgentTurnNotification.AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
+            Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+                .switchToConversation(conversationId, reason: "agentTurnNotification")
         }
     }
 
     private func configurePluginFontBridge() {
-        PluginFontConfig.FontConfigViewModel.applyFontNameHandler = { [windowContainer] fontName in
-            windowContainer.editorVM.service.state.fontName = fontName
+        PluginFontConfig.FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
+            Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+                .editorVM.service.state.fontName = fontName
         }
     }
 
     private func configurePluginGoEditorBridge() {
-        PluginGoEditor.GoEditorBridge.openFileHandler = { [windowContainer] url, projectRoot in
-            await windowContainer.editorVM.service.refreshProjectContext(for: projectRoot)
-            windowContainer.editorVM.service.open(at: url)
+        PluginGoEditor.GoEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+            let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+            await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
+            targetWindow.editorVM.service.open(at: url)
         }
     }
 
     private func configurePluginEditorStickySymbolBarBridge() {
-        PluginEditorStickySymbolBar.EditorStickySymbolBarBridge.editorServiceProvider = { [windowContainer] in
-            windowContainer.editorVM.service
+        PluginEditorStickySymbolBar.EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
+            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .editorVM.service
         }
     }
 
     private func configurePluginEditorTabStripBridge() {
-        PluginEditorTabStrip.EditorTabStripBridge.editorServiceProvider = { [windowContainer] in
-            windowContainer.editorVM.service
+        PluginEditorTabStrip.EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
+            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .editorVM.service
         }
     }
 
     private func configurePluginEditorRailWorkspaceSymbolsBridge() {
-        PluginEditorRailWorkspaceSymbols.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [windowContainer] in
-            windowContainer.editorVM.service
+        PluginEditorRailWorkspaceSymbols.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
+            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .editorVM.service
         }
     }
 
     private func configurePluginJSEditorBridge() {
-        PluginJSEditor.JSEditorBridge.openFileHandler = { [windowContainer] url, projectRoot in
-            await windowContainer.editorVM.service.refreshProjectContext(for: projectRoot)
-            windowContainer.editorVM.service.open(at: url)
+        PluginJSEditor.JSEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+            let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+            await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
+            targetWindow.editorVM.service.open(at: url)
         }
     }
 
@@ -407,13 +415,35 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginQuickFileSearchBridge() {
-        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { path in
-            NotificationCenter.postSyncSelectedFile(path: path)
+        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { [container] path in
+            NotificationCenter.postSyncSelectedFile(
+                path: path,
+                windowId: container.windowManagerVM.activeWindowId
+            )
         }
     }
 
     private func configurePluginAutoTaskBridge() {
         PluginAutoTask.AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
+    }
+
+    private static func targetWindowContainer(
+        for context: PluginContext,
+        fallback: WindowContainer,
+        rootContainer: RootContainer
+    ) -> WindowContainer {
+        if let windowId = context.windowId,
+           let targetWindow = rootContainer.windowManagerVM.getContainer(windowId) {
+            return targetWindow
+        }
+        return targetWindowContainer(fallback: fallback, rootContainer: rootContainer)
+    }
+
+    private static func targetWindowContainer(
+        fallback: WindowContainer,
+        rootContainer: RootContainer
+    ) -> WindowContainer {
+        rootContainer.windowManagerVM.activeWindowContainer ?? fallback
     }
 }
 

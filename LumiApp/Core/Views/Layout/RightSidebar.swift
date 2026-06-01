@@ -11,6 +11,7 @@ struct RightSidebarContainerView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @Environment(\.windowContainer) private var windowContainer
 
     /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
     let sections: [AnyView]
@@ -26,7 +27,8 @@ struct RightSidebarContainerView: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
 
         return pluginProvider.getRightSidebarRootWrapper(context: pluginContext) {
@@ -68,6 +70,7 @@ private struct SidebarToolbarBar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @Environment(\.windowContainer) private var windowContainer
 
     let leadingItems: [SidebarToolbarItem]
     let trailingItems: [SidebarToolbarItem]
@@ -100,7 +103,8 @@ private struct SidebarToolbarBar: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, context: toolbarContext) {
             customView

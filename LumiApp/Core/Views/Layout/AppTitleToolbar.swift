@@ -11,6 +11,7 @@ struct AppTitleToolbar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @Environment(\.windowContainer) private var windowContainer
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
@@ -22,7 +23,8 @@ struct AppTitleToolbar: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         let leadingViews = pluginProvider.getToolbarLeadingViews(context: pluginContext)
         let centerViews = pluginProvider.getToolbarCenterViews(context: pluginContext)

@@ -11,6 +11,7 @@ struct RailView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @Environment(\.windowContainer) private var windowContainer
 
     @State private var selectedTabId: String?
 
@@ -30,7 +31,8 @@ struct RailView: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         let tabs = pluginProvider.getRailTabs(context: pluginContext)
 
@@ -99,7 +101,8 @@ struct RailView: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }
 

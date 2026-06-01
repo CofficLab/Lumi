@@ -31,6 +31,7 @@ public actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
     @MainActor
     public func addPanelHeaderView(context: PluginContext) -> AnyView? {
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(EditorStickySymbolBarHeaderView())
+        guard let service = EditorStickySymbolBarBridge.editorServiceProvider?(context) else { return nil }
+        return AnyView(EditorStickySymbolBarHeaderView(service: service))
     }
 }

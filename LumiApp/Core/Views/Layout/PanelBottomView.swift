@@ -12,6 +12,7 @@ struct PanelBottomView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @Environment(\.windowContainer) private var windowContainer
 
     /// 当前选中的 Tab ID
     @State private var activeTabId: String?
@@ -23,7 +24,8 @@ struct PanelBottomView: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         let tabs = pluginProvider.getBottomPanelTabs(context: pluginContext)
 

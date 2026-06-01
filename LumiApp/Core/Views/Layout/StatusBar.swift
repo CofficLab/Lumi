@@ -12,6 +12,7 @@ struct StatusBar: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationTurnServices: AppConversationTurnVM
     @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @Environment(\.windowContainer) private var windowContainer
 
     /// 当前活跃的供应商 ID（优先对话级偏好，回退到全局选择）
     private var activeProviderId: String? {
@@ -30,6 +31,7 @@ struct StatusBar: View {
             activeProviderId: activeProviderId,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id,
             currentProjectPath: projectVM.currentProjectPath,
             languagePreference: projectVM.languagePreference,
             availableTools: conversationTurnServices.toolService.allTools,

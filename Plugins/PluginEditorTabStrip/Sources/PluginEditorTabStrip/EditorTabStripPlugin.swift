@@ -5,7 +5,7 @@ import EditorService
 
 @MainActor
 public enum EditorTabStripBridge {
-    public static var editorServiceProvider: (() -> EditorService?)?
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
 }
 
 /// 编辑器 Tab 栏插件
@@ -32,7 +32,7 @@ public actor EditorTabStripPlugin: SuperPlugin {
     public func addPanelHeaderView(context: PluginContext) -> AnyView? {
         // 仅在编辑器面板激活时提供 header
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        guard let service = EditorTabStripBridge.editorServiceProvider?() else { return nil }
+        guard let service = EditorTabStripBridge.editorServiceProvider?(context) else { return nil }
         return AnyView(EditorTabHeaderView(service: service))
     }
 

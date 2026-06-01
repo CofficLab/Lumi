@@ -8,7 +8,7 @@ extension Notification.Name {
     static let projectConfigApplied = Notification.Name("ProjectConfigApplied")
 
     /// 同步选中文件到 WindowProjectVM 的通知
-    /// userInfo: ["path": String]
+    /// userInfo: ["path": String, "windowId": UUID?]
     static let syncSelectedFile = Notification.Name("SyncSelectedFile")
 }
 
@@ -25,12 +25,17 @@ extension NotificationCenter {
     }
 
     /// 发送同步选中文件到 WindowProjectVM 的通知
-    /// - Parameter path: 文件路径
-    static func postSyncSelectedFile(path: String) {
+    /// - Parameters:
+    ///   - path: 文件路径
+    ///   - windowId: 目标窗口 ID，用于多窗口场景下的事件隔离
+    static func postSyncSelectedFile(path: String, windowId: UUID? = nil) {
         NotificationCenter.default.post(
             name: .syncSelectedFile,
             object: nil,
-            userInfo: ["path": path]
+            userInfo: [
+                "path": path,
+                "windowId": windowId as Any,
+            ]
         )
     }
 }
@@ -52,11 +57,22 @@ extension View {
     /// 监听同步选中文件事件
     /// - Parameter action: 事件处理闭包，参数为文件路径
     /// - Returns: 修改后的视图
-    func onSyncSelectedFile(perform action: @escaping (String) -> Void) -> some View {
+    func onSyncSelectedFile(
+        windowId: UUID? = nil,
+        perform action: @escaping (String) -> Void
+    ) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .syncSelectedFile)) { notification in
-            if let path = notification.userInfo?["path"] as? String {
-                action(path)
+            guard let userInfo = notification.userInfo,
+                  let path = userInfo["path"] as? String else {
+                return
             }
+            if let windowId {
+                guard let senderWindowId = userInfo["windowId"] as? UUID,
+                      senderWindowId == windowId else {
+                    return
+                }
+            }
+            action(path)
         }
     }
 }

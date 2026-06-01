@@ -11,6 +11,7 @@ struct PanelContentView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var layoutVM: WindowLayoutVM
+    @Environment(\.windowContainer) private var windowContainer
 
     var body: some View {
         let activeIcon = layoutVM.activeViewContainerIcon
@@ -19,7 +20,8 @@ struct PanelContentView: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeItem?.supportsAIChat ?? false,
-            showsProjectToolbar: activeItem?.showsProjectToolbar ?? false
+            showsProjectToolbar: activeItem?.showsProjectToolbar ?? false,
+            windowId: windowContainer?.id
         )
         let headerViews = pluginProvider.getActivePanelHeaderViews(context: pluginContext)
         let hasBottomTabs = pluginProvider.hasBottomPanelTabs(context: pluginContext)

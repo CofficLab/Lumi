@@ -1,27 +1,28 @@
 import EditorService
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 @MainActor
 public enum EditorStickySymbolBarBridge {
-    public static var editorServiceProvider: (() -> EditorService?)?
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
 }
 
 /// 编辑器符号面包屑头部视图。
 public struct EditorStickySymbolBarHeaderView: View {
-    private var service: EditorService? {
-        EditorStickySymbolBarBridge.editorServiceProvider?()
+    private let service: EditorService
+
+    public init(service: EditorService) {
+        self.service = service
     }
 
     public var body: some View {
-        if let service {
-            let activeDocumentSymbolTrail = service.documentSymbolProvider.activeItems(for: service.cursorLine)
-            if !activeDocumentSymbolTrail.isEmpty {
-                EditorStickySymbolBarView(
-                    service: service,
-                    symbols: activeDocumentSymbolTrail
-                )
-            }
+        let activeDocumentSymbolTrail = service.documentSymbolProvider.activeItems(for: service.cursorLine)
+        if !activeDocumentSymbolTrail.isEmpty {
+            EditorStickySymbolBarView(
+                service: service,
+                symbols: activeDocumentSymbolTrail
+            )
         }
     }
 }

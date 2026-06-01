@@ -1,4 +1,5 @@
 import os
+import LumiCoreKit
 import SuperLogKit
 import SwiftUI
 import LumiUI
@@ -7,6 +8,7 @@ import LumiUI
 public struct EditorFileTreeView: View, SuperLog {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var editorVM: WindowEditorVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
 
     // MARK: - Logging Configuration
 
@@ -69,7 +71,7 @@ public struct EditorFileTreeView: View, SuperLog {
         .onChange(of: editorVM.service.currentFileURL, onSelectedFileChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
-        .onSyncSelectedFile(perform: onSyncSelectedFile)
+        .onSyncSelectedFile(windowId: conversationVM.windowId, perform: onSyncSelectedFile)
         .onReceive(coordinator.$refreshToken) { newToken in
             onCoordinatorRefresh(newToken)
         }

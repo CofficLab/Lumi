@@ -40,6 +40,11 @@ public struct PluginContext {
     /// 项目相关插件可据此决定是否贡献工具栏视图。
     public let showsProjectToolbar: Bool
 
+    /// 当前正在构建插件视图的窗口 ID。
+    ///
+    /// 多窗口插件贡献需要用它选择窗口级服务，避免进程级 bridge 误用其他窗口状态。
+    public let windowId: UUID?
+
     /// 当前项目路径。
     ///
     /// 为空字符串表示当前窗口未选择项目。
@@ -66,6 +71,7 @@ public struct PluginContext {
         activeProviderId: String? = nil,
         supportsAIChat: Bool = false,
         showsProjectToolbar: Bool = false,
+        windowId: UUID? = nil,
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
         availableTools: [SuperAgentTool] = [],
@@ -77,6 +83,7 @@ public struct PluginContext {
         self.activeProviderId = activeProviderId
         self.supportsAIChat = supportsAIChat
         self.showsProjectToolbar = showsProjectToolbar
+        self.windowId = windowId
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference
         self.availableTools = availableTools

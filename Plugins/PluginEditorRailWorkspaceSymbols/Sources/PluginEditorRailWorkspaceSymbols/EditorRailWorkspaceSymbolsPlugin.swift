@@ -7,7 +7,7 @@ import os
 
 @MainActor
 public enum EditorRailWorkspaceSymbolsBridge {
-    public static var editorServiceProvider: (() -> EditorService?)?
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
 }
 
 /// 编辑器工作区符号 Rail 插件：提供 Symbols 标签页
@@ -43,7 +43,7 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
         guard tabId == "workspaceSymbols", context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        guard let service = EditorRailWorkspaceSymbolsBridge.editorServiceProvider?() else { return nil }
+        guard let service = EditorRailWorkspaceSymbolsBridge.editorServiceProvider?(context) else { return nil }
         return AnyView(EditorWorkspaceSymbolsRailContentView(service: service))
     }
 }

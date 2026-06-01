@@ -107,7 +107,8 @@ struct ContentView: View, SuperLog {
                     activeIcon: activeIcon,
                     isEditorVisible: layoutVM.editorVisible,
                     supportsAIChat: activeContainer?.supportsAIChat ?? false,
-                    showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false
+                    showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+                    windowId: windowContainer?.id
                 )
                 let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
                 let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
