@@ -16,7 +16,7 @@ struct PluginThemeGithubTests {
         #expect(ThemeGithubPlugin.isConfigurable == false)
         #expect(ThemeGithubPlugin.category == .theme)
         #expect(ThemeGithubPlugin.order == 128)
-        #expect(ThemeGithubPlugin.enable == true)
+        #expect(ThemeGithubPlugin.policy == .alwaysOn)
         #expect(ThemeGithubPlugin.shared.instanceLabel == ThemeGithubPlugin.id)
     }
 

@@ -15,7 +15,7 @@ struct PluginAppUpdateStatusBarTests {
         #expect(AppUpdateStatusBarPlugin.isConfigurable == false)
         #expect(AppUpdateStatusBarPlugin.category == .general)
         #expect(AppUpdateStatusBarPlugin.order == 8)
-        #expect(AppUpdateStatusBarPlugin.enable == true)
+        #expect(AppUpdateStatusBarPlugin.policy == .alwaysOn)
         #expect(AppUpdateStatusBarPlugin.shared.instanceLabel == AppUpdateStatusBarPlugin.id)
     }
 

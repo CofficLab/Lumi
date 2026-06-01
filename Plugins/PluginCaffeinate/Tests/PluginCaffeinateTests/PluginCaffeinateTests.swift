@@ -15,7 +15,7 @@ struct PluginCaffeinateTests {
         #expect(CaffeinatePlugin.isConfigurable == false)
         #expect(CaffeinatePlugin.category == .system)
         #expect(CaffeinatePlugin.order == 7)
-        #expect(CaffeinatePlugin.enable == true)
+        #expect(CaffeinatePlugin.policy == .alwaysOn)
         #expect(CaffeinatePlugin.shared.instanceLabel == CaffeinatePlugin.id)
     }
 

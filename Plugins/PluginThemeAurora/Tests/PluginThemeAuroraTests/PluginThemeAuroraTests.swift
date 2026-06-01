@@ -16,7 +16,7 @@ struct PluginThemeAuroraTests {
         #expect(ThemeAuroraPlugin.isConfigurable == false)
         #expect(ThemeAuroraPlugin.category == .theme)
         #expect(ThemeAuroraPlugin.order == 121)
-        #expect(ThemeAuroraPlugin.enable == true)
+        #expect(ThemeAuroraPlugin.policy == .alwaysOn)
         #expect(ThemeAuroraPlugin.shared.instanceLabel == ThemeAuroraPlugin.id)
     }
 

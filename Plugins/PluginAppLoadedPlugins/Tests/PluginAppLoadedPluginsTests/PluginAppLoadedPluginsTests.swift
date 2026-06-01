@@ -13,7 +13,7 @@ struct PluginAppLoadedPluginsTests {
         #expect(AppLoadedPluginsPlugin.isConfigurable == false)
         #expect(AppLoadedPluginsPlugin.category == .general)
         #expect(AppLoadedPluginsPlugin.order == 79)
-        #expect(AppLoadedPluginsPlugin.enable == true)
+        #expect(AppLoadedPluginsPlugin.policy == .alwaysOn)
         #expect(AppLoadedPluginsPlugin.shared.instanceLabel == AppLoadedPluginsPlugin.id)
     }
 
