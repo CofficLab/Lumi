@@ -33,6 +33,7 @@ public struct ShowImageOverlay<Content: View>: View, SuperLog {
                             state.clear()
                         }
                     )
+                    .id(item.id)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(1000)
                 }
@@ -141,8 +142,8 @@ struct ShowImagePreviewPanel: View {
         }
         .frame(maxWidth: 500, alignment: .topTrailing)
         .animation(.spring(response: 0.3), value: displayItem)
-        .task {
-            await loadImage()
+        .task(id: displayItem.id) {
+            await loadImage(displayItem)
         }
         .sheet(isPresented: $isPresentingFullscreen) {
             if let image = loadedImage {
@@ -153,13 +154,13 @@ struct ShowImagePreviewPanel: View {
 
     // MARK: - Image Loading
 
-    private func loadImage() async {
+    private func loadImage(_ item: ShowImageState.DisplayItem) async {
         isLoading = true
         errorText = nil
         loadedImage = nil
 
         do {
-            switch displayItem.source {
+            switch item.source {
             case .local(let path):
                 let fileURL = URL(fileURLWithPath: path)
                 guard let data = try? Data(contentsOf: fileURL),
@@ -169,6 +170,7 @@ struct ShowImagePreviewPanel: View {
                     isLoading = false
                     return
                 }
+                guard !Task.isCancelled else { return }
                 loadedImage = image
 
             case .remote(let urlString):
@@ -178,11 +180,13 @@ struct ShowImagePreviewPanel: View {
                     return
                 }
                 let (data, _) = try await URLSession.shared.data(from: url)
+                guard !Task.isCancelled else { return }
                 guard let image = NSImage(data: data) else {
                     errorText = PluginShowImageLocalization.string("无法解析图片数据")
                     isLoading = false
                     return
                 }
+                guard !Task.isCancelled else { return }
                 loadedImage = image
             }
         } catch {
