@@ -52,6 +52,7 @@ public final class ProjectsStore: @unchecked Sendable {
     public func saveProjects(_ projects: [Project]) {
         queue.async { [self] in
             self.persistProjectsToCurrentFile(projects: projects)
+            Self.postProjectsListDidChange()
         }
     }
 
@@ -67,6 +68,7 @@ public final class ProjectsStore: @unchecked Sendable {
             projects = Array(projects.prefix(Self.maxProjectsCount))
 
             self.persistProjectsToCurrentFile(projects: projects)
+            Self.postProjectsListDidChange()
         }
     }
 
@@ -76,6 +78,7 @@ public final class ProjectsStore: @unchecked Sendable {
             var projects = self.loadProjectsInternal()
             projects.removeAll { $0.id == project.id }
             self.persistProjectsToCurrentFile(projects: projects)
+            Self.postProjectsListDidChange()
         }
     }
 
@@ -178,5 +181,11 @@ public final class ProjectsStore: @unchecked Sendable {
     private func currentCorruptStateFileURL() -> URL {
         currentSettingsDirURL()
             .appendingPathComponent(Self.corruptStateFileName, isDirectory: false)
+    }
+
+    private static func postProjectsListDidChange() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .projectsListDidChange, object: nil)
+        }
     }
 }

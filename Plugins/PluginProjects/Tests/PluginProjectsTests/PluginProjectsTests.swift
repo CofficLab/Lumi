@@ -93,6 +93,50 @@ import Testing
     #expect(persisted.first?.path == project.path)
 }
 
+@Test func projectsStorePostsChangeNotificationAfterAddProject() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ProjectsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let probe = NotificationProbe()
+    let observer = NotificationCenter.default.addObserver(
+        forName: .projectsListDidChange,
+        object: nil,
+        queue: .main
+    ) { _ in
+        Task { @MainActor in
+            probe.received = true
+        }
+    }
+    defer { NotificationCenter.default.removeObserver(observer) }
+
+    let store = ProjectsStore(dbFolderURLProvider: { root })
+    store.addProject(name: "Lumi", path: "/tmp/Lumi")
+
+    let stateURL = root
+        .appendingPathComponent("Projects", isDirectory: true)
+        .appendingPathComponent("settings", isDirectory: true)
+        .appendingPathComponent("projects.json", isDirectory: false)
+    let projects = try await loadProjectsEventually(from: stateURL)
+    #expect(projects.first?.path == "/tmp/Lumi")
+    #expect(await probe.waitUntilReceived())
+}
+
+@MainActor
+private final class NotificationProbe {
+    var received = false
+
+    func waitUntilReceived() async -> Bool {
+        for _ in 0..<50 {
+            if received {
+                return true
+            }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return received
+    }
+}
+
 private func loadProjectsEventually(from stateURL: URL) async throws -> [Project] {
     for _ in 0..<50 {
         if let data = try? Data(contentsOf: stateURL),

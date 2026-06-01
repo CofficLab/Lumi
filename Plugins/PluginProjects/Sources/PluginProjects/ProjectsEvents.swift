@@ -7,6 +7,7 @@ extension Notification.Name {
     /// object: nil
     /// userInfo: ["projectName": String, "projectPath": String]
     public static let currentProjectDidChange = Notification.Name("CurrentProjectDidChange")
+    public static let projectsListDidChange = Notification.Name("ProjectsListDidChange")
     public static let applicationDidBecomeActive = Notification.Name("applicationDidBecomeActive")
     public static let windowStateShouldPersist = Notification.Name("windowStateShouldPersist")
 }

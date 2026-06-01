@@ -47,6 +47,9 @@ public struct ProjectsOverlay<Content: View>: View, SuperLog {
         .onCurrentProjectDidChange { name, path in
             handleCurrentProjectDidChange(name: name, path: path)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .projectsListDidChange)) { _ in
+            reloadRecentProjects()
+        }
         .onDisappear {
             restoreTask?.cancel()
             restoreTask = nil
@@ -80,6 +83,12 @@ extension ProjectsOverlay {
             syncProjectFromScopeIfNeeded()
             restoreTask = nil
         }
+    }
+
+    private func reloadRecentProjects() {
+        restoreTask?.cancel()
+        restoreTask = nil
+        restoreIfNeeded()
     }
 
     private func syncProjectFromScopeIfNeeded() {
