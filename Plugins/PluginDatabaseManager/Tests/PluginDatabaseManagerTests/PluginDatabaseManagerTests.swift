@@ -35,3 +35,22 @@ import DatabaseKit
     #expect(viewModel.errorMessage == nil)
     #expect(viewModel.queryResult?.rows == [[.integer(2)]])
 }
+
+@MainActor
+@Test func openSQLiteTableEscapesQuotedTableNames() async throws {
+    let viewModel = DatabaseViewModel()
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+
+    viewModel.queryText = "CREATE TABLE \"quoted\"\"table\" (id INTEGER);"
+    await viewModel.executeQuery()
+    await viewModel.loadSQLiteTables()
+
+    #expect(viewModel.sqliteTables.contains("quoted\"table"))
+
+    await viewModel.openSQLiteTable("quoted\"table")
+
+    #expect(viewModel.errorMessage == nil)
+    #expect(viewModel.queryText == "SELECT * FROM \"quoted\"\"table\" LIMIT 50;")
+    #expect(viewModel.queryResult?.columns == ["id"])
+}

@@ -230,8 +230,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     
     /// 打开指定 SQLite 表
     public func openSQLiteTable(_ name: String) async {
-        queryText = "SELECT * FROM \"\(name)\" LIMIT 50;"
+        queryText = "SELECT * FROM \(quotedSQLiteIdentifier(name)) LIMIT 50;"
         await executeQuery()
+    }
+
+    private func quotedSQLiteIdentifier(_ name: String) -> String {
+        "\"\(name.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
     
     private func initDemoData(configId: UUID) async throws {
