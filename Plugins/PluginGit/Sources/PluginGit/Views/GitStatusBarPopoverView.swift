@@ -87,7 +87,6 @@ public struct GitPluginPopoverView: View {
                 let branchName = createBranchName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !branchName.isEmpty else { return }
                 Task { await createBranch(named: branchName) }
-                createBranchName = ""
             }
         }
     }
@@ -427,9 +426,17 @@ public struct GitPluginPopoverView: View {
 
     private func createBranch(named name: String) async {
         let path = projectVM.currentProjectPath
+        do {
+            try GitBranchService.validateBranchName(name)
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+
         actionMessage = "Creating branch \(name)..."
         do {
             try GitBranchService.createBranch(name, at: path)
+            createBranchName = ""
             await refreshAll()
         } catch {
             errorMessage = error.localizedDescription

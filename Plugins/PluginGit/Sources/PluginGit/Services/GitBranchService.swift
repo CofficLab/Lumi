@@ -29,7 +29,38 @@ public enum GitBranchService {
 
     /// 创建新分支并切换
     public static func createBranch(_ name: String, at path: String) throws {
+        try validateBranchName(name)
         try LibGit2.checkoutNewBranch(named: name, at: path)
+    }
+
+    public static func validateBranchName(_ name: String) throws {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed == name, !name.isEmpty else {
+            throw GitError.invalidBranchName("Enter a branch name without leading or trailing whitespace.")
+        }
+        guard name != "@" else {
+            throw GitError.invalidBranchName("Branch name cannot be @.")
+        }
+        guard !name.hasPrefix("-") else {
+            throw GitError.invalidBranchName("Branch name cannot start with a dash.")
+        }
+        guard !name.hasPrefix("/") && !name.hasSuffix("/") && !name.contains("//") else {
+            throw GitError.invalidBranchName("Branch name cannot start, end, or repeat /.")
+        }
+        guard !name.hasSuffix(".") && !name.contains("..") && !name.contains("@{") else {
+            throw GitError.invalidBranchName("Branch name contains a reserved Git sequence.")
+        }
+
+        let forbiddenScalars = CharacterSet(charactersIn: " ~^:?*[\\")
+            .union(.controlCharacters)
+        guard name.unicodeScalars.allSatisfy({ !forbiddenScalars.contains($0) }) else {
+            throw GitError.invalidBranchName("Branch name contains characters Git does not allow.")
+        }
+
+        let components = name.split(separator: "/", omittingEmptySubsequences: false)
+        guard components.allSatisfy({ !$0.hasPrefix(".") && !$0.hasSuffix(".lock") }) else {
+            throw GitError.invalidBranchName("Branch path components cannot start with . or end with .lock.")
+        }
     }
 
     // MARK: - 工作区状态

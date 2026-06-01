@@ -35,6 +35,42 @@ import Testing
     }
 }
 
+@Test func validateBranchNameAcceptsCommonGitNames() throws {
+    try GitBranchService.validateBranchName("feature/editor-refresh")
+    try GitBranchService.validateBranchName("bugfix/issue-123")
+    try GitBranchService.validateBranchName("release_2026.06")
+}
+
+@Test func validateBranchNameRejectsInvalidGitNames() {
+    let invalidNames = [
+        "",
+        " feature",
+        "feature ",
+        "-feature",
+        "/feature",
+        "feature/",
+        "feature//editor",
+        "feature..editor",
+        "feature@{editor",
+        "feature.lock",
+        "feature/.hidden",
+        "feature/editor.lock",
+        "feature editor",
+        "feature:editor",
+        "feature?editor",
+        "feature*editor",
+        "feature[editor",
+        #"feature\editor"#,
+        "@"
+    ]
+
+    for name in invalidNames {
+        #expect(throws: GitError.self) {
+            try GitBranchService.validateBranchName(name)
+        }
+    }
+}
+
 @Test func remoteDisplayNamePreservesSpacesInLocalRemotePath() {
     let remote = GitCommitDetailService.parseRemoteDisplayName(from: "origin\t/tmp/My Repo.git (fetch)\norigin\t/tmp/My Repo.git (push)")
 

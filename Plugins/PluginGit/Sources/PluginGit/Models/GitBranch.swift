@@ -7,6 +7,7 @@ public enum GitError: LocalizedError {
     case createBranchFailed(String)
     case fetchFailed(String)
     case dirtyWorkingTree
+    case invalidBranchName(String)
     case unknown(String)
 
     public var errorDescription: String? {
@@ -21,6 +22,8 @@ public enum GitError: LocalizedError {
             return String(localized: "Fetch Failed: ", table: "GitPlugin") + msg
         case .dirtyWorkingTree:
             return String(localized: "Working tree has uncommitted changes", table: "GitPlugin")
+        case .invalidBranchName(let msg):
+            return String(localized: "Invalid Branch Name: ", table: "GitPlugin") + msg
         case .unknown(let msg):
             return msg
         }
