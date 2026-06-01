@@ -143,6 +143,7 @@ struct LocalModelRow: View {
                 }
             }
         }
+        .onTapGesture(perform: onSelect)
         .animation(.easeInOut(duration: 0.22), value: isLoading)
     }
 

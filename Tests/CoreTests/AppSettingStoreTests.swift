@@ -15,6 +15,8 @@ final class AppSettingStoreTests: XCTestCase {
 
         XCTAssertTrue(AppSettingStore.savePluginEnabled("PluginA", enabled: false))
         XCTAssertTrue(AppSettingStore.saveRemoteProviderModel(providerId: "provider", modelId: "model-a"))
+        XCTAssertTrue(AppSettingStore.saveSelectedLocalProviderId("local-provider"))
+        XCTAssertTrue(AppSettingStore.saveLocalProviderModel(providerId: "local-provider", modelId: "local-model-a"))
         XCTAssertTrue(AppSettingStore.saveEditorRecentCommandIDs(["open", "search"]))
 
         AppSettingStore.resetTestingConfiguration()
@@ -22,6 +24,8 @@ final class AppSettingStoreTests: XCTestCase {
 
         XCTAssertEqual(AppSettingStore.loadPluginEnabled("PluginA"), false)
         XCTAssertEqual(AppSettingStore.loadRemoteProviderModel(providerId: "provider"), "model-a")
+        XCTAssertEqual(AppSettingStore.loadSelectedLocalProviderId(), "local-provider")
+        XCTAssertEqual(AppSettingStore.loadLocalProviderModel(providerId: "local-provider"), "local-model-a")
         XCTAssertEqual(AppSettingStore.loadEditorRecentCommandIDs(), ["open", "search"])
     }
 

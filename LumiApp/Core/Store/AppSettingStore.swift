@@ -293,6 +293,53 @@ enum AppSettingStore {
         return set(modelsDict, forKey: remoteProviderModelsKey)
     }
 
+    // MARK: - Local Provider
+
+    private static let selectedLocalProviderIdKey = "App_SelectedLocalProviderId"
+    private static let localProviderModelsKey = "App_LocalProviderModels"
+
+    /// 加载上次选中的本地供应商 ID
+    static func loadSelectedLocalProviderId() -> String? {
+        object(forKey: selectedLocalProviderIdKey) as? String
+    }
+
+    /// 保存选中的本地供应商 ID
+    /// - Parameter id: 供应商 ID，为 nil 时清除保存的值
+    @discardableResult
+    static func saveSelectedLocalProviderId(_ id: String?) -> Bool {
+        set(id, forKey: selectedLocalProviderIdKey)
+    }
+
+    /// 加载指定本地供应商的默认模型
+    /// - Parameter providerId: 供应商 ID
+    /// - Returns: 保存的模型 ID，如果没有则返回 nil
+    static func loadLocalProviderModel(providerId: String) -> String? {
+        guard let modelsDict = object(forKey: localProviderModelsKey) as? [String: String] else {
+            return nil
+        }
+        return modelsDict[providerId]
+    }
+
+    /// 保存指定本地供应商的默认模型
+    /// - Parameters:
+    ///   - providerId: 供应商 ID
+    ///   - modelId: 模型 ID
+    @discardableResult
+    static func saveLocalProviderModel(providerId: String, modelId: String?) -> Bool {
+        var modelsDict: [String: String] = [:]
+        if let existing = object(forKey: localProviderModelsKey) as? [String: String] {
+            modelsDict = existing
+        }
+
+        if let modelId {
+            modelsDict[providerId] = modelId
+        } else {
+            modelsDict.removeValue(forKey: providerId)
+        }
+
+        return set(modelsDict, forKey: localProviderModelsKey)
+    }
+
     // MARK: - Last Selected Model
 
     private static let lastSelectedProviderIdKey = "App_LastSelectedProviderId"

@@ -40,10 +40,6 @@ struct LocalProviderSettingsView: View {
 
     @EnvironmentObject private var registry: LLMProviderRegistry
 
-    // MARK: - Constants
-
-    private static let selectedLocalProviderKey = "LocalProviderSettingsView.selectedProviderId"
-
     // MARK: - Computed
 
     /// 所有本地供应商（过滤掉非本地的）
@@ -86,6 +82,7 @@ struct LocalProviderSettingsView: View {
         .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
             updateLocalProvider()
+            saveSelectedProviderId(selectedProviderId)
         }
     }
 }
@@ -175,10 +172,23 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 加载当前供应商的设置信息（选中的模型）
     private func loadSettings() {
+        guard selectedProviderId.isEmpty == false else { return }
+        selectedModel = AppSettingStore.loadLocalProviderModel(providerId: selectedProviderId) ?? ""
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
+        guard selectedProviderId.isEmpty == false else { return }
+        AppSettingStore.saveLocalProviderModel(
+            providerId: selectedProviderId,
+            modelId: selectedModel.isEmpty ? nil : selectedModel
+        )
+    }
+
+    /// 保存选中的本地供应商 ID 到持久化存储
+    private func saveSelectedProviderId(_ id: String) {
+        guard id.isEmpty == false else { return }
+        AppSettingStore.saveSelectedLocalProviderId(id)
     }
 
     /// 根据当前选中的供应商 ID 更新本地供应商引用
@@ -262,7 +272,12 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 视图出现时的事件处理 - 加载仅本地供应商的设置
     func onAppear() {
-        selectedProviderId = localProviders.first?.id ?? ""
+        if let savedId = AppSettingStore.loadSelectedLocalProviderId(),
+           localProviders.contains(where: { $0.id == savedId }) {
+            selectedProviderId = savedId
+        } else {
+            selectedProviderId = localProviders.first?.id ?? ""
+        }
         loadSettings()
         updateLocalProvider()
     }

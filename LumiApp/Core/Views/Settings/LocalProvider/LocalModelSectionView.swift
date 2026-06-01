@@ -60,7 +60,7 @@ struct LocalModelSectionView: View {
                                 LocalModelRow(
                                     model: model,
                                     isCached: true,
-                                    isSelected: false,
+                                    isSelected: selectedModel == model.id,
                                     isDownloading: false,
                                     downloadStatus: nil,
                                     isDownloadDisabled: false,
@@ -68,7 +68,10 @@ struct LocalModelSectionView: View {
                                     hasAnyModelLoaded: loadedModelId != nil,
                                     isLoading: loadingModelId == model.id,
                                     isLoadDisabled: loadingModelId != nil,
-                                    onSelect: { },
+                                    onSelect: {
+                                        selectedModel = model.id
+                                        onSaveModel()
+                                    },
                                     onDownload: { },
                                     onLoad: { Task { await onLoad(model.id) } },
                                     onUnload: { Task { await onUnload() } }
@@ -172,7 +175,7 @@ struct LocalModelSectionView: View {
                         LocalModelRow(
                             model: model,
                             isCached: isCached,
-                            isSelected: false,
+                            isSelected: selectedModel == model.id,
                             isDownloading: downloadingModelId == model.id,
                             downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
                             isDownloadDisabled: downloadingModelId != nil,
@@ -180,7 +183,10 @@ struct LocalModelSectionView: View {
                             hasAnyModelLoaded: loadedModelId != nil,
                             isLoading: loadingModelId == model.id,
                             isLoadDisabled: loadingModelId != nil,
-                            onSelect: { },
+                            onSelect: {
+                                selectedModel = model.id
+                                onSaveModel()
+                            },
                             onDownload: { Task { await onDownload(model.id) } },
                             onLoad: { Task { await onLoad(model.id) } },
                             onUnload: { Task { await onUnload() } }
