@@ -1001,22 +1001,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
                     if Self.verbose {
                                             Self.logger.info("\(Self.t)✅ onEntryLoaded 成功：\(message ?? "nil")")
                     }
-                    if case let .loading(path) = self.entryStatus {
-                        let title = (path as NSString).lastPathComponent
-                        self.entryStatus = .loaded(path: path, title: title)
-                        self.schedulePostLoadFrameDiagnostics(
-                            fingerprint: self.lastLoadedFingerprint ?? "callback",
-                            title: title,
-                            frameSeqAtLoad: self.lastFrameSeq,
-                            frameCountAtLoad: self.receivedFrameCount
-                        )
+                    // loadDylib 的 await 路径带有 generation 校验；这个回调没有来源标识，
+                    // 只作为诊断信号，避免旧 dylib 回调覆盖当前文件/构建状态。
+                    if case .loaded = self.entryStatus {
+                        self.entryDebugState = nil
                     }
-                    self.entryDebugState = nil
                 } else {
                     if Self.verbose {
                                             Self.logger.error("\(Self.t)❌ onEntryLoaded 失败：\(message ?? "nil")")
                     }
-                    self.failEntry(kind: .dylibLoad, message: message ?? "unknown")
                 }
             }
         }
