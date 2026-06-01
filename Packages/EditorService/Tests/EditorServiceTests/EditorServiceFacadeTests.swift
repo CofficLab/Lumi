@@ -149,6 +149,26 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertTrue(service.hasUnsavedChanges)
     }
 
+    func testClearingEditorInvalidatesPendingFileLoads() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("StaleLoad.swift")
+        try "struct StaleLoad {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        service.loadFile(from: fileURL)
+        service.loadFile(from: nil)
+
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertNil(service.currentFileURL)
+        XCTAssertNil(service.content)
+        XCTAssertFalse(service.isFileLoadInProgress)
+    }
+
     private func waitUntil(
         _ description: String,
         timeout: TimeInterval = 2,

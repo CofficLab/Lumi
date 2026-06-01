@@ -123,6 +123,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private let sessionSyncGate = SessionSyncGate()
     private var isRestoringUndoState = false
+    private let fileLoadRequestGeneration = RequestGeneration()
     let referencesRequestGeneration = RequestGeneration()
     let workspaceSearchRequestGeneration = RequestGeneration()
     private let editorUndoManager = EditorUndoManager()
@@ -1654,6 +1655,7 @@ public final class EditorState: ObservableObject, SuperLog {
         saveController.cancelSuccessClear()
         
         guard let url = url else {
+            fileLoadRequestGeneration.invalidate()
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
             if Self.verbose {
@@ -1665,6 +1667,7 @@ public final class EditorState: ObservableObject, SuperLog {
         
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
+            fileLoadRequestGeneration.invalidate()
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
             if Self.verbose {
@@ -1675,6 +1678,7 @@ public final class EditorState: ObservableObject, SuperLog {
         }
         
         let loadingURL = url
+        let loadGeneration = fileLoadRequestGeneration.next()
         isFileLoadInProgress = true
         fileLoadErrorMessage = nil
         logger.info("\(self.t)loadFile: 开始加载 url=\(loadingURL.path), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
@@ -1689,6 +1693,7 @@ public final class EditorState: ObservableObject, SuperLog {
                 
                 await MainActor.run { [weak self] in
                     guard let self else { return }
+                    guard self.fileLoadRequestGeneration.isCurrent(loadGeneration) else { return }
                     let standardizedLoadingURL = loadingURL.standardizedFileURL
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
@@ -1788,9 +1793,11 @@ public final class EditorState: ObservableObject, SuperLog {
                                     self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
                 }
                 await MainActor.run { [weak self] in
-                    self?.isFileLoadInProgress = false
-                    self?.fileLoadErrorMessage = error.localizedDescription
-                    self?.resetState()
+                    guard let self else { return }
+                    guard self.fileLoadRequestGeneration.isCurrent(loadGeneration) else { return }
+                    self.isFileLoadInProgress = false
+                    self.fileLoadErrorMessage = error.localizedDescription
+                    self.resetState()
                 }
             }
         }
