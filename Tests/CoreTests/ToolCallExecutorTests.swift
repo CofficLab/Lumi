@@ -12,5 +12,12 @@ final class ToolCallExecutorTests: XCTestCase {
         XCTAssertFalse(ToolCallExecutor.isToolErrorOutput("Completed without errors"))
         XCTAssertFalse(ToolCallExecutor.isToolErrorOutput("stderr: error count 0"))
     }
+
+    func testUserRejectedToolResultIsMarkedAsError() {
+        let result = ToolCallExecutor.userRejectedToolResult()
+
+        XCTAssertEqual(result.content, "用户拒绝执行此工具")
+        XCTAssertTrue(result.isError)
+    }
 }
 #endif

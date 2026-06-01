@@ -12,6 +12,10 @@ final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
     nonisolated static let verbose: Bool = true
 
+    nonisolated static func userRejectedToolResult() -> ToolCallResult {
+        ToolCallResult(content: "用户拒绝执行此工具", isError: true)
+    }
+
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
     private let permissionRequestVM: WindowPermissionRequestVM
@@ -143,7 +147,7 @@ final class ToolCallExecutor: SuperLog {
 
             if toolCall.authorizationState == .userRejected {
                 hadUserRejection = true
-                updatedCalls[index].result = ToolCallResult(content: "用户拒绝执行此工具")
+                updatedCalls[index].result = Self.userRejectedToolResult()
                 continue
             }
 
