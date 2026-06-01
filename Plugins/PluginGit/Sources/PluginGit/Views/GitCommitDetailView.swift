@@ -43,6 +43,12 @@ public struct GitCommitDetailView: View {
     /// 当前加载任务
     @State private var loadTask: Task<Void, Never>?
 
+    /// 当前内容加载批次。用于丢弃项目或 commit 切换后的旧结果。
+    @State private var loadGeneration: Int = 0
+
+    /// 当前 diff 加载批次。用于丢弃文件切换后的旧结果。
+    @State private var diffGeneration: Int = 0
+
     /// 未提交变更文件列表
     @State private var uncommittedFiles: [GitChangedFile] = []
 
@@ -85,12 +91,19 @@ public struct GitCommitDetailView: View {
             handleSelectionChange()
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
+            loadTask?.cancel()
+            diffTask?.cancel()
+            loadGeneration += 1
+            diffGeneration += 1
             commitDetail = nil
             errorMessage = nil
             uncommittedFiles = []
             selectedFile = nil
             oldText = ""
             newText = ""
+            loading = false
+            loadingDiff = false
+            loadingWorkingState = false
             projectGitInfo = nil
             handleSelectionChange()
         }
@@ -623,15 +636,20 @@ public struct GitCommitDetailView: View {
     private func loadWorkingState() {
         let path = projectVM.currentProjectPath
         guard !path.isEmpty else {
+            loadTask?.cancel()
+            loadGeneration += 1
             uncommittedFiles = []
             loadingWorkingState = false
             projectGitInfo = nil
             return
         }
 
+        loadTask?.cancel()
+        loadGeneration += 1
+        let generation = loadGeneration
         loadingWorkingState = true
 
-        Task {
+        loadTask = Task {
             async let filesTask: [GitChangedFile] = {
                 do {
                     return try await GitCommitDetailService.loadUncommittedFiles(path: path)
@@ -646,6 +664,12 @@ public struct GitCommitDetailView: View {
 
             let files = await filesTask
             let info = await infoTask
+
+            if Task.isCancelled { return }
+
+            guard self.loadGeneration == generation,
+                  self.projectVM.currentProjectPath == path,
+                  self.gitVM.selectedCommitHash == nil else { return }
 
             self.uncommittedFiles = files
             self.loadingWorkingState = false
@@ -666,6 +690,8 @@ public struct GitCommitDetailView: View {
         let path = projectVM.currentProjectPath
 
         guard let hash = hash, !path.isEmpty else {
+            loadTask?.cancel()
+            loadGeneration += 1
             commitDetail = nil
             commitChangedFiles = []
             loading = false
@@ -674,6 +700,8 @@ public struct GitCommitDetailView: View {
         }
 
         loadTask?.cancel()
+        loadGeneration += 1
+        let generation = loadGeneration
         loading = true
         errorMessage = nil
 
@@ -686,7 +714,9 @@ public struct GitCommitDetailView: View {
 
                 if Task.isCancelled { return }
 
-                guard self.gitVM.selectedCommitHash == hash else { return }
+                guard self.loadGeneration == generation,
+                      self.projectVM.currentProjectPath == path,
+                      self.gitVM.selectedCommitHash == hash else { return }
                 self.commitDetail = detail
                 self.commitChangedFiles = files
                 self.loading = false
@@ -694,6 +724,9 @@ public struct GitCommitDetailView: View {
             } catch {
                 if Task.isCancelled { return }
 
+                guard self.loadGeneration == generation,
+                      self.projectVM.currentProjectPath == path,
+                      self.gitVM.selectedCommitHash == hash else { return }
                 self.commitDetail = nil
                 self.commitChangedFiles = []
                 self.loading = false
@@ -709,14 +742,17 @@ public struct GitCommitDetailView: View {
     /// 加载选中文件的 diff 内容
     private func loadFileDiff(file: String?) {
         diffTask?.cancel()
+        diffGeneration += 1
 
         guard let file = file,
               !projectVM.currentProjectPath.isEmpty else {
             oldText = ""
             newText = ""
+            loadingDiff = false
             return
         }
 
+        let generation = diffGeneration
         loadingDiff = true
 
         let path = projectVM.currentProjectPath
@@ -733,7 +769,10 @@ public struct GitCommitDetailView: View {
                 if Task.isCancelled { return }
 
                 await MainActor.run {
-                    guard self.selectedFile == file else { return }
+                    guard self.diffGeneration == generation,
+                          self.selectedFile == file,
+                          self.projectVM.currentProjectPath == path,
+                          self.gitVM.selectedCommitHash == hash else { return }
                     self.oldText = before
                     self.newText = after
                     self.loadingDiff = false
@@ -742,6 +781,10 @@ public struct GitCommitDetailView: View {
                 if Task.isCancelled { return }
 
                 await MainActor.run {
+                    guard self.diffGeneration == generation,
+                          self.selectedFile == file,
+                          self.projectVM.currentProjectPath == path,
+                          self.gitVM.selectedCommitHash == hash else { return }
                     self.oldText = ""
                     self.newText = ""
                     self.loadingDiff = false
