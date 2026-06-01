@@ -697,7 +697,7 @@ extension AgentTurnService {
     /// 从 Error 中提取原始 HTTP 错误详情（状态码 + 响应体），用于 UI 折叠展示。
     private static func extractRawErrorDetail(from error: Error) -> String? {
         if let llmError = error as? LLMServiceError,
-           case let .requestFailed(message, statusCode) = llmError,
+           case let .requestFailed(_, statusCode) = llmError,
            let statusCode {
             return "HTTP \(statusCode)"
         }
