@@ -113,17 +113,20 @@ enum SplitViewFinder {
 /// }
 /// ```
 struct SplitViewWidthPersistence: NSViewRepresentable {
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
+
     let storageKey: String
     /// 控制第几个子视图的比例（默认 0，向后兼容）
     var columnIndex: Int = 0
 
     func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
-        SplitViewWidthPersistenceView(storageKey: storageKey, columnIndex: columnIndex)
+        SplitViewWidthPersistenceView(storageKey: storageKey, columnIndex: columnIndex, layoutVM: layoutVM)
     }
 
     func updateNSView(_ nsView: SplitViewWidthPersistenceView, context: Context) {
         nsView.storageKey = storageKey
         nsView.columnIndex = columnIndex
+        nsView.layoutVM = layoutVM
         nsView.attachIfNeeded()
     }
 
@@ -137,6 +140,7 @@ final class SplitViewWidthPersistenceView: NSView {
 
     var storageKey: String
     var columnIndex: Int
+    weak var layoutVM: WindowLayoutVM?
     private var observedSplitView: NSSplitView?
     private var resizeObserver: NSObjectProtocol?
     private var didApplySavedValue = false
@@ -147,9 +151,10 @@ final class SplitViewWidthPersistenceView: NSView {
     /// 所有栏的最小保护尺寸
     static let minimumColumnSize: CGFloat = 48
 
-    init(storageKey: String, columnIndex: Int = 0) {
+    init(storageKey: String, columnIndex: Int = 0, layoutVM: WindowLayoutVM?) {
         self.storageKey = storageKey
         self.columnIndex = columnIndex
+        self.layoutVM = layoutVM
         super.init(frame: .zero)
     }
 
@@ -222,8 +227,8 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        // 从 WindowLayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
-        let savedRatio = RootContainer.shared.layoutVM.layoutRatios[storageKey]
+        // 从当前窗口的 WindowLayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
+        let savedRatio = layoutVM?.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             scheduleApplyRetry()
             return
@@ -290,8 +295,8 @@ final class SplitViewWidthPersistenceView: NSView {
         let ratio = columnSizeValue / usableSize
         guard ratio > 0.0, ratio < 1.0 else { return }
 
-        // 写入 WindowLayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
-        RootContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
+        // 写入当前窗口的 WindowLayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
+        layoutVM?.setLayoutRatio(ratio, forKey: storageKey)
     }
 
     // MARK: - Size Helpers
