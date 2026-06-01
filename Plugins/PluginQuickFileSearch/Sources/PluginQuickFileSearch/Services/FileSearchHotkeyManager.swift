@@ -16,6 +16,9 @@ public final class FileSearchHotkeyManager: ObservableObject {
     /// 搜索框是否可见
     @Published private(set) var isOverlayVisible: Bool = false
 
+    /// 当前应显示搜索框的窗口 ID
+    @Published private(set) var targetWindowId: UUID?
+
     // MARK: - Private Properties
 
     private var eventMonitor: Any?
@@ -49,8 +52,9 @@ public final class FileSearchHotkeyManager: ObservableObject {
     }
 
     /// 显示搜索框
-    public func showOverlay() {
+    public func showOverlay(windowId: UUID?) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            targetWindowId = windowId
             isOverlayVisible = true
         }
     }
@@ -59,6 +63,7 @@ public final class FileSearchHotkeyManager: ObservableObject {
     public func hideOverlay() {
         withAnimation(.easeOut(duration: 0.2)) {
             isOverlayVisible = false
+            targetWindowId = nil
         }
     }
 
@@ -67,8 +72,14 @@ public final class FileSearchHotkeyManager: ObservableObject {
         if self.isOverlayVisible {
             hideOverlay()
         } else {
-            showOverlay()
+            showOverlay(windowId: QuickFileSearchBridge.activeWindowIdProvider?())
         }
+    }
+
+    public func isOverlayVisible(for windowId: UUID?) -> Bool {
+        guard isOverlayVisible else { return false }
+        guard let targetWindowId else { return true }
+        return windowId == targetWindowId
     }
 
     // MARK: - Private Methods

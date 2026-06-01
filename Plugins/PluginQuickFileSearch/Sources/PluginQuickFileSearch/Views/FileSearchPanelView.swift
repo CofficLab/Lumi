@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 import LumiUI
 import AppKit
 
@@ -6,6 +7,7 @@ import AppKit
 ///
 /// 悬浮在应用主界面之上的文件搜索框
 public struct FileSearchPanelView: View {
+    @EnvironmentObject private var conversationVM: WindowConversationVM
     @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
     @StateObject private var searchService = FileSearchService.shared
 
@@ -167,7 +169,7 @@ public struct FileSearchPanelView: View {
         guard index >= 0 && index < searchService.searchResults.count else { return }
 
         let result = searchService.searchResults[index]
-        searchService.selectFile(result)
+        searchService.selectFile(result, windowId: conversationVM.windowId)
         hotkeyManager.hideOverlay()
     }
 

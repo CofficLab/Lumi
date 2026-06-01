@@ -89,12 +89,12 @@ public final class FileSearchService: ObservableObject, SuperLog {
     }
 
     /// 选择文件并更新 WindowProjectVM
-    public func selectFile(_ result: FileResult) {
+    public func selectFile(_ result: FileResult, windowId: UUID? = nil) {
         if Self.verbose {
             QuickFileSearchPlugin.logger.info("\(Self.t)📄 选择文件: \(result.relativePath)")
         }
 
-        QuickFileSearchBridge.selectFileHandler?(result.path)
+        QuickFileSearchBridge.selectFileHandler?(result.path, windowId)
 
         // 清空搜索查询
         searchQuery = ""

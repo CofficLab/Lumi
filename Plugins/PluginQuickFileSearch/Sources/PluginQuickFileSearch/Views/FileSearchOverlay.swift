@@ -8,6 +8,7 @@ import LumiUI
 /// 监听项目变化和快捷键事件，在原有内容上叠加搜索框
 public struct FileSearchOverlay<Content: View>: View {
     @EnvironmentObject private var projectContext: PluginProjectContext
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     /// 热键管理器
     @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
@@ -23,7 +24,7 @@ public struct FileSearchOverlay<Content: View>: View {
             content
 
             // 悬浮搜索框
-            if hotkeyManager.isOverlayVisible {
+            if hotkeyManager.isOverlayVisible(for: conversationVM.windowId) {
                 FileSearchPanelView()
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .zIndex(999)
@@ -37,6 +38,10 @@ public struct FileSearchOverlay<Content: View>: View {
         }
         .onChange(of: searchService.searchQuery) { _, _ in
             searchService.onSearchQueryChanged()
+        }
+        .onChange(of: hotkeyManager.targetWindowId) { _, targetWindowId in
+            guard targetWindowId == conversationVM.windowId else { return }
+            handleOnAppear()
         }
     }
 }

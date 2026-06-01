@@ -415,10 +415,13 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginQuickFileSearchBridge() {
-        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { [container] path in
+        PluginQuickFileSearch.QuickFileSearchBridge.activeWindowIdProvider = { [container] in
+            container.windowManagerVM.activeWindowId
+        }
+        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { [container] path, windowId in
             NotificationCenter.postSyncSelectedFile(
                 path: path,
-                windowId: container.windowManagerVM.activeWindowId
+                windowId: windowId ?? container.windowManagerVM.activeWindowId
             )
         }
     }

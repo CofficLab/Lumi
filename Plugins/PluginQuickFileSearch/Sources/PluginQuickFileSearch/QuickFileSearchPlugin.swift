@@ -7,7 +7,8 @@ import LumiUI
 import os
 
 public enum QuickFileSearchBridge {
-    public nonisolated(unsafe) static var selectFileHandler: (@MainActor (String) -> Void)?
+    public nonisolated(unsafe) static var activeWindowIdProvider: (@MainActor () -> UUID?)?
+    public nonisolated(unsafe) static var selectFileHandler: (@MainActor (String, UUID?) -> Void)?
 }
 
 /// Quick File Search Plugin: 快速文件搜索插件
