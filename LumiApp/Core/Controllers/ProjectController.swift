@@ -29,7 +29,41 @@ final class ProjectController: ObservableObject, SuperLog {
     // MARK: - Private
 
     private func handleProjectSwitch(path: String) async {
+        guard let projectURL = Self.existingDirectoryURL(path: path) else {
+            if Self.verbose {
+                AppLogger.core.warning("\(Self.t)忽略无效项目路径: \(path)")
+            }
+            return
+        }
 
+        let normalizedPath = projectURL.path
+        if windowContainer.projectVM.currentProjectPath != normalizedPath {
+            windowContainer.projectVM.switchProject(
+                to: Project(
+                    name: projectURL.lastPathComponent,
+                    path: normalizedPath,
+                    lastUsed: Date()
+                ),
+                reason: "projectContextRequest"
+            )
+        }
+
+        await applyProjectContext(path: normalizedPath)
+    }
+
+    static func existingDirectoryURL(path: String, fileManager: FileManager = .default) -> URL? {
+        let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPath.isEmpty else { return nil }
+
+        let expandedPath = (trimmedPath as NSString).expandingTildeInPath
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: expandedPath, isDirectory: true).standardizedFileURL
     }
 
     private func handleProjectClear() async {

@@ -5,6 +5,30 @@ import XCTest
 
 final class AppWindowManagerVMTests: XCTestCase {
     @MainActor
+    func testProjectControllerDirectoryResolutionRejectsInvalidProjectPaths() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiProjectController-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = tempRoot.appendingPathComponent("Project", isDirectory: true)
+        let fileURL = tempRoot.appendingPathComponent("file.txt", isDirectory: false)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        XCTAssertTrue(FileManager.default.createFile(atPath: fileURL.path, contents: Data()))
+
+        XCTAssertEqual(
+            ProjectController.existingDirectoryURL(path: projectURL.path)?.path,
+            projectURL.standardizedFileURL.path
+        )
+        XCTAssertEqual(
+            ProjectController.existingDirectoryURL(path: "  \(projectURL.path)  ")?.path,
+            projectURL.standardizedFileURL.path
+        )
+        XCTAssertNil(ProjectController.existingDirectoryURL(path: fileURL.path))
+        XCTAssertNil(ProjectController.existingDirectoryURL(path: tempRoot.appendingPathComponent("Missing").path))
+        XCTAssertNil(ProjectController.existingDirectoryURL(path: "   "))
+    }
+
+    @MainActor
     func testAssociateWindowIsIdempotentForCloseNotification() {
         let manager = AppWindowManagerVM()
         let window = NSWindow()
