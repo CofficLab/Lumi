@@ -62,6 +62,7 @@ public final class EditorSaveController {
 
         await applyDeferredSaveActions(
             prepared.deferredActions,
+            shouldContinue: { currentFileURL() == requestFileURL },
             currentText: currentText,
             diagnostics: diagnostics,
             requestCodeActions: requestCodeActions,
@@ -70,6 +71,7 @@ public final class EditorSaveController {
             applyWorkspaceEdit: applyWorkspaceEdit
         )
 
+        guard currentFileURL() == requestFileURL else { return }
         let finalContent = currentText() ?? prepared.text
         performSave(finalContent, requestFileURL)
     }
@@ -141,6 +143,7 @@ public final class EditorSaveController {
 
     private func applyDeferredSaveActions(
         _ actions: [EditorDeferredSaveAction],
+        shouldContinue: @escaping @MainActor () -> Bool,
         currentText: @escaping @MainActor () -> String?,
         diagnostics: @escaping @MainActor () -> [Diagnostic],
         requestCodeActions: @escaping @MainActor (_ range: LSPRange, _ diagnostics: [Diagnostic], _ triggerKinds: [CodeActionKind]) async -> [CodeAction],
@@ -149,12 +152,14 @@ public final class EditorSaveController {
         applyWorkspaceEdit: @escaping @MainActor (_ edit: WorkspaceEdit) -> Void
     ) async {
         guard actions.isEmpty == false else { return }
+        guard shouldContinue() else { return }
         guard let currentText = currentText() else { return }
         let requestedKinds = codeActionKinds(for: actions)
         guard !requestedKinds.isEmpty else { return }
 
         let range = fullDocumentRange(for: currentText)
         let codeActions = await requestCodeActions(range, diagnostics(), requestedKinds)
+        guard shouldContinue() else { return }
         guard !codeActions.isEmpty else { return }
 
         for action in codeActions {
@@ -163,6 +168,7 @@ public final class EditorSaveController {
                let resolvedAction = await resolveCodeAction(resolved) {
                 resolved = resolvedAction
             }
+            guard shouldContinue() else { return }
             guard let edit = resolved.edit else { continue }
             applyWorkspaceEdit(edit)
         }

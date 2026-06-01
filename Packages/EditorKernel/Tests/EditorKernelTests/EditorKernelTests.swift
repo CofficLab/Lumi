@@ -406,9 +406,61 @@ struct EditorKernelTests {
             }
         )
 
-        try? await Task.sleep(for: .milliseconds(50))
-        #expect(cleared == true)
+        #expect(await eventually { cleared })
         controller.cancelSuccessClear()
+    }
+
+    @Test
+    @MainActor
+    func saveControllerStopsWhenCurrentFileChangesDuringDeferredActions() async {
+        let controller = EditorSaveController()
+        let originalURL = URL(fileURLWithPath: "/tmp/Original.swift")
+        let switchedURL = URL(fileURLWithPath: "/tmp/Other.swift")
+        var currentURL = originalURL
+        var currentText = "original"
+        var appliedWorkspaceEdit = false
+        var savedContent: String?
+        var savedURL: URL?
+
+        await controller.prepareAndSaveNow(
+            currentContent: "original",
+            fileURL: originalURL,
+            options: .init(
+                textParticipants: .init(trimTrailingWhitespace: false, insertFinalNewline: false),
+                formatOnSave: false,
+                organizeImportsOnSave: true,
+                fixAllOnSave: false
+            ),
+            tabSize: 4,
+            insertSpaces: true,
+            currentFileURL: { currentURL },
+            prepareFormatting: { _, _, _ in nil },
+            applyPreparedSaveText: { currentText = $0 },
+            currentText: { currentText },
+            diagnostics: { [] },
+            requestCodeActions: { _, _, _ in
+                currentURL = switchedURL
+                currentText = "other file text"
+                return [
+                    CodeAction(
+                        title: "Organize Imports",
+                        kind: .SourceOrganizeImports,
+                        edit: WorkspaceEdit(changes: [:], documentChanges: nil)
+                    )
+                ]
+            },
+            resolveCodeAction: { $0 },
+            isCodeActionResolveSupported: false,
+            applyWorkspaceEdit: { _ in appliedWorkspaceEdit = true },
+            performSave: { content, url in
+                savedContent = content
+                savedURL = url
+            }
+        )
+
+        #expect(appliedWorkspaceEdit == false)
+        #expect(savedContent == nil)
+        #expect(savedURL == nil)
     }
 
     @Test
@@ -3051,8 +3103,7 @@ struct EditorKernelTests {
             }
         )
 
-        try? await Task.sleep(for: .milliseconds(80))
-        #expect(await applied.values == [2])
+        #expect(await eventually { await applied.values == [2] })
 
         let resetLifecycle = LSPRequestLifecycle()
         let resetApplied = AppliedRecorder()
@@ -3076,8 +3127,7 @@ struct EditorKernelTests {
             }
         )
 
-        try? await Task.sleep(for: .milliseconds(80))
-        #expect(await resetApplied.values == [2])
+        #expect(await eventually { await resetApplied.values == [2] })
     }
 
     @Test
@@ -3365,6 +3415,21 @@ struct EditorKernelTests {
         #expect(text.getLastLines(2) == "three\nfour")
         #expect(text.getFirstLines(10) == nil)
         #expect(text.getLastLines(10) == nil)
+    }
+
+    @MainActor
+    private func eventually(
+        timeout: TimeInterval = 1,
+        condition: @MainActor () async -> Bool
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await condition() {
+                return true
+            }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return await condition()
     }
 
     private static func isRipgrepAvailable() -> Bool {
