@@ -88,8 +88,10 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
         case .success(let urls):
             if let url = urls.first {
                 guard url.startAccessingSecurityScopedResource() else { return }
-                let path = url.path
-                let project = Project(name: url.lastPathComponent, path: path)
+                let standardizedURL = url.standardizedFileURL
+                let project = Project(name: standardizedURL.lastPathComponent, path: standardizedURL.path)
+                store.addProject(name: project.name, path: project.path)
+                recentProjectsVM.addProject(project)
                 Task { @MainActor in
                     projectVM.switchProject(to: project, reason: "projectDropdownSelect")
                     isPresented = false
