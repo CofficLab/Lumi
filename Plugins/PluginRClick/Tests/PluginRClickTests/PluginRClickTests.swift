@@ -62,6 +62,56 @@ import Foundation
     #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == .default)
 }
 
+@MainActor
+@Test func addTemplateRejectsUnsafeNameAndExtension() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigManager-TemplateValidation-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let manager = RClickConfigManager(
+        appGroupConfigFileURL: directory.appending(path: RClickConfigManager.sharedConfigFilename),
+        store: RClickPluginLocalStore(pluginDirectory: directory.appending(path: "LocalStore"))
+    )
+    let initialTemplates = manager.config.fileTemplates
+
+    #expect(manager.addTemplate(NewFileTemplate(name: "Unsafe/Name", extensionName: "swift")) == false)
+    #expect(manager.addTemplate(NewFileTemplate(name: "Swift", extensionName: "swift/path")) == false)
+    #expect(manager.addTemplate(NewFileTemplate(name: "  Swift  ", extensionName: ".swift")) == true)
+    #expect(manager.config.fileTemplates.count == initialTemplates.count + 1)
+    #expect(manager.config.fileTemplates.last?.name == "Swift")
+    #expect(manager.config.fileTemplates.last?.extensionName == "swift")
+}
+
+@MainActor
+@Test func loadedConfigDropsUnsafeTemplatesBeforeSaving() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigManager-TemplateLoadValidation-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let appGroupConfigURL = directory.appending(path: RClickConfigManager.sharedConfigFilename)
+    let dirtyConfig = RClickConfig(
+        items: [],
+        fileTemplates: [
+            NewFileTemplate(id: "valid", name: "  Swift  ", extensionName: ".swift"),
+            NewFileTemplate(id: "bad-name", name: "Bad/Name", extensionName: "txt"),
+            NewFileTemplate(id: "bad-ext", name: "Shell", extensionName: "sh/path")
+        ]
+    )
+    try JSONEncoder().encode(dirtyConfig).write(to: appGroupConfigURL)
+
+    let manager = RClickConfigManager(
+        appGroupConfigFileURL: appGroupConfigURL,
+        store: RClickPluginLocalStore(pluginDirectory: directory.appending(path: "LocalStore"))
+    )
+
+    #expect(manager.config.fileTemplates == [
+        NewFileTemplate(id: "valid", name: "Swift", extensionName: "swift")
+    ])
+    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL)))?.fileTemplates == manager.config.fileTemplates)
+}
+
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("RClickLocalStore-\(UUID().uuidString)", isDirectory: true)

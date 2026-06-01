@@ -71,11 +71,66 @@ public struct NewFileTemplate: Codable, Identifiable, Equatable, Sendable {
         self.content = content
         self.isEnabled = isEnabled
     }
+
+    public var normalizedForStorage: NewFileTemplate? {
+        guard let normalizedName = Self.normalizedName(name),
+              let normalizedExtension = Self.normalizedExtension(extensionName) else {
+            return nil
+        }
+
+        var normalized = self
+        normalized.name = normalizedName
+        normalized.extensionName = normalizedExtension
+        return normalized
+    }
+
+    public static func normalizedName(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= 128 else { return nil }
+        guard !trimmed.contains("/") && !trimmed.contains(":") else { return nil }
+        guard trimmed.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) }) else { return nil }
+        return trimmed
+    }
+
+    public static func normalizedExtension(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutLeadingDots = trimmed.drop(while: { $0 == "." })
+        guard !withoutLeadingDots.isEmpty, withoutLeadingDots.count <= 32 else { return nil }
+        guard withoutLeadingDots.allSatisfy(Self.isValidExtensionCharacter) else { return nil }
+        return String(withoutLeadingDots)
+    }
+
+    public static func isValidName(_ value: String) -> Bool {
+        normalizedName(value) != nil
+    }
+
+    public static func isValidExtension(_ value: String) -> Bool {
+        normalizedExtension(value) != nil
+    }
+
+    private static func isValidExtensionCharacter(_ character: Character) -> Bool {
+        guard character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first else {
+            return false
+        }
+
+        return (scalar.value >= 48 && scalar.value <= 57)
+            || (scalar.value >= 65 && scalar.value <= 90)
+            || (scalar.value >= 97 && scalar.value <= 122)
+            || scalar == "-"
+            || scalar == "_"
+    }
 }
 
 public struct RClickConfig: Codable, Equatable, Sendable {
     public var items: [RClickMenuItem]
     public var fileTemplates: [NewFileTemplate]
+
+    public var normalizedForStorage: RClickConfig {
+        RClickConfig(
+            items: items,
+            fileTemplates: fileTemplates.compactMap(\.normalizedForStorage)
+        )
+    }
     
     public static let `default` = RClickConfig(
         items: [

@@ -95,8 +95,14 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     }
     
     /// 添加模板
-    public func addTemplate(_ template: NewFileTemplate) {
-        config.fileTemplates.append(template)
+    @discardableResult
+    public func addTemplate(_ template: NewFileTemplate) -> Bool {
+        guard let normalized = template.normalizedForStorage else {
+            return false
+        }
+
+        config.fileTemplates.append(normalized)
+        return true
     }
     
     /// 删除模板
@@ -105,10 +111,15 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     }
     
     /// 更新模板
-    public func updateTemplate(_ template: NewFileTemplate) {
-        if let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) {
-            config.fileTemplates[index] = template
+    @discardableResult
+    public func updateTemplate(_ template: NewFileTemplate) -> Bool {
+        guard let normalized = template.normalizedForStorage,
+              let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) else {
+            return false
         }
+
+        config.fileTemplates[index] = normalized
+        return true
     }
     
     /// 重置为默认配置
@@ -178,7 +189,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     private func applyLoadedData(_ data: Data, source: String) -> Bool {
         do {
             let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
-            self.config = decoded
+            self.config = decoded.normalizedForStorage
             if Self.verbose, RClickPlugin.verbose {
                 RClickPlugin.logger.info(
                     "\(Self.t)已加载配置（\(source)）：\(self.config.items.count) 个菜单项，\(self.config.fileTemplates.count) 个模板"
