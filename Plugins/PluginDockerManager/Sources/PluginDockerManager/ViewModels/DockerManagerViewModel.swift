@@ -59,6 +59,33 @@ struct LiveDockerManagerService: DockerManagerServicing {
     }
 }
 
+enum DockerImageReferenceValidator {
+    static func normalizedReference(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= 255 else { return nil }
+        guard trimmed.first != "-" else { return nil }
+        guard trimmed.unicodeScalars.allSatisfy(isAllowedReferenceScalar) else { return nil }
+        guard trimmed.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !$0.isEmpty }) else { return nil }
+        return trimmed
+    }
+
+    static func isValidReference(_ value: String) -> Bool {
+        normalizedReference(value) != nil
+    }
+
+    private static func isAllowedReferenceScalar(_ scalar: Unicode.Scalar) -> Bool {
+        (scalar.value >= 48 && scalar.value <= 57)
+            || (scalar.value >= 65 && scalar.value <= 90)
+            || (scalar.value >= 97 && scalar.value <= 122)
+            || scalar == "."
+            || scalar == "_"
+            || scalar == "-"
+            || scalar == "/"
+            || scalar == ":"
+            || scalar == "@"
+    }
+}
+
 @MainActor
 class DockerManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🐳"
@@ -165,24 +192,33 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         }
     }
 
-    func pullImage(_ name: String) async {
+    @discardableResult
+    func pullImage(_ name: String) async -> Bool {
+        guard let normalizedName = DockerImageReferenceValidator.normalizedReference(name) else {
+            errorMessage = "Invalid image name"
+            return false
+        }
+
         if Self.verbose {
             if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.info("\(self.t)拉取镜像: \(name)")
+                DockerManagerPlugin.logger.info("\(self.t)拉取镜像: \(normalizedName)")
             }
         }
         isLoading = true
         errorMessage = nil
         do {
-            _ = try await service.pullImage(name)
+            _ = try await service.pullImage(normalizedName)
             await refreshImages()
+            isLoading = false
+            return true
         } catch {
             if DockerManagerPlugin.verbose {
                 DockerManagerPlugin.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
             }
             errorMessage = "拉取失败: \(error.localizedDescription)"
+            isLoading = false
+            return false
         }
-        isLoading = false
     }
 
     func selectImage(_ image: DockerImage) async {
@@ -228,16 +264,25 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         await task.value
     }
     
-    func tagImage(_ image: DockerImage, newTag: String) async {
+    @discardableResult
+    func tagImage(_ image: DockerImage, newTag: String) async -> Bool {
+        guard let normalizedTag = DockerImageReferenceValidator.normalizedReference(newTag) else {
+            errorMessage = "Invalid image tag"
+            return false
+        }
+
         isLoading = true
         errorMessage = nil
         do {
-            try await service.tagImage(image.imageID, target: newTag)
+            try await service.tagImage(image.imageID, target: normalizedTag)
             await refreshImages()
+            isLoading = false
+            return true
         } catch {
             errorMessage = "Tag failed: \(error.localizedDescription)"
+            isLoading = false
+            return false
         }
-        isLoading = false
     }
     
     func exportImage(_ image: DockerImage, to url: URL) async {

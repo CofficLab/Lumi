@@ -157,11 +157,13 @@ struct DockerImagesView: View {
                     AppButton(String(localized: "Cancel", table: "DockerManager"), style: .ghost) { showPullSheet = false }
                     AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary) {
                         Task {
-                            await viewModel.pullImage(pullImageName)
-                            showPullSheet = false
+                            if await viewModel.pullImage(pullImageName) {
+                                showPullSheet = false
+                                pullImageName = ""
+                            }
                         }
                     }
-                    .disabled(pullImageName.isEmpty || viewModel.isLoading)
+                    .disabled(!DockerImageReferenceValidator.isValidReference(pullImageName) || viewModel.isLoading)
                 }
             }
             .padding()
@@ -188,12 +190,13 @@ struct DockerImagesView: View {
                     AppButton(String(localized: "Confirm", table: "DockerManager"), style: .primary) {
                         if let img = imageToTag {
                             Task {
-                                await viewModel.tagImage(img, newTag: newTag)
-                                showTagSheet = false
+                                if await viewModel.tagImage(img, newTag: newTag) {
+                                    showTagSheet = false
+                                }
                             }
                         }
                     }
-                    .disabled(newTag.isEmpty || viewModel.isLoading)
+                    .disabled(!DockerImageReferenceValidator.isValidReference(newTag) || viewModel.isLoading)
                 }
             }
             .padding()

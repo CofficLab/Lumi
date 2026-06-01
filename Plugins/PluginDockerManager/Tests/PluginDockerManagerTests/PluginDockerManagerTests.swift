@@ -55,6 +55,33 @@ struct PluginDockerManagerTests {
         #expect(viewModel.errorMessage == nil)
     }
 
+    @Test
+    func pullImageRejectsInvalidReferencesBeforeCallingDocker() async {
+        let service = FakeDockerManagerService()
+        let viewModel = DockerManagerViewModel(service: service)
+
+        #expect(await viewModel.pullImage("--help") == false)
+        #expect(viewModel.errorMessage == "Invalid image name")
+        #expect(await service.pulledImages() == [])
+
+        #expect(await viewModel.pullImage("  registry.example.com/ns/app:V1  ") == true)
+        #expect(await service.pulledImages() == ["registry.example.com/ns/app:V1"])
+    }
+
+    @Test
+    func tagImageRejectsInvalidReferencesBeforeCallingDocker() async {
+        let image = Self.image(id: "sha256:test", repository: "test")
+        let service = FakeDockerManagerService()
+        let viewModel = DockerManagerViewModel(service: service)
+
+        #expect(await viewModel.tagImage(image, newTag: "repo/name:bad tag") == false)
+        #expect(viewModel.errorMessage == "Invalid image tag")
+        #expect(await service.taggedImages() == [])
+
+        #expect(await viewModel.tagImage(image, newTag: "  repo/name:Release_1  ") == true)
+        #expect(await service.taggedImages() == [TaggedImage(id: image.imageID, target: "repo/name:Release_1")])
+    }
+
     private static func image(id: String, repository: String) -> DockerImage {
         DockerImage(
             imageID: id,
@@ -69,10 +96,17 @@ struct PluginDockerManagerTests {
     }
 }
 
+private struct TaggedImage: Equatable, Sendable {
+    let id: String
+    let target: String
+}
+
 private actor FakeDockerManagerService: DockerManagerServicing {
     let delays: [String: UInt64]
+    private var pullRequests: [String] = []
+    private var tagRequests: [TaggedImage] = []
 
-    init(delays: [String: UInt64]) {
+    init(delays: [String: UInt64] = [:]) {
         self.delays = delays
     }
 
@@ -83,7 +117,8 @@ private actor FakeDockerManagerService: DockerManagerServicing {
     func removeImage(_ id: String, force: Bool) async throws {}
 
     func pullImage(_ name: String) async throws -> String {
-        ""
+        pullRequests.append(name)
+        return ""
     }
 
     func inspectImage(_ id: String) async throws -> DockerInspect {
@@ -116,7 +151,9 @@ private actor FakeDockerManagerService: DockerManagerServicing {
         ]
     }
 
-    func tagImage(_ id: String, target: String) async throws {}
+    func tagImage(_ id: String, target: String) async throws {
+        tagRequests.append(TaggedImage(id: id, target: target))
+    }
 
     func exportImage(_ id: String, to path: String) async throws {}
 
@@ -124,5 +161,13 @@ private actor FakeDockerManagerService: DockerManagerServicing {
 
     func scanImage(_ id: String) async throws -> String {
         ""
+    }
+
+    func pulledImages() -> [String] {
+        pullRequests
+    }
+
+    func taggedImages() -> [TaggedImage] {
+        tagRequests
     }
 }
