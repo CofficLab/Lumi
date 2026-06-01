@@ -150,7 +150,7 @@ public final class ProjectsStore: @unchecked Sendable {
     ///
     /// 旧路径：<dbRoot>/StatePersistencePlugin/settings/state.plist
     private func loadProjectsFromLegacyStatePlist() -> [Project]? {
-        let legacyStatePlistURL = AppConfig.getDBFolderURL()
+        let legacyStatePlistURL = dbFolderURLProvider()
             .appendingPathComponent("StatePersistencePlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true)
             .appendingPathComponent("state.plist", isDirectory: false)
