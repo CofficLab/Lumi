@@ -29,9 +29,8 @@ struct SettingView: View {
         case "plugin":
             return .plugin(saved.value)
         case "pluginCategory":
-            if let category = PluginCategory(rawValue: saved.value) {
-                return .pluginCategory(category)
-            }
+            // 分类入口已合并到插件管理视图内部，旧数据自动回退到插件管理页
+            return .core(.plugins)
         default:
             break
         }
@@ -48,8 +47,9 @@ struct SettingView: View {
         switch selection {
         case let .core(tab):
             AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
-        case let .pluginCategory(category):
-            AppSettingStore.saveSettingsSelection(type: "pluginCategory", value: category.rawValue)
+        case .pluginCategory:
+            // 分类入口已移除，不再保存
+            AppSettingStore.clearSettingsSelection()
         case let .plugin(id):
             AppSettingStore.saveSettingsSelection(type: "plugin", value: id)
         }
@@ -75,11 +75,6 @@ struct SettingView: View {
         pluginProvider.getPluginSettingsViews()
     }
 
-    /// 插件管理下方的分类入口
-    private var pluginCategories: [PluginCategory] {
-        pluginProvider.getConfigurablePluginsGroupedByCategory().map(\.category)
-    }
-
     /// 侧边栏内容视图
     private var sidebarView: some View {
         AppSettingsSidebarContainer {
@@ -97,10 +92,6 @@ struct SettingView: View {
                                 isSelected: selection == .core(tab)
                             ) {
                                 selection = .core(tab)
-                            }
-
-                            if tab == .plugins {
-                                pluginCategorySidebarItems
                             }
                         }
 
@@ -121,39 +112,6 @@ struct SettingView: View {
                     }
                     .padding(.vertical, 8)
                 }
-            }
-        }
-    }
-
-    private var pluginCategorySidebarItems: some View {
-        VStack(spacing: 2) {
-            ForEach(pluginCategories, id: \.self) { category in
-                Button {
-                    selection = .pluginCategory(category)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: category.systemImage)
-                            .font(.appCaption)
-                            .frame(width: 18)
-
-                        Text(category.displayName)
-                            .font(.appCaption)
-                            .lineLimit(1)
-
-                        Spacer(minLength: 0)
-                    }
-                    .foregroundColor(selection == .pluginCategory(category) ? theme.textPrimary : theme.textSecondary)
-                    .padding(.leading, 28)
-                    .padding(.trailing, 10)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .appSurface(
-                    style: .custom(selection == .pluginCategory(category) ? Color.secondary.opacity(0.18) : Color.clear),
-                    cornerRadius: 6
-                )
             }
         }
     }
