@@ -28,11 +28,10 @@ struct PanelContentView: View {
         Group {
             if let activeItem {
                 VStack(spacing: 0) {
-                    ForEach(headerViews.indices, id: \.self) { index in
-                        headerViews[index]
-                            // 确保 header 视图在 activeItem 切换时能正确触发 onAppear
-                            .id("header-\(activeItem.id)-\(index)")
-                    }
+                    PanelHeaderView(
+                        activeItemId: activeItem.id,
+                        headerViews: headerViews
+                    )
 
                     activeItem.makeView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
