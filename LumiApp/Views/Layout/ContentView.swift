@@ -120,7 +120,7 @@ struct ContentView: View, SuperLog {
                             columnIndex: 1
                         ))
                     if showEditor {
-                        PanelContentView()
+                        PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     RightSidebarContainerView(sections: sidebarSections)
@@ -136,7 +136,7 @@ struct ContentView: View, SuperLog {
                     ActivityBar()
                         .frame(maxHeight: .infinity)
                     if showEditor {
-                        PanelContentView()
+                        PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     RightSidebarContainerView(sections: sidebarSections)
@@ -158,7 +158,7 @@ struct ContentView: View, SuperLog {
                             columnIndex: 1
                         ))
                     if showEditor {
-                        PanelContentView()
+                        PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -168,7 +168,10 @@ struct ContentView: View, SuperLog {
                     ActivityBar()
                         .frame(maxHeight: .infinity)
                     if showEditor {
-                        PanelContentView()
+                        PanelView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        EmptyContentGuideView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
