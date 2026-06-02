@@ -28,12 +28,12 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/PluginThemeLumi"
+            path: "Sources"
         ),
         .testTarget(
             name: "PluginThemeLumiTests",
             dependencies: ["PluginThemeLumi"],
-            path: "Tests/PluginThemeLumiTests"
+            path: "Tests"
         )
     ]
 )
