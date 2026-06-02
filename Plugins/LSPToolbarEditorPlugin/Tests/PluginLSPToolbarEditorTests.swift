@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPToolbarEditor
+@testable import LSPToolbarEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

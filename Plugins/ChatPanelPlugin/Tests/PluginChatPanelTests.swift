@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginChatPanel
+@testable import ChatPanelPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

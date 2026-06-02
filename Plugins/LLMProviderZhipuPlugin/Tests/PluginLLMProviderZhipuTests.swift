@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderZhipu
+@testable import LLMProviderZhipuPlugin
 
 struct PluginLLMProviderZhipuTests {
     @Test func pluginMetadata() {

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginCSSEditor
+@testable import CSSEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginCodeReview
+@testable import CodeReviewPlugin
 
 @Test func packageLoads() async throws {
     #expect(Bool(true))

@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import CodeEditSourceEditor
-@testable import PluginMarkdownEditor
+@testable import MarkdownEditorPlugin
 
 @Test func highlightsMarkdownOutsideFencedCodeBlocks() {
     let markdown = """

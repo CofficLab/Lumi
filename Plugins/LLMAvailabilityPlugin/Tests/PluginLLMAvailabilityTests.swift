@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMAvailability
+@testable import LLMAvailabilityPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

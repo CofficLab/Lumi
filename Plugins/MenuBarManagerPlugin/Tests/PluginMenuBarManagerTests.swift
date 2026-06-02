@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginMenuBarManager
+@testable import MenuBarManagerPlugin
 
 @Test func packageLoads() async throws {
     #expect(MenuBarManagerPlugin.id == "MenuBarManager")

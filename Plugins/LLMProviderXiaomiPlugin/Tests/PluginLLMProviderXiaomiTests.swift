@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderXiaomi
+@testable import LLMProviderXiaomiPlugin
 
 struct PluginLLMProviderXiaomiTests {
     @Test func pluginMetadata() {

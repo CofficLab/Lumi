@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LumiCoreKit
-@testable import PluginFileLog
+@testable import FileLogPlugin
 
 struct PluginFileLogTests {
     @Test

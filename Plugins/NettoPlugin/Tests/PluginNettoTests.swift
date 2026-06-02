@@ -1,7 +1,7 @@
 import Foundation
 import NetworkExtension
 import Testing
-@testable import PluginNetto
+@testable import NettoPlugin
 
 @Test func corruptSettingsFileIsPreservedBeforeSavingNewSettings() throws {
     let directory = FileManager.default.temporaryDirectory

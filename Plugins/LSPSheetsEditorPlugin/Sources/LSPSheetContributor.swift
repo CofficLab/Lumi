@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import PluginLSPWorkspaceSymbolEditor
+import LSPWorkspaceSymbolEditorPlugin
 import SwiftUI
 
 @MainActor

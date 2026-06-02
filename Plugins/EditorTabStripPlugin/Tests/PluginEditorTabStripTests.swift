@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 import Testing
-@testable import PluginEditorTabStrip
+@testable import EditorTabStripPlugin
 
 @Test func packageLoads() async throws {
     #expect(EditorTabStripPlugin.id == "EditorTabStrip")

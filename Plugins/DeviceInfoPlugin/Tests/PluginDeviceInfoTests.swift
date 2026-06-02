@@ -1,7 +1,7 @@
 import Testing
 import LumiCoreKit
 import SwiftUI
-@testable import PluginDeviceInfo
+@testable import DeviceInfoPlugin
 
 @MainActor
 struct PluginDeviceInfoTests {

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPSignatureHelpEditor
+@testable import LSPSignatureHelpEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

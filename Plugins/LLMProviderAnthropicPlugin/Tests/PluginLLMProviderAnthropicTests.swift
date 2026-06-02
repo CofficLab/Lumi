@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderAnthropic
+@testable import LLMProviderAnthropicPlugin
 
 struct PluginLLMProviderAnthropicTests {
     @Test func pluginMetadata() {

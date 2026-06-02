@@ -1,7 +1,7 @@
 import Testing
 import BrewKit
 import LumiCoreKit
-@testable import PluginBrewManager
+@testable import BrewManagerPlugin
 
 @MainActor
 struct PluginBrewManagerTests {

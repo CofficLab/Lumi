@@ -1,6 +1,6 @@
 import Testing
 import DatabaseKit
-@testable import PluginDatabaseManager
+@testable import DatabaseManagerPlugin
 
 @MainActor
 @Test func demoSQLiteConnectionLoadsDemoTables() async throws {

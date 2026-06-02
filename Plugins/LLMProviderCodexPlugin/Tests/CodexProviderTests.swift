@@ -1,7 +1,7 @@
 import Foundation
 import LumiCoreKit
 import Testing
-@testable import PluginLLMProviderCodex
+@testable import LLMProviderCodexPlugin
 
 @Suite("PluginLLMProviderCodex")
 struct CodexProviderTests {

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginPortManager
+@testable import PortManagerPlugin
 
 @Test func parsesLsofListeningPorts() {
     let output = """

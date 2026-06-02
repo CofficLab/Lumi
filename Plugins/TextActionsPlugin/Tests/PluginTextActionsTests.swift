@@ -1,7 +1,7 @@
 import Testing
 import ApplicationServices
 import Foundation
-@testable import PluginTextActions
+@testable import TextActionsPlugin
 
 @Test func packageLoads() async throws {
     #expect(TextActionsPlugin.id == "TextActions")

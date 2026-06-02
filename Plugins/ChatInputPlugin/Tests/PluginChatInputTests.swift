@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LumiCoreKit
-@testable import PluginChatInput
+@testable import ChatInputPlugin
 
 @MainActor
 @Test func windowConversationVMSubmitsDraftText() async throws {

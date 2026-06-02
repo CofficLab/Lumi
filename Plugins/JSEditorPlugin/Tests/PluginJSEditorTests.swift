@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginJSEditor
+@testable import JSEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

@@ -1,6 +1,6 @@
 import EditorService
 import LumiUI
-import PluginLSPCallHierarchyEditor
+import LSPCallHierarchyEditorPlugin
 import SwiftUI
 
 /// 调用层级 Sheet 内容视图。

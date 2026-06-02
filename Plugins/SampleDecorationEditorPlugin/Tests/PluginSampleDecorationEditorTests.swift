@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginSampleDecorationEditor
+@testable import SampleDecorationEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(SampleDecorationEditorPlugin.id == "SampleDecorationEditor")

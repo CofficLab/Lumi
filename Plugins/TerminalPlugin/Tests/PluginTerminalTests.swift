@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginTerminal
+@testable import TerminalPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

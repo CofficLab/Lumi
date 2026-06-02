@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderFreeModel
+@testable import LLMProviderFreeModelPlugin
 
 struct PluginLLMProviderFreeModelTests {
     @Test func pluginMetadata() {

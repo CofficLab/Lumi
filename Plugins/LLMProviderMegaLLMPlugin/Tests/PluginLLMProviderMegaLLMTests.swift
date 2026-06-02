@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderMegaLLM
+@testable import LLMProviderMegaLLMPlugin
 
 struct PluginLLMProviderMegaLLMTests {
     @Test func pluginMetadata() {

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginSwiftPrimitiveTypesEditor
+@testable import SwiftPrimitiveTypesEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

@@ -1,7 +1,7 @@
 import AgentToolKit
 import LumiCoreKit
 import Testing
-@testable import PluginWebFetch
+@testable import WebFetchPlugin
 
 @Suite("PluginWebFetch")
 struct PluginWebFetchTests {

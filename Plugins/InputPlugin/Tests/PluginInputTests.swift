@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginInput
+@testable import InputPlugin
 
 @Test func packageLoads() async throws {
     #expect(InputPlugin.id == "InputManager")

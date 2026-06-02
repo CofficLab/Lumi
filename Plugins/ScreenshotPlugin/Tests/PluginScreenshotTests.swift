@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginScreenshot
+@testable import ScreenshotPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

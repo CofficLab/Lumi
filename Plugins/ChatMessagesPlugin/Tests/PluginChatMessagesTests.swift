@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LumiCoreKit
-@testable import PluginChatMessages
+@testable import ChatMessagesPlugin
 
 @MainActor
 @Test func windowConversationVMProvidesSelectedConversationMessages() {

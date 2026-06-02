@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginConversationTimeline
+@testable import ConversationTimelinePlugin
 import LumiCoreKit
 
 @Test func modelDisplayTextUsesAvailableNonEmptyMetadata() async throws {

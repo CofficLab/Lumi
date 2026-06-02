@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderOpenAI
+@testable import LLMProviderOpenAIPlugin
 
 struct PluginLLMProviderOpenAITests {
     @Test func pluginMetadata() {

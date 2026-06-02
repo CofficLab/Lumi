@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderOpenRouter
+@testable import LLMProviderOpenRouterPlugin
 
 struct PluginLLMProviderOpenRouterTests {
     @Test func pluginMetadata() {

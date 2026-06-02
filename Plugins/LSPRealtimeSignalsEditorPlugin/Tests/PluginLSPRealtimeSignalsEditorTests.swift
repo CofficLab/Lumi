@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPRealtimeSignalsEditor
+@testable import LSPRealtimeSignalsEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

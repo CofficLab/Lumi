@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginOpenInGitOK
+@testable import OpenInGitOKPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

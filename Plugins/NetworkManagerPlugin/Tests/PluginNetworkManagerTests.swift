@@ -1,7 +1,7 @@
 import Testing
 import Combine
 import Foundation
-@testable import PluginNetworkManager
+@testable import NetworkManagerPlugin
 
 @MainActor
 @Test func publicIPRefreshUsesCache() async throws {

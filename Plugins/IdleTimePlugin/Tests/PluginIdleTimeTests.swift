@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginIdleTime
+@testable import IdleTimePlugin
 
 @Test func packageLoads() async throws {
     let directory = try makeTemporaryDirectory()

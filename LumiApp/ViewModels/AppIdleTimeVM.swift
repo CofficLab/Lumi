@@ -29,10 +29,10 @@ final class AppIdleTimeVM: ObservableObject {
     // MARK: - Published State
 
     /// 当前推断的休息窗口
-    @Published private(set) var restWindow: IdleTimePlugin.RestWindow?
+    @Published private(set) var restWindow: RestWindow?
 
     /// 置信度标签
-    @Published private(set) var confidenceLabel: IdleTimePlugin.IdleConfidenceLabel = .learning
+    @Published private(set) var confidenceLabel: IdleConfidenceLabel = .learning
 
     /// 当前是否处于推断的休息时间段
     @Published private(set) var isInRestWindow: Bool = false
@@ -41,7 +41,7 @@ final class AppIdleTimeVM: ObservableObject {
     @Published private(set) var activityScores: [Double] = []
 
     /// 完整推断快照（供需要详细数据的消费者使用）
-    @Published private(set) var snapshot: IdleTimePlugin.IdleInferenceSnapshot?
+    @Published private(set) var snapshot: IdleInferenceSnapshot?
 
     // MARK: - Private
 
@@ -98,7 +98,7 @@ final class AppIdleTimeVM: ObservableObject {
             self.activityScores = snapshot.bucketScores
 
             if let window = snapshot.restWindow {
-                self.confidenceLabel = IdleTimePlugin.IdleConfidenceLabel.label(
+                self.confidenceLabel = IdleConfidenceLabel.label(
                     for: window.confidence,
                     source: window.source
                 )

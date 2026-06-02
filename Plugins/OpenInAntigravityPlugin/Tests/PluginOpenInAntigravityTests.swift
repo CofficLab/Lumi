@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginOpenInAntigravity
+@testable import OpenInAntigravityPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

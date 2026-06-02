@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginHistoryDBStatusBar
+@testable import HistoryDBStatusBarPlugin
 @testable import LumiCoreKit
 
 /// 用于测试的 Mock 实现

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginHTMLEditor
+@testable import HTMLEditorPlugin
 
 @Test func colorParserFindsHSLAndHSLAColors() async throws {
     let css = "color: hsl(120, 100%, 25%); background: hsla(240, 100%, 50%, 0.4);"

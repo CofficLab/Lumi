@@ -1,7 +1,7 @@
 import AppKit
 import SwiftData
 import Testing
-@testable import PluginClipboardManager
+@testable import ClipboardManagerPlugin
 
 @Test func pluginMetadataIsStable() {
     #expect(ClipboardManagerPlugin.id == "ClipboardManager")

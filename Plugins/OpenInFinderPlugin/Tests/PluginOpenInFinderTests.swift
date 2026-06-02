@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginOpenInFinder
+@testable import OpenInFinderPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

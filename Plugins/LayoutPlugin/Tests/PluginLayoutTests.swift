@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginLayout
+@testable import LayoutPlugin
 
 @Test
 func localStorePersistsLayoutSettings() throws {

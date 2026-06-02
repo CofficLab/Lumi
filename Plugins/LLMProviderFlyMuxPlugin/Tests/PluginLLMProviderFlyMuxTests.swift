@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderFlyMux
+@testable import LLMProviderFlyMuxPlugin
 
 struct PluginLLMProviderFlyMuxTests {
     @Test func pluginMetadata() {

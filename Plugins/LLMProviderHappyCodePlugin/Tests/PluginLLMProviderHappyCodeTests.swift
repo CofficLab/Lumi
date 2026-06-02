@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderHappyCode
+@testable import LLMProviderHappyCodePlugin
 
 struct PluginLLMProviderHappyCodeTests {
     @Test func pluginMetadata() {

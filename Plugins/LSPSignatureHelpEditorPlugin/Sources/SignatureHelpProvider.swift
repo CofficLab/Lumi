@@ -5,7 +5,7 @@ import Combine
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
-import PluginLSPServiceEditor
+import LSPServiceEditorPlugin
 
 /// 签名帮助提供者
 /// 监听输入触发字符，在光标位置显示函数签名信息

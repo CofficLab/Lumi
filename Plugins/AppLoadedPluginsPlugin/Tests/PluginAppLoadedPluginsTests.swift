@@ -1,6 +1,6 @@
 import Testing
 import LumiCoreKit
-@testable import PluginAppLoadedPlugins
+@testable import AppLoadedPluginsPlugin
 
 @MainActor
 struct PluginAppLoadedPluginsTests {

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginAskUser
+@testable import AskUserPlugin
 
 @Test func errorResultReturnsParseableJSON() throws {
     let result = AskUserTool.errorResult(message: "question is required")

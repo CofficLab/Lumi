@@ -1,7 +1,7 @@
 import Testing
 import EditorService
 import LanguageServerProtocol
-@testable import PluginLSPCallHierarchyEditor
+@testable import LSPCallHierarchyEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

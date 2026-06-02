@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginRClick
+@testable import RClickPlugin
 
 @Test func packageLoads() async throws {
     #expect(RClickPlugin.id == "RClick")

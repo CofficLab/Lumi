@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginLLMProviderMLX
+@testable import LLMProviderMLXPlugin
 
 @Test func packageLoads() async throws {
     #expect(MLXPlugin.id == "LLMProviderMLX")

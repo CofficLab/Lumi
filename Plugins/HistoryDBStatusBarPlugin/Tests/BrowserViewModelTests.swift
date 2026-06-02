@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginHistoryDBStatusBar
+@testable import HistoryDBStatusBarPlugin
 @testable import LumiCoreKit
 
 // MARK: - BrowserViewModel Tests

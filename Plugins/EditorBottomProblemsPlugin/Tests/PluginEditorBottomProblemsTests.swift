@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorBottomProblems
+@testable import EditorBottomProblemsPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

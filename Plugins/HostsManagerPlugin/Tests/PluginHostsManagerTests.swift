@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginHostsManager
+@testable import HostsManagerPlugin
 
 @Test func ipValidationRejectsOutOfRangeIPv4() {
     #expect(HostsParser.isValidIP("127.0.0.1"))

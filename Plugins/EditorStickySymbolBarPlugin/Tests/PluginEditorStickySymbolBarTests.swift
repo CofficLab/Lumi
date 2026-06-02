@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorStickySymbolBar
+@testable import EditorStickySymbolBarPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

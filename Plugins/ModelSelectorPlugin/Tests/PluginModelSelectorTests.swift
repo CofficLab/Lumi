@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
 import Testing
-@testable import PluginModelSelector
+@testable import ModelSelectorPlugin
 
 @Test func providerMapByIdKeepsFirstProviderForDuplicateIds() {
     let firstOpenAI = makeProvider(

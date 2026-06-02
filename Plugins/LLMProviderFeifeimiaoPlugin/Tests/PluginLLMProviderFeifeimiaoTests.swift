@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderFeifeimiao
+@testable import LLMProviderFeifeimiaoPlugin
 
 struct PluginLLMProviderFeifeimiaoTests {
     @Test func pluginMetadata() {

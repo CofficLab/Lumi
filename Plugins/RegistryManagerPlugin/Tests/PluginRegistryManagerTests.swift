@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginRegistryManager
+@testable import RegistryManagerPlugin
 
 @MainActor
 @Test

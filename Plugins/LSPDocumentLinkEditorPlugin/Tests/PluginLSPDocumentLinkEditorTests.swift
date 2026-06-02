@@ -1,6 +1,6 @@
 import Testing
 import LanguageServerProtocol
-@testable import PluginLSPDocumentLinkEditor
+@testable import LSPDocumentLinkEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

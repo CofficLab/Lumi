@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginRequestLog
+@testable import RequestLogPlugin
 
 @Suite("RequestLogStats")
 struct RequestLogStatsTests {

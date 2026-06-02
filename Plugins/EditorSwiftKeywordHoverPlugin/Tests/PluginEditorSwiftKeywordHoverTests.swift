@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorSwiftKeywordHover
+@testable import EditorSwiftKeywordHoverPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

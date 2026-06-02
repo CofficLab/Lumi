@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderDeepSeek
+@testable import LLMProviderDeepSeekPlugin
 
 struct PluginLLMProviderDeepSeekTests {
     @Test func pluginMetadata() {

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginOpenInCursor
+@testable import OpenInCursorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

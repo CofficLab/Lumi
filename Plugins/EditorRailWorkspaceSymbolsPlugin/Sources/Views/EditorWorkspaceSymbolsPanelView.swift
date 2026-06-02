@@ -1,5 +1,5 @@
 import EditorService
-import PluginLSPWorkspaceSymbolEditor
+import LSPWorkspaceSymbolEditorPlugin
 import SwiftUI
 
 public struct EditorWorkspaceSymbolsPanelView: View {

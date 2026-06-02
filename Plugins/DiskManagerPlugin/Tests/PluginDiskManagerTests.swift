@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import LumiCoreKit
-@testable import PluginDiskManager
+@testable import DiskManagerPlugin
 
 @MainActor
 struct PluginDiskManagerTests {

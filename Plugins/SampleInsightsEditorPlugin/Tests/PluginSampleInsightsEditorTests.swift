@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginSampleInsightsEditor
+@testable import SampleInsightsEditorPlugin
 
 @MainActor
 @Test func packageLoads() async throws {

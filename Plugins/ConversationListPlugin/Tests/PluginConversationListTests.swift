@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginConversationList
+@testable import ConversationListPlugin
 
 @Test func packageLoads() async throws {
     #expect(ConversationListPlugin.id == "ConversationList")

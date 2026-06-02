@@ -1,6 +1,6 @@
 import Testing
 import LumiCoreKit
-@testable import PluginChatMode
+@testable import ChatModePlugin
 
 @MainActor
 @Test func appLLMVMPropagatesA1A2A3ChatModes() async throws {

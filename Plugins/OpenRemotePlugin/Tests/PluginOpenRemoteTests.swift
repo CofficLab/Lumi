@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginOpenRemote
+@testable import OpenRemotePlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

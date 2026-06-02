@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderAliyun
+@testable import LLMProviderAliyunPlugin
 
 struct PluginLLMProviderAliyunTests {
     @Test func pluginMetadata() {

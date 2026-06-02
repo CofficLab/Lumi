@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderAiRouter
+@testable import LLMProviderAiRouterPlugin
 
 struct PluginLLMProviderAiRouterTests {
     @Test func pluginMetadata() {

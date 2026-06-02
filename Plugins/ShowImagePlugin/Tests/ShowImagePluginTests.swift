@@ -2,7 +2,7 @@ import AgentToolKit
 import Foundation
 import LumiCoreKit
 import Testing
-@testable import PluginShowImage
+@testable import ShowImagePlugin
 
 @Suite("PluginShowImage", .serialized)
 struct PluginShowImageTests {

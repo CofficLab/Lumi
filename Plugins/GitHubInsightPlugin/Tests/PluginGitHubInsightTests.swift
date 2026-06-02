@@ -1,7 +1,7 @@
 import Foundation
 import ProjectProfileKit
 import Testing
-@testable import PluginGitHubInsight
+@testable import GitHubInsightPlugin
 
 @Test func packageLoads() async throws {
     #expect(GitHubInsightPlugin.id == "GitHubInsight")

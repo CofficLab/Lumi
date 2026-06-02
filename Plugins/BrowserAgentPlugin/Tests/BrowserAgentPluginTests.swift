@@ -1,7 +1,7 @@
 import AgentToolKit
 import LumiCoreKit
 import Testing
-@testable import PluginBrowserAgent
+@testable import BrowserAgentPlugin
 
 @Suite("PluginBrowserAgent")
 struct PluginBrowserAgentTests {

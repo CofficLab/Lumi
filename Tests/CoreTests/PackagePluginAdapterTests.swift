@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import EditorService
-import PluginThemeSky
+import ThemeSkyPlugin
 import XCTest
 @testable import Lumi
 

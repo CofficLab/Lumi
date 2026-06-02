@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorRailWorkspaceSearch
+@testable import EditorRailWorkspaceSearchPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

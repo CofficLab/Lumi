@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginEditorRailFileTree
+@testable import EditorRailFileTreePlugin
 
 @Test func expansionPathOnlyDropsRootPrefix() {
     let rootPath = "/tmp/project"

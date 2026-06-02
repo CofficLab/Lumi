@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorBreadcrumb
+@testable import EditorBreadcrumbPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

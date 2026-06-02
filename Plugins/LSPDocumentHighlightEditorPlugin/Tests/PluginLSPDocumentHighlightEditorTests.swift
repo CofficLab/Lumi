@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPDocumentHighlightEditor
+@testable import LSPDocumentHighlightEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

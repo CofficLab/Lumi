@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorLSPContextCommands
+@testable import EditorLSPContextCommandsPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

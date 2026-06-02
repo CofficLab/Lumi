@@ -1,7 +1,7 @@
 import Testing
 import EditorService
 import Foundation
-@testable import PluginEditorPreview
+@testable import EditorPreviewPlugin
 
 @Test func packageLoads() async throws {
     #expect(Bool(true))

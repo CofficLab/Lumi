@@ -3,7 +3,7 @@ import Foundation
 import LumiCoreKit
 import SwiftData
 import Testing
-@testable import PluginAutoTask
+@testable import AutoTaskPlugin
 
 @Suite("PluginAutoTask")
 struct AutoTaskPluginTests {

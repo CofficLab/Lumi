@@ -1,7 +1,7 @@
 import Foundation
 import LumiCoreKit
 import Testing
-@testable import PluginProjects
+@testable import ProjectsPlugin
 
 @Test func branchDisplayNameIgnoresMissingAndBlankValues() async throws {
     #expect(GitBranchCache.displayName(for: nil) == nil)

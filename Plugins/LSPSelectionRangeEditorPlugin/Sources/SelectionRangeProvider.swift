@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import PluginLSPServiceEditor
+import LSPServiceEditorPlugin
 import LanguageServerProtocol
 
 /// 选择范围扩展提供者

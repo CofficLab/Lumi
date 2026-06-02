@@ -2,7 +2,7 @@ import Foundation
 import AgentToolKit
 import LumiCoreKit
 import Testing
-@testable import PluginProjectOverview
+@testable import ProjectOverviewPlugin
 
 @Suite("PluginProjectOverview")
 struct PluginProjectOverviewTests {

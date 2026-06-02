@@ -1,7 +1,7 @@
 import AgentToolKit
 import Foundation
 import Testing
-@testable import PluginAppIconDesigner
+@testable import AppIconDesignerPlugin
 
 @Suite("Icon document tools", .serialized)
 struct IconDocumentToolTests {

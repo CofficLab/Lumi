@@ -2,7 +2,7 @@ import AgentToolKit
 import LumiCoreKit
 import ShellKit
 import Testing
-@testable import PluginGitHubCLIDetect
+@testable import GitHubCLIDetectPlugin
 
 @Suite("PluginGitHubCLIDetect")
 struct PluginGitHubCLIDetectTests {

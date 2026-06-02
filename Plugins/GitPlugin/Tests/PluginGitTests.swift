@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginGit
+@testable import GitPlugin
 
 @Test func packageLoads() async throws {
     #expect(GitPlugin.id == "GitPlugin")

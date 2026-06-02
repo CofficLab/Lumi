@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import LumiCoreKit
 import SwiftData
-@testable import PluginAppManager
+@testable import AppManagerPlugin
 
 @MainActor
 struct PluginAppManagerTests {

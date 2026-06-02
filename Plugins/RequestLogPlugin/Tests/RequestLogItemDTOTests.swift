@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginRequestLog
+@testable import RequestLogPlugin
 import Foundation
 
 @Suite("RequestLogItemDTO")

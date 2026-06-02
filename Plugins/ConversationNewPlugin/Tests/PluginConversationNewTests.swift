@@ -1,7 +1,7 @@
 import Testing
 import AgentToolKit
 import LumiCoreKit
-@testable import PluginConversationNew
+@testable import ConversationNewPlugin
 
 @MainActor
 @Test func windowConversationVMCreatesConversationWithProjectContext() async throws {

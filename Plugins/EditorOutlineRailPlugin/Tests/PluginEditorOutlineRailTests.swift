@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginEditorOutlineRail
+@testable import EditorOutlineRailPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

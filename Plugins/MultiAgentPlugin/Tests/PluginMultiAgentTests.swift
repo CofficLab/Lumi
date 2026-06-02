@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginMultiAgent
+@testable import MultiAgentPlugin
 
 @Test func packageLoads() async throws {
     #expect(MultiAgentPlugin.id == "MultiAgent")

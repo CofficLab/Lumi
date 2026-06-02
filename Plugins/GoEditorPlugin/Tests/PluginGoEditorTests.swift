@@ -1,7 +1,7 @@
 import Foundation
 import GoEditorCore
 import Testing
-@testable import PluginGoEditor
+@testable import GoEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(GoEditorPlugin.id == "GoEditor")

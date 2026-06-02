@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import EditorService
-@testable import PluginEditorChatIntegration
+@testable import EditorChatIntegrationPlugin
 
 @Test func packageLoads() async throws {
     #expect(EditorChatIntegrationPlugin.id == "EditorChatIntegration")

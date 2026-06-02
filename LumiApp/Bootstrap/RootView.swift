@@ -336,7 +336,7 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configureProjectsPluginBridge() {
-        ProjectsPlugin.ProjectsBridge.currentProjectPathProvider = { [container, windowContainer] in
+        ProjectsBridge.currentProjectPathProvider = { [container, windowContainer] in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container).projectPath
         }
         pluginConversationVM.switchToLatestConversationHandler = { [windowContainer] projectPath in
@@ -352,21 +352,21 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configureAgentTurnNotificationPluginBridge() {
-        AgentTurnNotificationPlugin.AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
+        AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .switchToConversation(conversationId, reason: "agentTurnNotification")
         }
     }
 
     private func configurePluginFontBridge() {
-        FontConfigPlugin.FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
+        FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .editorVM.service.state.fontName = fontName
         }
     }
 
     private func configureGoEditorPluginBridge() {
-        GoEditorPlugin.GoEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+        GoEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
             targetWindow.editorVM.service.open(at: url)
@@ -374,28 +374,28 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configureEditorStickySymbolBarPluginBridge() {
-        EditorStickySymbolBarPlugin.EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
+        EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
     private func configureEditorTabStripPluginBridge() {
-        EditorTabStripPlugin.EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
+        EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
     private func configureEditorRailWorkspaceSymbolsPluginBridge() {
-        EditorRailWorkspaceSymbolsPlugin.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
+        EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
     private func configureJSEditorPluginBridge() {
-        JSEditorPlugin.JSEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+        JSEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
             targetWindow.editorVM.service.open(at: url)
@@ -403,22 +403,22 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configureScreenshotPluginBridge() {
-        ScreenshotPlugin.ScreenshotBridge.activeWindowIdProvider = { [container] in
+        ScreenshotBridge.activeWindowIdProvider = { [container] in
             container.windowManagerVM.activeWindowId
         }
     }
 
     private func configureTerminalPluginBridge() {
-        TerminalPlugin.TerminalPluginBridge.editorThemeIdProvider = { [container] in
+        TerminalPluginBridge.editorThemeIdProvider = { [container] in
             container.themeVM.activeEditorThemeId
         }
     }
 
     private func configureQuickFileSearchPluginBridge() {
-        QuickFileSearchPlugin.QuickFileSearchBridge.activeWindowIdProvider = { [container] in
+        QuickFileSearchBridge.activeWindowIdProvider = { [container] in
             container.windowManagerVM.activeWindowId
         }
-        QuickFileSearchPlugin.QuickFileSearchBridge.selectFileHandler = { [container] path, windowId in
+        QuickFileSearchBridge.selectFileHandler = { [container] path, windowId in
             NotificationCenter.postSyncSelectedFile(
                 path: path,
                 windowId: windowId ?? container.windowManagerVM.activeWindowId
@@ -427,7 +427,7 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configureAutoTaskPluginBridge() {
-        AutoTaskPlugin.AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
+        AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
     }
 
     private static func targetWindowContainer(

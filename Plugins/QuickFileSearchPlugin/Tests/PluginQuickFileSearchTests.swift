@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginQuickFileSearch
+@testable import QuickFileSearchPlugin
 
 @Test func scanProjectFilesOnlyDropsRootPrefix() throws {
     let rootURL = FileManager.default.temporaryDirectory

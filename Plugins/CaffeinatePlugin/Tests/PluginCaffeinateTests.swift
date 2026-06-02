@@ -1,7 +1,7 @@
 import AgentToolKit
 import LumiCoreKit
 import Testing
-@testable import PluginCaffeinate
+@testable import CaffeinatePlugin
 
 @MainActor
 struct PluginCaffeinateTests {

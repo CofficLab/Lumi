@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginOnboarding
+@testable import OnboardingPlugin
 
 @Test func packageLoads() async throws {
     #expect(OnboardingPlugin.id == "Onboarding")

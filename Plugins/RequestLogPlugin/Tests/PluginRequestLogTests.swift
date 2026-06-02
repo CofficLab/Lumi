@@ -2,7 +2,7 @@ import Foundation
 import HttpKit
 import SwiftData
 import Testing
-@testable import PluginRequestLog
+@testable import RequestLogPlugin
 
 @Test func historyStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
     let root = FileManager.default.temporaryDirectory

@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPFoldingRangeEditor
+@testable import LSPFoldingRangeEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

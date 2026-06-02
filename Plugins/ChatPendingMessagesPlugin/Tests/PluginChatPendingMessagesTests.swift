@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LumiCoreKit
-@testable import PluginChatPendingMessages
+@testable import ChatPendingMessagesPlugin
 
 @MainActor
 @Test func windowConversationVMProvidesAndRemovesPendingMessages() {

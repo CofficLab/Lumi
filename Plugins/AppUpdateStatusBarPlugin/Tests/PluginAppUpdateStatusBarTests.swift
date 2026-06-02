@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LumiCoreKit
-@testable import PluginAppUpdateStatusBar
+@testable import AppUpdateStatusBarPlugin
 
 @MainActor
 struct PluginAppUpdateStatusBarTests {

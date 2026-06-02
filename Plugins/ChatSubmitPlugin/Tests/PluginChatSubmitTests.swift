@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginChatSubmit
+@testable import ChatSubmitPlugin
 import LumiCoreKit
 
 @Test func metadataIsStable() throws {

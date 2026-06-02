@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginFontConfig
+@testable import FontConfigPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

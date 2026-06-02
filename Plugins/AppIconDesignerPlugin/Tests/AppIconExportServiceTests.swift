@@ -1,7 +1,7 @@
 import AppKit
 import Testing
 import Foundation
-@testable import PluginAppIconDesigner
+@testable import AppIconDesignerPlugin
 
 @Suite("PluginAppIconDesigner")
 struct AppIconExportServiceTests {

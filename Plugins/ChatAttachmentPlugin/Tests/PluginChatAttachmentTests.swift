@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import AgentToolKit
 import LumiCoreKit
-@testable import PluginChatAttachment
+@testable import ChatAttachmentPlugin
 
 @Test func packageLoads() async throws {
     #expect(Bool(true))

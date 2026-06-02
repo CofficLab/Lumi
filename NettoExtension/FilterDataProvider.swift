@@ -1,6 +1,6 @@
 import NetworkExtension
 import OSLog
-import PluginNetto
+import NettoPlugin
 
 class FilterDataProvider: NEFilterDataProvider {
     static let emoji: String = "🎈"

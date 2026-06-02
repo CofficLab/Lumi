@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginLSPCodeActionEditor
+@testable import LSPCodeActionEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

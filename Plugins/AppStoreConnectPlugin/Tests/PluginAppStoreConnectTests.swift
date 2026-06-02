@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import CryptoKit
-@testable import PluginAppStoreConnect
+@testable import AppStoreConnectPlugin
 
 @Suite(.serialized)
 struct PluginAppStoreConnectTests {

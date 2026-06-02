@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLLMProviderHyperAPI
+@testable import LLMProviderHyperAPIPlugin
 
 struct PluginLLMProviderHyperAPITests {
     @Test func pluginMetadata() {

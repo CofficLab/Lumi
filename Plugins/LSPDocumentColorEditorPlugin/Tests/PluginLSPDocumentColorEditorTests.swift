@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPDocumentColorEditor
+@testable import LSPDocumentColorEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PluginAppIconDesigner
+@testable import AppIconDesignerPlugin
 
 @Suite("App icon designer localization")
 struct AppIconDesignerLocalizationTests {

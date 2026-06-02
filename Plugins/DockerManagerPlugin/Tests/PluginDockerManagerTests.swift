@@ -1,7 +1,7 @@
 import Testing
 import DockerKit
 import LumiCoreKit
-@testable import PluginDockerManager
+@testable import DockerManagerPlugin
 
 @MainActor
 struct PluginDockerManagerTests {

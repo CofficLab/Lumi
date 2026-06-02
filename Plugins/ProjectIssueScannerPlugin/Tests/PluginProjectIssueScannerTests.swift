@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginProjectIssueScanner
+@testable import ProjectIssueScannerPlugin
 
 @Test func localRuleScannerOnlyReportsTodoMarkersFromComments() throws {
     let root = FileManager.default.temporaryDirectory

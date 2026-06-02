@@ -2,7 +2,7 @@ import AgentToolKit
 import Foundation
 import LumiCoreKit
 import Testing
-@testable import PluginWebSearch
+@testable import WebSearchPlugin
 
 @Suite("PluginWebSearch")
 struct PluginWebSearchTests {

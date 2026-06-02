@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginQuickLauncher
+@testable import QuickLauncherPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

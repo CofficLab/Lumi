@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import PluginEditorXcode
+@testable import EditorXcodePlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

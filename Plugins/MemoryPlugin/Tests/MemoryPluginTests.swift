@@ -3,7 +3,7 @@ import Foundation
 import LumiCoreKit
 import MemoryKit
 import Testing
-@testable import PluginMemory
+@testable import MemoryPlugin
 
 @Suite("PluginMemory")
 struct PluginMemoryTests {

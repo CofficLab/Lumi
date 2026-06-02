@@ -1,5 +1,5 @@
 import Testing
-@testable import PluginLSPSheetsEditor
+@testable import LSPSheetsEditorPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)
