@@ -16,7 +16,7 @@ struct ThemeOneDarkPluginTests {
         #expect(ThemeOneDarkPlugin.isConfigurable == false)
         #expect(ThemeOneDarkPlugin.category == .theme)
         #expect(ThemeOneDarkPlugin.order == 131)
-        #expect(ThemeOneDarkPlugin.policy == .alwaysOn)
+        #expect(ThemeOneDarkPlugin.policy == .disabled)
         #expect(ThemeOneDarkPlugin.shared.instanceLabel == ThemeOneDarkPlugin.id)
     }
 

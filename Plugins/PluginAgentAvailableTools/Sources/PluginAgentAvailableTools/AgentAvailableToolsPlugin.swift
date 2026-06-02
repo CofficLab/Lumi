@@ -19,7 +19,7 @@ public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     public static let iconName = "wrench.and.screwdriver"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 85 }
-    public static let policy: PluginPolicy = .alwaysOn
+    public static let policy: PluginPolicy = .disabled
 
     /// 始终启用，用户不可关闭
 

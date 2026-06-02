@@ -16,7 +16,7 @@ struct ThemeDraculaPluginTests {
         #expect(ThemeDraculaPlugin.isConfigurable == false)
         #expect(ThemeDraculaPlugin.category == .theme)
         #expect(ThemeDraculaPlugin.order == 132)
-        #expect(ThemeDraculaPlugin.policy == .alwaysOn)
+        #expect(ThemeDraculaPlugin.policy == .disabled)
         #expect(ThemeDraculaPlugin.shared.instanceLabel == ThemeDraculaPlugin.id)
     }
 

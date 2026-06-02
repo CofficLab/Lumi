@@ -14,7 +14,7 @@ struct PluginDockerManagerTests {
         #expect(DockerManagerPlugin.iconName == "shippingbox")
         #expect(DockerManagerPlugin.category == .developerTool)
         #expect(DockerManagerPlugin.order == 50)
-        #expect(DockerManagerPlugin.policy == .alwaysOn)
+        #expect(DockerManagerPlugin.policy == .disabled)
         #expect(DockerManagerPlugin.shared.instanceLabel == DockerManagerPlugin.id)
     }
 

@@ -24,7 +24,7 @@ public actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     public static var order: Int { 65 }
     
     /// 插件注册策略：可配置，默认不启用（用户可在设置中手动开启）
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = AppStoreConnectPlugin()

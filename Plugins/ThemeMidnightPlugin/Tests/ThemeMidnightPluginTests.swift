@@ -16,7 +16,7 @@ struct ThemeMidnightPluginTests {
         #expect(ThemeMidnightPlugin.isConfigurable == false)
         #expect(ThemeMidnightPlugin.category == .theme)
         #expect(ThemeMidnightPlugin.order == 120)
-        #expect(ThemeMidnightPlugin.policy == .alwaysOn)
+        #expect(ThemeMidnightPlugin.policy == .disabled)
         #expect(ThemeMidnightPlugin.shared.instanceLabel == ThemeMidnightPlugin.id)
     }
 

@@ -11,7 +11,7 @@ public actor EditorSwiftKeywordHoverPlugin: SuperPlugin {
     public static let iconName = "swift"
     public static let order = 20
     public static var category: PluginCategory { .general }
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
 
     /// 插件注册策略：开发中，暂不注册
 

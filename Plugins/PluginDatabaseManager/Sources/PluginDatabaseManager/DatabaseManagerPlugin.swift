@@ -22,7 +22,7 @@ public actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "server.rack"
     public static var order: Int { 50 }
 
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = DatabaseManagerPlugin()
     

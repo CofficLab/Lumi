@@ -22,7 +22,7 @@ public actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     public static let iconName: String = "hammer"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 95 }
-    public static let policy: PluginPolicy = .alwaysOn
+    public static let policy: PluginPolicy = .disabled
 
     // MARK: - Instance
 

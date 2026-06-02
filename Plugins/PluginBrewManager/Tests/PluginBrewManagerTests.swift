@@ -14,7 +14,7 @@ struct PluginBrewManagerTests {
         #expect(BrewManagerPlugin.iconName == "mug.fill")
         #expect(BrewManagerPlugin.category == .developerTool)
         #expect(BrewManagerPlugin.order == 60)
-        #expect(BrewManagerPlugin.policy == .alwaysOn)
+        #expect(BrewManagerPlugin.policy == .disabled)
         #expect(BrewManagerPlugin.shared.instanceLabel == BrewManagerPlugin.id)
     }
 

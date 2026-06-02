@@ -16,7 +16,7 @@ struct ThemeNebulaPluginTests {
         #expect(ThemeNebulaPlugin.isConfigurable == false)
         #expect(ThemeNebulaPlugin.category == .theme)
         #expect(ThemeNebulaPlugin.order == 122)
-        #expect(ThemeNebulaPlugin.policy == .alwaysOn)
+        #expect(ThemeNebulaPlugin.policy == .disabled)
         #expect(ThemeNebulaPlugin.shared.instanceLabel == ThemeNebulaPlugin.id)
     }
 

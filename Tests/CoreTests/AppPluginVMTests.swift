@@ -5,7 +5,7 @@ import XCTest
 
 final class AppPluginVMTests: XCTestCase {
     @MainActor
-    func testDuplicateViewContainerIconsSkipLaterPlugin() {
+    func testDisabledPluginsDoNotContributeViewContainers() {
         let vm = AppPluginVM(autoDiscover: false)
         vm.replacePluginsForTesting([
             FirstDuplicateIconPlugin.shared,
@@ -14,8 +14,7 @@ final class AppPluginVMTests: XCTestCase {
 
         let items = vm.getViewContainerItems()
 
-        XCTAssertEqual(items.map(\.id), ["first-duplicate-icon"])
-        XCTAssertEqual(items.first?.icon, "square.grid.2x2")
+        XCTAssertTrue(items.isEmpty)
     }
 }
 

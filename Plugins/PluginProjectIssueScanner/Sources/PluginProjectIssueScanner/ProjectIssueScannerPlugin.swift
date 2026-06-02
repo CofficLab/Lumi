@@ -26,7 +26,7 @@ public actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     public static let iconName: String = "scope"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 97 }
-    public static let policy: PluginPolicy = .alwaysOn
+    public static let policy: PluginPolicy = .disabled
 
     public static let shared = ProjectIssueScannerPlugin()
 

@@ -16,7 +16,7 @@ struct AutoTaskPluginTests {
         #expect(AutoTaskPlugin.isConfigurable == false)
         #expect(AutoTaskPlugin.category == .agent)
         #expect(AutoTaskPlugin.order == 90)
-        #expect(AutoTaskPlugin.policy == .alwaysOn)
+        #expect(AutoTaskPlugin.policy == .disabled)
     }
 
     @MainActor

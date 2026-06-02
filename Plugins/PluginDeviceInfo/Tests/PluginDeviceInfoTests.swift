@@ -15,7 +15,7 @@ struct PluginDeviceInfoTests {
         #expect(DeviceInfoPlugin.isConfigurable == false)
         #expect(DeviceInfoPlugin.category == .general)
         #expect(DeviceInfoPlugin.order == 10)
-        #expect(DeviceInfoPlugin.policy == .alwaysOn)
+        #expect(DeviceInfoPlugin.policy == .disabled)
         #expect(DeviceInfoPlugin.shared.instanceLabel == DeviceInfoPlugin.id)
     }
 

@@ -25,7 +25,7 @@ public actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     public static let iconName = "desktopcomputer"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 97 }
-    public static let policy: PluginPolicy = .alwaysOn
+    public static let policy: PluginPolicy = .disabled
 
     /// 始终启用，用户不可关闭
 

@@ -21,7 +21,7 @@ public actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
     public static let iconName = "point.topleft.down.curvedto.point.bottomright.up"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 89 }
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
 
     /// 插件注册策略：开发中，暂不注册
 

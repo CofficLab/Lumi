@@ -19,7 +19,7 @@ public actor NettoPlugin: SuperPlugin, SuperLog {
     public static let iconName = "shield.lefthalf.filled"
     public static var order: Int { 99 }
 
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
     

@@ -515,7 +515,7 @@ extension SuperPlugin {
 
     // 注意：category 必须由每个插件显式提供，不再有默认值
 
-    static var policy: PluginPolicy { .alwaysOn }
+    static var policy: PluginPolicy { .disabled }
 
     static var isConfigurable: Bool {
         switch policy {

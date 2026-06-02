@@ -15,7 +15,7 @@ struct PluginAppManagerTests {
         #expect(AppManagerPlugin.iconName == "apps.ipad")
         #expect(AppManagerPlugin.category == .system)
         #expect(AppManagerPlugin.order == 40)
-        #expect(AppManagerPlugin.policy == .alwaysOn)
+        #expect(AppManagerPlugin.policy == .disabled)
         #expect(AppManagerPlugin.shared.instanceLabel == AppManagerPlugin.id)
     }
 

@@ -14,7 +14,7 @@ struct PluginDiskManagerTests {
         #expect(DiskManagerPlugin.iconName == "internaldrive")
         #expect(DiskManagerPlugin.category == .system)
         #expect(DiskManagerPlugin.order == 22)
-        #expect(DiskManagerPlugin.policy == .alwaysOn)
+        #expect(DiskManagerPlugin.policy == .disabled)
         #expect(DiskManagerPlugin.shared.instanceLabel == DiskManagerPlugin.id)
     }
 

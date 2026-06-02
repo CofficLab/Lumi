@@ -26,7 +26,7 @@ public actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "menubar.rectangle"
     public static var order: Int { 20 }
 
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
     
     /// 插件注册策略：可配置，默认不启用（可选功能）
 

@@ -16,7 +16,7 @@ struct ThemeAutumnPluginTests {
         #expect(ThemeAutumnPlugin.isConfigurable == false)
         #expect(ThemeAutumnPlugin.category == .theme)
         #expect(ThemeAutumnPlugin.order == 126)
-        #expect(ThemeAutumnPlugin.policy == .alwaysOn)
+        #expect(ThemeAutumnPlugin.policy == .disabled)
         #expect(ThemeAutumnPlugin.shared.instanceLabel == ThemeAutumnPlugin.id)
     }
 

@@ -23,7 +23,7 @@ public actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
     public static let iconName: String = "safari"
     public static var category: PluginCategory { .general }
     public static var order: Int { 90 }
-    public static let policy: PluginPolicy = .alwaysOn
+    public static let policy: PluginPolicy = .disabled
 
     // MARK: - Instance
 

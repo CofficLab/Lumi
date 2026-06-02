@@ -16,7 +16,7 @@ struct ThemeMountainPluginTests {
         #expect(ThemeMountainPlugin.isConfigurable == false)
         #expect(ThemeMountainPlugin.category == .theme)
         #expect(ThemeMountainPlugin.order == 129)
-        #expect(ThemeMountainPlugin.policy == .alwaysOn)
+        #expect(ThemeMountainPlugin.policy == .disabled)
         #expect(ThemeMountainPlugin.shared.instanceLabel == ThemeMountainPlugin.id)
     }
 

@@ -20,7 +20,7 @@ public actor ChatPanelPlugin: SuperPlugin, SuperLog {
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 78 }
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ChatPanelPlugin()
 
     public nonisolated var instanceLabel: String { Self.id }
