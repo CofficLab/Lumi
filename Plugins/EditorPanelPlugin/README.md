@@ -1,0 +1,75 @@
+# EditorPanelPlugin
+
+Editor panel plugin for Lumi. Provides a code editor interface with features like file browsing, editing, and command palette.
+
+## Features
+
+- **Code editing** — source code editor integration
+- **File info banner** — display current file information
+- **Command palette** — quick access to editor commands
+- **State views** — loading, empty, and error states for file editing
+- **Drag & drop preview** — visual feedback for drag and drop operations
+- **Source editor bridge** — bridge between native and editor view
+
+## Requirements
+
+- macOS 14.0+
+- Swift 6.0+
+
+## Dependencies
+
+| Package | Description |
+|---------|-------------|
+| [CodeEditLanguages](../../Packages/CodeEditLanguages) | Code editing language support |
+| [LumiCodeEditSourceEditor](../../Packages/LumiCodeEditSourceEditor) | Source code editor component |
+| [CodeEditTextView](../../Packages/CodeEditTextView) | Text view component |
+| [EditorOverlayKit](../../Packages/EditorOverlayKit) | Editor overlay utilities |
+| [EditorService](../../Packages/EditorService) | Editor service framework |
+| [FilePreviewKit](../../Packages/FilePreviewKit) | File preview utilities |
+| [LumiCoreKit](../../Packages/LumiCoreKit) | Core framework for Lumi plugins |
+| [LumiUI](../../Packages/LumiUI) | UI components |
+| [MarkdownKit](../../Packages/MarkdownKit) | Markdown rendering |
+| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
+
+## Usage
+
+### As a Lumi Plugin
+
+This plugin integrates with the Lumi application. It provides:
+
+- **Editor Panel View** — main editor interface
+- **Source Editor View** — core editing component
+- **Command Palette View** — search and execute commands
+- **State Views** — handling empty, loading, and error states
+
+### Project Structure
+
+```
+Sources/
+├── EditorPanelPlugin.swift           # Plugin entry point
+├── Coordinators/
+│   ├── EditorPanelCoordinator.swift  # Main coordinator
+│   └── SourceEditorViewBridge.swift  # Editor view bridge
+├── Services/
+│   └── EditorPanelService.swift      # Editor panel service
+├── Views/
+│   ├── EditorPanelView.swift         # Main view
+│   ├── SourceEditorView.swift        # Source editor
+│   ├── FileInfoBannerView.swift      # File info display
+│   ├── EditorCommandPaletteView.swift# Command palette
+│   ├── EditorUnsupportedFileView.swift
+│   └── Guide/
+│       ├── EditorEmptyStateView.swift
+│       ├── EditorLoadingStateView.swift
+│       ├── EditorLoadFailureView.swift
+│       ├── EditorEmptyContentStateView.swift
+│       └── DragPreview.swift
+└── Resources/
+    └── LumiEditor.xcstrings          # Localization strings
+Tests/
+└── EditorPanelPluginTests/           # Unit tests
+```
+
+## License
+
+Proprietary. All rights reserved.
