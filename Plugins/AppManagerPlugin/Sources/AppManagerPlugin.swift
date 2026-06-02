@@ -33,7 +33,7 @@ public actor AppManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "apps.ipad"
     public static var category: PluginCategory { .system }
     public static var order: Int { 40 }
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .optOut
     
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = AppManagerPlugin()
