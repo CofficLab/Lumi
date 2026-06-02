@@ -315,7 +315,7 @@ struct PluginSettingsView: View {
 
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(plugin.pluginDisplayName)
-                                    .font(.appTitle2)
+                                    .font(.appTitle)
                                     .fontWeight(.semibold)
                                     .foregroundColor(theme.textPrimary)
 
@@ -462,23 +462,56 @@ struct PluginSettingsView: View {
         }
     }
 
+    @State private var posterIndex = 0
+
     private func posterCarousel(_ views: [AnyView]) -> some View {
-        VStack(spacing: 0) {
-            TabView {
-                ForEach(views.indices, id: \.self) { index in
-                    views[index]
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 240)
+        ZStack(alignment: .bottom) {
+            posterCarouselFrame(views[normalizedPosterIndex])
+
+            HStack(spacing: 8) {
+                carouselButton(systemImage: "chevron.left") {
+                    posterIndex = (normalizedPosterIndex - 1 + views.count) % views.count
+                }
+
+                HStack(spacing: 5) {
+                    ForEach(views.indices, id: \.self) { index in
+                        Circle()
+                            .fill(index == normalizedPosterIndex ? theme.primary : theme.textTertiary.opacity(0.35))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(theme.appPanelBackground.opacity(0.82)))
+
+                carouselButton(systemImage: "chevron.right") {
+                    posterIndex = (normalizedPosterIndex + 1) % views.count
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplay: .always))
+            .padding(.bottom, 22)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(theme.appDivider, lineWidth: 1)
-        )
+    }
+
+    private func posterCarouselFrame(_ posterView: AnyView) -> some View {
+        posterView
+            .frame(maxWidth: .infinity)
+            .frame(height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var normalizedPosterIndex: Int {
+        max(0, posterIndex)
+    }
+
+    private func carouselButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(theme.appPanelBackground.opacity(0.82)))
+        }
+        .buttonStyle(.plain)
     }
 
     private func featurePill(_ title: String) -> some View {
