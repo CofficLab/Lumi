@@ -28,12 +28,12 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/PluginThemeSky"
+            path: "Sources"
         ),
         .testTarget(
             name: "PluginThemeSkyTests",
             dependencies: ["PluginThemeSky"],
-            path: "Tests/PluginThemeSkyTests"
+            path: "Tests"
         )
     ]
 )

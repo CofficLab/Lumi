@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/PluginThemeMountain",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]
@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginThemeMountainTests",
             dependencies: ["PluginThemeMountain"],
-            path: "Tests/PluginThemeMountainTests"
+            path: "Tests"
         )
     ]
 )
