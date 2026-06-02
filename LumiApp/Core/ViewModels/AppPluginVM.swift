@@ -18,7 +18,7 @@ import os
 ///
 /// ## 插件发现机制
 ///
-/// AppPluginVM 优先使用构建阶段生成的插件注册表，避免启动时扫描整个
+/// AppPluginVM 优先使用 `LumiPluginRegistry` 提供的显式插件注册表，避免启动时扫描整个
 /// Objective-C runtime。兼容扫描仅在注册表为空或显式启用调试开关时运行。
 /// 插件按 `order` 属性排序，确保按正确顺序加载。
 ///
@@ -227,7 +227,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
     /// 自动发现并注册所有插件。
     ///
-    /// 主注册表由 `scripts/generate-plugin-registry.sh` 在构建时生成，
+    /// 主注册表由 `LumiPluginRegistry` 显式维护，
     /// 避免依赖 Objective-C runtime 枚举 Swift Package 中的 actor 类型。
     /// runtime 扫描仅作为兼容兜底，用于捕获仍直接声明在 app target 中、
     /// 但尚未进入生成表的 `Lumi.*Plugin` 类型。

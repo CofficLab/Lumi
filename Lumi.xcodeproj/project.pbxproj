@@ -1205,7 +1205,6 @@
 			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */;
 			buildPhases = (
 				A1B2D00230B2000100AAA202 /* Check CodeEdit Languages Framework */,
-				A1B2D00330B2000100AAA203 /* Generate Plugin Registry */,
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
@@ -2066,29 +2065,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/check-codeedit-languages-framework.sh\"\n";
-		};
-		A1B2D00330B2000100AAA203 /* Generate Plugin Registry */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Plugins",
-				"$(SRCROOT)/scripts/generate-plugin-registry.sh",
-			);
-			name = "Generate Plugin Registry";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Packages/LumiPluginRegistry/Package.swift",
-				"$(SRCROOT)/Packages/LumiPluginRegistry/Sources/LumiPluginRegistry/GeneratedPluginRegistry.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/generate-plugin-registry.sh\"\n";
 		};
 		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
