@@ -19,7 +19,6 @@ struct ContentView: View, SuperLog {
 
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var themeVM: AppThemeVM
-    @EnvironmentObject var providerRegistry: LLMProviderRegistry
     @EnvironmentObject var layoutVM: WindowLayoutVM
     @EnvironmentObject var conversationVM: WindowConversationVM
     @EnvironmentObject var projectVM: WindowProjectVM
@@ -92,98 +91,88 @@ struct ContentView: View, SuperLog {
     @ViewBuilder
     private var mainContent: some View {
         Group {
-            if providerRegistry.providerTypes.isEmpty {
+            let activeIcon = layoutVM.activeViewContainerIcon
+            let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
+            let pluginContext = PluginContext(
+                activeIcon: activeIcon,
+                isEditorVisible: layoutVM.editorVisible,
+                supportsAIChat: activeContainer?.supportsAIChat ?? false,
+                showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+                windowId: windowContainer?.id
+            )
+            let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
+            let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
+            let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
+            let showRail = hasRailTabs && layoutVM.railVisible
+            let showEditor = layoutVM.editorVisible
+
+            let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: !sidebarSections.isEmpty)
+            let autosaveName = "Unified_MainSplit_\(layoutSignature)"
+
+            if !sidebarSections.isEmpty && showRail {
                 HSplitView {
                     ActivityBar()
                         .frame(maxHeight: .infinity)
-                    AgentModeUnavailableGuideView()
+                    RailView()
                         .frame(maxHeight: .infinity)
+                        .background(SplitViewWidthPersistence(
+                            storageKey: "Layout.Main.Rail",
+                            columnIndex: 1
+                        ))
+                    if showEditor {
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    RightSidebarContainerView(sections: sidebarSections)
+                        .frame(maxHeight: .infinity)
+                        .background(SplitViewWidthPersistence(
+                            storageKey: "Layout.Main.RightSidebar",
+                            columnIndex: 3
+                        ))
                 }
-                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
+                .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
+            } else if !sidebarSections.isEmpty {
+                HSplitView {
+                    ActivityBar()
+                        .frame(maxHeight: .infinity)
+                    if showEditor {
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    RightSidebarContainerView(sections: sidebarSections)
+                        .frame(maxHeight: .infinity)
+                        .background(SplitViewWidthPersistence(
+                            storageKey: "Layout.Main.RightSidebar",
+                            columnIndex: 2
+                        ))
+                }
+                .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
+            } else if showRail {
+                HSplitView {
+                    ActivityBar()
+                        .frame(maxHeight: .infinity)
+                    RailView()
+                        .frame(maxHeight: .infinity)
+                        .background(SplitViewWidthPersistence(
+                            storageKey: "Layout.Main.Rail",
+                            columnIndex: 1
+                        ))
+                    if showEditor {
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
             } else {
-                let activeIcon = layoutVM.activeViewContainerIcon
-                let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
-                let pluginContext = PluginContext(
-                    activeIcon: activeIcon,
-                    isEditorVisible: layoutVM.editorVisible,
-                    supportsAIChat: activeContainer?.supportsAIChat ?? false,
-                    showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-                    windowId: windowContainer?.id
-                )
-                let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
-                let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
-                let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
-                let showRail = hasRailTabs && layoutVM.railVisible
-                let showEditor = layoutVM.editorVisible
-
-                let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: !sidebarSections.isEmpty)
-                let autosaveName = "Unified_MainSplit_\(layoutSignature)"
-
-                if !sidebarSections.isEmpty && showRail {
-                    HSplitView {
-                        ActivityBar()
-                            .frame(maxHeight: .infinity)
-                        RailView()
-                            .frame(maxHeight: .infinity)
-                            .background(SplitViewWidthPersistence(
-                                storageKey: "Layout.Main.Rail",
-                                columnIndex: 1
-                            ))
-                        if showEditor {
-                            PanelContentView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        RightSidebarContainerView(sections: sidebarSections)
-                            .frame(maxHeight: .infinity)
-                            .background(SplitViewWidthPersistence(
-                                storageKey: "Layout.Main.RightSidebar",
-                                columnIndex: 3
-                            ))
+                HSplitView {
+                    ActivityBar()
+                        .frame(maxHeight: .infinity)
+                    if showEditor {
+                        PanelContentView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else if !sidebarSections.isEmpty {
-                    HSplitView {
-                        ActivityBar()
-                            .frame(maxHeight: .infinity)
-                        if showEditor {
-                            PanelContentView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        RightSidebarContainerView(sections: sidebarSections)
-                            .frame(maxHeight: .infinity)
-                            .background(SplitViewWidthPersistence(
-                                storageKey: "Layout.Main.RightSidebar",
-                                columnIndex: 2
-                            ))
-                    }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else if showRail {
-                    HSplitView {
-                        ActivityBar()
-                            .frame(maxHeight: .infinity)
-                        RailView()
-                            .frame(maxHeight: .infinity)
-                            .background(SplitViewWidthPersistence(
-                                storageKey: "Layout.Main.Rail",
-                                columnIndex: 1
-                            ))
-                        if showEditor {
-                            PanelContentView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else {
-                    HSplitView {
-                        ActivityBar()
-                            .frame(maxHeight: .infinity)
-                        if showEditor {
-                            PanelContentView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 }
+                .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
