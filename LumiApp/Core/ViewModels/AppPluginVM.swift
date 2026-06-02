@@ -1,6 +1,7 @@
 import AppKit
 import AgentToolKit
 import LumiCoreKit
+import LumiPluginRegistry
 import Foundation
 import SwiftUI
 import ObjectiveC.runtime
@@ -168,7 +169,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var tools: [(pluginOrder: Int, tool: SuperAgentTool)] = []
 
         for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
+            let pluginOrder = plugin.pluginOrder
             for tool in plugin.agentTools(context: context) {
                 tools.append((pluginOrder: pluginOrder, tool: tool))
             }
@@ -185,7 +186,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var definitions: [(pluginOrder: Int, definition: any SubAgentDefinitionProtocol)] = []
 
         for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
+            let pluginOrder = plugin.pluginOrder
             for definition in plugin.subAgentDefinitions() {
                 definitions.append((pluginOrder: pluginOrder, definition: definition))
             }
@@ -208,7 +209,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var items: [(pluginOrder: Int, mwOrder: Int, middleware: SuperSendMiddleware)] = []
 
         for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
+            let pluginOrder = plugin.pluginOrder
             for m in plugin.sendMiddlewares() {
                 items.append((pluginOrder: pluginOrder, mwOrder: m.order, middleware: m))
             }
@@ -239,21 +240,21 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var discoveredPluginIDs = Set<String>()
 
         func appendGeneratedOrRuntimePlugin(_ instance: any SuperPlugin, className: String) {
-            let pluginType = type(of: instance)
-            guard pluginType.shouldRegister else { return }
+            guard instance.pluginPolicy != .disabled else { return }
             guard discoveredPluginIDs.insert(instance.instanceLabel).inserted else { return }
 
-            discoveredItems.append((instance, className, pluginType.order))
+            discoveredItems.append((instance, className, instance.pluginOrder))
             if Self.verbose {
-                AppLogger.core.info("\(self.t)发现插件: \(pluginType.id) (order: \(pluginType.order))")
+                AppLogger.core.info("\(self.t)发现插件: \(instance.pluginID) (order: \(instance.pluginOrder))")
             }
         }
 
-        let generatedPlugins = GeneratedPluginRegistry.plugins
-        for plugin in generatedPlugins {
+        let generatedPlugins = LumiPluginRegistry.GeneratedPluginRegistry.plugins
+        for packagedPlugin in generatedPlugins {
+            let plugin = AnyPackagePluginAdapter(packaged: packagedPlugin)
             appendGeneratedOrRuntimePlugin(
                 plugin,
-                className: String(describing: type(of: plugin))
+                className: String(describing: type(of: packagedPlugin))
             )
         }
 
@@ -303,12 +304,11 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var providerTypes: [any SuperLLMProvider.Type] = []
         var providerDiagnostics: [String] = []
         for plugin in sortedPlugins {
-            let pluginType = type(of: plugin)
             if let providerType = plugin.llmProviderType() {
                 providerTypes.append(providerType)
-                providerDiagnostics.append("\(pluginType.id)->\(providerType.id)")
+                providerDiagnostics.append("\(plugin.pluginID)->\(providerType.id)")
             } else {
-                providerDiagnostics.append("\(pluginType.id)->nil")
+                providerDiagnostics.append("\(plugin.pluginID)->nil")
             }
         }
         self.discoveredLLMProviderTypes = providerTypes
@@ -349,10 +349,9 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 封装了完整准入判断的资格对象
     func eligibility(for plugin: any SuperPlugin) -> PluginEligibility {
-        let pluginType = type(of: plugin)
         return PluginEligibility(
-            policy: pluginType.policy,
-            userEnabled: settingsStore.isPluginEnabled(plugin.instanceLabel, defaultEnabled: pluginType.enabledByDefault)
+            policy: plugin.pluginPolicy,
+            userEnabled: settingsStore.isPluginEnabled(plugin.instanceLabel, defaultEnabled: plugin.pluginEnabledByDefault)
         )
     }
 
@@ -717,8 +716,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { plugin -> (String, String, String, AnyView)? in
                 guard let view = plugin.addSettingsView() else { return nil }
-                let type = type(of: plugin)
-                return (type.id, type.displayName, type.iconName, view)
+                return (plugin.pluginID, plugin.pluginDisplayName, plugin.pluginIconName, view)
             }
     }
 
@@ -740,10 +738,10 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 分类按 ``PluginCategory/sortOrder`` 升序排列，
     /// 分类内插件按 ``SuperPlugin/order`` 升序排列。
     func getConfigurablePluginsGroupedByCategory() -> [(category: PluginCategory, plugins: [any SuperPlugin])] {
-        let configurable = plugins.filter { type(of: $0).isConfigurable }
-        let grouped = Dictionary(grouping: configurable) { type(of: $0).category }
+        let configurable = plugins.filter(\.pluginIsConfigurable)
+        let grouped = Dictionary(grouping: configurable) { $0.pluginCategory }
         return grouped
-            .map { (category: $0.key, plugins: $0.value.sorted { type(of: $0).order < type(of: $1).order }) }
+            .map { (category: $0.key, plugins: $0.value.sorted { $0.pluginOrder < $1.pluginOrder }) }
             .sorted { $0.category.sortOrder < $1.category.sortOrder }
     }
 
@@ -754,7 +752,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         var merged: [(pluginOrder: Int, item: LumiUIThemeContribution)] = []
 
         for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
+            let pluginOrder = plugin.pluginOrder
             for item in plugin.addThemeContributions() {
                 merged.append((
                     pluginOrder,

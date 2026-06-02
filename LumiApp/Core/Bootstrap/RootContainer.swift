@@ -189,7 +189,7 @@ final class RootContainer: ObservableObject, SuperLog {
         EditorSettingsLifecycle.registerEditorThemeContributors = { @MainActor registry in
             for plugin in AppPluginVM.shared.plugins {
                 guard AppPluginVM.shared.isPluginEnabled(plugin),
-                      type(of: plugin).category == .theme else { continue }
+                      plugin.pluginCategory == .theme else { continue }
                 plugin.registerEditorExtensions(into: registry)
             }
         }
@@ -208,13 +208,12 @@ final class RootContainer: ObservableObject, SuperLog {
                 plugin.registerEditorExtensions(into: registry)
             }
             let records = plugins.map { plugin -> EditorInstalledPluginRecord in
-                let t = type(of: plugin)
                 return EditorInstalledPluginRecord(
-                    id: t.id,
-                    displayName: t.displayName,
-                    description: t.description,
-                    order: t.order,
-                    isConfigurable: t.isConfigurable
+                    id: plugin.pluginID,
+                    displayName: plugin.pluginDisplayName,
+                    description: plugin.pluginDescription,
+                    order: plugin.pluginOrder,
+                    isConfigurable: plugin.pluginIsConfigurable
                 )
             }
             registry.recordInstalledPlugins(records)
@@ -248,13 +247,12 @@ final class RootContainer: ObservableObject, SuperLog {
             plugin.registerEditorExtensions(into: registry)
         }
         let pluginRecords = pluginsToRegister.map { plugin -> EditorInstalledPluginRecord in
-            let t = type(of: plugin)
             return EditorInstalledPluginRecord(
-                id: t.id,
-                displayName: t.displayName,
-                description: t.description,
-                order: t.order,
-                isConfigurable: t.isConfigurable
+                id: plugin.pluginID,
+                displayName: plugin.pluginDisplayName,
+                description: plugin.pluginDescription,
+                order: plugin.pluginOrder,
+                isConfigurable: plugin.pluginIsConfigurable
             )
         }
         registry.recordInstalledPlugins(pluginRecords)

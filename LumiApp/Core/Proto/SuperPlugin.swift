@@ -202,6 +202,19 @@ protocol SuperPlugin: Actor {
     /// 如果一个插件类型可能有多个实例，可重写此属性返回唯一标识。
     nonisolated var instanceLabel: String { get }
 
+    /// 插件实例级元数据。
+    ///
+    /// 默认从静态属性派生；type-erased bridge 可覆盖这些值，以保留 package
+    /// 插件的真实类型信息。
+    nonisolated var pluginID: String { get }
+    nonisolated var pluginDisplayName: String { get }
+    nonisolated var pluginDescription: String { get }
+    nonisolated var pluginIconName: String { get }
+    nonisolated var pluginPolicy: PluginPolicy { get }
+    nonisolated var pluginCategory: PluginCategory { get }
+    nonisolated var pluginOrder: Int { get }
+    nonisolated func pluginDescription(for language: LanguagePreference) -> String
+
     // MARK: - View Methods
 
     /// 添加根视图包裹
@@ -457,6 +470,38 @@ extension SuperPlugin {
     }
 
     nonisolated var instanceLabel: String { Self.id }
+
+    nonisolated var pluginID: String { Self.id }
+
+    nonisolated var pluginDisplayName: String { Self.displayName }
+
+    nonisolated var pluginDescription: String { Self.description }
+
+    nonisolated var pluginIconName: String { Self.iconName }
+
+    nonisolated var pluginPolicy: PluginPolicy { Self.policy }
+
+    nonisolated var pluginCategory: PluginCategory { Self.category }
+
+    nonisolated var pluginOrder: Int { Self.order }
+
+    nonisolated func pluginDescription(for language: LanguagePreference) -> String {
+        Self.description(for: language)
+    }
+
+    nonisolated var pluginEnabledByDefault: Bool {
+        switch pluginPolicy {
+        case .alwaysOn, .optOut: return true
+        case .optIn, .disabled: return false
+        }
+    }
+
+    nonisolated var pluginIsConfigurable: Bool {
+        switch pluginPolicy {
+        case .alwaysOn, .disabled: return false
+        case .optIn, .optOut: return true
+        }
+    }
 
     static var displayName: String { id }
 

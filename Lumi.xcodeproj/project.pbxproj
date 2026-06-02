@@ -241,6 +241,7 @@
 		FDE07B8B75ABB2FCB5395546 /* PluginLSPSheetsEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 061D5BF900836C9D78A6354B /* PluginLSPSheetsEditor */; };
 		GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = GBK2000000000000000001 /* GitBranchMonitorKit */; };
 		HPK1000000000000000001 /* HTMLPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = HPK2000000000000000001 /* HTMLPreviewKit */; };
+		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		NETTOEXTPLUGINNETTO00001 /* PluginNetto in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* PluginNetto */; };
 /* End PBXBuildFile section */
 
@@ -425,14 +426,14 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
-		A1B2C3D82F70000100AAA101 /* Packages */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Packages;
-			sourceTree = "<group>";
-		};
 		A10000102F60000100AAA002 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		A1B2C3D82F70000100AAA101 /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Packages;
 			sourceTree = "<group>";
 		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
@@ -608,6 +609,7 @@
 				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
 				0BB994802FC492FC003720A4 /* PluginProjectOverview in Frameworks */,
 				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
+				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
 				0B12E91A2FC3111D00F7DC5D /* PluginWebFetch in Frameworks */,
 				0B13A1022FD2000000A13A10 /* PluginGitHubCLIDetect in Frameworks */,
 				0B13B1022FD3000000A13B10 /* PluginBrowser in Frameworks */,
@@ -1394,6 +1396,7 @@
 				MRK100000000000000001 /* ModelRouterKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
+				LPR1000000000000000001 /* LumiPluginRegistry */,
 				0B12E9192FC3111D00F7DC5D /* PluginWebFetch */,
 				0B13A1012FD2000000A13A10 /* PluginGitHubCLIDetect */,
 				0B13B1012FD3000000A13B10 /* PluginBrowser */,
@@ -1563,6 +1566,7 @@
 				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
 				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
+				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				0B12E91B2FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Plugins/PluginWebFetch" */,
 				0B13A1002FD2000000A13A10 /* XCLocalSwiftPackageReference "Plugins/PluginGitHubCLIDetect" */,
 				0B13B1002FD3000000A13B10 /* XCLocalSwiftPackageReference "Plugins/PluginBrowser" */,
@@ -2079,7 +2083,8 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/LumiApp/Core/Generated/GeneratedPluginRegistry.swift",
+				"$(SRCROOT)/Packages/LumiPluginRegistry/Package.swift",
+				"$(SRCROOT)/Packages/LumiPluginRegistry/Sources/LumiPluginRegistry/GeneratedPluginRegistry.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
@@ -3458,6 +3463,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/HTMLPreviewKit;
 		};
+		LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiPluginRegistry;
+		};
 		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ModelRouterKit;
@@ -4705,6 +4714,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = HPK3000000000000000001 /* XCLocalSwiftPackageReference "Packages/HTMLPreviewKit" */;
 			productName = HTMLPreviewKit;
+		};
+		LPR1000000000000000001 /* LumiPluginRegistry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */;
+			productName = LumiPluginRegistry;
 		};
 		MRK100000000000000001 /* ModelRouterKit */ = {
 			isa = XCSwiftPackageProductDependency;

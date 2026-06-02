@@ -191,3 +191,204 @@ actor PackagePluginAdapter<Packaged: LumiCoreKit.SuperPlugin>: SuperPlugin {
         Packaged.shared.onDisable()
     }
 }
+
+/// Type-erased bridge for plugins supplied by `LumiPluginRegistry`.
+///
+/// The app-side `SuperPlugin` still exposes static metadata for legacy local
+/// plugins. Packaged plugins are delivered as existential instances, so this
+/// adapter forwards metadata through instance-level properties instead.
+actor AnyPackagePluginAdapter: SuperPlugin {
+    static let shared = AnyPackagePluginAdapter(packaged: EmptyPackagedPlugin.shared)
+
+    static var id: String { "AnyPackagePluginAdapter" }
+    static var displayName: String { "Package Plugin" }
+    static var description: String { "" }
+    static var iconName: String { "puzzlepiece" }
+    static var policy: PluginPolicy { .disabled }
+    static var category: PluginCategory { .general }
+    static var order: Int { Int.max }
+
+    private let packaged: any LumiCoreKit.SuperPlugin
+
+    init(packaged: any LumiCoreKit.SuperPlugin) {
+        self.packaged = packaged
+    }
+
+    nonisolated var instanceLabel: String { packaged.instanceLabel }
+    nonisolated var pluginID: String { type(of: packaged).id }
+    nonisolated var pluginDisplayName: String { type(of: packaged).displayName }
+    nonisolated var pluginDescription: String { type(of: packaged).description }
+    nonisolated var pluginIconName: String { type(of: packaged).iconName }
+    nonisolated var pluginPolicy: PluginPolicy { type(of: packaged).policy }
+    nonisolated var pluginCategory: PluginCategory { PluginCategory(package: type(of: packaged).category) }
+    nonisolated var pluginOrder: Int { type(of: packaged).order }
+
+    nonisolated func pluginDescription(for language: LanguagePreference) -> String {
+        type(of: packaged).description(for: language)
+    }
+
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        packaged.addRootView(content: content)
+    }
+
+    @MainActor
+    func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
+        packaged.wrapRightSidebarRoot(content, context: context)
+    }
+
+    @MainActor
+    func addToolBarLeadingView(context: PluginContext) -> AnyView? {
+        packaged.addToolBarLeadingView(context: context)
+    }
+
+    @MainActor
+    func addToolBarCenterView(context: PluginContext) -> AnyView? {
+        packaged.addToolBarCenterView(context: context)
+    }
+
+    @MainActor
+    func addToolBarTrailingView(context: PluginContext) -> AnyView? {
+        packaged.addToolBarTrailingView(context: context)
+    }
+
+    @MainActor
+    func addViewContainer() -> ViewContainerItem? {
+        packaged.addViewContainer().map(ViewContainerItem.init(package:))
+    }
+
+    @MainActor
+    func addPanelHeaderView(context: PluginContext) -> AnyView? {
+        packaged.addPanelHeaderView(context: context)
+    }
+
+    @MainActor
+    func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
+        packaged.addBottomPanelTabs(context: context).map(BottomPanelTab.init(package:))
+    }
+
+    @MainActor
+    func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
+        packaged.addBottomPanelContentView(tabId: tabId, context: context)
+    }
+
+    @MainActor
+    func addRailTabs(context: PluginContext) -> [RailTab] {
+        packaged.addRailTabs(context: context).map(RailTab.init(package:))
+    }
+
+    @MainActor
+    func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
+        packaged.addRailContentView(tabId: tabId, context: context)
+    }
+
+    @MainActor
+    func addSidebarSections(context: PluginContext) -> [AnyView] {
+        packaged.addSidebarSections(context: context)
+    }
+
+    @MainActor
+    func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        packaged.addSidebarLeadingToolbarItems(context: context).map(SidebarToolbarItem.init(package:))
+    }
+
+    @MainActor
+    func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+        packaged.addSidebarTrailingToolbarItems(context: context).map(SidebarToolbarItem.init(package:))
+    }
+
+    @MainActor
+    func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
+        packaged.addSidebarToolbarItemView(itemId: itemId, context: context)
+    }
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        packaged.addSettingsView()
+    }
+
+    @MainActor
+    func addPosterViews() -> [AnyView] {
+        packaged.addPosterViews()
+    }
+
+    @MainActor
+    func addMenuBarPopupViews() -> [AnyView] {
+        packaged.addMenuBarPopupViews()
+    }
+
+    @MainActor
+    func addMenuBarContentView() -> AnyView? {
+        packaged.addMenuBarContentView()
+    }
+
+    @MainActor
+    func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
+        packaged.addStatusBarLeadingView(context: context)
+    }
+
+    @MainActor
+    func addStatusBarCenterView(context: PluginContext) -> AnyView? {
+        packaged.addStatusBarCenterView(context: context)
+    }
+
+    @MainActor
+    func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        packaged.addStatusBarTrailingView(context: context)
+    }
+
+    @MainActor
+    func addThemeContributions() -> [LumiUIThemeContribution] {
+        packaged.addThemeContributions()
+    }
+
+    @MainActor
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        packaged.agentTools(context: context.packageContext)
+    }
+
+    @MainActor
+    func subAgentDefinitions() -> [any SubAgentDefinitionProtocol] {
+        packaged.subAgentDefinitions()
+    }
+
+    @MainActor
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        packaged.sendMiddlewares().map(AnySuperSendMiddleware.init)
+    }
+
+    nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
+        packaged.llmProviderType()
+    }
+
+    @MainActor
+    func messageRenderers() -> [any SuperMessageRenderer] {
+        packaged.messageRenderers().map(PackageMessageRendererAdapter.init)
+    }
+
+    nonisolated var providesEditorExtensions: Bool {
+        packaged.providesEditorExtensions
+    }
+
+    @MainActor
+    func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        packaged.registerEditorExtensions(into: registry)
+    }
+
+    nonisolated func onRegister() {
+        packaged.onRegister()
+    }
+
+    nonisolated func onEnable() {
+        packaged.onEnable()
+    }
+
+    nonisolated func onDisable() {
+        packaged.onDisable()
+    }
+}
+
+private actor EmptyPackagedPlugin: LumiCoreKit.SuperPlugin {
+    static let shared = EmptyPackagedPlugin()
+    static let category: LumiCoreKit.PluginCategory = .general
+}

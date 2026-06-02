@@ -43,13 +43,12 @@ struct PluginCategorySettingsView: View {
     private var pluginList: some View {
         LazyVGrid(columns: pluginGridColumns, alignment: .leading, spacing: 16) {
             ForEach(plugins, id: \.instanceLabel) { plugin in
-                let pluginType = type(of: plugin)
                 let pluginId = plugin.instanceLabel
 
                 AppSettingsPluginToggleRow(
-                    name: pluginType.displayName,
-                    description: pluginType.description(for: .current),
-                    icon: pluginType.iconName,
+                    name: plugin.pluginDisplayName,
+                    description: plugin.pluginDescription(for: .current),
+                    icon: plugin.pluginIconName,
                     posterViews: plugin.addPosterViews(),
                     isEnabled: Binding(
                         get: { pluginStates[pluginId, default: true] },
@@ -110,8 +109,10 @@ struct PluginCategorySettingsView: View {
     private func loadPluginStates() {
         var states: [String: Bool] = [:]
         for plugin in plugins {
-            let pluginType = type(of: plugin)
-            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enabledByDefault)
+            states[plugin.instanceLabel] = settingsStore.isPluginEnabled(
+                plugin.instanceLabel,
+                defaultEnabled: plugin.pluginEnabledByDefault
+            )
         }
         pluginStates = states
     }
