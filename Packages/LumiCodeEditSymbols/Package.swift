@@ -21,8 +21,7 @@ let package = Package(
             resources: [
                 // Custom SF Symbols stored as asset catalog.
                 // Paths are relative to `Sources/CodeEditSymbols`.
-                .process("Symbols.xcassets",
-            path: "Sources")
+                .process("Symbols.xcassets")
             ]
         ),
         .testTarget(

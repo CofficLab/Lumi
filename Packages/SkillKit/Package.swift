@@ -14,7 +14,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SkillKit"
+            name: "SkillKit",
             path: "Sources"
         ),
         .testTarget(

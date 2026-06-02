@@ -24,8 +24,7 @@ let package = Package(
         .target(
             name: "MarkdownKitCore",
             dependencies: [
-                .product(name: "Markdown", package: "swift-markdown",
-            path: "Sources")
+                .product(name: "Markdown", package: "swift-markdown")
             ],
             path: ".",
             exclude: [
@@ -45,8 +44,7 @@ let package = Package(
             name: "MarkdownKit",
             dependencies: [
                 "MarkdownKitCore",
-                .product(name: "BeautifulMermaid", package: "beautiful-mermaid-swift",
-            path: "Sources")
+                .product(name: "BeautifulMermaid", package: "beautiful-mermaid-swift")
             ],
             path: ".",
             exclude: [

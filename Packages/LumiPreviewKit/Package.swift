@@ -23,10 +23,10 @@ let package = Package(
         .target(
             name: "LumiPreviewKit",
             dependencies: [
-                .product(name: "SuperLogKit", package: "SuperLogKit",
-            path: "Sources")
+                .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
-            path: "Sources/LumiPreviewKit"
+            path: "Sources",
+            exclude: ["LumiPreviewHostApp"]
         ),
         .executableTarget(
             name: "LumiPreviewHostApp",

@@ -15,10 +15,10 @@ let package = Package(
     targets: [
         .target(
             name: "GoEditorCore",
-            path: "Sources"
             dependencies: [
                 "ShellKit",
-            ]
+            ],
+            path: "Sources"
         ),
         .testTarget(
             name: "GoEditorCoreTests",

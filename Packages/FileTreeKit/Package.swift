@@ -14,7 +14,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "FileTreeKit"
+            name: "FileTreeKit",
             path: "Sources"
         ),
         .testTarget(

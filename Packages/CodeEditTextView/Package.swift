@@ -31,18 +31,18 @@ let package = Package(
             name: "CodeEditTextView",
             dependencies: [
                 "TextStory",
-                .product(name: "Collections", package: "swift-collections",
-            path: "Sources"),
+                .product(name: "Collections", package: "swift-collections"),
                 "CodeEditTextViewObjC"
-            ]
+            ],
+            path: "Sources",
+            exclude: ["CodeEditTextViewObjC"]
         ),
 
         // ObjC addons
         .target(
             name: "CodeEditTextViewObjC",
             publicHeadersPath: "include"
-        ,
-            path: "Sources"),
+        ),
         .testTarget(
             name: "CodeEditTextViewTests",
             dependencies: ["CodeEditTextView"],

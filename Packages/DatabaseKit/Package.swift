@@ -21,14 +21,14 @@ let package = Package(
     targets: [
         .target(
             name: "DatabaseKit",
-            path: "Sources"
             dependencies: [
                 .product(name: "MySQLNIO", package: "mysql-nio"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOPosix", package: "swift-nio"),
                 .product(name: "Logging", package: "swift-log")
-            ]
+            ],
+            path: "Sources"
         ),
         .testTarget(
             name: "DatabaseKitTests",

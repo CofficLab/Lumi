@@ -26,7 +26,6 @@ let package = Package(
     targets: [
         .target(
             name: "EditorService",
-            path: "Sources"
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
@@ -37,7 +36,8 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
-            ]
+            ],
+            path: "Sources"
         ),
         .testTarget(
             name: "EditorServiceTests",
