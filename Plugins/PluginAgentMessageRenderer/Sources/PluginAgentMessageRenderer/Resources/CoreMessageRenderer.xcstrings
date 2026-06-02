@@ -135,6 +135,50 @@
         }
       }
     },
+    "Show Less" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Less"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
+          }
+        }
+      }
+    },
+    "Show More" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show More"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
+          }
+        }
+      }
+    },
     "Stop Current Turn" : {
       "localizations" : {
         "en" : {
@@ -267,6 +311,9 @@
         }
       }
     },
+    "工具执行失败" : {
+
+    },
     "思考过程" : {
       "localizations" : {
         "en" : {
@@ -361,6 +408,9 @@
     "没有可显示的调用参数" : {
 
     },
+    "没有错误详情" : {
+
+    },
     "点击结果后会在这里显示工具输出" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -408,50 +458,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新發送該訊息"
-          }
-        }
-      }
-    },
-    "Show More" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show More"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展开"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展開"
-          }
-        }
-      }
-    },
-    "Show Less" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Less"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收起"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收起"
           }
         }
       }

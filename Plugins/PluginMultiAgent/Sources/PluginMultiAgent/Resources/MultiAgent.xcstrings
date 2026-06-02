@@ -69,7 +69,11 @@
         }
       }
     },
+    "Maximum seconds to wait for each agent (default: 120, range: 1-3600)" : {
+
+    },
     "Maximum seconds to wait for each agent (default: 120)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

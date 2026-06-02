@@ -1,29 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Appended %lld tasks:" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appended %lld tasks:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已追加 %lld 个任务："
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已追加 %lld 個任務："
-          }
-        }
-      }
-    },
     "All tasks completed!" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43,6 +20,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有任務已完成！"
+          }
+        }
+      }
+    },
+    "Appended %lld tasks:" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appended %lld tasks:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已追加 %lld 个任务："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已追加 %lld 個任務："
           }
         }
       }
@@ -125,9 +125,6 @@
         }
       }
     },
-    "Created" : {
-
-    },
     "Created %lld tasks:" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -177,29 +174,6 @@
         }
       }
     },
-    "Failed to auto-start next task: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to auto-start next task: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动开始下一个任务失败：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動開始下一個任務失敗：%@"
-          }
-        }
-      }
-    },
     "Error: conversation_id is required" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -223,29 +197,6 @@
         }
       }
     },
-    "Error: failed to save tasks: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error: failed to save tasks: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误：保存任务失败：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤：儲存任務失敗：%@"
-          }
-        }
-      }
-    },
     "Error: failed to save task status: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -265,6 +216,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錯誤：儲存任務狀態失敗：%@"
+          }
+        }
+      }
+    },
+    "Error: failed to save tasks: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: failed to save tasks: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误：保存任务失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤：儲存任務失敗：%@"
           }
         }
       }
@@ -410,35 +384,35 @@
         }
       }
     },
-    "Tasks (%lld total)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tasks (%lld total)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任务列表（共 %lld 个）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任務列表（共 %lld 個）"
-          }
-        }
-      }
-    },
     "Expand" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "展开"
+          }
+        }
+      }
+    },
+    "Failed to auto-start next task: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to auto-start next task: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动开始下一个任务失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動開始下一個任務失敗：%@"
           }
         }
       }
@@ -543,6 +517,9 @@
         }
       }
     },
+    "No tasks appended: task list already reached the maximum size." : {
+
+    },
     "No tasks found for this conversation. Use create_task to plan your work." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -565,9 +542,6 @@
           }
         }
       }
-    },
-    "Now start working on task #1" : {
-
     },
     "Now start working on task #1: %@" : {
       "extractionState" : "manual",
@@ -754,8 +728,28 @@
         }
       }
     },
-    "tasks:" : {
-
+    "Tasks (%lld total)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks (%lld total)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任务列表（共 %lld 个）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任務列表（共 %lld 個）"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -2,7 +2,6 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%d rows × %d columns" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -23,6 +22,9 @@
           }
         }
       }
+    },
+    "Add to Chat" : {
+
     },
     "Automation: start preview stream" : {
       "extractionState" : "stale",
@@ -71,7 +73,6 @@
       }
     },
     "Build log saved:" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -94,7 +95,6 @@
       }
     },
     "building %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -117,7 +117,6 @@
       }
     },
     "cache" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -139,8 +138,10 @@
         }
       }
     },
+    "Cancel" : {
+
+    },
     "Choose which #Preview in the current Swift file to build and render." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -162,8 +163,19 @@
         }
       }
     },
+    "Clean all stale String Catalog keys in this project?" : {
+
+    },
+    "Clean Project String Catalogs" : {
+
+    },
+    "Clean stale keys in every String Catalog file in the current project" : {
+
+    },
+    "Clean stale keys in the current String Catalog file" : {
+
+    },
     "Clear Inline Preview build cache" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -186,7 +198,6 @@
       }
     },
     "Compilation failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -208,8 +219,16 @@
         }
       }
     },
+    "Copied" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy error message to clipboard" : {
+
+    },
     "CSV Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -232,7 +251,6 @@
       }
     },
     "Default Localization" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -255,7 +273,6 @@
       }
     },
     "Default Localization (%@)" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -277,8 +294,10 @@
         }
       }
     },
+    "Delete" : {
+
+    },
     "Dependency planning failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -299,6 +318,9 @@
           }
         }
       }
+    },
+    "Editor service is not available." : {
+
     },
     "Embedded preview powered by LumiPreviewKit" : {
       "localizations" : {
@@ -323,7 +345,6 @@
       }
     },
     "Empty CSV data" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -369,7 +390,6 @@
       }
     },
     "Entry debug state" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -392,7 +412,6 @@
       }
     },
     "Failed to capture preview screenshot." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -414,8 +433,13 @@
         }
       }
     },
+    "Failed to clean project String Catalogs: %@" : {
+
+    },
+    "Failed to clean String Catalog: %@" : {
+
+    },
     "Failed to load image: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -438,7 +462,6 @@
       }
     },
     "Failed to load string catalog: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -460,8 +483,13 @@
         }
       }
     },
+    "Failed to save file: %@" : {
+
+    },
+    "Failed to save file." : {
+
+    },
     "Failed to save screenshot: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -484,7 +512,6 @@
       }
     },
     "failed: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -507,7 +534,6 @@
       }
     },
     "File not found: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -529,8 +555,10 @@
         }
       }
     },
+    "File saved to Downloads: %@" : {
+
+    },
     "HTML Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -553,7 +581,6 @@
       }
     },
     "Image Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -598,7 +625,6 @@
       }
     },
     "Invalid CSV" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -621,7 +647,6 @@
       }
     },
     "Invalid JSON" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -644,7 +669,6 @@
       }
     },
     "Invalid JSON data" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -666,8 +690,10 @@
         }
       }
     },
+    "Invalid JSONL at line %lld" : {
+
+    },
     "Invalid plist" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -690,7 +716,6 @@
       }
     },
     "Invalid plist data" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -713,7 +738,6 @@
       }
     },
     "JSON Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -736,7 +760,6 @@
       }
     },
     "Key" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -782,7 +805,6 @@
       }
     },
     "Markdown Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -805,7 +827,6 @@
       }
     },
     "Markdown TODO completion" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -828,7 +849,6 @@
       }
     },
     "No #Preview in the current Swift file." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -851,7 +871,6 @@
       }
     },
     "No CSV content to preview." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -874,7 +893,6 @@
       }
     },
     "No data rows found" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -920,7 +938,6 @@
       }
     },
     "No JSON content to preview." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -943,7 +960,6 @@
       }
     },
     "No Markdown content to preview." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -966,7 +982,6 @@
       }
     },
     "No plist content to preview." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -988,8 +1003,10 @@
         }
       }
     },
+    "No stale String Catalog keys found." : {
+
+    },
     "No String Catalog content to preview." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1010,6 +1027,9 @@
           }
         }
       }
+    },
+    "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here." : {
+
     },
     "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here." : {
       "extractionState" : "stale",
@@ -1035,7 +1055,6 @@
       }
     },
     "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1058,7 +1077,6 @@
       }
     },
     "PDF Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1081,7 +1099,6 @@
       }
     },
     "Plist Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1104,7 +1121,6 @@
       }
     },
     "Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1127,7 +1143,6 @@
       }
     },
     "Preview dylib failed to load" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1150,7 +1165,6 @@
       }
     },
     "Preview failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1173,7 +1187,6 @@
       }
     },
     "ready" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1196,7 +1209,6 @@
       }
     },
     "rebuilt" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1219,7 +1231,6 @@
       }
     },
     "Refresh entry debug state" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1241,8 +1252,20 @@
         }
       }
     },
+    "Removed %d stale key(s) from %d String Catalog file(s)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removed %1$d stale key(s) from %2$d String Catalog file(s)."
+          }
+        }
+      }
+    },
+    "Removed %d stale String Catalog key(s)." : {
+
+    },
     "Retry" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1265,7 +1288,6 @@
       }
     },
     "Retry preview build" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1288,7 +1310,6 @@
       }
     },
     "running · %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1310,8 +1331,10 @@
         }
       }
     },
+    "Scanned %d String Catalog file(s); no stale keys found." : {
+
+    },
     "Screenshot preview canvas" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1356,8 +1379,10 @@
         }
       }
     },
+    "Screenshot saved to Downloads and copied to clipboard: %@" : {
+
+    },
     "SDK resolution failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1379,8 +1404,10 @@
         }
       }
     },
+    "Select a project before cleaning String Catalogs." : {
+
+    },
     "Show entry debug state" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1426,7 +1453,6 @@
       }
     },
     "Show log file in Finder" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1448,8 +1474,10 @@
         }
       }
     },
+    "Stale String Catalog keys in the current file" : {
+
+    },
     "starting" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1472,7 +1500,6 @@
       }
     },
     "stopping" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1495,7 +1522,6 @@
       }
     },
     "String Catalog Preview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1518,7 +1544,6 @@
       }
     },
     "This file type is not supported by Inline Preview yet." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1540,8 +1565,13 @@
         }
       }
     },
+    "This rewrites every .xcstrings file under the current project and removes entries marked as stale." : {
+
+    },
+    "Unclosed quoted field" : {
+
+    },
     "Unsupported plist format" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1564,7 +1594,6 @@
       }
     },
     "warming" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

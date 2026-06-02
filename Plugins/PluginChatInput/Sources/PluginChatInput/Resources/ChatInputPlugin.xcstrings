@@ -47,6 +47,9 @@
         }
       }
     },
+    "Clear chat history" : {
+
+    },
     "Input Area" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -69,6 +72,12 @@
           }
         }
       }
+    },
+    "List available commands" : {
+
+    },
+    "List MCP servers" : {
+
     },
     "Message Input" : {
       "extractionState" : "manual",
@@ -139,6 +148,9 @@
         }
       }
     },
+    "Plan a task" : {
+
+    },
     "Please create or select a conversation first" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -186,6 +198,9 @@
       }
     },
     "Send" : {
+
+    },
+    "Show all commands" : {
 
     }
   },

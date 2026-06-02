@@ -89,6 +89,9 @@
         }
       }
     },
+    "Cancelled" : {
+
+    },
     "Debug Current Go File" : {
 
     },
@@ -408,6 +411,9 @@
           }
         }
       }
+    },
+    "Stop" : {
+
     },
     "Testing" : {
       "localizations" : {
