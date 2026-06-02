@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "PluginSwiftSelectionCodeActionEditorTests",
             dependencies: ["PluginSwiftSelectionCodeActionEditor"],
-            path: "Tests/PluginSwiftSelectionCodeActionEditorTests"
+            path: "Tests"
         )
     ]
 )

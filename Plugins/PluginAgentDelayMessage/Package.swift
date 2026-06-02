@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentDelayMessageTests",
             dependencies: ["PluginAgentDelayMessage"],
-            path: "Tests/PluginAgentDelayMessageTests"
+            path: "Tests"
         )
     ]
 )

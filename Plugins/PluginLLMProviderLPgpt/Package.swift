@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderLPgptTests",
             dependencies: ["PluginLLMProviderLPgpt"],
-            path: "Tests/PluginLLMProviderLPgptTests"
+            path: "Tests"
         )
     ]
 )

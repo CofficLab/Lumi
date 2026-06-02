@@ -21,7 +21,7 @@ let package = Package(
         .testTarget(
             name: "DiskManagerKitTests",
             dependencies: ["DiskManagerKit"],
-            path: "Tests/DiskManagerKitTests"
+            path: "Tests"
         )
     ]
 )

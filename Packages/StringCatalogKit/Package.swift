@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "StringCatalogKitTests",
             dependencies: ["StringCatalogKit"],
-            path: "Tests/StringCatalogKitTests"
+            path: "Tests"
         )
     ]
 )

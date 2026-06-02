@@ -31,7 +31,7 @@ let package = Package(
         .testTarget(
             name: "MemoryKitTests",
             dependencies: ["MemoryKit"],
-            path: "Tests/MemoryKitTests"
+            path: "Tests"
         )
     ]
 )

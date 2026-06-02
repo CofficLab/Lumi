@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginClipboardManagerTests",
             dependencies: ["PluginClipboardManager"],
-            path: "Tests/PluginClipboardManagerTests"
+            path: "Tests"
         )
     ]
 )

@@ -40,7 +40,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderZhipuTests",
             dependencies: ["PluginLLMProviderZhipu"],
-            path: "Tests/PluginLLMProviderZhipuTests"
+            path: "Tests"
         )
     ]
 )

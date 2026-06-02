@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginIdleTimeTests",
             dependencies: ["PluginIdleTime"],
-            path: "Tests/PluginIdleTimeTests"
+            path: "Tests"
         )
     ]
 )

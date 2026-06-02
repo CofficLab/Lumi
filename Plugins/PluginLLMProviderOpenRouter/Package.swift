@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderOpenRouterTests",
             dependencies: ["PluginLLMProviderOpenRouter"],
-            path: "Tests/PluginLLMProviderOpenRouterTests"
+            path: "Tests"
         )
     ]
 )

@@ -17,7 +17,7 @@ let package = Package(
         .testTarget(
             name: "TerminalCoreKitTests",
             dependencies: ["TerminalCoreKit"],
-            path: "Tests/TerminalCoreKitTests"
+            path: "Tests"
         )
     ]
 )

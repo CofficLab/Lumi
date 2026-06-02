@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginQuickLauncherTests",
             dependencies: ["PluginQuickLauncher"],
-            path: "Tests/PluginQuickLauncherTests"
+            path: "Tests"
         )
     ]
 )

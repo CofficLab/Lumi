@@ -38,7 +38,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentMCPToolsTests",
             dependencies: ["PluginAgentMCPTools"],
-            path: "Tests/PluginAgentMCPToolsTests"
+            path: "Tests"
         )
     ]
 )

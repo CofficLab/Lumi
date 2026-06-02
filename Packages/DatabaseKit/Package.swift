@@ -31,7 +31,8 @@ let package = Package(
         ),
         .testTarget(
             name: "DatabaseKitTests",
-            dependencies: ["DatabaseKit"]
+            dependencies: ["DatabaseKit"],
+            path: "Tests"
         )
     ]
 )

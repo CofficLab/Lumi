@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginDiskManagerTests",
             dependencies: ["PluginDiskManager"],
-            path: "Tests/PluginDiskManagerTests"
+            path: "Tests"
         )
     ]
 )

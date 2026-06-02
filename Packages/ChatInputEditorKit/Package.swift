@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "ChatInputEditorKitTests",
             dependencies: ["ChatInputEditorKit"],
-            path: "Tests/ChatInputEditorKitTests"
+            path: "Tests"
         )
     ]
 )

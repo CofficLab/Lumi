@@ -53,7 +53,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorPanelTests",
             dependencies: ["PluginEditorPanel"],
-            path: "Tests/PluginEditorPanelTests"
+            path: "Tests"
         )
     ]
 )

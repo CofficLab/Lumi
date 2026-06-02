@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentTurnNotificationTests",
             dependencies: ["PluginAgentTurnNotification"],
-            path: "Tests/PluginAgentTurnNotificationTests"
+            path: "Tests"
         )
     ]
 )

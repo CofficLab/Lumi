@@ -40,7 +40,7 @@ let package = Package(
         .testTarget(
             name: "PluginGitHubInsightTests",
             dependencies: ["PluginGitHubInsight"],
-            path: "Tests/PluginGitHubInsightTests"
+            path: "Tests"
         )
     ]
 )

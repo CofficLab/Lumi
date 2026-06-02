@@ -35,7 +35,7 @@ let package = Package(
                 "PluginChatMode",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Tests/PluginChatModeTests"
+            path: "Tests"
         )
     ]
 )

@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMAvailabilityTests",
             dependencies: ["PluginLLMAvailability"],
-            path: "Tests/PluginLLMAvailabilityTests"
+            path: "Tests"
         )
     ]
 )

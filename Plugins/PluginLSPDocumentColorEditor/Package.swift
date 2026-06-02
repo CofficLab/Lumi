@@ -39,7 +39,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPDocumentColorEditorTests",
             dependencies: ["PluginLSPDocumentColorEditor"],
-            path: "Tests/PluginLSPDocumentColorEditorTests"
+            path: "Tests"
         )
     ]
 )

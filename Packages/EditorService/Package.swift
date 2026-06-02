@@ -45,7 +45,7 @@ let package = Package(
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
             ],
-            path: "Tests/EditorServiceTests"
+            path: "Tests"
         ),
     ]
 )

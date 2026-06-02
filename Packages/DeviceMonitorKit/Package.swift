@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(
             name: "DeviceMonitorKitTests",
             dependencies: ["DeviceMonitorKit"],
-            path: "Tests/DeviceMonitorKitTests"
+            path: "Tests"
         )
     ]
 )

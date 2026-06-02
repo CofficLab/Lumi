@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "LLMProviderKitTests",
             dependencies: ["LLMProviderKit"],
-            path: "Tests/LLMProviderKitTests"
+            path: "Tests"
         ),
     ]
 )

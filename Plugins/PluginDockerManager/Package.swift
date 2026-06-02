@@ -39,7 +39,7 @@ let package = Package(
                 "PluginDockerManager",
                 .product(name: "DockerKit", package: "DockerKit"),
             ],
-            path: "Tests/PluginDockerManagerTests"
+            path: "Tests"
         )
     ]
 )

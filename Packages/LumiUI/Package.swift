@@ -24,7 +24,7 @@ let package = Package(
         .testTarget(
             name: "LumiUITests",
             dependencies: ["LumiUI"],
-            path: "Tests/LumiUITests"
+            path: "Tests"
         )
     ]
 )

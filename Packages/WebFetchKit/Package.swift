@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(
             name: "WebFetchKitTests",
             dependencies: ["WebFetchKit"],
-            path: "Tests/WebFetchKitTests"
+            path: "Tests"
         )
     ]
 )

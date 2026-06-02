@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginRequestLogTests",
             dependencies: ["PluginRequestLog"],
-            path: "Tests/PluginRequestLogTests"
+            path: "Tests"
         )
     ]
 )

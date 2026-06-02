@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Tests/PluginConversationNewTests"
+            path: "Tests"
         )
     ]
 )

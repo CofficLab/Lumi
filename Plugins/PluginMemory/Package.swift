@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginMemoryTests",
             dependencies: ["PluginMemory"],
-            path: "Tests/PluginMemoryTests"
+            path: "Tests"
         )
     ]
 )

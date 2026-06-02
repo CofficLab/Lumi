@@ -29,7 +29,7 @@ let package = Package(
         .testTarget(
             name: "PluginWindowPersistenceTests",
             dependencies: ["PluginWindowPersistence"],
-            path: "Tests/PluginWindowPersistenceTests"
+            path: "Tests"
         )
     ]
 )

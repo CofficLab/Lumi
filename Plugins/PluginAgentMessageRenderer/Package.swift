@@ -44,7 +44,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentMessageRendererTests",
             dependencies: ["PluginAgentMessageRenderer"],
-            path: "Tests/PluginAgentMessageRendererTests"
+            path: "Tests"
         )
     ]
 )

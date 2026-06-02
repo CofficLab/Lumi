@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "OpenInKitTests",
             dependencies: ["OpenInKit"],
-            path: "Tests/OpenInKitTests"
+            path: "Tests"
         )
     ]
 )

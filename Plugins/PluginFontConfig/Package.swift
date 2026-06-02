@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginFontConfigTests",
             dependencies: ["PluginFontConfig"],
-            path: "Tests/PluginFontConfigTests"
+            path: "Tests"
         )
     ]
 )

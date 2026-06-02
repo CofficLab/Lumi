@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(
             name: "XcodeProjectGenTests",
             dependencies: ["XcodeProjectGen"],
-            path: "Tests/XcodeProjectGenTests"
+            path: "Tests"
         ),
     ]
 )

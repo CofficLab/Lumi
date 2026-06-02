@@ -31,7 +31,7 @@ let package = Package(
         .testTarget(
             name: "PluginChatPanelTests",
             dependencies: ["PluginChatPanel"],
-            path: "Tests/PluginChatPanelTests"
+            path: "Tests"
         )
     ]
 )

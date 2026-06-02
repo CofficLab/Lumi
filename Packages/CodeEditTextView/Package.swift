@@ -43,7 +43,8 @@ let package = Package(
         ),
         .testTarget(
             name: "CodeEditTextViewTests",
-            dependencies: ["CodeEditTextView"]
+            dependencies: ["CodeEditTextView"],
+            path: "Tests"
         ),
     ]
 )

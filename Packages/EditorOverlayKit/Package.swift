@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "EditorOverlayKitTests",
             dependencies: ["EditorOverlayKit"],
-            path: "Tests/EditorOverlayKitTests"
+            path: "Tests"
         )
     ]
 )

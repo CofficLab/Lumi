@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderMegaLLMTests",
             dependencies: ["PluginLLMProviderMegaLLM"],
-            path: "Tests/PluginLLMProviderMegaLLMTests"
+            path: "Tests"
         )
     ]
 )

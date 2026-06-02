@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentLanguageTests",
             dependencies: ["PluginAgentLanguage"],
-            path: "Tests/PluginAgentLanguageTests"
+            path: "Tests"
         )
     ]
 )

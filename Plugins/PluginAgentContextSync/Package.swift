@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginAgentContextSyncTests",
             dependencies: ["PluginAgentContextSync"],
-            path: "Tests/PluginAgentContextSyncTests"
+            path: "Tests"
         )
     ]
 )

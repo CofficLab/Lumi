@@ -21,7 +21,7 @@ let package = Package(
         .testTarget(
             name: "GitBranchMonitorKitTests",
             dependencies: ["GitBranchMonitorKit"],
-            path: "Tests/GitBranchMonitorKitTests"
+            path: "Tests"
         )
     ]
 )

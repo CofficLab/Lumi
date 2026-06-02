@@ -44,7 +44,7 @@ let package = Package(
         .testTarget(
             name: "PluginGitTests",
             dependencies: ["PluginGit"],
-            path: "Tests/PluginGitTests"
+            path: "Tests"
         )
     ]
 )

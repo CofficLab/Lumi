@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginOpenInXcodeTests",
             dependencies: ["PluginOpenInXcode"],
-            path: "Tests/PluginOpenInXcodeTests"
+            path: "Tests"
         )
     ]
 )

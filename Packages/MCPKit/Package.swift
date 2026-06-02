@@ -30,7 +30,7 @@ let package = Package(
         .testTarget(
             name: "MCPKitTests",
             dependencies: ["MCPKit"],
-            path: "Tests/MCPKitTests"
+            path: "Tests"
         ),
     ]
 )

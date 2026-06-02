@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginToolCallLoopDetectionTests",
             dependencies: ["PluginToolCallLoopDetection"],
-            path: "Tests/PluginToolCallLoopDetectionTests"
+            path: "Tests"
         )
     ]
 )

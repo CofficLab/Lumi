@@ -37,7 +37,7 @@ let package = Package(
         .testTarget(
             name: "PluginAppStoreConnectTests",
             dependencies: ["PluginAppStoreConnect"],
-            path: "Tests/PluginAppStoreConnectTests"
+            path: "Tests"
         )
     ]
 )

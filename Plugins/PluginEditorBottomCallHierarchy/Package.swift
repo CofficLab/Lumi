@@ -37,7 +37,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorBottomCallHierarchyTests",
             dependencies: ["PluginEditorBottomCallHierarchy"],
-            path: "Tests/PluginEditorBottomCallHierarchyTests"
+            path: "Tests"
         )
     ]
 )

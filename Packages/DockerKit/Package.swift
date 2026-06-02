@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(
             name: "DockerKitTests",
             dependencies: ["DockerKit"],
-            path: "Tests/DockerKitTests"
+            path: "Tests"
         )
     ]
 )

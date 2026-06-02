@@ -35,7 +35,7 @@ let package = Package(
         .testTarget(
             name: "LumiPreviewKitTests",
             dependencies: ["LumiPreviewKit"],
-            path: "Tests/LumiPreviewKitTests"
+            path: "Tests"
         )
     ]
 )

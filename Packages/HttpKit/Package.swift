@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "HttpKitTests",
             dependencies: ["HttpKit"],
-            path: "Tests/HttpKitTests"
+            path: "Tests"
         ),
     ]
 )

@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginWebFetchTests",
             dependencies: ["PluginWebFetch"],
-            path: "Tests/PluginWebFetchTests"
+            path: "Tests"
         )
     ]
 )

@@ -38,7 +38,7 @@ let package = Package(
         .testTarget(
             name: "PluginQuickFileSearchTests",
             dependencies: ["PluginQuickFileSearch"],
-            path: "Tests/PluginQuickFileSearchTests"
+            path: "Tests"
         )
     ]
 )

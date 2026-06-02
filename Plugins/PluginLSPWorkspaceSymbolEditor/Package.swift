@@ -41,7 +41,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPWorkspaceSymbolEditorTests",
             dependencies: ["PluginLSPWorkspaceSymbolEditor"],
-            path: "Tests/PluginLSPWorkspaceSymbolEditorTests"
+            path: "Tests"
         )
     ]
 )

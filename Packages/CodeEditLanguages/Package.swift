@@ -50,7 +50,8 @@ let package = Package(
         codeLanguagesContainerTarget,
         .testTarget(
             name: "CodeEditLanguagesTests",
-            dependencies: ["CodeEditLanguages"]
+            dependencies: ["CodeEditLanguages"],
+            path: "Tests"
         ),
     ]
 )

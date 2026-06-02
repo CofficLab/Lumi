@@ -24,7 +24,8 @@ let package = Package(
         ),
         .testTarget(
             name: "EditorKernelTests",
-            dependencies: ["EditorKernel"]
+            dependencies: ["EditorKernel"],
+            path: "Tests"
         )
     ]
 )

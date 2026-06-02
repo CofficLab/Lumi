@@ -18,7 +18,8 @@ let package = Package(
         ),
         .testTarget(
             name: "FileTreeKitTests",
-            dependencies: ["FileTreeKit"]
+            dependencies: ["FileTreeKit"],
+            path: "Tests"
         )
     ]
 )

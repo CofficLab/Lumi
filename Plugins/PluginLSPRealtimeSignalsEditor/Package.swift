@@ -41,7 +41,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPRealtimeSignalsEditorTests",
             dependencies: ["PluginLSPRealtimeSignalsEditor"],
-            path: "Tests/PluginLSPRealtimeSignalsEditorTests"
+            path: "Tests"
         )
     ]
 )

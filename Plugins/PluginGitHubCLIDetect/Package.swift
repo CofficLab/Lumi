@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginGitHubCLIDetectTests",
             dependencies: ["PluginGitHubCLIDetect"],
-            path: "Tests/PluginGitHubCLIDetectTests"
+            path: "Tests"
         )
     ]
 )

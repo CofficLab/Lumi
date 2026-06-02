@@ -39,7 +39,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorLSPContextCommandsTests",
             dependencies: ["PluginEditorLSPContextCommands"],
-            path: "Tests/PluginEditorLSPContextCommandsTests"
+            path: "Tests"
         )
     ]
 )

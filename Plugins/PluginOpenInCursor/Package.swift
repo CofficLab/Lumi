@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "PluginOpenInCursorTests",
             dependencies: ["PluginOpenInCursor"],
-            path: "Tests/PluginOpenInCursorTests"
+            path: "Tests"
         )
     ]
 )

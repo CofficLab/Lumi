@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginAutoTaskTests",
             dependencies: ["PluginAutoTask"],
-            path: "Tests/PluginAutoTaskTests"
+            path: "Tests"
         )
     ]
 )

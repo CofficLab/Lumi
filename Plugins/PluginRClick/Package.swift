@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginRClickTests",
             dependencies: ["PluginRClick"],
-            path: "Tests/PluginRClickTests"
+            path: "Tests"
         )
     ]
 )

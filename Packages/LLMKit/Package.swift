@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(
             name: "LLMKitTests",
             dependencies: ["LLMKit"],
-            path: "Tests/LLMKitTests"
+            path: "Tests"
         ),
     ]
 )

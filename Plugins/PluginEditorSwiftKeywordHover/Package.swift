@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorSwiftKeywordHoverTests",
             dependencies: ["PluginEditorSwiftKeywordHover"],
-            path: "Tests/PluginEditorSwiftKeywordHoverTests"
+            path: "Tests"
         )
     ]
 )

@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderXiaomiTests",
             dependencies: ["PluginLLMProviderXiaomi"],
-            path: "Tests/PluginLLMProviderXiaomiTests"
+            path: "Tests"
         )
     ]
 )

@@ -26,7 +26,8 @@ let package = Package(
         ),
         .testTarget(
             name: "XcodeKitTests",
-            dependencies: ["XcodeKit"]
+            dependencies: ["XcodeKit"],
+            path: "Tests"
         ),
     ]
 )

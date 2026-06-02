@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginMultiAgentTests",
             dependencies: ["PluginMultiAgent"],
-            path: "Tests/PluginMultiAgentTests"
+            path: "Tests"
         )
     ]
 )

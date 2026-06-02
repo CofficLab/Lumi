@@ -45,7 +45,8 @@ let package = Package(
         ),
         .testTarget(
             name: "CodeEditSourceEditorTests",
-            dependencies: ["CodeEditSourceEditor"]
+            dependencies: ["CodeEditSourceEditor"],
+            path: "Tests"
         ),
     ]
 )

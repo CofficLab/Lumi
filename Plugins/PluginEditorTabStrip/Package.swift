@@ -38,7 +38,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorTabStripTests",
             dependencies: ["PluginEditorTabStrip"],
-            path: "Tests/PluginEditorTabStripTests"
+            path: "Tests"
         )
     ]
 )

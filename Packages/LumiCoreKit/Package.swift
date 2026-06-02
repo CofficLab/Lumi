@@ -42,7 +42,7 @@ let package = Package(
         .testTarget(
             name: "LumiCoreKitTests",
             dependencies: ["LumiCoreKit"],
-            path: "Tests/LumiCoreKitTests"
+            path: "Tests"
         )
     ]
 )

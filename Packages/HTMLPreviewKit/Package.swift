@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "HTMLPreviewKitTests",
             dependencies: ["HTMLPreviewKit"],
-            path: "Tests/HTMLPreviewKitTests"
+            path: "Tests"
         )
     ]
 )

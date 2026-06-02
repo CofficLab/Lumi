@@ -45,7 +45,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPInlayHintEditorTests",
             dependencies: ["PluginLSPInlayHintEditor"],
-            path: "Tests/PluginLSPInlayHintEditorTests"
+            path: "Tests"
         )
     ]
 )

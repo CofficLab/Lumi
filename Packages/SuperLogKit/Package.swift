@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "SuperLogKitTests",
             dependencies: ["SuperLogKit"],
-            path: "Tests/SuperLogKitTests"
+            path: "Tests"
         )
     ]
 )

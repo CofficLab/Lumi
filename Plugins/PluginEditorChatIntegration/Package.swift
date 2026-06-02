@@ -37,7 +37,7 @@ let package = Package(
                 "PluginEditorChatIntegration",
                 .product(name: "EditorService", package: "EditorService"),
             ],
-            path: "Tests/PluginEditorChatIntegrationTests"
+            path: "Tests"
         )
     ]
 )

@@ -41,7 +41,7 @@ let package = Package(
         .testTarget(
             name: "PluginConversationTimelineTests",
             dependencies: ["PluginConversationTimeline"],
-            path: "Tests/PluginConversationTimelineTests"
+            path: "Tests"
         )
     ]
 )

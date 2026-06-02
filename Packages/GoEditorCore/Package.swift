@@ -23,7 +23,8 @@ let package = Package(
             name: "GoEditorCoreTests",
             dependencies: [
                 "GoEditorCore",
-            ]
+            ],
+            path: "Tests"
         ),
     ]
 )

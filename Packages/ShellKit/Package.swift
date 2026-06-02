@@ -9,6 +9,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "ShellKit"),
-        .testTarget(name: "ShellKitTests", dependencies: ["ShellKit"]),
+        .testTarget(name: "ShellKitTests", dependencies: ["ShellKit"],
+            path: "Tests"),
     ]
 )

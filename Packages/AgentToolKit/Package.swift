@@ -24,7 +24,7 @@ let package = Package(
         .testTarget(
             name: "AgentToolKitTests",
             dependencies: ["AgentToolKit"],
-            path: "Tests/AgentToolKitTests"
+            path: "Tests"
         )
     ]
 )

@@ -28,7 +28,7 @@ let package = Package(
         .testTarget(
             name: "FilePreviewKitTests",
             dependencies: ["FilePreviewKit"],
-            path: "Tests/FilePreviewKitTests"
+            path: "Tests"
         )
     ]
 )

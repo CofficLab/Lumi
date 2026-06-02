@@ -32,7 +32,7 @@ let package = Package(
         .testTarget(
             name: "PluginNettoTests",
             dependencies: ["PluginNetto"],
-            path: "Tests/PluginNettoTests"
+            path: "Tests"
         )
     ]
 )

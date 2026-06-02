@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginMultiCursorCommandsEditorTests",
             dependencies: ["PluginMultiCursorCommandsEditor"],
-            path: "Tests/PluginMultiCursorCommandsEditorTests"
+            path: "Tests"
         )
     ]
 )

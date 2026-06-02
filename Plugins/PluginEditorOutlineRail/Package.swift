@@ -37,7 +37,7 @@ let package = Package(
         .testTarget(
             name: "PluginEditorOutlineRailTests",
             dependencies: ["PluginEditorOutlineRail"],
-            path: "Tests/PluginEditorOutlineRailTests"
+            path: "Tests"
         )
     ]
 )

@@ -41,7 +41,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPCallHierarchyEditorTests",
             dependencies: ["PluginLSPCallHierarchyEditor"],
-            path: "Tests/PluginLSPCallHierarchyEditorTests"
+            path: "Tests"
         )
     ]
 )

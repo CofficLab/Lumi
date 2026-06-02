@@ -32,7 +32,7 @@ let package = Package(
                 "PluginChatPendingMessages",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Tests/PluginChatPendingMessagesTests"
+            path: "Tests"
         )
     ]
 )

@@ -39,7 +39,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPFoldingRangeEditorTests",
             dependencies: ["PluginLSPFoldingRangeEditor"],
-            path: "Tests/PluginLSPFoldingRangeEditorTests"
+            path: "Tests"
         )
     ]
 )

@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginMenuBarManagerTests",
             dependencies: ["PluginMenuBarManager"],
-            path: "Tests/PluginMenuBarManagerTests"
+            path: "Tests"
         )
     ]
 )

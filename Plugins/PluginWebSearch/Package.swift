@@ -34,7 +34,7 @@ let package = Package(
         .testTarget(
             name: "PluginWebSearchTests",
             dependencies: ["PluginWebSearch"],
-            path: "Tests/PluginWebSearchTests"
+            path: "Tests"
         )
     ]
 )

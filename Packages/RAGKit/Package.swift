@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "RAGKitTests",
             dependencies: ["RAGKit"],
-            path: "Tests/RAGKitTests"
+            path: "Tests"
         ),
     ]
 )

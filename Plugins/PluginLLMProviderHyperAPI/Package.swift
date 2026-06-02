@@ -36,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "PluginLLMProviderHyperAPITests",
             dependencies: ["PluginLLMProviderHyperAPI"],
-            path: "Tests/PluginLLMProviderHyperAPITests"
+            path: "Tests"
         )
     ]
 )

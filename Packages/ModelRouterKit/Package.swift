@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "ModelRouterKitTests",
             dependencies: ["ModelRouterKit"],
-            path: "Tests/ModelRouterKitTests"
+            path: "Tests"
         ),
     ]
 )

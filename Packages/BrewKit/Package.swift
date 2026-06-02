@@ -16,6 +16,6 @@ let package = Package(
             ],
             path: "Sources/BrewKit"
         ),
-        .testTarget(name: "BrewKitTests", dependencies: ["BrewKit"], path: "Tests/BrewKitTests")
+        .testTarget(name: "BrewKitTests", dependencies: ["BrewKit"], path: "Tests")
     ]
 )

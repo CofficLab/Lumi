@@ -20,7 +20,7 @@ let package = Package(
         .testTarget(
             name: "WorkspaceFileKitTests",
             dependencies: ["WorkspaceFileKit"],
-            path: "Tests/WorkspaceFileKitTests"
+            path: "Tests"
         ),
     ]
 )

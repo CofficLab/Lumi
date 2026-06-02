@@ -52,7 +52,7 @@ let package = Package(
         .testTarget(
             name: "PluginLSPServiceEditorTests",
             dependencies: ["PluginLSPServiceEditor"],
-            path: "Tests/PluginLSPServiceEditorTests"
+            path: "Tests"
         )
     ]
 )

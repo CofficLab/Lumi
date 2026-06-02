@@ -18,7 +18,8 @@ let package = Package(
         ),
         .testTarget(
             name: "SkillKitTests",
-            dependencies: ["SkillKit"]
+            dependencies: ["SkillKit"],
+            path: "Tests"
         )
     ]
 )
