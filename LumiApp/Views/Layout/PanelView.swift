@@ -41,7 +41,7 @@ struct PanelView: View {
             } else if showBottomPanel {
                 PanelBottomView()
             } else {
-                Color.clear
+                PanelEmptyStateView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
