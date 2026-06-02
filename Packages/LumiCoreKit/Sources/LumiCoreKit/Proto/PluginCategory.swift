@@ -3,7 +3,7 @@ import Foundation
 /// 插件分类
 ///
 /// 定义插件所属的功能分类，用于在设置页等 UI 中分组展示插件。
-public enum PluginCategory: String, CaseIterable, Codable {
+public enum PluginCategory: String, CaseIterable, Codable, Sendable {
     /// 通用（默认分类）
     case general
     /// AI / Agent

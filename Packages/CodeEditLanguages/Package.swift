@@ -2,6 +2,26 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
+
+let hasCodeLanguagesContainer = FileManager.default.fileExists(
+    atPath: "CodeLanguagesContainer.xcframework"
+)
+
+let codeLanguagesContainerDependency: Target.Dependency = hasCodeLanguagesContainer
+    ? "CodeLanguagesContainer"
+    : "CodeLanguages_Container"
+
+let codeLanguagesContainerTarget: Target = hasCodeLanguagesContainer
+    ? .binaryTarget(
+        name: "CodeLanguagesContainer",
+        path: "CodeLanguagesContainer.xcframework"
+    )
+    : .target(
+        name: "CodeLanguages_Container",
+        path: "Sources/CodeLanguages_Container",
+        publicHeadersPath: "include"
+    )
 
 let package = Package(
     name: "CodeEditLanguages",
@@ -21,17 +41,13 @@ let package = Package(
     targets: [
         .target(
             name: "CodeEditLanguages",
-            dependencies: ["CodeLanguagesContainer", "SwiftTreeSitter"],
+            dependencies: [codeLanguagesContainerDependency, "SwiftTreeSitter"],
             resources: [
                 .copy("Resources")
             ],
             linkerSettings: [.linkedLibrary("c++")]
         ),
-
-        .binaryTarget(
-            name: "CodeLanguagesContainer",
-            path: "CodeLanguagesContainer.xcframework"
-        ),
+        codeLanguagesContainerTarget,
         .testTarget(
             name: "CodeEditLanguagesTests",
             dependencies: ["CodeEditLanguages"]

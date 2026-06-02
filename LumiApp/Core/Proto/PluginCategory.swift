@@ -5,7 +5,7 @@ import Foundation
 /// 定义插件所属的功能分类，用于在设置页等 UI 中分组展示插件。
 /// 插件通过 ``SuperPlugin`` 的 `static var category: PluginCategory` 声明自己的分类。
 /// 如果插件不重写该属性，默认归入 ``general``（通用）分类。
-enum PluginCategory: String, CaseIterable, Codable {
+enum PluginCategory: String, CaseIterable, Codable, Sendable {
     /// 通用（默认分类）
     case general
     /// AI / Agent
