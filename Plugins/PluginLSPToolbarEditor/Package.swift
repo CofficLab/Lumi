@@ -22,7 +22,8 @@ let package = Package(
         .target(
             name: "PluginLSPToolbarEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "PluginLSPServiceEditor", package: "PluginLSPServiceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],

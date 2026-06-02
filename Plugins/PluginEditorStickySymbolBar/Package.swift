@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginEditorStickySymbolBar",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

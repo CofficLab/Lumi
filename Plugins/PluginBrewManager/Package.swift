@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginBrewManager",
             dependencies: [
-                .product(name: "BrewKit", package: "BrewKit"),
+                .product(name: "BrewKit", package: "BrewKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

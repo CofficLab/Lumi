@@ -22,7 +22,8 @@ let package = Package(
         .target(
             name: "PluginEditorBottomTerminal",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit",
+            path: "Sources"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),
             ],

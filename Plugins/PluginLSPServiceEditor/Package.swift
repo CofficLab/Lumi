@@ -31,7 +31,8 @@ let package = Package(
         .target(
             name: "PluginLSPServiceEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),

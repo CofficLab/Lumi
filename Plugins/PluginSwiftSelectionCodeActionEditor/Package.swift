@@ -21,7 +21,8 @@ let package = Package(
         .target(
             name: "PluginSwiftSelectionCodeActionEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources",

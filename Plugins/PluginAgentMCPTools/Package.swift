@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginAgentMCPTools",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "MCP", package: "swift-sdk"),
                 .product(name: "MCPKit", package: "MCPKit"),

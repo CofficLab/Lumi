@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "ThemeWinterPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

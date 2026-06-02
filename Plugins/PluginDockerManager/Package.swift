@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginDockerManager",
             dependencies: [
-                .product(name: "DockerKit", package: "DockerKit"),
+                .product(name: "DockerKit", package: "DockerKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

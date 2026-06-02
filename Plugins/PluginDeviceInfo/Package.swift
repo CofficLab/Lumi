@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginDeviceInfo",
             dependencies: [
-                .product(name: "DeviceMonitorKit", package: "DeviceMonitorKit"),
+                .product(name: "DeviceMonitorKit", package: "DeviceMonitorKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

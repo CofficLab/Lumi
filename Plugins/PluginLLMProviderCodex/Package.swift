@@ -21,7 +21,8 @@ let package = Package(
         .target(
             name: "PluginLLMProviderCodex",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

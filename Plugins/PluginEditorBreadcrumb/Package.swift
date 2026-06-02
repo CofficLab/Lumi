@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginEditorBreadcrumb",
             dependencies: [
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
+                .product(name: "CodeEditLanguages", package: "CodeEditLanguages",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

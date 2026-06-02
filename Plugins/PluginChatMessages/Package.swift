@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginChatMessages",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),

@@ -27,7 +27,8 @@ let package = Package(
         .target(
             name: "PluginGit",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),

@@ -22,7 +22,8 @@ let package = Package(
         .target(
             name: "PluginAutoTask",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],

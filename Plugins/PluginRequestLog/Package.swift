@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginRequestLog",
             dependencies: [
-                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "HttpKit", package: "HttpKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

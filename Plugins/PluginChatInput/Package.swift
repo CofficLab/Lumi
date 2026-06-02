@@ -22,7 +22,8 @@ let package = Package(
         .target(
             name: "PluginChatInput",
             dependencies: [
-                .product(name: "ChatInputEditorKit", package: "ChatInputEditorKit"),
+                .product(name: "ChatInputEditorKit", package: "ChatInputEditorKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

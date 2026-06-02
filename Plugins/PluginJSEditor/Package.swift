@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginJSEditor",
             dependencies: [
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "CodeEditTextView", package: "CodeEditTextView",
+            path: "Sources"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "ShellKit", package: "ShellKit"),

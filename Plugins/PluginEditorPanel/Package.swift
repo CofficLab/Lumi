@@ -29,7 +29,8 @@ let package = Package(
         .target(
             name: "PluginEditorPanel",
             dependencies: [
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
+                .product(name: "CodeEditLanguages", package: "CodeEditLanguages",
+            path: "Sources"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "EditorOverlayKit", package: "EditorOverlayKit"),

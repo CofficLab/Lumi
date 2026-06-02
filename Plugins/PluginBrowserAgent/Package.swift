@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginBrowserAgent",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ShellKit", package: "ShellKit"),

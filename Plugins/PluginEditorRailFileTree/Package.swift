@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginEditorRailFileTree",
             dependencies: [
-                .product(name: "FileTreeKit", package: "FileTreeKit"),
+                .product(name: "FileTreeKit", package: "FileTreeKit",
+            path: "Sources"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

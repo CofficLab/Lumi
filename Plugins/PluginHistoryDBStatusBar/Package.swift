@@ -21,7 +21,8 @@ let package = Package(
         .target(
             name: "PluginHistoryDBStatusBar",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit",
+            path: "Sources"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

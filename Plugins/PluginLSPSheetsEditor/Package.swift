@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginLSPSheetsEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "PluginLSPCallHierarchyEditor", package: "PluginLSPCallHierarchyEditor"),

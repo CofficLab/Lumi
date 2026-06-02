@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginProjectIssueScanner",
             dependencies: [
-                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LLMKit", package: "LLMKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ModelRouterKit", package: "ModelRouterKit"),

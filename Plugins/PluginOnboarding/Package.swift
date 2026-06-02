@@ -20,7 +20,8 @@ let package = Package(
         .target(
             name: "PluginOnboarding",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit",
+            path: "Sources"),
             ],
             path: "Sources",
             resources: [

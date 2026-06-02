@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginEditorRailWorkspaceSymbols",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "PluginLSPWorkspaceSymbolEditor", package: "PluginLSPWorkspaceSymbolEditor"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

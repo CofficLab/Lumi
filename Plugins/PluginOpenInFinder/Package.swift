@@ -21,7 +21,8 @@ let package = Package(
         .target(
             name: "PluginOpenInFinder",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit",
+            path: "Sources"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

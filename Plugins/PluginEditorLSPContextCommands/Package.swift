@@ -23,7 +23,8 @@ let package = Package(
         .target(
             name: "PluginEditorLSPContextCommands",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

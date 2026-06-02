@@ -27,7 +27,8 @@ let package = Package(
         .target(
             name: "PluginAgentMessageRenderer",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "LLMKit", package: "LLMKit"),

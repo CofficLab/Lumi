@@ -27,7 +27,8 @@ let package = Package(
         .target(
             name: "PluginEditorPreview",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "HTMLPreviewKit", package: "HTMLPreviewKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiPreviewKit", package: "LumiPreviewKit"),

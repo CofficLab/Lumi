@@ -22,7 +22,8 @@ let package = Package(
         .target(
             name: "PluginMultiCursorCommandsEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],

@@ -26,7 +26,8 @@ let package = Package(
         .target(
             name: "PluginLSPWorkspaceSymbolEditor",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorService", package: "EditorService",
+            path: "Sources"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "PluginLSPServiceEditor", package: "PluginLSPServiceEditor"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),

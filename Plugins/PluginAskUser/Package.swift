@@ -23,7 +23,10 @@ let package = Package(
                 "LumiCoreKit",
                 "LumiUI",
             ],
-            resources: [.process("Resources")],
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(

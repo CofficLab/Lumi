@@ -25,7 +25,8 @@ let package = Package(
         .target(
             name: "PluginLLMProviderZhipu",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "AgentToolKit", package: "AgentToolKit",
+            path: "Sources"),
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),

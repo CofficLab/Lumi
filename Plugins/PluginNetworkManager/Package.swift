@@ -24,7 +24,8 @@ let package = Package(
         .target(
             name: "PluginNetworkManager",
             dependencies: [
-                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "HttpKit", package: "HttpKit",
+            path: "Sources"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ShellKit", package: "ShellKit"),
