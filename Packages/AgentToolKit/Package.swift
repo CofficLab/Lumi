@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "AgentToolKit",
             dependencies: ["SuperLogKit"],
-            path: "Sources/AgentToolKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "AgentToolKitTests",
