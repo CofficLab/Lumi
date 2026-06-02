@@ -22,8 +22,7 @@ let package = Package(
         .target(
             name: "ThemeStatusBarPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit",
-            path: "Sources"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

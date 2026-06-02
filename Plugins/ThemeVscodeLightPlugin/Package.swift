@@ -23,8 +23,7 @@ let package = Package(
         .target(
             name: "ThemeVscodeLightPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService",
-            path: "Sources"),
+                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

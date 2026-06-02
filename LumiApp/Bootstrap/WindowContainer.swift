@@ -3,8 +3,8 @@ import Combine
 import AgentToolKit
 import Foundation
 import SwiftUI
-import PluginChatMessages
-import PluginWindowPersistence
+import ChatMessagesPlugin
+import WindowPersistencePlugin
 
 /// 窗口作用域容器
 ///

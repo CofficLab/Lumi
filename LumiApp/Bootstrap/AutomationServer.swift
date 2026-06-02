@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 import Network
-import PluginEditorPreview
+import EditorPreviewPlugin
 import SwiftUI
 import os
 

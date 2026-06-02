@@ -4,19 +4,19 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
-import PluginAgentTurnNotification
-import PluginEditorStickySymbolBar
-import PluginEditorTabStrip
-import PluginEditorRailWorkspaceSymbols
-import PluginFontConfig
-import PluginGit
-import PluginGoEditor
-import PluginJSEditor
-import PluginAutoTask
-import PluginProjects
-import PluginQuickFileSearch
-import PluginScreenshot
-import PluginTerminal
+import AgentTurnNotificationPlugin
+import EditorStickySymbolBarPlugin
+import EditorTabStripPlugin
+import EditorRailWorkspaceSymbolsPlugin
+import FontConfigPlugin
+import GitPlugin
+import GoEditorPlugin
+import JSEditorPlugin
+import AutoTaskPlugin
+import ProjectsPlugin
+import QuickFileSearchPlugin
+import ScreenshotPlugin
+import TerminalPlugin
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
@@ -114,28 +114,28 @@ struct RootView<Content>: View where Content: View {
 
     private var appLayoutLifecycleScene: some View {
         llmLifecycleScene
-        .onChange(of: windowContainer.layoutVM.bottomPanelVisible) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.contentPanelVisible) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.editorVisible) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.railVisible) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.rightSidebarVisible) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.activeViewContainerIcon) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.selectedAgentSidebarTabId) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.selectedAgentDetailId) { _, _ in syncPluginLayoutContext() }
-        .onChange(of: windowContainer.layoutVM.layoutRatios) { _, _ in syncPluginLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.bottomPanelVisible) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.contentPanelVisible) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.editorVisible) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.railVisible) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.rightSidebarVisible) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.activeViewContainerIcon) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentSidebarTabId) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentDetailId) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.layoutRatios) { _, _ in syncLayoutPluginContext() }
     }
 
     private var pluginLayoutLifecycleScene: some View {
         appLayoutLifecycleScene
-        .onChange(of: pluginLayoutContext.bottomPanelVisible) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.contentPanelVisible) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.editorVisible) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.railVisible) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.rightSidebarVisible) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.activeViewContainerIcon) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.selectedAgentSidebarTabId) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.selectedAgentDetailId) { _, _ in propagatePluginLayoutContextToApp() }
-        .onChange(of: pluginLayoutContext.layoutRatios) { _, _ in propagatePluginLayoutContextToApp() }
+        .onChange(of: pluginLayoutContext.bottomPanelVisible) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.contentPanelVisible) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.editorVisible) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.railVisible) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.rightSidebarVisible) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.activeViewContainerIcon) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.selectedAgentSidebarTabId) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.selectedAgentDetailId) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.layoutRatios) { _, _ in propagateLayoutPluginContextToApp() }
     }
 
     private var configuredContent: some View {
@@ -195,20 +195,20 @@ struct RootView<Content>: View where Content: View {
         syncPluginRecentProjectsContext()
         syncPluginConversationContext()
         syncPluginLLMContext()
-        syncPluginLayoutContext()
+        syncLayoutPluginContext()
         configurePluginProjectBridge()
-        configurePluginEditorStickySymbolBarBridge()
-        configurePluginEditorTabStripBridge()
-        configurePluginEditorRailWorkspaceSymbolsBridge()
+        configureEditorStickySymbolBarPluginBridge()
+        configureEditorTabStripPluginBridge()
+        configureEditorRailWorkspaceSymbolsPluginBridge()
         configurePluginFontBridge()
-        configurePluginGoEditorBridge()
-        configurePluginJSEditorBridge()
-        configurePluginScreenshotBridge()
-        configurePluginTerminalBridge()
-        configurePluginQuickFileSearchBridge()
-        configurePluginProjectsBridge()
-        configurePluginAutoTaskBridge()
-        configurePluginAgentTurnNotificationBridge()
+        configureGoEditorPluginBridge()
+        configureJSEditorPluginBridge()
+        configureScreenshotPluginBridge()
+        configureTerminalPluginBridge()
+        configureQuickFileSearchPluginBridge()
+        configureProjectsPluginBridge()
+        configureAutoTaskPluginBridge()
+        configureAgentTurnNotificationPluginBridge()
     }
 
     private func syncPluginProjectContext() {
@@ -298,7 +298,7 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func syncPluginLayoutContext() {
+    private func syncLayoutPluginContext() {
         pluginLayoutContext.update(
             bottomPanelVisible: windowContainer.layoutVM.bottomPanelVisible,
             contentPanelVisible: windowContainer.layoutVM.contentPanelVisible,
@@ -312,7 +312,7 @@ struct RootView<Content>: View where Content: View {
         )
     }
 
-    private func propagatePluginLayoutContextToApp() {
+    private func propagateLayoutPluginContextToApp() {
         let layoutVM = windowContainer.layoutVM
         layoutVM.restoreFromPlugin(activeViewContainerIcon: pluginLayoutContext.activeViewContainerIcon)
         layoutVM.restoreFromPlugin(tabId: pluginLayoutContext.selectedAgentSidebarTabId)
@@ -335,8 +335,8 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func configurePluginProjectsBridge() {
-        PluginProjects.ProjectsBridge.currentProjectPathProvider = { [container, windowContainer] in
+    private func configureProjectsPluginBridge() {
+        ProjectsPlugin.ProjectsBridge.currentProjectPathProvider = { [container, windowContainer] in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container).projectPath
         }
         pluginConversationVM.switchToLatestConversationHandler = { [windowContainer] projectPath in
@@ -351,74 +351,74 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func configurePluginAgentTurnNotificationBridge() {
-        PluginAgentTurnNotification.AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
+    private func configureAgentTurnNotificationPluginBridge() {
+        AgentTurnNotificationPlugin.AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .switchToConversation(conversationId, reason: "agentTurnNotification")
         }
     }
 
     private func configurePluginFontBridge() {
-        PluginFontConfig.FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
+        FontConfigPlugin.FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .editorVM.service.state.fontName = fontName
         }
     }
 
-    private func configurePluginGoEditorBridge() {
-        PluginGoEditor.GoEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+    private func configureGoEditorPluginBridge() {
+        GoEditorPlugin.GoEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
             targetWindow.editorVM.service.open(at: url)
         }
     }
 
-    private func configurePluginEditorStickySymbolBarBridge() {
-        PluginEditorStickySymbolBar.EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
+    private func configureEditorStickySymbolBarPluginBridge() {
+        EditorStickySymbolBarPlugin.EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
-    private func configurePluginEditorTabStripBridge() {
-        PluginEditorTabStrip.EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
+    private func configureEditorTabStripPluginBridge() {
+        EditorTabStripPlugin.EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
-    private func configurePluginEditorRailWorkspaceSymbolsBridge() {
-        PluginEditorRailWorkspaceSymbols.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
+    private func configureEditorRailWorkspaceSymbolsPluginBridge() {
+        EditorRailWorkspaceSymbolsPlugin.EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }
     }
 
-    private func configurePluginJSEditorBridge() {
-        PluginJSEditor.JSEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
+    private func configureJSEditorPluginBridge() {
+        JSEditorPlugin.JSEditorBridge.openFileHandler = { [container, windowContainer] url, projectRoot in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
             targetWindow.editorVM.service.open(at: url)
         }
     }
 
-    private func configurePluginScreenshotBridge() {
-        PluginScreenshot.ScreenshotBridge.activeWindowIdProvider = { [container] in
+    private func configureScreenshotPluginBridge() {
+        ScreenshotPlugin.ScreenshotBridge.activeWindowIdProvider = { [container] in
             container.windowManagerVM.activeWindowId
         }
     }
 
-    private func configurePluginTerminalBridge() {
-        PluginTerminal.TerminalPluginBridge.editorThemeIdProvider = { [container] in
+    private func configureTerminalPluginBridge() {
+        TerminalPlugin.TerminalPluginBridge.editorThemeIdProvider = { [container] in
             container.themeVM.activeEditorThemeId
         }
     }
 
-    private func configurePluginQuickFileSearchBridge() {
-        PluginQuickFileSearch.QuickFileSearchBridge.activeWindowIdProvider = { [container] in
+    private func configureQuickFileSearchPluginBridge() {
+        QuickFileSearchPlugin.QuickFileSearchBridge.activeWindowIdProvider = { [container] in
             container.windowManagerVM.activeWindowId
         }
-        PluginQuickFileSearch.QuickFileSearchBridge.selectFileHandler = { [container] path, windowId in
+        QuickFileSearchPlugin.QuickFileSearchBridge.selectFileHandler = { [container] path, windowId in
             NotificationCenter.postSyncSelectedFile(
                 path: path,
                 windowId: windowId ?? container.windowManagerVM.activeWindowId
@@ -426,8 +426,8 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func configurePluginAutoTaskBridge() {
-        PluginAutoTask.AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
+    private func configureAutoTaskPluginBridge() {
+        AutoTaskPlugin.AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
     }
 
     private static func targetWindowContainer(

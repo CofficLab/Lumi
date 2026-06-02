@@ -1,5 +1,5 @@
 import Foundation
-import PluginGit
+import GitPlugin
 import SwiftUI
 import os
 
@@ -152,7 +152,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
 
     /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID
     func restoreFromPlugin(tabId: String) {
-        let normalizedTabId = tabId == "GitCommitHistory" ? PluginGit.GitPlugin.id : tabId
+        let normalizedTabId = tabId == "GitCommitHistory" ? GitPlugin.GitPlugin.id : tabId
         guard selectedAgentSidebarTabId != normalizedTabId else { return }
         selectedAgentSidebarTabId = normalizedTabId
     }

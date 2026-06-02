@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import PluginEditorPreview
+import EditorPreviewPlugin
 import os
 
 /// 自动化控制器 — 集中处理自动化测试动作

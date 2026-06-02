@@ -1,7 +1,7 @@
 import Foundation
 import AgentToolKit
-import PluginAgentCoreTools
-import PluginProjects
+import AgentCoreToolsPlugin
+import ProjectsPlugin
 
 /// 工具调用执行器
 ///
