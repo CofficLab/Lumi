@@ -30,25 +30,25 @@
 		0B14A1622FD4000000A14A16 /* PluginDiskManager in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1612FD4000000A14A16 /* PluginDiskManager */; };
 		0B14A1722FD4000000A14A17 /* PluginCaffeinate in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1712FD4000000A14A17 /* PluginCaffeinate */; };
 		0B14A1822FD4000000A14A18 /* PluginFileLog in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1812FD4000000A14A18 /* PluginFileLog */; };
-		0B14A1922FD4000000A14A19 /* PluginThemeAurora in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1912FD4000000A14A19 /* PluginThemeAurora */; };
-		0B14A1A22FD4000000A14A1A /* PluginThemeDracula in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1A12FD4000000A14A1A /* PluginThemeDracula */; };
-		0B14A1B22FD4000000A14A1B /* PluginThemeAutumn in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1B12FD4000000A14A1B /* PluginThemeAutumn */; };
-		0B14A1C22FD4000000A14A1C /* PluginThemeGithub in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1C12FD4000000A14A1C /* PluginThemeGithub */; };
-		0B14A1D22FD4000000A14A1D /* PluginThemeMidnight in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1D12FD4000000A14A1D /* PluginThemeMidnight */; };
-		0B14A1E22FD4000000A14A1E /* PluginThemeMountain in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1E12FD4000000A14A1E /* PluginThemeMountain */; };
-		0B14A1F22FD4000000A14A1F /* PluginThemeNebula in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1F12FD4000000A14A1F /* PluginThemeNebula */; };
-		0B14A2022FD4000000A14A20 /* PluginThemeOneDark in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2012FD4000000A14A20 /* PluginThemeOneDark */; };
+		0B14A1922FD4000000A14A19 /* ThemeAuroraPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1912FD4000000A14A19 /* ThemeAuroraPlugin */; };
+		0B14A1A22FD4000000A14A1A /* ThemeDraculaPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1A12FD4000000A14A1A /* ThemeDraculaPlugin */; };
+		0B14A1B22FD4000000A14A1B /* ThemeAutumnPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1B12FD4000000A14A1B /* ThemeAutumnPlugin */; };
+		0B14A1C22FD4000000A14A1C /* ThemeGithubPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1C12FD4000000A14A1C /* ThemeGithubPlugin */; };
+		0B14A1D22FD4000000A14A1D /* ThemeMidnightPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1D12FD4000000A14A1D /* ThemeMidnightPlugin */; };
+		0B14A1E22FD4000000A14A1E /* ThemeMountainPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1E12FD4000000A14A1E /* ThemeMountainPlugin */; };
+		0B14A1F22FD4000000A14A1F /* ThemeNebulaPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A1F12FD4000000A14A1F /* ThemeNebulaPlugin */; };
+		0B14A2022FD4000000A14A20 /* ThemeOneDarkPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2012FD4000000A14A20 /* ThemeOneDarkPlugin */; };
 		0B14A2122FD4000000A14A21 /* PluginAppStoreConnect in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */; };
-		0B14B1022FD4000000B14B10 /* PluginThemeLumi in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1012FD4000000B14B10 /* PluginThemeLumi */; };
-		0B14B1122FD4000000B14B11 /* PluginThemeOrchard in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1112FD4000000B14B11 /* PluginThemeOrchard */; };
-		0B14B1222FD4000000B14B12 /* PluginThemeRiver in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1212FD4000000B14B12 /* PluginThemeRiver */; };
-		0B14B1322FD4000000B14B13 /* PluginThemeSky in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1312FD4000000B14B13 /* PluginThemeSky */; };
-		0B14B1422FD4000000B14B14 /* PluginThemeSpring in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1412FD4000000B14B14 /* PluginThemeSpring */; };
-		0B14B1522FD4000000B14B15 /* PluginThemeSummer in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1512FD4000000B14B15 /* PluginThemeSummer */; };
-		0B14B1622FD4000000B14B16 /* PluginThemeVoid in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1612FD4000000B14B16 /* PluginThemeVoid */; };
-		0B14B1722FD4000000B14B17 /* PluginThemeVscodeDark in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */; };
-		0B14B1822FD4000000B14B18 /* PluginThemeVscodeLight in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */; };
-		0B14B1922FD4000000B14B19 /* PluginThemeWinter in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1912FD4000000B14B19 /* PluginThemeWinter */; };
+		0B14B1022FD4000000B14B10 /* ThemeLumiPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1012FD4000000B14B10 /* ThemeLumiPlugin */; };
+		0B14B1122FD4000000B14B11 /* ThemeOrchardPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1112FD4000000B14B11 /* ThemeOrchardPlugin */; };
+		0B14B1222FD4000000B14B12 /* ThemeRiverPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1212FD4000000B14B12 /* ThemeRiverPlugin */; };
+		0B14B1322FD4000000B14B13 /* ThemeSkyPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1312FD4000000B14B13 /* ThemeSkyPlugin */; };
+		0B14B1422FD4000000B14B14 /* ThemeSpringPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1412FD4000000B14B14 /* ThemeSpringPlugin */; };
+		0B14B1522FD4000000B14B15 /* ThemeSummerPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1512FD4000000B14B15 /* ThemeSummerPlugin */; };
+		0B14B1622FD4000000B14B16 /* ThemeVoidPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1612FD4000000B14B16 /* ThemeVoidPlugin */; };
+		0B14B1722FD4000000B14B17 /* ThemeVscodeDarkPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1712FD4000000B14B17 /* ThemeVscodeDarkPlugin */; };
+		0B14B1822FD4000000B14B18 /* ThemeVscodeLightPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1812FD4000000B14B18 /* ThemeVscodeLightPlugin */; };
+		0B14B1922FD4000000B14B19 /* ThemeWinterPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0B14B1912FD4000000B14B19 /* ThemeWinterPlugin */; };
 		0B15C1322FD50000A15C1302 /* PluginAppIconDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = 0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */; };
 		0B16C2022FD6000000C16C20 /* PluginLLMProviderAiRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2012FD6000000C16C20 /* PluginLLMProviderAiRouter */; };
 		0B16C2122FD6000000C16C21 /* PluginLLMProviderAliyun in Frameworks */ = {isa = PBXBuildFile; productRef = 0B16C2112FD6000000C16C21 /* PluginLLMProviderAliyun */; };
@@ -151,7 +151,7 @@
 		99E19AC31FAB359BA7CB7CA9 /* PluginMenuBarManager in Frameworks */ = {isa = PBXBuildFile; productRef = 80F4055C0A75E21F621EDD2F /* PluginMenuBarManager */; };
 		9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = B58B244CDF214E2CB80C1953 /* LLMKit */; };
 		9BB7CC2702C9F8312F4C1041 /* PluginFontConfig in Frameworks */ = {isa = PBXBuildFile; productRef = D04E348CC6815BBC821246B8 /* PluginFontConfig */; };
-		9DDBAC02E131DDF3207FA765 /* PluginThemeStatusBar in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */; };
+		9DDBAC02E131DDF3207FA765 /* ThemeStatusBarPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6D798BD1E9119E7D9C8149 /* ThemeStatusBarPlugin */; };
 		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
@@ -582,7 +582,7 @@
 				B53E423F3C186EBA2A4AF6A5 /* PluginSwiftSelectionCodeActionEditor in Frameworks */,
 				F1B01FF0EF34101613B107E3 /* PluginTerminal in Frameworks */,
 				9126473F502831A7FE6BE25C /* PluginTextActions in Frameworks */,
-				9DDBAC02E131DDF3207FA765 /* PluginThemeStatusBar in Frameworks */,
+				9DDBAC02E131DDF3207FA765 /* ThemeStatusBarPlugin in Frameworks */,
 				E7D1ECDF52B61DA69CC2D16B /* PluginToolCallLoopDetection in Frameworks */,
 				13ED7035AD480A898EDB782E /* PluginToolPermission in Frameworks */,
 				116713ECD19CB60F0FE8DD56 /* PluginVerbosity in Frameworks */,
@@ -645,24 +645,24 @@
 				0B14A1622FD4000000A14A16 /* PluginDiskManager in Frameworks */,
 				0B14A1722FD4000000A14A17 /* PluginCaffeinate in Frameworks */,
 				0B14A1822FD4000000A14A18 /* PluginFileLog in Frameworks */,
-				0B14A1922FD4000000A14A19 /* PluginThemeAurora in Frameworks */,
-				0B14A1A22FD4000000A14A1A /* PluginThemeDracula in Frameworks */,
-				0B14A1B22FD4000000A14A1B /* PluginThemeAutumn in Frameworks */,
-				0B14A1C22FD4000000A14A1C /* PluginThemeGithub in Frameworks */,
-				0B14A1D22FD4000000A14A1D /* PluginThemeMidnight in Frameworks */,
-				0B14A1E22FD4000000A14A1E /* PluginThemeMountain in Frameworks */,
-				0B14A1F22FD4000000A14A1F /* PluginThemeNebula in Frameworks */,
-				0B14A2022FD4000000A14A20 /* PluginThemeOneDark in Frameworks */,
-				0B14B1022FD4000000B14B10 /* PluginThemeLumi in Frameworks */,
-				0B14B1122FD4000000B14B11 /* PluginThemeOrchard in Frameworks */,
-				0B14B1222FD4000000B14B12 /* PluginThemeRiver in Frameworks */,
-				0B14B1322FD4000000B14B13 /* PluginThemeSky in Frameworks */,
-				0B14B1422FD4000000B14B14 /* PluginThemeSpring in Frameworks */,
-				0B14B1522FD4000000B14B15 /* PluginThemeSummer in Frameworks */,
-				0B14B1622FD4000000B14B16 /* PluginThemeVoid in Frameworks */,
-				0B14B1722FD4000000B14B17 /* PluginThemeVscodeDark in Frameworks */,
-				0B14B1822FD4000000B14B18 /* PluginThemeVscodeLight in Frameworks */,
-				0B14B1922FD4000000B14B19 /* PluginThemeWinter in Frameworks */,
+				0B14A1922FD4000000A14A19 /* ThemeAuroraPlugin in Frameworks */,
+				0B14A1A22FD4000000A14A1A /* ThemeDraculaPlugin in Frameworks */,
+				0B14A1B22FD4000000A14A1B /* ThemeAutumnPlugin in Frameworks */,
+				0B14A1C22FD4000000A14A1C /* ThemeGithubPlugin in Frameworks */,
+				0B14A1D22FD4000000A14A1D /* ThemeMidnightPlugin in Frameworks */,
+				0B14A1E22FD4000000A14A1E /* ThemeMountainPlugin in Frameworks */,
+				0B14A1F22FD4000000A14A1F /* ThemeNebulaPlugin in Frameworks */,
+				0B14A2022FD4000000A14A20 /* ThemeOneDarkPlugin in Frameworks */,
+				0B14B1022FD4000000B14B10 /* ThemeLumiPlugin in Frameworks */,
+				0B14B1122FD4000000B14B11 /* ThemeOrchardPlugin in Frameworks */,
+				0B14B1222FD4000000B14B12 /* ThemeRiverPlugin in Frameworks */,
+				0B14B1322FD4000000B14B13 /* ThemeSkyPlugin in Frameworks */,
+				0B14B1422FD4000000B14B14 /* ThemeSpringPlugin in Frameworks */,
+				0B14B1522FD4000000B14B15 /* ThemeSummerPlugin in Frameworks */,
+				0B14B1622FD4000000B14B16 /* ThemeVoidPlugin in Frameworks */,
+				0B14B1722FD4000000B14B17 /* ThemeVscodeDarkPlugin in Frameworks */,
+				0B14B1822FD4000000B14B18 /* ThemeVscodeLightPlugin in Frameworks */,
+				0B14B1922FD4000000B14B19 /* ThemeWinterPlugin in Frameworks */,
 				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
 				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
@@ -1332,7 +1332,7 @@
 				17409507E773057064E5EE13 /* PluginSwiftSelectionCodeActionEditor */,
 				93B13FD377B9551E0AFAC1A7 /* PluginTerminal */,
 				F6016FAA6014704B4C9FCB38 /* PluginTextActions */,
-				4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */,
+				4D6D798BD1E9119E7D9C8149 /* ThemeStatusBarPlugin */,
 				84C54E39AE2E087C8D61369C /* PluginToolCallLoopDetection */,
 				A888E42C948716BF00411A5A /* PluginToolPermission */,
 				421F79F03BD0B9582EF22F77 /* PluginVerbosity */,
@@ -1430,24 +1430,24 @@
 				0B14A1612FD4000000A14A16 /* PluginDiskManager */,
 				0B14A1712FD4000000A14A17 /* PluginCaffeinate */,
 				0B14A1812FD4000000A14A18 /* PluginFileLog */,
-				0B14A1912FD4000000A14A19 /* PluginThemeAurora */,
-				0B14A1A12FD4000000A14A1A /* PluginThemeDracula */,
-				0B14A1B12FD4000000A14A1B /* PluginThemeAutumn */,
-				0B14A1C12FD4000000A14A1C /* PluginThemeGithub */,
-				0B14A1D12FD4000000A14A1D /* PluginThemeMidnight */,
-				0B14A1E12FD4000000A14A1E /* PluginThemeMountain */,
-				0B14A1F12FD4000000A14A1F /* PluginThemeNebula */,
-				0B14A2012FD4000000A14A20 /* PluginThemeOneDark */,
-				0B14B1012FD4000000B14B10 /* PluginThemeLumi */,
-				0B14B1112FD4000000B14B11 /* PluginThemeOrchard */,
-				0B14B1212FD4000000B14B12 /* PluginThemeRiver */,
-				0B14B1312FD4000000B14B13 /* PluginThemeSky */,
-				0B14B1412FD4000000B14B14 /* PluginThemeSpring */,
-				0B14B1512FD4000000B14B15 /* PluginThemeSummer */,
-				0B14B1612FD4000000B14B16 /* PluginThemeVoid */,
-				0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */,
-				0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */,
-				0B14B1912FD4000000B14B19 /* PluginThemeWinter */,
+				0B14A1912FD4000000A14A19 /* ThemeAuroraPlugin */,
+				0B14A1A12FD4000000A14A1A /* ThemeDraculaPlugin */,
+				0B14A1B12FD4000000A14A1B /* ThemeAutumnPlugin */,
+				0B14A1C12FD4000000A14A1C /* ThemeGithubPlugin */,
+				0B14A1D12FD4000000A14A1D /* ThemeMidnightPlugin */,
+				0B14A1E12FD4000000A14A1E /* ThemeMountainPlugin */,
+				0B14A1F12FD4000000A14A1F /* ThemeNebulaPlugin */,
+				0B14A2012FD4000000A14A20 /* ThemeOneDarkPlugin */,
+				0B14B1012FD4000000B14B10 /* ThemeLumiPlugin */,
+				0B14B1112FD4000000B14B11 /* ThemeOrchardPlugin */,
+				0B14B1212FD4000000B14B12 /* ThemeRiverPlugin */,
+				0B14B1312FD4000000B14B13 /* ThemeSkyPlugin */,
+				0B14B1412FD4000000B14B14 /* ThemeSpringPlugin */,
+				0B14B1512FD4000000B14B15 /* ThemeSummerPlugin */,
+				0B14B1612FD4000000B14B16 /* ThemeVoidPlugin */,
+				0B14B1712FD4000000B14B17 /* ThemeVscodeDarkPlugin */,
+				0B14B1812FD4000000B14B18 /* ThemeVscodeLightPlugin */,
+				0B14B1912FD4000000B14B19 /* ThemeWinterPlugin */,
 				0BB9F76F2FC48DF6003720A4 /* PluginAutoTask */,
 				0BB9F76F2FC48DF7003720A5 /* PluginAskUser */,
 				0BB9947F2FC492FC003720A4 /* PluginProjectOverview */,
@@ -1600,24 +1600,24 @@
 				0B14A1602FD4000000A14A16 /* XCLocalSwiftPackageReference "Plugins/PluginDiskManager" */,
 				0B14A1702FD4000000A14A17 /* XCLocalSwiftPackageReference "Plugins/PluginCaffeinate" */,
 				0B14A1802FD4000000A14A18 /* XCLocalSwiftPackageReference "Plugins/PluginFileLog" */,
-				0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeAurora" */,
-				0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/PluginThemeDracula" */,
-				0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/PluginThemeAutumn" */,
-				0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/PluginThemeGithub" */,
-				0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/PluginThemeMidnight" */,
-				0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/PluginThemeMountain" */,
-				0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/PluginThemeNebula" */,
-				0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOneDark" */,
-				0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/PluginThemeLumi" */,
-				0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOrchard" */,
-				0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/PluginThemeRiver" */,
-				0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSky" */,
-				0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSpring" */,
-				0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSummer" */,
-				0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVoid" */,
-				0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeDark" */,
-				0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeLight" */,
-				0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeWinter" */,
+				0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/ThemeAuroraPlugin" */,
+				0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/ThemeDraculaPlugin" */,
+				0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/ThemeAutumnPlugin" */,
+				0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/ThemeGithubPlugin" */,
+				0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/ThemeMidnightPlugin" */,
+				0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/ThemeMountainPlugin" */,
+				0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/ThemeNebulaPlugin" */,
+				0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/ThemeOneDarkPlugin" */,
+				0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/ThemeLumiPlugin" */,
+				0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/ThemeOrchardPlugin" */,
+				0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/ThemeRiverPlugin" */,
+				0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/ThemeSkyPlugin" */,
+				0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/ThemeSpringPlugin" */,
+				0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/ThemeSummerPlugin" */,
+				0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/ThemeVoidPlugin" */,
+				0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeDarkPlugin" */,
+				0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeLightPlugin" */,
+				0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/ThemeWinterPlugin" */,
 				0BB9F76E2FC48DF6003720A4 /* XCLocalSwiftPackageReference "Plugins/PluginAutoTask" */,
 				0BB9F76E2FC48DF7003720A5 /* XCLocalSwiftPackageReference "Plugins/PluginAskUser" */,
 				0BB9947E2FC492FC003720A4 /* XCLocalSwiftPackageReference "Plugins/PluginProjectOverview" */,
@@ -1728,7 +1728,7 @@
 				9D8B53DD0534D4A3DBD26F1C /* XCLocalSwiftPackageReference "Plugins/PluginSwiftSelectionCodeActionEditor" */,
 				79AD127284A1185BD9F45189 /* XCLocalSwiftPackageReference "Plugins/PluginTerminal" */,
 				4AC985FD6EE32E7449477FC4 /* XCLocalSwiftPackageReference "Plugins/PluginTextActions" */,
-				F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/PluginThemeStatusBar" */,
+				F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/ThemeStatusBarPlugin" */,
 				392D16DD858B5FC453A33793 /* XCLocalSwiftPackageReference "Plugins/PluginToolCallLoopDetection" */,
 				DD7499EC77BE0853E49810D5 /* XCLocalSwiftPackageReference "Plugins/PluginToolPermission" */,
 				82D3703A7B8466FBE77541FB /* XCLocalSwiftPackageReference "Plugins/PluginVerbosity" */,
@@ -2697,81 +2697,81 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/PluginFileLog;
 		};
-		0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeAurora" */ = {
+		0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/ThemeAuroraPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeAurora;
+			relativePath = Plugins/ThemeAuroraPlugin;
 		};
-		0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/PluginThemeDracula" */ = {
+		0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/ThemeDraculaPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeDracula;
+			relativePath = Plugins/ThemeDraculaPlugin;
 		};
-		0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/PluginThemeAutumn" */ = {
+		0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/ThemeAutumnPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeAutumn;
+			relativePath = Plugins/ThemeAutumnPlugin;
 		};
-		0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/PluginThemeGithub" */ = {
+		0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/ThemeGithubPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeGithub;
+			relativePath = Plugins/ThemeGithubPlugin;
 		};
-		0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/PluginThemeMidnight" */ = {
+		0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/ThemeMidnightPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeMidnight;
+			relativePath = Plugins/ThemeMidnightPlugin;
 		};
-		0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/PluginThemeMountain" */ = {
+		0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/ThemeMountainPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeMountain;
+			relativePath = Plugins/ThemeMountainPlugin;
 		};
-		0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/PluginThemeNebula" */ = {
+		0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/ThemeNebulaPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeNebula;
+			relativePath = Plugins/ThemeNebulaPlugin;
 		};
-		0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOneDark" */ = {
+		0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/ThemeOneDarkPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeOneDark;
+			relativePath = Plugins/ThemeOneDarkPlugin;
 		};
 		0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Plugins/PluginAppStoreConnect" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/PluginAppStoreConnect;
 		};
-		0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/PluginThemeLumi" */ = {
+		0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/ThemeLumiPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeLumi;
+			relativePath = Plugins/ThemeLumiPlugin;
 		};
-		0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOrchard" */ = {
+		0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/ThemeOrchardPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeOrchard;
+			relativePath = Plugins/ThemeOrchardPlugin;
 		};
-		0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/PluginThemeRiver" */ = {
+		0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/ThemeRiverPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeRiver;
+			relativePath = Plugins/ThemeRiverPlugin;
 		};
-		0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSky" */ = {
+		0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/ThemeSkyPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeSky;
+			relativePath = Plugins/ThemeSkyPlugin;
 		};
-		0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSpring" */ = {
+		0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/ThemeSpringPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeSpring;
+			relativePath = Plugins/ThemeSpringPlugin;
 		};
-		0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSummer" */ = {
+		0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/ThemeSummerPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeSummer;
+			relativePath = Plugins/ThemeSummerPlugin;
 		};
-		0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVoid" */ = {
+		0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/ThemeVoidPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeVoid;
+			relativePath = Plugins/ThemeVoidPlugin;
 		};
-		0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeDark" */ = {
+		0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeDarkPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeVscodeDark;
+			relativePath = Plugins/ThemeVscodeDarkPlugin;
 		};
-		0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeLight" */ = {
+		0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeLightPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeVscodeLight;
+			relativePath = Plugins/ThemeVscodeLightPlugin;
 		};
-		0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeWinter" */ = {
+		0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/ThemeWinterPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeWinter;
+			relativePath = Plugins/ThemeWinterPlugin;
 		};
 		0B15C1302FD50000A15C1300 /* XCLocalSwiftPackageReference "Plugins/PluginAppIconDesigner" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -3393,9 +3393,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FileTreeKit;
 		};
-		F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/PluginThemeStatusBar" */ = {
+		F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/ThemeStatusBarPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/PluginThemeStatusBar;
+			relativePath = Plugins/ThemeStatusBarPlugin;
 		};
 		F9D60328E2020ED0DAFFE1B7 /* XCLocalSwiftPackageReference "Plugins/PluginRegistryManager" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -3659,100 +3659,100 @@
 			package = 0B14A1802FD4000000A14A18 /* XCLocalSwiftPackageReference "Plugins/PluginFileLog" */;
 			productName = PluginFileLog;
 		};
-		0B14A1912FD4000000A14A19 /* PluginThemeAurora */ = {
+		0B14A1912FD4000000A14A19 /* ThemeAuroraPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeAurora" */;
-			productName = PluginThemeAurora;
+			package = 0B14A1902FD4000000A14A19 /* XCLocalSwiftPackageReference "Plugins/ThemeAuroraPlugin" */;
+			productName = ThemeAuroraPlugin;
 		};
-		0B14A1A12FD4000000A14A1A /* PluginThemeDracula */ = {
+		0B14A1A12FD4000000A14A1A /* ThemeDraculaPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/PluginThemeDracula" */;
-			productName = PluginThemeDracula;
+			package = 0B14A1A02FD4000000A14A1A /* XCLocalSwiftPackageReference "Plugins/ThemeDraculaPlugin" */;
+			productName = ThemeDraculaPlugin;
 		};
-		0B14A1B12FD4000000A14A1B /* PluginThemeAutumn */ = {
+		0B14A1B12FD4000000A14A1B /* ThemeAutumnPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/PluginThemeAutumn" */;
-			productName = PluginThemeAutumn;
+			package = 0B14A1B02FD4000000A14A1B /* XCLocalSwiftPackageReference "Plugins/ThemeAutumnPlugin" */;
+			productName = ThemeAutumnPlugin;
 		};
-		0B14A1C12FD4000000A14A1C /* PluginThemeGithub */ = {
+		0B14A1C12FD4000000A14A1C /* ThemeGithubPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/PluginThemeGithub" */;
-			productName = PluginThemeGithub;
+			package = 0B14A1C02FD4000000A14A1C /* XCLocalSwiftPackageReference "Plugins/ThemeGithubPlugin" */;
+			productName = ThemeGithubPlugin;
 		};
-		0B14A1D12FD4000000A14A1D /* PluginThemeMidnight */ = {
+		0B14A1D12FD4000000A14A1D /* ThemeMidnightPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/PluginThemeMidnight" */;
-			productName = PluginThemeMidnight;
+			package = 0B14A1D02FD4000000A14A1D /* XCLocalSwiftPackageReference "Plugins/ThemeMidnightPlugin" */;
+			productName = ThemeMidnightPlugin;
 		};
-		0B14A1E12FD4000000A14A1E /* PluginThemeMountain */ = {
+		0B14A1E12FD4000000A14A1E /* ThemeMountainPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/PluginThemeMountain" */;
-			productName = PluginThemeMountain;
+			package = 0B14A1E02FD4000000A14A1E /* XCLocalSwiftPackageReference "Plugins/ThemeMountainPlugin" */;
+			productName = ThemeMountainPlugin;
 		};
-		0B14A1F12FD4000000A14A1F /* PluginThemeNebula */ = {
+		0B14A1F12FD4000000A14A1F /* ThemeNebulaPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/PluginThemeNebula" */;
-			productName = PluginThemeNebula;
+			package = 0B14A1F02FD4000000A14A1F /* XCLocalSwiftPackageReference "Plugins/ThemeNebulaPlugin" */;
+			productName = ThemeNebulaPlugin;
 		};
-		0B14A2012FD4000000A14A20 /* PluginThemeOneDark */ = {
+		0B14A2012FD4000000A14A20 /* ThemeOneDarkPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOneDark" */;
-			productName = PluginThemeOneDark;
+			package = 0B14A2002FD4000000A14A20 /* XCLocalSwiftPackageReference "Plugins/ThemeOneDarkPlugin" */;
+			productName = ThemeOneDarkPlugin;
 		};
 		0B14A2112FD4000000A14A21 /* PluginAppStoreConnect */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0B14A2102FD4000000A14A21 /* XCLocalSwiftPackageReference "Plugins/PluginAppStoreConnect" */;
 			productName = PluginAppStoreConnect;
 		};
-		0B14B1012FD4000000B14B10 /* PluginThemeLumi */ = {
+		0B14B1012FD4000000B14B10 /* ThemeLumiPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/PluginThemeLumi" */;
-			productName = PluginThemeLumi;
+			package = 0B14B1002FD4000000B14B10 /* XCLocalSwiftPackageReference "Plugins/ThemeLumiPlugin" */;
+			productName = ThemeLumiPlugin;
 		};
-		0B14B1112FD4000000B14B11 /* PluginThemeOrchard */ = {
+		0B14B1112FD4000000B14B11 /* ThemeOrchardPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/PluginThemeOrchard" */;
-			productName = PluginThemeOrchard;
+			package = 0B14B1102FD4000000B14B11 /* XCLocalSwiftPackageReference "Plugins/ThemeOrchardPlugin" */;
+			productName = ThemeOrchardPlugin;
 		};
-		0B14B1212FD4000000B14B12 /* PluginThemeRiver */ = {
+		0B14B1212FD4000000B14B12 /* ThemeRiverPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/PluginThemeRiver" */;
-			productName = PluginThemeRiver;
+			package = 0B14B1202FD4000000B14B12 /* XCLocalSwiftPackageReference "Plugins/ThemeRiverPlugin" */;
+			productName = ThemeRiverPlugin;
 		};
-		0B14B1312FD4000000B14B13 /* PluginThemeSky */ = {
+		0B14B1312FD4000000B14B13 /* ThemeSkyPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSky" */;
-			productName = PluginThemeSky;
+			package = 0B14B1302FD4000000B14B13 /* XCLocalSwiftPackageReference "Plugins/ThemeSkyPlugin" */;
+			productName = ThemeSkyPlugin;
 		};
-		0B14B1412FD4000000B14B14 /* PluginThemeSpring */ = {
+		0B14B1412FD4000000B14B14 /* ThemeSpringPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSpring" */;
-			productName = PluginThemeSpring;
+			package = 0B14B1402FD4000000B14B14 /* XCLocalSwiftPackageReference "Plugins/ThemeSpringPlugin" */;
+			productName = ThemeSpringPlugin;
 		};
-		0B14B1512FD4000000B14B15 /* PluginThemeSummer */ = {
+		0B14B1512FD4000000B14B15 /* ThemeSummerPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/PluginThemeSummer" */;
-			productName = PluginThemeSummer;
+			package = 0B14B1502FD4000000B14B15 /* XCLocalSwiftPackageReference "Plugins/ThemeSummerPlugin" */;
+			productName = ThemeSummerPlugin;
 		};
-		0B14B1612FD4000000B14B16 /* PluginThemeVoid */ = {
+		0B14B1612FD4000000B14B16 /* ThemeVoidPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVoid" */;
-			productName = PluginThemeVoid;
+			package = 0B14B1602FD4000000B14B16 /* XCLocalSwiftPackageReference "Plugins/ThemeVoidPlugin" */;
+			productName = ThemeVoidPlugin;
 		};
-		0B14B1712FD4000000B14B17 /* PluginThemeVscodeDark */ = {
+		0B14B1712FD4000000B14B17 /* ThemeVscodeDarkPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeDark" */;
-			productName = PluginThemeVscodeDark;
+			package = 0B14B1702FD4000000B14B17 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeDarkPlugin" */;
+			productName = ThemeVscodeDarkPlugin;
 		};
-		0B14B1812FD4000000B14B18 /* PluginThemeVscodeLight */ = {
+		0B14B1812FD4000000B14B18 /* ThemeVscodeLightPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/PluginThemeVscodeLight" */;
-			productName = PluginThemeVscodeLight;
+			package = 0B14B1802FD4000000B14B18 /* XCLocalSwiftPackageReference "Plugins/ThemeVscodeLightPlugin" */;
+			productName = ThemeVscodeLightPlugin;
 		};
-		0B14B1912FD4000000B14B19 /* PluginThemeWinter */ = {
+		0B14B1912FD4000000B14B19 /* ThemeWinterPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/PluginThemeWinter" */;
-			productName = PluginThemeWinter;
+			package = 0B14B1902FD4000000B14B19 /* XCLocalSwiftPackageReference "Plugins/ThemeWinterPlugin" */;
+			productName = ThemeWinterPlugin;
 		};
 		0B15C1312FD50000A15C1301 /* PluginAppIconDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -4114,10 +4114,10 @@
 			package = 7ED0FE3ECDC44389D825AD98 /* XCLocalSwiftPackageReference "Plugins/PluginEditorRailFileTree" */;
 			productName = PluginEditorRailFileTree;
 		};
-		4D6D798BD1E9119E7D9C8149 /* PluginThemeStatusBar */ = {
+		4D6D798BD1E9119E7D9C8149 /* ThemeStatusBarPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/PluginThemeStatusBar" */;
-			productName = PluginThemeStatusBar;
+			package = F485BA2BC1B60639957A6C08 /* XCLocalSwiftPackageReference "Plugins/ThemeStatusBarPlugin" */;
+			productName = ThemeStatusBarPlugin;
 		};
 		4D9A3039E03ABC33955C1158 /* PluginLSPDocumentColorEditor */ = {
 			isa = XCSwiftPackageProductDependency;

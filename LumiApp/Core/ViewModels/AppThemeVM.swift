@@ -1,6 +1,6 @@
 import Combine
 import LumiUI
-import PluginThemeStatusBar
+import ThemeStatusBarPlugin
 import SwiftUI
 
 /// 主题 ViewModel：委托 ``LumiUIThemeRegistry``，由 ``ThemeService`` 从插件同步贡献。
