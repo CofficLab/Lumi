@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginGoEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

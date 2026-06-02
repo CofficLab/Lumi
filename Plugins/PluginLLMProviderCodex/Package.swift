@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginLLMProviderCodex"
+            path: "Sources"
         ),
         .testTarget(
             name: "PluginLLMProviderCodexTests",

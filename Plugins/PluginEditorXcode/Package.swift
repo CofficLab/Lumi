@@ -40,7 +40,7 @@ let package = Package(
                 .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),
                 .product(name: "XcodeProj", package: "XcodeProj"),
             ],
-            path: "Sources/PluginEditorXcode",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

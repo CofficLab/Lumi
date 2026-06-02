@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "PluginLSPServiceEditor", package: "PluginLSPServiceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources/PluginLSPToolbarEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

@@ -36,7 +36,7 @@ let package = Package(
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
-            path: "Sources/PluginAgentMessageRenderer",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "PluginLSPWorkspaceSymbolEditor", package: "PluginLSPWorkspaceSymbolEditor"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginEditorRailWorkspaceSymbols",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

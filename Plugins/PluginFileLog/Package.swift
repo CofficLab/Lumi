@@ -23,7 +23,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginFileLog"
+            path: "Sources"
         ),
         .testTarget(
             name: "PluginFileLogTests",

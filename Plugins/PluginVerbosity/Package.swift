@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginVerbosity",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

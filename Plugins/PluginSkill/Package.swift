@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "SkillKit", package: "SkillKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginSkill",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

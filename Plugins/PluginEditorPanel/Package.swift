@@ -40,7 +40,7 @@ let package = Package(
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginEditorPanel",
+            path: "Sources",
             exclude: [
                 "Coordinators",
                 "Services",

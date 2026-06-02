@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/PluginLSPCodeActionEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

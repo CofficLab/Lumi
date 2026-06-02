@@ -31,7 +31,7 @@ let package = Package(
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginLLMProviderMLX",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

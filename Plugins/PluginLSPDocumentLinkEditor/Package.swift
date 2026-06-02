@@ -33,7 +33,7 @@ let package = Package(
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources/PluginLSPDocumentLinkEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

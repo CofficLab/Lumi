@@ -22,7 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources/PluginOnboarding",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

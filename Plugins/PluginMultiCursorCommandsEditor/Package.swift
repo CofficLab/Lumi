@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources/PluginMultiCursorCommandsEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

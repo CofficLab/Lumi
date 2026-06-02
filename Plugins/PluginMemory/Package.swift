@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "MemoryKit", package: "MemoryKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginMemory",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

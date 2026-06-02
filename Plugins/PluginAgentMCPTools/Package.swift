@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "MCPKit", package: "MCPKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginAgentMCPTools",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

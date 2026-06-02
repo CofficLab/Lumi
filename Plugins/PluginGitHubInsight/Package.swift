@@ -32,7 +32,7 @@ let package = Package(
                 .product(name: "ProjectProfileKit", package: "ProjectProfileKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginGitHubInsight",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

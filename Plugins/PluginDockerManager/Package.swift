@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginDockerManager",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

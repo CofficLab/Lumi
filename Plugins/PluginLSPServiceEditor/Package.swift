@@ -44,7 +44,7 @@ let package = Package(
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginLSPServiceEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

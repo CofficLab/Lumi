@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/PluginOpenInGitHubDesktop",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

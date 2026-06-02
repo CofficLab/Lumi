@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),
             ],
-            path: "Sources/PluginEditorBottomTerminal",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

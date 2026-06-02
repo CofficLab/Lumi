@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "RAGKit", package: "RAGKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginAgentRAG",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

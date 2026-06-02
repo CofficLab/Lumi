@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginAgentAvailableTools",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

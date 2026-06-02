@@ -36,7 +36,7 @@ let package = Package(
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginGit",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

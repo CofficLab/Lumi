@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "WebFetchKit", package: "WebFetchKit"),
             ],
-            path: "Sources/PluginWebFetch",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]

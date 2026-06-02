@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources/PluginMarkdownEditor",
+            path: "Sources",
             resources: [
                 .process("Resources")
             ]
