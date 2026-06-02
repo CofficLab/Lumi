@@ -20,7 +20,7 @@ public actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "network"
     public static var category: PluginCategory { .system }
     public static var order: Int { 30 }
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .optIn
 
     public nonisolated var instanceLabel: String { Self.id }
 
