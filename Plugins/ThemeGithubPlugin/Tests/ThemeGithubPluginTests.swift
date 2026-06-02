@@ -62,6 +62,6 @@ struct ThemeGithubPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeGithubPluginResources.bundle.url(forResource: "ThemeGithubPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeGithubPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

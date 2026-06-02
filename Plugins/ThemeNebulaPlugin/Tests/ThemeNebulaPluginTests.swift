@@ -62,6 +62,6 @@ struct ThemeNebulaPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeNebulaPluginResources.bundle.url(forResource: "ThemeNebulaPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeNebulaPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

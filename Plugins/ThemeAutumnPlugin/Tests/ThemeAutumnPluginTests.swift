@@ -62,6 +62,6 @@ struct ThemeAutumnPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeAutumnPluginResources.bundle.url(forResource: "ThemeAutumnPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeAutumnPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

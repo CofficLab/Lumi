@@ -63,6 +63,6 @@ struct ThemeAuroraPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeAuroraPluginResources.bundle.url(forResource: "ThemeAuroraPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeAuroraPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

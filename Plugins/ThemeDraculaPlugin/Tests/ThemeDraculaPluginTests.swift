@@ -62,6 +62,6 @@ struct ThemeDraculaPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeDraculaPluginResources.bundle.url(forResource: "ThemeDraculaPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeDraculaPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

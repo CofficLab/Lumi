@@ -62,6 +62,6 @@ struct ThemeMidnightPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeMidnightPluginResources.bundle.url(forResource: "ThemeMidnightPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeMidnightPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

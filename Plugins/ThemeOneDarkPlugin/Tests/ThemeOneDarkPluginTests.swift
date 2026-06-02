@@ -62,6 +62,6 @@ struct ThemeOneDarkPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeOneDarkPluginResources.bundle.url(forResource: "ThemeOneDarkPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeOneDarkPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }

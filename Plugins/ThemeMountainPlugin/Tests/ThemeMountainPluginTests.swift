@@ -62,6 +62,6 @@ struct ThemeMountainPluginTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(ThemeMountainPluginResources.bundle.url(forResource: "ThemeMountainPlugin", withExtension: "xcstrings") != nil)
+        #expect(ThemeMountainPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
     }
 }
