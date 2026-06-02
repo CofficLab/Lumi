@@ -7,6 +7,7 @@ enum SettingTab: String, CaseIterable, Hashable {
     case theme = "主题"
     case localProvider = "本地供应商"
     case remoteProvider = "云端供应商"
+    case editor = "编辑器"
     case plugins = "插件管理"
     case about = "关于"
 
@@ -16,6 +17,7 @@ enum SettingTab: String, CaseIterable, Hashable {
         case .theme: return "paintbrush.fill"
         case .localProvider: return "cpu"
         case .remoteProvider: return "network"
+        case .editor: return "text.cursor"
         case .plugins: return "puzzlepiece.extension"
         case .about: return "info.circle"
         }
@@ -34,6 +36,8 @@ enum SettingTab: String, CaseIterable, Hashable {
             LocalProviderSettingsView()
         case .remoteProvider:
             RemoteProviderSettingsView()
+        case .editor:
+            EditorSettingsView()
         case .plugins:
             PluginSettingsView()
         case .about:
