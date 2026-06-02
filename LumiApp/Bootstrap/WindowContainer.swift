@@ -615,7 +615,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
            let conversation = conversationVM.fetchConversation(id: conversationId) {
             title = conversation.displayTitle
         } else if let _ = projectPath {
-            title = "Lumi - \(projectVM.currentProjectName)"
+            title = "\(projectVM.currentProjectName)"
         } else {
             title = "Lumi"
         }
