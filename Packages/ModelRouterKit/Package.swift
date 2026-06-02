@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "ModelRouterKit",
-            path: "Sources/ModelRouterKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "ModelRouterKitTests",

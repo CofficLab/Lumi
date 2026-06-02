@@ -15,6 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "SkillKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "SkillKitTests",

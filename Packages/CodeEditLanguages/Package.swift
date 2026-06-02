@@ -43,7 +43,8 @@ let package = Package(
             name: "CodeEditLanguages",
             dependencies: [codeLanguagesContainerDependency, "SwiftTreeSitter"],
             resources: [
-                .copy("Resources")
+                .copy("Resources",
+            path: "Sources")
             ],
             linkerSettings: [.linkedLibrary("c++")]
         ),

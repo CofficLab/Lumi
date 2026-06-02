@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "GitHubKit",
             dependencies: ["HttpKit"],
-            path: "Sources/GitHubKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "GitHubKitTests",

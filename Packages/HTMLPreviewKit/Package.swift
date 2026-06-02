@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "HTMLPreviewKit",
-            path: "Sources/HTMLPreviewKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "HTMLPreviewKitTests",

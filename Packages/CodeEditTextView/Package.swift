@@ -31,7 +31,8 @@ let package = Package(
             name: "CodeEditTextView",
             dependencies: [
                 "TextStory",
-                .product(name: "Collections", package: "swift-collections"),
+                .product(name: "Collections", package: "swift-collections",
+            path: "Sources"),
                 "CodeEditTextViewObjC"
             ]
         ),
@@ -40,7 +41,8 @@ let package = Package(
         .target(
             name: "CodeEditTextViewObjC",
             publicHeadersPath: "include"
-        ),
+        ,
+            path: "Sources"),
         .testTarget(
             name: "CodeEditTextViewTests",
             dependencies: ["CodeEditTextView"],

@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "WorkspaceFileKit",
-            path: "Sources/WorkspaceFileKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "WorkspaceFileKitTests",

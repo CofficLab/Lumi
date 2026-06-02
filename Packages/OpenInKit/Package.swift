@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "OpenInKit",
-            path: "Sources/OpenInKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "OpenInKitTests",

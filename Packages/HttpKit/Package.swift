@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "HttpKit",
-            path: "Sources/HttpKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "HttpKitTests",

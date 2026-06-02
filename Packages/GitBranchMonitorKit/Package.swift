@@ -16,7 +16,7 @@ let package = Package(
         .target(
             name: "GitBranchMonitorKit",
             dependencies: [],
-            path: "Sources/GitBranchMonitorKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "GitBranchMonitorKitTests",

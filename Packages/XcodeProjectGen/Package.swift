@@ -21,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
             ],
-            path: "Sources/XcodeProjectGen"
+            path: "Sources"
         ),
         .testTarget(
             name: "XcodeProjectGenTests",

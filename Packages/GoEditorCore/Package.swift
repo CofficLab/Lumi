@@ -15,6 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "GoEditorCore",
+            path: "Sources"
             dependencies: [
                 "ShellKit",
             ]

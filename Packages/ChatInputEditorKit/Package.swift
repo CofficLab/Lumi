@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "ChatInputEditorKit",
-            path: "Sources/ChatInputEditorKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "ChatInputEditorKitTests",

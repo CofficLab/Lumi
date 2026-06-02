@@ -14,7 +14,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ShellKit", package: "ShellKit")
             ],
-            path: "Sources/BrewKit"
+            path: "Sources"
         ),
         .testTarget(name: "BrewKitTests", dependencies: ["BrewKit"], path: "Tests")
     ]

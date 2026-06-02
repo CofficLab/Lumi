@@ -21,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/DeviceMonitorKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "DeviceMonitorKitTests",

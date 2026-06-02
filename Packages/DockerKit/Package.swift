@@ -21,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ShellKit", package: "ShellKit")
             ],
-            path: "Sources/DockerKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "DockerKitTests",

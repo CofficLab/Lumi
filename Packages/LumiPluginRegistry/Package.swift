@@ -356,7 +356,7 @@ let package = Package(
                 "PluginWebSearch",
                 "PluginWindowPersistence",
             ],
-            path: "Sources/LumiPluginRegistry"
+            path: "Sources"
         ),
     ]
 )

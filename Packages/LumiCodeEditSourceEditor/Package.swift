@@ -40,7 +40,8 @@ let package = Package(
                 "CodeEditTextView",
                 "CodeEditLanguages",
                 "TextFormation",
-                .product(name: "CodeEditSymbols", package: "LumiCodeEditSymbols")
+                .product(name: "CodeEditSymbols", package: "LumiCodeEditSymbols",
+            path: "Sources")
             ]
         ),
         .testTarget(

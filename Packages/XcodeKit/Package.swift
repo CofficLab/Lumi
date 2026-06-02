@@ -19,6 +19,7 @@ let package = Package(
     targets: [
         .target(
             name: "XcodeKit",
+            path: "Sources"
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

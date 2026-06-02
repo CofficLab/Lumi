@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "StringCatalogKit",
-            path: "Sources/StringCatalogKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "StringCatalogKitTests",

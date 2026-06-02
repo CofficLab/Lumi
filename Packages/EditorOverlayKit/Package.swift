@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/EditorOverlayKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "EditorOverlayKitTests",

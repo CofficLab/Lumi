@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "RAGKit",
-            path: "Sources/RAGKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "RAGKitTests",

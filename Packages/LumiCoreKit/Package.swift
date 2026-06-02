@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/LumiCoreKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "LumiCoreKitTests",

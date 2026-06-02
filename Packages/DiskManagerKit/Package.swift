@@ -16,7 +16,7 @@ let package = Package(
     targets: [
         .target(
             name: "DiskManagerKit",
-            path: "Sources/DiskManagerKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "DiskManagerKitTests",

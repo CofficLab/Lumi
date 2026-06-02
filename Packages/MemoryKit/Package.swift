@@ -26,7 +26,7 @@ let package = Package(
         .target(
             name: "MemoryKit",
             dependencies: [],
-            path: "Sources/MemoryKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "MemoryKitTests",

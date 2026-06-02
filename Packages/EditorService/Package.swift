@@ -26,6 +26,7 @@ let package = Package(
     targets: [
         .target(
             name: "EditorService",
+            path: "Sources"
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),

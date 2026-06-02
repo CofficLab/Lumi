@@ -21,6 +21,7 @@ let package = Package(
     targets: [
         .target(
             name: "DatabaseKit",
+            path: "Sources"
             dependencies: [
                 .product(name: "MySQLNIO", package: "mysql-nio"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),

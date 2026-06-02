@@ -18,6 +18,7 @@ let package = Package(
     targets: [
         .target(
             name: "EditorKernel",
+            path: "Sources"
             dependencies: [
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol")
             ]
