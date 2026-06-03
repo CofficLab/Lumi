@@ -25,7 +25,7 @@ public actor DiskManagerPlugin: SuperPlugin, SuperLog {
     public static let iconName = "internaldrive"
     public static var category: PluginCategory { .system }
     public static var order: Int { 22 }
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .optOut
 
     public nonisolated var instanceLabel: String { Self.id }
 
