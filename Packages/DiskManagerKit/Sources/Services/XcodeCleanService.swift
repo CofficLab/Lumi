@@ -201,7 +201,7 @@ actor XcodeScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: String(localized: "Starting scan..."))
+        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: String(localized: "Starting scan...", bundle: .module))
 
         let task = Task { await performScan(scanCategory: scanCategory, id: myID) }
         activeTask = task

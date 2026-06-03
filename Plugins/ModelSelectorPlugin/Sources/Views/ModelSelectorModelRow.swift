@@ -63,22 +63,22 @@ public struct ModelSelectorModelRow: View {
                                 if let supportsVision {
                                     capabilityBadge(
                                         title: supportsVision
-                                            ? String(localized: "Image", table: "AgentChat")
-                                            : String(localized: "Text", table: "AgentChat"),
+                                            ? String(localized: "Image", bundle: .module)
+                                            : String(localized: "Text", bundle: .module),
                                         systemImage: supportsVision ? "photo" : "text.bubble"
                                     )
                                 }
 
                                 if let supportsTools, supportsTools {
                                     capabilityBadge(
-                                        title: String(localized: "Tools", table: "AgentChat"),
+                                        title: String(localized: "Tools", bundle: .module),
                                         systemImage: "wrench.and.screwdriver"
                                     )
                                 }
 
                                 if let supportsTTS, supportsTTS {
                                     capabilityBadge(
-                                        title: String(localized: "TTS", table: "AgentChat"),
+                                        title: String(localized: "TTS", bundle: .module),
                                         systemImage: "waveform"
                                     )
                                 }
@@ -172,13 +172,13 @@ public struct ModelSelectorModelRow: View {
     private func availabilityHelpText(for status: LLMAvailabilityStatus) -> String {
         switch status {
         case .available:
-            return String(localized: "Available", table: "LLMAvailability")
+            return String(localized: "Available", bundle: .module)
         case .unavailable(let reason):
             return reason
         case .checking:
-            return String(localized: "Checking...", table: "LLMAvailability")
+            return String(localized: "Checking...", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", table: "LLMAvailability")
+            return String(localized: "Unknown", bundle: .module)
         }
     }
 

@@ -24,7 +24,10 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "ChatPendingMessagesPluginTests",

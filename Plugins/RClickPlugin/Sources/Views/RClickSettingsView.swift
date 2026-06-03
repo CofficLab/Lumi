@@ -10,7 +10,7 @@ public struct RClickSettingsView: View {
     public var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
-                Text(String(localized: "Preview", table: "RClick"))
+                Text(String(localized: "Preview", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textSecondary)
 
@@ -33,10 +33,10 @@ public struct RClickSettingsView: View {
                                     .foregroundColor(theme.primary)
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(String(localized: "Enable Finder Extension", table: "RClick"))
+                                    Text(String(localized: "Enable Finder Extension", bundle: .module))
                                         .font(.appTitle)
                                         .foregroundColor(theme.textPrimary)
-                                    Text(String(localized: "The right-click menu functionality requires the Finder extension to be enabled in System Settings.", table: "RClick"))
+                                    Text(String(localized: "The right-click menu functionality requires the Finder extension to be enabled in System Settings.", bundle: .module))
                                         .font(.appCaption)
                                         .foregroundColor(theme.textSecondary)
                                 }
@@ -50,7 +50,7 @@ public struct RClickSettingsView: View {
 
                                 Spacer()
 
-                                Text(String(localized: "System Settings → Privacy & Security → Extensions → Added Extensions", table: "RClick"))
+                                Text(String(localized: "System Settings → Privacy & Security → Extensions → Added Extensions", bundle: .module))
                                     .font(.appMicro)
                                     .foregroundColor(theme.textTertiary)
                             }
@@ -59,7 +59,7 @@ public struct RClickSettingsView: View {
 
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "General Actions", table: "RClick"))
+                            Text(String(localized: "General Actions", bundle: .module))
                                 .font(.appTitle)
                                 .foregroundColor(theme.textPrimary)
 
@@ -91,7 +91,7 @@ public struct RClickSettingsView: View {
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text(String(localized: "New File Menu", table: "RClick"))
+                                Text(String(localized: "New File Menu", bundle: .module))
                                     .font(.appTitle)
                                     .foregroundColor(theme.textPrimary)
                                 Spacer()
@@ -105,7 +105,7 @@ public struct RClickSettingsView: View {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
                                             .foregroundColor(theme.textSecondary)
-                                        Text(String(localized: "Enable 'New File' Submenu", table: "RClick"))
+                                        Text(String(localized: "Enable 'New File' Submenu", bundle: .module))
                                             .font(.appBody)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -149,7 +149,7 @@ public struct RClickSettingsView: View {
 
                     AppCard {
                         HStack {
-                            Text(String(localized: "Reset to Defaults", table: "RClick"))
+                            Text(String(localized: "Reset to Defaults", bundle: .module))
                                 .font(.appBodyEmphasized)
                                 .foregroundColor(theme.error)
                             Spacer()

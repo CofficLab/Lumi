@@ -7,8 +7,8 @@ public actor SampleInsightsEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = SampleInsightsEditorPlugin()
     public static let id = "SampleInsightsEditor"
-    public static let displayName = String(localized: "Sample Insights", table: "SampleInsights")
-    public static let description = String(localized: "Demonstrates hover, panel, and title action contributions.", table: "SampleInsights")
+    public static let displayName = String(localized: "Sample Insights", bundle: .module)
+    public static let description = String(localized: "Demonstrates hover, panel, and title action contributions.", bundle: .module)
     public static let iconName = "lightbulb.max"
     public static let order = 91
     public static var category: PluginCategory { .editor }

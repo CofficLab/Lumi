@@ -120,7 +120,7 @@ public struct EditorPeekOverlayView: View {
                             )
                     }
                 } else {
-                    Text(String(localized: "No preview available"))
+                    Text(String(localized: "No preview available", bundle: .module))
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "98989E"))
                 }
@@ -132,13 +132,13 @@ public struct EditorPeekOverlayView: View {
 
     private var footer: some View {
         HStack {
-            Text(String(localized: "\(presentation.items.count) items"))
+            Text(String(localized: "\(presentation.items.count) items", bundle: .module))
                 .font(.system(size: 10))
                 .foregroundColor(Color(hex: "98989E"))
 
             Spacer(minLength: 0)
 
-            Button(String(localized: "Open")) {
+            Button(String(localized: "Open", bundle: .module)) {
                 guard let selectedItem else { return }
                 state.openPeekItem(selectedItem)
             }
@@ -146,7 +146,7 @@ public struct EditorPeekOverlayView: View {
             .controlSize(.small)
             .disabled(selectedItem == nil)
 
-            Button(String(localized: "Close")) {
+            Button(String(localized: "Close", bundle: .module)) {
                 state.dismissPeek()
             }
             .buttonStyle(.borderless)

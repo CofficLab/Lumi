@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LumiUI",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -19,7 +20,10 @@ let package = Package(
         .target(
             name: "LumiUI",
             dependencies: ["AgentToolKit"],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "LumiUITests",

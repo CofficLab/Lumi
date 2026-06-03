@@ -6,8 +6,8 @@ public actor AgentToolPermissionPlugin: SuperPlugin {
     public nonisolated static let emoji = "🔐"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentToolPermission"
-    public static let displayName = String(localized: "Tool Permission", table: "AgentToolPermission")
-    public static let description = String(localized: "Tool permission overlay at root", table: "AgentToolPermission")
+    public static let displayName = String(localized: "Tool Permission", bundle: .module)
+    public static let description = String(localized: "Tool permission overlay at root", bundle: .module)
     public static let iconName = "lock.shield"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 95 }

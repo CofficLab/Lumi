@@ -37,9 +37,9 @@ public enum LanguagePreference: String, CaseIterable, Identifiable, Codable, Sen
     public var displayName: String {
         switch self {
         case .chinese:
-            return String(localized: "Chinese", table: "AgentLanguageHeader")
+            return String(localized: "Chinese", bundle: .module)
         case .english:
-            return String(localized: "English", table: "AgentLanguageHeader")
+            return String(localized: "English", bundle: .module)
         }
     }
 

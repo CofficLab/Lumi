@@ -10,8 +10,8 @@ public actor AgentOpenInCursorPlugin: SuperPlugin {
     public nonisolated static let emoji = "↗️"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentOpenInCursor"
-    public static let displayName = String(localized: "Open in Cursor", table: "AgentOpenInCursor")
-    public static let description = String(localized: "Open current project in Cursor editor", table: "AgentOpenInCursor")
+    public static let displayName = String(localized: "Open in Cursor", bundle: .module)
+    public static let description = String(localized: "Open current project in Cursor editor", bundle: .module)
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 82 }
@@ -87,7 +87,7 @@ public struct OpenInCursorStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Cursor 中打开当前项目", bundle: .main))
+            .help(String(localized: "在 Cursor 中打开当前项目", bundle: .module))
         }
     }
 
@@ -97,13 +97,13 @@ public struct OpenInCursorStatusBarView: View {
             Image(systemName: "chevron.left.forwardslash.chevron.right")
                 .font(.appMicro)
 
-            Text(String(localized: "Cursor", table: "OpenInCursorPlugin"))
+            Text(String(localized: "Cursor", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInCursor"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInCursor() {
@@ -128,7 +128,7 @@ public struct OpenInCursorDetailView: View {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                     .font(.appBodyEmphasized)
 
-                Text(String(localized: "Cursor", table: "OpenInCursorPlugin"))
+                Text(String(localized: "Cursor", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -139,7 +139,7 @@ public struct OpenInCursorDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInCursorPlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -150,7 +150,7 @@ public struct OpenInCursorDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInCursorPlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -171,7 +171,7 @@ public struct OpenInCursorDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInCursorPlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()

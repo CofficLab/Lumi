@@ -13,8 +13,8 @@ public actor RequestLogPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "RequestLog"
-    public static let displayName: String = String(localized: "PluginName", table: "RequestLog")
-    public static let description: String = String(localized: "PluginDescription", table: "RequestLog")
+    public static let displayName: String = String(localized: "PluginName", bundle: .module)
+    public static let description: String = String(localized: "PluginDescription", bundle: .module)
     public static let iconName: String = "doc.text.magnifyingglass"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 100 }

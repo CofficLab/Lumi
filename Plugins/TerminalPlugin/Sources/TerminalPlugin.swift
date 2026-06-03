@@ -12,8 +12,8 @@ public actor TerminalPlugin: SuperPlugin, SuperLog {
 
     public static let id = "Terminal"
     public static let navigationId: String = "terminal"
-    public static let displayName = String(localized: "Terminal", table: "Terminal")
-    public static let description = String(localized: "Native interactive terminal powered by SwiftTerm", table: "Terminal")
+    public static let displayName = String(localized: "Terminal", bundle: .module)
+    public static let description = String(localized: "Native interactive terminal powered by SwiftTerm", bundle: .module)
     public static let iconName = "terminal"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 90 }

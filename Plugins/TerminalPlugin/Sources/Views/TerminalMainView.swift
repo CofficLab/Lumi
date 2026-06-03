@@ -52,7 +52,7 @@ public struct TerminalMainView: View {
             // Content - 所有终端视图都保持存在，通过 opacity 控制显示
             // 这样可以避免 Tab 切换时视图被销毁重建导致的状态丢失
             if viewModel.sessions.isEmpty {
-                Text(String(localized: "No open terminals", table: "Terminal"))
+                Text(String(localized: "No open terminals", bundle: .module))
                     .font(.appBody)
                     .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

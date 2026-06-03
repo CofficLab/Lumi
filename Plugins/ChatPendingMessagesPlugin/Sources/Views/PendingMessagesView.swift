@@ -16,7 +16,7 @@ public struct PendingMessagesView: View {
                     Image(systemName: "clock")
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
-                    Text(PendingMessagesRuntime.title.isEmpty ? String(localized: "Waiting to Send", table: "AgentChat") : PendingMessagesRuntime.title)
+                    Text(PendingMessagesRuntime.title.isEmpty ? String(localized: "Waiting to Send", bundle: .module) : PendingMessagesRuntime.title)
                         .font(.system(size: 11, weight: .medium))
                     Text("(\(messages.count))")
                         .font(.system(size: 10))

@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "AskUserPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "AskUserPlugin", targets: ["AskUserPlugin"]),

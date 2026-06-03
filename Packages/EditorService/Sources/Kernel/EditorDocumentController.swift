@@ -209,7 +209,7 @@ final class EditorDocumentController: SuperLog {
         } else {
             preview = String(decoding: data, as: UTF8.self)
         }
-        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: EditorHostEnvironment.current.localizationTable)
+        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", bundle: .module)
         return preview + suffix
     }
 

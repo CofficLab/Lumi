@@ -14,14 +14,14 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
 
     public var title: String {
         switch self {
-        case .newFile: return String(localized: "New File", table: "RClick")
-        case .copyPath: return String(localized: "Copy Path", table: "RClick")
-        case .openInTerminal: return String(localized: "Open in Terminal", table: "RClick")
-        case .openInVSCode: return String(localized: "Open in VS Code", table: "RClick")
-        case .deleteFile: return String(localized: "Delete File", table: "RClick")
-        case .hideFile: return String(localized: "Hide File", table: "RClick")
-        case .showHiddenFiles: return String(localized: "Show Hidden Files", table: "RClick")
-        case .listHiddenFiles: return String(localized: "List Hidden Files", table: "RClick")
+        case .newFile: return String(localized: "New File", bundle: .module)
+        case .copyPath: return String(localized: "Copy Path", bundle: .module)
+        case .openInTerminal: return String(localized: "Open in Terminal", bundle: .module)
+        case .openInVSCode: return String(localized: "Open in VS Code", bundle: .module)
+        case .deleteFile: return String(localized: "Delete File", bundle: .module)
+        case .hideFile: return String(localized: "Hide File", bundle: .module)
+        case .showHiddenFiles: return String(localized: "Show Hidden Files", bundle: .module)
+        case .listHiddenFiles: return String(localized: "List Hidden Files", bundle: .module)
         }
     }
 

@@ -55,7 +55,7 @@ public struct ProjectDropdownMenu: View {
 
             // 浏览按钮
             if recentProjects.isEmpty && projectVM.currentProjectPath.isEmpty {
-                Text(String(localized: "No projects", table: "Projects"))
+                Text(String(localized: "No projects", bundle: .module))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color(hex: "98989E"))
                     .padding()

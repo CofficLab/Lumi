@@ -42,9 +42,9 @@ public struct CacheCategory: Identifiable, Hashable, Sendable {
 
         public var label: String {
             switch self {
-            case .safe: return String(localized: "Safe")
-            case .medium: return String(localized: "Medium")
-            case .risky: return String(localized: "Risky")
+            case .safe: return String(localized: "Safe", bundle: .module)
+            case .medium: return String(localized: "Medium", bundle: .module)
+            case .risky: return String(localized: "Risky", bundle: .module)
             }
         }
     }

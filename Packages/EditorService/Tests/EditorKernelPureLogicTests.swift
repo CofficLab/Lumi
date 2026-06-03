@@ -714,7 +714,7 @@ final class EditorKernelPureLogicTests: XCTestCase {
         )
 
         XCTAssertEqual(single, "1")
-        XCTAssertEqual(multiple, "3" + String(localized: " cursors", table: "LumiEditor"))
+        XCTAssertEqual(multiple, "3" + String(localized: " cursors", bundle: .module))
     }
 
     func testEditorFindControllerStateUpdatesKeepPanelVisibleAndPreserveOtherFields() {

@@ -32,9 +32,9 @@ final class VueCommandContributor: SuperEditorCommandContributor {
     private func goToTemplateCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.goToTemplate",
-            title: String(localized: "Go to Template", table: "VueEditor"),
+            title: String(localized: "Go to Template", bundle: .module),
             systemImage: "anglebrackets.left",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             shortcut: EditorCommandShortcut(key: "1", modifiers: [.command]),
             order: 100,
             isEnabled: true
@@ -49,9 +49,9 @@ final class VueCommandContributor: SuperEditorCommandContributor {
     private func goToScriptCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.goToScript",
-            title: String(localized: "Go to Script", table: "VueEditor"),
+            title: String(localized: "Go to Script", bundle: .module),
             systemImage: "curlybraces",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             shortcut: EditorCommandShortcut(key: "2", modifiers: [.command]),
             order: 200,
             isEnabled: true
@@ -66,9 +66,9 @@ final class VueCommandContributor: SuperEditorCommandContributor {
     private func goToStyleCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.goToStyle",
-            title: String(localized: "Go to Style", table: "VueEditor"),
+            title: String(localized: "Go to Style", bundle: .module),
             systemImage: "paintbrush",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             shortcut: EditorCommandShortcut(key: "3", modifiers: [.command]),
             order: 300,
             isEnabled: true

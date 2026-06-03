@@ -53,9 +53,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
     private func startDevServerCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.dev.start",
-            title: String(localized: "Start Dev Server", table: "VueEditor"),
+            title: String(localized: "Start Dev Server", bundle: .module),
             systemImage: "play.fill",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             shortcut: EditorCommandShortcut(key: "r", modifiers: [.shift, .command]),
             order: 100,
             isEnabled: true
@@ -74,9 +74,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
 
         return EditorCommandSuggestion(
             id: "vue.dev.open",
-            title: String(localized: "Open Dev Server", table: "VueEditor"),
+            title: String(localized: "Open Dev Server", bundle: .module),
             systemImage: "safari",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             shortcut: EditorCommandShortcut(key: "r", modifiers: [.shift, .command, .option]),
             order: 150,
             isEnabled: true
@@ -92,9 +92,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
     private func buildProductionCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.dev.build",
-            title: String(localized: "Build Production", table: "VueEditor"),
+            title: String(localized: "Build Production", bundle: .module),
             systemImage: "archivebox",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             order: 200,
             isEnabled: true
         ) { [weak self, weak state] in
@@ -108,9 +108,9 @@ final class VueDevCommandContributor: SuperEditorCommandContributor {
     private func previewCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "vue.dev.preview",
-            title: String(localized: "Preview Build", table: "VueEditor"),
+            title: String(localized: "Preview Build", bundle: .module),
             systemImage: "eye.fill",
-            category: String(localized: "Vue", table: "VueEditor"),
+            category: String(localized: "Vue", bundle: .module),
             order: 250,
             isEnabled: true
         ) { [weak self, weak state] in

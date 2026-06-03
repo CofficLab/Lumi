@@ -14,8 +14,8 @@ public actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public static let id = "ChatPendingMessages"
-    public static let displayName = String(localized: "Chat Pending Messages", table: "AgentChat")
-    public static let description = String(localized: "Show queued chat messages above the input area", table: "AgentChat")
+    public static let displayName = String(localized: "Chat Pending Messages", bundle: .module)
+    public static let description = String(localized: "Show queued chat messages above the input area", bundle: .module)
     public static let iconName = "clock"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 95 }

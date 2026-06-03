@@ -10,7 +10,7 @@ public final class SampleInsightsPanelContributor: SuperEditorPanelContributor {
         [
             EditorPanelSuggestion(
                 id: "sample.insights.side-panel",
-                title: String(localized: "Sample Insights", table: "SampleInsights"),
+                title: String(localized: "Sample Insights", bundle: .module),
                 systemImage: "lightbulb.max",
                 placement: .bottom,
                 order: -10,
@@ -60,7 +60,7 @@ private struct SampleInsightsPanelView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(String(localized: "Sample Insights", table: "SampleInsights"))
+                    Text(String(localized: "Sample Insights", bundle: .module))
                         .font(.system(size: 13, weight: .semibold))
                     Text(fileSummary)
                         .font(.system(size: 11))
@@ -69,7 +69,7 @@ private struct SampleInsightsPanelView: View {
 
                 Spacer(minLength: 0)
 
-                Button(String(localized: "Close", table: "SampleInsights")) {
+                Button(String(localized: "Close", bundle: .module)) {
                     store.isPresented = false
                     state.objectWillChange.send()
                 }
@@ -77,13 +77,13 @@ private struct SampleInsightsPanelView: View {
                 .font(.system(size: 11, weight: .medium))
             }
 
-            insightRow(String(localized: "Language", table: "SampleInsights"), languageSummary)
-            insightRow(String(localized: "Cursor", table: "SampleInsights"), "Ln \(max(state.cursorLine, 1)), Col \(max(state.cursorColumn, 1))")
+            insightRow(String(localized: "Language", bundle: .module), languageSummary)
+            insightRow(String(localized: "Cursor", bundle: .module), "Ln \(max(state.cursorLine, 1)), Col \(max(state.cursorColumn, 1))")
             insightRow("TODO", "\(todoSummary.todo)")
             insightRow("FIXME", "\(todoSummary.fixme)")
-            insightRow(String(localized: "Large File", table: "SampleInsights"), state.largeFileMode == .normal ? String(localized: "No", table: "SampleInsights") : String(localized: "Yes", table: "SampleInsights"))
+            insightRow(String(localized: "Large File", bundle: .module), state.largeFileMode == .normal ? String(localized: "No", bundle: .module) : String(localized: "Yes", bundle: .module))
 
-            Text(String(localized: "This panel is contributed by SuperEditorPanelContributor and toggled from a titleTrailing status item.", table: "SampleInsights"))
+            Text(String(localized: "This panel is contributed by SuperEditorPanelContributor and toggled from a titleTrailing status item.", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "DiskManagerKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -16,7 +17,10 @@ let package = Package(
     targets: [
         .target(
             name: "DiskManagerKit",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "DiskManagerKitTests",

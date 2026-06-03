@@ -16,7 +16,6 @@ public enum PackageStringLocalization {
 
         return String(
             localized: String.LocalizationValue(key),
-            table: table,
             bundle: bundle,
             locale: language.locale,
             comment: ""

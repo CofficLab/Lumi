@@ -26,8 +26,8 @@ public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id = "QuickFileSearch"
-    public static let displayName = String(localized: "Quick File Search", table: "QuickFileSearch")
-    public static let description = String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch")
+    public static let displayName = String(localized: "Quick File Search", bundle: .module)
+    public static let description = String(localized: "Fast file search with Cmd+P", bundle: .module)
     public static let iconName = "magnifyingglass"
     public static var order: Int { 50 }
 
@@ -88,6 +88,6 @@ public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
 // MARK: - Preview
 
 #Preview("File Search Overlay") {
-    FileSearchOverlay(content: Text(String(localized: "Content", table: "QuickFileSearch")))
+    FileSearchOverlay(content: Text(String(localized: "Content", bundle: .module)))
         .inRootView()
 }

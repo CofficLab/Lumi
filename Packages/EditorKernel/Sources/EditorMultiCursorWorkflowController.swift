@@ -99,7 +99,7 @@ public final class EditorMultiCursorWorkflowController {
             return EditorMultiCursorWorkflowResult(
                 state: currentState,
                 session: existingSession,
-                warningMessage: String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
+                warningMessage: String(localized: "Select text before adding next occurrence", bundle: .module),
                 logAction: nil,
                 logNote: nil
             )
@@ -157,7 +157,7 @@ public final class EditorMultiCursorWorkflowController {
         return EditorMultiCursorWorkflowResult(
             state: state,
             session: session,
-            warningMessage: String(localized: "No more occurrences found", table: "LumiEditor"),
+            warningMessage: String(localized: "No more occurrences found", bundle: .module),
             logAction: logAction,
             logNote: logNote
         )
@@ -173,7 +173,7 @@ public final class EditorMultiCursorWorkflowController {
             return EditorMultiCursorWorkflowResult(
                 state: currentState,
                 session: nil,
-                warningMessage: String(localized: "Select text before selecting all occurrences", table: "LumiEditor"),
+                warningMessage: String(localized: "Select text before selecting all occurrences", bundle: .module),
                 logAction: nil,
                 logNote: nil
             )

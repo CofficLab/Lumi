@@ -29,8 +29,8 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
     )
 
     public static let id = "VueEditor"
-    public static let displayName = String(localized: "Vue Editor", table: "VueEditor")
-    public static let description = String(localized: "Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", table: "VueEditor")
+    public static let displayName = String(localized: "Vue Editor", bundle: .module)
+    public static let description = String(localized: "Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", bundle: .module)
     public static let iconName = "curlybraces"
     public static let order = 35
     public static var category: PluginCategory { .editor }
@@ -76,7 +76,7 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
         return [
             RailTab(
                 id: "vue-outline",
-                title: String(localized: "Vue Outline", table: "VueEditor"),
+                title: String(localized: "Vue Outline", bundle: .module),
                 systemImage: "curlybraces",
                 priority: 2
             )

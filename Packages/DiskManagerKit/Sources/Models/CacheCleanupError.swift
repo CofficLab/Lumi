@@ -5,6 +5,6 @@ public struct CacheCleanupError: LocalizedError, Sendable {
     public let underlyingDescription: String
 
     public var errorDescription: String? {
-        String(localized: "Failed to remove \(path): \(underlyingDescription)")
+        String(localized: "Failed to remove \(path): \(underlyingDescription)", bundle: .module)
     }
 }

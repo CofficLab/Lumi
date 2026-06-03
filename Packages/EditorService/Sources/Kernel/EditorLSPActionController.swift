@@ -13,13 +13,13 @@ final class EditorLSPActionController: EditorLSPActionProviding {
     func jumpKindStatusMessage(_ kind: EditorLSPActionJumpKind) -> String {
         switch EditorLSPActionPolicy.statusMessageKey(for: kind) {
         case .findingDefinition:
-            return String(localized: "Finding definition...", table: EditorHostEnvironment.current.localizationTable)
+            return String(localized: "Finding definition...", bundle: .module)
         case .findingDeclaration:
-            return String(localized: "Finding declaration...", table: EditorHostEnvironment.current.localizationTable)
+            return String(localized: "Finding declaration...", bundle: .module)
         case .findingTypeDefinition:
-            return String(localized: "Finding type definition...", table: EditorHostEnvironment.current.localizationTable)
+            return String(localized: "Finding type definition...", bundle: .module)
         case .findingImplementation:
-            return String(localized: "Finding implementation...", table: EditorHostEnvironment.current.localizationTable)
+            return String(localized: "Finding implementation...", bundle: .module)
         }
     }
 
@@ -44,7 +44,7 @@ final class EditorLSPActionController: EditorLSPActionProviding {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: String(localized: "OK", table: EditorHostEnvironment.current.localizationTable))
+        alert.addButton(withTitle: String(localized: "OK", bundle: .module))
         alert.runModal()
     }
 

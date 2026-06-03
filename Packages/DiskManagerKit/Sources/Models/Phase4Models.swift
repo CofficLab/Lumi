@@ -29,11 +29,11 @@ public struct ProjectInfo: Identifiable, Hashable, Sendable {
 
         public var displayName: String {
             switch self {
-            case .node: return String(localized: "Node.js")
-            case .rust: return String(localized: "Rust")
-            case .swift: return String(localized: "Swift/Xcode")
-            case .python: return String(localized: "Python")
-            case .generic: return String(localized: "Generic")
+            case .node: return String(localized: "Node.js", bundle: .module)
+            case .rust: return String(localized: "Rust", bundle: .module)
+            case .swift: return String(localized: "Swift/Xcode", bundle: .module)
+            case .python: return String(localized: "Python", bundle: .module)
+            case .generic: return String(localized: "Generic", bundle: .module)
             }
         }
 

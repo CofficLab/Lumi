@@ -36,7 +36,7 @@ struct ChatPanelConversationList: View {
                 } else {
                     AppEmptyState(
                         icon: "message.fill",
-                        title: String(localized: "No Conversations", table: "AgentChat")
+                        title: String(localized: "No Conversations", bundle: .module)
                     )
                 }
             } else {

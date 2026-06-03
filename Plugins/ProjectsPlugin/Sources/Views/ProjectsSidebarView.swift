@@ -142,7 +142,7 @@ public struct ProjectsSidebarView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No Projects", table: "Projects"))
+            Text(String(localized: "No Projects", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -161,7 +161,7 @@ public struct ProjectsSidebarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 11))
-                Text(String(localized: "Add New Project", table: "Projects"))
+                Text(String(localized: "Add New Project", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
             }
             .frame(maxWidth: .infinity)

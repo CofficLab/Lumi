@@ -22,8 +22,8 @@ public actor ProjectsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "Projects"
-    public static let displayName: String = String(localized: "Projects", table: "Projects")
-    public static let description: String = String(localized: "Manage the global projects list", table: "Projects")
+    public static let displayName: String = String(localized: "Projects", bundle: .module)
+    public static let description: String = String(localized: "Manage the global projects list", bundle: .module)
     public static let iconName: String = "folder"
     public static var category: PluginCategory { .general }
     public static var order: Int { 10 }

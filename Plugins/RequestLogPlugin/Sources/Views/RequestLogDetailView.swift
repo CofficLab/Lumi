@@ -9,7 +9,7 @@ public struct RequestLogDetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Request Log", table: "RequestLog"),
+            title: String(localized: "Request Log", bundle: .module),
             systemImage: "doc.text.magnifyingglass"
         ) {
             HStack(spacing: 12) {
@@ -21,7 +21,7 @@ public struct RequestLogDetailView: View {
                 AppIconButton(systemImage: "arrow.clockwise") {
                     Task { await viewModel.reload() }
                 }
-                .help(String(localized: "Reload", table: "RequestLog"))
+                .help(String(localized: "Reload", bundle: .module))
             }
         } content: {
             VStack(alignment: .leading, spacing: 0) {
@@ -29,7 +29,7 @@ public struct RequestLogDetailView: View {
 
                 if viewModel.isLoading {
                     Spacer()
-                    ProgressView(String(localized: "Loading...", table: "RequestLog"))
+                    ProgressView(String(localized: "Loading...", bundle: .module))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Spacer()
                 } else {
@@ -50,22 +50,22 @@ public struct RequestLogDetailView: View {
     private var statsSummary: some View {
         HStack(spacing: 12) {
             StatusBarPopoverMetricBadge(
-                label: String(localized: "Total", table: "RequestLog"),
+                label: String(localized: "Total", bundle: .module),
                 value: "\(viewModel.stats.totalRequests)",
                 tint: theme.textSecondary
             )
             StatusBarPopoverMetricBadge(
-                label: String(localized: "Success", table: "RequestLog"),
+                label: String(localized: "Success", bundle: .module),
                 value: "\(viewModel.stats.successCount)",
                 tint: theme.success
             )
             StatusBarPopoverMetricBadge(
-                label: String(localized: "Failed", table: "RequestLog"),
+                label: String(localized: "Failed", bundle: .module),
                 value: "\(viewModel.stats.failedCount)",
                 tint: theme.error
             )
             StatusBarPopoverMetricBadge(
-                label: String(localized: "Avg", table: "RequestLog"),
+                label: String(localized: "Avg", bundle: .module),
                 value: String(format: "%.1fs", viewModel.stats.averageDuration),
                 tint: theme.textSecondary
             )
@@ -76,19 +76,19 @@ public struct RequestLogDetailView: View {
     private var filterTabs: some View {
         HStack(spacing: 0) {
             filterTab(
-                title: String(localized: "All", table: "RequestLog"),
+                title: String(localized: "All", bundle: .module),
                 icon: "list.bullet",
                 filter: nil
             )
 
             filterTab(
-                title: String(localized: "Success", table: "RequestLog"),
+                title: String(localized: "Success", bundle: .module),
                 icon: "checkmark.circle",
                 filter: true
             )
 
             filterTab(
-                title: String(localized: "Failed", table: "RequestLog"),
+                title: String(localized: "Failed", bundle: .module),
                 icon: "xmark.circle",
                 filter: false
             )
@@ -146,7 +146,7 @@ public struct RequestLogDetailView: View {
     @ViewBuilder
     private var requestLogTable: some View {
         Table(viewModel.items) {
-            TableColumn(String(localized: "Time", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Time", bundle: .module)) { row in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.timestamp, style: .date)
                         .font(.appMicro)
@@ -157,14 +157,14 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 108, max: 124)
 
-            TableColumn(String(localized: "Method", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Method", bundle: .module)) { row in
                 Text(row.method.uppercased())
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
             }
             .width(min: 56, max: 68)
 
-            TableColumn(String(localized: "URL", table: "RequestLog")) { row in
+            TableColumn(String(localized: "URL", bundle: .module)) { row in
                 Text(row.requestURL)
                     .font(.appMicro)
                     .lineLimit(1)
@@ -173,14 +173,14 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 240)
 
-            TableColumn(String(localized: "Body Size", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Body Size", bundle: .module)) { row in
                 Text(formatBytes(row.requestBodySize))
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
             }
             .width(min: 76, max: 90)
 
-            TableColumn(String(localized: "Status", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Status", bundle: .module)) { row in
                 if let code = row.responseStatusCode {
                     Text("\(code)")
                         .font(.appMicroEmphasized)
@@ -193,7 +193,7 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 58, max: 72)
 
-            TableColumn(String(localized: "Duration", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Duration", bundle: .module)) { row in
                 if let duration = row.duration {
                     Text(String(format: "%.2fs", duration))
                         .font(.appMicro)
@@ -207,20 +207,20 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 76, max: 90)
 
-            TableColumn(String(localized: "Result", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Result", bundle: .module)) { row in
                 if row.isSuccess {
-                    Label(String(localized: "Success", table: "RequestLog"), systemImage: "checkmark.circle.fill")
+                    Label(String(localized: "Success", bundle: .module), systemImage: "checkmark.circle.fill")
                         .font(.appMicro)
                         .foregroundColor(theme.success)
                 } else {
-                    Label(String(localized: "Failed", table: "RequestLog"), systemImage: "xmark.circle.fill")
+                    Label(String(localized: "Failed", bundle: .module), systemImage: "xmark.circle.fill")
                         .font(.appMicro)
                         .foregroundColor(theme.error)
                 }
             }
             .width(min: 82, max: 96)
 
-            TableColumn(String(localized: "Response Body", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Response Body", bundle: .module)) { row in
                 if let preview = row.responseBodyPreview {
                     Text(preview)
                         .font(.system(size: 10, design: .monospaced))
@@ -239,7 +239,7 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 140)
 
-            TableColumn(String(localized: "Error", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Error", bundle: .module)) { row in
                 if let error = row.errorMessage {
                     Text(error)
                         .font(.appMicro)
@@ -254,7 +254,7 @@ public struct RequestLogDetailView: View {
             }
             .width(min: 160)
 
-            TableColumn(String(localized: "Request ID", table: "RequestLog")) { row in
+            TableColumn(String(localized: "Request ID", bundle: .module)) { row in
                 Text(row.requestId.uuidString.prefix(8))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
@@ -272,7 +272,7 @@ public struct RequestLogDetailView: View {
         HStack(spacing: 12) {
             Text(
                 String(
-                    format: String(localized: "Showing: %d", table: "RequestLog"),
+                    format: String(localized: "Showing: %d", bundle: .module),
                     viewModel.totalDisplayCount
                 )
             )
@@ -281,14 +281,14 @@ public struct RequestLogDetailView: View {
 
             Spacer()
 
-            AppButton(String(localized: "Prev", table: "RequestLog"), size: .small) {
+            AppButton(String(localized: "Prev", bundle: .module), size: .small) {
                 viewModel.previousPage()
             }
             .disabled(viewModel.currentPage <= 1)
 
             Text(
                 String(
-                    format: String(localized: "Page %d / %d", table: "RequestLog"),
+                    format: String(localized: "Page %d / %d", bundle: .module),
                     viewModel.currentPage,
                     viewModel.totalPages
                 )
@@ -296,7 +296,7 @@ public struct RequestLogDetailView: View {
             .font(.appMicro)
             .foregroundColor(theme.textSecondary)
 
-            AppButton(String(localized: "Next", table: "RequestLog"), size: .small) {
+            AppButton(String(localized: "Next", bundle: .module), size: .small) {
                 viewModel.nextPage()
             }
             .disabled(viewModel.currentPage >= viewModel.totalPages)
@@ -309,7 +309,7 @@ public struct RequestLogDetailView: View {
     private var emptyView: some View {
         AppEmptyState(
             icon: "tray",
-            title: LocalizedStringKey(String(localized: "No request logs", table: "RequestLog"))
+            title: LocalizedStringKey(String(localized: "No request logs", bundle: .module))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

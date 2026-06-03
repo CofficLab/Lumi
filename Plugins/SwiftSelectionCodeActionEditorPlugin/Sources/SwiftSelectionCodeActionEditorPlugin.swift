@@ -7,8 +7,8 @@ public actor SwiftSelectionCodeActionEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = SwiftSelectionCodeActionEditorPlugin()
     public static let id = "SwiftSelectionCodeActionEditor"
-    public static let displayName = String(localized: "Swift Selection Code Actions", table: "SwiftSelectionCodeActionEditor")
-    public static let description = String(localized: "Provides selection-based Swift code actions.", table: "SwiftSelectionCodeActionEditor")
+    public static let displayName = String(localized: "Swift Selection Code Actions", bundle: .module)
+    public static let description = String(localized: "Provides selection-based Swift code actions.", bundle: .module)
     public static let iconName = "cursorarrow.click.badge.clock"
     public static let order = 30
     public static var category: PluginCategory { .editor }

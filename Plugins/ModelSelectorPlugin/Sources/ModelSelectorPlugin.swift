@@ -15,8 +15,8 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = true
     public static let id = "ModelSelector"
-    public static let displayName = String(localized: "Model Selector", table: "AgentChat")
-    public static let description = String(localized: "Select LLM provider and model", table: "AgentChat")
+    public static let displayName = String(localized: "Model Selector", bundle: .module)
+    public static let description = String(localized: "Select LLM provider and model", bundle: .module)
     public static let iconName = "globe"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 84 }
@@ -52,7 +52,7 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "model-selector",
-                title: String(localized: "Select Model", table: "AgentChat"),
+                title: String(localized: "Select Model", bundle: .module),
                 systemImage: "globe",
                 priority: 20
             )

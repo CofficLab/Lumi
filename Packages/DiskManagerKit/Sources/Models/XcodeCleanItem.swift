@@ -13,13 +13,13 @@ public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .derivedData: return String(localized: "Derived Data")
-        case .archives: return String(localized: "Archives")
-        case .iOSDeviceSupport: return String(localized: "iOS Device Support")
-        case .watchOSDeviceSupport: return String(localized: "watchOS Device Support")
-        case .tvOSDeviceSupport: return String(localized: "tvOS Device Support")
-        case .simulatorCaches: return String(localized: "Simulator Caches")
-        case .logs: return String(localized: "Logs")
+        case .derivedData: return String(localized: "Derived Data", bundle: .module)
+        case .archives: return String(localized: "Archives", bundle: .module)
+        case .iOSDeviceSupport: return String(localized: "iOS Device Support", bundle: .module)
+        case .watchOSDeviceSupport: return String(localized: "watchOS Device Support", bundle: .module)
+        case .tvOSDeviceSupport: return String(localized: "tvOS Device Support", bundle: .module)
+        case .simulatorCaches: return String(localized: "Simulator Caches", bundle: .module)
+        case .logs: return String(localized: "Logs", bundle: .module)
         }
     }
 
@@ -37,13 +37,13 @@ public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
 
     public var description: String {
         switch self {
-        case .derivedData: return String(localized: "Intermediate files and indices from the build process, safe to delete.")
-        case .archives: return String(localized: "App packaging archive files.")
-        case .iOSDeviceSupport: return String(localized: "Symbol files generated when debugging connected devices.")
-        case .watchOSDeviceSupport: return String(localized: "Apple Watch debug symbol files.")
-        case .tvOSDeviceSupport: return String(localized: "Apple TV debug symbol files.")
-        case .simulatorCaches: return String(localized: "Simulator runtime cache.")
-        case .logs: return String(localized: "Old simulator logs and debug records.")
+        case .derivedData: return String(localized: "Intermediate files and indices from the build process, safe to delete.", bundle: .module)
+        case .archives: return String(localized: "App packaging archive files.", bundle: .module)
+        case .iOSDeviceSupport: return String(localized: "Symbol files generated when debugging connected devices.", bundle: .module)
+        case .watchOSDeviceSupport: return String(localized: "Apple Watch debug symbol files.", bundle: .module)
+        case .tvOSDeviceSupport: return String(localized: "Apple TV debug symbol files.", bundle: .module)
+        case .simulatorCaches: return String(localized: "Simulator runtime cache.", bundle: .module)
+        case .logs: return String(localized: "Old simulator logs and debug records.", bundle: .module)
         }
     }
 }

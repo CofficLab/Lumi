@@ -6,7 +6,7 @@ extension EditorMultiCursorController {
     func summaryText(for state: MultiCursorState) -> String {
         let count = state.all.count
         if count <= 1 { return "1" }
-        return "\(count)" + String(localized: " cursors", table: EditorHostEnvironment.current.localizationTable)
+        return "\(count)" + String(localized: " cursors", bundle: .module)
     }
 
     func cursorPositions(

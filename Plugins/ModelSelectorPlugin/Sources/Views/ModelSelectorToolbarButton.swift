@@ -29,8 +29,8 @@ public struct ModelSelectorToolbarButton: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .accessibilityLabel(String(localized: "Select Model", table: "AgentChat"))
-        .accessibilityHint(String(localized: "Select Model Hint", table: "AgentChat"))
+        .accessibilityLabel(String(localized: "Select Model", bundle: .module))
+        .accessibilityHint(String(localized: "Select Model Hint", bundle: .module))
     }
 
     /// 当前显示的「供应商 + 模型」文案
@@ -42,7 +42,7 @@ public struct ModelSelectorToolbarButton: View {
             if llmVM.isAutoMode {
                 return "Auto"
             }
-            return String(localized: "No Model Selected", table: "AgentChat")
+            return String(localized: "No Model Selected", bundle: .module)
         }
 
         let displayModel: String
