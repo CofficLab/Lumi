@@ -11,10 +11,10 @@ public final class SampleInsightsSettingsContributor: SuperEditorSettingsContrib
         [
             EditorSettingsItemSuggestion(
                 id: "sample.insights.inline-tips",
-                sectionTitle: String(localized: "Extension Settings", table: "SampleInsights"),
-                sectionSummary: String(localized: "Settings items from editor extensions are automatically grouped here.", table: "SampleInsights"),
-                title: String(localized: "Sample Insights Inline Tips", table: "SampleInsights"),
-                subtitle: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"),
+                sectionTitle: String(localized: "Extension Settings", bundle: .module),
+                sectionSummary: String(localized: "Settings items from editor extensions are automatically grouped here.", bundle: .module),
+                title: String(localized: "Sample Insights Inline Tips", bundle: .module),
+                subtitle: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", bundle: .module),
                 keywords: ["sample insights", "extension", "tips", "插件设置"],
                 order: 10,
                 metadata: .init(priority: 40, dedupeKey: "sample-insights-inline-tips"),
@@ -47,8 +47,8 @@ private struct SampleInsightsSettingsToggleRow: View {
 
     public var body: some View {
         AppSettingsToggleRow(
-            String(localized: "Sample Insights Inline Tips", table: "SampleInsights"),
-            description: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"),
+            String(localized: "Sample Insights Inline Tips", bundle: .module),
+            description: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", bundle: .module),
             isOn: $store.inlineTipsEnabled
         )
     }
