@@ -15,6 +15,7 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "✏️"
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static var category: PluginCategory { .agent }
     public nonisolated static let verbose: Bool = true
     public static let id: String = "ConversationTitle"
