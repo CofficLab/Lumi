@@ -79,14 +79,14 @@ public struct AutoTaskSidebarView: View {
             viewModel.removeObserver()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Task List", table: "AutoTask"))
+        .accessibilityLabel(String(localized: "Task List", bundle: .module))
     }
 
     // MARK: - Header
 
     private var headerView: some View {
         HStack {
-            Label(String(localized: "Tasks", table: "AutoTask"), systemImage: "checklist")
+            Label(String(localized: "Tasks", bundle: .module), systemImage: "checklist")
                 .font(.headline)
 
             Spacer()
@@ -104,7 +104,7 @@ public struct AutoTaskSidebarView: View {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            .help(String(localized: "Refresh", table: "AutoTask"))
+            .help(String(localized: "Refresh", bundle: .module))
 
             Button {
                 withAnimation(.easeInOut(duration: 0.16)) {
@@ -116,8 +116,8 @@ public struct AutoTaskSidebarView: View {
             }
             .buttonStyle(.borderless)
             .help(isCollapsed
-                ? String(localized: "Expand", table: "AutoTask")
-                : String(localized: "Collapse", table: "AutoTask")
+                ? String(localized: "Expand", bundle: .module)
+                : String(localized: "Collapse", bundle: .module)
             )
         }
         .padding(.horizontal, 12)

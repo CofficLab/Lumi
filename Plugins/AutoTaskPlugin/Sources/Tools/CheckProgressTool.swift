@@ -45,11 +45,11 @@ public struct CheckProgressTool: SuperAgentTool, SuperLog {
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
         if summary.isEmpty {
-            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", table: "AutoTask")
+            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
         }
 
         let doneCount = summary.completed + summary.skipped
-        let progressLabel = String(localized: "Task Progress", table: "AutoTask")
+        let progressLabel = String(localized: "Task Progress", bundle: .module)
         var result = "## \(progressLabel): \(doneCount)/\(summary.total) (\(summary.completionPercent)%)\n\n"
 
         let statusIcons: [TaskItem.TaskStatus: String] = [
@@ -69,22 +69,22 @@ public struct CheckProgressTool: SuperAgentTool, SuperLog {
         }
 
         if summary.isAllDone {
-            result += "\n🎉 **\(String(localized: "All tasks completed!", table: "AutoTask"))**"
+            result += "\n🎉 **\(String(localized: "All tasks completed!", bundle: .module))**"
         } else if summary.inProgress > 0 {
             let current = tasks.first { $0.status == .inProgress }
             if let current {
-                let focusLabel = String(localized: "Current focus", table: "AutoTask")
+                let focusLabel = String(localized: "Current focus", bundle: .module)
                 result += "\n📌 **\(focusLabel): \(current.title)**"
             }
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                let nextUpLabel = String(localized: "Next up", table: "AutoTask")
+                let nextUpLabel = String(localized: "Next up", bundle: .module)
                 result += "\n⏭️ **\(nextUpLabel): \(next.title)**"
             }
         } else if summary.pending > 0 {
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                let nextTaskLabel = String(localized: "Next task — start by calling update_task with status 'in_progress'", table: "AutoTask")
+                let nextTaskLabel = String(localized: "Next task — start by calling update_task with status 'in_progress'", bundle: .module)
                 result += "\n⏭️ **\(nextTaskLabel): \(next.title)**"
             }
         }

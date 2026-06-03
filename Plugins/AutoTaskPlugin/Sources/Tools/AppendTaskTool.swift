@@ -64,17 +64,17 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         let conversationId = context.conversationId.uuidString
 
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
-            return String(localized: "Error: tasks array is required", table: "AutoTask")
+            return String(localized: "Error: tasks array is required", bundle: .module)
         }
 
         guard !tasksArray.isEmpty else {
-            return String(localized: "Error: tasks array must not be empty", table: "AutoTask")
+            return String(localized: "Error: tasks array must not be empty", bundle: .module)
         }
 
         let items = TaskToolInputNormalizer.normalize(tasksArray)
 
         guard !items.isEmpty else {
-            return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", table: "AutoTask")
+            return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
         }
 
         let manager = TaskStateManager.shared
@@ -84,7 +84,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         } catch {
             AutoTaskPlugin.logger.error("\(Self.t)Failed to append tasks for cid=\(conversationId.prefix(8)): \(error.localizedDescription)")
             return String(
-                format: String(localized: "Error: failed to save tasks: %@", table: "AutoTask"),
+                format: String(localized: "Error: failed to save tasks: %@", bundle: .module),
                 error.localizedDescription
             )
         }
@@ -94,7 +94,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         }
 
         guard !appendedTasks.isEmpty else {
-            return String(localized: "No tasks appended: task list already reached the maximum size.", table: "AutoTask")
+            return String(localized: "No tasks appended: task list already reached the maximum size.", bundle: .module)
         }
 
         // 通知 UI 刷新
@@ -105,7 +105,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         )
 
         let appendedLabel = String(
-            format: String(localized: "Appended %lld tasks:", table: "AutoTask"),
+            format: String(localized: "Appended %lld tasks:", bundle: .module),
             appendedTasks.count
         )
         var result = "✅ \(appendedLabel)\n\n"

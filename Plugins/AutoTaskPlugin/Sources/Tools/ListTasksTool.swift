@@ -59,7 +59,7 @@ public struct ListTasksTool: SuperAgentTool, SuperLog {
         }
 
         if tasks.isEmpty {
-            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", table: "AutoTask")
+            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
         }
 
         let statusLabels: [TaskItem.TaskStatus: String] = [
@@ -69,7 +69,7 @@ public struct ListTasksTool: SuperAgentTool, SuperLog {
             .skipped: "skipped",
         ]
 
-        var result = "📋 \(String(localized: "Tasks (\(tasks.count) total)", table: "AutoTask"))\n\n"
+        var result = "📋 \(String(localized: "Tasks (\(tasks.count) total)", bundle: .module))\n\n"
         for task in tasks {
             let statusLabel = statusLabels[task.status] ?? "unknown"
             result += "#\(task.order) `\(task.id)` [\(statusLabel)] **\(task.title)**"

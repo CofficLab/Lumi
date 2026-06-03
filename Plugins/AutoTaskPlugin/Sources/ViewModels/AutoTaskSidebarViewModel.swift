@@ -176,10 +176,10 @@ public struct TaskDisplayItem: Identifiable, Equatable {
 
     public var statusText: String {
         switch status {
-        case .pending: String(localized: "Pending", table: "AutoTask")
-        case .inProgress: String(localized: "In Progress", table: "AutoTask")
-        case .completed: String(localized: "Completed", table: "AutoTask")
-        case .skipped: String(localized: "Skipped", table: "AutoTask")
+        case .pending: String(localized: "Pending", bundle: .module)
+        case .inProgress: String(localized: "In Progress", bundle: .module)
+        case .completed: String(localized: "Completed", bundle: .module)
+        case .skipped: String(localized: "Skipped", bundle: .module)
         }
     }
 }
