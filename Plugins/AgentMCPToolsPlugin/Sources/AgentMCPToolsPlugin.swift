@@ -13,8 +13,8 @@ public actor AgentMCPToolsPlugin: SuperPlugin {
     public nonisolated static let emoji = "🐘"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentMCPTools"
-    public static let displayName = String(localized: "MCP Tools", table: "AgentMCPTools")
-    public static let description = String(localized: "MCP-backed tools (hidden)", table: "AgentMCPTools")
+    public static let displayName = String(localized: "MCP Tools", bundle: .module)
+    public static let description = String(localized: "MCP-backed tools (hidden)", bundle: .module)
     public static let iconName = "server.rack"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 60 }
