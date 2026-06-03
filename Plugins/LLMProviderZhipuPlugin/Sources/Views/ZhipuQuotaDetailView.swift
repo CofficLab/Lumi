@@ -17,7 +17,7 @@ struct ZhipuQuotaDetailView: View {
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Zhipu GLM Quota", table: "Zhipu"),
+            title: String(localized: "Zhipu GLM Quota", bundle: .module),
             systemImage: "chart.bar.fill"
         ) {
             AppIconButton(systemImage: "arrow.clockwise") {
@@ -45,7 +45,7 @@ struct ZhipuQuotaDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text(String(localized: "Loading...", table: "Zhipu"))
+            Text(String(localized: "Loading...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -58,7 +58,7 @@ struct ZhipuQuotaDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             // 等级
             GlassKeyValueRow(
-                label: String(localized: "Level", table: "Zhipu"),
+                label: String(localized: "Level", bundle: .module),
                 value: data.levelDisplay,
                 labelWidth: 70
             )
@@ -66,7 +66,7 @@ struct ZhipuQuotaDetailView: View {
             // 进度条
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "Usage Progress", table: "Zhipu"))
+                    Text(String(localized: "Usage Progress", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
 
@@ -81,13 +81,13 @@ struct ZhipuQuotaDetailView: View {
                     .progressViewStyle(LinearProgressViewStyle(tint: progressColor(data.usedPercent)))
 
                 HStack {
-                    Text(String(localized: "Remaining \(data.leftPercent)%", table: "Zhipu"))
+                    Text(String(localized: "Remaining \(data.leftPercent)%", bundle: .module))
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
 
                     Spacer()
 
-                    Text(String(localized: "Total 5 hours", table: "Zhipu"))
+                    Text(String(localized: "Total 5 hours", bundle: .module))
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -98,7 +98,7 @@ struct ZhipuQuotaDetailView: View {
             // 重置时间（显示完整日期和相对时间）
             VStack(alignment: .leading, spacing: 4) {
                 GlassKeyValueRow(
-                    label: String(localized: "Reset Time", table: "Zhipu"),
+                    label: String(localized: "Reset Time", bundle: .module),
                     value: data.resetTime,
                     labelWidth: 70
                 )
@@ -112,7 +112,7 @@ struct ZhipuQuotaDetailView: View {
             // MCP 每月额度
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "MCP Monthly Quota", table: "Zhipu"))
+                    Text(String(localized: "MCP Monthly Quota", bundle: .module))
                         .font(.appCaptionEmphasized)
                         .foregroundColor(theme.textPrimary)
 
@@ -122,7 +122,7 @@ struct ZhipuQuotaDetailView: View {
                 HStack(spacing: 16) {
                     // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "Remaining", table: "Zhipu"))
+                        Text(String(localized: "Remaining", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Text("\(data.mcpLeftPercent)%")
@@ -134,7 +134,7 @@ struct ZhipuQuotaDetailView: View {
 
                     // 重置时间
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text(String(localized: "Reset", table: "Zhipu"))
+                        Text(String(localized: "Reset", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Text(data.mcpResetTime)
@@ -155,8 +155,8 @@ struct ZhipuQuotaDetailView: View {
     private var authErrorContent: some View {
         AppEmptyState(
             icon: "exclamationmark.triangle.fill",
-            title: LocalizedStringKey(String(localized: "Auth expired", table: "Zhipu")),
-            description: LocalizedStringKey(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "Zhipu"))
+            title: LocalizedStringKey(String(localized: "Auth expired", bundle: .module)),
+            description: LocalizedStringKey(String(localized: "Please check if Zhipu AI API Key is correctly configured", bundle: .module))
         )
     }
 
@@ -164,8 +164,8 @@ struct ZhipuQuotaDetailView: View {
     private var unavailableContent: some View {
         AppEmptyState(
             icon: "exclamationmark.triangle",
-            title: LocalizedStringKey(String(localized: "Quota unavailable", table: "Zhipu")),
-            description: LocalizedStringKey(String(localized: "Please check network connection or try again later", table: "Zhipu"))
+            title: LocalizedStringKey(String(localized: "Quota unavailable", bundle: .module)),
+            description: LocalizedStringKey(String(localized: "Please check network connection or try again later", bundle: .module))
         )
     }
 

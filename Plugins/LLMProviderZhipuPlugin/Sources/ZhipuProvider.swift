@@ -17,9 +17,9 @@ public final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @uncheck
     // MARK: - 基础信息
 
     public static let id = "zhipu"
-    public static let displayName = String(localized: "Zhipu AI CodingPlan", table: "Zhipu")
+    public static let displayName = String(localized: "Zhipu AI CodingPlan", bundle: .module)
     public static let shortName = "ZhiPu"
-    public static let description = String(localized: "智谱 AI (GLM)", table: "Zhipu")
+    public static let description = String(localized: "智谱 AI (GLM)", bundle: .module)
 
     public static let websiteURL: String? = "https://open.bigmodel.cn"
 

@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "認證過期"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認證過期"
+          }
         }
       }
     },
@@ -39,6 +45,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在狀態欄顯示智譜 GLM Coding Plan 的配額狀態"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在狀態欄顯示智譜 GLM Coding Plan 的配額狀態"
@@ -65,6 +77,12 @@
             "state": "translated",
             "value": "等級"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等級"
+          }
         }
       }
     },
@@ -83,6 +101,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "載入中..."
@@ -109,6 +133,12 @@
             "state": "translated",
             "value": "MCP 每月額度"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP 每月額度"
+          }
         }
       }
     },
@@ -127,6 +157,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請檢查智譜 AI API Key 是否正確配置"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "請檢查智譜 AI API Key 是否正確配置"
@@ -153,6 +189,12 @@
             "state": "translated",
             "value": "請檢查網路連線或稍後重試"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請檢查網路連線或稍後重試"
+          }
         }
       }
     },
@@ -171,6 +213,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配額不可用"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "配額不可用"
@@ -197,6 +245,12 @@
             "state": "translated",
             "value": "剩餘"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩餘"
+          }
         }
       }
     },
@@ -215,6 +269,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩餘 %lld%%"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "剩餘 %lld%%"
@@ -241,6 +301,12 @@
             "state": "translated",
             "value": "重置"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置"
+          }
         }
       }
     },
@@ -259,6 +325,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置時間"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "重置時間"
@@ -285,6 +357,12 @@
             "state": "translated",
             "value": "總時長 5 小時"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "總時長 5 小時"
+          }
         }
       }
     },
@@ -303,6 +381,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用進度"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "使用進度"
@@ -330,6 +414,12 @@
             "state": "translated",
             "value": "智譜 AI CodingPlan"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智譜 AI CodingPlan"
+          }
         }
       }
     },
@@ -348,6 +438,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智譜 GLM 配額"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "智譜 GLM 配額"
@@ -374,6 +470,12 @@
             "state": "translated",
             "value": "載入中..."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
+          }
         }
       }
     },
@@ -393,6 +495,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智譜 AI (GLM)"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "智譜 AI (GLM)"
