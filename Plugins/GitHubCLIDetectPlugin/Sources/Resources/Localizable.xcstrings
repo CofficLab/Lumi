@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "GitHub CLI 檢測"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 檢測"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"

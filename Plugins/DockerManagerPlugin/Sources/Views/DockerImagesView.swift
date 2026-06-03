@@ -25,7 +25,7 @@ struct DockerImagesView: View {
             if let errorMessage = viewModel.errorMessage {
                 AppErrorBanner(
                     message: LocalizedStringKey(errorMessage),
-                    retryTitle: LocalizedStringKey(String(localized: "Dismiss", table: "DockerManager"))
+                    retryTitle: LocalizedStringKey(String(localized: "Dismiss", bundle: .module))
                 ) {
                     viewModel.errorMessage = nil
                 }
@@ -40,19 +40,19 @@ struct DockerImagesView: View {
                     HStack {
                         AppSearchBar(
                             text: $viewModel.searchText,
-                            placeholder: LocalizedStringKey(String(localized: "Search images...", table: "DockerManager"))
+                            placeholder: LocalizedStringKey(String(localized: "Search images...", bundle: .module))
                         )
 
                         Menu {
                             Picker("Sort", selection: $viewModel.sortOption) {
-                                Text(String(localized: "Created", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.created)
-                                Text(String(localized: "Name", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.name)
-                                Text(String(localized: "Size", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.size)
+                                Text(String(localized: "Created", bundle: .module)).tag(DockerManagerViewModel.SortOption.created)
+                                Text(String(localized: "Name", bundle: .module)).tag(DockerManagerViewModel.SortOption.name)
+                                Text(String(localized: "Size", bundle: .module)).tag(DockerManagerViewModel.SortOption.size)
                             }
                             Toggle("Descending", isOn: $viewModel.sortDescending)
                         } label: {
                             GlassRow {
-                                Label(String(localized: "Sort", table: "DockerManager"), systemImage: "arrow.up.arrow.down")
+                                Label(String(localized: "Sort", bundle: .module), systemImage: "arrow.up.arrow.down")
                                     .foregroundColor(theme.textPrimary)
                             }
                             .frame(width: 90)
@@ -60,7 +60,7 @@ struct DockerImagesView: View {
 
                         AppIconButton(
                             systemImage: "arrow.clockwise",
-                            label: String(localized: "Refresh", table: "DockerManager"),
+                            label: String(localized: "Refresh", bundle: .module),
                             size: .regular
                         ) {
                             Task { await viewModel.refreshImages() }
@@ -84,20 +84,20 @@ struct DockerImagesView: View {
                         DockerImageRow(image: image)
                             .tag(image)
                             .contextMenu {
-                                Button(String(localized: "Tag...", table: "DockerManager")) {
+                                Button(String(localized: "Tag...", bundle: .module)) {
                                     imageToTag = image
                                     newTag = image.repository + ":"
                                     showTagSheet = true
                                 }
-                                Button(String(localized: "Export...", table: "DockerManager")) {
+                                Button(String(localized: "Export...", bundle: .module)) {
                                     imageToExport = image
                                     showFileExporter = true
                                 }
-                                Button(String(localized: "Scan", table: "DockerManager")) {
+                                Button(String(localized: "Scan", bundle: .module)) {
                                     Task { await viewModel.scanImage(image) }
                                 }
                                 Divider()
-                                Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
+                                Button(String(localized: "Delete", bundle: .module), role: .destructive) {
                                     Task { await viewModel.deleteImage(image) }
                                 }
                             }
@@ -112,10 +112,10 @@ struct DockerImagesView: View {
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Spacer()
-                        AppButton(String(localized: "Import", table: "DockerManager"), style: .secondary, size: .small) {
+                        AppButton(String(localized: "Import", bundle: .module), style: .secondary, size: .small) {
                             showFileImporter = true
                         }
-                        AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary, size: .small) {
+                        AppButton(String(localized: "Pull", bundle: .module), style: .primary, size: .small) {
                             showPullSheet = true
                         }
                     }
@@ -130,7 +130,7 @@ struct DockerImagesView: View {
                 } else {
                     AppEmptyState(
                         icon: "cube.box",
-                        title: LocalizedStringKey(String(localized: "Select an image to view details", table: "DockerManager"))
+                        title: LocalizedStringKey(String(localized: "Select an image to view details", bundle: .module))
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Material.regularMaterial)
@@ -139,7 +139,7 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
-                Text(String(localized: "Pull New Image", table: "DockerManager"))
+                Text(String(localized: "Pull New Image", bundle: .module))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 GlassTextField(
@@ -154,8 +154,8 @@ struct DockerImagesView: View {
                 }
 
                 HStack {
-                    AppButton(String(localized: "Cancel", table: "DockerManager"), style: .ghost) { showPullSheet = false }
-                    AppButton(String(localized: "Pull", table: "DockerManager"), style: .primary) {
+                    AppButton(String(localized: "Cancel", bundle: .module), style: .ghost) { showPullSheet = false }
+                    AppButton(String(localized: "Pull", bundle: .module), style: .primary) {
                         Task {
                             if await viewModel.pullImage(pullImageName) {
                                 showPullSheet = false
@@ -170,11 +170,11 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
-                Text(String(localized: "Tag Image", table: "DockerManager"))
+                Text(String(localized: "Tag Image", bundle: .module))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 if let img = imageToTag {
-                    Text(String(localized: "Source:", table: "DockerManager") + " \(img.name)")
+                    Text(String(localized: "Source:", bundle: .module) + " \(img.name)")
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -186,8 +186,8 @@ struct DockerImagesView: View {
                 .frame(width: 320)
 
                 HStack {
-                    AppButton(String(localized: "Cancel", table: "DockerManager"), style: .ghost) { showTagSheet = false }
-                    AppButton(String(localized: "Confirm", table: "DockerManager"), style: .primary) {
+                    AppButton(String(localized: "Cancel", bundle: .module), style: .ghost) { showTagSheet = false }
+                    AppButton(String(localized: "Confirm", bundle: .module), style: .primary) {
                         if let img = imageToTag {
                             Task {
                                 if await viewModel.tagImage(img, newTag: newTag) {
@@ -209,7 +209,7 @@ struct DockerImagesView: View {
                 if DockerManagerPlugin.verbose {
                     DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Import failed: \(error.localizedDescription)")
                 }
-                viewModel.reportFilePanelError(String(localized: "Import failed", table: "DockerManager"), error: error)
+                viewModel.reportFilePanelError(String(localized: "Import failed", bundle: .module), error: error)
             }
         }
         .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
@@ -222,7 +222,7 @@ struct DockerImagesView: View {
                 if DockerManagerPlugin.verbose {
                     DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Export failed: \(error.localizedDescription)")
                 }
-                viewModel.reportFilePanelError(String(localized: "Export failed", table: "DockerManager"), error: error)
+                viewModel.reportFilePanelError(String(localized: "Export failed", bundle: .module), error: error)
             }
         }
         .onAppear {
@@ -320,7 +320,7 @@ struct DockerImageDetailView: View {
                 if let scanResult = viewModel.scanResult {
                     AppCard(style: .subtle, cornerRadius: 8) {
                         VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "Security Scan", table: "DockerManager"))
+                        Text(String(localized: "Security Scan", bundle: .module))
                             .font(.appBody)
                             .foregroundColor(theme.textPrimary)
 
@@ -352,7 +352,7 @@ struct DockerImageDetailView: View {
                     if let config = detail.Config {
                         AppCard(style: .subtle, cornerRadius: 8) {
                             VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "Configuration", table: "DockerManager"))
+                            Text(String(localized: "Configuration", bundle: .module))
                                 .font(.appBody)
                                 .foregroundColor(theme.textPrimary)
 
@@ -362,7 +362,7 @@ struct DockerImageDetailView: View {
                             }
 
                             if let envs = config.Env {
-                                Text(String(localized: "ENV:", table: "DockerManager"))
+                                Text(String(localized: "ENV:", bundle: .module))
                                     .font(.appMicro)
                                     .fontWeight(.bold)
                                     .foregroundColor(theme.textSecondary)
@@ -372,7 +372,7 @@ struct DockerImageDetailView: View {
                                         .foregroundColor(theme.textSecondary)
                                 }
                                 if envs.count > 5 {
-                                    Text("... (+ \(envs.count - 5)) " + String(localized: "more", table: "DockerManager"))
+                                    Text("... (+ \(envs.count - 5)) " + String(localized: "more", bundle: .module))
                                         .font(.appMicro)
                                         .foregroundColor(theme.textTertiary)
                                 }
@@ -385,7 +385,7 @@ struct DockerImageDetailView: View {
                 // History/Layers
                 AppCard(style: .subtle, cornerRadius: 8) {
                     VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "History / Layers", table: "DockerManager"))
+                    Text(String(localized: "History / Layers", bundle: .module))
                         .font(.appBody)
                         .foregroundColor(theme.textPrimary)
 
@@ -416,9 +416,9 @@ struct DockerImageDetailView: View {
             .padding()
         }
         .background(Material.regularMaterial)
-        .alert(String(localized: "Confirm Delete", table: "DockerManager"), isPresented: $showDeleteAlert) {
-            Button(String(localized: "Cancel", table: "DockerManager"), role: .cancel) { }
-            Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
+        .alert(String(localized: "Confirm Delete", bundle: .module), isPresented: $showDeleteAlert) {
+            Button(String(localized: "Cancel", bundle: .module), role: .cancel) { }
+            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
                 Task { await viewModel.deleteImage(image) }
             }
         } message: {

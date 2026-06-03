@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "Web 獲取"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web 獲取"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"

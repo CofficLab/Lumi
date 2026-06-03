@@ -1,48 +1,60 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Project Overview": {
+    "Memory": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Project Overview"
+            "value": "Memory"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "项目概览"
+            "value": "记忆"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "項目概覽"
+            "value": "記憶"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶"
           }
         }
       }
     },
-    "Provides project overview tool, returning project type, top-level structure, Git information, and key files.": {
+    "Persistent memory system for cross-session context": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provides project overview tool, returning project type, top-level structure, Git information, and key files."
+            "value": "Persistent memory system for cross-session context"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供项目总览工具，返回项目类型、顶层结构、Git 信息与关键文件。"
+            "value": "跨会话持久化记忆系统"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 資訊與關鍵檔案。"
+            "value": "跨會話持久化記憶系統"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跨會話持久化記憶系統"
           }
         }
       }

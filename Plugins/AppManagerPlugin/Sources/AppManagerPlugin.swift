@@ -51,11 +51,11 @@ public actor AppManagerPlugin: SuperPlugin, SuperLog {
 }
 
 enum PluginAppManagerLocalization {
-    static let table = "AppManager"
+    static let table = "Localizable"
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+        String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
     }
 
     static func string(_ key: String, for language: LanguagePreference) -> String {

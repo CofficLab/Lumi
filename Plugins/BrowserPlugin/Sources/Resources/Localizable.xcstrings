@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "瀏覽器"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽器"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
