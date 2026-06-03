@@ -15,8 +15,8 @@ public actor LSPDocumentColorEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPDocumentColorEditorPlugin()
     public static let id = "LSPDocumentColorEditor"
-    public static let displayName = String(localized: "LSP Document Colors", table: "LSPDocumentColorEditor")
-    public static let description = String(localized: "Displays color swatches for color literals from the language server.", table: "LSPDocumentColorEditor")
+    public static let displayName = String(localized: "LSP Document Colors", bundle: .module)
+    public static let description = String(localized: "Displays color swatches for color literals from the language server.", bundle: .module)
     public static let iconName = "paintpalette"
     public static let order = 28
     public static var category: PluginCategory { .editor }
