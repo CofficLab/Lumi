@@ -7,6 +7,92 @@ import SwiftUI
 
 public typealias ModelPreference = (providerId: String, model: String)
 
+public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+    case brief
+    case standard
+    case detailed
+
+    public var id: String { rawValue }
+
+    public var rawValue: String {
+        switch self {
+        case .brief:
+            return "v1"
+        case .standard:
+            return "v2"
+        case .detailed:
+            return "v3"
+        }
+    }
+
+    public init?(rawValue: String) {
+        switch rawValue.lowercased() {
+        case "v1", "brief":
+            self = .brief
+        case "v2", "standard", "normal":
+            self = .standard
+        case "v3", "detailed":
+            self = .detailed
+        default:
+            return nil
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let value = Self(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Invalid response verbosity: \(rawValue)"
+            )
+        }
+        self = value
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public var levelCode: String {
+        rawValue.uppercased()
+    }
+
+    public var displayName: String {
+        switch self {
+        case .brief:
+            return "简洁"
+        case .standard:
+            return "标准"
+        case .detailed:
+            return "详细"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .brief:
+            return "text.alignleft"
+        case .standard:
+            return "text.justify.left"
+        case .detailed:
+            return "doc.richtext"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .brief:
+            return "只显示核心内容"
+        case .standard:
+            return "显示标准消息内容"
+        case .detailed:
+            return "显示模型、时间等详细信息"
+        }
+    }
+}
+
 public enum ChatMode: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
     case chat
     case build
@@ -104,6 +190,7 @@ public final class AppLLMVM: ObservableObject {
     }
     @Published public var lastAutoRouteSummary: String?
     @Published public var chatMode: ChatMode
+    @Published public var verbosity: ResponseVerbosity
 
     public var llmService: LLMService
     public var providersProvider: @MainActor () -> [LLMProviderInfo]
@@ -114,6 +201,7 @@ public final class AppLLMVM: ObservableObject {
     public var currentModelSetter: @MainActor (String) -> Void
     public var isAutoModeSetter: @MainActor (Bool) -> Void
     public var chatModeSetter: @MainActor (ChatMode) -> Void
+    public var verbositySetter: @MainActor (ResponseVerbosity) -> Void
     private var isApplyingHostState = false
     private var hostStateCancellables: Set<AnyCancellable> = []
 
@@ -123,6 +211,7 @@ public final class AppLLMVM: ObservableObject {
         isAutoMode: Bool = false,
         lastAutoRouteSummary: String? = nil,
         chatMode: ChatMode = .build,
+        verbosity: ResponseVerbosity = .brief,
         llmService: LLMService = LLMService(),
         providersProvider: @escaping @MainActor () -> [LLMProviderInfo] = { [] },
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
@@ -131,13 +220,15 @@ public final class AppLLMVM: ObservableObject {
         selectedProviderIdSetter: @escaping @MainActor (String) -> Void = { _ in },
         currentModelSetter: @escaping @MainActor (String) -> Void = { _ in },
         isAutoModeSetter: @escaping @MainActor (Bool) -> Void = { _ in },
-        chatModeSetter: @escaping @MainActor (ChatMode) -> Void = { _ in }
+        chatModeSetter: @escaping @MainActor (ChatMode) -> Void = { _ in },
+        verbositySetter: @escaping @MainActor (ResponseVerbosity) -> Void = { _ in }
     ) {
         self.selectedProviderId = selectedProviderId
         self.currentModel = currentModel
         self.isAutoMode = isAutoMode
         self.lastAutoRouteSummary = lastAutoRouteSummary
         self.chatMode = chatMode
+        self.verbosity = verbosity
         self.llmService = llmService
         self.providersProvider = providersProvider
         self.providerTypeProvider = providerTypeProvider
@@ -147,6 +238,7 @@ public final class AppLLMVM: ObservableObject {
         self.currentModelSetter = currentModelSetter
         self.isAutoModeSetter = isAutoModeSetter
         self.chatModeSetter = chatModeSetter
+        self.verbositySetter = verbositySetter
     }
 
     public var availableProviders: [LLMProviderInfo] { providersProvider() }
@@ -179,9 +271,20 @@ public final class AppLLMVM: ObservableObject {
         chatModeSetter(chatMode)
     }
 
+    public func setVerbosity(_ verbosity: ResponseVerbosity) {
+        guard self.verbosity != verbosity else { return }
+        self.verbosity = verbosity
+        verbositySetter(verbosity)
+    }
+
     public func updateChatModeFromHost(_ chatMode: ChatMode) {
         guard self.chatMode != chatMode else { return }
         self.chatMode = chatMode
+    }
+
+    public func updateVerbosityFromHost(_ verbosity: ResponseVerbosity) {
+        guard self.verbosity != verbosity else { return }
+        self.verbosity = verbosity
     }
 
     public func updateSelectedProviderIdFromHost(_ selectedProviderId: String) {
@@ -315,6 +418,8 @@ public final class WindowConversationVM: ObservableObject {
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
     public var preferenceSaver: @MainActor (UUID?, String, String) -> Void
     public var chatModePreferenceProvider: @MainActor () -> ChatMode?
+    public var verbosityPreferenceProvider: @MainActor () -> ResponseVerbosity?
+    public var verbosityPreferenceSaver: @MainActor (ResponseVerbosity?) -> Void
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var statusMessageProvider: @MainActor (UUID) -> ChatMessage?
     public var pendingMessagesProvider: @MainActor (UUID) -> [ChatMessage]
@@ -340,6 +445,8 @@ public final class WindowConversationVM: ObservableObject {
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
         chatModePreferenceProvider: @escaping @MainActor () -> ChatMode? = { nil },
+        verbosityPreferenceProvider: @escaping @MainActor () -> ResponseVerbosity? = { nil },
+        verbosityPreferenceSaver: @escaping @MainActor (ResponseVerbosity?) -> Void = { _ in },
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         statusMessageProvider: @escaping @MainActor (UUID) -> ChatMessage? = { _ in nil },
         pendingMessagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
@@ -364,6 +471,8 @@ public final class WindowConversationVM: ObservableObject {
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
         self.chatModePreferenceProvider = chatModePreferenceProvider
+        self.verbosityPreferenceProvider = verbosityPreferenceProvider
+        self.verbosityPreferenceSaver = verbosityPreferenceSaver
         self.messagesProvider = messagesProvider
         self.statusMessageProvider = statusMessageProvider
         self.pendingMessagesProvider = pendingMessagesProvider
@@ -397,6 +506,14 @@ public final class WindowConversationVM: ObservableObject {
 
     public func getChatModePreference() -> ChatMode? {
         chatModePreferenceProvider()
+    }
+
+    public func getVerbosityPreference() -> ResponseVerbosity? {
+        verbosityPreferenceProvider()
+    }
+
+    public func saveVerbosityPreference(_ verbosity: ResponseVerbosity?) {
+        verbosityPreferenceSaver(verbosity)
     }
 
     public var hasSelectedConversation: Bool {

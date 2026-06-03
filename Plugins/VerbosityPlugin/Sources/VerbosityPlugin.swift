@@ -42,6 +42,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
-        nil
+        guard itemId == "verbosity-toggle" else { return nil }
+        return AnyView(VerbosityToolbarButton())
     }
 }

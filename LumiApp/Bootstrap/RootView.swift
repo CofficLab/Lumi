@@ -12,6 +12,7 @@ import FontConfigPlugin
 import GitPlugin
 import GoEditorPlugin
 import JSEditorPlugin
+import MessageRendererPlugin
 import AutoTaskPlugin
 import ProjectsPlugin
 import QuickFileSearchPlugin
@@ -134,6 +135,7 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: container.agentSessionConfig.currentModel) { _, _ in syncPluginLLMContext() }
         .onChange(of: container.agentSessionConfig.isAutoMode) { _, _ in syncPluginLLMContext() }
         .onChange(of: container.agentSessionConfig.chatMode) { _, _ in syncPluginLLMContext() }
+        .onChange(of: container.agentSessionConfig.verbosity) { _, _ in syncPluginLLMContext() }
     }
 
     private var appLayoutLifecycleScene: some View {
@@ -233,6 +235,7 @@ struct RootView<Content>: View where Content: View {
         configureJSEditorPluginBridge()
         configureScreenshotPluginBridge()
         configureTerminalPluginBridge()
+        configureMessageRendererPluginBridge()
         configureQuickFileSearchPluginBridge()
         configureProjectsPluginBridge()
         configureAutoTaskPluginBridge()
@@ -272,6 +275,14 @@ struct RootView<Content>: View where Content: View {
         }
         pluginConversationVM.statusMessageProvider = { [windowContainer] conversationId in
             windowContainer.conversationSendStatusVM.statusMessage(for: conversationId)
+        }
+        pluginConversationVM.verbosityPreferenceProvider = { [windowContainer] in
+            windowContainer.conversationVM.getVerbosityPreference()
+                .flatMap { LumiCoreKit.ResponseVerbosity(rawValue: $0.rawValue) }
+        }
+        pluginConversationVM.verbosityPreferenceSaver = { [windowContainer] verbosity in
+            let appVerbosity = verbosity.flatMap { ResponseVerbosity(rawValue: $0.rawValue) }
+            windowContainer.conversationVM.saveVerbosityPreference(appVerbosity)
         }
         pluginConversationVM.pendingMessagesProvider = { [windowContainer] conversationId in
             windowContainer.messageQueueVM.pendingMessages(for: conversationId)
@@ -397,6 +408,7 @@ struct RootView<Content>: View where Content: View {
         pluginLLMVM.isAutoMode = container.agentSessionConfig.isAutoMode
         pluginLLMVM.lastAutoRouteSummary = container.agentSessionConfig.lastAutoRouteSummary
         pluginLLMVM.updateChatModeFromHost(LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build)
+        pluginLLMVM.updateVerbosityFromHost(LumiCoreKit.ResponseVerbosity(rawValue: container.agentSessionConfig.verbosity.rawValue) ?? .brief)
 
         // 桥接 provider 查询方法，让插件 VM 能获取已注册的供应商列表
         let appLLMVM = container.agentSessionConfig
@@ -409,6 +421,11 @@ struct RootView<Content>: View where Content: View {
             guard let appChatMode = ChatMode(rawValue: chatMode.rawValue) else { return }
             container.agentSessionConfig.setChatMode(appChatMode)
             windowContainer.conversationVM.saveChatModePreference(appChatMode)
+        }
+        pluginLLMVM.verbositySetter = { [container, windowContainer] verbosity in
+            guard let appVerbosity = ResponseVerbosity(rawValue: verbosity.rawValue) else { return }
+            container.agentSessionConfig.setVerbosity(appVerbosity)
+            windowContainer.conversationVM.saveVerbosityPreference(appVerbosity)
         }
     }
 
@@ -469,6 +486,12 @@ struct RootView<Content>: View where Content: View {
         AgentTurnNotificationRuntime.selectConversation = { [container, windowContainer] conversationId in
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .switchToConversation(conversationId, reason: "agentTurnNotification")
+        }
+    }
+
+    private func configureMessageRendererPluginBridge() {
+        MessageRendererRuntime.showsAssistantHeaderProvider = { [container] in
+            container.agentSessionConfig.verbosity == .detailed
         }
     }
 
