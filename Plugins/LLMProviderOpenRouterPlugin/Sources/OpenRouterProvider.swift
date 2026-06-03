@@ -17,9 +17,9 @@ public final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @un
     // MARK: - Basic Info
 
     public static let id = "openrouter"
-    public static let displayName = String(localized: "OpenRouter", table: "OpenRouter")
+    public static let displayName = String(localized: "OpenRouter", bundle: .module)
     public static let shortName = "OR"
-    public static let description = String(localized: "Multi-Provider LLM Router", table: "OpenRouter")
+    public static let description = String(localized: "Multi-Provider LLM Router", bundle: .module)
 
     public static let websiteURL: String? = "https://openrouter.ai"
 
