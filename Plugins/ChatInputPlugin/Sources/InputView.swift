@@ -81,7 +81,7 @@ public struct InputView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.secondary)
 
-                Text(String(localized: "Release to add image to the chat", table: "ChatInputPlugin"))
+                Text(String(localized: "Release to add image to the chat", bundle: .module))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
