@@ -15,9 +15,9 @@ public final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendab
     // MARK: - 基础信息
 
     public static let id = "xiaomi"
-    public static let displayName = String(localized: "Xiaomi", table: "Xiaomi")
+    public static let displayName = String(localized: "Xiaomi", bundle: .module)
     public static let shortName = "XM"
-    public static let description = String(localized: "Xiaomi AI Models", table: "Xiaomi")
+    public static let description = String(localized: "Xiaomi AI Models", bundle: .module)
 
     public static let websiteURL: String? = "https://platform.xiaomimimo.com/token-plan"
 
