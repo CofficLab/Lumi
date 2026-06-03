@@ -14,13 +14,13 @@ public final class SwiftSelectionCodeActionContributor: SuperEditorCodeActionCon
         return [
             .init(
                 id: "builtin.swift.wrap-print",
-                title: String(localized: "Wrap Selection with print(...)", table: "SwiftSelectionCodeActionEditor"),
+                title: String(localized: "Wrap Selection with print(...)", bundle: .module),
                 command: "builtin.swift.wrap-print",
                 priority: 120
             ),
             .init(
                 id: "builtin.swift.wrap-debug",
-                title: String(localized: "Wrap Selection in #if DEBUG", table: "SwiftSelectionCodeActionEditor"),
+                title: String(localized: "Wrap Selection in #if DEBUG", bundle: .module),
                 command: "builtin.swift.wrap-debug",
                 priority: 110
             )
