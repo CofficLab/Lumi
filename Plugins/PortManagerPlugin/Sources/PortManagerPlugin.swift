@@ -13,8 +13,8 @@ public actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     public static let id = "PortManager"
     public static let navigationId = "port_manager"
-    public static let displayName = String(localized: "Port Manager", table: "PortManager")
-    public static let description = String(localized: "View and manage port usage", table: "PortManager")
+    public static let displayName = String(localized: "Port Manager", bundle: .module)
+    public static let description = String(localized: "View and manage port usage", bundle: .module)
     public static let iconName = "arrow.up.arrow.down.circle"
     public static var category: PluginCategory { .system }
     public static var order: Int { 20 }
