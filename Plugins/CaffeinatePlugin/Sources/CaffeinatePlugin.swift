@@ -18,6 +18,8 @@ public actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     nonisolated public static let verbose: Bool = true
 
+    nonisolated public static let policy: PluginPolicy = .optOut
+
     public static let id: String = "Caffeinate"
     public static let navigationId: String = "caffeinate_settings"
     public static let displayName: String = PluginCaffeinateLocalization.string("Anti-Sleep")

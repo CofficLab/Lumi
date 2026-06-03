@@ -12,10 +12,10 @@ struct PluginCaffeinateTests {
         #expect(CaffeinatePlugin.displayName.isEmpty == false)
         #expect(CaffeinatePlugin.description.isEmpty == false)
         #expect(CaffeinatePlugin.iconName == "bolt")
-        #expect(CaffeinatePlugin.isConfigurable == false)
+        #expect(CaffeinatePlugin.isConfigurable == true)
         #expect(CaffeinatePlugin.category == .system)
         #expect(CaffeinatePlugin.order == 7)
-        #expect(CaffeinatePlugin.policy == .disabled)
+        #expect(CaffeinatePlugin.policy == .optOut)
         #expect(CaffeinatePlugin.shared.instanceLabel == CaffeinatePlugin.id)
     }
 
