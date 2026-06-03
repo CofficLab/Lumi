@@ -13,8 +13,8 @@ public actor LSPRealtimeSignalsEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPRealtimeSignalsEditorPlugin()
     public static let id = "LSPRealtimeSignalsEditor"
-    public static let displayName = String(localized: "LSP Realtime Signals", table: "LSPRealtimeSignalsEditor")
-    public static let description = String(localized: "Triggers realtime LSP updates for highlights, hints, and signature help.", table: "LSPRealtimeSignalsEditor")
+    public static let displayName = String(localized: "LSP Realtime Signals", bundle: .module)
+    public static let description = String(localized: "Triggers realtime LSP updates for highlights, hints, and signature help.", bundle: .module)
     public static let iconName = "wifi"
     public static let order = 18
     public static var category: PluginCategory { .editor }
