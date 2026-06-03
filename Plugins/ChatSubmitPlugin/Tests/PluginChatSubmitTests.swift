@@ -6,6 +6,11 @@ import LumiCoreKit
     #expect(ChatSubmitPlugin.id == "ChatSubmit")
 }
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(ChatSubmitPlugin.policy == .alwaysOn)
+    #expect(ChatSubmitPlugin.isConfigurable == false)
+}
+
 @MainActor
 @Test func chatSubmitToolbarProvidesClickableCustomView() async throws {
     let context = PluginContext(activeIcon: nil, isEditorVisible: false, supportsAIChat: true, showsProjectToolbar: false)

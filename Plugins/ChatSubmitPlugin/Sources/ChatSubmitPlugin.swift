@@ -7,6 +7,7 @@ import os
 public actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-submit")
     public nonisolated static let emoji = "🚀"
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let verbose: Bool = true
 
     public static let id = "ChatSubmit"
