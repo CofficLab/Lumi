@@ -16,9 +16,9 @@ public final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unch
     // MARK: - Basic Info
 
     public static let id = "deepseek"
-    public static let displayName = String(localized: "DeepSeek", table: "DeepSeek")
+    public static let displayName = String(localized: "DeepSeek", bundle: .module)
     public static let shortName = "DS"
-    public static let description = String(localized: "DeepSeek AI", table: "DeepSeek")
+    public static let description = String(localized: "DeepSeek AI", bundle: .module)
 
     public static let websiteURL: String? = "https://deepseek.com"
 
