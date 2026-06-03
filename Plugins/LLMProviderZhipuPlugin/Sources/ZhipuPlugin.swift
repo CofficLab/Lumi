@@ -30,6 +30,8 @@ public actor ZhipuPlugin: SuperPlugin, SuperLog {
     public static var order: Int { 10 }
 
     public nonisolated var instanceLabel: String { Self.id }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = ZhipuPlugin()
 
     public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {

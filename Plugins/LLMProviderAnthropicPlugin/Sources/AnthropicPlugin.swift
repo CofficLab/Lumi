@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// Anthropic LLM 供应商插件
 public actor AnthropicPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = AnthropicPlugin()
     public static let id = "LLMProviderAnthropic"
     public static let displayName = "Anthropic"

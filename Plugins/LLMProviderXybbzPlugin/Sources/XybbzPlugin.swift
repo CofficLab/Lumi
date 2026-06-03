@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// Xybbz LLM 供应商插件
 public actor XybbzPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = XybbzPlugin()
     public static let id = "LLMProviderXybbz"
     public static let displayName = "Xybbz"

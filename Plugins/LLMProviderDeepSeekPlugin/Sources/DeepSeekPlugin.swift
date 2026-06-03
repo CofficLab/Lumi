@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// DeepSeek LLM 供应商插件
 public actor DeepSeekPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = DeepSeekPlugin()
     public static let id = "LLMProviderDeepSeek"
     public static let displayName = "DeepSeek"

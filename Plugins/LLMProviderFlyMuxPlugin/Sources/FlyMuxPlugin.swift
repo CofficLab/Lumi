@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// FlyMux LLM 供应商插件
 public actor FlyMuxPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = FlyMuxPlugin()
     public static let id = "LLMProviderFlyMux"
     public static let displayName = "FlyMux"

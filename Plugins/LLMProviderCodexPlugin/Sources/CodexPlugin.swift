@@ -6,6 +6,8 @@ import LumiCoreKit
 /// The app still exposes a small Lumi-namespace adapter for runtime discovery;
 /// this package owns the provider implementation and tests.
 public actor CodexPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = CodexPlugin()
     public static let id = "LLMProviderCodex"
     public static let displayName = "Codex CLI"

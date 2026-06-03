@@ -27,6 +27,7 @@ public actor ProjectsPlugin: SuperPlugin, SuperLog {
     public static let iconName: String = "folder"
     public static var category: PluginCategory { .general }
     public static var order: Int { 10 }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = ProjectsPlugin()

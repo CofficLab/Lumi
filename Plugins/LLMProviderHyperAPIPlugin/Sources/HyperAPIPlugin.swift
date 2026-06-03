@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// HyperAPI LLM 供应商插件
 public actor HyperAPIPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = HyperAPIPlugin()
     public static let id = "LLMProviderHyperAPI"
     public static let displayName = "HyperAPI"

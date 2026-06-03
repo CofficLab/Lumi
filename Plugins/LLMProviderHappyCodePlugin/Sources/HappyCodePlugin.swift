@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// HappyCode LLM 供应商插件
 public actor HappyCodePlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = HappyCodePlugin()
     public static let id = "LLMProviderHappyCode"
     public static let displayName = "HappyCode"

@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// Feifeimiao LLM 供应商插件
 public actor FeifeimiaoPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = FeifeimiaoPlugin()
     public static let id = "LLMProviderFeifeimiao"
     public static let displayName = "Feifeimiao"

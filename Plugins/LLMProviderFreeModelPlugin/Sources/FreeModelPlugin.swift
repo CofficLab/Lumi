@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// FreeModel LLM 供应商插件
 public actor FreeModelPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = FreeModelPlugin()
     public static let id = "LLMProviderFreeModel"
     public static let displayName = "FreeModel"
