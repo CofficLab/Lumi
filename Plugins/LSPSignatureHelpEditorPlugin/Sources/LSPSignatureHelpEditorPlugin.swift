@@ -14,8 +14,8 @@ public actor LSPSignatureHelpEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSignatureHelpEditorPlugin()
     public static let id = "LSPSignatureHelpEditor"
-    public static let displayName = String(localized: "LSP Signature Help", table: "LSPSignatureHelpEditor")
-    public static let description = String(localized: "Shows function signature hints when typing parameters.", table: "LSPSignatureHelpEditor")
+    public static let displayName = String(localized: "LSP Signature Help", bundle: .module)
+    public static let description = String(localized: "Shows function signature hints when typing parameters.", bundle: .module)
     public static let iconName = "text.badge.plus"
     public static let order = 23
     public static var category: PluginCategory { .editor }
