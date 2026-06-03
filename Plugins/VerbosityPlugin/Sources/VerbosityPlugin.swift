@@ -14,8 +14,8 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let verbose: Bool = true
     public static let id = "Verbosity"
-    public static let displayName = String(localized: "Verbosity", table: "Verbosity")
-    public static let description = String(localized: "Switch between Brief, Normal, and Detailed response styles", table: "Verbosity")
+    public static let displayName = String(localized: "Verbosity", bundle: .module)
+    public static let description = String(localized: "Switch between Brief, Normal, and Detailed response styles", bundle: .module)
     public static let iconName = "text.alignleft"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 84 }
@@ -34,7 +34,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "verbosity-toggle",
-                title: String(localized: "Verbosity", table: "Verbosity"),
+                title: String(localized: "Verbosity", bundle: .module),
                 systemImage: "text.alignleft",
                 priority: 11
             )
