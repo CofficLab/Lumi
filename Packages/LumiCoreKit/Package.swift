@@ -8,6 +8,7 @@ import PackageDescription
 /// 使插件可以作为独立 Swift Package 存在并拥有自己的单元测试。
 let package = Package(
     name: "LumiCoreKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -37,7 +38,10 @@ let package = Package(
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "LumiCoreKitTests",
