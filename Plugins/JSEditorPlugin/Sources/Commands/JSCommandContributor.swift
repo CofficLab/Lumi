@@ -42,9 +42,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func buildCommand(state: EditorState, projectPath: String?, package: JSPackageInfo?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.build",
-            title: String(localized: "JS Build", table: "JSEditor"),
+            title: String(localized: "JS Build", bundle: .module),
             systemImage: "hammer",
-            category: String(localized: "JavaScript", table: "JSEditor"),
+            category: String(localized: "JavaScript", bundle: .module),
             shortcut: EditorCommandShortcut(key: "b", modifiers: [.command]),
             order: 100,
             isEnabled: projectPath != nil
@@ -57,9 +57,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func testCommand(state: EditorState, projectPath: String?, package: JSPackageInfo?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.test",
-            title: String(localized: "JS Test", table: "JSEditor"),
+            title: String(localized: "JS Test", bundle: .module),
             systemImage: "testtube.2",
-            category: String(localized: "JavaScript", table: "JSEditor"),
+            category: String(localized: "JavaScript", bundle: .module),
             order: 200,
             isEnabled: projectPath != nil && TestRunnerDetector.preferredScript(package: package) != nil
         ) { [weak self, weak state] in
@@ -71,9 +71,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func lintCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.lint",
-            title: String(localized: "ESLint Current File", table: "JSEditor"),
+            title: String(localized: "ESLint Current File", bundle: .module),
             systemImage: "checklist",
-            category: String(localized: "JavaScript", table: "JSEditor"),
+            category: String(localized: "JavaScript", bundle: .module),
             order: 300,
             isEnabled: projectPath != nil
         ) { [weak self, weak state] in
@@ -85,9 +85,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func formatCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.format.prettier",
-            title: String(localized: "Format with Prettier", table: "JSEditor"),
+            title: String(localized: "Format with Prettier", bundle: .module),
             systemImage: "text.alignleft",
-            category: String(localized: "JavaScript", table: "JSEditor"),
+            category: String(localized: "JavaScript", bundle: .module),
             shortcut: EditorCommandShortcut(key: "l", modifiers: [.shift, .command]),
             order: 400,
             isEnabled: projectPath != nil
@@ -100,9 +100,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func debugCommand(state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.debug.node",
-            title: String(localized: "Debug Current File", table: "JSEditor"),
+            title: String(localized: "Debug Current File", bundle: .module),
             systemImage: "ladybug",
-            category: String(localized: "JavaScript", table: "JSEditor"),
+            category: String(localized: "JavaScript", bundle: .module),
             order: 500,
             isEnabled: projectPath != nil && state.currentFileURL != nil
         ) { [weak state] in
@@ -115,9 +115,9 @@ public final class JSCommandContributor: SuperEditorCommandContributor {
     private func scriptCommand(script: String, state: EditorState, projectPath: String?) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "js.script.\(script)",
-            title: String(format: String(localized: "Run Script: %@", table: "JSEditor"), script),
+            title: String(format: String(localized: "Run Script: %@", bundle: .module), script),
             systemImage: "terminal",
-            category: String(localized: "npm Scripts", table: "JSEditor"),
+            category: String(localized: "npm Scripts", bundle: .module),
             order: 600,
             isEnabled: projectPath != nil
         ) { [weak self, weak state] in

@@ -56,23 +56,23 @@ public struct TaskOutputView: View {
                 Text(statusText)
                     .font(.system(size: 11, weight: .medium))
             } else if taskManager.state == .cancelled {
-                Label(String(localized: "Cancelled", table: "JSEditor"), systemImage: "stop.circle.fill")
+                Label(String(localized: "Cancelled", bundle: .module), systemImage: "stop.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else if taskManager.errorCount > 0 {
-                Label("\(taskManager.errorCount) \(String(localized: "errors", table: "JSEditor"))", systemImage: "xmark.circle.fill")
+                Label("\(taskManager.errorCount) \(String(localized: "errors", bundle: .module))", systemImage: "xmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(hex: "FF453A"))
             } else if taskManager.warningCount > 0 {
-                Label("\(taskManager.warningCount) \(String(localized: "warnings", table: "JSEditor"))", systemImage: "exclamationmark.triangle.fill")
+                Label("\(taskManager.warningCount) \(String(localized: "warnings", bundle: .module))", systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(hex: "FF9F0A"))
             } else if taskManager.state == .success {
-                Label(String(localized: "Task succeeded", table: "JSEditor"), systemImage: "checkmark.circle.fill")
+                Label(String(localized: "Task succeeded", bundle: .module), systemImage: "checkmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(hex: "30D158"))
             } else if taskManager.state == .failed {
-                Label(String(localized: "Task failed", table: "JSEditor"), systemImage: "xmark.circle.fill")
+                Label(String(localized: "Task failed", bundle: .module), systemImage: "xmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(hex: "FF453A"))
             }
@@ -88,7 +88,7 @@ public struct TaskOutputView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                .help(String(localized: "Stop", table: "JSEditor"))
+                .help(String(localized: "Stop", bundle: .module))
             }
 
             if taskManager.lastDuration > 0 {
@@ -135,7 +135,7 @@ public struct TaskOutputView: View {
             Image(systemName: "terminal")
                 .font(.system(size: 20, weight: .thin))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
-            Text(String(localized: "Run a JS task to see output", table: "JSEditor"))
+            Text(String(localized: "Run a JS task to see output", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
@@ -154,10 +154,10 @@ public struct TaskOutputView: View {
 
     private var statusText: String {
         switch taskManager.state {
-        case .building: return String(localized: "Building...", table: "JSEditor")
-        case .linting: return String(localized: "Linting...", table: "JSEditor")
-        case .formatting: return String(localized: "Formatting...", table: "JSEditor")
-        default: return String(localized: "Running...", table: "JSEditor")
+        case .building: return String(localized: "Building...", bundle: .module)
+        case .linting: return String(localized: "Linting...", bundle: .module)
+        case .formatting: return String(localized: "Formatting...", bundle: .module)
+        default: return String(localized: "Running...", bundle: .module)
         }
     }
 

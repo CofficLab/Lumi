@@ -11,7 +11,7 @@ public struct DebugToolbarView: View {
             Button {
                 _ = launchConfiguration.flatMap(NodeDAPAdapter.commandLine)
             } label: {
-                Label(String(localized: "Node", table: "JSEditor"), systemImage: "play.fill")
+                Label(String(localized: "Node", bundle: .module), systemImage: "play.fill")
             }
             .buttonStyle(.borderless)
             .disabled(launchConfiguration == nil)
@@ -19,7 +19,7 @@ public struct DebugToolbarView: View {
             Button {
                 _ = BrowserCDPAdapter.defaultEndpoint().map(BrowserCDPAdapter.init(endpoint:))
             } label: {
-                Label(String(localized: "Browser", table: "JSEditor"), systemImage: "safari")
+                Label(String(localized: "Browser", bundle: .module), systemImage: "safari")
             }
             .buttonStyle(.borderless)
 

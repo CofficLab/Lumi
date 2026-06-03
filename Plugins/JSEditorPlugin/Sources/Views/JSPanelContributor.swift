@@ -19,7 +19,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
         return [
             EditorPanelSuggestion(
                 id: "js.task-output",
-                title: String(localized: "JS Output", table: "JSEditor"),
+                title: String(localized: "JS Output", bundle: .module),
                 systemImage: "terminal",
                 placement: .bottom,
                 order: 520,
@@ -37,7 +37,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
             ),
             EditorPanelSuggestion(
                 id: "js.test-results",
-                title: String(localized: "JS Tests", table: "JSEditor"),
+                title: String(localized: "JS Tests", bundle: .module),
                 systemImage: "testtube.2",
                 placement: .bottom,
                 order: 530,
@@ -50,7 +50,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
             ),
             EditorPanelSuggestion(
                 id: "js.debug-toolbar",
-                title: String(localized: "Debug", table: "JSEditor"),
+                title: String(localized: "Debug", bundle: .module),
                 systemImage: "ladybug",
                 placement: .bottom,
                 order: 540,

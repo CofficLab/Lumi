@@ -75,11 +75,11 @@ private struct JSStatusIndicatorView: View {
 
     private var label: String {
         switch taskManager.state {
-        case .building: return String(localized: "Building", table: "JSEditor")
-        case .testing: return String(localized: "Testing", table: "JSEditor")
-        case .linting: return String(localized: "Linting", table: "JSEditor")
-        case .formatting: return String(localized: "Formatting", table: "JSEditor")
-        default: return String(localized: "Running", table: "JSEditor")
+        case .building: return String(localized: "Building", bundle: .module)
+        case .testing: return String(localized: "Testing", bundle: .module)
+        case .linting: return String(localized: "Linting", bundle: .module)
+        case .formatting: return String(localized: "Formatting", bundle: .module)
+        default: return String(localized: "Running", bundle: .module)
         }
     }
 }

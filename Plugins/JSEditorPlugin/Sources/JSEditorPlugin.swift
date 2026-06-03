@@ -26,8 +26,8 @@ public actor JSEditorPlugin: SuperPlugin, SuperLog {
     )
 
     public static let id = "JSEditor"
-    public static let displayName = String(localized: "JS/TS Editor", table: "JSEditor")
-    public static let description = String(localized: "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution.", table: "JSEditor")
+    public static let displayName = String(localized: "JS/TS Editor", bundle: .module)
+    public static let description = String(localized: "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution.", bundle: .module)
     public static let iconName = "js"
     public static let order = 33
     public static var category: PluginCategory { .editor }

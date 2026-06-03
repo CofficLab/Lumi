@@ -29,10 +29,10 @@ public struct TestResultView: View {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
-                Text(String(localized: "Testing...", table: "JSEditor"))
+                Text(String(localized: "Testing...", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
             } else if taskManager.state == .cancelled {
-                Label(String(localized: "Cancelled", table: "JSEditor"), systemImage: "stop.circle.fill")
+                Label(String(localized: "Cancelled", bundle: .module), systemImage: "stop.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
             } else {
@@ -52,7 +52,7 @@ public struct TestResultView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                .help(String(localized: "Stop", table: "JSEditor"))
+                .help(String(localized: "Stop", bundle: .module))
             }
         }
         .padding(.horizontal, 12)
@@ -97,7 +97,7 @@ public struct TestResultView: View {
     private var loadingState: some View {
         VStack(spacing: 8) {
             ProgressView().scaleEffect(0.8)
-            Text(String(localized: "Running tests...", table: "JSEditor"))
+            Text(String(localized: "Running tests...", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
@@ -109,7 +109,7 @@ public struct TestResultView: View {
             Image(systemName: "testtube.2")
                 .font(.system(size: 20, weight: .thin))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
-            Text(String(localized: "Run JS tests to see results", table: "JSEditor"))
+            Text(String(localized: "Run JS tests to see results", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
         }
@@ -121,7 +121,7 @@ public struct TestResultView: View {
     private var skippedCount: Int { taskManager.testEvents.filter { $0.status == .skipped }.count }
 
     private var summaryText: String {
-        "\(passedCount) \(String(localized: "passed", table: "JSEditor")), \(failedCount) \(String(localized: "failed", table: "JSEditor")), \(skippedCount) \(String(localized: "skipped", table: "JSEditor"))"
+        "\(passedCount) \(String(localized: "passed", bundle: .module)), \(failedCount) \(String(localized: "failed", bundle: .module)), \(skippedCount) \(String(localized: "skipped", bundle: .module))"
     }
 
     private func symbol(for status: JSTestEvent.Status) -> String {
