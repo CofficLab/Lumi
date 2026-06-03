@@ -11,8 +11,8 @@ public actor AgentLanguagePlugin: SuperPlugin {
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentLanguageHeader"
-    public static let displayName = String(localized: "Language Selector", table: "AgentLanguageHeader")
-    public static let description = String(localized: "AI response language in header", table: "AgentLanguageHeader")
+    public static let displayName = String(localized: "Language Selector", bundle: .module)
+    public static let description = String(localized: "AI response language in header", bundle: .module)
     public static let iconName = "globe"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 83 }
@@ -41,7 +41,7 @@ public actor AgentLanguagePlugin: SuperPlugin {
         return [
             SidebarToolbarItem(
                 id: "language-toggle",
-                title: String(localized: "Language Selector", table: "AgentLanguageHeader"),
+                title: String(localized: "Language Selector", bundle: .module),
                 systemImage: "globe",
                 priority: 5  // 低于 ChatMode 的 10，排在左侧
             )
