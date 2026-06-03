@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeAuroraPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ThemeAuroraPlugin()
     public static let id: String = "aurora"
     public static let displayName: String = "Aurora"

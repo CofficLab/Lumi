@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeOrchardPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ThemeOrchardPlugin()
     public static let id: String = "orchard"
     public static let displayName: String = "Orchard"

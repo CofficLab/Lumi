@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeDraculaPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ThemeDraculaPlugin()
     public static let id: String = "dracula"
     public static let displayName: String = "Dracula"

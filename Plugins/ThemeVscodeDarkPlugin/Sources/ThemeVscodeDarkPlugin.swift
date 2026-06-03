@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeVscodeDarkPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ThemeVscodeDarkPlugin()
     public static let id: String = "vscode-dark"
     public static let displayName: String = "VS Code 深色"
