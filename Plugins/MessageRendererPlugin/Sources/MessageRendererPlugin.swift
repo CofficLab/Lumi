@@ -14,6 +14,8 @@ import LumiCoreKit
 ///
 /// 渲染器实现在 `Renderers/` 目录下，每个渲染器一个文件。
 public actor MessageRendererPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = MessageRendererPlugin()
     public static let id = "CoreMessageRenderer"
     public static let displayName = String(localized: "核心消息渲染器", table: "CoreMessageRenderer")
