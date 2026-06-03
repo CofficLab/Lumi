@@ -291,6 +291,14 @@ struct RootView<Content>: View where Content: View {
         pluginLLMVM.isAutoMode = container.agentSessionConfig.isAutoMode
         pluginLLMVM.lastAutoRouteSummary = container.agentSessionConfig.lastAutoRouteSummary
         pluginLLMVM.updateChatModeFromHost(LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build)
+
+        // 桥接 provider 查询方法，让插件 VM 能获取已注册的供应商列表
+        let appLLMVM = container.agentSessionConfig
+        pluginLLMVM.providersProvider = { appLLMVM.allProviders }
+        pluginLLMVM.providerTypeProvider = { appLLMVM.providerType(forId: $0) }
+        pluginLLMVM.providerFactory = { appLLMVM.createProvider(id: $0) }
+        pluginLLMVM.apiKeyProvider = { appLLMVM.getApiKey(for: $0) }
+
         pluginLLMVM.chatModeSetter = { [container, windowContainer] chatMode in
             guard let appChatMode = ChatMode(rawValue: chatMode.rawValue) else { return }
             container.agentSessionConfig.setChatMode(appChatMode)
