@@ -11,8 +11,8 @@ public actor ClipboardManagerPlugin: SuperPlugin {
     public nonisolated static let verbose: Bool = true
     public static let id = "ClipboardManager"
     public static let navigationId = "clipboard_manager"
-    public static let displayName = String(localized: "Clipboard", table: "ClipboardManager")
-    public static let description = String(localized: "Manage clipboard history and snippets", table: "ClipboardManager")
+    public static let displayName = String(localized: "Clipboard", bundle: .module)
+    public static let description = String(localized: "Manage clipboard history and snippets", bundle: .module)
     public static let iconName = "doc.on.clipboard"
     public static var category: PluginCategory { .general }
     public static var order: Int { 70 }

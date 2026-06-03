@@ -14,8 +14,8 @@ public struct ClipboardSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "Clipboard Manager", table: "ClipboardManager"),
-            subtitle: String(localized: "Monitor clipboard history locally on this device.", table: "ClipboardManager"),
+            title: String(localized: "Clipboard Manager", bundle: .module),
+            subtitle: String(localized: "Monitor clipboard history locally on this device.", bundle: .module),
             showHeader: false
         ) {
             generalSection
@@ -33,11 +33,11 @@ public struct ClipboardSettingsView: View {
     private var generalSection: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "General", table: "ClipboardManager"),
+                title: String(localized: "General", bundle: .module),
                 spacing: 12
             ) {
                 AppSettingsToggleRow(
-                    String(localized: "Enable Clipboard Monitoring", table: "ClipboardManager"),
+                    String(localized: "Enable Clipboard Monitoring", bundle: .module),
                     systemImage: "doc.on.clipboard",
                     isOn: $isMonitoringEnabled
                 )
@@ -51,14 +51,14 @@ public struct ClipboardSettingsView: View {
                 }
 
                 AppSettingsPickerRow(
-                    String(localized: "History Size", table: "ClipboardManager"),
+                    String(localized: "History Size", bundle: .module),
                     systemImage: "clock.arrow.circlepath",
                     selection: $historySize
                 ) {
                     Text("100").tag(100)
                     Text("500").tag(500)
                     Text("1000").tag(1000)
-                    Text(String(localized: "Unlimited", table: "ClipboardManager")).tag(Int.max)
+                    Text(String(localized: "Unlimited", bundle: .module)).tag(Int.max)
                 }
                 .onChange(of: historySize) { _, newValue in
                     store.set(newValue, forKey: historySizeKey)
@@ -70,11 +70,11 @@ public struct ClipboardSettingsView: View {
     private var dataSection: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Data", table: "ClipboardManager"),
+                title: String(localized: "Data", bundle: .module),
                 spacing: 12
             ) {
                 AppButton(
-                    String(localized: "Clear All History", table: "ClipboardManager"),
+                    String(localized: "Clear All History", bundle: .module),
                     style: .destructive,
                     fillsWidth: true
                 ) {
@@ -83,7 +83,7 @@ public struct ClipboardSettingsView: View {
                     }
                 }
 
-                Text(String(localized: "All data is stored locally in SwiftData database and will not be uploaded to any server.", table: "ClipboardManager"))
+                Text(String(localized: "All data is stored locally in SwiftData database and will not be uploaded to any server.", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)

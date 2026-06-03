@@ -32,7 +32,7 @@ public struct ClipboardHistoryView: View {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text(String(localized: "No clipboard records", table: "ClipboardManager"))
+                    Text(String(localized: "No clipboard records", bundle: .module))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -43,14 +43,14 @@ public struct ClipboardHistoryView: View {
                         ClipboardItemRow(item: item)
                             .tag(item.id)
                             .contextMenu {
-                                Button(String(localized: "Copy", table: "ClipboardManager")) {
+                                Button(String(localized: "Copy", bundle: .module)) {
                                     viewModel.copyToClipboard(item)
                                 }
                                 Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
                                 }
                                 Divider()
-                                Button(String(localized: "Delete", table: "ClipboardManager")) {
+                                Button(String(localized: "Delete", bundle: .module)) {
                                     viewModel.delete(id: item.id)
                                 }
                             }
@@ -69,7 +69,7 @@ public struct ClipboardHistoryView: View {
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
                 AppButton("Clear All", style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
-                .help(String(localized: "Clear History", table: "ClipboardManager"))
+                .help(String(localized: "Clear History", bundle: .module))
             }
             .padding(8)
             .background(Material.regularMaterial)
