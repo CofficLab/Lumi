@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "AgentToolKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -19,7 +20,10 @@ let package = Package(
         .target(
             name: "AgentToolKit",
             dependencies: ["SuperLogKit"],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "AgentToolKitTests",
