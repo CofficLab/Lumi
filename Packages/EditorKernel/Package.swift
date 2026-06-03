@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorKernel",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -21,7 +22,10 @@ let package = Package(
             dependencies: [
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol")
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "EditorKernelTests",

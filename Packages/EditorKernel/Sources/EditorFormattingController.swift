@@ -16,7 +16,7 @@ public final class EditorFormattingController {
     ) async {
         guard canPreview, isEditable else { return }
         showStatus(
-            String(localized: "Formatting document...", table: "LumiEditor"),
+            String(localized: "Formatting document...", bundle: .module),
             .info,
             1.2
         )
@@ -26,7 +26,7 @@ public final class EditorFormattingController {
               !edits.isEmpty else {
             EditorPerformance.shared.cancel(perfToken)
             showStatus(
-                String(localized: "No formatting changes", table: "LumiEditor"),
+                String(localized: "No formatting changes", bundle: .module),
                 .warning,
                 1.8
             )
@@ -36,7 +36,7 @@ public final class EditorFormattingController {
         applyTextEdits(edits, "lsp_format_document")
         EditorPerformance.shared.end(perfToken)
         showStatus(
-            String(localized: "Document formatted", table: "LumiEditor"),
+            String(localized: "Document formatted", bundle: .module),
             .success,
             1.8
         )

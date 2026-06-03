@@ -94,7 +94,7 @@ public final class EditorLanguageActionFacade {
         let requestGeneration = requestGenerationNext()
         let requestFileURL = fileURL
         showStatus(
-            String(localized: "Finding references...", table: "LumiEditor"),
+            String(localized: "Finding references...", bundle: .module),
             .info,
             1.2
         )
@@ -106,7 +106,7 @@ public final class EditorLanguageActionFacade {
             clearReferences()
             syncSession()
             showStatus(
-                String(localized: "No references found", table: "LumiEditor"),
+                String(localized: "No references found", bundle: .module),
                 .warning,
                 1.8
             )
@@ -126,7 +126,7 @@ public final class EditorLanguageActionFacade {
         updateReferenceVisibility(!sortedItems.isEmpty)
         syncSession()
         showStatus(
-            String(localized: "Found references:", table: "LumiEditor") + " \(sortedItems.count)",
+            String(localized: "Found references:", bundle: .module) + " \(sortedItems.count)",
             .success,
             1.8
         )
