@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "顯示圖片"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示圖片"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在界面中顯示圖片，支持本地路徑和遠程 URL。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在界面中顯示圖片，支持本地路徑和遠程 URL。"
@@ -67,6 +79,12 @@
             "state": "translated",
             "value": "關閉"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉"
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中…"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "載入中…"
@@ -113,6 +137,12 @@
             "state": "translated",
             "value": "點擊放大預覽"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊放大預覽"
+          }
         }
       }
     },
@@ -132,6 +162,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入圖片"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "無法載入圖片"
@@ -159,6 +195,12 @@
             "state": "translated",
             "value": "無效的 URL"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無效的 URL"
+          }
         }
       }
     },
@@ -182,6 +224,12 @@
             "state": "translated",
             "value": "無法解析圖片數據"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析圖片數據"
+          }
         }
       }
     },
@@ -201,6 +249,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入失敗"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "載入失敗"
