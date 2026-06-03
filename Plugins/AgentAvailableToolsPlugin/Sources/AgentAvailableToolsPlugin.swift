@@ -14,8 +14,8 @@ public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-available-tools")
 
     public static let id = "AgentAvailableToolsPlugin"
-    public static let displayName = String(localized: "Tools", table: "AgentAvailableToolsPlugin")
-    public static let description = String(localized: "Show all available tools", table: "AgentAvailableToolsPlugin")
+    public static let displayName = String(localized: "Tools", bundle: .module)
+    public static let description = String(localized: "Show all available tools", bundle: .module)
     public static let iconName = "wrench.and.screwdriver"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 85 }
@@ -74,7 +74,7 @@ private struct AvailableToolsListDetailView: View {
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Tools", table: "AgentAvailableToolsPlugin"),
+            title: String(localized: "Tools", bundle: .module),
             systemImage: "wrench.and.screwdriver",
             subtitle: toolsCountText
         ) {
@@ -89,7 +89,7 @@ private struct AvailableToolsListDetailView: View {
 
     private var toolsCountText: String {
         String.localizedStringWithFormat(
-            String(localized: "%lld tools available", table: "AgentAvailableToolsPlugin", comment: "Count of available tools"),
+            String(localized: "%lld tools available", bundle: .module, comment: "Count of available tools"),
             Int64(tools.count)
         )
     }
@@ -97,13 +97,13 @@ private struct AvailableToolsListDetailView: View {
     private var searchField: some View {
         AppSearchBar(
             text: $query,
-            placeholder: LocalizedStringKey(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"))
+            placeholder: LocalizedStringKey(String(localized: "Search tools", bundle: .module))
         )
         .frame(width: 280)
     }
 
     private var languagePicker: some View {
-        Picker(String(localized: "Language", table: "AgentAvailableToolsPlugin"), selection: $selectedLanguage) {
+        Picker(String(localized: "Language", bundle: .module), selection: $selectedLanguage) {
             ForEach(LanguagePreference.allCases) { language in
                 Text(language.displayName).tag(language)
             }
@@ -131,8 +131,8 @@ private struct AvailableToolsListDetailView: View {
     private var emptyStateView: some View {
         AppEmptyState(
             icon: "wrench.and.screwdriver",
-            title: "No tools found",
-            description: "Try a different search keyword."
+            title: String(localized: "No tools found", bundle: .module),
+            description: String(localized: "Try a different search keyword.", bundle: .module)
         )
     }
 

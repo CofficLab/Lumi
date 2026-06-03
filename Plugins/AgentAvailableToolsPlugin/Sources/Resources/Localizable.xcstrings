@@ -16,6 +16,12 @@
             "value": "工具"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -39,6 +45,12 @@
             "value": "展示所有可用工具"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示所有可用工具"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -60,6 +72,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "查看工具"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視工具"
           }
         },
         "zh-HK": {
@@ -86,6 +104,12 @@
             "value": "可用工具：%lld 个"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用工具：%lld 個"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -107,6 +131,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索工具"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋工具"
           }
         },
         "zh-HK": {
@@ -132,6 +162,12 @@
             "value": "语言"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -150,6 +186,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "完成"
@@ -178,6 +220,12 @@
             "value": "未找到工具"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到工具"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -199,6 +247,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "试试其他关键词。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請試試其他關鍵字。"
           }
         },
         "zh-HK": {
