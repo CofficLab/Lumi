@@ -16,8 +16,8 @@ public actor InputPlugin: SuperPlugin, SuperLog {
 
     public static let id = "InputManager"
     public static let navigationId: String = "input_manager"
-    public static let displayName = String(localized: "Input Manager", table: "Input")
-    public static let description = String(localized: "Manage input-related behaviors", table: "Input")
+    public static let displayName = String(localized: "Input Manager", bundle: .module)
+    public static let description = String(localized: "Manage input-related behaviors", bundle: .module)
     public static let iconName = "keyboard"
     public static var order: Int { 70 }
     public nonisolated static let policy: PluginPolicy = .disabled

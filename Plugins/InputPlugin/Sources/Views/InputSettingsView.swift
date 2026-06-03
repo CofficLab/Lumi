@@ -7,14 +7,14 @@ public struct InputSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "Input Source", table: "Input"),
-            subtitle: String(localized: "Automatically switch input sources per application.", table: "Input"),
+            title: String(localized: "Input Source", bundle: .module),
+            subtitle: String(localized: "Automatically switch input sources per application.", bundle: .module),
             showHeader: false
         ) {
             AppCard {
                 AppSettingsSection(spacing: 12) {
                     AppSettingsToggleRow(
-                        String(localized: "Enable Auto Input Source Switching", table: "Input"),
+                        String(localized: "Enable Auto Input Source Switching", bundle: .module),
                         systemImage: "keyboard",
                         isOn: Binding(
                             get: { viewModel.isEnabled },
@@ -50,7 +50,7 @@ public struct InputSettingsView: View {
         } else {
             AppCard {
                 AppSettingsSection(
-                    title: String(localized: "Rules", table: "Input"),
+                    title: String(localized: "Rules", bundle: .module),
                     spacing: 6
                 ) {
                     ForEach(Array(viewModel.rules.enumerated()), id: \.element.id) { index, rule in
@@ -59,7 +59,7 @@ public struct InputSettingsView: View {
                             availableSources: viewModel.availableSources
                         )
                         .contextMenu {
-                            Button(String(localized: "Delete", table: "Input"), role: .destructive) {
+                            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
                                 viewModel.removeRule(at: IndexSet(integer: index))
                             }
                         }
