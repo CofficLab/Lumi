@@ -1,41 +1,35 @@
-import SwiftUI
+import AppKit
+import ChatInputEditorKit
 import LumiCoreKit
 import LumiUI
+import SwiftUI
 
 public struct InputView: View {
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @FocusState private var isFocused: Bool
+    @State private var isFocused = false
+    @State private var editorHeight: CGFloat = ChatInputEditorView.minHeight
+    @State private var cursorPosition = 0
+    @State private var isImageDragHovering = false
 
     public init() {}
 
     public var body: some View {
         VStack(spacing: 8) {
-            TextEditor(text: draftBinding)
-                .font(.appBody)
-                .foregroundColor(theme.textPrimary)
-                .scrollContentBackground(.hidden)
-                .focused($isFocused)
-                .frame(minHeight: 72, maxHeight: 160)
+            editorView
+                .frame(height: editorHeight)
                 .padding(8)
                 .background(theme.textSecondary.opacity(0.06))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    if isImageDragHovering {
+                        imageDropHoverOverlay
+                    }
+                }
 
             CommandSuggestionView(input: conversationVM.draftText) { command in
                 conversationVM.setDraftText(command + " ")
                 isFocused = true
-            }
-
-            HStack {
-                Spacer()
-                AppButton(
-                    String(localized: "Send", table: "ChatInputPlugin"),
-                    style: .primary,
-                    size: .small
-                ) {
-                    submit()
-                }
-                .disabled(!canSubmit)
             }
         }
         .padding(.horizontal, 8)
@@ -51,6 +45,53 @@ public struct InputView: View {
         }
     }
 
+    private var editorView: some View {
+        ChatInputEditorView(
+            text: draftBinding,
+            height: $editorHeight,
+            font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+            textColor: NSColor(theme.textPrimary),
+            isVerbose: ChatInputPlugin.verbose,
+            log: { message in
+                ChatInputPlugin.logger.info("\(ChatInputPlugin.t)\(message)")
+            },
+            onSubmit: submit,
+            onEnter: handleEnter,
+            onFileDrop: { url in
+                conversationVM.handleImageUpload(url: url)
+            },
+            isFocused: $isFocused,
+            cursorPosition: $cursorPosition,
+            isImageDragHovering: $isImageDragHovering
+        )
+        .animation(.easeInOut(duration: 0.15), value: editorHeight)
+    }
+
+    private var imageDropHoverOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [7, 5]))
+                .foregroundStyle(.secondary.opacity(0.65))
+
+            VStack(spacing: 8) {
+                Image(systemName: "photo.badge.plus")
+                    .font(.title2)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+
+                Text(String(localized: "Release to add image to the chat", table: "ChatInputPlugin"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+            }
+        }
+        .allowsHitTesting(false)
+        .transition(.opacity)
+    }
+
     private var draftBinding: Binding<String> {
         Binding(
             get: { conversationVM.draftText },
@@ -58,13 +99,21 @@ public struct InputView: View {
         )
     }
 
-    private var canSubmit: Bool {
-        conversationVM.canSubmitText && !conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    private func handleEnter() {
+        if let suggestion = CommandSuggestionView.suggestions(for: conversationVM.draftText).first {
+            conversationVM.setDraftText(suggestion.command + " ")
+            isFocused = true
+            return
+        }
+
+        submit()
     }
 
     private func submit() {
         let value = conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
+        editorHeight = ChatInputEditorView.minHeight
+        cursorPosition = 0
         Task { await conversationVM.submitDraftText(value) }
     }
 
@@ -74,6 +123,7 @@ public struct InputView: View {
         } else {
             conversationVM.setDraftText("\(conversationVM.draftText)\n\n\(value)")
         }
+        cursorPosition = conversationVM.draftText.count
     }
 
     static func addToChatText(from notification: Notification, targetWindowId: UUID?) -> String? {
