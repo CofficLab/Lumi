@@ -16,11 +16,8 @@ public actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📞"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorBottomCallHierarchy"
-    public static let displayName: String = String(
-        localized: "Editor Bottom Call Hierarchy", table: "EditorBottomCallHierarchy")
-    public static let description: String = String(
-        localized: "Call Hierarchy panel in the editor bottom area",
-        table: "EditorBottomCallHierarchy")
+    public static let displayName: String = String(localized: "Editor Bottom Call Hierarchy", bundle: .module)
+    public static let description: String = String(localized: "Call Hierarchy panel in the editor bottom area", bundle: .module)
     public static let iconName: String = "point.3.connected.trianglepath.dotted"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 79 }

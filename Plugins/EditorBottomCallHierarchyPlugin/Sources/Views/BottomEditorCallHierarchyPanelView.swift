@@ -43,21 +43,21 @@ public struct BottomEditorCallHierarchyPanelView: View {
     @ViewBuilder
     private var content: some View {
         if service.callHierarchyProvider.isLoading {
-            emptyState(String(localized: "Loading Call Hierarchy...", table: "EditorBottomCallHierarchy"), systemImage: "arrow.triangle.branch")
+            emptyState(String(localized: "Loading Call Hierarchy...", bundle: .module), systemImage: "arrow.triangle.branch")
         } else if service.callHierarchyProvider.rootItem == nil {
-            emptyState(String(localized: "No Call Hierarchy", table: "EditorBottomCallHierarchy"), systemImage: "point.3.connected.trianglepath.dotted")
+            emptyState(String(localized: "No Call Hierarchy", bundle: .module), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorBottomCallHierarchy"), calls: service.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: String(localized: "Incoming", bundle: .module), calls: service.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorBottomCallHierarchy"), calls: service.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: String(localized: "Outgoing", bundle: .module), calls: service.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
         let count = service.callHierarchyProvider.incomingCalls.count + service.callHierarchyProvider.outgoingCalls.count
-        return count > 0 ? String(localized: "Call Hierarchy (\(count))", table: "EditorBottomCallHierarchy") : String(localized: "Call Hierarchy", table: "EditorBottomCallHierarchy")
+        return count > 0 ? String(localized: "Call Hierarchy (\(count))", bundle: .module) : String(localized: "Call Hierarchy", bundle: .module)
     }
 
     private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
@@ -71,7 +71,7 @@ public struct BottomEditorCallHierarchyPanelView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     if calls.isEmpty {
-                        emptyState(String(localized: "Empty", table: "EditorBottomCallHierarchy"), systemImage: "minus.circle")
+                        emptyState(String(localized: "Empty", bundle: .module), systemImage: "minus.circle")
                     } else {
                         ForEach(calls) { call in
                             Button {
