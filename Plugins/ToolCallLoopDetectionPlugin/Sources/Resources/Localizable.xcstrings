@@ -1,6 +1,6 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
+  "sourceLanguage": "en",
+  "strings": {
     "PluginDescription": {
       "extractionState": "stale",
       "localizations": {
@@ -17,6 +17,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測並阻止無限工具調用循環"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "檢測並阻止無限工具調用循環"
@@ -44,9 +50,15 @@
             "state": "translated",
             "value": "工具調用循環檢測"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具調用循環檢測"
+          }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }
