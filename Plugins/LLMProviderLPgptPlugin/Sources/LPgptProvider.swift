@@ -15,9 +15,9 @@ public final class LPgptProvider: NSObject, SuperLLMProvider, @unchecked Sendabl
     // MARK: - 基础信息
 
     public static let id = "lpgpt"
-    public static let displayName = String(localized: "LPgpt", table: "LPgpt")
+    public static let displayName = String(localized: "LPgpt", bundle: .module)
     public static let shortName = "LP"
-    public static let description = String(localized: "Free LLM Gateway by lpgpt.us", table: "LPgpt")
+    public static let description = String(localized: "Free LLM Gateway by lpgpt.us", bundle: .module)
 
     public static let websiteURL: String? = "https://lpgpt.us"
 

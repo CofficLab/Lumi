@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "LPgpt"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LPgpt"
+          }
         }
       }
     },
@@ -41,6 +47,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "lpgpt.us 提供的免費 LLM 網關服務"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lpgpt.us 提供的免费 LLM 网关服务"
           }
         }
       }
