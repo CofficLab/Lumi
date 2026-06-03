@@ -15,9 +15,9 @@ public final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Send
     // MARK: - 基础信息
 
     public static let id = "hyperapi"
-    public static let displayName = String(localized: "HyperAPI", table: "HyperAPI")
+    public static let displayName = String(localized: "HyperAPI", bundle: .module)
     public static let shortName = "HA"
-    public static let description = String(localized: "LLM Router by hyperapi.cc", table: "HyperAPI")
+    public static let description = String(localized: "LLM Router by hyperapi.cc", bundle: .module)
 
     public static let websiteURL: String? = "https://hyperapi.cc"
 
