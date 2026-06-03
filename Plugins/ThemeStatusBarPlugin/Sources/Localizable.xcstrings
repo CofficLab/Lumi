@@ -1,8 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "All" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -25,7 +27,6 @@
       }
     },
     "Dark" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -71,7 +72,6 @@
       }
     },
     "Editor Theme Status" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -94,7 +94,6 @@
       }
     },
     "Light" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -116,8 +115,10 @@
         }
       }
     },
+    "No themes available" : {
+
+    },
     "No themes in this category" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -139,8 +140,10 @@
         }
       }
     },
+    "Persist and switch editor theme in the status bar" : {
+
+    },
     "System" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -161,6 +164,9 @@
           }
         }
       }
+    },
+    "Theme" : {
+
     }
   },
   "version" : "1.1"

@@ -1,133 +1,145 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Automatically switch input sources per application.": {
-      "localizations": {}
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Add New Rule" : {
+
     },
-    "Delete": {
-      "localizations": {}
+    "Application" : {
+
     },
-    "Enable Auto Input Source Switching": {
-      "localizations": {}
+    "Automatically switch input sources per application." : {
+
     },
-    "Input Manager": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Input Manager"
+    "Delete" : {
+
+    },
+    "Enable Auto Input Source Switching" : {
+
+    },
+    "Input Manager" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Manager"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "输入管理器"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入管理器"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輸入管理器"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入管理器"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輸入管理器"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入管理器"
           }
         }
       }
     },
-    "Input Source": {
-      "localizations": {}
+    "Input Source" : {
+
     },
-    "Manage input-related behaviors": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage input-related behaviors"
+    "Manage input-related behaviors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage input-related behaviors"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage input-related behaviors"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage input-related behaviors"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage input-related behaviors"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage input-related behaviors"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage input-related behaviors"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage input-related behaviors"
           }
         }
       }
     },
-    "Rules": {
-      "localizations": {}
+    "Rules" : {
+
     },
-    "暂无输入源切换规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暂无输入源切换规则"
+    "Select Application" : {
+
+    },
+    "Select Input Source" : {
+
+    },
+    "暂无输入源切换规则" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无输入源切换规则"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暂无输入源切换规则"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无输入源切换规则"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暫無輸入源切換規則"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無輸入源切換規則"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暫無輸入源切換規則"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無輸入源切換規則"
           }
         }
       }
     },
-    "添加应用和对应的输入源，切换应用时自动切换输入法": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+    "添加应用和对应的输入源，切换应用时自动切换输入法" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加应用和对应的输入源，切换应用时自动切换输入法"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加应用和对应的输入源，切换应用时自动切换输入法"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加應用和對應的輸入源，切換應用時自動切換輸入法"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加應用和對應的輸入源，切換應用時自動切換輸入法"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加應用和對應的輸入源，切換應用時自動切換輸入法"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加應用和對應的輸入源，切換應用時自動切換輸入法"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }
