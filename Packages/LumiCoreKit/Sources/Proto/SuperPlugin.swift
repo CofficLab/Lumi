@@ -101,12 +101,19 @@ public struct ViewContainerItem: Identifiable, Equatable {
     /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
     public let supportsAIChat: Bool
 
+    /// 是否显示文件树
+    ///
+    /// 当此容器处于激活状态时，文件树插件会在 Rail 栏注册 Explorer 标签页。
+    /// 设为 `true` 的容器（如编辑器）表示其工作流需要项目文件树导航。
+    public let showsFileTree: Bool
+
     public init(
         id: String,
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
         supportsAIChat: Bool = false,
+        showsFileTree: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
     ) {
         self.id = id
@@ -114,6 +121,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         self.icon = icon
         self.showsProjectToolbar = showsProjectToolbar
         self.supportsAIChat = supportsAIChat
+        self.showsFileTree = showsFileTree
         self.makeView = makeView
     }
 

@@ -84,6 +84,8 @@ struct ViewContainerItem: Identifiable, Equatable {
     /// 会在右侧栏贡献各自的 Section 视图。
     /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
     let supportsAIChat: Bool
+    /// 是否显示文件树
+    let showsFileTree: Bool
 
     init(
         id: String,
@@ -91,6 +93,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         icon: String,
         showsProjectToolbar: Bool = false,
         supportsAIChat: Bool = false,
+        showsFileTree: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
     ) {
         self.id = id
@@ -98,6 +101,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         self.icon = icon
         self.showsProjectToolbar = showsProjectToolbar
         self.supportsAIChat = supportsAIChat
+        self.showsFileTree = showsFileTree
         self.makeView = makeView
     }
 

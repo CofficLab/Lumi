@@ -41,6 +41,12 @@ public struct PluginContext {
     /// 项目相关插件可据此决定是否贡献工具栏视图。
     public let showsProjectToolbar: Bool
 
+    /// 当前激活的 ViewContainer 是否显示文件树
+    ///
+    /// 由 ViewContainerItem 的 `showsFileTree` 属性投影而来。
+    /// 文件树插件据此决定是否注册 Explorer 标签页。
+    public let showsFileTree: Bool
+
     /// 当前正在构建插件视图的窗口 ID。
     ///
     /// 多窗口插件贡献需要用它选择窗口级服务，避免进程级 bridge 误用其他窗口状态。
@@ -82,6 +88,7 @@ public struct PluginContext {
         activeProviderId: String? = nil,
         supportsAIChat: Bool = false,
         showsProjectToolbar: Bool = false,
+        showsFileTree: Bool = false,
         windowId: UUID? = nil,
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
@@ -96,6 +103,7 @@ public struct PluginContext {
         self.activeProviderId = activeProviderId
         self.supportsAIChat = supportsAIChat
         self.showsProjectToolbar = showsProjectToolbar
+        self.showsFileTree = showsFileTree
         self.windowId = windowId
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference

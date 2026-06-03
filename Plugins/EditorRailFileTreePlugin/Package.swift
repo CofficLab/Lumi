@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../../Packages/FileTreeKit"),
         .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -26,12 +27,10 @@ let package = Package(
                 .product(name: "FileTreeKit", package: "FileTreeKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
-            exclude: [
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]

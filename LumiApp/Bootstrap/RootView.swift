@@ -45,6 +45,7 @@ struct RootView<Content>: View where Content: View {
     @StateObject private var pluginProjectContext = PluginProjectContext()
     @StateObject private var pluginRecentProjectsVM = LumiCoreKit.AppProjectsVM()
     @StateObject private var pluginThemeVM = LumiCoreKit.AppThemeVM()
+    @StateObject private var pluginEditorContext = LumiCoreKit.EditorContext()
     @StateObject private var pluginPluginVM = LumiCoreKit.AppPluginVM()
     @StateObject private var pluginLLMVM = LumiCoreKit.AppLLMVM()
     @StateObject private var pluginGitVM = LumiCoreKit.AppGitVM()
@@ -201,6 +202,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.windowManagerVM)
             .environmentObject(container.themeVM)
             .environmentObject(pluginThemeVM)
+            .environmentObject(pluginEditorContext)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(pluginPluginVM)
@@ -239,6 +241,7 @@ struct RootView<Content>: View where Content: View {
         configureProjectsPluginBridge()
         configureAutoTaskPluginBridge()
         configureAgentTurnNotificationPluginBridge()
+        configureEditorContextBridge()
     }
 
     /// 设置首次回退图标提供者，供 LayoutPlugin 在磁盘无记录时使用
@@ -486,6 +489,35 @@ struct RootView<Content>: View where Content: View {
             Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
                 .switchToConversation(conversationId, reason: "agentTurnNotification")
         }
+    }
+
+    private func configureEditorContextBridge() {
+        // 桥接主题提供者
+        pluginEditorContext.configureThemeProvider { [container] in
+            container.themeVM.activeChromeTheme
+        }
+        pluginEditorContext.configureFileIconThemeProvider { [container] in
+            container.themeVM.activeFileIconTheme
+        }
+        // 桥接编辑器操作
+        pluginEditorContext.openFileHandler = { [container, windowContainer] url in
+            let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+            targetWindow.editorVM.service.open(at: url)
+        }
+        pluginEditorContext.refreshProjectContextHandler = { [container, windowContainer] projectPath in
+            let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+            await targetWindow.editorVM.service.refreshProjectContext(for: projectPath)
+        }
+        pluginEditorContext.addToConversationHandler = { [container] fileURL, windowId in
+            NotificationCenter.postFileDroppedToChat(fileURL: fileURL, windowId: windowId)
+        }
+        EditorContext.syncSelectedFileNotificationName = .syncSelectedFile
+        // 同步当前选中文件
+        syncEditorContextFileURL()
+    }
+
+    private func syncEditorContextFileURL() {
+        pluginEditorContext.updateCurrentFileURL(windowContainer.editorVM.service.currentFileURL)
     }
 
     private func configureMessageRendererPluginBridge() {

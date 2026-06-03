@@ -1,8 +1,10 @@
+import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
 public struct EditorFileTreeNodeView: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var editorContext: EditorContext
     public let url: URL
     public let depth: Int
 
@@ -509,7 +511,7 @@ extension EditorFileTreeNodeView {
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
     private func addToConversation() {
-        NotificationCenter.postFileDroppedToChat(fileURL: url, windowId: windowId)
+        editorContext.addToConversation(fileURL: url, windowId: windowId)
     }
 }
 

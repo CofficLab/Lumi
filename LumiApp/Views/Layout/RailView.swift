@@ -32,8 +32,14 @@ struct RailView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            showsFileTree: activeContainer?.showsFileTree ?? false,
             windowId: windowContainer?.id
         )
+        if let container = activeContainer {
+            print("🛤️ RailView: activeIcon=\(activeIcon ?? "<nil>"), showsFileTree=\(container.showsFileTree), supportsAIChat=\(container.supportsAIChat)")
+        } else {
+            print("🛤️ RailView: activeContainer is nil, activeIcon=\(activeIcon ?? "<nil>")")
+        }
         let tabs = pluginProvider.getRailTabs(context: pluginContext)
 
         Group {
@@ -102,6 +108,7 @@ struct RailView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+            showsFileTree: activeContainer?.showsFileTree ?? false,
             windowId: windowContainer?.id
         )
         let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }

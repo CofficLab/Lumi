@@ -7,7 +7,7 @@ import LumiUI
 /// Editor Rail 文件树根视图
 public struct EditorFileTreeView: View, SuperLog {
     @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject var editorVM: WindowEditorVM
+    @EnvironmentObject var editorContext: EditorContext
     @EnvironmentObject var conversationVM: WindowConversationVM
 
     // MARK: - Logging Configuration
@@ -37,7 +37,7 @@ public struct EditorFileTreeView: View, SuperLog {
                         EditorFileTreeNodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
-                            selectedURL: editorVM.service.currentFileURL,
+                            selectedURL: editorContext.currentFileURL,
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
@@ -69,10 +69,22 @@ public struct EditorFileTreeView: View, SuperLog {
         }
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
-        .onChange(of: editorVM.service.currentFileURL, onSelectedFileChanged)
+        .onChange(of: editorContext.currentFileURL, onSelectedFileChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
-        .onSyncSelectedFile(windowId: conversationVM.windowId, perform: onSyncSelectedFile)
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: EditorContext.syncSelectedFileNotificationName ?? Notification.Name("___unused___")
+            )
+        ) { notification in
+            guard let userInfo = notification.userInfo,
+                  let path = userInfo["path"] as? String else { return }
+            if let windowId = conversationVM.windowId {
+                guard let senderWindowId = userInfo["windowId"] as? UUID,
+                      senderWindowId == windowId else { return }
+            }
+            onSyncSelectedFile(path: path)
+        }
         .onReceive(coordinator.$refreshToken) { newToken in
             onCoordinatorRefresh(newToken)
         }
@@ -88,8 +100,8 @@ public struct EditorFileTreeView: View, SuperLog {
     private func openProjectFile(_ url: URL) {
         let projectPath = projectVM.currentProjectPath
         Task { @MainActor in
-            await editorVM.service.refreshProjectContext(for: projectPath)
-            editorVM.service.open(at: url)
+            await editorContext.refreshProjectContext(for: projectPath)
+            editorContext.openFile(at: url)
         }
     }
 

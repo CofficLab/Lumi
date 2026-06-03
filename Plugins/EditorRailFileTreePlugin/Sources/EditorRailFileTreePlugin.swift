@@ -29,10 +29,19 @@ public actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {
-        []
+        Self.logger.info("\(Self.t)addRailTabs: showsFileTree=\(context.showsFileTree), activeIcon=\(context.activeIcon ?? "<nil>")")
+        guard context.showsFileTree else { return [] }
+        return [RailTab(
+            id: "explorer",
+            title: String(localized: "Explorer", bundle: .module),
+            systemImage: "folder",
+            priority: 0
+        )]
     }
 
     @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        nil
+        Self.logger.info("\(Self.t)addRailContentView: tabId=\(tabId), showsFileTree=\(context.showsFileTree)")
+        guard tabId == "explorer", context.showsFileTree else { return nil }
+        return AnyView(EditorFileTreeView())
     }
 }
