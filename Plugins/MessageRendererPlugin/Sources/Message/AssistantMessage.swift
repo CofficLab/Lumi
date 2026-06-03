@@ -11,6 +11,8 @@ public struct AssistantMessage: View {
     public let isLastMessage: Bool
 
     @Binding var showRawMessage: Bool
+    @State private var showDetailPopover = false
+
     private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
@@ -90,6 +92,17 @@ public struct AssistantMessage: View {
                 Text(formatTimestamp(message.timestamp))
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
+
+                // 消息详情按钮
+                MessageDetailButton(
+                    message: message,
+                    showDetailPopover: $showDetailPopover,
+                    formatTimestamp: formatTimestamp,
+                    formatModelName: formatModelName,
+                    formatCount: formatCount,
+                    formatMilliseconds: formatMilliseconds,
+                    formatNumber: formatNumber
+                )
 
                 // 切换原始消息按钮
                 // RawMessageToggleButton(showRawMessage: $showRawMessage)
