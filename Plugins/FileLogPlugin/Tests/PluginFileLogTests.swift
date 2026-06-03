@@ -14,7 +14,7 @@ struct PluginFileLogTests {
         #expect(FileLogPlugin.isConfigurable == false)
         #expect(FileLogPlugin.category == .system)
         #expect(FileLogPlugin.order == 1)
-        #expect(FileLogPlugin.policy == .disabled)
+        #expect(FileLogPlugin.policy == .alwaysOn)
         #expect(FileLogPlugin.shared.instanceLabel == FileLogPlugin.id)
     }
 
