@@ -21,8 +21,8 @@ public struct RAGSettingsView: View, SuperLog {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "RAG 索引状态", table: "RAG"),
-            subtitle: String(localized: "Manage semantic indexes for tracked projects.", table: "RAG"),
+            title: String(localized: "RAG 索引状态", bundle: .module),
+            subtitle: String(localized: "Manage semantic indexes for tracked projects.", bundle: .module),
             showHeader: false
         ) {
             actionsCard
@@ -31,7 +31,7 @@ public struct RAGSettingsView: View, SuperLog {
                 AppCard {
                     AppEmptyState(
                         icon: "folder.badge.questionmark",
-                        title: String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", table: "RAG")
+                        title: String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", bundle: .module)
                     )
                     .frame(minHeight: 160)
                 }
@@ -55,7 +55,7 @@ public struct RAGSettingsView: View, SuperLog {
         .onRAGIndexProgressDidChange { event in
             progressByPath[event.projectPath] = event
             if event.isFinished {
-                message = String(format: String(localized: "Index update completed: %@", table: "RAG"), event.projectPath)
+                message = String(format: String(localized: "Index update completed: %@", bundle: .module), event.projectPath)
                 Task { await loadStatus() }
             }
         }
@@ -63,10 +63,10 @@ public struct RAGSettingsView: View, SuperLog {
 
     private var actionsCard: some View {
         AppCard {
-            AppSettingsSection(title: String(localized: "Actions", table: "RAG"), spacing: 12) {
+            AppSettingsSection(title: String(localized: "Actions", bundle: .module), spacing: 12) {
                 HStack(spacing: 8) {
                     AppButton(
-                        String(localized: "刷新全部状态", table: "RAG"),
+                        String(localized: "刷新全部状态", bundle: .module),
                         style: .secondary,
                         fillsWidth: true
                     ) {
@@ -75,7 +75,7 @@ public struct RAGSettingsView: View, SuperLog {
                     .disabled(isLoading)
 
                     AppButton(
-                        String(localized: "重建全部索引", table: "RAG"),
+                        String(localized: "重建全部索引", bundle: .module),
                         style: .primary,
                         fillsWidth: true
                     ) {
@@ -90,9 +90,9 @@ public struct RAGSettingsView: View, SuperLog {
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
         AppCard {
-            AppSettingsSection(title: String(localized: "运行时", table: "RAG"), spacing: 8) {
+            AppSettingsSection(title: String(localized: "运行时", bundle: .module), spacing: 8) {
                 GlassKeyValueRow(
-                    label: String(localized: "Vector Backend", table: "RAG"),
+                    label: String(localized: "Vector Backend", bundle: .module),
                     value: info.vectorBackend.rawValue
                 )
             }
@@ -105,57 +105,57 @@ public struct RAGSettingsView: View, SuperLog {
             AppSettingsSection(title: project.name, subtitle: project.path, spacing: 12) {
                 if let status = statusesByPath[project.path] {
                     GlassKeyValueRow(
-                        label: String(localized: "最近索引", table: "RAG"),
+                        label: String(localized: "最近索引", bundle: .module),
                         value: relativeDate(status.lastIndexedAt)
                     )
                     GlassKeyValueRow(
-                        label: String(localized: "文件数", table: "RAG"),
+                        label: String(localized: "文件数", bundle: .module),
                         value: "\(status.fileCount)"
                     )
                     GlassKeyValueRow(
-                        label: String(localized: "片段数", table: "RAG"),
+                        label: String(localized: "片段数", bundle: .module),
                         value: "\(status.chunkCount)"
                     )
                     AppSettingsRow {
                         HStack {
-                            Text(String(localized: "状态", table: "RAG"))
+                            Text(String(localized: "状态", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundColor(theme.textSecondary)
                             Spacer()
                             GlassBadge(
                                 text: LocalizedStringKey(
                                     status.isStale
-                                        ? String(localized: "已过期", table: "RAG")
-                                        : String(localized: "最新", table: "RAG")
+                                        ? String(localized: "已过期", bundle: .module)
+                                        : String(localized: "最新", bundle: .module)
                                 ),
                                 style: status.isStale ? .warning : .success
                             )
                         }
                     }
                 } else if isLoading {
-                    Text(String(localized: "读取中…", table: "RAG"))
+                    Text(String(localized: "读取中…", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 } else {
-                    Text(String(localized: "尚未建立索引", table: "RAG"))
+                    Text(String(localized: "尚未建立索引", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
 
                 if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                     ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
-                    Text(String(format: String(localized: "Progress: %lld/%lld", table: "RAG"), progress.scannedFiles, progress.totalFiles))
+                    Text(String(format: String(localized: "Progress: %lld/%lld", bundle: .module), progress.scannedFiles, progress.totalFiles))
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
 
                 HStack(spacing: 8) {
-                    AppButton(String(localized: "刷新", table: "RAG"), style: .secondary, fillsWidth: true) {
+                    AppButton(String(localized: "刷新", bundle: .module), style: .secondary, fillsWidth: true) {
                         Task { await refreshProjectStatus(projectPath: project.path) }
                     }
                     .disabled(isLoading)
 
-                    AppButton(String(localized: "重建", table: "RAG"), style: .primary, fillsWidth: true) {
+                    AppButton(String(localized: "重建", bundle: .module), style: .primary, fillsWidth: true) {
                         Task { await rebuildProjectIndex(projectPath: project.path) }
                     }
                     .disabled(isLoading)
@@ -192,7 +192,7 @@ extension RAGSettingsView {
             statusesByPath = next
             message = nil
         } catch {
-            message = String(format: String(localized: "Failed to load index status: %@", table: "RAG"), error.localizedDescription)
+            message = String(format: String(localized: "Failed to load index status: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -201,7 +201,7 @@ extension RAGSettingsView {
         guard !projects.isEmpty else { return }
 
         isLoading = true
-        message = String(localized: "Rebuilding all indexes...", table: "RAG")
+        message = String(localized: "Rebuilding all indexes...", bundle: .module)
         defer { isLoading = false }
 
         do {
@@ -210,9 +210,9 @@ extension RAGSettingsView {
                 try await service.ensureIndexed(projectPath: project.path, force: true)
             }
             await loadStatus()
-            message = String(localized: "All project indexes updated.", table: "RAG")
+            message = String(localized: "All project indexes updated.", bundle: .module)
         } catch {
-            message = String(format: String(localized: "Failed to rebuild indexes: %@", table: "RAG"), error.localizedDescription)
+            message = String(format: String(localized: "Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -226,9 +226,9 @@ extension RAGSettingsView {
             if status == nil {
                 statusesByPath.removeValue(forKey: projectPath)
             }
-            message = String(format: String(localized: "Refreshed: %@", table: "RAG"), projectPath)
+            message = String(format: String(localized: "Refreshed: %@", bundle: .module), projectPath)
         } catch {
-            message = String(format: String(localized: "Refresh failed: %@", table: "RAG"), error.localizedDescription)
+            message = String(format: String(localized: "Refresh failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -240,9 +240,9 @@ extension RAGSettingsView {
             try await service.ensureIndexed(projectPath: projectPath, force: true)
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status
-            message = String(format: String(localized: "Rebuilt: %@", table: "RAG"), projectPath)
+            message = String(format: String(localized: "Rebuilt: %@", bundle: .module), projectPath)
         } catch {
-            message = String(format: String(localized: "Rebuild failed: %@", table: "RAG"), error.localizedDescription)
+            message = String(format: String(localized: "Rebuild failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 }

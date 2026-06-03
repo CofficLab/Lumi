@@ -20,8 +20,8 @@ public actor RAGPlugin: SuperPlugin, SuperLog {
 
     public static let id = "rag"
     public static let navigationId: String = "rag_settings"
-    public static let displayName = String(localized: "RAG")
-    public static let description = String(localized: "Retrieval-Augmented Generation", table: "RAG")
+    public static let displayName = String(localized: "RAG", bundle: .module)
+    public static let description = String(localized: "Retrieval-Augmented Generation", bundle: .module)
     public static let iconName = "doc.text.magnifyingglass"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 200 }
