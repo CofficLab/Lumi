@@ -11,7 +11,7 @@ public struct DatabaseMainView: View {
         HSplitView {
             // Sidebar
             VStack(alignment: .leading) {
-                Text(String(localized: "Connections", table: "DatabaseManager"))
+                Text(String(localized: "Connections", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .padding(.horizontal)
@@ -50,7 +50,7 @@ public struct DatabaseMainView: View {
                             AppCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text(String(localized: "Keys", table: "DatabaseManager"))
+                                        Text(String(localized: "Keys", bundle: .module))
                                             .font(.appBodyEmphasized)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -73,7 +73,7 @@ public struct DatabaseMainView: View {
                             AppCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text(String(localized: "Tables", table: "DatabaseManager"))
+                                        Text(String(localized: "Tables", bundle: .module))
                                             .font(.appBodyEmphasized)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -126,7 +126,7 @@ public struct DatabaseMainView: View {
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
-                            Text(String(localized: "No results", table: "DatabaseManager"))
+                            Text(String(localized: "No results", bundle: .module))
                                 .foregroundColor(theme.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
@@ -136,7 +136,7 @@ public struct DatabaseMainView: View {
                         Image(systemName: "database")
                             .font(.appLargeTitle)
                             .foregroundColor(theme.textSecondary)
-                        Text(String(localized: "Select a database to connect", table: "DatabaseManager"))
+                        Text(String(localized: "Select a database to connect", bundle: .module))
                             .font(.appTitle)
                             .foregroundColor(theme.textSecondary)
                     }
@@ -191,7 +191,7 @@ public struct QueryResultView: View {
                                     .frame(width: 160, alignment: .leading)
                                     .border(theme.appSubtleBorder.opacity(0.7))
                                     .contextMenu {
-                                        Button(String(localized: "Copy", table: "DatabaseManager")) {
+                                        Button(String(localized: "Copy", bundle: .module)) {
                                             NSPasteboard.general.clearContents()
                                             NSPasteboard.general.setString(text, forType: .string)
                                         }
@@ -236,7 +236,7 @@ public struct AddConnectionView: View {
     
     public var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "Add Connection", table: "DatabaseManager"))
+            Text(String(localized: "Add Connection", bundle: .module))
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
             
@@ -245,7 +245,7 @@ public struct AddConnectionView: View {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
                     
                     HStack {
-                        Text(String(localized: "Database Type", table: "DatabaseManager"))
+                        Text(String(localized: "Database Type", bundle: .module))
                             .foregroundColor(theme.textSecondary)
                         Spacer()
                         Picker("", selection: $type) {

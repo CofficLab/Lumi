@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "添加連接"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加連接"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "連接"
@@ -64,6 +76,12 @@
             "state": "translated",
             "value": "複製"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
             "state": "translated",
             "value": "Database"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
+          }
         }
       }
     },
@@ -104,6 +128,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫類型"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "資料庫類型"
@@ -130,6 +160,12 @@
             "state": "translated",
             "value": "鍵"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵"
+          }
         }
       }
     },
@@ -148,6 +184,12 @@
           }
         },
         "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
@@ -174,6 +216,12 @@
             "state": "translated",
             "value": "無結果"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無結果"
+          }
         }
       }
     },
@@ -196,6 +244,12 @@
             "state": "translated",
             "value": "選擇一個資料庫進行連接"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個資料庫進行連接"
+          }
         }
       }
     },
@@ -214,6 +268,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "表"
