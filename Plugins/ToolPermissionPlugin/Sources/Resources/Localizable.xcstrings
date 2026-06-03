@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "工具權限"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具權限"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根視圖工具權限浮層"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "根視圖工具權限浮層"
@@ -67,6 +79,12 @@
             "state": "translated",
             "value": "權限請求"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "權限請求"
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳情"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "詳情"
@@ -113,6 +137,12 @@
             "state": "translated",
             "value": "拒絕"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
+          }
         }
       }
     },
@@ -132,6 +162,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "允許"
@@ -159,6 +195,12 @@
             "state": "translated",
             "value": "助手正在嘗試執行 %@ 操作。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "助手正在嘗試執行 %@ 操作。"
+          }
         }
       }
     },
@@ -182,6 +224,12 @@
             "state": "translated",
             "value": "權限請求"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "權限請求"
+          }
         }
       }
     },
@@ -201,6 +249,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請審閱操作風險並選擇允許或拒絕"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "請審閱操作風險並選擇允許或拒絕"
