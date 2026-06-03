@@ -15,6 +15,7 @@ public actor SkillPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "✨"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     // MARK: - 插件基本信息
 
