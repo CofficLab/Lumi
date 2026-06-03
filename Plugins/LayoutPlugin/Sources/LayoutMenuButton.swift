@@ -10,20 +10,20 @@ public struct LayoutMenuButton: View {
     public var body: some View {
         Menu {
             Toggle(isOn: $layoutVM.editorVisible) {
-                Label(String(localized: "Editor"), systemImage: "rectangle.center.inset.filled")
+                Label(String(localized: "Editor", bundle: .module), systemImage: "rectangle.center.inset.filled")
             }
             Toggle(isOn: $layoutVM.contentPanelVisible) {
-                Label(String(localized: "Content Panel"), systemImage: "rectangle.topthird.inset.filled")
+                Label(String(localized: "Content Panel", bundle: .module), systemImage: "rectangle.topthird.inset.filled")
             }
             Toggle(isOn: $layoutVM.bottomPanelVisible) {
-                Label(String(localized: "Bottom Panel"), systemImage: "square.bottomthird.inset.filled")
+                Label(String(localized: "Bottom Panel", bundle: .module), systemImage: "square.bottomthird.inset.filled")
             }
             Toggle(isOn: $layoutVM.railVisible) {
-                Label(String(localized: "Rail"), systemImage: "sidebar.right")
+                Label(String(localized: "Rail", bundle: .module), systemImage: "sidebar.right")
             }
             Divider()
             Toggle(isOn: $layoutVM.rightSidebarVisible) {
-                Label(String(localized: "Right Sidebar"), systemImage: "rectangle.rightthird.inset.filled")
+                Label(String(localized: "Right Sidebar", bundle: .module), systemImage: "rectangle.rightthird.inset.filled")
             }
         } label: {
             Image(systemName: "sidebar.leading")
@@ -35,6 +35,6 @@ public struct LayoutMenuButton: View {
         .menuIndicator(.hidden)
         .frame(width: 22, height: 22)
         .fixedSize()
-        .help(String(localized: "Layout"))
+        .help(String(localized: "Layout", bundle: .module))
     }
 }
