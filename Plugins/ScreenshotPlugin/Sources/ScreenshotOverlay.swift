@@ -161,11 +161,11 @@ public final class ScreenshotState: ObservableObject {
 
     private func presentPermissionAlert() {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Screen Recording Permission Required", table: "AgentChat")
-        alert.informativeText = String(localized: "Screen Recording Permission Required Hint", table: "AgentChat")
+        alert.messageText = String(localized: "Screen Recording Permission Required", bundle: .module)
+        alert.informativeText = String(localized: "Screen Recording Permission Required Hint", bundle: .module)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "Open System Settings", table: "AgentChat"))
-        alert.addButton(withTitle: String(localized: "Cancel", table: "AgentChat"))
+        alert.addButton(withTitle: String(localized: "Open System Settings", bundle: .module))
+        alert.addButton(withTitle: String(localized: "Cancel", bundle: .module))
 
         if alert.runModal() == .alertFirstButtonReturn,
            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
@@ -175,21 +175,21 @@ public final class ScreenshotState: ObservableObject {
 
     private func presentCaptureFailureAlert(error: Error) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Screenshot Failed", table: "AgentChat")
+        alert.messageText = String(localized: "Screenshot Failed", bundle: .module)
         alert.informativeText = captureFailureMessage(for: error)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "OK", table: "AgentChat"))
+        alert.addButton(withTitle: String(localized: "OK", bundle: .module))
         alert.runModal()
     }
 
     private func captureFailureMessage(for error: Error) -> String {
         switch error {
         case ScreenshotError.noScreens:
-            return String(localized: "Screenshot Failed No Screens", table: "AgentChat")
+            return String(localized: "Screenshot Failed No Screens", bundle: .module)
         case ScreenshotError.captureFailed:
-            return String(localized: "Screenshot Failed No Image", table: "AgentChat")
+            return String(localized: "Screenshot Failed No Image", bundle: .module)
         default:
-            let prefix = String(localized: "Screenshot Failed Generic", table: "AgentChat")
+            let prefix = String(localized: "Screenshot Failed Generic", bundle: .module)
             return "\(prefix)\n\n\(error.localizedDescription)"
         }
     }
@@ -380,7 +380,7 @@ public final class ScreenshotOverlayContentView: NSView {
     }
 
     private func drawHint() {
-        let hint = String(localized: "Drag to select a screenshot region. Press ESC to cancel.", table: "AgentChat")
+        let hint = String(localized: "Drag to select a screenshot region. Press ESC to cancel.", bundle: .module)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 13, weight: .medium),
             .foregroundColor: NSColor.white.withAlphaComponent(0.82)

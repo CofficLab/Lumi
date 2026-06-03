@@ -16,8 +16,8 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📸"
     public nonisolated static let verbose: Bool = true
     public static let id = "Screenshot"
-    public static let displayName = String(localized: "Screenshot", table: "AgentChat")
-    public static let description = String(localized: "Capture screen region as chat attachment", table: "AgentChat")
+    public static let displayName = String(localized: "Screenshot", bundle: .module)
+    public static let description = String(localized: "Capture screen region as chat attachment", bundle: .module)
     public static let iconName = "crop"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 85 }
@@ -37,7 +37,7 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "screenshot",
-                title: String(localized: "Screenshot Region", table: "AgentChat"),
+                title: String(localized: "Screenshot Region", bundle: .module),
                 systemImage: "crop",
                 priority: 30
             )
@@ -83,14 +83,14 @@ private struct ScreenshotToolbarButton: View {
         }
         .disabled(screenshotState.isCapturing)
         .keyboardShortcut("S", modifiers: [.command, .shift])
-        .accessibilityLabel(String(localized: "Screenshot Region", table: "AgentChat"))
-        .accessibilityHint(String(localized: "Screenshot Region Hint", table: "AgentChat"))
+        .accessibilityLabel(String(localized: "Screenshot Region", bundle: .module))
+        .accessibilityHint(String(localized: "Screenshot Region Hint", bundle: .module))
     }
 
     private var helpText: String {
         if screenshotState.isPreparing {
-            return String(localized: "Preparing Screenshot", table: "AgentChat")
+            return String(localized: "Preparing Screenshot", bundle: .module)
         }
-        return String(localized: "Screenshot Region", table: "AgentChat")
+        return String(localized: "Screenshot Region", bundle: .module)
     }
 }
