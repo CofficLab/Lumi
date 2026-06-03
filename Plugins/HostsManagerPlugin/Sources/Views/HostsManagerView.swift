@@ -12,7 +12,7 @@ public struct HostsManagerView: View {
         VStack(spacing: 0) {
             HStack {
                 Picker("Group", selection: $viewModel.selectedGroup) {
-                    Text(String(localized: "All", table: "HostsManager")).tag(String?.none)
+                    Text(String(localized: "All", bundle: .module)).tag(String?.none)
                     ForEach(viewModel.groups, id: \.self) { group in
                         Text(group).tag(String?.some(group))
                     }
@@ -23,12 +23,12 @@ public struct HostsManagerView: View {
 
                 AppSearchBar(
                     text: $viewModel.searchText,
-                    placeholder: LocalizedStringKey(String(localized: "Search Host", table: "HostsManager"))
+                    placeholder: LocalizedStringKey(String(localized: "Search Host", bundle: .module))
                 )
                 .frame(width: 220)
 
                 AppButton(
-                    String(localized: "Add", table: "HostsManager"),
+                    String(localized: "Add", bundle: .module),
                     systemImage: "plus",
                     style: .primary,
                     size: .small
@@ -37,20 +37,20 @@ public struct HostsManagerView: View {
                 }
 
                 Menu {
-                    Button(String(localized: "Refresh", table: "HostsManager")) {
+                    Button(String(localized: "Refresh", bundle: .module)) {
                         Task { await viewModel.loadHosts() }
                     }
                     Divider()
-                    Button(String(localized: "Export Backup...", table: "HostsManager")) {
+                    Button(String(localized: "Export Backup...", bundle: .module)) {
                         exportHosts()
                     }
-                    Button(String(localized: "Import Backup...", table: "HostsManager")) {
+                    Button(String(localized: "Import Backup...", bundle: .module)) {
                         importHosts()
                     }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "ellipsis.circle")
-                        Text(String(localized: "More", table: "HostsManager"))
+                        Text(String(localized: "More", bundle: .module))
                     }
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
@@ -68,14 +68,14 @@ public struct HostsManagerView: View {
 
             if viewModel.isLoading {
                 AppLoadingOverlay(
-                    message: LocalizedStringKey(String(localized: "Loading Hosts", table: "HostsManager")),
+                    message: LocalizedStringKey(String(localized: "Loading Hosts", bundle: .module)),
                     size: .medium
                 )
             } else if let error = viewModel.errorMessage {
                 VStack {
                     AppErrorBanner(
                         message: LocalizedStringKey(error),
-                        retryTitle: LocalizedStringKey(String(localized: "Retry", table: "HostsManager"))
+                        retryTitle: LocalizedStringKey(String(localized: "Retry", bundle: .module))
                     ) {
                         Task { await viewModel.loadHosts() }
                     }
@@ -120,7 +120,7 @@ public struct HostsManagerView: View {
                         HostsManagerPlugin.logger.error("Export failed: \(error)")
                     }
                     viewModel.errorMessage = String(
-                        format: String(localized: "Export failed: %@", table: "HostsManager"),
+                        format: String(localized: "Export failed: %@", bundle: .module),
                         error.localizedDescription
                     )
                 }
@@ -145,7 +145,7 @@ public struct HostsManagerView: View {
                         }
                         await MainActor.run {
                             viewModel.errorMessage = String(
-                                format: String(localized: "Import failed: %@", table: "HostsManager"),
+                                format: String(localized: "Import failed: %@", bundle: .module),
                                 error.localizedDescription
                             )
                         }
@@ -248,7 +248,7 @@ public struct HostAddView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "Add Host Entry", table: "HostsManager"))
+            Text(String(localized: "Add Host Entry", bundle: .module))
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
 
@@ -256,12 +256,12 @@ public struct HostAddView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
                     if showIPError {
-                        AppErrorBanner(message: LocalizedStringKey(String(localized: "Invalid IP address format", table: "HostsManager")))
+                        AppErrorBanner(message: LocalizedStringKey(String(localized: "Invalid IP address format", bundle: .module)))
                     }
 
                     GlassTextField(title: "Domain", text: $domain, placeholder: "dev.example.com")
                     if showDomainError {
-                        AppErrorBanner(message: LocalizedStringKey(String(localized: "Invalid domain format", table: "HostsManager")))
+                        AppErrorBanner(message: LocalizedStringKey(String(localized: "Invalid domain format", bundle: .module)))
                     }
                     GlassTextField(title: "Comment", text: $comment, placeholder: "Optional")
                     GlassTextField(title: "Group", text: $group, placeholder: "Optional")
@@ -269,11 +269,11 @@ public struct HostAddView: View {
             }
 
             HStack {
-                AppButton(String(localized: "Cancel", table: "HostsManager"), style: .ghost) {
+                AppButton(String(localized: "Cancel", bundle: .module), style: .ghost) {
                     isPresented = false
                 }
 
-                AppButton(String(localized: "Save", table: "HostsManager"), style: .primary) {
+                AppButton(String(localized: "Save", bundle: .module), style: .primary) {
                     let trimmedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
                     let hasDomain = !domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     let hasValidDomains = viewModel.isValidDomainList(domain)

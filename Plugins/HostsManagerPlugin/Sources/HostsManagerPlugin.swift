@@ -15,8 +15,8 @@ public actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     public static let id = "HostsManager"
     public static let navigationId = "hosts_manager"
-    public static let displayName = String(localized: "Hosts Manager", table: "HostsManager")
-    public static let description = String(localized: "Manage system hosts file configuration", table: "HostsManager")
+    public static let displayName = String(localized: "Hosts Manager", bundle: .module)
+    public static let description = String(localized: "Manage system hosts file configuration", bundle: .module)
     public static let iconName = "list.bullet.rectangle"
     public static var category: PluginCategory { .system }
     public static var order: Int { 21 }
