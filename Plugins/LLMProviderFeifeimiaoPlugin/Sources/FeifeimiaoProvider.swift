@@ -15,9 +15,9 @@ public final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Se
     // MARK: - 基础信息
 
     public static let id = "feifeimiao"
-    public static let displayName = String(localized: "Feifeimiao", table: "Feifeimiao")
+    public static let displayName = String(localized: "Feifeimiao", bundle: .module)
     public static let shortName = "FF"
-    public static let description = String(localized: "LLM API by feifeimiao", table: "Feifeimiao")
+    public static let description = String(localized: "LLM API by feifeimiao", bundle: .module)
 
     public static let websiteURL: String? = "https://api.feifeimiao.top"
 

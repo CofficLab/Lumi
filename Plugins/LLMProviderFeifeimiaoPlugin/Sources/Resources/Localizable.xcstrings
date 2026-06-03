@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "飛飛鳥"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "飛飛鳥"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "feifeimiao 提供的 LLM API 服務"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "feifeimiao 提供的 LLM API 服務"
