@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 创建新对话工具
 ///
@@ -11,18 +12,18 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog {
     public let name = "create_new_conversation"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
     private let projectName: String?
     private let projectPath: String?
     private let languagePreference: LanguagePreference
 
     public init(
-        conversationVM: WindowConversationVM,
+        conversationListContext: ConversationListContext,
         projectName: String?,
         projectPath: String?,
         languagePreference: LanguagePreference
     ) {
-        self.conversationVM = conversationVM
+        self.conversationListContext = conversationListContext
         self.projectName = projectName
         self.projectPath = projectPath
         self.languagePreference = languagePreference
@@ -92,7 +93,7 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog {
         let customTitle = arguments["title"]?.value as? String
 
         // 创建新对话（使用公共 API）
-        await conversationVM.createNewConversation(
+        let createdConversationId = await conversationListContext.createConversation(
             projectName: projectName,
             projectPath: projectPath,
             languagePreference: languagePreference
@@ -104,16 +105,17 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog {
             
             // 在主线程上完成所有 Conversation 操作
             await MainActor.run {
-                guard let conversationId = conversationVM.selectedConversationId,
-                      let conversation = conversationVM.fetchConversation(id: conversationId) else {
+                guard let conversationId = createdConversationId ?? conversationListContext.selectedConversationId else {
                     return
                 }
-                conversationVM.updateConversationTitle(conversation, newTitle: trimmedTitle)
+                conversationListContext.updateConversationTitle(id: conversationId, title: trimmedTitle)
             }
         }
 
         // 获取创建结果
-        let conversationId = await conversationVM.selectedConversationId
+        let conversationId = await MainActor.run {
+            createdConversationId ?? conversationListContext.selectedConversationId
+        }
 
         guard let conversationId else {
             return """

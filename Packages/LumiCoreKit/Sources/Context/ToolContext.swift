@@ -12,6 +12,9 @@ public struct ToolContext: AgentToolKit.ToolContextProviding {
     public let toolService: ToolService
     public let llmVM: AppLLMVM?
     public let conversationVM: WindowConversationVM?
+    public let conversationListContext: ConversationListContext?
+    public let currentProjectName: String?
+    public let currentProjectPath: String?
     public let recentProjectsVM: AppProjectsVM?
 
     public init(
@@ -20,6 +23,9 @@ public struct ToolContext: AgentToolKit.ToolContextProviding {
         toolService: ToolService = ToolService(),
         llmVM: AppLLMVM? = nil,
         conversationVM: WindowConversationVM? = nil,
+        conversationListContext: ConversationListContext? = nil,
+        currentProjectName: String? = nil,
+        currentProjectPath: String? = nil,
         recentProjectsVM: AppProjectsVM? = nil
     ) {
         self.languagePreference = languagePreference
@@ -27,6 +33,9 @@ public struct ToolContext: AgentToolKit.ToolContextProviding {
         self.toolService = toolService
         self.llmVM = llmVM
         self.conversationVM = conversationVM
+        self.conversationListContext = conversationListContext
+        self.currentProjectName = currentProjectName
+        self.currentProjectPath = currentProjectPath
         self.recentProjectsVM = recentProjectsVM
     }
 }

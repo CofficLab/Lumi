@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 获取对话总数工具
 ///
@@ -11,10 +12,10 @@ public struct GetConversationCountTool: SuperAgentTool, SuperLog {
     public let name = "get_conversation_count"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
 
-    public init(conversationVM: WindowConversationVM) {
-        self.conversationVM = conversationVM
+    public init(conversationListContext: ConversationListContext) {
+        self.conversationListContext = conversationListContext
     }
     
     public func description(for language: LanguagePreference) -> String {
@@ -45,17 +46,17 @@ public struct GetConversationCountTool: SuperAgentTool, SuperLog {
         // 获取当前活跃窗口的项目路径（从 context 中获取）
         let projectPath = context.currentProjectPath
 
-        // 通过注入的 conversationVM 获取所有对话（在主线程上执行）
+        // 通过注入的 context 获取所有对话（在主线程上执行）
         let totalCount: Int
         let projectCount: Int
         let projectName: String?
 
         (totalCount, projectCount, projectName) = await MainActor.run { () -> (Int, Int, String?) in
-            let allConversations = conversationVM.fetchAllConversations()
+            let allConversations = conversationListContext.fetchAllConversations()
             let totalCount = allConversations.count
 
             if let projectPath {
-                let projectConversations = allConversations.filter { $0.projectId == projectPath }
+                let projectConversations = allConversations.filter { $0.projectPath == projectPath }
                 let projectCount = projectConversations.count
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
                 return (totalCount, projectCount, projectName)

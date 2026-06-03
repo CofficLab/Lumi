@@ -56,7 +56,8 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return ConversationListRuntime.toolbarTrailingViewProvider?()
+        guard let conversationListContext = context.conversationListContext else { return nil }
+        return AnyView(ConversationListPopoverButton(context: conversationListContext))
     }
 
     // MARK: - Send Middlewares
@@ -64,7 +65,7 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 发送管线中间件：项目切换对话引导
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        ConversationListRuntime.sendMiddlewaresProvider?() ?? []
+        [AnySuperSendMiddleware(ProjectSwitchSendMiddleware())]
     }
 
     // MARK: - Agent Tools
@@ -72,6 +73,24 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 提供对话管理相关的 Agent 工具
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        ConversationListRuntime.agentToolsProvider?(context) ?? []
+        guard let conversationListContext = context.conversationListContext else { return [] }
+        return [
+            CreateNewConversationTool(
+                conversationListContext: conversationListContext,
+                projectName: context.currentProjectName,
+                projectPath: context.currentProjectPath,
+                languagePreference: context.languagePreference
+            ),
+            DeleteConversationTool(
+                conversationListContext: conversationListContext,
+                languagePreference: context.languagePreference
+            ),
+            GetRecentConversationsTool(
+                conversationListContext: conversationListContext,
+                currentProjectPath: context.currentProjectPath
+            ),
+            GetConversationCountTool(conversationListContext: conversationListContext),
+            SetConversationProjectTool(conversationListContext: conversationListContext),
+        ]
     }
 }

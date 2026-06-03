@@ -4,7 +4,7 @@ import os
 /// ConversationList Plugin 本地存储
 ///
 /// 负责持久化插件的配置和设置项。
-/// 存储位置：ConversationListRuntime.databaseDirectory()/ConversationListPlugin/settings.plist
+/// 存储位置：ConversationListContext.databaseDirectory()/ConversationListPlugin/settings.plist
 public final class ConversationListLocalStore: @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list.local-store")
     
@@ -32,7 +32,12 @@ public final class ConversationListLocalStore: @unchecked Sendable {
     // MARK: - Initialization
     
     public convenience init() {
-        self.init(settingsDirectory: ConversationListRuntime.databaseDirectory()
+        self.init(databaseDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory)
+    }
+
+    public convenience init(databaseDirectory: URL) {
+        self.init(settingsDirectory: databaseDirectory
             .appendingPathComponent("ConversationListPlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
@@ -146,7 +151,9 @@ public final class ConversationListLocalStore: @unchecked Sendable {
         queue.sync {
             guard readDict()[Self.storageKey] == nil else { return }
             
-            let legacyFile = ConversationListRuntime.databaseDirectory()
+            let legacyFile = pluginDirectory
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
                 .appendingPathComponent("app_settings", isDirectory: true)
                 .appendingPathComponent(sanitizeLegacyKey(Self.legacyKey) + ".plist")
             

@@ -1,5 +1,5 @@
 import LumiUI
-import SwiftData
+import LumiCoreKit
 import SwiftUI
 
 /// 会话项视图
@@ -14,11 +14,11 @@ public struct ConversationItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     /// 会话模型：包含标题、更新时间、项目 ID 等信息
-    public let conversation: Conversation
+    public let conversation: ConversationListItem
     /// 删除回调：用户确认删除后调用
     public let onDelete: () -> Void
 
-    /// 对话是否正在处理消息（由 WindowConversationStatusVM 驱动）
+    /// 对话是否正在处理消息（由 ConversationListContext 驱动）
     public var isProcessing: Bool = false
 
     /// 近期活跃时间窗口，默认 5 分钟
@@ -127,8 +127,8 @@ extension ConversationItemView {
     @ViewBuilder
     private var metadataSection: some View {
         HStack {
-            if let projectId = conversation.projectId {
-                let projectName = URL(fileURLWithPath: projectId).lastPathComponent
+            if let projectPath = conversation.projectPath {
+                let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
                 Text(projectName)
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
@@ -148,7 +148,7 @@ extension ConversationItemView {
 
 // MARK: - Private
 
-private extension ConversationItemView {
+extension ConversationItemView {
     /// 量化的相对时间展示：减少 UI 因秒级波动导致的频繁跳变
     /// - 1分钟内：按 10 秒分桶（0-9秒显示"刚刚"，10-19秒显示"10秒前"，以此类推）
     /// - 1分钟以上：按分钟显示（比如"1分钟前"）
@@ -188,7 +188,7 @@ private extension ConversationItemView {
 
 #Preview("会话项 - 默认状态") {
     ConversationItemView(
-        conversation: Conversation.example(),
+        conversation: ConversationListItem.example(),
         onDelete: { if ConversationListPlugin.verbose { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") } }
     )
     .frame(width: 200)
@@ -197,7 +197,7 @@ private extension ConversationItemView {
 
 #Preview("会话项 - 处理中") {
     ConversationItemView(
-        conversation: Conversation.example(),
+        conversation: ConversationListItem.example(),
         onDelete: {},
         isProcessing: true
     )
@@ -207,31 +207,28 @@ private extension ConversationItemView {
 
 #Preview("会话项 - 近期活跃") {
     ConversationItemView(
-        conversation: Conversation.example(minutesAgo: 2),
+        conversation: ConversationListItem.example(minutesAgo: 2),
         onDelete: {}
     )
     .frame(width: 200)
     .padding()
 }
 
-// MARK: - Conversation+Preview
+// MARK: - ConversationListItem+Preview
 
-extension Conversation {
-    /// 创建示例会话用于预览
-    /// - Parameters:
-    ///   - title: 标题，默认为"示例对话"
-    ///   - projectId: 项目 ID，默认为示例项目路径
-    ///   - minutesAgo: 多少分钟前更新，默认为 30
-    /// - Returns: 示例会话实例
+extension ConversationListItem {
+    /// 创建示例会话用于预览。
     public static func example(
         title: String = "示例对话",
-        projectId: String? = "/Users/example/project",
+        projectPath: String? = "/Users/example/project",
         minutesAgo: Int = 30
-    ) -> Conversation {
-        let item = Conversation()
-        item.title = title
-        item.projectId = projectId
-        item.updatedAt = Date().addingTimeInterval(-Double(minutesAgo) * 60)
-        return item
+    ) -> ConversationListItem {
+        ConversationListItem(
+            id: UUID(),
+            projectPath: projectPath,
+            title: title,
+            createdAt: Date().addingTimeInterval(-Double(minutesAgo + 30) * 60),
+            updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60)
+        )
     }
 }

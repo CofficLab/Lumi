@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 获取最近对话列表工具
 ///
@@ -11,11 +12,11 @@ public struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
     public let name = "get_recent_conversations"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
     private let currentProjectPath: String?
 
-    public init(conversationVM: WindowConversationVM, currentProjectPath: String?) {
-        self.conversationVM = conversationVM
+    public init(conversationListContext: ConversationListContext, currentProjectPath: String?) {
+        self.conversationListContext = conversationListContext
         self.currentProjectPath = currentProjectPath
     }
     
@@ -86,7 +87,7 @@ public struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
 
         // 获取所有对话（在主线程上执行，提取 Sendable 信息）
         let (allCount, recentConversations) = await MainActor.run {
-            let allConversations = conversationVM.fetchAllConversations()
+            let allConversations = conversationListContext.fetchAllConversations()
             let recentConversations = Array(allConversations.prefix(clampedLimit))
 
             let dateFormatter = DateFormatter()
@@ -94,9 +95,9 @@ public struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
 
             let infos = recentConversations.map { conversation -> ConversationInfo in
                 let projectName: String
-                if let projectId = conversation.projectId {
-                    let name = URL(fileURLWithPath: projectId).lastPathComponent
-                    let isCurrent = projectId == currentProjectPath ? " (current)" : ""
+                if let projectPath = conversation.projectPath {
+                    let name = URL(fileURLWithPath: projectPath).lastPathComponent
+                    let isCurrent = projectPath == currentProjectPath ? " (current)" : ""
                     projectName = name + isCurrent
                 } else {
                     projectName = "-"

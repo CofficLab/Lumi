@@ -1,4 +1,5 @@
 import LumiUI
+import LumiCoreKit
 import SwiftUI
 
 /// 工具栏上的会话列表入口按钮
@@ -6,15 +7,15 @@ import SwiftUI
 /// 在窗口工具栏右上角显示一个聊天气泡图标，点击后弹出 Popover
 /// 展示完整的会话列表，支持选择、删除、分页加载等操作。
 public struct ConversationListPopoverButton: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    @ObservedObject private var context: ConversationListContext
     @State private var isPresented = false
 
+    public init(context: ConversationListContext) {
+        self.context = context
+    }
+
     public var body: some View {
-        if !projectVM.isProjectSelected {
-            EmptyView()
-        } else {
-            conversationListButton
-        }
+        conversationListButton
     }
 
     private var conversationListButton: some View {
@@ -25,7 +26,7 @@ public struct ConversationListPopoverButton: View {
             isPresented.toggle()
         }
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            ConversationListView()
+            ConversationListView(context: context)
                 .frame(width: 300, height: 480)
         }
     }
@@ -34,7 +35,7 @@ public struct ConversationListPopoverButton: View {
 // MARK: - Preview
 
 #Preview("Conversation List Popover Button") {
-    ConversationListPopoverButton()
+    ConversationListPopoverButton(context: ConversationListContext())
         .padding()
         .inRootView()
 }

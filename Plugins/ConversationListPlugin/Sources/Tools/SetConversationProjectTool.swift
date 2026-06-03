@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 设置对话关联项目工具
 ///
@@ -11,10 +12,10 @@ public struct SetConversationProjectTool: SuperAgentTool, SuperLog {
     public let name = "set_conversation_project"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
 
-    public init(conversationVM: WindowConversationVM) {
-        self.conversationVM = conversationVM
+    public init(conversationListContext: ConversationListContext) {
+        self.conversationListContext = conversationListContext
     }
     
     public func description(for language: LanguagePreference) -> String {
@@ -101,12 +102,12 @@ public struct SetConversationProjectTool: SuperAgentTool, SuperLog {
 
         // 在主线程上完成所有 Conversation 操作
         let result = await MainActor.run { () -> (success: Bool, title: String?, oldProject: String?, newProject: String?) in
-            guard let conversation = conversationVM.fetchConversation(id: conversationId) else {
+            guard let conversation = conversationListContext.fetchConversation(id: conversationId) else {
                 return (false, nil, nil, nil)
             }
 
-            let oldProject = conversation.projectId
-            conversationVM.updateProjectAssociation(for: conversation, projectPath: projectPath)
+            let oldProject = conversation.projectPath
+            conversationListContext.updateProjectAssociation(id: conversation.id, projectPath: projectPath)
             return (true, conversation.title, oldProject, projectPath)
         }
 

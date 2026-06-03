@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 删除指定对话工具
 ///
@@ -11,11 +12,11 @@ public struct DeleteConversationTool: SuperAgentTool, SuperLog {
     public let name = "delete_conversation"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
     private let languagePreference: LanguagePreference
 
-    public init(conversationVM: WindowConversationVM, languagePreference: LanguagePreference) {
-        self.conversationVM = conversationVM
+    public init(conversationListContext: ConversationListContext, languagePreference: LanguagePreference) {
+        self.conversationListContext = conversationListContext
         self.languagePreference = languagePreference
     }
 
@@ -102,7 +103,7 @@ public struct DeleteConversationTool: SuperAgentTool, SuperLog {
 
         // 在主线程上执行所有 Conversation 操作
         let result = await MainActor.run {
-            guard let conversation = conversationVM.fetchConversation(id: conversationId) else {
+            guard let conversation = conversationListContext.fetchConversation(id: conversationId) else {
                 return """
                 ## Delete Conversation ❌
 
@@ -115,9 +116,9 @@ public struct DeleteConversationTool: SuperAgentTool, SuperLog {
             }
 
             let title = conversation.title
-            let wasSelected = conversationVM.selectedConversationId == conversationId
+            let wasSelected = conversationListContext.selectedConversationId == conversationId
 
-            conversationVM.deleteConversation(conversation)
+            conversationListContext.deleteConversation(id: conversation.id)
 
             var output = "## Conversation Deleted ✅\n\n"
             output += "**Title**: \(title.isEmpty ? "(untitled)" : title)\n"
@@ -130,8 +131,8 @@ public struct DeleteConversationTool: SuperAgentTool, SuperLog {
             return output
         }
 
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)对话已删除：\(idString)")
+        if Self.verbose, ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.info("\(Self.t)对话已删除：\(idString)")
         }
 
         return result

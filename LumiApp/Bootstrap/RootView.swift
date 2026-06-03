@@ -4,7 +4,6 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
-import ConversationListPlugin
 import AgentTurnNotificationPlugin
 import EditorStickySymbolBarPlugin
 import EditorTabStripPlugin
@@ -49,6 +48,7 @@ struct RootView<Content>: View where Content: View {
     @StateObject private var pluginLLMVM = LumiCoreKit.AppLLMVM()
     @StateObject private var pluginGitVM = LumiCoreKit.AppGitVM()
     @StateObject private var pluginConversationVM = LumiCoreKit.WindowConversationVM()
+    @StateObject private var pluginConversationListContext = LumiCoreKit.ConversationListContext()
     @StateObject private var pluginLayoutContext = LumiCoreKit.WindowLayoutVM()
 
     init(container: WindowContainer, @ViewBuilder content: () -> Content) {
@@ -90,6 +90,15 @@ struct RootView<Content>: View where Content: View {
             syncPluginRecentProjectsContext()
         }
         .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
+            syncPluginConversationListContext()
+        }
+        .onChange(of: windowContainer.projectVM.currentProjectPath) { _, _ in
+            syncPluginConversationListContext()
+        }
+        .onChange(of: windowContainer.projectVM.currentProjectName) { _, _ in
+            syncPluginConversationListContext()
+        }
+        .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
             syncPluginConversationContext()
         }
         .onChange(of: windowContainer.chatDraftVM.text) { _, _ in
@@ -102,6 +111,14 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.agentAttachmentsVM.pendingAttachments) { _, _ in
             syncPluginConversationContext()
             pluginConversationVM.notifyAttachmentsChanged()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
+            syncPluginConversationListContext()
+            guard let change = Self.conversationListChange(from: notification) else { return }
+            pluginConversationListContext.notifyConversationChanged(change)
+        }
+        .onReceive(windowContainer.conversationSendStatusVM.$statusMessageByConversationId) { _ in
+            pluginConversationListContext.notifyConversationStatusChanged()
         }
     }
 
@@ -152,6 +169,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.editorVM)
             .environmentObject(windowContainer.conversationVM)
             .environmentObject(pluginConversationVM)
+            .environmentObject(pluginConversationListContext)
             .environmentObject(windowContainer.projectVM)
             .environmentObject(pluginProjectContext)
             .environmentObject(windowContainer.layoutVM)
@@ -195,11 +213,12 @@ struct RootView<Content>: View where Content: View {
         syncPluginProjectContext()
         syncPluginRecentProjectsContext()
         syncPluginConversationContext()
+        syncPluginConversationListContext()
         syncPluginLLMContext()
         syncLayoutPluginContext()
         configureDefaultIconProvider()
         configurePluginProjectBridge()
-        configureConversationListPluginBridge()
+        configureConversationListContext()
         configureEditorStickySymbolBarPluginBridge()
         configureEditorTabStripPluginBridge()
         configureEditorRailWorkspaceSymbolsPluginBridge()
@@ -272,6 +291,61 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.textSubmitter = { [windowContainer] text in
             windowContainer.inputQueueVM.enqueueText(text)
         }
+    }
+
+    private func syncPluginConversationListContext() {
+        pluginConversationListContext.selectedConversationId = windowContainer.conversationVM.selectedConversationId
+        pluginConversationListContext.fetchAllConversationsProvider = { [windowContainer] in
+            windowContainer.conversationVM.fetchAllConversations().map(Self.conversationListItem)
+        }
+        pluginConversationListContext.fetchConversationsPageProvider = { [windowContainer] limit, offset in
+            windowContainer.conversationVM.fetchConversationsPage(limit: limit, offset: offset).map(Self.conversationListItem)
+        }
+        pluginConversationListContext.fetchConversationProvider = { [windowContainer] id in
+            windowContainer.conversationVM.fetchConversation(id: id).map(Self.conversationListItem)
+        }
+        pluginConversationListContext.selectConversationHandler = { [windowContainer] id, reason in
+            windowContainer.switchToConversation(id, reason: reason)
+        }
+        pluginConversationListContext.deleteConversationHandler = { [windowContainer] id in
+            guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
+            windowContainer.conversationVM.deleteConversation(conversation)
+            return true
+        }
+        pluginConversationListContext.updateConversationTitleHandler = { [windowContainer] id, title in
+            guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
+            windowContainer.conversationVM.updateConversationTitle(conversation, newTitle: title)
+            return true
+        }
+        pluginConversationListContext.updateProjectAssociationHandler = { [windowContainer] id, projectPath in
+            guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
+            windowContainer.conversationVM.updateProjectAssociation(for: conversation, projectPath: projectPath)
+            return true
+        }
+        pluginConversationListContext.createConversationHandler = { [windowContainer] projectName, projectPath, languagePreference in
+            await windowContainer.conversationVM.createNewConversation(
+                projectName: projectName,
+                projectPath: projectPath,
+                languagePreference: languagePreference
+            )
+            return windowContainer.conversationVM.selectedConversationId
+        }
+        pluginConversationListContext.switchProjectHandler = { [windowContainer] projectPath, reason in
+            let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+            windowContainer.projectVM.switchProject(
+                to: Project(name: projectName, path: projectPath, lastUsed: Date()),
+                reason: reason
+            )
+        }
+        pluginConversationListContext.isConversationProcessingProvider = { [windowContainer] id in
+            windowContainer.conversationSendStatusVM.isMessageProcessing(for: id)
+        }
+        pluginConversationListContext.databaseDirectoryProvider = {
+            AppConfig.getDBFolderURL()
+        }
+        container.toolService.currentProjectName = windowContainer.projectVM.currentProjectName
+        container.toolService.currentProjectPath = windowContainer.projectVM.currentProjectPath
+        container.toolService.conversationListContext = pluginConversationListContext
     }
 
     private func handleFileDroppedToChat(_ url: URL) {
@@ -449,19 +523,32 @@ struct RootView<Content>: View where Content: View {
         AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
     }
 
-    private func configureConversationListPluginBridge() {
-        // 工具栏右侧：会话列表弹出按钮（在编辑器模式下显示）
-        ConversationListRuntime.toolbarTrailingViewProvider = {
-            AnyView(ConversationListPopoverButton())
+    private func configureConversationListContext() {
+        syncPluginConversationListContext()
+    }
+
+    private static func conversationListItem(_ conversation: Conversation) -> LumiCoreKit.ConversationListItem {
+        LumiCoreKit.ConversationListItem(
+            id: conversation.id,
+            projectPath: conversation.projectId,
+            title: conversation.title,
+            createdAt: conversation.createdAt,
+            updatedAt: conversation.updatedAt
+        )
+    }
+
+    private static func conversationListChange(from notification: Notification) -> LumiCoreKit.ConversationListChange? {
+        guard
+            let userInfo = notification.userInfo,
+            let typeRaw = userInfo[ConversationChangeUserInfoKey.type] as? String,
+            let idRaw = userInfo[ConversationChangeUserInfoKey.conversationId] as? String,
+            let type = LumiCoreKit.ConversationListChangeType(rawValue: typeRaw),
+            let conversationId = UUID(uuidString: idRaw)
+        else {
+            return nil
         }
 
-        // TODO: sendMiddlewares 和 agentTools 的桥接需要将 Tool/Middleware 源码
-        // 迁移至 app target 或引入 LumiCoreKit 版本的协议抽象后恢复
-
-        // 数据库目录
-        ConversationListRuntime.databaseDirectoryProvider = {
-            AppConfig.getDBFolderURL()
-        }
+        return LumiCoreKit.ConversationListChange(type: type, conversationId: conversationId)
     }
 
     private static func targetWindowContainer(

@@ -65,6 +65,11 @@ public struct PluginContext {
     /// 为 `nil` 时表示当前环境不支持历史查询（如测试或预览场景）。
     public let historyService: (any HistoryQueryService)?
 
+    /// 对话列表能力（由内核注入）。
+    ///
+    /// 插件通过此对象读取、选择、创建和维护对话列表，不直接依赖 app 的 ViewModel。
+    public let conversationListContext: ConversationListContext?
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
@@ -76,7 +81,8 @@ public struct PluginContext {
         languagePreference: LanguagePreference = .current,
         availableTools: [SuperAgentTool] = [],
         toolLanguagePreference: LanguagePreference = .current,
-        historyService: (any HistoryQueryService)? = nil
+        historyService: (any HistoryQueryService)? = nil,
+        conversationListContext: ConversationListContext? = nil
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
@@ -89,5 +95,6 @@ public struct PluginContext {
         self.availableTools = availableTools
         self.toolLanguagePreference = toolLanguagePreference
         self.historyService = historyService
+        self.conversationListContext = conversationListContext
     }
 }

@@ -1,41 +1,21 @@
 import Combine
-import SuperLogKit
+import LumiCoreKit
 import LumiUI
+import SuperLogKit
 import SwiftUI
 
 /// 对话列表视图
-/// 使用分页方式渲染会话列表，避免一次性加载全部历史记录
-///
-/// 支持多窗口模式，优先从 WindowState 获取和设置当前窗口的会话选择。
+/// 使用分页方式渲染会话列表，避免一次性加载全部历史记录。
 public struct ConversationListView: View, SuperLog {
-    /// 日志标识 emoji
     public nonisolated static let emoji = "🐶"
-    /// 是否输出详细日志
     public nonisolated static let verbose: Bool = true
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    
-    /// 窗口作用域（多窗口支持）
-    @Environment(\.windowContainer) private var windowContainer
-    
-    /// 会话管理 ViewModel（全局）
-    @EnvironmentObject var conversationVM: WindowConversationVM
-    
-    /// 项目管理 ViewModel（全局）
-    @EnvironmentObject var projectVM: WindowProjectVM
+    @ObservedObject private var context: ConversationListContext
 
-    /// 会话状态 ViewModel（用于检测哪些对话正在处理中）
-    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
-
-    private let selectionStore = ConversationListLocalStore.shared
-
-    /// 当前页已加载的会话
-    @State private var conversations: [Conversation] = []
-
-    /// 本地选择的会话 ID
+    private let selectionStore: ConversationListLocalStore
+    @State private var conversations: [ConversationListItem] = []
     @State private var localSelectedConversationId: UUID?
-
-    /// 分页状态
     @State private var nextOffset: Int = 0
     @State private var hasMore: Bool = true
     @State private var isLoadingPage: Bool = false
@@ -43,15 +23,17 @@ public struct ConversationListView: View, SuperLog {
     @State private var didRestoreSelection: Bool = false
     @State private var lastReloadSelectionId: UUID?
 
-    /// 每页大小
     private let pageSize: Int = 40
-
     private let listTopAnchorId = "conversation_list_top_anchor"
+
+    public init(context: ConversationListContext) {
+        self.context = context
+        self.selectionStore = ConversationListLocalStore(databaseDirectory: context.databaseDirectory())
+    }
 
     public var body: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
-                // 对话列表内容
                 if conversations.isEmpty {
                     if isLoadingPage {
                         loadingView
@@ -64,24 +46,18 @@ public struct ConversationListView: View, SuperLog {
             }
             .onAppear(perform: performInitialLoadIfNeeded)
             .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-            .onChange(of: conversationVM.selectedConversationId, handleConversationSelected)
-            .onChange(of: conversationVM.selectedConversationId) { _, newValue in
+            .onChange(of: context.selectedConversationId, handleConversationSelected)
+            .onChange(of: context.selectedConversationId) { _, newValue in
                 selectionStore.saveSelectedConversationId(newValue)
             }
             .onChange(of: conversations) { _, newConversations in
-                // 当会话列表变化时，同步当前选中的会话
                 handleConversationsChanged(newConversations)
             }
-            .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
-                handleConversationDidChangeNotification(notification)
+            .onChange(of: context.lastChange) { _, change in
+                guard let change else { return }
+                handleConversationChange(change)
             }
-            .onAgentConversationCreated { conversationId in
-                handleAgentConversationCreated(conversationId: conversationId, proxy: proxy)
-            }
-            // 监听会话状态变化（驱动活跃状态 UI）
-            .onReceive(conversationSendStatusVM.$statusMessageByConversationId) { _ in
-                // Published 字典变化时自动刷新 UI
-            }
+            .onChange(of: context.statusVersion) { _, _ in }
         }
     }
 }
@@ -110,7 +86,7 @@ extension ConversationListView {
                     ConversationItemView(
                         conversation: conversation,
                         onDelete: { handleDelete(conversation) },
-                        isProcessing: isConversationProcessing(conversation.id)
+                        isProcessing: context.isConversationProcessing(conversation.id)
                     )
                     .id(conversation.id)
                     .tag(conversation.id)
@@ -128,11 +104,6 @@ extension ConversationListView {
         }
     }
 
-    /// 判断指定会话是否正在进行消息处理
-    private func isConversationProcessing(_ conversationId: UUID) -> Bool {
-        conversationSendStatusVM.isMessageProcessing(for: conversationId)
-    }
-
     private var loadingIndicator: some View {
         HStack {
             Spacer()
@@ -147,84 +118,51 @@ extension ConversationListView {
 // MARK: - Action
 
 extension ConversationListView {
-    /// 获取当前选中的会话 ID（优先从 WindowState 获取）
     private var currentSelectedConversationId: UUID? {
-        // 优先使用窗口级状态
-        if let windowContainer = windowContainer,
-           let conversationId = windowContainer.selectedConversationId {
-            return conversationId
-        }
-        // 回退到全局 VM
-        return conversationVM.selectedConversationId
+        context.selectedConversationId
     }
-    
-    /// 同步 VM 的选中状态到本地 List
-    /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
-    private func syncSelectionFromViewModel() {
+
+    private func syncSelectionFromContext() {
         let selectedId = currentSelectedConversationId
 
-        // 如果有选中的会话，同步到本地
-        if let selectedId = selectedId {
-            // 检查选中的会话是否存在于当前列表中
+        if let selectedId {
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
                     localSelectedConversationId = selectedId
                 }
             } else {
-                // 选中的会话不存在于列表中，清除选择
-                if Self.verbose {
-                    if ConversationListPlugin.verbose {
-                                            ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
-                    }
+                if Self.verbose, ConversationListPlugin.verbose {
+                    ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
                 }
                 localSelectedConversationId = nil
             }
-        } else {
-            // 没有选中会话，清除本地选择
-            if localSelectedConversationId != nil {
-                localSelectedConversationId = nil
-            }
+        } else if localSelectedConversationId != nil {
+            localSelectedConversationId = nil
         }
     }
 
-    /// 删除会话，并同步分页列表状态
-    /// - Parameter conversation: 要删除的会话
-    private func handleDelete(_ conversation: Conversation) {
-        if Self.verbose {
-            if ConversationListPlugin.verbose {
-                            ConversationListPlugin.logger.info("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
-            }
+    private func handleDelete(_ conversation: ConversationListItem) {
+        if Self.verbose, ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.info("\(self.t)🗑️ 开始删除对话：\(conversation.displayTitle)")
         }
 
-        // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
         if localSelectedConversationId == conversation.id {
             let remainingConversations = conversations.filter { $0.id != conversation.id }
-            if let nextConversation = remainingConversations.first {
-                localSelectedConversationId = nextConversation.id
-                if Self.verbose {
-                    if ConversationListPlugin.verbose {
-                                            ConversationListPlugin.logger.info("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
-                    }
-                }
-            } else {
-                localSelectedConversationId = nil
-            }
+            localSelectedConversationId = remainingConversations.first?.id
         }
 
-        // 从本地分页列表中移除，保持 UI 即时响应
         conversations.removeAll { $0.id == conversation.id }
         nextOffset = max(0, nextOffset - 1)
         if conversations.count < pageSize {
             hasMore = true
         }
 
-        conversationVM.deleteConversation(conversation)
+        _ = context.deleteConversation(id: conversation.id)
     }
 
-    /// 视图首次出现时加载第一页
     private func performInitialLoadIfNeeded() {
         guard !didInitialLoad else {
-            syncSelectionFromViewModel()
+            syncSelectionFromContext()
             return
         }
 
@@ -233,7 +171,6 @@ extension ConversationListView {
         reloadFromFirstPage()
     }
 
-    /// 从第一页重新加载
     private func reloadFromFirstPage() {
         conversations = []
         nextOffset = 0
@@ -241,18 +178,16 @@ extension ConversationListView {
         loadNextPageIfNeeded()
     }
 
-    /// 滚动到末尾时触发续页
-    private func handleRowAppear(_ conversation: Conversation) {
+    private func handleRowAppear(_ conversation: ConversationListItem) {
         guard conversation.id == conversations.last?.id else { return }
         loadNextPageIfNeeded()
     }
 
-    /// 分页加载下一页
     private func loadNextPageIfNeeded() {
         guard hasMore, !isLoadingPage else { return }
 
         isLoadingPage = true
-        let page = conversationVM.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+        let page = context.fetchConversationsPage(limit: pageSize, offset: nextOffset)
 
         if nextOffset == 0 {
             conversations = page
@@ -266,10 +201,9 @@ extension ConversationListView {
         isLoadingPage = false
 
         ensureSelectedConversationVisible()
-        syncSelectionFromViewModel()
+        syncSelectionFromContext()
     }
 
-    /// 恢复插件本地存储中的最后选中会话。
     private func restorePersistedSelectionIfNeeded() {
         guard !didRestoreSelection else { return }
         didRestoreSelection = true
@@ -279,62 +213,46 @@ extension ConversationListView {
             return
         }
 
-        guard conversationVM.fetchConversation(id: restoredId) != nil else {
+        guard context.fetchConversation(id: restoredId) != nil else {
             selectionStore.saveSelectedConversationId(nil)
             return
         }
 
-        if let windowContainer {
-            windowContainer.switchToConversation(restoredId, reason: "conversationListRestoreSelection")
-        } else {
-            conversationVM.setSelectedConversation(restoredId, reason: "conversationListRestoreSelection")
-        }
+        context.selectConversation(restoredId, reason: "conversationListRestoreSelection")
     }
 
-    /// 当前选中的会话可能不在第一页；把它补进列表，避免恢复后 UI 看起来没有选中项。
     private func ensureSelectedConversationVisible() {
         guard let selectedId = currentSelectedConversationId,
               conversations.contains(where: { $0.id == selectedId }) == false,
-              let selectedConversation = conversationVM.fetchConversation(id: selectedId) else {
+              let selectedConversation = context.fetchConversation(id: selectedId) else {
             return
         }
 
         conversations.insert(selectedConversation, at: 0)
     }
 
-    /// 增量处理会话变更，避免整页重拉
-    private func handleConversationDidChangeNotification(_ notification: Notification) {
-        guard
-            let userInfo = notification.userInfo,
-            let typeRaw = userInfo[ConversationChangeUserInfoKey.type] as? String,
-            let idRaw = userInfo[ConversationChangeUserInfoKey.conversationId] as? String,
-            let type = ConversationChangeType(rawValue: typeRaw),
-            let conversationId = UUID(uuidString: idRaw)
-        else {
-            return
-        }
-
-        switch type {
+    private func handleConversationChange(_ change: ConversationListChange) {
+        switch change.type {
         case .created:
-            handleConversationCreated(conversationId)
+            handleConversationCreated(change.conversationId)
         case .updated:
-            handleConversationUpdated(conversationId)
+            handleConversationUpdated(change.conversationId)
         case .deleted:
-            handleConversationDeleted(conversationId)
+            handleConversationDeleted(change.conversationId)
         }
     }
 
     private func handleConversationCreated(_ conversationId: UUID) {
-        guard let conversation = conversationVM.fetchConversation(id: conversationId) else { return }
+        guard let conversation = context.fetchConversation(id: conversationId) else { return }
         guard !conversations.contains(where: { $0.id == conversationId }) else { return }
 
         conversations.insert(conversation, at: 0)
         nextOffset += 1
-        syncSelectionFromViewModel()
+        syncSelectionFromContext()
     }
 
     private func handleConversationUpdated(_ conversationId: UUID) {
-        guard let updatedConversation = conversationVM.fetchConversation(id: conversationId) else { return }
+        guard let updatedConversation = context.fetchConversation(id: conversationId) else { return }
         guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
 
         conversations[index] = updatedConversation
@@ -350,165 +268,88 @@ extension ConversationListView {
         }
     }
 
-    private func handleAgentConversationCreated(conversationId: UUID, proxy: ScrollViewProxy) {
-        // 如果当前分页尚未包含新会话，先刷新第一页再尝试滚动到顶部。
-        let containsRow = conversations.contains(where: { $0.id == conversationId })
-        if !containsRow, !isLoadingPage {
-            reloadFromFirstPage()
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeOut(duration: 0.2)) {
-                // 滚动到绝对顶部锚点，避免 List 内部 padding 导致未到顶
-                proxy.scrollTo(listTopAnchorId, anchor: .top)
-            }
-        }
-    }
-
-    /// 如果会话关联了项目，切换到该项目
-    /// - Parameter conversation: 选中的会话
-    private func switchToProjectIfNeeded(for conversation: Conversation) {
-        guard let projectId = conversation.projectId else {
-            if Self.verbose {
-                if ConversationListPlugin.verbose {
-                                    ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.title)」未关联项目")
-                }
+    private func switchToProjectIfNeeded(for conversation: ConversationListItem) {
+        guard let projectPath = conversation.projectPath else {
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.displayTitle)」未关联项目")
             }
             return
         }
-        
-        // 检查项目路径是否有效
-        let projectPath = projectId
+
         guard FileManager.default.fileExists(atPath: projectPath) else {
-            if Self.verbose {
-                if ConversationListPlugin.verbose {
-                                    ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
-                }
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
             }
             return
         }
-        
-        // 检查当前项目是否已经是目标项目
-        if projectVM.currentProject?.path == projectPath {
-            if Self.verbose {
-                if ConversationListPlugin.verbose {
-                                    ConversationListPlugin.logger.info("\(self.t)✅ 已是当前项目，无需切换：\(projectPath)")
-                }
-            }
-            return
-        }
-        
-        // 创建 Project 对象并切换
-        let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-        let project = Project(name: projectName, path: projectPath, lastUsed: Date())
-        
-        projectVM.switchProject(to: project, reason: "conversationListSelect")
-        
-        if Self.verbose {
-            if ConversationListPlugin.verbose {
-                            ConversationListPlugin.logger.info("\(self.t)🔄 已切换到项目：\(projectName) (\(projectPath))")
-            }
-        }
+
+        context.switchProject(projectPath: projectPath, reason: "conversationListSelect")
     }
 }
 
 // MARK: - Event Handler
 
 extension ConversationListView {
-    /// 处理会话列表变化
-    public func handleConversationsChanged(_ newConversations: [Conversation]) {
-        // 如果当前选中的会话不在新列表中，清除选择
-        if let localId = localSelectedConversationId {
-            if !newConversations.contains(where: { $0.id == localId }) {
-                if Self.verbose {
-                    if ConversationListPlugin.verbose {
-                                            ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
-                    }
-                }
-                localSelectedConversationId = nil
+    public func handleConversationsChanged(_ newConversations: [ConversationListItem]) {
+        if let localId = localSelectedConversationId,
+           !newConversations.contains(where: { $0.id == localId }) {
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
             }
+            localSelectedConversationId = nil
         }
     }
 
-    /// 处理选择变化：同步到 WindowConversationVM 和 WindowState
     public func handleLocalSelectionChange() {
-        // 只在值确实不同时才更新，避免循环
         let currentSelected = currentSelectedConversationId
-        guard localSelectedConversationId != currentSelected else {
-            return
-        }
+        guard localSelectedConversationId != currentSelected else { return }
 
-        if let newId = self.localSelectedConversationId {
-            if Self.verbose {
-                if ConversationListPlugin.verbose {
-                                    ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
-                }
+        if let newId = localSelectedConversationId {
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
-            
-            // 同步到窗口级状态
-            windowContainer?.switchToConversation(newId, reason: "conversationListSelect")
-            
-            // 同步到全局 VM（向后兼容）
-            self.conversationVM.setSelectedConversation(newId, reason: "conversationListSelect")
-            
-            // 选择会话时，切换到关联的项目
+
+            context.selectConversation(newId, reason: "conversationListSelect")
+
             if let conversation = conversations.first(where: { $0.id == newId }) {
                 switchToProjectIfNeeded(for: conversation)
             }
         } else {
-            if Self.verbose {
-                if ConversationListPlugin.verbose {
-                                    ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
-                }
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
             }
-            
-            // 同步到窗口级状态
-            windowContainer?.switchToConversation(nil, reason: "conversationListClear")
-            
-            // 同步到全局 VM（向后兼容）
-            self.conversationVM.setSelectedConversation(nil, reason: "conversationListClear")
+
+            context.selectConversation(nil, reason: "conversationListClear")
         }
     }
 
     public func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
-        let vmId = conversationVM.selectedConversationId?.uuidString ?? "nil"
-        if Self.verbose {
-            if ConversationListPlugin.verbose {
-                            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
-            }
+        let selectedId = context.selectedConversationId
+        let contextId = selectedId?.uuidString ?? "nil"
+        if Self.verbose, ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), context=\(contextId)")
         }
 
-        // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != conversationVM.selectedConversationId else {
-            return
-        }
+        guard localSelectedConversationId != selectedId else { return }
 
-        if let conversationId = self.conversationVM.selectedConversationId {
-            // 新会话通常会成为当前选中项，如果当前分页中没有，先刷新第一页
-            if self.conversations.first(where: { $0.id == conversationId }) == nil {
+        if let conversationId = selectedId {
+            if conversations.first(where: { $0.id == conversationId }) == nil {
                 if lastReloadSelectionId != conversationId {
                     lastReloadSelectionId = conversationId
                     reloadFromFirstPage()
-                } else if Self.verbose {
-                    if ConversationListPlugin.verbose {
-                                            ConversationListPlugin.logger.info("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
-                    }
+                } else if Self.verbose, ConversationListPlugin.verbose {
+                    ConversationListPlugin.logger.info("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
                 }
             }
 
             ensureSelectedConversationVisible()
-            if self.conversations.first(where: { $0.id == conversationId }) != nil {
-                if Self.verbose {
-                    if ConversationListPlugin.verbose {
-                                            ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
-                    }
-                }
-                self.localSelectedConversationId = conversationId
+            if conversations.first(where: { $0.id == conversationId }) != nil {
+                localSelectedConversationId = conversationId
                 lastReloadSelectionId = nil
             }
         } else {
-            self.localSelectedConversationId = nil
+            localSelectedConversationId = nil
         }
     }
 }
@@ -516,11 +357,11 @@ extension ConversationListView {
 // MARK: - Preview
 
 #Preview("对话列表 - 标准尺寸") {
-    ConversationListView()
+    ConversationListView(context: ConversationListContext())
         .frame(width: 300, height: 600)
 }
 
 #Preview("对话列表 - 窄屏") {
-    ConversationListView()
+    ConversationListView(context: ConversationListContext())
         .frame(width: 250, height: 400)
 }

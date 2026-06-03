@@ -189,6 +189,9 @@ extension ToolContext {
             toolService: packageToolService,
             llmVM: packageLLMVM,
             conversationVM: packageConversationVM,
+            conversationListContext: conversationListContext,
+            currentProjectName: currentProjectName,
+            currentProjectPath: currentProjectPath,
             recentProjectsVM: packageRecentProjectsVM
         )
     }

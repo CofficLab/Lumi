@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 
 /// 工具构建上下文
 ///
@@ -13,6 +14,9 @@ struct ToolContext: ToolContextProviding {
     let llmService: LLMService?
     let llmVM: AppLLMVM?
     let conversationVM: WindowConversationVM?
+    let conversationListContext: LumiCoreKit.ConversationListContext?
+    let currentProjectName: String?
+    let currentProjectPath: String?
     let recentProjectsVM: AppProjectsVM?
 
     var languagePreference: LanguagePreference {

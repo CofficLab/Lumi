@@ -1,4 +1,5 @@
 import AgentToolKit
+import LumiCoreKit
 import SuperLogKit
 import Foundation
 
@@ -22,17 +23,17 @@ public final class ProjectSwitchSendMiddleware: SuperSendMiddleware, SuperLog {
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
-        guard let currentProject = ctx.projectVM.currentProject else {
-            if Self.verbose {
-                AppLogger.core.debug("\(Self.t)📁 无当前项目，跳过项目切换提示")
+        let projectPath = ctx.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !projectPath.isEmpty else {
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.debug("\(Self.t)📁 无当前项目，跳过项目切换提示")
             }
             await next(ctx)
             return
         }
 
-        let projectName = currentProject.name
-        let projectPath = currentProject.path
-        let language = ctx.projectVM.languagePreference
+        let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+        let language = ctx.languagePreference
 
         let prompt = Self.buildPrompt(
             projectName: projectName,
@@ -41,8 +42,8 @@ public final class ProjectSwitchSendMiddleware: SuperSendMiddleware, SuperLog {
         )
         ctx.transientSystemPrompts.append(prompt)
 
-        if Self.verbose {
-            AppLogger.core.debug("\(Self.t)📁 已注入项目切换提示: \"\(projectName)\"")
+        if Self.verbose, ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.debug("\(Self.t)📁 已注入项目切换提示: \"\(projectName)\"")
         }
 
         await next(ctx)

@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import Combine
+import LumiCoreKit
 
 /// 工具服务：负责管理所有可用工具
 ///
@@ -45,6 +46,30 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// 对话管理 ViewModel（可选，由 WindowContainer 注入）
     weak var conversationVM: WindowConversationVM?
+
+    /// 对话列表能力上下文（可选，由当前窗口注入）
+    var conversationListContext: LumiCoreKit.ConversationListContext? {
+        didSet {
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
+
+    var currentProjectName: String? {
+        didSet {
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
+    var currentProjectPath: String? {
+        didSet {
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
 
     /// 最近项目 ViewModel（可选，由 RootContainer 注入）
     weak var recentProjectsVM: AppProjectsVM?
@@ -98,7 +123,16 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 刷新所有工具列表
     @MainActor
     private func refreshAllTools() {
-        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM, conversationVM: conversationVM, recentProjectsVM: recentProjectsVM)
+        let context = ToolContext(
+            toolService: self,
+            llmService: llmService,
+            llmVM: llmVM,
+            conversationVM: conversationVM,
+            conversationListContext: conversationListContext,
+            currentProjectName: currentProjectName,
+            currentProjectPath: currentProjectPath,
+            recentProjectsVM: recentProjectsVM
+        )
         pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
         allTools = coreAgentTools() + pluginTools
 
