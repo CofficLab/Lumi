@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "LSP 彈窗面板"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 彈窗面板"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供工作區符號、調用層級等 LSP 彈窗面板。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供工作區符號、調用層級等 LSP 彈窗面板。"
@@ -64,6 +76,12 @@
             "state": "translated",
             "value": "關閉"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉"
+          }
         }
       }
     },
@@ -82,6 +100,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入呼叫層級中..."
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "載入呼叫層級中..."
@@ -108,6 +132,12 @@
             "state": "translated",
             "value": "未找到呼叫層級資訊"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到呼叫層級資訊"
+          }
         }
       }
     },
@@ -130,6 +160,12 @@
             "state": "translated",
             "value": "呼叫層級"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "呼叫層級"
+          }
         }
       }
     },
@@ -148,6 +184,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新解析"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "重新解析"

@@ -39,12 +39,12 @@ public struct CallHierarchySheetView: View {
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
             } else {
-                Text(String(localized: "调用层级", table: "LSPSheetsEditor"))
+                Text(String(localized: "调用层级", bundle: .module))
                     .font(.appCallout)
                     .foregroundColor(theme.textPrimary)
             }
             Spacer()
-            Button(String(localized: "关闭", table: "LSPSheetsEditor")) {
+            Button(String(localized: "关闭", bundle: .module)) {
                 state.performPanelCommand(.closeCallHierarchy)
             }
         }
@@ -70,7 +70,7 @@ public struct CallHierarchySheetView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
-                Button(String(localized: "重新解析", table: "LSPSheetsEditor")) {
+                Button(String(localized: "重新解析", bundle: .module)) {
                     state.resyncProjectContext()
                 }
                 .buttonStyle(.plain)
@@ -89,7 +89,7 @@ public struct CallHierarchySheetView: View {
         if state.callHierarchyProvider.isLoading {
             VStack(spacing: 10) {
                 ProgressView()
-                Text(String(localized: "加载调用层级中...", table: "LSPSheetsEditor"))
+                Text(String(localized: "加载调用层级中...", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -99,7 +99,7 @@ public struct CallHierarchySheetView: View {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.appLargeTitle)
                     .foregroundColor(theme.textSecondary)
-                Text(String(localized: "未找到调用层级信息", table: "LSPSheetsEditor"))
+                Text(String(localized: "未找到调用层级信息", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }

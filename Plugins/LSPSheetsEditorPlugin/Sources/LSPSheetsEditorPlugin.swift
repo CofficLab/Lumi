@@ -13,8 +13,8 @@ public actor LSPSheetsEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSheetsEditorPlugin()
     public static let id = "LSPSheetsEditor"
-    public static let displayName = String(localized: "LSP Sheets", table: "LSPSheetsEditor")
-    public static let description = String(localized: "Presents LSP sheets such as workspace symbols and call hierarchy.", table: "LSPSheetsEditor")
+    public static let displayName = String(localized: "LSP Sheets", bundle: .module)
+    public static let description = String(localized: "Presents LSP sheets such as workspace symbols and call hierarchy.", bundle: .module)
     public static let iconName = "square.on.square"
     public static let order = 17
     public static var category: PluginCategory { .editor }
