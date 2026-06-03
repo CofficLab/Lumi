@@ -37,11 +37,11 @@ public actor BrowserPlugin: SuperPlugin, SuperLog {
 }
 
 enum PluginBrowserLocalization {
-    static let table = "Browser"
+    static let table = "Localizable"
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
+        String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
     }
 
     static func string(_ key: String, for language: LanguagePreference) -> String {
