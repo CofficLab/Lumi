@@ -20,9 +20,9 @@ public actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔄"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "AgentContextSync"
-    public static let displayName: String = String(localized: "Context Sync", table: "AgentContextSync")
+    public static let displayName: String = String(localized: "Context Sync", bundle: .module)
     public static let description: String = String(
-        localized: "Sync project context to conversation", table: "AgentContextSync")
+        localized: "Sync project context to conversation", bundle: .module)
     public static let iconName: String = "arrow.triangle.2.circlepath"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 1 }

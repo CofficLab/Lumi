@@ -15,6 +15,12 @@
             "value": "上下文同步"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上下文同步"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -35,6 +41,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "将项目上下文同步到对话中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將專案上下文同步到對話中"
           }
         },
         "zh-HK": {
