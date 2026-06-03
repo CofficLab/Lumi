@@ -105,6 +105,39 @@ public struct AssistantMessage: View {
         if let modelName = message.modelName, !modelName.isEmpty {
             items.append(formatModelName(modelName))
         }
+        if let inputTokens = message.inputTokens {
+            items.append("in \(formatCount(inputTokens))")
+        }
+        if let outputTokens = message.outputTokens {
+            items.append("out \(formatCount(outputTokens))")
+        }
+        if let totalTokens = message.totalTokens {
+            items.append("total \(formatCount(totalTokens))")
+        }
+        if let latency = message.latency {
+            items.append("lat \(formatMilliseconds(latency))")
+        }
+        if let timeToFirstToken = message.timeToFirstToken {
+            items.append("ttft \(formatMilliseconds(timeToFirstToken))")
+        }
+        if let streamingDuration = message.streamingDuration {
+            items.append("stream \(formatMilliseconds(streamingDuration))")
+        }
+        if let thinkingDuration = message.thinkingDuration {
+            items.append("think \(formatMilliseconds(thinkingDuration))")
+        }
+        if let finishReason = message.finishReason, !finishReason.isEmpty {
+            items.append("finish \(finishReason)")
+        }
+        if let temperature = message.temperature {
+            items.append("temp \(formatNumber(temperature))")
+        }
+        if let maxTokens = message.maxTokens {
+            items.append("max \(formatCount(maxTokens))")
+        }
+        if let requestId = message.requestId, !requestId.isEmpty {
+            items.append("req \(String(requestId.prefix(8)))")
+        }
         return items
     }
 
@@ -120,5 +153,32 @@ public struct AssistantMessage: View {
             return parts.dropLast().joined(separator: "-")
         }
         return name
+    }
+
+    private func formatCount(_ count: Int) -> String {
+        if count >= 1_000_000 {
+            return String(format: "%.1fM", Double(count) / 1_000_000)
+        }
+        if count >= 1_000 {
+            return String(format: "%.1fk", Double(count) / 1_000)
+        }
+        return "\(count)"
+    }
+
+    private func formatMilliseconds(_ milliseconds: Double) -> String {
+        if milliseconds < 1_000 {
+            return "\(Int(milliseconds.rounded()))ms"
+        }
+        if milliseconds < 60_000 {
+            return String(format: "%.1fs", milliseconds / 1_000)
+        }
+        let totalSeconds = Int((milliseconds / 1_000).rounded())
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return "\(minutes)m\(seconds)s"
+    }
+
+    private func formatNumber(_ value: Double) -> String {
+        String(format: "%.2g", value)
     }
 }
