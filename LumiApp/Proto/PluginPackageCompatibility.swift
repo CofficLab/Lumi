@@ -206,6 +206,8 @@ struct PackageMessageRendererAdapter: SuperMessageRenderer {
 
     static var id: String { "package-message-renderer" }
     static var priority: Int { 0 }
+    var rendererID: String { renderer.rendererID }
+    var rendererPriority: Int { renderer.rendererPriority }
 
     func canRender(message: ChatMessage) -> Bool {
         renderer.canRender(message: message)

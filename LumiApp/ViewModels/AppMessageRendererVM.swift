@@ -72,14 +72,14 @@ final class AppMessageRendererVM: ObservableObject {
     /// 注册后会自动按优先级重新排序。
     func register(_ renderer: some SuperMessageRenderer) {
         // 检查是否已存在相同 ID 的渲染器
-        if let index = renderers.firstIndex(where: { type(of: $0).id == type(of: renderer).id }) {
+        if let index = renderers.firstIndex(where: { $0.rendererID == renderer.rendererID }) {
             renderers[index] = renderer
         } else {
             renderers.append(renderer)
         }
         
         // 按优先级降序排序
-        renderers.sort { type(of: $0).priority > type(of: $1).priority }
+        renderers.sort { $0.rendererPriority > $1.rendererPriority }
     }
     
     /// 批量注册渲染器
@@ -93,7 +93,7 @@ final class AppMessageRendererVM: ObservableObject {
     ///
     /// - Parameter id: 要注销的渲染器 ID
     func unregister(id: String) {
-        renderers.removeAll { type(of: $0).id == id }
+        renderers.removeAll { $0.rendererID == id }
     }
     
     /// 清空所有渲染器

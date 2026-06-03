@@ -33,6 +33,12 @@ protocol SuperMessageRenderer {
     
     /// 渲染器优先级（数字越大优先级越高，先匹配）
     static var priority: Int { get }
+
+    /// 渲染器实例标识，默认来自静态 `id`。
+    var rendererID: String { get }
+
+    /// 渲染器实例优先级，默认来自静态 `priority`。
+    var rendererPriority: Int { get }
     
     /// 判断是否可以渲染该消息
     ///
@@ -52,4 +58,6 @@ protocol SuperMessageRenderer {
 
 extension SuperMessageRenderer {
     static var priority: Int { 0 }
+    var rendererID: String { Self.id }
+    var rendererPriority: Int { Self.priority }
 }

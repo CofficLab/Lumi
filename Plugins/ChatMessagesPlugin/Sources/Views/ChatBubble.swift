@@ -5,12 +5,26 @@ import SwiftUI
 public struct ChatBubble: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     public let message: ChatMessage
+    private let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
+    @State private var showRawMessage = false
 
-    public init(message: ChatMessage) {
+    public init(
+        message: ChatMessage,
+        messageRenderer: @escaping (ChatMessage, Binding<Bool>) -> AnyView? = { _, _ in nil }
+    ) {
         self.message = message
+        self.messageRenderer = messageRenderer
     }
 
     public var body: some View {
+        if let rendered = messageRenderer(message, $showRawMessage) {
+            rendered
+        } else {
+            fallbackBubble
+        }
+    }
+
+    private var fallbackBubble: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(roleTitle)

@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import SwiftUI
 
 /// 插件视图构建上下文
 ///
@@ -70,6 +71,11 @@ public struct PluginContext {
     /// 插件通过此对象读取、选择、创建和维护对话列表，不直接依赖 app 的 ViewModel。
     public let conversationListContext: ConversationListContext?
 
+    /// 消息渲染能力（由内核注入）。
+    ///
+    /// 消息列表类插件通过此能力调用当前已注册的消息渲染器，不直接依赖 app 的渲染器 ViewModel。
+    public let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
+
     public init(
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
@@ -82,7 +88,8 @@ public struct PluginContext {
         availableTools: [SuperAgentTool] = [],
         toolLanguagePreference: LanguagePreference = .current,
         historyService: (any HistoryQueryService)? = nil,
-        conversationListContext: ConversationListContext? = nil
+        conversationListContext: ConversationListContext? = nil,
+        messageRenderer: @escaping (ChatMessage, Binding<Bool>) -> AnyView? = { _, _ in nil }
     ) {
         self.activeIcon = activeIcon
         self.isEditorVisible = isEditorVisible
@@ -96,5 +103,6 @@ public struct PluginContext {
         self.toolLanguagePreference = toolLanguagePreference
         self.historyService = historyService
         self.conversationListContext = conversationListContext
+        self.messageRenderer = messageRenderer
     }
 }

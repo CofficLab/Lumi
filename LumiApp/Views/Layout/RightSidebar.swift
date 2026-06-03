@@ -11,6 +11,7 @@ struct RightSidebarContainerView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
     @Environment(\.windowContainer) private var windowContainer
 
     /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
@@ -28,7 +29,8 @@ struct RightSidebarContainerView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            windowId: windowContainer?.id
+            windowId: windowContainer?.id,
+            messageRenderer: renderMessage
         )
 
         return pluginProvider.getRightSidebarRootWrapper(context: pluginContext) {
@@ -58,6 +60,13 @@ struct RightSidebarContainerView: View {
             .frame(minWidth: 320, idealWidth: 400)
         }
     }
+
+    private func renderMessage(_ message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView? {
+        guard let renderer = messageRendererVM.findRenderer(for: message) else {
+            return nil
+        }
+        return renderer.render(message: message, showRawMessage: showRawMessage)
+    }
 }
 
 // MARK: - Sidebar Toolbar Bar
@@ -70,6 +79,7 @@ private struct SidebarToolbarBar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
     @Environment(\.windowContainer) private var windowContainer
 
     let leadingItems: [SidebarToolbarItem]
@@ -104,7 +114,8 @@ private struct SidebarToolbarBar: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            windowId: windowContainer?.id
+            windowId: windowContainer?.id,
+            messageRenderer: renderMessage
         )
         if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, context: toolbarContext) {
             customView
@@ -121,6 +132,13 @@ private struct SidebarToolbarBar: View {
             .help(item.title)
             .accessibilityLabel(item.title)
         }
+    }
+
+    private func renderMessage(_ message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView? {
+        guard let renderer = messageRendererVM.findRenderer(for: message) else {
+            return nil
+        }
+        return renderer.render(message: message, showRawMessage: showRawMessage)
     }
 }
 

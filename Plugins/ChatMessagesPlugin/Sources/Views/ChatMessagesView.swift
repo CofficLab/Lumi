@@ -5,8 +5,11 @@ import SwiftUI
 public struct ChatMessagesView: View {
     @EnvironmentObject private var conversationVM: LumiCoreKit.WindowConversationVM
     @State private var refreshVersion = 0
+    private let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
 
-    public init() {}
+    public init(messageRenderer: @escaping (ChatMessage, Binding<Bool>) -> AnyView? = { _, _ in nil }) {
+        self.messageRenderer = messageRenderer
+    }
 
     public var body: some View {
         let messages = conversationVM.currentDisplayMessages()
@@ -17,7 +20,7 @@ public struct ChatMessagesView: View {
             } else if messages.isEmpty {
                 EmptyMessagesView()
             } else {
-                MessageListView(messages: messages)
+                MessageListView(messages: messages, messageRenderer: messageRenderer)
             }
         }
         .id(refreshVersion)

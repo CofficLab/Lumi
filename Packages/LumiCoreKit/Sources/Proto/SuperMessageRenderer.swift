@@ -11,6 +11,16 @@ public protocol SuperMessageRenderer {
     /// 渲染器优先级（数字越大优先级越高，先匹配）
     static var priority: Int { get }
 
+    /// 渲染器实例标识。
+    ///
+    /// 默认来自静态 `id`，供 type-erased adapter 保留被包装渲染器的真实标识。
+    var rendererID: String { get }
+
+    /// 渲染器实例优先级。
+    ///
+    /// 默认来自静态 `priority`，供 type-erased adapter 保留被包装渲染器的真实优先级。
+    var rendererPriority: Int { get }
+
     /// 判断是否可以渲染该消息
     func canRender(message: ChatMessage) -> Bool
 
@@ -23,4 +33,6 @@ public protocol SuperMessageRenderer {
 
 extension SuperMessageRenderer {
     public static var priority: Int { 0 }
+    public var rendererID: String { Self.id }
+    public var rendererPriority: Int { Self.priority }
 }

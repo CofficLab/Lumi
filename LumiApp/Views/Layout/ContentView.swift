@@ -22,6 +22,7 @@ struct ContentView: View, SuperLog {
     @EnvironmentObject var layoutVM: WindowLayoutVM
     @EnvironmentObject var conversationVM: WindowConversationVM
     @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
@@ -101,7 +102,8 @@ struct ContentView: View, SuperLog {
                 isEditorVisible: layoutVM.editorVisible,
                 supportsAIChat: activeContainer?.supportsAIChat ?? false,
                 showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-                windowId: windowContainer?.id
+                windowId: windowContainer?.id,
+                messageRenderer: renderMessage
             )
             let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
             let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
@@ -192,6 +194,13 @@ struct ContentView: View, SuperLog {
         if hasRail { signature += "R" }
         signature += "B"
         return signature
+    }
+
+    private func renderMessage(_ message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView? {
+        guard let renderer = messageRendererVM.findRenderer(for: message) else {
+            return nil
+        }
+        return renderer.render(message: message, showRawMessage: showRawMessage)
     }
 }
 

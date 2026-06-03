@@ -40,6 +40,6 @@ public actor AgentChatPlugin: SuperPlugin, SuperLog {
     /// 右侧栏 Section：消息列表
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
         guard context.supportsAIChat else { return [] }
-        return [AnyView(ChatMessagesView())]
+        return [AnyView(ChatMessagesView(messageRenderer: context.messageRenderer))]
     }
 }
