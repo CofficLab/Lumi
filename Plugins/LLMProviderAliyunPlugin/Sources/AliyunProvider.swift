@@ -18,9 +18,9 @@ public final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchec
     // MARK: - 基础信息
 
     public static let id = "aliyun"
-    public static let displayName = String(localized: "阿里云 CodingPlan", table: "Aliyun")
+    public static let displayName = String(localized: "阿里云 CodingPlan", bundle: .module)
     public static let shortName = "Aliyun"
-    public static let description = String(localized: "阿里云 DashScope Coding Plan（兼容 Anthropic API）", table: "Aliyun")
+    public static let description = String(localized: "阿里云 DashScope Coding Plan（兼容 Anthropic API）", bundle: .module)
 
     public static let websiteURL: String? = "https://dashscope.console.aliyun.com"
 
