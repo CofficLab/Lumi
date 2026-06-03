@@ -14,9 +14,9 @@ public final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendab
     // MARK: - 基础信息
 
     public static let id = "openai"
-    public static let displayName = String(localized: "OpenAI", table: "OpenAI")
+    public static let displayName = String(localized: "OpenAI", bundle: .module)
     public static let shortName = "OA"
-    public static let description = String(localized: "GPT by OpenAI", table: "OpenAI")
+    public static let description = String(localized: "GPT by OpenAI", bundle: .module)
 
     public static let websiteURL: String? = "https://openai.com"
 
