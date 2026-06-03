@@ -28,7 +28,7 @@ public struct ToolbarButton: View {
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .clipShape(Circle())
         }
-        .help(String(localized: "History DB", table: "HistoryDBStatusBar"))
+        .help(String(localized: "History DB", bundle: .module))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             DetailView(historyService: historyService)
             .frame(width: 720, height: 520)

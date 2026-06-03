@@ -11,8 +11,8 @@ public actor HistoryDBStatusBarPlugin: SuperPlugin {
 
     public static let id: String = "HistoryDBStatusBar"
     public static let navigationId: String? = nil
-    public static let displayName: String = String(localized: "History Database Browser", table: "HistoryDBStatusBar")
-    public static let description: String = String(localized: "Browse message and conversation history in status bar popover", table: "HistoryDBStatusBar")
+    public static let displayName: String = String(localized: "History Database Browser", bundle: .module)
+    public static let description: String = String(localized: "Browse message and conversation history in status bar popover", bundle: .module)
     public static let iconName: String = "tablecells"
     public static var order: Int { 98 }
 
