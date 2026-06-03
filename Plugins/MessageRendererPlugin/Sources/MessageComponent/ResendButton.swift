@@ -15,7 +15,7 @@ public struct ResendButton: View {
             size: .compact,
             action: action
         )
-        .help(String(localized: "重新发送该消息", table: "CoreMessageRenderer"))
+        .help(String(localized: "重新发送该消息", bundle: .module))
     }
 }
 

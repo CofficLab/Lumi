@@ -18,8 +18,8 @@ public actor MessageRendererPlugin: SuperPlugin {
 
     public static let shared = MessageRendererPlugin()
     public static let id = "CoreMessageRenderer"
-    public static let displayName = String(localized: "核心消息渲染器", table: "CoreMessageRenderer")
-    public static let description = String(localized: "提供内置消息类型的渲染支持", table: "CoreMessageRenderer")
+    public static let displayName = String(localized: "核心消息渲染器", bundle: .module)
+    public static let description = String(localized: "提供内置消息类型的渲染支持", bundle: .module)
     public static let iconName = "paintbrush.fill"
     public static var category: PluginCategory { .general }
     public static var order: Int { 10 } // 最先加载，确保内置渲染器先注册

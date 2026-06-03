@@ -7,8 +7,8 @@ public actor OnboardingPlugin: SuperPlugin {
     public nonisolated static let emoji = "🎉"
     public nonisolated static let verbose: Bool = true
     public static let id = "Onboarding"
-    public static let displayName = String(localized: "Onboarding", table: "OnboardingPlugin")
-    public static let description = String(localized: "Show first-run onboarding and guidance entry points", table: "OnboardingPlugin")
+    public static let displayName = String(localized: "Onboarding", bundle: .module)
+    public static let description = String(localized: "Show first-run onboarding and guidance entry points", bundle: .module)
     public static let iconName = "hand.wave"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 10 }

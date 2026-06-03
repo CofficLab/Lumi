@@ -1,0 +1,12 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Model Preference": {
+      "localizations": {}
+    },
+    "Remember provider and model per conversation": {
+      "localizations": {}
+    }
+  },
+  "version": "1.0"
+}

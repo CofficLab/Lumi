@@ -24,7 +24,7 @@ public struct ToolExecutionStatusCardView: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.appMicroEmphasized)
                         .foregroundColor(theme.textSecondary)
-                    Text(String(localized: "工具执行", table: "CoreMessageRenderer"))
+                    Text(String(localized: "工具执行", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                     Text(snapshot.summary)
@@ -37,8 +37,8 @@ public struct ToolExecutionStatusCardView: View {
                     if snapshot.phase == .running {
                         AppButton(
                             didRequestStop
-                                ? String(localized: "Stopping…", table: "CoreMessageRenderer")
-                                : String(localized: "Stop Current Turn", table: "CoreMessageRenderer"),
+                                ? String(localized: "Stopping…", bundle: .module)
+                                : String(localized: "Stop Current Turn", bundle: .module),
                             style: .destructive,
                             size: .small
                         ) {
@@ -86,7 +86,7 @@ public struct ToolExecutionStatusCardView: View {
                         }
 
                         if let lines = snapshot.shellLines, let bytes = snapshot.shellBytes {
-                            Text(String(format: String(localized: "Output: %lld lines, %@", table: "CoreMessageRenderer"), lines, Self.byteFormatter.string(fromByteCount: Int64(bytes))))
+                            Text(String(format: String(localized: "Output: %lld lines, %@", bundle: .module), lines, Self.byteFormatter.string(fromByteCount: Int64(bytes))))
                                 .font(.appMicro)
                                 .foregroundColor(theme.textSecondary)
                         }
@@ -131,10 +131,10 @@ public struct ToolExecutionStatusSnapshot {
 
         var label: String {
             switch self {
-            case .running: return String(localized: "Running", table: "CoreMessageRenderer")
-            case .completed: return String(localized: "Completed", table: "CoreMessageRenderer")
-            case .failed: return String(localized: "Failed", table: "CoreMessageRenderer")
-            case .cancelled: return String(localized: "Stopped", table: "CoreMessageRenderer")
+            case .running: return String(localized: "Running", bundle: .module)
+            case .completed: return String(localized: "Completed", bundle: .module)
+            case .failed: return String(localized: "Failed", bundle: .module)
+            case .cancelled: return String(localized: "Stopped", bundle: .module)
             }
         }
     }
@@ -235,7 +235,7 @@ public struct ToolExecutionStatusSnapshot {
         guard content == "已停止执行工具" else { return nil }
         return ToolExecutionStatusSnapshot(
             phase: .cancelled,
-            toolName: String(localized: "Tool", table: "CoreMessageRenderer"),
+            toolName: String(localized: "Tool", bundle: .module),
             current: nil,
             total: nil,
             elapsedSeconds: nil,

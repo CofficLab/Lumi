@@ -101,8 +101,8 @@ public struct CollapsibleMessageContent<Content: View>: View {
                     .font(.system(size: 10, weight: .semibold))
                 Text(
                     isExpanded
-                        ? String(localized: "Show Less", table: "CoreMessageRenderer")
-                        : String(localized: "Show More", table: "CoreMessageRenderer")
+                        ? String(localized: "Show Less", bundle: .module)
+                        : String(localized: "Show More", bundle: .module)
                 )
                 .font(.appCaption)
             }

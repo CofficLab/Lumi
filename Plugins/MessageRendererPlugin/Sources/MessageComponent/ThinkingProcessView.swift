@@ -37,7 +37,7 @@ public struct ThinkingProcessView: View {
                             .font(.appMicroEmphasized)
                             .foregroundColor(theme.textSecondary)
 
-                        Text(String(localized: "思考过程", table: "CoreMessageRenderer"))
+                        Text(String(localized: "思考过程", bundle: .module))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
 

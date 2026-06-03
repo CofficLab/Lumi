@@ -9,11 +9,11 @@ import SwiftUI
 public enum RoleLabel {
     /// 助手标签视图
     public static var assistant: some View {
-        AppRoleBadge(String(localized: "Dev Assistant", table: "AgentMessages"))
+        AppRoleBadge(String(localized: "Dev Assistant", bundle: .module))
     }
 
     /// 工具输出标签视图
     public static var tool: some View {
-        AppRoleBadge(String(localized: "Tool Output", table: "AgentMessages"))
+        AppRoleBadge(String(localized: "Tool Output", bundle: .module))
     }
 }

@@ -31,8 +31,8 @@ public actor MultiAgentPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id: String = "MultiAgent"
-    public static let displayName = String(localized: "Multi Agent", table: "MultiAgent")
-    public static let description = String(localized: "Spawn parallel sub-agents with independent LLM providers and models", table: "MultiAgent")
+    public static let displayName = String(localized: "Multi Agent", bundle: .module)
+    public static let description = String(localized: "Spawn parallel sub-agents with independent LLM providers and models", bundle: .module)
     public static let iconName: String = "person.3.fill"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 88 }
