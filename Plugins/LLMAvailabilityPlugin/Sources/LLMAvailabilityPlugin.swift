@@ -22,6 +22,7 @@ public actor LLMAvailabilityPlugin: SuperPlugin {
     public static var order: Int { 15 }
 
     /// 核心基础设施插件，不允许用户禁用
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public static let shared = LLMAvailabilityPlugin()
 
