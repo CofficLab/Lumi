@@ -22,8 +22,8 @@ public actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id = "EditorLSPContextCommands"
-    public static let displayName = String(localized: "LSP Context Commands", table: "EditorLSPContextCommands")
-    public static let description = String(localized: "Adds LSP context commands like go to definition and rename.", table: "EditorLSPContextCommands")
+    public static let displayName = String(localized: "LSP Context Commands", bundle: .module)
+    public static let description = String(localized: "Adds LSP context commands like go to definition and rename.", bundle: .module)
     public static let iconName = "command"
     public static let order = 15
     public static var category: PluginCategory { .editor }

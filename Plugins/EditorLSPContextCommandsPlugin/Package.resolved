@@ -1,6 +1,33 @@
 {
-  "originHash" : "94fd1423fae30f30605cc58c1def35dad31be0bc3ec1980a97cc97ff97affacd",
+  "originHash" : "4f7d0ddaeef834fdbea4656c40cb4df9f764889637c5dd3862a17f6543494fca",
   "pins" : [
+    {
+      "identity" : "jsonrpc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/JSONRPC",
+      "state" : {
+        "revision" : "29987f721374f30e686af40ccffd0b13b14dde1f",
+        "version" : "0.9.2"
+      }
+    },
+    {
+      "identity" : "languageserverprotocol",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/LanguageServerProtocol",
+      "state" : {
+        "revision" : "82770aa7d6e54e52f3b4339c49a64ee794ad1cfe",
+        "version" : "0.14.1"
+      }
+    },
+    {
+      "identity" : "magicalert",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicAlert.git",
+      "state" : {
+        "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
+        "version" : "1.0.1"
+      }
+    },
     {
       "identity" : "rearrange",
       "kind" : "remoteSourceControl",
@@ -20,12 +47,39 @@
       }
     },
     {
+      "identity" : "swifttreesitter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter.git",
+      "state" : {
+        "revision" : "08ef81eb8620617b55b08868126707ad72bf754f",
+        "version" : "0.25.0"
+      }
+    },
+    {
+      "identity" : "textformation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/TextFormation",
+      "state" : {
+        "revision" : "b1ce9a14bd86042bba4de62236028dc4ce9db6a1",
+        "version" : "0.9.0"
+      }
+    },
+    {
       "identity" : "textstory",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextStory",
       "state" : {
         "revision" : "a52db1a2eca74d37c8c19bf3165416941632ed45",
         "version" : "0.9.2"
+      }
+    },
+    {
+      "identity" : "tree-sitter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter",
+      "state" : {
+        "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
+        "version" : "0.25.10"
       }
     }
   ],
