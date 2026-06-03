@@ -22,6 +22,8 @@ env:
   DERIVED_DATA_PATH: "./DerivedData"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
+  RELEASE_ARCHS: "arm64 x86_64"
+  DEFAULT_UPDATE_ARCH: "arm64"
 
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,121 +228,172 @@ jobs:
 
       - name: Build App (Archive)
         run: |
+          set -euo pipefail
           set -o pipefail
-          xcodebuild archive \
-            -project ${{ env.SCHEME }}.xcodeproj \
-            -scheme ${{ env.SCHEME }} \
-            -destination "${{ env.DESTINATION }}" \
-            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-            -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            -skipPackageUpdates \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="-" \
-            DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGNING_REQUIRED=NO \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | xcpretty
+          mkdir -p ./temp
+
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
+            rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
+
+            xcodebuild archive \
+              -project ${{ env.SCHEME }}.xcodeproj \
+              -scheme ${{ env.SCHEME }} \
+              -destination "${{ env.DESTINATION }}" \
+              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+              -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              -skipPackageUpdates \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="-" \
+              DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
+              PROVISIONING_PROFILE_SPECIFIER="" \
+              CODE_SIGNING_REQUIRED=NO \
+              AD_HOC_CODE_SIGNING_ALLOWED=YES \
+              ARCHS="$arch" \
+              ONLY_ACTIVE_ARCH=NO \
+              | xcpretty
+          done
 
       - name: Codesign App
         run: |
-          # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
-          ditto "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
+          set -euo pipefail
 
-          APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
 
           # 使用脚本进行深度签名
           chmod +x .github/scripts/sign_app.sh
-          .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
+
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            ARCHIVE_APP="./temp/${{ env.SCHEME }}-${arch}.xcarchive/Products/Applications/${{ env.SCHEME }}.app"
+            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
+
+            if [ ! -d "$ARCHIVE_APP" ]; then
+              echo "❌ Archived app not found: $ARCHIVE_APP"
+              exit 1
+            fi
+
+            # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
+            rm -rf "$APP_PATH"
+            ditto "$ARCHIVE_APP" "$APP_PATH"
+
+            BINARY_PATH="$APP_PATH/Contents/MacOS/${{ env.SCHEME }}"
+            if ! lipo -archs "$BINARY_PATH" | tr ' ' '\n' | grep -qx "$arch"; then
+              echo "❌ $BINARY_PATH does not contain expected architecture: $arch"
+              lipo -archs "$BINARY_PATH" || true
+              exit 1
+            fi
+
+            .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
+          done
 
       - name: Create DMG
         run: |
           set -euo pipefail
-          STAGING_DIR="./temp/dmg_staging"
-          VOL_NAME="${{ env.SCHEME }}"
-          DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}.dmg"
 
-          # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
-          rm -rf "$STAGING_DIR"
-          mkdir -p "$STAGING_DIR"
-          ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
-          ln -sfn /Applications "$STAGING_DIR/Applications"
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            STAGING_DIR="./temp/dmg_staging_${arch}"
+            VOL_NAME="${{ env.SCHEME }}-${arch}"
+            DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
+            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
 
-          echo "Checking Staging Dir:"
-          ls -la "$STAGING_DIR"
-
-          # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
-          mdutil -i off "$STAGING_DIR" 2>/dev/null || true
-          mdutil -i off "./temp" 2>/dev/null || true
-          sync
-          sleep 1
-
-          create_dmg() {
-            # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
-            hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
-            rm -f "$DMG_NAME"
-            if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
-              return 0
-            fi
-            return 1
-          }
-
-          MAX_ATTEMPTS=6
-          attempt=0
-          until create_dmg; do
-            attempt=$((attempt + 1))
-            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
-              echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
+            if [ ! -d "$APP_PATH" ]; then
+              echo "❌ Signed app not found: $APP_PATH"
               exit 1
             fi
-            echo "hdiutil create failed (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
-            sleep $((attempt * 3))
-          done
 
-          echo "Created: $DMG_NAME"
+            # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
+            rm -rf "$STAGING_DIR"
+            mkdir -p "$STAGING_DIR"
+            ditto "$APP_PATH" "$STAGING_DIR/${{ env.SCHEME }}.app"
+            ln -sfn /Applications "$STAGING_DIR/Applications"
+
+            echo "Checking Staging Dir for $arch:"
+            ls -la "$STAGING_DIR"
+
+            # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
+            mdutil -i off "$STAGING_DIR" 2>/dev/null || true
+            mdutil -i off "./temp" 2>/dev/null || true
+            sync
+            sleep 1
+
+            create_dmg() {
+              # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
+              hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
+              rm -f "$DMG_NAME"
+              if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
+                return 0
+              fi
+              return 1
+            }
+
+            MAX_ATTEMPTS=6
+            attempt=0
+            until create_dmg; do
+              attempt=$((attempt + 1))
+              if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
+                exit 1
+              fi
+              echo "hdiutil create failed for $arch (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
+              sleep $((attempt * 3))
+            done
+
+            echo "Created: $DMG_NAME"
+          done
 
       - name: Notary
         run: |
-          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
-          if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
+          set -euo pipefail
 
-          # Run submit and capture output
-          set +e
-          xcrun notarytool submit "$file" \
-            --key ${{ steps.signing.outputs.api_key_path }} \
-            --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-            --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
-            --wait \
-            --timeout 10m > notary_result.txt 2>&1
-
-          EXIT_CODE=$?
-          # Output result for debugging
-          cat notary_result.txt
-
-          if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" notary_result.txt; then
-             echo "❌ Notarization failed. Retrieving logs..."
-             # Extract ID from the output file
-             SUBMISSION_ID=$(grep "id:" notary_result.txt | head -n 1 | awk '{print $2}' | tr -d ' ')
-             if [ -n "$SUBMISSION_ID" ]; then
-                echo "Fetching log for Submission ID: $SUBMISSION_ID"
-                xcrun notarytool log "$SUBMISSION_ID" \
-                  --key ${{ steps.signing.outputs.api_key_path }} \
-                  --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-                  --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} 
-             fi
-             exit 1
+          if ! compgen -G "./temp/*.dmg" > /dev/null; then
+            echo "DMG not found"
+            exit 1
           fi
-          set -e
 
-          stapler staple "$file"
+          for file in ./temp/*.dmg; do
+            echo "📨 Notarizing $file..."
+            result_file="notary_result_$(basename "$file" .dmg).txt"
+
+            # Run submit and capture output
+            set +e
+            xcrun notarytool submit "$file" \
+              --key ${{ steps.signing.outputs.api_key_path }} \
+              --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+              --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
+              --wait \
+              --timeout 10m > "$result_file" 2>&1
+
+            EXIT_CODE=$?
+            set -e
+
+            # Output result for debugging
+            cat "$result_file"
+
+            if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" "$result_file"; then
+               echo "❌ Notarization failed for $file. Retrieving logs..."
+               # Extract ID from the output file
+               SUBMISSION_ID=$(grep "id:" "$result_file" | head -n 1 | awk '{print $2}' | tr -d ' ')
+               if [ -n "$SUBMISSION_ID" ]; then
+                  echo "Fetching log for Submission ID: $SUBMISSION_ID"
+                  xcrun notarytool log "$SUBMISSION_ID" \
+                    --key ${{ steps.signing.outputs.api_key_path }} \
+                    --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+                    --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }}
+               fi
+               exit 1
+            fi
+
+            stapler staple "$file"
+          done
 
       - name: Validate Notarization
         run: |
-          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
-          stapler validate "$file"
+          set -euo pipefail
+          for file in ./temp/*.dmg; do
+            stapler validate "$file"
+          done
 
       - name: Prepare Updates Directory
         run: |
@@ -353,18 +406,21 @@ jobs:
       # =================================================================================================
       - name: Package dSYMs
         run: |
-          DSYM_SOURCE="./temp/${{ env.SCHEME }}.xcarchive/dSYMs"
-          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+          set -euo pipefail
 
-          if [ -d "$DSYM_SOURCE" ]; then
-            cd "$DSYM_SOURCE"
-            zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM
-            echo "✅ dSYMs packaged: $(du -sh "$GITHUB_WORKSPACE/$DSYM_ZIP" | cut -f1)"
-            ls -lh "$GITHUB_WORKSPACE/$DSYM_ZIP"
-          else
-            echo "⚠️ No dSYMs directory found in xcarchive"
-            ls -R "./temp/${{ env.SCHEME }}.xcarchive/" || true
-          fi
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            DSYM_SOURCE="./temp/${{ env.SCHEME }}-${arch}.xcarchive/dSYMs"
+            DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}_dSYMs.zip"
+
+            if [ -d "$DSYM_SOURCE" ]; then
+              (cd "$DSYM_SOURCE" && zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM)
+              echo "✅ dSYMs packaged for $arch: $(du -sh "$DSYM_ZIP" | cut -f1)"
+              ls -lh "$DSYM_ZIP"
+            else
+              echo "⚠️ No dSYMs directory found in xcarchive for $arch"
+              ls -R "./temp/${{ env.SCHEME }}-${arch}.xcarchive/" || true
+            fi
+          done
 
       # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
@@ -372,6 +428,20 @@ jobs:
       - name: Generate Appcast
         if: env.IS_PRERELEASE == 'false'
         run: |
+          set -euo pipefail
+
+          APPCAST_INPUT="${{ github.workspace }}/appcast-updates"
+          DEFAULT_DMG="${{ github.workspace }}/updates/${{ env.SCHEME }}_${{ env.new_version }}_${{ env.DEFAULT_UPDATE_ARCH }}.dmg"
+
+          if [ ! -f "$DEFAULT_DMG" ]; then
+            echo "❌ Default appcast DMG not found: $DEFAULT_DMG"
+            exit 1
+          fi
+
+          rm -rf "$APPCAST_INPUT"
+          mkdir -p "$APPCAST_INPUT"
+          cp "$DEFAULT_DMG" "$APPCAST_INPUT/"
+
           # 解决依赖以获取 Sparkle 工具
           xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
@@ -382,7 +452,8 @@ jobs:
 
           if [ -d "$SPARKLE_BIN" ]; then
             cd "$SPARKLE_BIN"
-            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
+            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - "$APPCAST_INPUT"
+            cp "$APPCAST_INPUT/appcast.xml" "${{ github.workspace }}/updates/appcast.xml"
           else
             echo "❌ Sparkle bin not found"
             exit 1
@@ -393,7 +464,11 @@ jobs:
         run: |
           cd updates
           if [ -f appcast.xml ]; then
-            dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
+            dmg_file="${{ env.SCHEME }}_${{ env.new_version }}_${{ env.DEFAULT_UPDATE_ARCH }}.dmg"
+            if [ ! -f "$dmg_file" ]; then
+              echo "⚠️ Default appcast DMG not found: $dmg_file; falling back to first DMG"
+              dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
+            fi
             if [ -z "$dmg_file" ]; then
               echo "❌ DMG not found in updates directory"
               exit 1
@@ -454,11 +529,10 @@ jobs:
             cp ./appcast.xml release-assets/
           fi
 
-          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
-          if [ -f "$DSYM_ZIP" ]; then
-            cp "$DSYM_ZIP" release-assets/
+          if compgen -G "./temp/*_dSYMs.zip" > /dev/null; then
+            cp ./temp/*_dSYMs.zip release-assets/
           else
-            echo "⚠️ dSYM zip not found, continuing without it"
+            echo "⚠️ dSYM zips not found, continuing without them"
           fi
 
           ls -alh release-assets
@@ -474,31 +548,32 @@ jobs:
         run: |
           set -euo pipefail
           
-          DMG_FILE=$(ls ./release-assets/*.dmg 2>/dev/null | head -n 1)
-          if [ -z "$DMG_FILE" ]; then
+          if ! compgen -G "./release-assets/*.dmg" > /dev/null; then
             echo "⚠️  No DMG file found to upload"
             exit 0
           fi
-          
-          DMG_FILENAME=$(basename "$DMG_FILE")
-          R2_KEY="lumi/${DMG_FILENAME}"
-          
-          echo "📤 Uploading DMG to R2: $R2_KEY"
-          
-          RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
-            -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
-            -F "file=@${DMG_FILE}" \
-            -F "key=${R2_KEY}")
-          
-          echo "Response: $RESPONSE"
-          
-          if echo "$RESPONSE" | grep -q '"success":true'; then
-            R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
-            echo "✅ DMG uploaded: $R2_DMG_URL"
-          else
-            echo "❌ Failed to upload DMG to R2"
-            exit 1
-          fi
+
+          for DMG_FILE in ./release-assets/*.dmg; do
+            DMG_FILENAME=$(basename "$DMG_FILE")
+            R2_KEY="lumi/${DMG_FILENAME}"
+
+            echo "📤 Uploading DMG to R2: $R2_KEY"
+
+            RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
+              -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+              -F "file=@${DMG_FILE}" \
+              -F "key=${R2_KEY}")
+
+            echo "Response: $RESPONSE"
+
+            if echo "$RESPONSE" | grep -q '"success":true'; then
+              R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+              echo "✅ DMG uploaded: $R2_DMG_URL"
+            else
+              echo "❌ Failed to upload DMG to R2: $DMG_FILENAME"
+              exit 1
+            fi
+          done
 
       # =================================================================================================
       # 6. 发布 Release
