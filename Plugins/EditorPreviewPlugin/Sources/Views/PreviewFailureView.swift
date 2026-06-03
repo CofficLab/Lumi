@@ -26,13 +26,13 @@ struct PreviewFailureView: View {
                 Button {
                     onRetry?()
                 } label: {
-                    Label(String(localized: "Retry", table: "EditorPreview"), systemImage: "arrow.clockwise")
+                    Label(String(localized: "Retry", bundle: .module), systemImage: "arrow.clockwise")
                         .labelStyle(.titleAndIcon)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Retry preview build", table: "EditorPreview"))
+                .help(String(localized: "Retry preview build", bundle: .module))
 
                 Button {
                     NSPasteboard.general.clearContents()
@@ -49,14 +49,14 @@ struct PreviewFailureView: View {
                         }
                     }
                 } label: {
-                    Label(isCopied ? String(localized: "Copied", table: "EditorPreview") : String(localized: "Copy", table: "EditorPreview"),
+                    Label(isCopied ? String(localized: "Copied", bundle: .module) : String(localized: "Copy", bundle: .module),
                           systemImage: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
                         .labelStyle(.titleAndIcon)
                         .font(.caption)
                         .foregroundStyle(isCopied ? .green : .secondary)
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Copy error message to clipboard", table: "EditorPreview"))
+                .help(String(localized: "Copy error message to clipboard", bundle: .module))
             }
 
             ScrollView {
@@ -71,7 +71,7 @@ struct PreviewFailureView: View {
                     Image(systemName: "doc.text")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(String(localized: "Build log saved:", table: "EditorPreview"))
+                    Text(String(localized: "Build log saved:", bundle: .module))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button {
@@ -83,7 +83,7 @@ struct PreviewFailureView: View {
                             .underline()
                     }
                     .buttonStyle(.plain)
-                    .help(String(localized: "Show log file in Finder", table: "EditorPreview"))
+                    .help(String(localized: "Show log file in Finder", bundle: .module))
                     .draggable(buildLogURL.path)
                 }
             }

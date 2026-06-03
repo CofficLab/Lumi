@@ -10,7 +10,7 @@ public struct PreviewBuildingView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "building \(fileName)", table: "EditorPreview"))
+            Text(String(localized: "building \(fileName)", bundle: .module))
                 .font(.callout)
                 .foregroundStyle(.primary)
                 .lineLimit(1)

@@ -50,7 +50,7 @@ public struct EditorPreviewCSVView: View, SuperLog {
             Image(systemName: "tablecells")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text(String(localized: "No CSV content to preview.", table: "EditorPreview"))
+            Text(String(localized: "No CSV content to preview.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -63,7 +63,7 @@ public struct EditorPreviewCSVView: View, SuperLog {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.orange)
-            Text(String(localized: "Invalid CSV", table: "EditorPreview"))
+            Text(String(localized: "Invalid CSV", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.primary)
             Text(error.localizedDescription)
@@ -80,7 +80,7 @@ public struct EditorPreviewCSVView: View, SuperLog {
             // 统计信息
             if !table.rows.isEmpty {
                 Text(String(
-                    format: String(localized: "%d rows × %d columns", table: "EditorPreview"),
+                    format: String(localized: "%d rows × %d columns", bundle: .module),
                     table.rows.count,
                     table.headers.count
                 ))

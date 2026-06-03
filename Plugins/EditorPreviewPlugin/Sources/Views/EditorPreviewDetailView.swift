@@ -159,16 +159,16 @@ public struct EditorPreviewDetailView: View, SuperLog {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .confirmationDialog(
-            String(localized: "Clean all stale String Catalog keys in this project?", table: "EditorPreview"),
+            String(localized: "Clean all stale String Catalog keys in this project?", bundle: .module),
             isPresented: $isConfirmingProjectStringCatalogClean,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "Clean Project String Catalogs", table: "EditorPreview"), role: .destructive) {
+            Button(String(localized: "Clean Project String Catalogs", bundle: .module), role: .destructive) {
                 cleanProjectStringCatalogs()
             }
-            Button(String(localized: "Cancel", table: "EditorPreview"), role: .cancel) {}
+            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
         } message: {
-            Text(String(localized: "This rewrites every .xcstrings file under the current project and removes entries marked as stale.", table: "EditorPreview"))
+            Text(String(localized: "This rewrites every .xcstrings file under the current project and removes entries marked as stale.", bundle: .module))
         }
     }
 
@@ -176,35 +176,35 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private var staticPreviewModeBadge: some View {
         switch viewModel.previewMode {
         case .image:
-            Label(String(localized: "Image Preview", table: "EditorPreview"), systemImage: "photo")
+            Label(String(localized: "Image Preview", bundle: .module), systemImage: "photo")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .markdown:
-            Label(String(localized: "Markdown Preview", table: "EditorPreview"), systemImage: "doc.richtext")
+            Label(String(localized: "Markdown Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .stringCatalog:
-            Label(String(localized: "String Catalog Preview", table: "EditorPreview"), systemImage: "character.book.closed")
+            Label(String(localized: "String Catalog Preview", bundle: .module), systemImage: "character.book.closed")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .json:
-            Label(String(localized: "JSON Preview", table: "EditorPreview"), systemImage: "curlybraces")
+            Label(String(localized: "JSON Preview", bundle: .module), systemImage: "curlybraces")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .plist:
-            Label(String(localized: "Plist Preview", table: "EditorPreview"), systemImage: "list.bullet.rectangle")
+            Label(String(localized: "Plist Preview", bundle: .module), systemImage: "list.bullet.rectangle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .csv:
-            Label(String(localized: "CSV Preview", table: "EditorPreview"), systemImage: "tablecells")
+            Label(String(localized: "CSV Preview", bundle: .module), systemImage: "tablecells")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .html:
-            Label(String(localized: "HTML Preview", table: "EditorPreview"), systemImage: "globe")
+            Label(String(localized: "HTML Preview", bundle: .module), systemImage: "globe")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .pdf:
-            Label(String(localized: "PDF Preview", table: "EditorPreview"), systemImage: "doc.richtext")
+            Label(String(localized: "PDF Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case let .unsupported(url):
@@ -231,7 +231,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .font(.caption)
             .foregroundStyle(.green)
             .lineLimit(1)
-            .help(String(localized: "Markdown TODO completion", table: "EditorPreview"))
+            .help(String(localized: "Markdown TODO completion", bundle: .module))
         }
     }
 
@@ -243,7 +243,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundStyle(.orange)
-                        .help(String(localized: "Stale String Catalog keys in the current file", table: "EditorPreview"))
+                        .help(String(localized: "Stale String Catalog keys in the current file", bundle: .module))
                 }
 
                 Button {
@@ -258,7 +258,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 }
                 .buttonStyle(.borderless)
                 .disabled(isCleaningCurrentStringCatalog || catalog.staleEntryCount == 0)
-                .help(String(localized: "Clean stale keys in the current String Catalog file", table: "EditorPreview"))
+                .help(String(localized: "Clean stale keys in the current String Catalog file", bundle: .module))
             }
 
             Button {
@@ -276,7 +276,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 isCleaningProjectStringCatalogs ||
                 projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
-            .help(String(localized: "Clean stale keys in every String Catalog file in the current project", table: "EditorPreview"))
+            .help(String(localized: "Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
     }
 
@@ -292,7 +292,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private var entryControls: some View {
         if viewModel.availablePreviews.count > 1 {
             Picker(
-                String(localized: "Preview", table: "EditorPreview"),
+                String(localized: "Preview", bundle: .module),
                 selection: Binding(
                     get: { viewModel.selectedPreviewIndex },
                     set: { viewModel.selectPreview(index: $0) }
@@ -305,7 +305,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .pickerStyle(.menu)
             .labelsHidden()
             .frame(maxWidth: 180)
-            .help(String(localized: "Choose which #Preview in the current Swift file to build and render.", table: "EditorPreview"))
+            .help(String(localized: "Choose which #Preview in the current Swift file to build and render.", bundle: .module))
         }
     }
 
@@ -322,8 +322,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func buildInfoText(_ info: EditorPreviewViewModel.BuildInfo) -> String {
         let mode = info.usedCache
-            ? String(localized: "cache", table: "EditorPreview")
-            : String(localized: "rebuilt", table: "EditorPreview")
+            ? String(localized: "cache", bundle: .module)
+            : String(localized: "rebuilt", bundle: .module)
         let time = Self.buildTimeFormatter.string(from: info.completedAt)
         return "\(mode) · \(time) · \(info.previewCount) preview(s)"
     }
@@ -334,7 +334,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         if !summary.isEmpty {
             HStack(spacing: 4) {
                 Label(
-                    "\(String(localized: "cache", table: "EditorPreview")) · \(summary.formattedByteCount)",
+                    "\(String(localized: "cache", bundle: .module)) · \(summary.formattedByteCount)",
                     systemImage: "externaldrive"
                 )
                 .labelStyle(.titleAndIcon)
@@ -345,7 +345,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Clear Inline Preview build cache", table: "EditorPreview"))
+                .help(String(localized: "Clear Inline Preview build cache", bundle: .module))
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -367,7 +367,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 }
             }
             .buttonStyle(.borderless)
-            .help(String(localized: "Refresh entry debug state", table: "EditorPreview"))
+            .help(String(localized: "Refresh entry debug state", bundle: .module))
         }
     }
 
@@ -395,7 +395,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
         .buttonStyle(.borderless)
         .disabled(canTakeScreenshot == false)
-        .help(String(localized: "Screenshot preview canvas", table: "EditorPreview"))
+        .help(String(localized: "Screenshot preview canvas", bundle: .module))
     }
 
     /// 当前是否可以截图：swift 预览正在运行且已加载 entry，或非 swift 静态预览（image、markdown 等）。
@@ -433,7 +433,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         isTakingScreenshot = false
 
         guard let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
-            alert_warning(String(localized: "Failed to save file.", table: "EditorPreview"))
+            alert_warning(String(localized: "Failed to save file.", bundle: .module))
             return
         }
 
@@ -448,7 +448,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
             alert_success(
                 String(
-                    format: String(localized: "File saved to Downloads: %@", table: "EditorPreview"),
+                    format: String(localized: "File saved to Downloads: %@", bundle: .module),
                     finalURL.lastPathComponent
                 )
             )
@@ -459,7 +459,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to save file: %@", table: "EditorPreview"),
+                    format: String(localized: "Failed to save file: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -477,7 +477,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         isTakingScreenshot = false
 
         guard let image else {
-            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -493,13 +493,13 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
         guard let canvasView = previewCanvasView else {
             isTakingScreenshot = false
-            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
         guard let image = renderImage(from: canvasView) else {
             isTakingScreenshot = false
-            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -517,7 +517,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             } catch {
                 isTakingScreenshot = false
                 Self.logger.error("\(Self.t)📸 HTML 截图失败：\(error.localizedDescription)")
-                alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+                alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
             }
         }
     }
@@ -548,7 +548,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
               let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
-            alert_warning(String(localized: "Failed to capture preview screenshot.", table: "EditorPreview"))
+            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -570,7 +570,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
             alert_success(
                 String(
-                    format: String(localized: "Screenshot saved to Downloads and copied to clipboard: %@", table: "EditorPreview"),
+                    format: String(localized: "Screenshot saved to Downloads and copied to clipboard: %@", bundle: .module),
                     fileURL.lastPathComponent
                 )
             )
@@ -581,7 +581,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to save screenshot: %@", table: "EditorPreview"),
+                    format: String(localized: "Failed to save screenshot: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -602,7 +602,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
         do {
             guard let editorService else {
-                alert_warning(String(localized: "Editor service is not available.", table: "EditorPreview"))
+                alert_warning(String(localized: "Editor service is not available.", bundle: .module))
                 return
             }
             let removedCount = try viewModel.cleanCurrentStringCatalog(
@@ -613,17 +613,17 @@ public struct EditorPreviewDetailView: View, SuperLog {
             if removedCount > 0 {
                 alert_success(
                     String(
-                        format: String(localized: "Removed %d stale String Catalog key(s).", table: "EditorPreview"),
+                        format: String(localized: "Removed %d stale String Catalog key(s).", bundle: .module),
                         removedCount
                     )
                 )
             } else {
-                alert_info(String(localized: "No stale String Catalog keys found.", table: "EditorPreview"))
+                alert_info(String(localized: "No stale String Catalog keys found.", bundle: .module))
             }
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to clean String Catalog: %@", table: "EditorPreview"),
+                    format: String(localized: "Failed to clean String Catalog: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -634,11 +634,11 @@ public struct EditorPreviewDetailView: View, SuperLog {
         guard !isCleaningProjectStringCatalogs else { return }
         let projectRootPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
-            alert_warning(String(localized: "Select a project before cleaning String Catalogs.", table: "EditorPreview"))
+            alert_warning(String(localized: "Select a project before cleaning String Catalogs.", bundle: .module))
             return
         }
         guard let editorService else {
-            alert_warning(String(localized: "Editor service is not available.", table: "EditorPreview"))
+            alert_warning(String(localized: "Editor service is not available.", bundle: .module))
             return
         }
 
@@ -656,7 +656,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 if summary.removedEntryCount > 0 {
                     alert_success(
                         String(
-                            format: String(localized: "Removed %d stale key(s) from %d String Catalog file(s).", table: "EditorPreview"),
+                            format: String(localized: "Removed %d stale key(s) from %d String Catalog file(s).", bundle: .module),
                             summary.removedEntryCount,
                             summary.changedFileCount
                         )
@@ -664,7 +664,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 } else {
                     alert_info(
                         String(
-                            format: String(localized: "Scanned %d String Catalog file(s); no stale keys found.", table: "EditorPreview"),
+                            format: String(localized: "Scanned %d String Catalog file(s); no stale keys found.", bundle: .module),
                             summary.scannedFileCount
                         )
                     )
@@ -673,7 +673,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 isCleaningProjectStringCatalogs = false
                 alert_error(
                     String(
-                        format: String(localized: "Failed to clean project String Catalogs: %@", table: "EditorPreview"),
+                        format: String(localized: "Failed to clean project String Catalogs: %@", bundle: .module),
                         error.localizedDescription
                     )
                 )
@@ -687,17 +687,17 @@ public struct EditorPreviewDetailView: View, SuperLog {
         case .idle:
             EmptyView()
         case .warming:
-            Text(String(localized: "warming", table: "EditorPreview")).font(.caption).foregroundStyle(.orange)
+            Text(String(localized: "warming", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case .ready:
-            Text(String(localized: "ready", table: "EditorPreview")).font(.caption).foregroundStyle(.secondary)
+            Text(String(localized: "ready", bundle: .module)).font(.caption).foregroundStyle(.secondary)
         case .starting:
-            Text(String(localized: "starting", table: "EditorPreview")).font(.caption).foregroundStyle(.orange)
+            Text(String(localized: "starting", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case .running:
-            Text(String(localized: "running · \(viewModel.policy.rawValue)", table: "EditorPreview")).font(.caption).foregroundStyle(.green)
+            Text(String(localized: "running · \(viewModel.policy.rawValue)", bundle: .module)).font(.caption).foregroundStyle(.green)
         case .stopping:
-            Text(String(localized: "stopping", table: "EditorPreview")).font(.caption).foregroundStyle(.orange)
+            Text(String(localized: "stopping", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case let .failed(message):
-            Text(String(localized: "failed: \(message)", table: "EditorPreview"))
+            Text(String(localized: "failed: \(message)", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -770,7 +770,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                             Image(systemName: "bolt.slash")
                                 .font(.system(size: 36))
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "No #Preview in the current Swift file.", table: "EditorPreview"))
+                            Text(String(localized: "No #Preview in the current Swift file.", bundle: .module))
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
@@ -778,7 +778,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                             Image(systemName: "rectangle.dashed")
                                 .font(.system(size: 36))
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", table: "EditorPreview"))
+                            Text(String(localized: "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", bundle: .module))
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
@@ -857,8 +857,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     .font(.system(size: 36))
                     .foregroundStyle(.secondary)
                 Text(url == nil
-                     ? String(localized: "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here.", table: "EditorPreview")
-                     : String(localized: "This file type is not supported by Inline Preview yet.", table: "EditorPreview"))
+                     ? String(localized: "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here.", bundle: .module)
+                     : String(localized: "This file type is not supported by Inline Preview yet.", bundle: .module))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -896,7 +896,7 @@ private struct EditorPreviewDebugStateView: View {
             HStack(spacing: 8) {
                 Image(systemName: "stethoscope")
                     .foregroundStyle(.blue)
-                Text(String(localized: "Entry debug state", table: "EditorPreview"))
+                Text(String(localized: "Entry debug state", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 8)
                 Button {
@@ -905,7 +905,7 @@ private struct EditorPreviewDebugStateView: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Show entry debug state", table: "EditorPreview"))
+                .help(String(localized: "Show entry debug state", bundle: .module))
             }
 
             if isExpanded {
@@ -1194,7 +1194,7 @@ private struct EditorPreviewMarkdownView: View {
                 Image(systemName: "doc.richtext")
                     .font(.system(size: 28))
                     .foregroundStyle(.secondary)
-                Text(String(localized: "No Markdown content to preview.", table: "EditorPreview"))
+                Text(String(localized: "No Markdown content to preview.", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1254,13 +1254,13 @@ private struct EditorPreviewMarkdownView: View {
                         Button {
                             addToChat(heading: heading)
                         } label: {
-                            Label(String(localized: "Add to Chat", table: "EditorPreview"), systemImage: "bubble.left")
+                            Label(String(localized: "Add to Chat", bundle: .module), systemImage: "bubble.left")
                         }
                         Divider()
                         Button(role: .destructive) {
                             deleteHeadingAndContent(heading: heading)
                         } label: {
-                            Label(String(localized: "Delete", table: "EditorPreview"), systemImage: "trash")
+                            Label(String(localized: "Delete", bundle: .module), systemImage: "trash")
                         }
                     }
                 }
@@ -1379,7 +1379,7 @@ private struct EditorPreviewStringCatalogContainer: View {
             if sourceText.isEmpty {
                 messageView(
                     systemImage: "character.book.closed",
-                    text: String(localized: "No String Catalog content to preview.", table: "EditorPreview")
+                    text: String(localized: "No String Catalog content to preview.", bundle: .module)
                 )
             } else {
                 switch parseResult {
@@ -1390,7 +1390,7 @@ private struct EditorPreviewStringCatalogContainer: View {
                     messageView(
                         systemImage: "exclamationmark.triangle",
                         text: String(
-                            format: String(localized: "Failed to load string catalog: %@", table: "EditorPreview"),
+                            format: String(localized: "Failed to load string catalog: %@", bundle: .module),
                             error.localizedDescription
                         )
                     )
@@ -1513,7 +1513,7 @@ private struct EditorPreviewStringCatalogView: View {
                     .lineLimit(1)
 
                 if language.isSourceLanguage {
-                    Text(String(localized: "Default Localization", table: "EditorPreview"))
+                    Text(String(localized: "Default Localization", bundle: .module))
                         .font(.system(size: 11))
                         .foregroundColor(secondaryColor)
                         .lineLimit(1)
@@ -1556,7 +1556,7 @@ private struct EditorPreviewStringCatalogView: View {
 
     private var tableHeader: some View {
         HStack(spacing: 0) {
-            headerCell(String(localized: "Key", table: "EditorPreview"), width: 340)
+            headerCell(String(localized: "Key", bundle: .module), width: 340)
             headerCell(sourceColumnTitle, width: 360)
             if selectedLanguage.id != sourceLanguage.id {
                 headerCell(selectedLanguageColumnTitle, width: 360)
@@ -1622,7 +1622,7 @@ private struct EditorPreviewStringCatalogView: View {
 
     private var sourceColumnTitle: String {
         String(
-            format: String(localized: "Default Localization (%@)", table: "EditorPreview"),
+            format: String(localized: "Default Localization (%@)", bundle: .module),
             sourceLanguage.id
         )
     }
@@ -1779,11 +1779,11 @@ private struct EditorPreviewImageView: View {
         image = nil
         loadError = nil
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            loadError = String(format: String(localized: "File not found: %@", table: "EditorPreview"), fileURL.lastPathComponent)
+            loadError = String(format: String(localized: "File not found: %@", bundle: .module), fileURL.lastPathComponent)
             return
         }
         guard let loadedImage = NSImage(contentsOf: fileURL) else {
-            loadError = String(format: String(localized: "Failed to load image: %@", table: "EditorPreview"), fileURL.lastPathComponent)
+            loadError = String(format: String(localized: "Failed to load image: %@", bundle: .module), fileURL.lastPathComponent)
             return
         }
         image = loadedImage

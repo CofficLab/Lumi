@@ -14,11 +14,11 @@ enum CSVPreviewParser {
         var errorDescription: String? {
             switch self {
             case .emptyData:
-                return String(localized: "Empty CSV data", table: "EditorPreview")
+                return String(localized: "Empty CSV data", bundle: .module)
             case .noData:
-                return String(localized: "No data rows found", table: "EditorPreview")
+                return String(localized: "No data rows found", bundle: .module)
             case .unclosedQuote:
-                return String(localized: "Unclosed quoted field", table: "EditorPreview")
+                return String(localized: "Unclosed quoted field", bundle: .module)
             }
         }
     }

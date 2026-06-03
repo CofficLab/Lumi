@@ -63,9 +63,9 @@ public struct EditorPreviewPlistView: View, SuperLog {
         var errorDescription: String? {
             switch self {
             case .invalidData:
-                return String(localized: "Invalid plist data", table: "EditorPreview")
+                return String(localized: "Invalid plist data", bundle: .module)
             case .invalidFormat:
-                return String(localized: "Unsupported plist format", table: "EditorPreview")
+                return String(localized: "Unsupported plist format", bundle: .module)
             }
         }
     }
@@ -77,7 +77,7 @@ public struct EditorPreviewPlistView: View, SuperLog {
             Image(systemName: "list.bullet.rectangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text(String(localized: "No plist content to preview.", table: "EditorPreview"))
+            Text(String(localized: "No plist content to preview.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -90,7 +90,7 @@ public struct EditorPreviewPlistView: View, SuperLog {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.orange)
-            Text(String(localized: "Invalid plist", table: "EditorPreview"))
+            Text(String(localized: "Invalid plist", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.primary)
             Text(error.localizedDescription)
