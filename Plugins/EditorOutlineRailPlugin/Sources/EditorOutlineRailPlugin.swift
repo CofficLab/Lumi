@@ -13,11 +13,8 @@ public actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorOutlineRail"
-    public static let displayName: String = String(
-        localized: "Editor Outline Rail", table: "EditorOutlineRail")
-    public static let description: String = String(
-        localized: "Editor sidebar outline tab",
-        table: "EditorOutlineRail")
+    public static let displayName: String = String(localized: "Editor Outline Rail", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar outline tab", bundle: .module)
     public static let iconName: String = "list.bullet.indent"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }

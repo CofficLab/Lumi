@@ -48,7 +48,7 @@ public struct EditorOutlinePanelView: View {
     private var header: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                Text(String(localized: "Outline", table: "EditorOutlineRail"))
+                Text(String(localized: "Outline", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -70,7 +70,7 @@ public struct EditorOutlinePanelView: View {
                 .buttonStyle(.plain)
             }
 
-            TextField(String(localized: "Filter symbols", table: "EditorOutlineRail"), text: $filterText)
+            TextField(String(localized: "Filter symbols", bundle: .module), text: $filterText)
                 .textFieldStyle(.roundedBorder)
                 .font(.appMicro)
         }
@@ -111,7 +111,7 @@ public struct EditorOutlinePanelView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text(provider.isLoading ? String(localized: "Loading Outline...", table: "EditorOutlineRail") : String(localized: "No Symbols", table: "EditorOutlineRail"))
+            Text(provider.isLoading ? String(localized: "Loading Outline...", bundle: .module) : String(localized: "No Symbols", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
         }
