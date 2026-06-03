@@ -66,7 +66,7 @@ public struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        String(localized: "获取最近的对话列表", table: "ConversationList")
+        String(localized: "获取最近的对话列表", bundle: .module)
     }
     
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

@@ -35,7 +35,7 @@ public struct GetConversationCountTool: SuperAgentTool, SuperLog {
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        String(localized: "获取对话总数", table: "ConversationList")
+        String(localized: "获取对话总数", bundle: .module)
     }
     
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

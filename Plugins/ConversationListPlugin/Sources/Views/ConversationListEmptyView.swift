@@ -11,7 +11,7 @@ public struct ConversationListEmptyView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text(String(localized: "No conversations", table: "ConversationList"))
+            Text(String(localized: "No conversations", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }

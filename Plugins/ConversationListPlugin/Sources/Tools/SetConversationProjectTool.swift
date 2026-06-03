@@ -72,7 +72,7 @@ public struct SetConversationProjectTool: SuperAgentTool, SuperLog {
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         let convId = (arguments["conversationId"]?.value as? String).map { String($0.prefix(8)) } ?? "unknown"
-        return String(localized: "设置对话项目: \(convId)", table: "ConversationList")
+        return String(localized: "设置对话项目: \(convId)", bundle: .module)
     }
     
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

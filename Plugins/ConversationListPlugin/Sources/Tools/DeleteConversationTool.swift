@@ -69,10 +69,10 @@ public struct DeleteConversationTool: SuperAgentTool, SuperLog {
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let id = arguments["conversationId"]?.value as? String else {
-            return String(localized: "删除对话", table: "ConversationList")
+            return String(localized: "删除对话", bundle: .module)
         }
         let shortId = String(id.prefix(8))
-        return String(localized: "删除对话 \(shortId)", table: "ConversationList")
+        return String(localized: "删除对话 \(shortId)", bundle: .module)
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

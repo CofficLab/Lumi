@@ -66,7 +66,7 @@ public struct ConversationListView: View, SuperLog {
 
 extension ConversationListView {
     private var loadingView: some View {
-        ProgressView(String(localized: "Loading...", table: "ConversationList"))
+        ProgressView(String(localized: "Loading...", bundle: .module))
             .font(.appMicro)
             .foregroundColor(theme.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)

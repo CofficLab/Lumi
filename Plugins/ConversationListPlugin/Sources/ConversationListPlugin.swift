@@ -19,8 +19,8 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     public static var category: PluginCategory { .agent }
     public nonisolated static let verbose: Bool = true
     public static let id: String = "ConversationList"
-    public static let displayName: String = String(localized: "Conversation List", table: "ConversationList")
-    public static let description: String = String(localized: "Show all conversation history", table: "ConversationList")
+    public static let displayName: String = String(localized: "Conversation List", bundle: .module)
+    public static let description: String = String(localized: "Show all conversation history", bundle: .module)
     public static let iconName: String = "message.fill"
     public static var order: Int { 76 }
     public nonisolated static let policy: PluginPolicy = .alwaysOn

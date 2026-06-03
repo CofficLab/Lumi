@@ -20,7 +20,7 @@ public struct ConversationListHeader: View {
                 .font(.appCallout)
                 .foregroundColor(theme.primary)
 
-            Text(String(localized: "Conversation History", table: "ConversationList"))
+            Text(String(localized: "Conversation History", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

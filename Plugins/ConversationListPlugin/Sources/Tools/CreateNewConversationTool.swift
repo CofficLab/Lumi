@@ -81,7 +81,7 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog {
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        String(localized: "创建新对话", table: "ConversationList")
+        String(localized: "创建新对话", bundle: .module)
     }
     
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
