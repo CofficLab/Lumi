@@ -24,7 +24,7 @@ public struct EditorInlineRenameOverlayView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Rename Symbol"))
+                Text(String(localized: "Rename Symbol", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -41,7 +41,7 @@ public struct EditorInlineRenameOverlayView: View {
                 .buttonStyle(.plain)
             }
 
-            TextField(String(localized: "New name"), text: Binding(
+            TextField(String(localized: "New name", bundle: .module), text: Binding(
                 get: { renameState.draftName },
                 set: { state.updateInlineRenameDraft($0) }
             ))
@@ -58,7 +58,7 @@ public struct EditorInlineRenameOverlayView: View {
             }
 
             HStack(spacing: 8) {
-                Text(String(localized: "Current: \(renameState.originalName)"))
+                Text(String(localized: "Current: \(renameState.originalName)", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -79,7 +79,7 @@ public struct EditorInlineRenameOverlayView: View {
                     .lineLimit(2)
             } else if let summary = renameState.previewSummary, !summary.fileLabels.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Files"))
+                    Text(String(localized: "Files", bundle: .module))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     ForEach(summary.fileLabels, id: \.self) { label in
@@ -92,7 +92,7 @@ public struct EditorInlineRenameOverlayView: View {
             }
 
             HStack {
-                Button(renameState.canApply ? String(localized: "Apply Rename") : String(localized: "Preview Changes")) {
+                Button(renameState.canApply ? String(localized: "Apply Rename", bundle: .module) : String(localized: "Preview Changes", bundle: .module)) {
                     if renameState.canApply {
                         state.applyInlineRename()
                     } else {
@@ -105,7 +105,7 @@ public struct EditorInlineRenameOverlayView: View {
                 .controlSize(.small)
                 .disabled(renameState.isLoadingPreview || (!renameState.canPreview && !renameState.canApply))
 
-                Button(String(localized: "Cancel")) {
+                Button(String(localized: "Cancel", bundle: .module)) {
                     state.dismissInlineRename()
                 }
                 .buttonStyle(.borderless)

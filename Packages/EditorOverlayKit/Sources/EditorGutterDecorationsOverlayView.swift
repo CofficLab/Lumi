@@ -75,7 +75,7 @@ public struct EditorGutterDecorationsOverlayView: View {
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
-            .help(String(localized: "Open diagnostic"))
+            .help(String(localized: "Open diagnostic", bundle: .module))
         } else {
             content
                 .allowsHitTesting(false)

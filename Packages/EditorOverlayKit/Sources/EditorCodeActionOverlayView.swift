@@ -83,6 +83,6 @@ public struct EditorCodeActionOverlayView: View {
             }
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Quick Fix"))
+        .help(String(localized: "Quick Fix", bundle: .module))
     }
 }
