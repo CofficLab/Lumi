@@ -13,8 +13,8 @@ public actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPDocumentHighlightEditorPlugin()
     public static let id = "LSPDocumentHighlightEditor"
-    public static let displayName = String(localized: "LSP Document Highlight", table: "LSPDocumentHighlightEditor")
-    public static let description = String(localized: "Highlights all references of the symbol at cursor position.", table: "LSPDocumentHighlightEditor")
+    public static let displayName = String(localized: "LSP Document Highlight", bundle: .module)
+    public static let description = String(localized: "Highlights all references of the symbol at cursor position.", bundle: .module)
     public static let iconName = "highlighter"
     public static let order = 21
     public static var category: PluginCategory { .editor }
