@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "FreeModel"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FreeModel"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freemodel.dev 提供的免費 LLM 網關服務"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "freemodel.dev 提供的免費 LLM 網關服務"

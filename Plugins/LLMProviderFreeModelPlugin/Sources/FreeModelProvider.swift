@@ -15,9 +15,9 @@ public final class FreeModelProvider: NSObject, SuperLLMProvider, @unchecked Sen
     // MARK: - 基础信息
 
     public static let id = "freemodel"
-    public static let displayName = String(localized: "FreeModel", table: "FreeModel")
+    public static let displayName = String(localized: "FreeModel", bundle: .module)
     public static let shortName = "FM"
-    public static let description = String(localized: "Free LLM Gateway by freemodel.dev", table: "FreeModel")
+    public static let description = String(localized: "Free LLM Gateway by freemodel.dev", bundle: .module)
 
     public static let websiteURL: String? = "https://freemodel.dev"
 
