@@ -13,8 +13,8 @@ public actor LSPFoldingRangeEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPFoldingRangeEditorPlugin()
     public static let id = "LSPFoldingRangeEditor"
-    public static let displayName = String(localized: "LSP Folding Ranges", table: "LSPFoldingRangeEditor")
-    public static let description = String(localized: "Provides code folding ranges from the language server.", table: "LSPFoldingRangeEditor")
+    public static let displayName = String(localized: "LSP Folding Ranges", bundle: .module)
+    public static let description = String(localized: "Provides code folding ranges from the language server.", bundle: .module)
     public static let iconName = "chevron.left.2"
     public static let order = 26
     public static var category: PluginCategory { .editor }
