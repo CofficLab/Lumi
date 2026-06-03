@@ -303,15 +303,21 @@ final class AppPluginVM: ObservableObject, SuperLog {
         // 从插件中收集 LLM 供应商类型
         var providerTypes: [any SuperLLMProvider.Type] = []
         var providerDiagnostics: [String] = []
-        for plugin in sortedPlugins {
-            if let providerType = plugin.llmProviderType() {
+
+        // 优先从 GeneratedPluginRegistry 直接收集 provider 类型，
+        // 避免通过 AnyPackagePluginAdapter 的存在值间接调用导致动态分派失效
+        for packagedPlugin in generatedPlugins {
+            if let providerType = packagedPlugin.llmProviderType() {
                 providerTypes.append(providerType)
-                providerDiagnostics.append("\(plugin.pluginID)->\(providerType.id)")
-            } else {
-                providerDiagnostics.append("\(plugin.pluginID)->nil")
+                providerDiagnostics.append("\(type(of: packagedPlugin).id)->\(providerType.id)")
             }
         }
+
         self.discoveredLLMProviderTypes = providerTypes
+
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)Provider diagnostics (from registry): \(providerDiagnostics.joined(separator: ", "))")
+        }
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
