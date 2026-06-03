@@ -10,7 +10,7 @@ import LumiCoreKit
 /// - **恢复**：视图 onAppear 时读取本地存储并调用 `selectTheme()` 恢复上次选择。
 /// - **保存**：监听 `AppThemeVM.currentThemeId` 变化，自动写入本地存储。
 public actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-theme-status")
     public nonisolated static let emoji = "🎨"
     public nonisolated static let verbose: Bool = true
