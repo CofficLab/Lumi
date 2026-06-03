@@ -12,6 +12,7 @@ struct PluginBrowserAgentTests {
         #expect(BrowserAgentPlugin.iconName == "globe")
         #expect(BrowserAgentPlugin.category == .general)
         #expect(BrowserAgentPlugin.order == 103)
+        #expect(BrowserAgentPlugin.policy == .alwaysOn)
     }
 
     @MainActor

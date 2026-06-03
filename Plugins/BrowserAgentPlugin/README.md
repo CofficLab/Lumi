@@ -1,27 +1,54 @@
-# PluginBrowserAgent
+# BrowserAgentPlugin
 
-`PluginBrowserAgent` is the package-based Browser Agent plugin for Lumi.
+Browser automation plugin for Lumi. Provides the `browser_agent` agent tool, backed by the `agent-browser` CLI.
 
-The package exposes the plugin adapter and tool registration layer:
+## Features
 
-- `BrowserAgentPlugin`: Lumi plugin entry point
-- `BrowserAgentTool`: Agent tool adapter for `browser_agent` (powered by agent-browser CLI)
-- `Resources/BrowserAgent.xcstrings`: plugin-owned localization catalog
+- **Browser automation tool** - registers `browser_agent` for agent workflows
+- **Command execution** - forwards parsed commands to the `agent-browser` CLI
+- **Safe timeout bounds** - clamps command timeouts to 1-300 seconds
+- **CLI discovery** - searches common macOS install paths and login shell PATH
+- **Localization** - packages Browser Agent string resources with the plugin
+
+## Requirements
+
+- macOS 14.0+
+- Swift 6.0+
+- `agent-browser` CLI installed and available on PATH or a known install path
+
+## Dependencies
+
+| Package | Description |
+|---------|-------------|
+| [AgentToolKit](../../Packages/AgentToolKit) | Agent tool protocols and argument types |
+| [LumiCoreKit](../../Packages/LumiCoreKit) | Plugin protocol and localization helpers |
+| [ShellKit](../../Packages/ShellKit) | Shell command execution and command discovery |
+| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
+
+## Plugin Contributions
+
+| Method | Description |
+|--------|-------------|
+| `agentTools` | Registers the `browser_agent` tool |
+
+## Policy
+
+`.alwaysOn` - core browser automation plugin that is always registered and cannot be disabled by users.
 
 ## Structure
 
 ```text
-PluginBrowserAgent
+BrowserAgentPlugin
   Package.swift
-  Sources/PluginBrowserAgent
+  Sources/
     Resources/BrowserAgent.xcstrings
     BrowserAgentPlugin.swift
     BrowserAgentTool.swift
-  Tests/PluginBrowserAgentTests
+  Tests/
     BrowserAgentPluginTests.swift
 ```
 
-## Test
+## Testing
 
 ```bash
 swift test
@@ -29,6 +56,6 @@ swift test
 
 ## Localization
 
-Package-owned translations live in `Sources/PluginBrowserAgent/Resources/BrowserAgent.xcstrings`.
+Package-owned translations live in `Sources/Resources/BrowserAgent.xcstrings`.
 
 Code in this package should localize with `Bundle.module`, not the app main bundle. Use `PluginBrowserAgentLocalization.string(_:)` for plugin metadata so package tests and app integration read from the same resource bundle.
