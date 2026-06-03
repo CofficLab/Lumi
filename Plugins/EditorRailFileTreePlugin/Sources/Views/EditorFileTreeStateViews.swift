@@ -12,7 +12,7 @@ public struct EditorFileTreeLoadingView: View {
         HStack(spacing: 6) {
             ProgressView()
                 .scaleEffect(0.6)
-            Text(String(localized: "Loading...", table: "EditorRailFileTree"))
+            Text(String(localized: "Loading...", bundle: .module))
                 .font(.system(size: 10))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -31,7 +31,7 @@ public struct EditorFileTreeEmptyView: View {
     }
 
     public var body: some View {
-        Text(String(localized: "Empty folder", table: "EditorRailFileTree"))
+        Text(String(localized: "Empty folder", bundle: .module))
             .font(.system(size: 10))
             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -12,11 +12,8 @@ public actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📁"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorRailFileTree"
-    public static let displayName: String = String(
-        localized: "Editor Rail File Tree", table: "EditorRailFileTree")
-    public static let description: String = String(
-        localized: "Editor sidebar explorer tab",
-        table: "EditorRailFileTree")
+    public static let displayName: String = String(localized: "Editor Rail File Tree", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar explorer tab", bundle: .module)
     public static let iconName: String = "folder"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }

@@ -175,30 +175,30 @@ public struct EditorFileTreeNodeView: View {
             .onTapGesture { handleTap() }
             .onHover { hovering in isHovering = hovering }
             .confirmationDialog(
-                String(localized: "Are you sure you want to delete \"\(fileName)\"?", table: "EditorRailFileTree"),
+                String(localized: "Are you sure you want to delete \"\(fileName)\"?", bundle: .module),
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "Move to Trash", table: "EditorRailFileTree"), role: .destructive) { deleteItem() }
-                Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
+                Button(String(localized: "Move to Trash", bundle: .module), role: .destructive) { deleteItem() }
+                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
             } message: {
-                Text(String(localized: "This item will be moved to the Trash.", table: "EditorRailFileTree"))
+                Text(String(localized: "This item will be moved to the Trash.", bundle: .module))
             }
-            .alert(String(localized: "New File", table: "EditorRailFileTree"), isPresented: $showNewFileSheet) {
-                TextField(String(localized: "File name", table: "EditorRailFileTree"), text: $newItemName)
-                Button(String(localized: "Create", table: "EditorRailFileTree")) { createNewFile() }
-                Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the name for the new file.", table: "EditorRailFileTree")) }
-            .alert(String(localized: "New Folder", table: "EditorRailFileTree"), isPresented: $showNewFolderSheet) {
-                TextField(String(localized: "Folder name", table: "EditorRailFileTree"), text: $newItemName)
-                Button(String(localized: "Create", table: "EditorRailFileTree")) { createNewFolder() }
-                Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the name for the new folder.", table: "EditorRailFileTree")) }
-            .alert(String(localized: "Rename", table: "EditorRailFileTree"), isPresented: $showRenameSheet) {
-                TextField(String(localized: "New name", table: "EditorRailFileTree"), text: $newItemName)
-                Button(String(localized: "Rename", table: "EditorRailFileTree")) { renameItem() }
-                Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the new name for this item.", table: "EditorRailFileTree")) }
+            .alert(String(localized: "New File", bundle: .module), isPresented: $showNewFileSheet) {
+                TextField(String(localized: "File name", bundle: .module), text: $newItemName)
+                Button(String(localized: "Create", bundle: .module)) { createNewFile() }
+                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+            } message: { Text(String(localized: "Enter the name for the new file.", bundle: .module)) }
+            .alert(String(localized: "New Folder", bundle: .module), isPresented: $showNewFolderSheet) {
+                TextField(String(localized: "Folder name", bundle: .module), text: $newItemName)
+                Button(String(localized: "Create", bundle: .module)) { createNewFolder() }
+                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+            } message: { Text(String(localized: "Enter the name for the new folder.", bundle: .module)) }
+            .alert(String(localized: "Rename", bundle: .module), isPresented: $showRenameSheet) {
+                TextField(String(localized: "New name", bundle: .module), text: $newItemName)
+                Button(String(localized: "Rename", bundle: .module)) { renameItem() }
+                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+            } message: { Text(String(localized: "Enter the new name for this item.", bundle: .module)) }
 
             if isDirectory && isExpanded {
                 if children.isEmpty {
@@ -255,13 +255,13 @@ public struct EditorFileTreeNodeView: View {
                 newItemName = ""
                 showNewFileSheet = true
             } label: {
-                Label(String(localized: "New File", table: "EditorRailFileTree"), systemImage: "doc.badge.plus")
+                Label(String(localized: "New File", bundle: .module), systemImage: "doc.badge.plus")
             }
             Button {
                 newItemName = ""
                 showNewFolderSheet = true
             } label: {
-                Label(String(localized: "New Folder", table: "EditorRailFileTree"), systemImage: "folder.badge.plus")
+                Label(String(localized: "New Folder", bundle: .module), systemImage: "folder.badge.plus")
             }
             Divider()
         }
@@ -270,20 +270,20 @@ public struct EditorFileTreeNodeView: View {
             newItemName = fileName
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { showRenameSheet = true }
         } label: {
-            Label(String(localized: "Rename", table: "EditorRailFileTree"), systemImage: "pencil")
+            Label(String(localized: "Rename", bundle: .module), systemImage: "pencil")
         }
 
         Divider()
         Button { addToConversation() } label: {
-            Label(String(localized: "Add to Conversation", table: "EditorRailFileTree"), systemImage: "bubble.left.and.bubble.right")
+            Label(String(localized: "Add to Conversation", bundle: .module), systemImage: "bubble.left.and.bubble.right")
         }
-        Button { openInFinder() } label: { Label(String(localized: "Reveal in Finder", table: "EditorRailFileTree"), systemImage: "finder") }
-        Button { openInVSCode() } label: { Label(String(localized: "Open in VS Code", table: "EditorRailFileTree"), systemImage: "chevron.left.forwardslash.chevron.right") }
-        Button { openInTerminal() } label: { Label(String(localized: "Open in Terminal", table: "EditorRailFileTree"), systemImage: "terminal") }
-        Button { copyPath() } label: { Label(String(localized: "Copy Path", table: "EditorRailFileTree"), systemImage: "doc.on.doc") }
+        Button { openInFinder() } label: { Label(String(localized: "Reveal in Finder", bundle: .module), systemImage: "finder") }
+        Button { openInVSCode() } label: { Label(String(localized: "Open in VS Code", bundle: .module), systemImage: "chevron.left.forwardslash.chevron.right") }
+        Button { openInTerminal() } label: { Label(String(localized: "Open in Terminal", bundle: .module), systemImage: "terminal") }
+        Button { copyPath() } label: { Label(String(localized: "Copy Path", bundle: .module), systemImage: "doc.on.doc") }
         Divider()
         Button(role: .destructive) { showDeleteConfirmation = true } label: {
-            Label(String(localized: "Move to Trash", table: "EditorRailFileTree"), systemImage: "trash")
+            Label(String(localized: "Move to Trash", bundle: .module), systemImage: "trash")
         }
     }
 

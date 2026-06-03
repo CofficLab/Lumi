@@ -7,7 +7,7 @@ public struct EditorFileTreeNoProjectView: View {
             Image(systemName: "folder")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No project", table: "EditorRailFileTree"))
+            Text(String(localized: "No project", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

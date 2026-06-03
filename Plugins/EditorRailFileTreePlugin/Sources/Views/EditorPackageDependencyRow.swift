@@ -66,16 +66,16 @@ public struct EditorPackageDependencyRow: View {
     private var contextMenuContent: some View {
         Button { openLocation() } label: {
             if dependency.kind == .local {
-                Label(String(localized: "Reveal in Finder", table: "EditorRailFileTree"), systemImage: "finder")
+                Label(String(localized: "Reveal in Finder", bundle: .module), systemImage: "finder")
             } else {
-                Label(String(localized: "Open Repository", table: "EditorRailFileTree"), systemImage: "link")
+                Label(String(localized: "Open Repository", bundle: .module), systemImage: "link")
             }
         }
         Button { copyLocation() } label: {
-            Label(String(localized: "Copy URL/path", table: "EditorRailFileTree"), systemImage: "doc.on.doc")
+            Label(String(localized: "Copy URL/path", bundle: .module), systemImage: "doc.on.doc")
         }
         Button { openInTerminal() } label: {
-            Label(String(localized: "Open in Terminal", table: "EditorRailFileTree"), systemImage: "terminal")
+            Label(String(localized: "Open in Terminal", bundle: .module), systemImage: "terminal")
         }
     }
 

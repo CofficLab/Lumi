@@ -31,7 +31,7 @@ public struct EditorPackageDependencySection: View {
                         .foregroundColor(theme.accentColors().primary)
                         .frame(width: 16)
 
-                    Text(String(localized: "Package Dependencies", table: "EditorRailFileTree"))
+                    Text(String(localized: "Package Dependencies", bundle: .module))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(theme.workspaceTextColor())
                         .lineLimit(1)
@@ -59,7 +59,7 @@ public struct EditorPackageDependencySection: View {
 
             if isExpanded {
                 if dependencies.isEmpty {
-                    Text(diagnostic ?? String(localized: "No package dependencies", table: "EditorRailFileTree"))
+                    Text(diagnostic ?? String(localized: "No package dependencies", bundle: .module))
                         .font(.system(size: 10))
                         .foregroundColor(theme.workspaceSecondaryTextColor())
                         .lineLimit(2)
@@ -86,14 +86,14 @@ public struct EditorPackageDependencySection: View {
     @ViewBuilder
     private var contextMenuContent: some View {
         Button { onRetry() } label: {
-            Label(String(localized: "Retry refresh", table: "EditorRailFileTree"), systemImage: "arrow.clockwise")
+            Label(String(localized: "Retry refresh", bundle: .module), systemImage: "arrow.clockwise")
         }
         if let diagnostic {
             Button {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(diagnostic, forType: .string)
             } label: {
-                Label(String(localized: "Copy diagnostic text", table: "EditorRailFileTree"), systemImage: "doc.on.doc")
+                Label(String(localized: "Copy diagnostic text", bundle: .module), systemImage: "doc.on.doc")
             }
         }
     }
