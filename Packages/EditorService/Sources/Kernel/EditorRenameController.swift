@@ -6,14 +6,14 @@ import EditorKernel
 final class EditorRenameController: EditorRenamePrompting {
     func promptForNewName() -> String? {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Rename Symbol", table: EditorHostEnvironment.current.localizationTable)
-        alert.informativeText = String(localized: "Enter a new symbol name:", table: EditorHostEnvironment.current.localizationTable)
+        alert.messageText = String(localized: "Rename Symbol", bundle: .module)
+        alert.informativeText = String(localized: "Enter a new symbol name:", bundle: .module)
         alert.alertStyle = .informational
-        alert.addButton(withTitle: String(localized: "Rename", table: EditorHostEnvironment.current.localizationTable))
-        alert.addButton(withTitle: String(localized: "Cancel", table: EditorHostEnvironment.current.localizationTable))
+        alert.addButton(withTitle: String(localized: "Rename", bundle: .module))
+        alert.addButton(withTitle: String(localized: "Cancel", bundle: .module))
 
         let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 22))
-        input.placeholderString = String(localized: "New name", table: EditorHostEnvironment.current.localizationTable)
+        input.placeholderString = String(localized: "New name", bundle: .module)
         alert.accessoryView = input
 
         let response = alert.runModal()
@@ -23,24 +23,24 @@ final class EditorRenameController: EditorRenamePrompting {
     }
 
     func cancelledMessage() -> String {
-        String(localized: "Rename cancelled", table: EditorHostEnvironment.current.localizationTable)
+        String(localized: "Rename cancelled", bundle: .module)
     }
 
     func inProgressMessage() -> String {
-        String(localized: "Renaming symbol...", table: EditorHostEnvironment.current.localizationTable)
+        String(localized: "Renaming symbol...", bundle: .module)
     }
 
     func failedMessage() -> String {
-        String(localized: "Rename failed", table: EditorHostEnvironment.current.localizationTable)
+        String(localized: "Rename failed", bundle: .module)
     }
 
     func notAppliedMessage() -> String {
-        String(localized: "Rename not applied", table: EditorHostEnvironment.current.localizationTable)
+        String(localized: "Rename not applied", bundle: .module)
     }
 
     func completedMessage(changedFiles: Int) -> String {
         EditorRenamePolicy.completedMessage(
-            prefix: String(localized: "Rename completed, updated files:", table: EditorHostEnvironment.current.localizationTable),
+            prefix: String(localized: "Rename completed, updated files:", bundle: .module),
             changedFiles: changedFiles
         )
     }

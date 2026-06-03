@@ -384,19 +384,19 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
         var toastFinding: String {
             switch self {
-            case .definition: return String(localized: "Finding definition...", table: EditorHostEnvironment.current.localizationTable)
-            case .declaration: return String(localized: "Finding declaration...", table: EditorHostEnvironment.current.localizationTable)
-            case .typeDefinition: return String(localized: "Finding type definition...", table: EditorHostEnvironment.current.localizationTable)
-            case .implementation: return String(localized: "Finding implementation...", table: EditorHostEnvironment.current.localizationTable)
+            case .definition: return String(localized: "Finding definition...", bundle: .module)
+            case .declaration: return String(localized: "Finding declaration...", bundle: .module)
+            case .typeDefinition: return String(localized: "Finding type definition...", bundle: .module)
+            case .implementation: return String(localized: "Finding implementation...", bundle: .module)
             }
         }
 
         var toastNotFound: String {
             switch self {
-            case .definition: return String(localized: "No definition found", table: EditorHostEnvironment.current.localizationTable)
-            case .declaration: return String(localized: "No declaration found", table: EditorHostEnvironment.current.localizationTable)
-            case .typeDefinition: return String(localized: "No type definition found", table: EditorHostEnvironment.current.localizationTable)
-            case .implementation: return String(localized: "No implementation found", table: EditorHostEnvironment.current.localizationTable)
+            case .definition: return String(localized: "No definition found", bundle: .module)
+            case .declaration: return String(localized: "No declaration found", bundle: .module)
+            case .typeDefinition: return String(localized: "No type definition found", bundle: .module)
+            case .implementation: return String(localized: "No implementation found", bundle: .module)
             }
         }
     }

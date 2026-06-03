@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorService",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -37,7 +38,10 @@ let package = Package(
                 .product(name: "MagicAlert", package: "MagicAlert"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "EditorServiceTests",
