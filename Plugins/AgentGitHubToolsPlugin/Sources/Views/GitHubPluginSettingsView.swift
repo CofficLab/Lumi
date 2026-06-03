@@ -19,7 +19,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "GitHub Tools", table: "GitHubTools"),
+            title: String(localized: "GitHub Tools", bundle: .module),
             showHeader: false
         ) {
             tokenCard
@@ -34,12 +34,12 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     private var tokenCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Personal Access Token", table: "GitHubTools"),
+                title: String(localized: "Personal Access Token", bundle: .module),
                 spacing: 12
             ) {
                 AppSettingsSecureFieldRow(
-                    String(localized: "GitHub Token", table: "GitHubTools"),
-                    placeholder: String(localized: "Enter GitHub Token", table: "GitHubTools"),
+                    String(localized: "GitHub Token", bundle: .module),
+                    placeholder: String(localized: "Enter GitHub Token", bundle: .module),
                     text: $token
                 )
 
@@ -47,7 +47,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(theme.success)
-                        Text(String(localized: "已保存", table: "GitHubTools"))
+                        Text(String(localized: "已保存", bundle: .module))
                             .font(.appCaption)
                             .foregroundColor(theme.success)
                     }
@@ -67,18 +67,18 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     private var apiLimitCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "API 限制", table: "GitHubTools"),
-                subtitle: String(localized: "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。", table: "GitHubTools"),
+                title: String(localized: "API 限制", bundle: .module),
+                subtitle: String(localized: "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。", bundle: .module),
                 spacing: 12
             ) {
                 limitRow(
-                    title: String(localized: "未认证用户", table: "GitHubTools"),
-                    value: String(localized: "60 次/小时", table: "GitHubTools"),
+                    title: String(localized: "未认证用户", bundle: .module),
+                    value: String(localized: "60 次/小时", bundle: .module),
                     isPositive: false
                 )
                 limitRow(
-                    title: String(localized: "已认证用户", table: "GitHubTools"),
-                    value: String(localized: "5,000 次/小时", table: "GitHubTools"),
+                    title: String(localized: "已认证用户", bundle: .module),
+                    value: String(localized: "5,000 次/小时", bundle: .module),
                     isPositive: true
                 )
 

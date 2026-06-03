@@ -21,8 +21,8 @@ public actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public static let id: String = "GitHubTools"
-    public static let displayName: String = String(localized: "GitHub Tools", table: "GitHubTools")
-    public static let description: String = String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", table: "GitHubTools")
+    public static let displayName: String = String(localized: "GitHub Tools", bundle: .module)
+    public static let description: String = String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", bundle: .module)
     public static let iconName: String = "star.circle.fill"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 15 }
