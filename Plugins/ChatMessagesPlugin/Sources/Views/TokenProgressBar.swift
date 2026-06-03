@@ -48,8 +48,8 @@ public struct TokenProgressBar: View {
         ➡️ Input Token: \(inputTokens) (\(inputPercent)%)
         ⬅️ Output Token: \(outputTokens) (\(outputPercent)%)
 
-        \(String(localized: "Input Token Help"))
-        \(String(localized: "Output Token Help"))
+        \(String(localized: "Input Token Help", bundle: .module))
+        \(String(localized: "Output Token Help", bundle: .module))
         """
     }
 }

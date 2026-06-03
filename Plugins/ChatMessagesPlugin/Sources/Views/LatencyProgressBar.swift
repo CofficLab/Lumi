@@ -67,10 +67,10 @@ public struct LatencyProgressBar: View {
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         return """
         ⚡ TTFT: \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 \(String(localized: "Response Time")): \(formatLatency(totalLatency)) (\(responsePercent)%)
+        🕐 \(String(localized: "Response Time", bundle: .module)): \(formatLatency(totalLatency)) (\(responsePercent)%)
 
-        \(String(localized: "TTFT Help"))
-        \(String(localized: "Response Time Help"))
+        \(String(localized: "TTFT Help", bundle: .module))
+        \(String(localized: "Response Time Help", bundle: .module))
         """
     }
 }
