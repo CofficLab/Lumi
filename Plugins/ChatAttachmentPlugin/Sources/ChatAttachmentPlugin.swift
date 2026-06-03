@@ -12,6 +12,7 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "📎"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "ChatAttachment"
     public static let displayName = String(localized: "Chat Attachment", table: "AgentChat")
     public static let description = String(localized: "Pending chat attachments and sidebar drop handling", table: "AgentChat")

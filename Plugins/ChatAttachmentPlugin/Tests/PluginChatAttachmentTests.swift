@@ -8,6 +8,10 @@ import LumiCoreKit
     #expect(Bool(true))
 }
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(ChatAttachmentPlugin.policy == .alwaysOn)
+}
+
 @Test func droppedFileURLStringsBecomeFileURLs() {
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: "/tmp/a.png")?.path == "/tmp/a.png")
     #expect(ChatAttachmentDropRules.fileURL(fromDroppedString: " file:///tmp/a%20b.png\n")?.path == "/tmp/a b.png")
