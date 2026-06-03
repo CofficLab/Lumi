@@ -14,8 +14,8 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "ChatAttachment"
-    public static let displayName = String(localized: "Chat Attachment", table: "AgentChat")
-    public static let description = String(localized: "Pending chat attachments and sidebar drop handling", table: "AgentChat")
+    public static let displayName = String(localized: "Chat Attachment", bundle: .module)
+    public static let description = String(localized: "Pending chat attachments and sidebar drop handling", bundle: .module)
     public static let iconName = "paperclip"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 94 }
@@ -38,7 +38,7 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "image-upload",
-                title: String(localized: "Upload Image", table: "AgentChat"),
+                title: String(localized: "Upload Image", bundle: .module),
                 systemImage: "photo",
                 priority: 40
             )
@@ -72,9 +72,9 @@ private struct ImageUploadToolbarButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!conversationVM.canAttachToCurrentConversation)
-        .help(String(localized: "Upload Image", table: "AgentChat"))
-        .accessibilityLabel(String(localized: "Upload Image", table: "AgentChat"))
-        .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentChat"))
+        .help(String(localized: "Upload Image", bundle: .module))
+        .accessibilityLabel(String(localized: "Upload Image", bundle: .module))
+        .accessibilityHint(String(localized: "Upload Image Hint", bundle: .module))
     }
 
     private func selectImage() {
