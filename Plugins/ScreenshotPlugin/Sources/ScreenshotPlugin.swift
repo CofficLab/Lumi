@@ -21,6 +21,7 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
     public static let iconName = "crop"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 85 }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ScreenshotPlugin()
 
     // MARK: - Lifecycle
