@@ -6,8 +6,8 @@ import LumiCoreKit
 public actor EditorSwiftKeywordHoverPlugin: SuperPlugin {
     public static let shared = EditorSwiftKeywordHoverPlugin()
     public static let id = "EditorSwiftKeywordHover"
-    public static let displayName = String(localized: "Editor Swift Keyword Hover", table: "EditorSwiftKeywordHover")
-    public static let description = String(localized: "Shows inline hover documentation for common Swift keywords.", table: "EditorSwiftKeywordHover")
+    public static let displayName = String(localized: "Editor Swift Keyword Hover", bundle: .module)
+    public static let description = String(localized: "Shows inline hover documentation for common Swift keywords.", bundle: .module)
     public static let iconName = "swift"
     public static let order = 20
     public static var category: PluginCategory { .general }
