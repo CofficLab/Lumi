@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "在 header 中顯示一個按鈕，用於在 Xcode 中打開當前項目"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在 Xcode 中打開當前項目"
+          }
         }
       }
     },
@@ -44,6 +50,12 @@
             "state": "translated",
             "value": "在 Xcode 中打開"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中打開"
+          }
         }
       }
     },
@@ -62,6 +74,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Xcode"
@@ -89,6 +107,12 @@
             "state": "translated",
             "value": "在 Xcode 中打開當前項目"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中打開當前項目"
+          }
         }
       }
     },
@@ -107,6 +131,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製路徑"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "複製路徑"
@@ -133,6 +163,12 @@
             "state": "translated",
             "value": "打開"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
         }
       }
     },
@@ -151,6 +187,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "項目"

@@ -17,8 +17,8 @@ public actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id: String = "AgentOpenInXcode"
-    public static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")
-    public static let description: String = String(localized: "Displays a button in the header to open the current project in Xcode", table: "AgentOpenInXcode")
+    public static let displayName: String = String(localized: "Open in Xcode", bundle: .module)
+    public static let description: String = String(localized: "Displays a button in the header to open the current project in Xcode", bundle: .module)
     public static let iconName: String = "hammer"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 95 }
@@ -84,7 +84,7 @@ public struct OpenInXcodeStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Xcode 中打开当前项目", table: "AgentOpenInXcode"))
+            .help(String(localized: "在 Xcode 中打开当前项目", bundle: .module))
         }
     }
 
@@ -94,13 +94,13 @@ public struct OpenInXcodeStatusBarView: View {
             Image(systemName: "hammer.fill")
                 .font(.appMicro)
 
-            Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
+            Text(String(localized: "Xcode", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInXcode"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInXcode() {
@@ -126,7 +126,7 @@ public struct OpenInXcodeDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
+                Text(String(localized: "Xcode", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -137,7 +137,7 @@ public struct OpenInXcodeDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInXcodePlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -148,7 +148,7 @@ public struct OpenInXcodeDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInXcodePlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -169,7 +169,7 @@ public struct OpenInXcodeDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInXcodePlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()
