@@ -22,8 +22,8 @@ public actor AgentOpenInGitOKPlugin: SuperPlugin {
     public nonisolated static let emoji = "✅"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentOpenInGitOK"
-    public static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
-    public static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
+    public static let displayName = String(localized: "Open in GitOK", bundle: .module)
+    public static let description = String(localized: "Open current project in GitOK", bundle: .module)
     public static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 98 }
@@ -88,8 +88,8 @@ public struct OpenInGitOKStatusBarView: View {
             }
             .buttonStyle(.plain)
             .help(isGitOKInstalled
-                ? String(localized: "在 GitOK 中打开当前项目", table: "AgentOpenInGitOK")
-                : String(localized: "GitOK 未安装", table: "AgentOpenInGitOK"))
+                ? String(localized: "在 GitOK 中打开当前项目", bundle: .module)
+                : String(localized: "GitOK 未安装", bundle: .module))
         }
     }
 
@@ -100,13 +100,13 @@ public struct OpenInGitOKStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
+            Text(String(localized: "GitOK", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInGitOK"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInGitOK() {
@@ -133,7 +133,7 @@ public struct OpenInGitOKDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
+                Text(String(localized: "GitOK", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -144,7 +144,7 @@ public struct OpenInGitOKDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInGitOKPlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -155,7 +155,7 @@ public struct OpenInGitOKDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInGitOKPlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -176,7 +176,7 @@ public struct OpenInGitOKDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInGitOKPlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()
