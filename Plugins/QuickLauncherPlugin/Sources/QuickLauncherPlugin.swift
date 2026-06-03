@@ -20,8 +20,8 @@ public actor QuickLauncherPlugin: SuperPlugin, SuperLog {
 
     public static let id: String = "QuickLauncher"
     public static let navigationId: String = "quicklauncher_settings"
-    public static let displayName: String = String(localized: "Quick Launcher", table: "QuickLauncher")
-    public static let description: String = String(localized: "Quick access to system apps and utilities", table: "QuickLauncher")
+    public static let displayName: String = String(localized: "Quick Launcher", bundle: .module)
+    public static let description: String = String(localized: "Quick access to system apps and utilities", bundle: .module)
     public static let iconName: String = "app.grid"
     public static var category: PluginCategory { .system }
     public static var order: Int { 8 }
