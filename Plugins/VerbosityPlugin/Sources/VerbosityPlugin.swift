@@ -11,6 +11,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.verbosity")
 
     public nonisolated static let emoji = "📝"
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let verbose: Bool = true
     public static let id = "Verbosity"
     public static let displayName = String(localized: "Verbosity", table: "Verbosity")
