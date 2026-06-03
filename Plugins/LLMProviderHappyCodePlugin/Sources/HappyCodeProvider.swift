@@ -15,9 +15,9 @@ public final class HappyCodeProvider: NSObject, SuperLLMProvider, @unchecked Sen
     // MARK: - 基础信息
 
     public static let id = "happycode"
-    public static let displayName = String(localized: "HappyCode", table: "HappyCode")
+    public static let displayName = String(localized: "HappyCode", bundle: .module)
     public static let shortName = "HC"
-    public static let description = String(localized: "AI API Gateway by HappyCode", table: "HappyCode")
+    public static let description = String(localized: "AI API Gateway by HappyCode", bundle: .module)
 
     public static let websiteURL: String? = "https://happycode.vip"
 
