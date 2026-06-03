@@ -190,7 +190,7 @@ actor ProjectScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentProgress = String(localized: "Starting scan...")
+        currentProgress = String(localized: "Starting scan...", bundle: .module)
 
         let task = Task { await performScan(paths: paths, id: myID) }
         activeTask = task
