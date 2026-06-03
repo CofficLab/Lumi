@@ -15,8 +15,8 @@ public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🧭"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "BreadcrumbNav"
-    public static let displayName: String = String(localized: "Breadcrumb Navigation", table: "BreadcrumbNav")
-    public static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", table: "BreadcrumbNav")
+    public static let displayName: String = String(localized: "Breadcrumb Navigation", bundle: .module)
+    public static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", bundle: .module)
     public static let iconName: String = "point.topleft.down.curvedto.point.bottomright.up"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 70 }

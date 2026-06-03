@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "麵包屑導航"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麵包屑導航"
+          }
         }
       }
     },
@@ -39,6 +45,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在編輯器標籤欄下方顯示文件路徑的麵包屑導航"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在編輯器標籤欄下方顯示文件路徑的麵包屑導航"
