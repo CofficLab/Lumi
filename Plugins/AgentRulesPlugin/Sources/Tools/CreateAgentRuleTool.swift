@@ -21,19 +21,19 @@ public struct CreateAgentRuleTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", table: "AgentRules")
+                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", bundle: .module)
                 ],
                 "filename": [
                     "type": "string",
-                    "description": String(localized: "The filename for the new rule document (without .md extension, will be added automatically). Use kebab-case or snake_case naming convention.", table: "AgentRules")
+                    "description": String(localized: "The filename for the new rule document (without .md extension, will be added automatically). Use kebab-case or snake_case naming convention.", bundle: .module)
                 ],
                 "title": [
                     "type": "string",
-                    "description": String(localized: "The title of the rule document (will be added as a level 1 heading).", table: "AgentRules")
+                    "description": String(localized: "The title of the rule document (will be added as a level 1 heading).", bundle: .module)
                 ],
                 "content": [
                     "type": "string",
-                    "description": String(localized: "The content of the rule document in Markdown format. If empty, only the title heading will be created.", table: "AgentRules")
+                    "description": String(localized: "The content of the rule document in Markdown format. If empty, only the title heading will be created.", bundle: .module)
                 ]
             ],
             "required": ["project_path", "filename", "title"]

@@ -18,8 +18,8 @@ public actor AgentRulesPlugin: SuperPlugin, SuperLog {
     // MARK: - 插件基本信息
 
     public static let id = "AgentRules"
-    public static let displayName = String(localized: "Agent Rules", table: "AgentRules")
-    public static let description = String(localized: "Manage rule documents in .agent/rules directory", table: "AgentRules")
+    public static let displayName = String(localized: "Agent Rules", bundle: .module)
+    public static let description = String(localized: "Manage rule documents in .agent/rules directory", bundle: .module)
     public static let iconName = "doc.text"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 50 }

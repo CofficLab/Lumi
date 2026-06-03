@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "包含 .agent/rules 文件夾的項目目錄的絕對路徑。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含 .agent/rules 文件夾的項目目錄的絕對路徑。"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 規則"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Agent 規則"
@@ -67,6 +79,12 @@
             "state": "translated",
             "value": "在項目的 .agent/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在項目的 .agent/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
@@ -113,6 +137,12 @@
             "state": "translated",
             "value": "管理 .agent/rules 目錄中的規則文檔"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 .agent/rules 目錄中的規則文檔"
+          }
         }
       }
     },
@@ -132,6 +162,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回的最大規則數量（默認：全部）。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "返回的最大規則數量（默認：全部）。"
@@ -159,6 +195,12 @@
             "state": "translated",
             "value": "規則文檔的內容，採用 Markdown 格式。如果為空，將只創建標題。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "規則文檔的內容，採用 Markdown 格式。如果為空，將只創建標題。"
+          }
         }
       }
     },
@@ -182,6 +224,12 @@
             "state": "translated",
             "value": "新規則文檔的文件名（不含 .md 擴展名，將自動添加）。使用 kebab-case 或 snake_case 命名約定。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新規則文檔的文件名（不含 .md 擴展名，將自動添加）。使用 kebab-case 或 snake_case 命名約定。"
+          }
         }
       }
     },
@@ -201,6 +249,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "規則文檔的標題（將添加為一級標題）。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "規則文檔的標題（將添加為一級標題）。"

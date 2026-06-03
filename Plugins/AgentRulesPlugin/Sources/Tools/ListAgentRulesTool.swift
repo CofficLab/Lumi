@@ -24,11 +24,11 @@ public struct ListAgentRulesTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", table: "AgentRules")
+                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", bundle: .module)
                 ],
                 "limit": [
                     "type": "integer",
-                    "description": String(localized: "Maximum number of rules to return (default: all).", table: "AgentRules"),
+                    "description": String(localized: "Maximum number of rules to return (default: all).", bundle: .module),
                     "minimum": Self.minLimit,
                     "maximum": Self.maxLimit
                 ]
