@@ -10,8 +10,8 @@ public actor AgentOpenInAntigravityPlugin: SuperPlugin {
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentOpenInAntigravity"
-    public static let displayName = String(localized: "Open in Antigravity", table: "AgentOpenInAntigravity")
-    public static let description = String(localized: "Open current project in Antigravity editor", table: "AgentOpenInAntigravity")
+    public static let displayName = String(localized: "Open in Antigravity", bundle: .module)
+    public static let description = String(localized: "Open current project in Antigravity editor", bundle: .module)
     public static let iconName = "paperplane"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 83 }
@@ -91,7 +91,7 @@ public struct OpenInAntigravityStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Antigravity 中打开当前项目", bundle: .main))
+            .help(String(localized: "在 Antigravity 中打开当前项目", bundle: .module))
         }
     }
 
@@ -102,13 +102,13 @@ public struct OpenInAntigravityStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
+            Text(String(localized: "Antigravity", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInAntigravity"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInAntigravity() {
@@ -134,7 +134,7 @@ public struct OpenInAntigravityDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
+                Text(String(localized: "Antigravity", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -145,7 +145,7 @@ public struct OpenInAntigravityDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInAntigravityPlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -156,7 +156,7 @@ public struct OpenInAntigravityDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInAntigravityPlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -177,7 +177,7 @@ public struct OpenInAntigravityDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInAntigravityPlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()
