@@ -13,11 +13,8 @@ public actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorRailWorkspaceSearch"
-    public static let displayName: String = String(
-        localized: "Editor Rail Workspace Search", table: "EditorRailWorkspaceSearch")
-    public static let description: String = String(
-        localized: "Editor sidebar search tab",
-        table: "EditorRailWorkspaceSearch")
+    public static let displayName: String = String(localized: "Editor Rail Workspace Search", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar search tab", bundle: .module)
     public static let iconName: String = "magnifyingglass"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }
