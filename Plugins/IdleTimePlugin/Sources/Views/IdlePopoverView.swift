@@ -8,7 +8,7 @@ public struct IdlePopoverView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Idle Time", table: "IdleTime"),
+            title: String(localized: "Idle Time", bundle: .module),
             systemImage: "moon.zzz",
             showsHeaderDivider: false
         ) {
@@ -40,11 +40,11 @@ public struct IdlePopoverView: View {
 
     private var metrics: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: 8) {
-            metricRow(String(localized: "Coverage", table: "IdleTime"), coverageText)
-            metricRow(String(localized: "Events", table: "IdleTime"), "\(snapshot?.eventCount ?? 0)")
-            metricRow(String(localized: "Last active", table: "IdleTime"), lastActiveText)
-            metricRow(String(localized: "Source", table: "IdleTime"), sourceText)
-            metricRow(String(localized: "Confidence", table: "IdleTime"), confidencePercentText)
+            metricRow(String(localized: "Coverage", bundle: .module), coverageText)
+            metricRow(String(localized: "Events", bundle: .module), "\(snapshot?.eventCount ?? 0)")
+            metricRow(String(localized: "Last active", bundle: .module), lastActiveText)
+            metricRow(String(localized: "Source", bundle: .module), sourceText)
+            metricRow(String(localized: "Confidence", bundle: .module), confidencePercentText)
         }
         .font(.appCaption)
     }
@@ -60,23 +60,23 @@ public struct IdlePopoverView: View {
     }
 
     private var windowText: String {
-        guard let window = snapshot?.restWindow else { return String(localized: "Learning", table: "IdleTime") }
+        guard let window = snapshot?.restWindow else { return String(localized: "Learning", bundle: .module) }
         let label = IdleConfidenceLabel.label(for: window.confidence, source: window.source)
         if label == .learning {
-            return String(localized: "Learning", table: "IdleTime")
+            return String(localized: "Learning", bundle: .module)
         }
         return "\(formatMinute(window.startMinuteOfDay)) - \(formatMinute(window.endMinuteOfDay))"
     }
 
     private var confidenceText: String {
-        guard let window = snapshot?.restWindow else { return String(localized: "Learning", table: "IdleTime") }
+        guard let window = snapshot?.restWindow else { return String(localized: "Learning", bundle: .module) }
         switch IdleConfidenceLabel.label(for: window.confidence, source: window.source) {
         case .learning:
-            return String(localized: "Learning", table: "IdleTime")
+            return String(localized: "Learning", bundle: .module)
         case .medium:
-            return String(localized: "Medium", table: "IdleTime")
+            return String(localized: "Medium", bundle: .module)
         case .high:
-            return String(localized: "High", table: "IdleTime")
+            return String(localized: "High", bundle: .module)
         }
     }
 
@@ -94,25 +94,25 @@ public struct IdlePopoverView: View {
 
     private var coverageText: String {
         let count = snapshot?.observedDayCount ?? 0
-        return "\(count) / 28 \(String(localized: "days", table: "IdleTime"))"
+        return "\(count) / 28 \(String(localized: "days", bundle: .module))"
     }
 
     private var lastActiveText: String {
-        guard let date = snapshot?.lastActivityAt else { return String(localized: "None", table: "IdleTime") }
+        guard let date = snapshot?.lastActivityAt else { return String(localized: "None", bundle: .module) }
         return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
     private var sourceText: String {
-        guard let source = snapshot?.restWindow?.source else { return String(localized: "Learning", table: "IdleTime") }
+        guard let source = snapshot?.restWindow?.source else { return String(localized: "Learning", bundle: .module) }
         switch source {
         case .weekday:
-            return String(localized: "Weekday model", table: "IdleTime")
+            return String(localized: "Weekday model", bundle: .module)
         case .weekend:
-            return String(localized: "Weekend model", table: "IdleTime")
+            return String(localized: "Weekend model", bundle: .module)
         case .globalFallback:
-            return String(localized: "Global model", table: "IdleTime")
+            return String(localized: "Global model", bundle: .module)
         case .defaultFallback:
-            return String(localized: "Default fallback", table: "IdleTime")
+            return String(localized: "Default fallback", bundle: .module)
         }
     }
 

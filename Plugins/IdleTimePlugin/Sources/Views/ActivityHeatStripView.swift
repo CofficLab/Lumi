@@ -8,7 +8,7 @@ public struct ActivityHeatStripView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(String(localized: "24-hour activity", table: "IdleTime"))
+            Text(String(localized: "24-hour activity", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
 
