@@ -20,8 +20,8 @@ public actor SkillPlugin: SuperPlugin, SuperLog {
     // MARK: - 插件基本信息
 
     public static let id = "Skill"
-    public static let displayName = String(localized: "Skills", table: "Skill")
-    public static let description = String(localized: "Load domain skills from .agent/skills/ directory", table: "Skill")
+    public static let displayName = String(localized: "Skills", bundle: .module)
+    public static let description = String(localized: "Load domain skills from .agent/skills/ directory", bundle: .module)
     public static let iconName = "sparkles"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 51 }

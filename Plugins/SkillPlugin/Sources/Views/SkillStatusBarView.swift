@@ -116,12 +116,12 @@ public struct SkillListPopover: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "^[\(skills.count) Available Skill](inflect: true)", table: "Skill"),
+            title: String(localized: "^[\(skills.count) Available Skill](inflect: true)", bundle: .module),
             systemImage: "sparkles"
         ) {
             HStack {
                 Spacer()
-                Text(String(localized: "Skills are loaded from .agent/skills/", table: "Skill"))
+                Text(String(localized: "Skills are loaded from .agent/skills/", bundle: .module))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }
