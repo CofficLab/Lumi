@@ -125,125 +125,125 @@ public struct EditorFileTreeNodeView: View {
 
     public var body: some View {
         let isSelected = selectedURL == url
-        let theme = themeVM.activeChromeTheme
+        guard let theme = editorContext.activeChromeTheme else {
+            return AnyView(Color.clear)
+        }
 
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 4) {
-                if isDirectory {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(theme.workspaceSecondaryTextColor())
-                        .frame(width: 12)
-                } else {
-                    Color.clear.frame(width: 12)
-                }
-
-                fileIconView(resolvedIcon)
-                    .font(.system(size: 12))
-                    .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
-                    .frame(width: 16)
-
-                Text(fileName)
-                    .font(.system(size: 11))
-                    .foregroundColor(isSelected ? theme.sidebarSelectionTextColor() : theme.workspaceTextColor())
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Git 状态标记
-                if let gitStatus = currentGitStatus {
-                    Text(gitStatus.displayLetter)
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected, theme: theme))
-                        .frame(width: 16, alignment: .trailing)
-                        .help(gitStatus.tooltip)
-                }
-            }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 6)
-            .padding(.leading, CGFloat(depth) * 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(rowBackground(isSelected: isSelected))
-            .contentShape(Rectangle())
-            .onDrag {
-                // 传递纯文本路径字符串，接收方直接拿到绝对路径，不会触发文件缓存复制
-                NSItemProvider(object: url.path as NSString)
-            } preview: {
-                FileTreeDragPreview(fileURL: url)
-            }
-            .contextMenu { contextMenuContent }
-            .onTapGesture { handleTap() }
-            .onHover { hovering in isHovering = hovering }
-            .confirmationDialog(
-                String(localized: "Are you sure you want to delete \"\(fileName)\"?", bundle: .module),
-                isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button(String(localized: "Move to Trash", bundle: .module), role: .destructive) { deleteItem() }
-                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            } message: {
-                Text(String(localized: "This item will be moved to the Trash.", bundle: .module))
-            }
-            .alert(String(localized: "New File", bundle: .module), isPresented: $showNewFileSheet) {
-                TextField(String(localized: "File name", bundle: .module), text: $newItemName)
-                Button(String(localized: "Create", bundle: .module)) { createNewFile() }
-                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the name for the new file.", bundle: .module)) }
-            .alert(String(localized: "New Folder", bundle: .module), isPresented: $showNewFolderSheet) {
-                TextField(String(localized: "Folder name", bundle: .module), text: $newItemName)
-                Button(String(localized: "Create", bundle: .module)) { createNewFolder() }
-                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the name for the new folder.", bundle: .module)) }
-            .alert(String(localized: "Rename", bundle: .module), isPresented: $showRenameSheet) {
-                TextField(String(localized: "New name", bundle: .module), text: $newItemName)
-                Button(String(localized: "Rename", bundle: .module)) { renameItem() }
-                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            } message: { Text(String(localized: "Enter the new name for this item.", bundle: .module)) }
-
-            if isDirectory && isExpanded {
-                if children.isEmpty {
-                    if isLoadingChildren {
-                        EditorFileTreeLoadingView(depth: depth + 1)
-                    } else if hasLoadedChildren {
-                        EditorFileTreeEmptyView(depth: depth + 1)
+        return AnyView(
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 4) {
+                    if isDirectory {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(theme.workspaceSecondaryTextColor())
+                            .frame(width: 12)
+                    } else {
+                        Color.clear.frame(width: 12)
                     }
-                } else {
-                    VStack(spacing: 2) {
-                        ForEach(children, id: \.self) { childURL in
-                            EditorFileTreeNodeView(
-                                url: childURL,
-                                depth: depth + 1,
-                                selectedURL: selectedURL,
-                                onSelect: onSelect,
-                                windowId: windowId,
-                                refreshToken: refreshToken,
-                                projectRootPath: projectRootPath,
-                                onExpansionChange: onExpansionChange,
-                                onTreeMutation: onTreeMutation,
-                                gitStatusSnapshot: gitStatusSnapshot
-                            )
+
+                    fileIconView(resolvedIcon)
+                        .font(.system(size: 12))
+                        .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
+                        .frame(width: 16)
+
+                    Text(fileName)
+                        .font(.system(size: 11))
+                        .foregroundColor(isSelected ? theme.sidebarSelectionTextColor() : theme.workspaceTextColor())
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    if let gitStatus = currentGitStatus {
+                        Text(gitStatus.displayLetter)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected, theme: theme))
+                            .frame(width: 16, alignment: .trailing)
+                            .help(gitStatus.tooltip)
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 6)
+                .padding(.leading, CGFloat(depth) * 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(rowBackground(isSelected: isSelected, theme: theme))
+                .contentShape(Rectangle())
+                .onDrag {
+                    NSItemProvider(object: url.path as NSString)
+                } preview: {
+                    FileTreeDragPreview(fileURL: url)
+                }
+                .contextMenu { contextMenuContent }
+                .onTapGesture { handleTap() }
+                .onHover { hovering in isHovering = hovering }
+                .confirmationDialog(
+                    String(localized: "Are you sure you want to delete \"\(fileName)\"?", bundle: .module),
+                    isPresented: $showDeleteConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button(String(localized: "Move to Trash", bundle: .module), role: .destructive) { deleteItem() }
+                    Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+                } message: {
+                    Text(String(localized: "This item will be moved to the Trash.", bundle: .module))
+                }
+                .alert(String(localized: "New File", bundle: .module), isPresented: $showNewFileSheet) {
+                    TextField(String(localized: "File name", bundle: .module), text: $newItemName)
+                    Button(String(localized: "Create", bundle: .module)) { createNewFile() }
+                    Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+                } message: { Text(String(localized: "Enter the name for the new file.", bundle: .module)) }
+                .alert(String(localized: "New Folder", bundle: .module), isPresented: $showNewFolderSheet) {
+                    TextField(String(localized: "Folder name", bundle: .module), text: $newItemName)
+                    Button(String(localized: "Create", bundle: .module)) { createNewFolder() }
+                    Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+                } message: { Text(String(localized: "Enter the name for the new folder.", bundle: .module)) }
+                .alert(String(localized: "Rename", bundle: .module), isPresented: $showRenameSheet) {
+                    TextField(String(localized: "New name", bundle: .module), text: $newItemName)
+                    Button(String(localized: "Rename", bundle: .module)) { renameItem() }
+                    Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+                } message: { Text(String(localized: "Enter the new name for this item.", bundle: .module)) }
+
+                if isDirectory && isExpanded {
+                    if children.isEmpty {
+                        if isLoadingChildren {
+                            EditorFileTreeLoadingView(depth: depth + 1)
+                        } else if hasLoadedChildren {
+                            EditorFileTreeEmptyView(depth: depth + 1)
+                        }
+                    } else {
+                        VStack(spacing: 2) {
+                            ForEach(children, id: \.self) { childURL in
+                                EditorFileTreeNodeView(
+                                    url: childURL,
+                                    depth: depth + 1,
+                                    selectedURL: selectedURL,
+                                    onSelect: onSelect,
+                                    windowId: windowId,
+                                    refreshToken: refreshToken,
+                                    projectRootPath: projectRootPath,
+                                    onExpansionChange: onExpansionChange,
+                                    onTreeMutation: onTreeMutation,
+                                    gitStatusSnapshot: gitStatusSnapshot
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-        .onAppear {
-            // 恢复展开状态时，children 尚未加载，需要补加载
-            if isDirectory && isExpanded && children.isEmpty {
-                loadChildren()
+            .onAppear {
+                if isDirectory && isExpanded && children.isEmpty {
+                    loadChildren()
+                }
+                if isDirectory && isExpanded {
+                    notifyExpansionChanged(isExpanded: true)
+                }
             }
-            // 恢复展开状态时通知协调器（用于文件系统监听）
-            if isDirectory && isExpanded {
-                notifyExpansionChanged(isExpanded: true)
+            .onChange(of: refreshToken) { _, newValue in
+                handleRefreshTokenChange(newValue)
             }
-        }
-        .onChange(of: refreshToken) { _, newValue in
-            handleRefreshTokenChange(newValue)
-        }
-        .onDisappear {
-            loadChildrenTask?.cancel()
-            loadChildrenTask = nil
-        }
+            .onDisappear {
+                loadChildrenTask?.cancel()
+                loadChildrenTask = nil
+            }
+        )
     }
 
     // MARK: - Context Menu
@@ -364,7 +364,7 @@ public struct EditorFileTreeNodeView: View {
             projectRootPath: projectRootPath
         )
         let defaultContributor = LumiDefaultFileIconThemeContributor()
-        let activeContributor = themeVM.activeFileIconTheme
+        let activeContributor = editorContext.activeFileIconTheme
         if let icon = activeContributor?.icon(for: context) {
             return icon
         }
@@ -392,8 +392,7 @@ public struct EditorFileTreeNodeView: View {
         }
     }
 
-    fileprivate func rowBackground(isSelected: Bool) -> Color {
-        let theme = themeVM.activeChromeTheme
+    private func rowBackground(isSelected: Bool, theme: any LumiAppChromeTheme) -> Color {
         if isSelected {
             return isHovering ? theme.sidebarSelectionColor().opacity(1.2) : theme.sidebarSelectionColor()
         } else {
@@ -517,7 +516,7 @@ extension EditorFileTreeNodeView {
 // MARK: - Preview
 
 #Preview {
-    public let testURL = URL(fileURLWithPath: NSHomeDirectory())
+    let testURL = URL(fileURLWithPath: NSHomeDirectory())
 
     return EditorFileTreeNodeView(
         url: testURL,
