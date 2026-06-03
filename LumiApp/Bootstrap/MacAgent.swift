@@ -39,8 +39,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 负责管理菜单栏图标、弹窗和状态显示。
     /// 在应用启动时初始化，应用终止时清理。
     private var statusBarController: MenuBarController?
-    private var openWindowObserver: NSObjectProtocol?
-    private var mainWindows: [NSWindow] = []
     private var didPresentInitialMainWindow = false
 
     // MARK: - Application Lifecycle
@@ -67,7 +65,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             AppLogger.core.info("\(self.t)应用启动完成")
         }
 
-        observeWindowOpenRequests()
         ensureMainWindowPresented()
 
         // 初始化 libgit2（必须在任何 Git 操作之前调用）
@@ -99,7 +96,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
 
         cleanupApplication()
-        removeWindowOpenObserver()
 
         // 清理 libgit2
         LibGit2.shutdown()
@@ -137,20 +133,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
     /// 当应用已运行且用户再次点击 Dock 图标时，确保没有可见窗口的场景能恢复主窗口。
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        guard !flag else {
-            return true
-        }
-
-        if let window = mainWindows.first {
-            activateMainWindow(window)
-            return false
-        }
-
-        NotificationCenter.postOpenWindowWithRoute(route: LumiWindowRoute())
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)应用重新激活时无可见窗口，已请求打开主窗口")
-        }
-        return false
+        true
     }
 
     // MARK: - Dock Menu
@@ -226,81 +209,21 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
     }
 
-    private func observeWindowOpenRequests() {
-        removeWindowOpenObserver()
-        openWindowObserver = NotificationCenter.default.addObserver(
-            forName: .openWindowWithRoute,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self,
-                  let route = notification.userInfo?["route"] as? LumiWindowRoute else {
-                return
-            }
-            Task { @MainActor in
-                self.presentMainWindow(route: route)
-            }
-        }
-    }
-
-    private func removeWindowOpenObserver() {
-        if let openWindowObserver {
-            NotificationCenter.default.removeObserver(openWindowObserver)
-            self.openWindowObserver = nil
-        }
-    }
-
     private func ensureMainWindowPresented() {
         if RootContainer.shared.windowManagerVM.activatePreferredWindow() {
             didPresentInitialMainWindow = true
             return
         }
 
-        if !didPresentInitialMainWindow {
-            presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
-            didPresentInitialMainWindow = true
-        }
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self else { return }
-            if RootContainer.shared.windowManagerVM.activatePreferredWindow() || !self.mainWindows.isEmpty {
+            if RootContainer.shared.windowManagerVM.activatePreferredWindow() {
                 self.didPresentInitialMainWindow = true
                 return
             }
-            self.presentMainWindow(route: CoreWindowIDStore.consumeNextWindowRoute())
+            NotificationCenter.postOpenWindowWithRoute(route: CoreWindowIDStore.consumeNextWindowRoute())
             self.didPresentInitialMainWindow = true
         }
-    }
-
-    private func presentMainWindow(route: LumiWindowRoute) {
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)准备呈现主窗口 \(route.id.uuidString.prefix(8))")
-        }
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Lumi"
-        window.isRestorable = false
-        window.delegate = self
-        window.contentViewController = NSHostingController(rootView: MainWindowSceneContent(route: route))
-        mainWindows.append(window)
-        window.minSize = NSSize(width: 900, height: 640)
-        window.setContentSize(NSSize(width: 1000, height: 800))
-        window.center()
-        activateMainWindow(window)
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)已呈现主窗口 \(route.id.uuidString.prefix(8))")
-        }
-    }
-
-    private func activateMainWindow(_ window: NSWindow) {
-        NSApp.unhide(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
     }
 
     /// 在当前活跃窗口的编辑器中打开文件
@@ -382,13 +305,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         return libraryURL?
             .appendingPathComponent("Saved Application State", isDirectory: true)
             .appendingPathComponent("\(bundleIdentifier).savedState", isDirectory: true)
-    }
-}
-
-extension MacAgent: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
-        guard let closingWindow = notification.object as? NSWindow else { return }
-        mainWindows.removeAll { $0 === closingWindow }
     }
 }
 

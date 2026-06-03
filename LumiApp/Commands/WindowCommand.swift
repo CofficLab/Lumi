@@ -4,12 +4,14 @@ import SwiftUI
 ///
 /// 支持以下功能：
 /// - Cmd+Shift+N 创建新窗口
-/// - 监听 `openWindowWithRoute` 通知打开指定路由的窗口
+/// - 通过 SwiftUI `openWindow` 交给系统创建主窗口
 struct WindowCommand: Commands {
+    @Environment(\.openWindow) private var openWindow
+
     var body: some Commands {
         CommandGroup(after: .newItem) {
             Button("新建窗口") {
-                NotificationCenter.postOpenWindowWithRoute(route: LumiWindowRoute())
+                openWindow(id: AppConfig.mainWindowID, value: LumiWindowRoute())
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
         }

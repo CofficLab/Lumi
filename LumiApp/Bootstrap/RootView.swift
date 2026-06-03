@@ -72,6 +72,8 @@ struct RootView<Content>: View where Content: View {
             handleOpenFileInEditor(url)
         }
         .onDisappear {
+            windowContainer.persistCurrentStateSynchronously()
+            windowContainer.cleanup()
             container.toolService.clearConversationListContext(for: windowContainer.id)
         }
     }

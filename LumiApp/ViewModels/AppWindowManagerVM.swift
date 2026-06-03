@@ -74,7 +74,6 @@ final class AppWindowManagerVM: ObservableObject, SuperLog {
     /// 窗口关闭时注销，仅发出通知（存储由插件负责）
     func unregisterContainer(_ windowId: UUID) {
         RootContainer.shared.toolService.clearConversationListContext(for: windowId)
-        containerMap[windowId]?.cleanup()
         windowContainers.removeAll { $0.id == windowId }
         containerMap.removeValue(forKey: windowId)
 

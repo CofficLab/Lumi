@@ -27,6 +27,6 @@ struct MainWindowSceneContent: View {
     var body: some View {
         ContentLayout(projectPath: initialProjectPath)
             .inRootView(container: windowContainer)
-            .restoreCoreWindowIDs()
+            .restoreCoreWindowIDs(windowId: windowContainer.id)
     }
 }
