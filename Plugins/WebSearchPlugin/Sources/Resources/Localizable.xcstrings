@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "網頁搜索"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"
