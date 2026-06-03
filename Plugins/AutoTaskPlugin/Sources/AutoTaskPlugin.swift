@@ -14,6 +14,7 @@ import SwiftUI
 public actor AutoTaskPlugin: SuperPlugin, SuperLog {
     nonisolated public static let emoji = "📋"
     nonisolated public static let verbose: Bool = true
+    nonisolated public static let policy: PluginPolicy = .alwaysOn
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
 
     // MARK: - Plugin Properties
