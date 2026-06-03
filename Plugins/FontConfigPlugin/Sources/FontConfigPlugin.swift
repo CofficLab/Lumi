@@ -11,10 +11,8 @@ public actor FontConfigPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id: String = "FontConfig"
-    public static let displayName: String = String(
-        localized: "Font Config", table: "FontConfig")
-    public static let description: String = String(
-        localized: "Quick font switching in status bar", table: "FontConfig")
+    public static let displayName: String = String(localized: "Font Config", bundle: .module)
+    public static let description: String = String(localized: "Quick font switching in status bar", bundle: .module)
     public static let iconName: String = "textformat"
     public static var order: Int { 78 }
 

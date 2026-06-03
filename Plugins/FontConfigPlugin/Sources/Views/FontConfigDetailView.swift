@@ -21,7 +21,7 @@ public struct FontConfigDetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Editor Font", table: "FontConfig"),
+            title: String(localized: "Editor Font", bundle: .module),
             systemImage: "textformat"
         ) {
             currentFontBadge
@@ -57,7 +57,7 @@ public struct FontConfigDetailView: View {
     private var searchField: some View {
         AppSearchBar(
             text: $searchText,
-            placeholder: LocalizedStringKey(String(localized: "Search fonts...", table: "FontConfig"))
+            placeholder: LocalizedStringKey(String(localized: "Search fonts...", bundle: .module))
         )
     }
 
@@ -66,7 +66,7 @@ public struct FontConfigDetailView: View {
             LazyVStack(spacing: 0) {
                 // MARK: 系统默认选项
                 FontRow(
-                    title: String(localized: "System Monospaced", table: "FontConfig"),
+                    title: String(localized: "System Monospaced", bundle: .module),
                     subtitle: "SF Mono",
                     isSelected: viewModel.selectedPostScriptName == nil,
                     previewFontName: nil

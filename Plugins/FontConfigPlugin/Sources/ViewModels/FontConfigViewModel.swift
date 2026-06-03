@@ -31,7 +31,7 @@ public final class FontConfigViewModel: ObservableObject {
     /// 当前字体显示名
     public var displayName: String {
         guard let psName = selectedPostScriptName else {
-            return String(localized: "System", table: "FontConfig")
+            return String(localized: "System", bundle: .module)
         }
         return availableFonts.first { $0.postScriptName == psName }?.displayName ?? psName
     }
