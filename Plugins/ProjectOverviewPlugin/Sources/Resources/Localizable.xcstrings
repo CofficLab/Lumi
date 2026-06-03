@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "項目概覽"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目概覽"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 資訊與關鍵檔案。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 資訊與關鍵檔案。"
