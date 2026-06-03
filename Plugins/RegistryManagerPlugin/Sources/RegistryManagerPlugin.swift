@@ -12,8 +12,8 @@ public actor RegistryManagerPlugin: SuperPlugin, SuperLog {
 
     public static let id = "RegistryManager"
     public static let navigationId: String = "registry_manager"
-    public static let displayName = String(localized: "Registry Manager", table: "RegistryManager")
-    public static let description = String(localized: "Manage Lumi registries", table: "RegistryManager")
+    public static let displayName = String(localized: "Registry Manager", bundle: .module)
+    public static let description = String(localized: "Manage Lumi registries", bundle: .module)
     public static let iconName = "arrow.triangle.2.circlepath"
     public static var category: PluginCategory { .system }
     public static var order: Int { 80 }

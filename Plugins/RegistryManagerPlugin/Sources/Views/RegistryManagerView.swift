@@ -10,11 +10,11 @@ public struct RegistryManagerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "Registry Manager", table: "RegistryManager"))
+                    Text(String(localized: "Registry Manager", bundle: .module))
                         .font(.appLargeTitle)
                         .foregroundColor(theme.textPrimary)
                     
-                    Text(String(localized: "Manage all your package registries in one place", table: "RegistryManager"))
+                    Text(String(localized: "Manage all your package registries in one place", bundle: .module))
                         .font(.appBody)
                         .foregroundColor(theme.textSecondary)
                 }

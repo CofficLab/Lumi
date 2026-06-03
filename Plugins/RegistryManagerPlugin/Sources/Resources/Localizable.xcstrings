@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "Manage Lumi registries"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Lumi 映像倉庫"
+          }
         }
       }
     },
@@ -41,6 +47,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Registry Manager"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映像倉庫管理"
           }
         }
       }
@@ -64,6 +76,12 @@
             "state": "translated",
             "value": "Manage all your package registries in one place"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一個地方管理所有包倉庫"
+          }
         }
       }
     },
@@ -85,6 +103,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Docker registry updated. Please restart Docker Desktop."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker 倉庫已更新。請重啟 Docker Desktop。"
           }
         }
       }
@@ -108,6 +132,12 @@
             "state": "translated",
             "value": "Switched {type} registry to {name}"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換 {type} 倉庫到 {name}"
+          }
         }
       }
     },
@@ -130,6 +160,12 @@
             "state": "translated",
             "value": "Failed to set {type}: {error}"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設置 {type} 失敗：{error}"
+          }
         }
       }
     },
@@ -151,6 +187,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Failed: {error}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗：{error}"
           }
         }
       }
