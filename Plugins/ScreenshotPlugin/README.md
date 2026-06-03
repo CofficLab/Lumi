@@ -4,11 +4,11 @@ Screenshot plugin for Lumi. Provides a sidebar toolbar button for region capture
 
 ## Features
 
-- **Region capture** — fullscreen overlay with resizable selection rectangle
-- **Sidebar toolbar button** — screenshot button in AI chat sidebar
-- **Keyboard shortcut** — `Cmd+Shift+S` to trigger screenshot
-- **Attachment integration** — captured images broadcast via notification for ChatAttachmentPlugin to consume
-- **Loading state** — progress indicator during capture preparation
+- **Region capture** - fullscreen overlay with resizable selection rectangle
+- **Sidebar toolbar button** - screenshot button in AI chat sidebar
+- **Keyboard shortcut** - `Cmd+Shift+S` to trigger screenshot
+- **Attachment integration** - captured images broadcast via notification for ChatAttachmentPlugin to consume
+- **Loading state** - progress indicator during capture preparation
 
 ## Requirements
 
@@ -29,17 +29,21 @@ Screenshot plugin for Lumi. Provides a sidebar toolbar button for region capture
 
 This plugin integrates with the Lumi application. It provides:
 
-- **Sidebar Toolbar Button** — screenshot button in AI chat sidebar
-- **Screenshot Overlay** — fullscreen selection overlay for region capture
+- **Sidebar Toolbar Button** - screenshot button in AI chat sidebar
+- **Screenshot Overlay** - fullscreen selection overlay for region capture
+
+## Policy
+
+`.alwaysOn` - core screenshot attachment plugin that is always registered and cannot be disabled by users.
 
 ### Project Structure
 
 ```
 Sources/
-├── ScreenshotPlugin.swift            # Plugin entry point and toolbar button
-└── ScreenshotOverlay.swift           # Fullscreen capture overlay
++-- ScreenshotPlugin.swift            # Plugin entry point and toolbar button
++-- ScreenshotOverlay.swift           # Fullscreen capture overlay
 Tests/
-└── PluginScreenshotTests/            # Unit tests
++-- PluginScreenshotTests.swift       # Unit tests
 ```
 
 ## License
