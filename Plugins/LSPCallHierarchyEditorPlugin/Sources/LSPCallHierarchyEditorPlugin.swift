@@ -26,8 +26,8 @@ public actor LSPCallHierarchyEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPCallHierarchyEditorPlugin()
     public static let id = "LSPCallHierarchyEditor"
-    public static let displayName = String(localized: "LSP Call Hierarchy", table: "LSPCallHierarchyEditor")
-    public static let description = String(localized: "Shows incoming and outgoing call hierarchy for symbols.", table: "LSPCallHierarchyEditor")
+    public static let displayName = String(localized: "LSP Call Hierarchy", bundle: .module)
+    public static let description = String(localized: "Shows incoming and outgoing call hierarchy for symbols.", bundle: .module)
     public static let iconName = "diagram"
     public static let order = 25
     public static var category: PluginCategory { .editor }

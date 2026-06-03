@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "LSP 調用層級"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 調用層級"
+          }
         }
       }
     },
@@ -42,6 +48,12 @@
             "state": "translated",
             "value": "顯示符號的傳入和傳出調用層級。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示符號的傳入和傳出調用層級。"
+          }
         }
       }
     },
@@ -60,6 +72,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "無"

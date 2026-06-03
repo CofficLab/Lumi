@@ -33,7 +33,7 @@ public struct CallHierarchyTreeView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 4)
             if calls.isEmpty {
-                Text(String(localized: "无", table: "LSPCallHierarchyEditor") + direction.title)
+                Text(String(localized: "无", bundle: .module) + direction.title)
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .padding()
