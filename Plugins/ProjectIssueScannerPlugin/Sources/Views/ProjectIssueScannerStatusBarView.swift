@@ -179,7 +179,7 @@ public struct ProjectIssueScannerPopover: View {
         HStack {
             Image(systemName: "scope")
                 .foregroundColor(primaryTextColor)
-            Text(String(localized: "Project Issues", table: "ProjectIssueScanner"))
+            Text(String(localized: "Project Issues", bundle: .module))
                 .font(.headline)
                 .foregroundColor(primaryTextColor)
             Spacer()
@@ -234,15 +234,15 @@ public struct ProjectIssueScannerPopover: View {
         if viewModel.state == .scanning {
             AppEmptyState(
                 icon: "arrow.triangle.2.circlepath",
-                title: LocalizedStringKey(String(localized: "Scanning project issues...", table: "ProjectIssueScanner", bundle: .main))
+                title: LocalizedStringKey(String(localized: "Scanning project issues...", bundle: .module))
             )
             .frame(maxWidth: .infinity, minHeight: 200)
         } else {
             AppEmptyState(
                 icon: "checkmark.circle",
-                title: LocalizedStringKey(String(localized: "No issues found", table: "ProjectIssueScanner", bundle: .main)),
-                description: LocalizedStringKey(String(localized: "Click Scan Now to check for potential issues.", table: "ProjectIssueScanner", bundle: .main)),
-                actionTitle: LocalizedStringKey(String(localized: "Scan Now", table: "ProjectIssueScanner", bundle: .main))
+                title: LocalizedStringKey(String(localized: "No issues found", bundle: .module)),
+                description: LocalizedStringKey(String(localized: "Click Scan Now to check for potential issues.", bundle: .module)),
+                actionTitle: LocalizedStringKey(String(localized: "Scan Now", bundle: .module))
             ) {
                 viewModel.scan(projectPath: projectPath)
             }
@@ -259,7 +259,7 @@ public struct ProjectIssueScannerPopover: View {
             Button {
                 viewModel.scan(projectPath: projectPath)
             } label: {
-                Label(String(localized: "Scan Now", table: "ProjectIssueScanner"), systemImage: "arrow.clockwise")
+                Label(String(localized: "Scan Now", bundle: .module), systemImage: "arrow.clockwise")
             }
             .disabled(viewModel.state == .scanning)
         }
@@ -268,11 +268,11 @@ public struct ProjectIssueScannerPopover: View {
     private var statusText: String {
         switch viewModel.state {
         case .idle:
-            return String(localized: "Idle", table: "ProjectIssueScanner")
+            return String(localized: "Idle", bundle: .module)
         case .scanning:
-            return String(localized: "Scanning", table: "ProjectIssueScanner")
+            return String(localized: "Scanning", bundle: .module)
         case .ready:
-            return String(localized: "Ready", table: "ProjectIssueScanner")
+            return String(localized: "Ready", bundle: .module)
         }
     }
 }
