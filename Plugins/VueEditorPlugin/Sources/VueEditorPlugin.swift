@@ -19,6 +19,7 @@ import os
 /// LSP 基础能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 通过 Volar (vue-language-server) 提供完整 SFC 智能支持。
 public actor VueEditorPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = VueEditorPlugin()
     public nonisolated static let emoji = "💚"
     public nonisolated static let verbose: Bool = true

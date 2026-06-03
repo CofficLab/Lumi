@@ -11,6 +11,7 @@ import LumiCoreKit
 /// 主入口负责注册 Provider 和 Quick Open contributor，具体 Sheet/弹窗容器通常由
 /// `LSPSheetsEditorPlugin` 或其它消费 Workspace Symbol Provider 的 UI 提供。
 public actor LSPWorkspaceSymbolEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPWorkspaceSymbolEditorPlugin()
     public static let id = "LSPWorkspaceSymbolEditor"
     public static let displayName = String(localized: "LSP Workspace Symbols", table: "LSPWorkspaceSymbolEditor")

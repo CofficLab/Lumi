@@ -2,6 +2,7 @@ import LumiCoreKit
 
 /// 工具执行授权浮层：在根视图上叠加 `PermissionRequestView`，与聊天区域解耦。
 public actor AgentToolPermissionPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🔐"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentToolPermission"

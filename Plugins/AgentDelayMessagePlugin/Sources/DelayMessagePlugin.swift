@@ -27,6 +27,7 @@ import os
 /// DelayMessageTool
 /// ```
 public actor DelayMessagePlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.delay-message")
 
     // MARK: - Plugin Properties

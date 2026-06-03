@@ -6,6 +6,7 @@ import os
 
 /// MCP 工具插件：将 MCP 封装成内核可见的 AgentTools（用户无需关心安装/管理）。
 public actor AgentMCPToolsPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mcp-tools")
 

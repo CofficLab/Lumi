@@ -9,6 +9,7 @@ import LumiUI
 ///
 /// 提供工具来管理 .agent/rules 目录中的规则文档
 public actor AgentRulesPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-rules")
 

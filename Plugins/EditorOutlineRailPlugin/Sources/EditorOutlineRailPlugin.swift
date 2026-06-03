@@ -6,6 +6,7 @@ import os
 
 /// 编辑器大纲 Rail 插件：提供 Outline 标签页
 public actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-outline-rail")
 

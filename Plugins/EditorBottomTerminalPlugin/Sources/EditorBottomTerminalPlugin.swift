@@ -13,6 +13,7 @@ import os
 /// 注意：此插件使用独立的 TerminalTabsViewModel 实例，
 /// 与 TerminalPlugin（侧边栏终端）完全隔离，不共享会话状态。
 public actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-terminal")
 

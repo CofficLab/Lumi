@@ -22,9 +22,6 @@ extension SuperPlugin {
 
     public static var iconName: String { "puzzlepiece" }
 
-    /// 默认策略：禁用，插件需要显式切换策略后才会注册。
-    public static var policy: PluginPolicy { .disabled }
-
     public static var isConfigurable: Bool {
         switch policy {
         case .alwaysOn, .disabled: return false

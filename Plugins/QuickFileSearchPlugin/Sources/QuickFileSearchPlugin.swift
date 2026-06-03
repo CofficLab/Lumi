@@ -15,6 +15,7 @@ public enum QuickFileSearchBridge {
 ///
 /// 功能：通过 Cmd+P 快捷键触发悬浮文件搜索框，快速定位和选择项目中的文件
 public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quick-file-search")
 

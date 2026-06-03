@@ -9,6 +9,7 @@ import os
 /// 向内核全局底部面板注册 References Tab 入口，
 /// 内核负责 Tab 栏渲染和切换，本插件只提供 Tab 定义和内容视图。
 public actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-references")
 

@@ -8,6 +8,7 @@ import os
 ///
 /// 提供工具调用循环检测中间件，防止 AI Agent 进入无限循环。
 public actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-call-loop-detection")
     public nonisolated static let emoji = "🔄"
     public nonisolated static let verbose: Bool = true

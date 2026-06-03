@@ -12,6 +12,7 @@ import LumiCoreKit
 ///
 /// 完整启用该能力需要 LSP 服务可用，且当前语言服务器支持 document color 相关 LSP 方法。
 public actor LSPDocumentColorEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPDocumentColorEditorPlugin()
     public static let id = "LSPDocumentColorEditor"
     public static let displayName = String(localized: "LSP Document Colors", table: "LSPDocumentColorEditor")

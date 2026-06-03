@@ -12,6 +12,7 @@ public enum EditorRailWorkspaceSymbolsBridge {
 
 /// 编辑器工作区符号 Rail 插件：提供 Symbols 标签页
 public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-symbols")
 

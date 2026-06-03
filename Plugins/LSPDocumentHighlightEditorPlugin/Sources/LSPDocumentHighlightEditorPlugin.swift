@@ -10,6 +10,7 @@ import LumiCoreKit
 /// 本插件不提供独立 View。高亮结果会作为 `HighlightProviding` 数据源或文档高亮 Provider
 /// 被源码编辑器消费，最终由编辑器高亮系统把引用范围渲染到文本上。
 public actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPDocumentHighlightEditorPlugin()
     public static let id = "LSPDocumentHighlightEditor"
     public static let displayName = String(localized: "LSP Document Highlight", table: "LSPDocumentHighlightEditor")

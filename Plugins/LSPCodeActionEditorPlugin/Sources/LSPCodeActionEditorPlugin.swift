@@ -21,6 +21,7 @@ import LumiCoreKit
 /// 插件主入口只注册 Provider；具体何时请求动作、在哪里显示灯泡或弹窗，
 /// 由编辑器状态、Overlay 或消费 `SuperEditorCodeActionProvider` 的 UI 负责。
 public actor LSPCodeActionEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPCodeActionEditorPlugin()
     public static let id = "LSPCodeActionEditor"
     public static let displayName = String(localized: "LSP Code Actions", table: "LSPCodeActionEditor")

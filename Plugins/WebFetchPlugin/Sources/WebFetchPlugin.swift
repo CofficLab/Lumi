@@ -9,6 +9,7 @@ import os
 /// 作为 package 化试点，插件适配层只负责把 `WebFetchTool` 注册到 Lumi 插件系统；
 /// 实际网页抓取能力由 `WebFetchKit` 承载。
 public actor WebFetchPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-fetch")
 
     public nonisolated static let emoji = "🌐"

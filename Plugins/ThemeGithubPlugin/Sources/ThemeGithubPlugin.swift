@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeGithubPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeGithubPlugin()
     public static let id: String = "github"
     public static let displayName: String = "GitHub"

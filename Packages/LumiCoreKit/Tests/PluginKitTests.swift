@@ -155,6 +155,7 @@ struct LumiCoreKitTests {
 }
 
 private actor LocalizedDescriptionPlugin: SuperPlugin {
+    static let policy: PluginPolicy = .disabled
     static let shared = LocalizedDescriptionPlugin()
     static let displayName = "Localized"
     static let description = "English description"
@@ -381,6 +382,7 @@ struct LumiCoreKitActorTests {
 
 private actor LegacyMenuBarPopupPlugin: SuperPlugin {
     static let shared = LegacyMenuBarPopupPlugin()
+    static let policy: PluginPolicy = .disabled
     static let displayName = "Legacy Menu"
     static let description = "Legacy menu popup"
     static let iconName = "menubar.rectangle"

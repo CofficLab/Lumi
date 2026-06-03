@@ -10,6 +10,7 @@ import LumiCoreKit
 /// 例如调用层级数据来自 `LSPCallHierarchyEditorPlugin`，工作区符号数据来自
 /// `LSPWorkspaceSymbolEditorPlugin`。具体 Sheet 内容视图放在 `Views` 目录中。
 public actor LSPSheetsEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSheetsEditorPlugin()
     public static let id = "LSPSheetsEditor"
     public static let displayName = String(localized: "LSP Sheets", table: "LSPSheetsEditor")

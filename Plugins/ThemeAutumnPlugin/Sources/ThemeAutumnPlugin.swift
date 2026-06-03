@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeAutumnPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeAutumnPlugin()
     public static let id: String = "autumn"
     public static let displayName: String = "Autumn"

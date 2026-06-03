@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeSpringPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeSpringPlugin()
     public static let id: String = "spring"
     public static let displayName: String = "Spring"

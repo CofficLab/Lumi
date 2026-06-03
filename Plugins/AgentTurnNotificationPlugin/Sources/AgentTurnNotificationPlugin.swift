@@ -8,6 +8,7 @@ import os
 /// 在 AgentTurnService 一轮循环结束时发出 macOS 系统通知，
 /// 让用户在焦点离开应用时也能知道 Agent 完成了工作。
 public actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.turn-notification")
 

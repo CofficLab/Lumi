@@ -6,6 +6,7 @@ import SwiftUI
 import os
 
 public actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-update-status-bar")
 
     public nonisolated static let emoji = "⬆️"

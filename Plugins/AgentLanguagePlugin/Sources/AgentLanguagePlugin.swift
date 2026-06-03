@@ -7,6 +7,7 @@ import SwiftUI
 /// 位于 ChatMode 按钮左侧，点击循环切换中文/英文。
 /// 通过中间件自动将语言偏好注入 LLM 系统提示。
 public actor AgentLanguagePlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentLanguageHeader"

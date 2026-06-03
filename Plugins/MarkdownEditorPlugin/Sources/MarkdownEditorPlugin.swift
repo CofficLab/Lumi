@@ -4,6 +4,7 @@ import LumiCoreKit
 
 /// Markdown 高亮编辑器插件：提供 Markdown 语法高亮
 public actor MarkdownEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = MarkdownEditorPlugin()
     public static let id = "MarkdownEditor"
     public static let displayName = "Markdown Highlight"

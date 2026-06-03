@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeMountainPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeMountainPlugin()
     public static let id: String = "mountain"
     public static let displayName: String = "Mountain"

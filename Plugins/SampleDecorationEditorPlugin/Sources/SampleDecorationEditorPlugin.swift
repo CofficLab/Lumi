@@ -4,6 +4,7 @@ import LumiCoreKit
 
 /// 编辑器 decoration 样例插件：演示 git-like 与 custom gutter decoration 的接入方式。
 public actor SampleDecorationEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = SampleDecorationEditorPlugin()
     public static let id = "SampleDecorationEditor"
     public static let displayName = String(localized: "Sample Decoration", table: "SampleDecoration")

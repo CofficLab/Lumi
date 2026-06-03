@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeWinterPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeWinterPlugin()
     public static let id: String = "winter"
     public static let displayName: String = "Winter"

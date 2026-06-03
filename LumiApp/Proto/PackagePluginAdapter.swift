@@ -390,5 +390,6 @@ actor AnyPackagePluginAdapter: SuperPlugin {
 
 private actor EmptyPackagedPlugin: LumiCoreKit.SuperPlugin {
     static let shared = EmptyPackagedPlugin()
+    static let policy: LumiCoreKit.PluginPolicy = .disabled
     static let category: LumiCoreKit.PluginCategory = .general
 }

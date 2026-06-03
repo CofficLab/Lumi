@@ -8,6 +8,7 @@ import os
 
 /// 快速启动器插件：提供系统常见应用的快捷入口
 public actor QuickLauncherPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quicklauncher")
 

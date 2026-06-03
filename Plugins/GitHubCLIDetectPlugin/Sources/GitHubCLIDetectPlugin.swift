@@ -9,6 +9,7 @@ import os
 /// The package owns the tool and service implementation; the app keeps only
 /// a registration adapter while runtime plugin discovery is still module-based.
 public actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-cli-detect")
     public nonisolated static let emoji = "🐚"
     public nonisolated static let verbose: Bool = true

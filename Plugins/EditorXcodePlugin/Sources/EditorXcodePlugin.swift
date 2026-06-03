@@ -15,6 +15,7 @@ public enum XcodePluginLog {
 
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
 public actor EditorXcodePlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🔧"
 
     public static let shared = EditorXcodePlugin()

@@ -4,6 +4,7 @@ import LumiCoreKit
 
 /// 多光标命令编辑器插件：添加多光标编辑的上下文菜单操作
 public actor MultiCursorCommandsEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = MultiCursorCommandsEditorPlugin()
     public static let id = "MultiCursorCommandsEditor"
     public static let displayName = String(localized: "Multi-Cursor Commands", table: "MultiCursorCommandsEditor")

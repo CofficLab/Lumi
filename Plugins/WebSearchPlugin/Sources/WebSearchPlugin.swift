@@ -10,6 +10,7 @@ import os
 /// 主要用于满足阿里云 Qwen 系列模型对 Function Calling 的限制要求：
 /// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
 public actor WebSearchPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-search")
 
     public nonisolated static let emoji = "🔍"

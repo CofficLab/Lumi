@@ -11,6 +11,7 @@ import SwiftUI
 ///
 /// 提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索）。
 public actor GitHubToolsPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-tools")
     /// 日志标识符
     public nonisolated static let emoji = "🐙"

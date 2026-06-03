@@ -9,6 +9,7 @@ import os
 /// 提供网页截图功能。
 /// 使用 WKWebView 渲染网页并截图，截图保存到系统临时目录返回文件路径。
 public actor BrowserPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser")
 
     public nonisolated static let emoji = "🖼️"

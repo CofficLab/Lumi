@@ -16,6 +16,7 @@ import os
 /// LSP 能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 已内置支持 typescript-language-server。
 public actor JSEditorPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = JSEditorPlugin()
     public nonisolated static let emoji = "🟨"
     public nonisolated static let verbose: Bool = true

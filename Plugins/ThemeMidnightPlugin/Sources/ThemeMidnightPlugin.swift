@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeMidnightPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeMidnightPlugin()
     public static let id: String = "midnight"
     public static let displayName: String = "Midnight"

@@ -25,6 +25,7 @@ import LumiUI
 /// - 子智能体可以调用当前可用的工具（只读工具优先）
 /// - 结果返回后子智能体上下文立即释放，不持久化
 public actor MultiAgentPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.multi-agent")
     public nonisolated static let emoji = "🤖"
     public nonisolated static let verbose: Bool = true

@@ -9,6 +9,7 @@ import LumiCoreKit
 /// 当前主入口暂未直接注册 Provider，保留为独立插件边界，方便后续把 selection range 能力接入
 /// 编辑器命令或多光标/选择系统。本插件本身不提供 View。
 public actor LSPSelectionRangeEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSelectionRangeEditorPlugin()
     public static let id = "LSPSelectionRangeEditor"
     public static let displayName = String(localized: "LSP Selection Ranges", table: "LSPSelectionRangeEditor")

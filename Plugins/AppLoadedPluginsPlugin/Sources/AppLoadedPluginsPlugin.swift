@@ -6,6 +6,7 @@ import SwiftUI
 
 /// App 插件状态栏入口：在状态栏右侧显示已加载 App 插件数量与详情。
 public actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🧩"
     public nonisolated static let verbose: Bool = true
 

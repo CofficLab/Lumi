@@ -6,6 +6,7 @@ import os
 
 /// 编辑器引用 Rail 插件：提供 References 标签页
 public actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-references")
 

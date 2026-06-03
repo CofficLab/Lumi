@@ -14,6 +14,7 @@ import LumiCoreKit
 ///
 /// 其它 LSP 插件通常依赖本插件提供的 `LSPService.shared` 和注册后的 LSP client。
 public actor LSPServiceEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPServiceEditorPlugin()
     public static let id = "LSPServiceEditor"
     public static let displayName = String(localized: "LSP Service", table: "LSPServiceEditor")

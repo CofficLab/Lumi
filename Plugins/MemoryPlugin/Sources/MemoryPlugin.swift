@@ -19,6 +19,7 @@ import os
 /// - **MemoryContextSuperSendMiddleware**: 发送时注入记忆提示词
 /// - **4 个 Agent Tools**: save/recall/list/delete memory
 public actor MemoryPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.memory")
 
     public nonisolated static let emoji = "🧠"

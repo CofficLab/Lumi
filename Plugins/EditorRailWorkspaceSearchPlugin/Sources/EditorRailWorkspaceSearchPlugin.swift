@@ -6,6 +6,7 @@ import os
 
 /// 编辑器工作区搜索 Rail 插件：提供 Search 标签页
 public actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-search")
 

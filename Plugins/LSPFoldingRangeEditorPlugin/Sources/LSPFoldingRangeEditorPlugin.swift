@@ -10,6 +10,7 @@ import LumiCoreKit
 /// 用于显示折叠箭头、折叠区域或恢复折叠状态。完整能力依赖 LSP 服务插件和
 /// 当前语言服务器对 folding range 的支持。
 public actor LSPFoldingRangeEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPFoldingRangeEditorPlugin()
     public static let id = "LSPFoldingRangeEditor"
     public static let displayName = String(localized: "LSP Folding Ranges", table: "LSPFoldingRangeEditor")

@@ -11,6 +11,7 @@ import LumiCoreKit
 /// 本插件目录中的 `Views/SignatureHelpView.swift` 负责渲染签名帮助浮层内容；
 /// 主入口只注册 Provider，具体显示时机和位置由编辑器 Overlay 或消费 Provider 的 UI 决定。
 public actor LSPSignatureHelpEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSignatureHelpEditorPlugin()
     public static let id = "LSPSignatureHelpEditor"
     public static let displayName = String(localized: "LSP Signature Help", table: "LSPSignatureHelpEditor")

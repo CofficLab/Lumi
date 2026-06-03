@@ -5,6 +5,7 @@ import SwiftUI
 
 /// CSS 语言编辑器插件：提供 CSS 补全和悬浮提示
 public actor CSSEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = CSSEditorPlugin()
     public static let id = "CSSEditor"
     public static let displayName = "CSS Language Tools"

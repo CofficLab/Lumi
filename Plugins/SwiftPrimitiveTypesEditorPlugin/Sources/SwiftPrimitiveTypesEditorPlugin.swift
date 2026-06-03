@@ -4,6 +4,7 @@ import LumiCoreKit
 
 /// Swift 原始类型编辑器插件：提供 Swift 原始类型补全建议
 public actor SwiftPrimitiveTypesEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = SwiftPrimitiveTypesEditorPlugin()
     public static let id = "SwiftPrimitiveTypesEditor"
     public static let displayName = String(localized: "Swift Primitive Types", table: "SwiftPrimitiveTypesEditor")

@@ -4,6 +4,7 @@ import LumiCoreKit
 import LumiUI
 
 public actor ThemeNebulaPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = ThemeNebulaPlugin()
     public static let id: String = "nebula"
     public static let displayName: String = "星云粉"

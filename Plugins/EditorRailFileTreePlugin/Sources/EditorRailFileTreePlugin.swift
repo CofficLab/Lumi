@@ -20,6 +20,7 @@ public actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
     public static let iconName: String = "folder"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }
+    public static var policy: PluginPolicy { .alwaysOn }
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorRailFileTreePlugin()

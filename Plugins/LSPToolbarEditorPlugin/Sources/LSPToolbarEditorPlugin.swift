@@ -9,6 +9,7 @@ import LumiCoreKit
 /// 本插件主要提供工具栏状态项 Contributor，不直接实现 LSP 请求；具体数据来自 `LSPServiceEditorPlugin`
 /// 注册的 LSP 服务、诊断流和进度 Provider。需要工具栏/状态栏 UI 消费 StatusItem contributor 后才会显示。
 public actor LSPToolbarEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPToolbarEditorPlugin()
     public static let id = "LSPToolbarEditor"
     public static let displayName = String(localized: "LSP Toolbar", table: "LSPToolbarEditor")

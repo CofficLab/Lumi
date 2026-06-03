@@ -3,6 +3,7 @@ import SuperLogKit
 import LumiCoreKit
 
 public actor IdleTimePlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🌙"
     public static var category: PluginCategory { .general }
     public nonisolated static let verbose: Bool = true

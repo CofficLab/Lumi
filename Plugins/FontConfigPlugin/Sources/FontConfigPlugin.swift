@@ -5,6 +5,7 @@ import LumiCoreKit
 
 /// 字体配置插件：在状态栏提供编辑器字体快速切换入口
 public actor FontConfigPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🔤"
     public static var category: PluginCategory { .theme }
     public nonisolated static let verbose: Bool = true

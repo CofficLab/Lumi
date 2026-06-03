@@ -8,6 +8,7 @@ import os
 ///
 /// 类似 VS Code 的面包屑导航，提供可点击的文件路径段，支持快速导航到同级文件/文件夹。
 public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.breadcrumb-nav")
 

@@ -3,6 +3,7 @@ import LumiCoreKit
 
 /// 首次运行引导插件
 public actor OnboardingPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "🎉"
     public nonisolated static let verbose: Bool = true
     public static let id = "Onboarding"

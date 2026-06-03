@@ -10,6 +10,7 @@ import os
 /// - 通过中间件在发送消息时注入当前项目信息
 /// - 不再将上下文保存到数据库，而是作为临时提示词注入
 public actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.context-sync")

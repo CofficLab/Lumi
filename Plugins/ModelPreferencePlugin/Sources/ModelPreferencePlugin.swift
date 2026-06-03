@@ -5,6 +5,7 @@ import SuperLogKit
 import os
 
 public actor ModelPreferencePlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "🎯"

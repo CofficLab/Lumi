@@ -11,6 +11,7 @@ import LumiCoreKit
 /// 主入口只注册 Provider，不负责计算视图位置或直接挂载 UI。实际展示位置由编辑器 Overlay
 /// 或消费 `SuperEditorInlayHintProvider` 的 UI 决定。
 public actor LSPInlayHintEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPInlayHintEditorPlugin()
     public static let id = "LSPInlayHintEditor"
     public static let displayName = String(localized: "LSP Inlay Hints", table: "LSPInlayHintEditor")

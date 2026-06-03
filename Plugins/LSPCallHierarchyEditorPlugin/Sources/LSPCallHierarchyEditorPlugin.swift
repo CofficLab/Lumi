@@ -23,6 +23,7 @@ import LumiCoreKit
 /// 要完整测试该能力，需要同时启用 LSP 服务、调用层级 Provider、触发命令的入口以及展示结果的 UI 容器，
 /// 并确保当前语言服务器支持上述 Call Hierarchy LSP 方法。
 public actor LSPCallHierarchyEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPCallHierarchyEditorPlugin()
     public static let id = "LSPCallHierarchyEditor"
     public static let displayName = String(localized: "LSP Call Hierarchy", table: "LSPCallHierarchyEditor")

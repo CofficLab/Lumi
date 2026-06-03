@@ -5,6 +5,7 @@ import os
 
 /// 窗口持久化插件：监听各窗口 VM 状态变化，防抖保存到磁盘（项目、会话、面板、编辑器等）。
 public actor WindowPersistencePlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.window-persistence")
 
     public nonisolated static let emoji = "🪟"

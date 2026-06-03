@@ -11,6 +11,7 @@ import SwiftUI
 /// - 标签自动闭合
 /// - 标签匹配与高亮
 public actor HTMLEditorPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = HTMLEditorPlugin()
     public static let id = "HTMLEditor"
     public static let displayName = String(localized: "HTML Editor", table: "HTMLEditor")

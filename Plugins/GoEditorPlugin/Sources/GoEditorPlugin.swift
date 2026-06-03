@@ -21,6 +21,7 @@ public enum GoEditorBridge {
 /// LSP 基础能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 已内置支持 gopls。
 public actor GoEditorPlugin: SuperPlugin, SuperLog {
+    public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = GoEditorPlugin()
     public nonisolated static let emoji = "🐹"
     public nonisolated static let verbose: Bool = true
