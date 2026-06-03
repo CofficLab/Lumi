@@ -3,6 +3,11 @@ import AgentToolKit
 import LumiCoreKit
 @testable import ConversationNewPlugin
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(ConversationNewPlugin.policy == .alwaysOn)
+    #expect(ConversationNewPlugin.isConfigurable == false)
+}
+
 @MainActor
 @Test func windowConversationVMCreatesConversationWithProjectContext() async throws {
     var created: [(String?, String?, LanguagePreference)] = []

@@ -7,6 +7,7 @@ import SwiftUI
 public actor ConversationNewHeaderPlugin: SuperPlugin {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "AgentChatToolbar"
     public static let displayName = String(localized: "New Chat Button", table: "ConversationNew")
     public static let description = String(localized: "Create new chat from header", table: "ConversationNew")
