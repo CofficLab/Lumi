@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "瀏覽器代理"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽器代理"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基於 agent-browser CLI 的瀏覽器自動化功能"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "基於 agent-browser CLI 的瀏覽器自動化功能"
