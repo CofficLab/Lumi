@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "Agent 回合已結束"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 回合已結束"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi Agent"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Lumi Agent"
@@ -67,6 +79,12 @@
             "state": "translated",
             "value": "當 Agent 回合結束時發送系統通知。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當 Agent 回合結束時發送系統通知。"
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輪次通知"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "輪次通知"
