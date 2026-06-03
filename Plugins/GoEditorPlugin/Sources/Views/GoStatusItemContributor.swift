@@ -63,7 +63,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Building", table: "GoEditor"))
+                Text(String(localized: "Building", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -71,7 +71,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Testing", table: "GoEditor"))
+                Text(String(localized: "Testing", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -79,7 +79,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Formatting", table: "GoEditor"))
+                Text(String(localized: "Formatting", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -87,7 +87,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Tidying", table: "GoEditor"))
+                Text(String(localized: "Tidying", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 

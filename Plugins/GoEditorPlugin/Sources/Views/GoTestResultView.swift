@@ -39,13 +39,13 @@ public struct GoTestResultView: View {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
-                Text(String(localized: "Testing...", table: "GoEditor"))
+                Text(String(localized: "Testing...", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
             } else if testManager.state == .cancelled {
                 HStack(spacing: 4) {
                     Image(systemName: "stop.circle.fill")
                         .font(.system(size: 10))
-                    Text(String(localized: "Cancelled", table: "GoEditor"))
+                    Text(String(localized: "Cancelled", bundle: .module))
                         .font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
@@ -55,7 +55,7 @@ public struct GoTestResultView: View {
                 let skipped = testManager.skippedCount
 
                 if failed > 0 {
-                    Text("\(passed) \(String(localized: "passed", table: "GoEditor")), \(failed) \(String(localized: "failed", table: "GoEditor")), \(skipped) \(String(localized: "skipped", table: "GoEditor"))")
+                    Text("\(passed) \(String(localized: "passed", bundle: .module)), \(failed) \(String(localized: "failed", bundle: .module)), \(skipped) \(String(localized: "skipped", bundle: .module))")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "FF453A"))
                 } else if !testManager.testEvents.isEmpty {
@@ -63,7 +63,7 @@ public struct GoTestResultView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
                             .foregroundColor(Color(hex: "30D158"))
-                        Text("\(passed) \(String(localized: "passed", table: "GoEditor"))")
+                        Text("\(passed) \(String(localized: "passed", bundle: .module))")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Color(hex: "30D158"))
                     }
@@ -81,7 +81,7 @@ public struct GoTestResultView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                .help(String(localized: "Stop", table: "GoEditor"))
+                .help(String(localized: "Stop", bundle: .module))
             }
 
             if testManager.lastTestDuration > 0 {
@@ -153,7 +153,7 @@ public struct GoTestResultView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .scaleEffect(0.8)
-            Text(String(localized: "Running tests...", table: "GoEditor"))
+            Text(String(localized: "Running tests...", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(
                     themeVM.activeChromeTheme.workspaceSecondaryTextColor()
@@ -171,7 +171,7 @@ public struct GoTestResultView: View {
                 .foregroundColor(
                     themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                 )
-            Text(String(localized: "Run go test to see results", table: "GoEditor"))
+            Text(String(localized: "Run go test to see results", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(
                     themeVM.activeChromeTheme.workspaceSecondaryTextColor()
