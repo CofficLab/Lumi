@@ -96,7 +96,7 @@ public struct AppButton: View {
         fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
-        self.title = Text(String(localized: String.LocalizationValue(title), table: table))
+        self.title = Text(String(localized: String.LocalizationValue(title), bundle: .module))
         self.systemImage = systemImage
         self.showsTitle = true
         self.style = style
