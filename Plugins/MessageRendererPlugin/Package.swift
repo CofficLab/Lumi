@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentMessageRendererPlugin",
+    name: "MessageRendererPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "AgentMessageRendererPlugin",
-            targets: ["AgentMessageRendererPlugin"]
+            name: "MessageRendererPlugin",
+            targets: ["MessageRendererPlugin"]
         )
     ],
     dependencies: [
@@ -25,7 +25,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AgentMessageRendererPlugin",
+            name: "MessageRendererPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
@@ -42,8 +42,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "AgentMessageRendererPluginTests",
-            dependencies: ["AgentMessageRendererPlugin"],
+            name: "MessageRendererPluginTests",
+            dependencies: ["MessageRendererPlugin"],
             path: "Tests"
         )
     ]

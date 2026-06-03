@@ -1,6 +1,6 @@
 import Testing
 import AgentToolKit
-@testable import AgentMessageRendererPlugin
+@testable import MessageRendererPlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

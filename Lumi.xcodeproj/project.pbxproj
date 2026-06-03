@@ -205,7 +205,7 @@
 		CFF3EA168629382018C28250 /* ScreenshotPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 7F080107C249FFC8C5F9E0C4 /* ScreenshotPlugin */; };
 		D0DF68DEA8E44F944DB2A220 /* LSPRealtimeSignalsEditorPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = E23DAA9331335EBF87C2EF45 /* LSPRealtimeSignalsEditorPlugin */; };
 		D18D263887DCE7609786AB30 /* EditorBottomReferencesPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 590583DC36F54C708D573720 /* EditorBottomReferencesPlugin */; };
-		D4D80C0D6F8934D748BBAB65 /* AgentMessageRendererPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = E7A6066A71F4DE1B69B489A7 /* AgentMessageRendererPlugin */; };
+		D4D80C0D6F8934D748BBAB65 /* MessageRendererPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = E7A6066A71F4DE1B69B489A7 /* MessageRendererPlugin */; };
 		D59BC26BC4D1C97A9E498482 /* LSPDocumentLinkEditorPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = ACCA775D38E3807370061F59 /* LSPDocumentLinkEditorPlugin */; };
 		D950F28305D0F9B7DDAA6738 /* ConversationTitlePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 57FD4D7CA89D0CCBB5BF034D /* ConversationTitlePlugin */; };
 		D97027B95BD7221FF642209C /* AgentRulesPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = B4793F7CEEF875247D8526E6 /* AgentRulesPlugin */; };
@@ -398,7 +398,6 @@
 				AgentGitHubToolsPlugin,
 				AgentLanguagePlugin,
 				AgentMCPToolsPlugin,
-				AgentMessageRendererPlugin,
 				AgentRAGPlugin,
 				AgentRulesPlugin,
 				AgentTurnNotificationPlugin,
@@ -666,7 +665,7 @@
 				DE2BAD45B5E01C7870351ACB /* AgentGitHubToolsPlugin in Frameworks */,
 				F695A1225EE724C3B3472E1F /* AgentLanguagePlugin in Frameworks */,
 				7C2A50AD6255CB6CA6590E56 /* AgentMCPToolsPlugin in Frameworks */,
-				D4D80C0D6F8934D748BBAB65 /* AgentMessageRendererPlugin in Frameworks */,
+				D4D80C0D6F8934D748BBAB65 /* MessageRendererPlugin in Frameworks */,
 				CA887353886BBA1B3F940CAA /* AgentRAGPlugin in Frameworks */,
 				D97027B95BD7221FF642209C /* AgentRulesPlugin in Frameworks */,
 				431A2253A7287C3DAC6CEF8D /* AgentTurnNotificationPlugin in Frameworks */,
@@ -1418,7 +1417,7 @@
 				30E2D969ABAB2E8661190487 /* AgentGitHubToolsPlugin */,
 				75E88D92D53FA3E545C39E17 /* AgentLanguagePlugin */,
 				6AC603D847F506F371242CD7 /* AgentMCPToolsPlugin */,
-				E7A6066A71F4DE1B69B489A7 /* AgentMessageRendererPlugin */,
+				E7A6066A71F4DE1B69B489A7 /* MessageRendererPlugin */,
 				1C295BDFECB699C46510D2D4 /* AgentRAGPlugin */,
 				B4793F7CEEF875247D8526E6 /* AgentRulesPlugin */,
 				21709EC063923191DD80EA8C /* AgentTurnNotificationPlugin */,
@@ -1813,7 +1812,7 @@
 				7B13B52D4919470F99CF077E /* XCLocalSwiftPackageReference "Plugins/AgentGitHubToolsPlugin" */,
 				450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Plugins/AgentLanguagePlugin" */,
 				E74763AAEF20F46DDE0340FA /* XCLocalSwiftPackageReference "Plugins/AgentMCPToolsPlugin" */,
-				BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/AgentMessageRendererPlugin" */,
+				BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/MessageRendererPlugin" */,
 				9E5C3801F915BEB60845BC0E /* XCLocalSwiftPackageReference "Plugins/AgentRAGPlugin" */,
 				7DA8FFD6782284385BB7ABA0 /* XCLocalSwiftPackageReference "Plugins/AgentRulesPlugin" */,
 				AB165A0E7319BDEBECEF298E /* XCLocalSwiftPackageReference "Plugins/AgentTurnNotificationPlugin" */,
@@ -3470,9 +3469,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/FontConfigPlugin;
 		};
-		BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/AgentMessageRendererPlugin" */ = {
+		BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/MessageRendererPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/AgentMessageRendererPlugin;
+			relativePath = Plugins/MessageRendererPlugin;
 		};
 		BDCD488DF93D20097CCB06E7 /* XCLocalSwiftPackageReference "Plugins/RClickPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -4759,10 +4758,10 @@
 			package = A143F108E3CA51CE0184BAFA /* XCLocalSwiftPackageReference "Plugins/LayoutPlugin" */;
 			productName = LayoutPlugin;
 		};
-		E7A6066A71F4DE1B69B489A7 /* AgentMessageRendererPlugin */ = {
+		E7A6066A71F4DE1B69B489A7 /* MessageRendererPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/AgentMessageRendererPlugin" */;
-			productName = AgentMessageRendererPlugin;
+			package = BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/MessageRendererPlugin" */;
+			productName = MessageRendererPlugin;
 		};
 		E87E1005243A0185A1950AEA /* SampleDecorationEditorPlugin */ = {
 			isa = XCSwiftPackageProductDependency;

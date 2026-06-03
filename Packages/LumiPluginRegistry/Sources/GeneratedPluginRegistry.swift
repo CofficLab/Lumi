@@ -6,7 +6,7 @@ import AgentDelayMessagePlugin
 import AgentGitHubToolsPlugin
 import AgentLanguagePlugin
 import AgentMCPToolsPlugin
-import AgentMessageRendererPlugin
+import MessageRendererPlugin
 import AgentRAGPlugin
 import AgentRulesPlugin
 import AgentTurnNotificationPlugin
