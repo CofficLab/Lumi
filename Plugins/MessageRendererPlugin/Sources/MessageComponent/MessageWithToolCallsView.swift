@@ -136,7 +136,7 @@ private struct ToolCallRow: View {
             ) {
                 toggleParameterPopover()
             }
-            .help(String(localized: "调用参数", table: "CoreMessageRenderer"))
+            .help(String(localized: "调用参数", bundle: .module))
             .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
                     title: "\(toolCall.name) · 调用参数",
@@ -156,10 +156,10 @@ private struct ToolCallRow: View {
             ) {
                 toggleResultPopover()
             }
-            .help(String(localized: "调用结果", table: "CoreMessageRenderer"))
+            .help(String(localized: "调用结果", bundle: .module))
             .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
-                    title: String(localized: "调用结果", table: "CoreMessageRenderer"),
+                    title: String(localized: "调用结果", bundle: .module),
                     systemImage: resultVisualState.systemImage,
                     isError: resultVisualState.isFailure
                 ) {
@@ -301,7 +301,7 @@ private struct ToolCallContentSectionView: View {
         } else {
             EmptyToolSectionView(
                 systemImage: "info.circle",
-                text: String(localized: "没有可显示的调用参数", table: "CoreMessageRenderer")
+                text: String(localized: "没有可显示的调用参数", bundle: .module)
             )
         }
     }
@@ -319,7 +319,7 @@ private struct ToolResultSectionView: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text(String(localized: "查询结果中…", table: "CoreMessageRenderer"))
+                Text(String(localized: "查询结果中…", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -335,8 +335,8 @@ private struct ToolResultSectionView: View {
                     EmptyToolSectionView(
                         systemImage: "info.circle",
                         text: visualState.isFailure
-                            ? String(localized: "没有错误详情", table: "CoreMessageRenderer")
-                            : String(localized: "暂无工具输出", table: "CoreMessageRenderer")
+                            ? String(localized: "没有错误详情", bundle: .module)
+                            : String(localized: "暂无工具输出", bundle: .module)
                     )
                 } else {
                     GenericToolSectionView(content: result.content, isError: visualState.isFailure)
@@ -345,7 +345,7 @@ private struct ToolResultSectionView: View {
         } else {
             EmptyToolSectionView(
                 systemImage: "info.circle",
-                text: String(localized: "暂无工具输出", table: "CoreMessageRenderer")
+                text: String(localized: "暂无工具输出", bundle: .module)
             )
         }
     }
@@ -358,7 +358,7 @@ private struct ToolFailureNoticeView: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(theme.error)
-            Text(String(localized: "工具执行失败", table: "CoreMessageRenderer"))
+            Text(String(localized: "工具执行失败", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.error)
         }

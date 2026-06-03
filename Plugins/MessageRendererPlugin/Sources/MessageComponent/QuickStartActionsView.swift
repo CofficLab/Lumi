@@ -13,7 +13,7 @@ public struct QuickStartActionsView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "下一步操作", table: "CoreMessageRenderer"))
+            Text(String(localized: "下一步操作", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
 
