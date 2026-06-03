@@ -12,7 +12,7 @@ public struct NewChatButton: View {
     public var body: some View {
         AppIconButton(
             systemImage: "plus",
-            label: String(localized: "Start New Conversation", table: "ConversationNew")
+            label: String(localized: "Start New Conversation", bundle: .module)
         ) {
             Task {
                 await conversationVM.createNewConversation(

@@ -9,8 +9,8 @@ public actor ConversationNewHeaderPlugin: SuperPlugin {
     public nonisolated static let verbose: Bool = true
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "AgentChatToolbar"
-    public static let displayName = String(localized: "New Chat Button", table: "ConversationNew")
-    public static let description = String(localized: "Create new chat from header", table: "ConversationNew")
+    public static let displayName = String(localized: "New Chat Button", bundle: .module)
+    public static let description = String(localized: "Create new chat from header", bundle: .module)
     public static let iconName = "bubble.left.and.bubble.right"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 60 }
