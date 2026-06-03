@@ -71,6 +71,6 @@ extension FileSearchOverlay {
 // MARK: - Preview
 
 #Preview("File Search Overlay") {
-    FileSearchOverlay(content: Text(String(localized: "Content", table: "QuickFileSearch")))
+    FileSearchOverlay(content: Text(String(localized: "Content", bundle: .module)))
         .inRootView()
 }
