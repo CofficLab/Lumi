@@ -71,7 +71,7 @@ public struct UpdateConversationTitleTool: SuperAgentTool, SuperLog {
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         let title = (arguments["title"]?.value as? String).map { String($0.prefix(15)) } ?? "unknown"
-        return String(localized: "更新对话标题: \(title)", table: "ConversationTitle")
+        return String(localized: "更新对话标题: \(title)", bundle: .module)
     }
     
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

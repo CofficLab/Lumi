@@ -19,8 +19,8 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     public static var category: PluginCategory { .agent }
     public nonisolated static let verbose: Bool = true
     public static let id: String = "ConversationTitle"
-    public static let displayName: String = String(localized: "Auto Conversation Title", table: "ConversationTitle")
-    public static let description: String = String(localized: "Automatically generate conversation titles from the first user message", table: "ConversationTitle")
+    public static let displayName: String = String(localized: "Auto Conversation Title", bundle: .module)
+    public static let description: String = String(localized: "Automatically generate conversation titles from the first user message", bundle: .module)
     public static let iconName: String = "character.cursor.ibeam"
     public static var order: Int { 77 }
 
