@@ -191,15 +191,15 @@ extension FirewallService: AppCommunication {
 
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(localized: "New Connection Request", table: "Netto")
+        alert.messageText = String(localized: "New Connection Request", bundle: .module)
         alert.informativeText = Self.connectionPromptMessage(
             appId: appId,
             hostname: hostname,
             port: port,
             direction: direction
         )
-        alert.addButton(withTitle: String(localized: "Allow", table: "Netto"))
-        alert.addButton(withTitle: String(localized: "Block", table: "Netto"))
+        alert.addButton(withTitle: String(localized: "Allow", bundle: .module))
+        alert.addButton(withTitle: String(localized: "Block", bundle: .module))
 
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -214,13 +214,13 @@ extension FirewallService: AppCommunication {
         let directionText: String
         switch direction {
         case .inbound:
-            directionText = String(localized: "Incoming", table: "Netto")
+            directionText = String(localized: "Incoming", bundle: .module)
         case .outbound:
-            directionText = String(localized: "Outgoing", table: "Netto")
+            directionText = String(localized: "Outgoing", bundle: .module)
         case .any:
-            directionText = String(localized: "Any", table: "Netto")
+            directionText = String(localized: "Any", bundle: .module)
         @unknown default:
-            directionText = String(localized: "Unknown", table: "Netto")
+            directionText = String(localized: "Unknown", bundle: .module)
         }
 
         return "\(appId)\n\(directionText): \(endpoint)"

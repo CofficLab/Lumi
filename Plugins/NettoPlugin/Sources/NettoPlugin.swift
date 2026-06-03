@@ -14,8 +14,8 @@ public actor NettoPlugin: SuperPlugin, SuperLog {
 
     public static let id = "Netto"
     public static let navigationId = "netto_firewall"
-    public static let displayName = String(localized: "Netto Firewall", table: "Netto")
-    public static let description = String(localized: "Manage network permissions for macOS applications.", table: "Netto")
+    public static let displayName = String(localized: "Netto Firewall", bundle: .module)
+    public static let description = String(localized: "Manage network permissions for macOS applications.", bundle: .module)
     public static let iconName = "shield.lefthalf.filled"
     public static var order: Int { 99 }
 
