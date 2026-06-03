@@ -98,6 +98,10 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 窗口标题
     @Published var title: String = "Lumi"
 
+    /// 当前激活的视图容器标题（如"聊天"、"搜索"等）
+    /// 由 ContentView 在 activeViewContainerIcon 变化时设置
+    var activeViewContainerTitle: String?
+
     /// 侧边栏可见性
     @Published var sidebarVisibility: Bool = true
 
@@ -611,14 +615,28 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
     /// 更新窗口标题
     func updateTitle() {
+        let baseTitle: String
         if let conversationId = conversationVM.selectedConversationId,
            let conversation = conversationVM.fetchConversation(id: conversationId) {
-            title = conversation.displayTitle
+            baseTitle = conversation.displayTitle
         } else if let _ = projectPath {
-            title = "\(projectVM.currentProjectName)"
+            baseTitle = projectVM.currentProjectName
         } else {
-            title = "Lumi"
+            baseTitle = "Lumi"
         }
+
+        if let viewTitle = activeViewContainerTitle, !viewTitle.isEmpty, viewTitle != "Chat" {
+            title = "\(baseTitle) — \(viewTitle)"
+        } else {
+            title = baseTitle
+        }
+    }
+
+    /// 由 ContentView 调用，通知当前激活的视图容器已变化
+    func setActiveViewContainerTitle(_ newTitle: String?) {
+        guard activeViewContainerTitle != newTitle else { return }
+        activeViewContainerTitle = newTitle
+        updateTitle()
     }
 
     // MARK: - Window Status

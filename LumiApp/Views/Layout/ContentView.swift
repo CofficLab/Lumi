@@ -78,6 +78,9 @@ struct ContentView: View, SuperLog {
             onChangeColumnVisibility: { onChangeColumnVisibility(container: container) }
         )
         .environment(\.windowContainer, container)
+        .onChange(of: layoutVM.activeViewContainerIcon) { _, _ in
+            updateViewContainerTitle(container: container)
+        }
         .background {
             WindowAccessor { window in
                 RootContainer.shared.windowManagerVM.associateWindow(window, with: container.id)
@@ -338,6 +341,16 @@ extension ContentView {
 
     func openPluginSettings() {
         openWindow(id: AppConfig.settingsWindowID)
+    }
+
+    /// 根据当前激活的图标查询插件标题，并通知容器更新窗口标题
+    private func updateViewContainerTitle(container: WindowContainer) {
+        guard let icon = layoutVM.activeViewContainerIcon else {
+            container.setActiveViewContainerTitle(nil)
+            return
+        }
+        let item = pluginProvider.getViewContainerItems().first { $0.icon == icon }
+        container.setActiveViewContainerTitle(item?.title)
     }
 }
 
