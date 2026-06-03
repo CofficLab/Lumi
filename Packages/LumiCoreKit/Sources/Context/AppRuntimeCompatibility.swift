@@ -308,6 +308,7 @@ public final class WindowConversationVM: ObservableObject {
     @Published public var selectedConversationId: UUID?
     @Published public private(set) var pendingMessagesVersion: Int
     @Published public private(set) var attachmentVersion: Int
+    @Published public private(set) var statusVersion: Int
     @Published public private(set) var draftText: String
 
     public var currentPreferenceProvider: @MainActor () -> ModelPreference?
@@ -315,6 +316,7 @@ public final class WindowConversationVM: ObservableObject {
     public var preferenceSaver: @MainActor (UUID?, String, String) -> Void
     public var chatModePreferenceProvider: @MainActor () -> ChatMode?
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
+    public var statusMessageProvider: @MainActor (UUID) -> ChatMessage?
     public var pendingMessagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var pendingMessageRemover: @MainActor (UUID) -> Void
     public var pendingAttachmentsProvider: @MainActor () -> [AgentPendingImageAttachment]
@@ -332,12 +334,14 @@ public final class WindowConversationVM: ObservableObject {
         selectedConversationId: UUID? = nil,
         pendingMessagesVersion: Int = 0,
         attachmentVersion: Int = 0,
+        statusVersion: Int = 0,
         draftText: String = "",
         currentPreferenceProvider: @escaping @MainActor () -> ModelPreference? = { nil },
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
         chatModePreferenceProvider: @escaping @MainActor () -> ChatMode? = { nil },
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        statusMessageProvider: @escaping @MainActor (UUID) -> ChatMessage? = { _ in nil },
         pendingMessagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         pendingMessageRemover: @escaping @MainActor (UUID) -> Void = { _ in },
         pendingAttachmentsProvider: @escaping @MainActor () -> [AgentPendingImageAttachment] = { [] },
@@ -354,12 +358,14 @@ public final class WindowConversationVM: ObservableObject {
         self.selectedConversationId = selectedConversationId
         self.pendingMessagesVersion = pendingMessagesVersion
         self.attachmentVersion = attachmentVersion
+        self.statusVersion = statusVersion
         self.draftText = draftText
         self.currentPreferenceProvider = currentPreferenceProvider
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
         self.chatModePreferenceProvider = chatModePreferenceProvider
         self.messagesProvider = messagesProvider
+        self.statusMessageProvider = statusMessageProvider
         self.pendingMessagesProvider = pendingMessagesProvider
         self.pendingMessageRemover = pendingMessageRemover
         self.pendingAttachmentsProvider = pendingAttachmentsProvider
@@ -404,6 +410,20 @@ public final class WindowConversationVM: ObservableObject {
     public func currentMessages() -> [ChatMessage] {
         guard let selectedConversationId else { return [] }
         return messages(for: selectedConversationId)
+    }
+
+    public func statusMessage(for conversationId: UUID) -> ChatMessage? {
+        statusMessageProvider(conversationId)
+    }
+
+    public func currentDisplayMessages() -> [ChatMessage] {
+        guard let selectedConversationId else { return [] }
+        var rows = messages(for: selectedConversationId)
+        if let statusMessage = statusMessage(for: selectedConversationId),
+           !rows.contains(where: { $0.id == statusMessage.id }) {
+            rows.append(statusMessage)
+        }
+        return rows
     }
 
     public func pendingMessages(for conversationId: UUID) -> [ChatMessage] {
@@ -472,6 +492,10 @@ public final class WindowConversationVM: ObservableObject {
 
     public func notifyAttachmentsChanged() {
         attachmentVersion += 1
+    }
+
+    public func notifyStatusChanged() {
+        statusVersion += 1
     }
 
     @discardableResult

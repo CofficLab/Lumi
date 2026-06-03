@@ -123,6 +123,7 @@ struct RootView<Content>: View where Content: View {
             pluginConversationListContext.notifyConversationChanged(change)
         }
         .onReceive(windowContainer.conversationSendStatusVM.$statusMessageByConversationId) { _ in
+            pluginConversationVM.notifyStatusChanged()
             pluginConversationListContext.notifyConversationStatusChanged()
         }
     }
@@ -268,6 +269,9 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.updateDraftTextFromHost(windowContainer.chatDraftVM.text)
         pluginConversationVM.messagesProvider = { [container] conversationId in
             container.chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) ?? []
+        }
+        pluginConversationVM.statusMessageProvider = { [windowContainer] conversationId in
+            windowContainer.conversationSendStatusVM.statusMessage(for: conversationId)
         }
         pluginConversationVM.pendingMessagesProvider = { [windowContainer] conversationId in
             windowContainer.messageQueueVM.pendingMessages(for: conversationId)
