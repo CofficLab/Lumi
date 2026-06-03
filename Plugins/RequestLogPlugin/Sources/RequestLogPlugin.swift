@@ -11,6 +11,7 @@ import LumiUI
 public actor RequestLogPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📝"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "RequestLog"
     public static let displayName: String = String(localized: "PluginName", table: "RequestLog")
     public static let description: String = String(localized: "PluginDescription", table: "RequestLog")

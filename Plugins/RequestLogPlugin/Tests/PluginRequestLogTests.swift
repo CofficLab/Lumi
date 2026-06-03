@@ -4,6 +4,11 @@ import SwiftData
 import Testing
 @testable import RequestLogPlugin
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(RequestLogPlugin.policy == .alwaysOn)
+    #expect(RequestLogPlugin.isConfigurable == false)
+}
+
 @Test func historyStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("request-log-store-\(UUID().uuidString)", isDirectory: true)
