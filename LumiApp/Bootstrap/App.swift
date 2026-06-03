@@ -46,10 +46,8 @@ struct CoreApp: App {
         WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
             MainWindowSceneContent(route: route)
         }
-        .restorationBehavior(.disabled)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultLaunchBehavior(.suppressed)
         .defaultSize(width: 1000, height: 800)
         .commands {
             DebugCommand()
@@ -73,8 +71,6 @@ struct CoreApp: App {
             SettingView()
                 .inRootView(container: WindowContainer(container: RootContainer.shared))
         }
-        .restorationBehavior(.disabled)
-        .defaultLaunchBehavior(.suppressed)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
