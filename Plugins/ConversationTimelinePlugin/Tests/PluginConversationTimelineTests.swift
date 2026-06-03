@@ -3,6 +3,11 @@ import Testing
 @testable import ConversationTimelinePlugin
 import LumiCoreKit
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(ConversationTimelinePlugin.policy == .alwaysOn)
+    #expect(ConversationTimelinePlugin.isConfigurable == false)
+}
+
 @Test func modelDisplayTextUsesAvailableNonEmptyMetadata() async throws {
     #expect(makeTimelineItem(providerId: "openai", modelName: "gpt-4.1").modelDisplayText == "openai / gpt-4.1")
     #expect(makeTimelineItem(providerId: "  anthropic  ", modelName: nil).modelDisplayText == "anthropic")

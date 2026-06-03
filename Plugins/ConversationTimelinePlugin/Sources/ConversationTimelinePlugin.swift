@@ -8,6 +8,7 @@ import os
 public actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-timeline")
     public nonisolated static let emoji = "📅"
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static var category: PluginCategory { .general }
     public nonisolated static let verbose: Bool = true
 
