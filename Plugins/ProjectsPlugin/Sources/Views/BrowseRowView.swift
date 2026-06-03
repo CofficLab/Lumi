@@ -17,7 +17,7 @@ public struct BrowseRowView: View {
                     .font(.appCallout)
                     .foregroundColor(theme.primary)
 
-                Text(String(localized: "Select New Project", table: "Projects"))
+                Text(String(localized: "Select New Project", bundle: .module))
                     .font(.appBody)
                     .foregroundColor(theme.primary)
 

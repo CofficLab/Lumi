@@ -66,7 +66,7 @@ public struct NoProjectOverlay: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Release to add project", table: "Projects"))
+                Text(String(localized: "Release to add project", bundle: .module))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -152,11 +152,11 @@ public struct NoProjectOverlay: View {
                     )
             }
 
-            Text(String(localized: "No Project Selected", table: "Projects"))
+            Text(String(localized: "No Project Selected", bundle: .module))
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
 
-            Text(String(localized: "Select a project to get started", table: "Projects"))
+            Text(String(localized: "Select a project to get started", bundle: .module))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -167,7 +167,7 @@ public struct NoProjectOverlay: View {
 
     private var recentProjectsSection: some View {
         VStack(spacing: 4) {
-            Text(String(localized: "Projects", table: "Projects"))
+            Text(String(localized: "Projects", bundle: .module))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -233,7 +233,7 @@ public struct NoProjectOverlay: View {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 13))
-                    Text(String(localized: "Add New Project", table: "Projects"))
+                    Text(String(localized: "Add New Project", bundle: .module))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -253,7 +253,7 @@ public struct NoProjectOverlay: View {
             .buttonStyle(.plain)
 
             // 提示文字
-            Text(String(localized: "Or drag a folder here", table: "Projects"))
+            Text(String(localized: "Or drag a folder here", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundStyle(.quaternary)
         }
