@@ -37,6 +37,10 @@ PluginHistoryDBStatusBar
   - [LumiCoreKit](../../Packages/LumiCoreKit) – Plugin protocol & core types
   - [LumiUI](../../Packages/LumiUI) – Shared UI components & theme system
 
+## Policy
+
+`.alwaysOn` – core history browser status bar plugin that is always registered and cannot be disabled by users.
+
 ## How It Works
 
 The plugin registers as a `SuperPlugin` and provides a status bar trailing view when the Agent mode (code icon) is active. Clicking the status bar icon opens a popover with two tabs:
@@ -51,13 +55,13 @@ The `HistoryDBBrowserViewModel` manages pagination state (`currentPage`, `pageSi
 This plugin is a local Swift Package within the Lumi monorepo. Add it to your Xcode project or another package's dependencies:
 
 ```swift
-.package(path: "../../Plugins/PluginHistoryDBStatusBar")
+.package(path: "../../Plugins/HistoryDBStatusBarPlugin")
 ```
 
 Then link the target:
 
 ```swift
-.product(name: "PluginHistoryDBStatusBar", package: "PluginHistoryDBStatusBar")
+.product(name: "HistoryDBStatusBarPlugin", package: "HistoryDBStatusBarPlugin")
 ```
 
 ## License

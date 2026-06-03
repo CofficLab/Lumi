@@ -7,6 +7,11 @@ import Foundation
 
 @MainActor
 struct BrowserViewModelTests {
+    @Test func pluginPolicyIsAlwaysOn() {
+        #expect(HistoryDBStatusBarPlugin.policy == .alwaysOn)
+        #expect(HistoryDBStatusBarPlugin.isConfigurable == false)
+    }
+
     
     @Test func viewModelWithoutServiceReturnsEmpty() async {
         let vm = BrowserViewModel(historyService: nil)

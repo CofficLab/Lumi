@@ -7,6 +7,7 @@ public actor HistoryDBStatusBarPlugin: SuperPlugin {
     public nonisolated static let emoji = "🗄️"
     public static var category: PluginCategory { .general }
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public static let id: String = "HistoryDBStatusBar"
     public static let navigationId: String? = nil
