@@ -15,8 +15,8 @@ public actor LSPDocumentLinkEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPDocumentLinkEditorPlugin()
     public static let id = "LSPDocumentLinkEditor"
-    public static let displayName = String(localized: "LSP Document Links", table: "LSPDocumentLinkEditor")
-    public static let description = String(localized: "Makes URLs and file paths clickable in the editor.", table: "LSPDocumentLinkEditor")
+    public static let displayName = String(localized: "LSP Document Links", bundle: .module)
+    public static let description = String(localized: "Makes URLs and file paths clickable in the editor.", bundle: .module)
     public static let iconName = "link"
     public static let order = 29
     public static var category: PluginCategory { .editor }
