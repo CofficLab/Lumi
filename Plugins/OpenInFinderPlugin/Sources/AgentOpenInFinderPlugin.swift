@@ -10,8 +10,8 @@ public actor AgentOpenInFinderPlugin: SuperPlugin {
     public nonisolated static let emoji = "📂"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentOpenInFinder"
-    public static let displayName = String(localized: "Open in Finder", table: "AgentOpenInFinder")
-    public static let description = String(localized: "Open current project in Finder", table: "AgentOpenInFinder")
+    public static let displayName = String(localized: "Open in Finder", bundle: .module)
+    public static let description = String(localized: "Open current project in Finder", bundle: .module)
     public static let iconName = "folder"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 96 }
@@ -70,7 +70,7 @@ public struct OpenInFinderStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Finder 中打开当前项目", table: "AgentOpenInFinder"))
+            .help(String(localized: "在 Finder 中打开当前项目", bundle: .module))
         }
     }
 
@@ -80,13 +80,13 @@ public struct OpenInFinderStatusBarView: View {
             Image(systemName: "folder.fill")
                 .font(.appMicro)
 
-            Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
+            Text(String(localized: "Finder", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInFinder"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInFinder() {
@@ -112,7 +112,7 @@ public struct OpenInFinderDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
+                Text(String(localized: "Finder", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -123,7 +123,7 @@ public struct OpenInFinderDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInFinderPlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -134,7 +134,7 @@ public struct OpenInFinderDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInFinderPlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -155,7 +155,7 @@ public struct OpenInFinderDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInFinderPlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()

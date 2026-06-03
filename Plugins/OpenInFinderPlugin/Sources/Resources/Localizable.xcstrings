@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "Finder"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder"
+          }
         }
       }
     },
@@ -39,6 +45,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中打開當前項目"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在 Finder 中打開當前項目"
@@ -66,6 +78,12 @@
             "state": "translated",
             "value": "在 Finder 中打開"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中打開"
+          }
         }
       }
     },
@@ -85,6 +103,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中打開當前項目"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在 Finder 中打開當前項目"
@@ -111,6 +135,12 @@
             "state": "translated",
             "value": "複製路徑"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製路徑"
+          }
         }
       }
     },
@@ -133,6 +163,12 @@
             "state": "translated",
             "value": "打開"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
         }
       }
     },
@@ -151,6 +187,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "項目"
