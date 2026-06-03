@@ -16,11 +16,8 @@ public actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "⚠️"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorBottomProblems"
-    public static let displayName: String = String(
-        localized: "Editor Bottom Problems", table: "EditorBottomProblems")
-    public static let description: String = String(
-        localized: "Problems panel in the editor bottom area",
-        table: "EditorBottomProblems")
+    public static let displayName: String = String(localized: "Editor Bottom Problems", bundle: .module)
+    public static let description: String = String(localized: "Problems panel in the editor bottom area", bundle: .module)
     public static let iconName: String = "exclamationmark.bubble"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 79 }

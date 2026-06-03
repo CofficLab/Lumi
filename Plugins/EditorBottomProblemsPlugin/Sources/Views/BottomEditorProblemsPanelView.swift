@@ -42,24 +42,24 @@ public struct BottomEditorProblemsPanelView: View {
 
     private var panelTitle: String {
         let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
-        return count > 0 ? String(localized: "Problems (\(count))", table: "EditorBottomProblems") : String(localized: "Problems", table: "EditorBottomProblems")
+        return count > 0 ? String(localized: "Problems (\(count))", bundle: .module) : String(localized: "Problems", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if service.panelState.semanticProblems.isEmpty && service.panelState.problemDiagnostics.isEmpty {
-                    emptyState(String(localized: "No Problems", table: "EditorBottomProblems"), systemImage: "checkmark.circle")
+                    emptyState(String(localized: "No Problems", bundle: .module), systemImage: "checkmark.circle")
                 } else {
                     if !service.panelState.semanticProblems.isEmpty {
-                        sectionLabel(String(localized: "Project Context", table: "EditorBottomProblems"))
+                        sectionLabel(String(localized: "Project Context", bundle: .module))
                         ForEach(service.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: String(localized: "Project", table: "EditorBottomProblems"))
+                            panelCard(title: problem.title, subtitle: problem.message, badge: String(localized: "Project", bundle: .module))
                         }
                     }
 
                     if !service.panelState.problemDiagnostics.isEmpty {
-                        sectionLabel(String(localized: "Diagnostics", table: "EditorBottomProblems"))
+                        sectionLabel(String(localized: "Diagnostics", bundle: .module))
                         ForEach(Array(service.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
