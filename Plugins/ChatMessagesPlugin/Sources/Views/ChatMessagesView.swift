@@ -9,7 +9,7 @@ public struct ChatMessagesView: View {
     public init() {}
 
     public var body: some View {
-        let messages = conversationVM.currentMessages()
+        let messages = conversationVM.currentDisplayMessages()
 
         Group {
             if !conversationVM.hasSelectedConversation {
@@ -22,6 +22,9 @@ public struct ChatMessagesView: View {
         }
         .id(refreshVersion)
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
+            refreshVersion += 1
+        }
+        .onChange(of: conversationVM.statusVersion) { _, _ in
             refreshVersion += 1
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("messageSaved"))) { notification in
