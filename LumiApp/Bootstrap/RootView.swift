@@ -190,7 +190,6 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.commandSuggestionVM)
             .environmentObject(windowContainer.permissionRequestVM)
             .environmentObject(windowContainer.taskCancellationVM)
-            .environmentObject(windowContainer.chatTimelineViewModel)
             .environmentObject(windowContainer.conversationSendStatusVM)
             .environmentObject(windowContainer.projectContextRequestVM)
     }

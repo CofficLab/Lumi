@@ -20,7 +20,7 @@ import os
 /// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessageQueueVM,
 /// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
 /// WindowConversationStatusVM, WindowTaskCancellationVM, WindowCommandSuggestionVM,
-/// WindowProjectContextRequestVM, WindowChatTimelineViewModel
+/// WindowProjectContextRequestVM
 @MainActor
 final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"

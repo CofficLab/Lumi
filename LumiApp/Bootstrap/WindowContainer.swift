@@ -3,7 +3,6 @@ import Combine
 import AgentToolKit
 import Foundation
 import SwiftUI
-import ChatMessagesPlugin
 import WindowPersistencePlugin
 
 /// 窗口作用域容器
@@ -75,9 +74,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
     /// 项目上下文请求（跟随当前窗口项目）
     let projectContextRequestVM: WindowProjectContextRequestVM
-
-    /// 聊天时间线（依赖 WindowConversationVM，窗口级）
-    let chatTimelineViewModel: WindowChatTimelineViewModel
 
     /// 编辑器（每窗口独立的 EditorService，文件打开/切换互不影响）
     let editorVM: WindowEditorVM
@@ -196,7 +192,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             slashCommandService: container.slashCommandService
         )
         self.projectContextRequestVM = WindowProjectContextRequestVM()
-        self.chatTimelineViewModel = WindowChatTimelineViewModel()
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
         )
