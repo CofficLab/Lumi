@@ -18,7 +18,7 @@ public actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     public static let id: String = "AgentTurnNotification"
     public static let displayName: String = String(localized: "Turn Notification", bundle: .module)
     public static let description: String = String(
-        localized: "Send a system notification when an Agent turn finishes.", table: "AgentTurnNotification")
+        localized: "Send a system notification when an Agent turn finishes.", bundle: .module)
     public static let iconName: String = "bell.badge"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 99 }
