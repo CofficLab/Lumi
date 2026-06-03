@@ -19,11 +19,8 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔣"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorRailWorkspaceSymbols"
-    public static let displayName: String = String(
-        localized: "Editor Rail Workspace Symbols", table: "EditorRailWorkspaceSymbols")
-    public static let description: String = String(
-        localized: "Editor sidebar workspace symbols tab",
-        table: "EditorRailWorkspaceSymbols")
+    public static let displayName: String = String(localized: "Editor Rail Workspace Symbols", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar workspace symbols tab", bundle: .module)
     public static let iconName: String = "text.magnifyingglass"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }
@@ -39,7 +36,7 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return [] }
-        return [RailTab(id: "workspaceSymbols", title: String(localized: "Symbols", table: "EditorRailWorkspaceSymbols"), systemImage: "text.magnifyingglass", priority: 13)]
+        return [RailTab(id: "workspaceSymbols", title: String(localized: "Symbols", bundle: .module), systemImage: "text.magnifyingglass", priority: 13)]
     }
 
     @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {

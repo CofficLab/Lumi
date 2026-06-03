@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "{count} 個工作區符號"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{count} 個工作區符號"
+          }
         }
       }
     },
@@ -39,6 +45,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個工作區符號"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld 個工作區符號"
@@ -65,6 +77,12 @@
             "state": "translated",
             "value": "編輯器工作區符號側邊欄"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器工作區符號側邊欄"
+          }
         }
       }
     },
@@ -83,6 +101,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄工作區符號標籤"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "編輯器側邊欄工作區符號標籤"
@@ -109,6 +133,12 @@
             "state": "translated",
             "value": "符號"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "符號"
+          }
         }
       }
     },
@@ -131,6 +161,12 @@
             "state": "translated",
             "value": "工作區符號"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號"
+          }
         }
       }
     },
@@ -149,6 +185,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號不可用"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "工作區符號不可用"
