@@ -15,9 +15,9 @@ public final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendab
     // MARK: - 基础信息
 
     public static let id = "flymux"
-    public static let displayName = String(localized: "FlyMux", table: "FlyMux")
+    public static let displayName = String(localized: "FlyMux", bundle: .module)
     public static let shortName = "FMX"
-    public static let description = String(localized: "AI API Gateway by flymux.com", table: "FlyMux")
+    public static let description = String(localized: "AI API Gateway by flymux.com", bundle: .module)
 
     public static let websiteURL: String? = "https://flymux.com"
 
