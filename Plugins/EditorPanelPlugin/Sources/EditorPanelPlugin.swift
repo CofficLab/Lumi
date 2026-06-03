@@ -15,9 +15,8 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "✏️"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "LumiEditor"
-    public static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
-    public static let description: String = String(
-        localized: "Code editor with file tree", table: "LumiEditor")
+    public static let displayName: String = String(localized: "Code Editor", bundle: .module)
+    public static let description: String = String(localized: "Code editor with file tree", bundle: .module)
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 77 }

@@ -260,7 +260,7 @@ public struct SourceEditorView: View, SuperLog {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(hints.prefix(24)) { hint in
-                        Text(String(localized: "L\(hint.line + 1) \(hint.text)", table: "LumiEditor"))
+                        Text(String(localized: "L\(hint.line + 1) \(hint.text)", bundle: .module))
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .lineLimit(1)

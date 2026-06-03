@@ -10,7 +10,7 @@ public struct EditorLoadingStateView: View {
             ProgressView()
                 .controlSize(.small)
 
-            Text(String(localized: "Loading...", table: "LumiEditor"))
+            Text(String(localized: "Loading...", bundle: .module))
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "98989E"))
         }

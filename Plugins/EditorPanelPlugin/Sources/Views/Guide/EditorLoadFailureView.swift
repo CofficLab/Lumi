@@ -10,7 +10,7 @@ public struct EditorLoadFailureView: View {
                 .font(.system(size: 36, weight: .thin))
                 .foregroundColor(Color(hex: "98989E"))
 
-            Text(String(localized: "Unable to Open File", table: "LumiEditor"))
+            Text(String(localized: "Unable to Open File", bundle: .module))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 

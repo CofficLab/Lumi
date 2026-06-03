@@ -265,27 +265,27 @@ public final class EditorPanelService: ObservableObject {
         guard let snapshot = service.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
         switch snapshot.contextStatus {
         case .unavailable, .needsResync:
-            return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", table: "LumiEditor")
+            return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", bundle: .module)
         default:
             break
         }
         guard service.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
-            return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", table: "LumiEditor")
+            return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", bundle: .module)
         }
         if let activeScheme = snapshot.activeScheme,
            let currentTarget = snapshot.currentFilePrimaryTarget,
            !currentTarget.isEmpty,
            !snapshot.activeSchemeBuildableTargets.isEmpty,
            !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
-            return String(localized: "Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", table: "LumiEditor")
+            return String(localized: "Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", bundle: .module)
         }
         if snapshot.currentFileMatchedTargets.count > 1 {
             if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
-                return String(localized: "Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", table: "LumiEditor")
+                return String(localized: "Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", bundle: .module)
             }
             let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
-            return String(localized: "Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", table: "LumiEditor")
+            return String(localized: "Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", bundle: .module)
         }
         return nil
     }
