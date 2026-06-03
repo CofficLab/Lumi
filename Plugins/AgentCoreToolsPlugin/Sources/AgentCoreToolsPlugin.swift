@@ -11,8 +11,8 @@ public actor AgentCoreToolsPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-core-tools")
     public static let id: String = "AgentCoreTools"
-    public static let displayName: String = String(localized: "Agent Core Tools", table: "AgentCoreTools")
-    public static let description: String = String(localized: "提供 Lumi 的基础 Agent 工具（文件/命令）。", table: "AgentCoreTools")
+    public static let displayName: String = String(localized: "Agent Core Tools", bundle: .module)
+    public static let description: String = String(localized: "提供 Lumi 的基础 Agent 工具（文件/命令）。", bundle: .module)
     public static let iconName: String = "wrench.and.screwdriver"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 0 }

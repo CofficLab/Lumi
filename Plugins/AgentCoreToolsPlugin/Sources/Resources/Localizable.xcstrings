@@ -16,6 +16,12 @@
             "value": "Agent 核心工具"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 核心工具"
+          }
+        },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
@@ -37,6 +43,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "提供 Lumi 的基础 Agent 工具（文件/命令）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 Lumi 的基礎 Agent 工具（檔案/命令）。"
           }
         },
         "zh-HK": {
