@@ -12,8 +12,8 @@ public actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     public static var category: PluginCategory { .general }
     public nonisolated static let verbose: Bool = true
     public static let id: String = "WindowPersistence"
-    public static let displayName: String = String(localized: "Window Persistence", table: "WindowPersistence")
-    public static let description: String = String(localized: "Save window states when they change", table: "WindowPersistence")
+    public static let displayName: String = String(localized: "Window Persistence", bundle: .module)
+    public static let description: String = String(localized: "Save window states when they change", bundle: .module)
     public static let iconName: String = "macwindow"
     public static var order: Int { 999 }
 
