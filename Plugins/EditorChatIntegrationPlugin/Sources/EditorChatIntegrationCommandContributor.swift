@@ -20,7 +20,7 @@ public final class EditorChatIntegrationCommandContributor: SuperEditorCommandCo
             commands.append(
                 .init(
                     id: "builtin.add-selection-to-chat",
-                    title: String(localized: "Add Selection to Chat", table: "LumiEditor"),
+                    title: String(localized: "Add Selection to Chat", bundle: .module),
                     systemImage: "bubble.left.and.text.bubble.right",
                     category: EditorCommandCategory.chat.rawValue,
                     order: 1,
@@ -34,7 +34,7 @@ public final class EditorChatIntegrationCommandContributor: SuperEditorCommandCo
         commands.append(
             .init(
                 id: "builtin.add-location-to-chat",
-                title: String(localized: "Add Location to Chat", table: "LumiEditor"),
+                title: String(localized: "Add Location to Chat", bundle: .module),
                 systemImage: "mappin.and.ellipse",
                 category: EditorCommandCategory.chat.rawValue,
                 order: 2,
