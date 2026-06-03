@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
+          }
         }
       }
     },
@@ -40,6 +46,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開遠程倉庫"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "打開遠程倉庫"
@@ -67,6 +79,12 @@
             "state": "translated",
             "value": "在瀏覽器中打開當前項目的遠程倉庫"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開當前項目的遠程倉庫"
+          }
         }
       }
     },
@@ -89,6 +107,12 @@
             "state": "translated",
             "value": "URL"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
         }
       }
     },
@@ -107,6 +131,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "載入中..."
@@ -134,6 +164,12 @@
             "state": "translated",
             "value": "在瀏覽器中打開遠程倉庫"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開遠程倉庫"
+          }
         }
       }
     },
@@ -152,6 +188,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製 URL"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "複製 URL"
@@ -178,6 +220,12 @@
             "state": "translated",
             "value": "當前項目沒有遠端倉庫"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前項目沒有遠端倉庫"
+          }
         }
       }
     },
@@ -196,6 +244,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "打開"
@@ -222,6 +276,12 @@
             "state": "translated",
             "value": "無遠端倉庫"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無遠端倉庫"
+          }
         }
       }
     },
@@ -240,6 +300,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遠端倉庫"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "遠端倉庫"
