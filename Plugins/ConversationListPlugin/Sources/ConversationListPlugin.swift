@@ -22,6 +22,7 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     public static let description: String = String(localized: "Show all conversation history", table: "ConversationList")
     public static let iconName: String = "message.fill"
     public static var order: Int { 76 }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = ConversationListPlugin()
