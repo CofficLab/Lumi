@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// 小米 LLM 供应商插件
 public actor XiaomiPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = XiaomiPlugin()
     public static let id = "LLMProviderXiaomi"
     public static let displayName = "小米"

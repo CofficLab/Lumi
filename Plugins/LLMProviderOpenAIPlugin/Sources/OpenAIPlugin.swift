@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// OpenAI LLM 供应商插件
 public actor OpenAIPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = OpenAIPlugin()
     public static let id = "LLMProviderOpenAI"
     public static let displayName = "OpenAI"

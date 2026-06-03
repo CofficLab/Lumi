@@ -7,6 +7,8 @@ import LumiCoreKit
 /// 通过 `SuperPlugin` 的 `llmProviderType()` 方法暴露供应商类型，
 /// 由 AppPluginVM 统一发现并注册。
 public actor OpenRouterPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let shared = OpenRouterPlugin()
     public static let id = "LLMProviderOpenRouter"
     public static let displayName = "OpenRouter"
