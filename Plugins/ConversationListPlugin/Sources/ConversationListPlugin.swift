@@ -55,7 +55,7 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 工具栏右侧：会话列表按钮
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        guard context.supportsAIChat else { return nil }
         guard let conversationListContext = context.conversationListContext else { return nil }
         return AnyView(ConversationListPopoverButton(context: conversationListContext))
     }
