@@ -21,7 +21,7 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
     private var toolbar: some View {
         HStack(spacing: 8) {
             TextField(
-                String(localized: "Search in files", table: "EditorBottomSearch"),
+                String(localized: "Search in files", bundle: .module),
                 text: Binding(
                     get: { service.panelState.workspaceSearchQuery },
                     set: { service.panelController.setWorkspaceSearchQuery($0) }
@@ -34,14 +34,14 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
                 }
             }
 
-            AppButton(String(localized: "Search", table: "EditorBottomSearch"), systemImage: "magnifyingglass", style: .primary, size: .small) {
+            AppButton(String(localized: "Search", bundle: .module), systemImage: "magnifyingglass", style: .primary, size: .small) {
                 Task { @MainActor in
                     await service.performWorkspaceSearch()
                 }
             }
             .disabled(service.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-            AppButton(String(localized: "Open Search Editor", table: "EditorBottomSearch"), systemImage: "doc.text.magnifyingglass", style: .secondary, size: .small) {
+            AppButton(String(localized: "Open Search Editor", bundle: .module), systemImage: "doc.text.magnifyingglass", style: .secondary, size: .small) {
                 service.openWorkspaceSearchResultsInEditor()
             }
             .disabled(service.panelState.workspaceSearchResults.isEmpty)
@@ -54,7 +54,7 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
         if service.panelState.isWorkspaceSearchLoading {
             VStack(spacing: 10) {
                 ProgressView()
-                Text(String(localized: "Searching workspace…", table: "EditorBottomSearch"))
+                Text(String(localized: "Searching workspace…", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -62,14 +62,14 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
         } else if let error = service.panelState.workspaceSearchErrorMessage {
             emptyState(error, systemImage: "exclamationmark.triangle")
         } else if service.panelState.workspaceSearchQuery.isEmpty {
-            emptyState(String(localized: "Enter a query and press Return", table: "EditorBottomSearch"), systemImage: "magnifyingglass")
+            emptyState(String(localized: "Enter a query and press Return", bundle: .module), systemImage: "magnifyingglass")
         } else if service.panelState.workspaceSearchResults.isEmpty {
-            emptyState(String(localized: "No results", table: "EditorBottomSearch"), systemImage: "doc.text.magnifyingglass")
+            emptyState(String(localized: "No results", bundle: .module), systemImage: "doc.text.magnifyingglass")
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     if let summary = service.panelState.workspaceSearchSummary {
-                        Text(String(localized: "\(summary.totalMatches) matches in \(summary.totalFiles) files", table: "EditorBottomSearch"))
+                        Text(String(localized: "\(summary.totalMatches) matches in \(summary.totalFiles) files", bundle: .module))
                             .font(.appMicroEmphasized)
                             .foregroundColor(theme.textSecondary)
                     }
@@ -136,8 +136,8 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
 
     private func fileMatchSummary(_ file: EditorWorkspaceSearchFileResult) -> String {
         let noun = file.matchCount == 1
-            ? String(localized: "match", table: "EditorBottomSearch")
-            : String(localized: "matches", table: "EditorBottomSearch")
+            ? String(localized: "match", bundle: .module)
+            : String(localized: "matches", bundle: .module)
         return "\(file.matchCount) \(noun)"
     }
 

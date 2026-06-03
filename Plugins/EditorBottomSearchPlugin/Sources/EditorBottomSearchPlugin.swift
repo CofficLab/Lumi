@@ -16,11 +16,8 @@ public actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorBottomSearch"
-    public static let displayName: String = String(
-        localized: "Editor Bottom Search", table: "EditorBottomSearch")
-    public static let description: String = String(
-        localized: "Search panel in the editor bottom area",
-        table: "EditorBottomSearch")
+    public static let displayName: String = String(localized: "Editor Bottom Search", bundle: .module)
+    public static let description: String = String(localized: "Search panel in the editor bottom area", bundle: .module)
     public static let iconName: String = "magnifyingglass"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 79 }
