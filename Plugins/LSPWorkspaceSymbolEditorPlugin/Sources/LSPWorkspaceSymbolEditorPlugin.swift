@@ -14,8 +14,8 @@ public actor LSPWorkspaceSymbolEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPWorkspaceSymbolEditorPlugin()
     public static let id = "LSPWorkspaceSymbolEditor"
-    public static let displayName = String(localized: "LSP Workspace Symbols", table: "LSPWorkspaceSymbolEditor")
-    public static let description = String(localized: "Provides workspace-wide symbol search.", table: "LSPWorkspaceSymbolEditor")
+    public static let displayName = String(localized: "LSP Workspace Symbols", bundle: .module)
+    public static let description = String(localized: "Provides workspace-wide symbol search.", bundle: .module)
     public static let iconName = "magnifyingglass"
     public static let order = 24
     public static var category: PluginCategory { .editor }
