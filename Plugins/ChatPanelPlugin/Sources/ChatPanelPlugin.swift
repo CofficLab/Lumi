@@ -15,8 +15,8 @@ public actor ChatPanelPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose: Bool = true
     public static let id = "ChatPanel"
-    public static let displayName = String(localized: "Chat", table: "AgentChat")
-    public static let description = String(localized: "Conversation list with chat surface", table: "AgentChat")
+    public static let displayName = String(localized: "Chat", bundle: .module)
+    public static let description = String(localized: "Conversation list with chat surface", bundle: .module)
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 78 }
@@ -48,15 +48,5 @@ public actor ChatPanelPlugin: SuperPlugin, SuperLog {
         ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, supportsAIChat: true) {
             AnyView(ChatPanelView())
         }
-    }
-}
-
-public struct ChatPanelView: View {
-    public var body: some View {
-        AppEmptyState(
-            icon: ChatPanelPlugin.iconName,
-            title: ChatPanelPlugin.displayName
-        )
-        .frame(minWidth: 260, idealWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
     }
 }
