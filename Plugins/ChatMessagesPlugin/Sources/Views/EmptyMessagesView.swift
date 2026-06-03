@@ -9,7 +9,7 @@ public struct EmptyMessagesView: View {
     public var body: some View {
         AppEmptyState(
             icon: "bubble.left.and.bubble.right",
-            title: String(localized: "No messages yet", table: "AgentChat")
+            title: String(localized: "No messages yet")
         )
         .foregroundColor(theme.textSecondary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

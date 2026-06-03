@@ -14,11 +14,11 @@ public struct CollapseButton: View {
     public var body: some View {
         AppIconButton(
             systemImage: "chevron.up",
-            label: String(localized: "Collapse", table: "AgentChat"),
+            label: String(localized: "Collapse"),
             tint: theme.textSecondary.opacity(0.8),
             size: .compact,
             action: action
         )
-        .help(String(localized: "Collapse Message", table: "AgentChat"))
+        .help(String(localized: "Collapse Message"))
     }
 }

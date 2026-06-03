@@ -7,7 +7,7 @@ public struct EmptyStateView: View {
     public var body: some View {
         AppEmptyState(
             icon: "text.bubble",
-            title: String(localized: "Select or start a conversation", table: "AgentChat")
+            title: String(localized: "Select or start a conversation")
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
