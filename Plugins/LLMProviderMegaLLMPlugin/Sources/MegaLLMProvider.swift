@@ -15,9 +15,9 @@ public final class MegaLLMProvider: NSObject, SuperLLMProvider, @unchecked Senda
     // MARK: - 基础信息
 
     public static let id = "megallm"
-    public static let displayName = String(localized: "MegaLLM", table: "MegaLLM")
+    public static let displayName = String(localized: "MegaLLM", bundle: .module)
     public static let shortName = "ML"
-    public static let description = String(localized: "MegaLLM AI", table: "MegaLLM")
+    public static let description = String(localized: "MegaLLM AI", bundle: .module)
 
     public static let websiteURL: String? = "https://megallm.com"
 
