@@ -21,8 +21,8 @@ public actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 
     public static let id: String = "MenuBarManager"
     public static let navigationId: String = "menu_bar_manager"
-    public static let displayName: String = String(localized: "Menu Bar Manager", table: "MenuBarManager")
-    public static let description: String = String(localized: "Manage your menu bar items", table: "MenuBarManager")
+    public static let displayName: String = String(localized: "Menu Bar Manager", bundle: .module)
+    public static let description: String = String(localized: "Manage your menu bar items", bundle: .module)
     public static let iconName = "menubar.rectangle"
     public static var order: Int { 20 }
 
