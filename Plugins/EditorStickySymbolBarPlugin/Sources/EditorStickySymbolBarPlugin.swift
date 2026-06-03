@@ -13,11 +13,8 @@ public actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🧩"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorStickySymbolBar"
-    public static let displayName: String = String(
-        localized: "Editor Sticky Symbol Bar", table: "EditorStickySymbolBar")
-    public static let description: String = String(
-        localized: "Current symbol breadcrumb for the editor panel",
-        table: "EditorStickySymbolBar")
+    public static let displayName: String = String(localized: "Editor Sticky Symbol Bar", bundle: .module)
+    public static let description: String = String(localized: "Current symbol breadcrumb for the editor panel", bundle: .module)
     public static let iconName = "point.topleft.down.curvedto.point.bottomright.up"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 89 }

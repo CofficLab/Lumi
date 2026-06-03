@@ -47,7 +47,7 @@ public struct EditorStickySymbolBarView: View {
 
     public var body: some View {
         HStack(spacing: 10) {
-            Label(String(localized: "Current Symbol", table: "LumiEditor"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+            Label(String(localized: "Current Symbol", bundle: .module), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                 .font(.appMicroEmphasized)
                 .foregroundColor(theme.textSecondary)
 
@@ -67,7 +67,7 @@ public struct EditorStickySymbolBarView: View {
 
             Spacer(minLength: 0)
 
-            Text(String(localized: "Ln \(service.cursorLine)", table: "LumiEditor"))
+            Text(String(localized: "Ln \(service.cursorLine)", bundle: .module))
                 .font(.appMicroEmphasized)
                 .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 8)
