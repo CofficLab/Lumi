@@ -11,6 +11,8 @@ public actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+
     public static let id = "ChatPendingMessages"
     public static let displayName = String(localized: "Chat Pending Messages", table: "AgentChat")
     public static let description = String(localized: "Show queued chat messages above the input area", table: "AgentChat")

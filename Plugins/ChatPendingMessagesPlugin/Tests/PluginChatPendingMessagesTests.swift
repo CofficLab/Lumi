@@ -3,6 +3,11 @@ import Testing
 import LumiCoreKit
 @testable import ChatPendingMessagesPlugin
 
+@Test func pluginPolicyIsAlwaysOn() {
+    #expect(ChatPendingMessagesPlugin.policy == .alwaysOn)
+    #expect(ChatPendingMessagesPlugin.isConfigurable == false)
+}
+
 @MainActor
 @Test func windowConversationVMProvidesAndRemovesPendingMessages() {
     let selectedConversationId = UUID()
