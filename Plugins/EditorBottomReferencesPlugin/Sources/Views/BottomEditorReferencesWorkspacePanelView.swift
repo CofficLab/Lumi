@@ -40,14 +40,14 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
 
     private var panelTitle: String {
         let count = service.panelState.referenceResults.count
-        return count > 0 ? String(localized: "References (\(count))", table: "EditorBottomReferences") : String(localized: "References", table: "EditorBottomReferences")
+        return count > 0 ? String(localized: "References (\(count))", bundle: .module) : String(localized: "References", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if service.panelState.referenceResults.isEmpty {
-                    emptyState(String(localized: "No References", table: "EditorBottomReferences"), systemImage: "arrow.triangle.branch")
+                    emptyState(String(localized: "No References", bundle: .module), systemImage: "arrow.triangle.branch")
                 } else {
                     ForEach(service.panelState.referenceResults) { item in
                         Button {
@@ -66,7 +66,7 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
                             panelCard(
                                 title: "\(item.path):\(item.line):\(item.column)",
                                 subtitle: item.preview,
-                                badge: String(localized: "Reference", table: "EditorBottomReferences"),
+                                badge: String(localized: "Reference", bundle: .module),
                                 isSelected: service.panelState.selectedReferenceResult == item
                             )
                         }

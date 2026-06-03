@@ -16,11 +16,8 @@ public actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔗"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorBottomReferences"
-    public static let displayName: String = String(
-        localized: "Editor Bottom References", table: "EditorBottomReferences")
-    public static let description: String = String(
-        localized: "References panel in the editor bottom area",
-        table: "EditorBottomReferences")
+    public static let displayName: String = String(localized: "Editor Bottom References", bundle: .module)
+    public static let description: String = String(localized: "References panel in the editor bottom area", bundle: .module)
     public static let iconName: String = "arrow.triangle.branch"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 79 }
