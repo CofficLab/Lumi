@@ -35,8 +35,8 @@ public actor DelayMessagePlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "⏳"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "DelayMessage"
-    public static let displayName: String = String(localized: "Delay Message", table: "DelayMessage")
-    public static let description: String = String(localized: "Schedule delayed messages to resume conversations automatically.", table: "DelayMessage")
+    public static let displayName: String = String(localized: "Delay Message", bundle: .module)
+    public static let description: String = String(localized: "Schedule delayed messages to resume conversations automatically.", bundle: .module)
     public static let iconName: String = "clock.badge"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 98 }

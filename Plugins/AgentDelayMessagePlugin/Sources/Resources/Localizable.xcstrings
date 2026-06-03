@@ -21,6 +21,12 @@
             "state": "translated",
             "value": "延時消息"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延時消息"
+          }
         }
       }
     },
@@ -39,6 +45,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延時發送消息以自動恢復對話。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "延時發送消息以自動恢復對話。"
