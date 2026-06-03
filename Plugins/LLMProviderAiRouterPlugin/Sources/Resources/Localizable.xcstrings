@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "AiRouter"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AiRouter"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "airouter.org 提供的 LLM 路由服務"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "airouter.org 提供的 LLM 路由服務"

@@ -15,9 +15,9 @@ public final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Send
     // MARK: - 基础信息
 
     public static let id = "airouter"
-    public static let displayName = String(localized: "AiRouter", table: "AiRouter")
+    public static let displayName = String(localized: "AiRouter", bundle: .module)
     public static let shortName = "AR"
-    public static let description = String(localized: "LLM Router by airouter.org", table: "AiRouter")
+    public static let description = String(localized: "LLM Router by airouter.org", bundle: .module)
 
     public static let websiteURL: String? = "https://airouter.org"
 
