@@ -176,7 +176,7 @@ public struct GitHubKBPopover: View {
             HStack {
                 Image(systemName: "network")
                     .foregroundColor(primaryTextColor)
-                Text(String(localized: "GitHub Ecosystem KB", table: "GitHubInsight"))
+                Text(String(localized: "GitHub Ecosystem KB", bundle: .module))
                     .font(.headline)
                     .foregroundColor(primaryTextColor)
                 Spacer()
@@ -185,7 +185,7 @@ public struct GitHubKBPopover: View {
                     .foregroundColor(secondaryTextColor)
             }
             if let profile = viewModel.profile {
-                Text(String(format: String(localized: "Profile: %@", table: "GitHubInsight"), profile.shortTitle))
+                Text(String(format: String(localized: "Profile: %@", bundle: .module), profile.shortTitle))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
             }
@@ -214,15 +214,15 @@ public struct GitHubKBPopover: View {
         case .syncing:
             AppEmptyState(
                 icon: "arrow.triangle.2.circlepath",
-                title: LocalizedStringKey(String(localized: "Syncing GitHub ecosystem references...", table: "GitHubInsight"))
+                title: LocalizedStringKey(String(localized: "Syncing GitHub ecosystem references...", bundle: .module))
             )
             .frame(maxWidth: .infinity, minHeight: 220)
         default:
             AppEmptyState(
                 icon: "magnifyingglass",
-                title: LocalizedStringKey(String(localized: "No cached GitHub ecosystem references yet.", table: "GitHubInsight")),
-                description: LocalizedStringKey(String(localized: "Click Sync Now to discover related GitHub repositories.", table: "GitHubInsight")),
-                actionTitle: LocalizedStringKey(String(localized: "Sync Now", table: "GitHubInsight"))
+                title: LocalizedStringKey(String(localized: "No cached GitHub ecosystem references yet.", bundle: .module)),
+                description: LocalizedStringKey(String(localized: "Click Sync Now to discover related GitHub repositories.", bundle: .module)),
+                actionTitle: LocalizedStringKey(String(localized: "Sync Now", bundle: .module))
             ) {
                 viewModel.load(projectPath: projectPath, force: true)
             }
@@ -240,7 +240,7 @@ public struct GitHubKBPopover: View {
             Button {
                 viewModel.load(projectPath: projectPath, force: true)
             } label: {
-                Label(String(localized: "Sync Now", table: "GitHubInsight"), systemImage: "arrow.clockwise")
+                Label(String(localized: "Sync Now", bundle: .module), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -255,13 +255,13 @@ public struct GitHubKBPopover: View {
     private var statusText: String {
         switch viewModel.state {
         case .idle:
-            return String(localized: "Idle", table: "GitHubInsight")
+            return String(localized: "Idle", bundle: .module)
         case .syncing:
-            return String(localized: "Syncing", table: "GitHubInsight")
+            return String(localized: "Syncing", bundle: .module)
         case .ready(let count):
-            return String(format: String(localized: "Ready: %lld entries", table: "GitHubInsight"), count)
+            return String(format: String(localized: "Ready: %lld entries", bundle: .module), count)
         case .rateLimited:
-            return String(localized: "GitHub rate limited", table: "GitHubInsight")
+            return String(localized: "GitHub rate limited", bundle: .module)
         case .failed(let message):
             return message
         }

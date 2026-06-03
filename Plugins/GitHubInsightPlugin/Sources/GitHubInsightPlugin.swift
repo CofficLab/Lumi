@@ -16,8 +16,8 @@ public actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     public static let id = "GitHubInsight"
-    public static let displayName = String(localized: "GitHub Insight", table: "GitHubInsight")
-    public static let description = String(localized: "Builds a local cache of GitHub ecosystem references for the current project.", table: "GitHubInsight")
+    public static let displayName = String(localized: "GitHub Insight", bundle: .module)
+    public static let description = String(localized: "Builds a local cache of GitHub ecosystem references for the current project.", bundle: .module)
     public static let iconName = "network"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 16 }
