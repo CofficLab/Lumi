@@ -146,19 +146,19 @@ public struct GitCommitHistorySidebarView: View {
             // 文本
             VStack(alignment: .leading, spacing: 2) {
                 if uncommittedFileCount == 0 {
-                    Text(String(localized: "Clean working tree", table: "GitPlugin"))
+                    Text(String(localized: "Clean working tree", bundle: .module))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "All changes committed", table: "GitPlugin"))
+                    Text(String(localized: "All changes committed", bundle: .module))
                         .font(.system(size: 10))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else {
-                    Text(String(localized: "Current status", table: "GitPlugin"))
+                    Text(String(localized: "Current status", bundle: .module))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", table: "GitPlugin"))
+                    Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", bundle: .module))
                         .font(.system(size: 10))
                         .foregroundColor(.orange)
                 }
@@ -190,7 +190,7 @@ public struct GitCommitHistorySidebarView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "Loading...", table: "GitPlugin"))
+            Text(String(localized: "Loading...", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -204,7 +204,7 @@ public struct GitCommitHistorySidebarView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a project first", table: "GitPlugin"))
+            Text(String(localized: "Please select a project first", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -383,22 +383,22 @@ extension Date {
         let interval = now.timeIntervalSince(self)
 
         if interval < 60 {
-            return String(localized: "Just now", table: "GitPlugin")
+            return String(localized: "Just now", bundle: .module)
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(localized: "\(minutes) minutes ago", table: "GitPlugin")
+            return String(localized: "\(minutes) minutes ago", bundle: .module)
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return String(localized: "\(hours) hours ago", table: "GitPlugin")
+            return String(localized: "\(hours) hours ago", bundle: .module)
         } else if interval < 2592000 {
             let days = Int(interval / 86400)
-            return String(localized: "\(days) days ago", table: "GitPlugin")
+            return String(localized: "\(days) days ago", bundle: .module)
         } else if interval < 31536000 {
             let months = Int(interval / 2592000)
-            return String(localized: "\(months) months ago", table: "GitPlugin")
+            return String(localized: "\(months) months ago", bundle: .module)
         } else {
             let years = Int(interval / 31536000)
-            return String(localized: "\(years) years ago", table: "GitPlugin")
+            return String(localized: "\(years) years ago", bundle: .module)
         }
     }
 }

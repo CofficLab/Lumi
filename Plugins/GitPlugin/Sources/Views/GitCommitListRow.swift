@@ -32,7 +32,7 @@ public struct GitCommitListRow: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 11))
                                 .foregroundColor(.orange)
-                                .help(String(localized: "Not pushed to remote repository", table: "GitPlugin"))
+                                .help(String(localized: "Not pushed to remote repository", bundle: .module))
                         }
                     }
 

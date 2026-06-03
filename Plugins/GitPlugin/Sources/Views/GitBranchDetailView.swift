@@ -12,7 +12,7 @@ public struct GitBranchDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Git Information", table: "GitPlugin"))
+                Text(String(localized: "Git Information", bundle: .module))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -22,11 +22,11 @@ public struct GitBranchDetailView: View {
             Divider()
 
             if let branch = branchName {
-                GitInfoRow(label: String(localized: "Current Branch", table: "GitPlugin"), value: branch)
+                GitInfoRow(label: String(localized: "Current Branch", bundle: .module), value: branch)
 
                 if let dirty = isDirty {
                     HStack(spacing: 8) {
-                        Text(String(localized: "Status", table: "GitPlugin"))
+                        Text(String(localized: "Status", bundle: .module))
                             .font(.system(size: 12))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .frame(width: 70, alignment: .leading)
@@ -37,8 +37,8 @@ public struct GitBranchDetailView: View {
                                 .frame(width: 6, height: 6)
 
                             Text(dirty
-                                ? String(localized: "Uncommitted Changes", table: "GitPlugin")
-                                : String(localized: "Clean Working Tree", table: "GitPlugin"))
+                                ? String(localized: "Uncommitted Changes", bundle: .module)
+                                : String(localized: "Clean Working Tree", bundle: .module))
                                 .font(.system(size: 12))
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         }
@@ -52,7 +52,7 @@ public struct GitBranchDetailView: View {
                         .font(.system(size: 32))
                         .foregroundColor(Color(hex: "FF9F0A"))
 
-                    Text(String(localized: "Unable to Get Git Information", table: "GitPlugin"))
+                    Text(String(localized: "Unable to Get Git Information", bundle: .module))
                         .font(.system(size: 13))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }

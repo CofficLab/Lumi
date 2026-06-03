@@ -8,9 +8,9 @@ public struct GitDiffPanelView: View {
     public let newText: String
     public let isLoading: Bool
 
-    public var loadingText: String = String(localized: "Loading diff...", table: "GitPlugin")
-    public var selectFileText: String = String(localized: "Select a file to view diff", table: "GitPlugin")
-    public var cannotDisplayText: String = String(localized: "Cannot display diff for this file", table: "GitPlugin")
+    public var loadingText: String = String(localized: "Loading diff...", bundle: .module)
+    public var selectFileText: String = String(localized: "Select a file to view diff", bundle: .module)
+    public var cannotDisplayText: String = String(localized: "Cannot display diff for this file", bundle: .module)
 
     public var body: some View {
         VStack(spacing: 0) {

@@ -15,7 +15,7 @@ public actor GitPlugin: SuperPlugin, SuperLog {
     public static let id: String = "GitPlugin"
     public static let navigationId: String? = nil
     public static let displayName: String = "Git"
-    public static let description: String = String(localized: "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。", table: "GitPlugin")
+    public static let description: String = String(localized: "提供 Git 版本控制相关的功能，包括面板、提交历史、状态栏和 Agent 工具。", bundle: .module)
     public static let iconName: String = "arrow.triangle.branch"
     public static var category: PluginCategory { .developerTool }
     public static var order: Int { 11 }
