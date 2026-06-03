@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "構建生產版本"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構建生產版本"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳轉到 Script"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "跳轉到 Script"
@@ -64,6 +76,12 @@
             "state": "translated",
             "value": "跳轉到 Style"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳轉到 Style"
+          }
         }
       }
     },
@@ -82,6 +100,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳轉到 Template"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "跳轉到 Template"
@@ -108,6 +132,12 @@
             "state": "translated",
             "value": "打開開發伺服器"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開開發伺服器"
+          }
         }
       }
     },
@@ -126,6 +156,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽構建"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "預覽構建"
@@ -152,6 +188,12 @@
             "state": "translated",
             "value": "啟動開發伺服器"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟動開發伺服器"
+          }
         }
       }
     },
@@ -170,6 +212,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vue"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Vue"
@@ -196,6 +244,12 @@
             "state": "translated",
             "value": "Vue 編輯器"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vue 編輯器"
+          }
         }
       }
     },
@@ -218,6 +272,12 @@
             "state": "translated",
             "value": "Vue 大綱"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vue 大綱"
+          }
         }
       }
     },
@@ -236,6 +296,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vue 單文件組件編輯支援：Volar LSP 整合、範本指令補全和組件懸浮文檔。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Vue 單文件組件編輯支援：Volar LSP 整合、範本指令補全和組件懸浮文檔。"
