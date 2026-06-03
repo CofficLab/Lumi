@@ -33,9 +33,11 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        guard let llmVM = context.llmVM,
-              let conversationVM = context.conversationVM else { return [] }
-        return [SwitchModelTool(llmVM: llmVM, conversationVM: conversationVM)]
+        // TODO: 暂时注释掉，后续恢复
+//        guard let llmVM = context.llmVM,
+//              let conversationVM = context.conversationVM else { return [] }
+//        return [SwitchModelTool(llmVM: llmVM, conversationVM: conversationVM)]
+        return []
     }
 
     // MARK: - Root View
