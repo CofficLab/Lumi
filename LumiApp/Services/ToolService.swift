@@ -71,6 +71,8 @@ class ToolService: SuperLog, @unchecked Sendable {
         }
     }
 
+    private var conversationListWindowId: UUID?
+
     /// 最近项目 ViewModel（可选，由 RootContainer 注入）
     weak var recentProjectsVM: AppProjectsVM?
 
@@ -152,6 +154,28 @@ class ToolService: SuperLog, @unchecked Sendable {
             SpawnSubAgentTool(llmService: llmService, llmVM: llmVM, toolService: self),
             CollectSubAgentTool(),
         ]
+    }
+
+    @MainActor
+    func setConversationListContext(
+        _ context: LumiCoreKit.ConversationListContext,
+        windowId: UUID,
+        currentProjectName: String?,
+        currentProjectPath: String?
+    ) {
+        conversationListWindowId = windowId
+        self.currentProjectName = currentProjectName
+        self.currentProjectPath = currentProjectPath
+        conversationListContext = context
+    }
+
+    @MainActor
+    func clearConversationListContext(for windowId: UUID) {
+        guard conversationListWindowId == windowId else { return }
+        conversationListWindowId = nil
+        currentProjectName = nil
+        currentProjectPath = nil
+        conversationListContext = nil
     }
 
     // MARK: - Public API

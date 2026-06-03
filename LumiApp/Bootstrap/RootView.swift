@@ -71,6 +71,9 @@ struct RootView<Content>: View where Content: View {
         .onOpenFileInEditor(windowId: windowContainer.id) { url in
             handleOpenFileInEditor(url)
         }
+        .onDisappear {
+            container.toolService.clearConversationListContext(for: windowContainer.id)
+        }
     }
 
     private var initialLifecycleScene: some View {
@@ -295,34 +298,41 @@ struct RootView<Content>: View where Content: View {
 
     private func syncPluginConversationListContext() {
         pluginConversationListContext.selectedConversationId = windowContainer.conversationVM.selectedConversationId
-        pluginConversationListContext.fetchAllConversationsProvider = { [windowContainer] in
-            windowContainer.conversationVM.fetchAllConversations().map(Self.conversationListItem)
+        pluginConversationListContext.fetchAllConversationsProvider = { [weak windowContainer] in
+            guard let windowContainer else { return [] }
+            return windowContainer.conversationVM.fetchAllConversations().map(Self.conversationListItem)
         }
-        pluginConversationListContext.fetchConversationsPageProvider = { [windowContainer] limit, offset in
-            windowContainer.conversationVM.fetchConversationsPage(limit: limit, offset: offset).map(Self.conversationListItem)
+        pluginConversationListContext.fetchConversationsPageProvider = { [weak windowContainer] limit, offset in
+            guard let windowContainer else { return [] }
+            return windowContainer.conversationVM.fetchConversationsPage(limit: limit, offset: offset).map(Self.conversationListItem)
         }
-        pluginConversationListContext.fetchConversationProvider = { [windowContainer] id in
-            windowContainer.conversationVM.fetchConversation(id: id).map(Self.conversationListItem)
+        pluginConversationListContext.fetchConversationProvider = { [weak windowContainer] id in
+            guard let windowContainer else { return nil }
+            return windowContainer.conversationVM.fetchConversation(id: id).map(Self.conversationListItem)
         }
-        pluginConversationListContext.selectConversationHandler = { [windowContainer] id, reason in
-            windowContainer.switchToConversation(id, reason: reason)
+        pluginConversationListContext.selectConversationHandler = { [weak windowContainer] id, reason in
+            windowContainer?.switchToConversation(id, reason: reason)
         }
-        pluginConversationListContext.deleteConversationHandler = { [windowContainer] id in
+        pluginConversationListContext.deleteConversationHandler = { [weak windowContainer] id in
+            guard let windowContainer else { return false }
             guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
             windowContainer.conversationVM.deleteConversation(conversation)
             return true
         }
-        pluginConversationListContext.updateConversationTitleHandler = { [windowContainer] id, title in
+        pluginConversationListContext.updateConversationTitleHandler = { [weak windowContainer] id, title in
+            guard let windowContainer else { return false }
             guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
             windowContainer.conversationVM.updateConversationTitle(conversation, newTitle: title)
             return true
         }
-        pluginConversationListContext.updateProjectAssociationHandler = { [windowContainer] id, projectPath in
+        pluginConversationListContext.updateProjectAssociationHandler = { [weak windowContainer] id, projectPath in
+            guard let windowContainer else { return false }
             guard let conversation = windowContainer.conversationVM.fetchConversation(id: id) else { return false }
             windowContainer.conversationVM.updateProjectAssociation(for: conversation, projectPath: projectPath)
             return true
         }
-        pluginConversationListContext.createConversationHandler = { [windowContainer] projectName, projectPath, languagePreference in
+        pluginConversationListContext.createConversationHandler = { [weak windowContainer] projectName, projectPath, languagePreference in
+            guard let windowContainer else { return nil }
             await windowContainer.conversationVM.createNewConversation(
                 projectName: projectName,
                 projectPath: projectPath,
@@ -330,22 +340,27 @@ struct RootView<Content>: View where Content: View {
             )
             return windowContainer.conversationVM.selectedConversationId
         }
-        pluginConversationListContext.switchProjectHandler = { [windowContainer] projectPath, reason in
+        pluginConversationListContext.switchProjectHandler = { [weak windowContainer] projectPath, reason in
+            guard let windowContainer else { return }
             let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
             windowContainer.projectVM.switchProject(
                 to: Project(name: projectName, path: projectPath, lastUsed: Date()),
                 reason: reason
             )
         }
-        pluginConversationListContext.isConversationProcessingProvider = { [windowContainer] id in
-            windowContainer.conversationSendStatusVM.isMessageProcessing(for: id)
+        pluginConversationListContext.isConversationProcessingProvider = { [weak windowContainer] id in
+            guard let windowContainer else { return false }
+            return windowContainer.conversationSendStatusVM.isMessageProcessing(for: id)
         }
         pluginConversationListContext.databaseDirectoryProvider = {
             AppConfig.getDBFolderURL()
         }
-        container.toolService.currentProjectName = windowContainer.projectVM.currentProjectName
-        container.toolService.currentProjectPath = windowContainer.projectVM.currentProjectPath
-        container.toolService.conversationListContext = pluginConversationListContext
+        container.toolService.setConversationListContext(
+            pluginConversationListContext,
+            windowId: windowContainer.id,
+            currentProjectName: windowContainer.projectVM.currentProjectName,
+            currentProjectPath: windowContainer.projectVM.currentProjectPath
+        )
     }
 
     private func handleFileDroppedToChat(_ url: URL) {
