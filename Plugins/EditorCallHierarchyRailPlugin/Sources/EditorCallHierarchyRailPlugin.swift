@@ -13,11 +13,8 @@ public actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📞"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorCallHierarchyRail"
-    public static let displayName: String = String(
-        localized: "Editor Call Hierarchy Rail", table: "EditorCallHierarchyRail")
-    public static let description: String = String(
-        localized: "Editor sidebar call hierarchy tab",
-        table: "EditorCallHierarchyRail")
+    public static let displayName: String = String(localized: "Editor Call Hierarchy Rail", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar call hierarchy tab", bundle: .module)
     public static let iconName: String = "point.3.connected.trianglepath.dotted"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }
