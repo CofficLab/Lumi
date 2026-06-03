@@ -1,6 +1,7 @@
 import LumiCoreKit
 import SuperLogKit
 import AgentToolKit
+import LumiUI
 import Foundation
 import os
 import SwiftUI
@@ -29,17 +30,33 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
-    // MARK: - Toolbar Views
+    // MARK: - Poster Views
 
     @MainActor
     public func addPosterViews() -> [AnyView] {
-        []
+        [
+            PluginPosterSupport.poster(
+                title: "会话历史",
+                subtitle: "从工具栏访问会话列表，并提供会话创建、删除和项目关联工具。",
+                icon: Self.iconName,
+                accent: .blue,
+                metrics: [
+                    PluginPosterSupport.metric("History", "历史"),
+                    PluginPosterSupport.metric("Tools", "工具"),
+                ],
+                rows: ["最近会话", "新建会话", "项目关联"],
+                chips: ["Agent", "会话", "历史"]
+            ),
+        ]
     }
+
+    // MARK: - Toolbar Views
 
     /// 工具栏右侧：会话列表按钮
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
-        nil
+        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        return ConversationListRuntime.toolbarTrailingViewProvider?()
     }
 
     // MARK: - Send Middlewares
@@ -47,7 +64,7 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 发送管线中间件：项目切换对话引导
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        []
+        ConversationListRuntime.sendMiddlewaresProvider?() ?? []
     }
 
     // MARK: - Agent Tools
@@ -55,6 +72,6 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 提供对话管理相关的 Agent 工具
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        []
+        ConversationListRuntime.agentToolsProvider?(context) ?? []
     }
 }

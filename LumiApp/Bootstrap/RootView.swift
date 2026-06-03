@@ -4,6 +4,7 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
+import ConversationListPlugin
 import AgentTurnNotificationPlugin
 import EditorStickySymbolBarPlugin
 import EditorTabStripPlugin
@@ -198,6 +199,7 @@ struct RootView<Content>: View where Content: View {
         syncLayoutPluginContext()
         configureDefaultIconProvider()
         configurePluginProjectBridge()
+        configureConversationListPluginBridge()
         configureEditorStickySymbolBarPluginBridge()
         configureEditorTabStripPluginBridge()
         configureEditorRailWorkspaceSymbolsPluginBridge()
@@ -445,6 +447,21 @@ struct RootView<Content>: View where Content: View {
 
     private func configureAutoTaskPluginBridge() {
         AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
+    }
+
+    private func configureConversationListPluginBridge() {
+        // 工具栏右侧：会话列表弹出按钮（在编辑器模式下显示）
+        ConversationListRuntime.toolbarTrailingViewProvider = {
+            AnyView(ConversationListPopoverButton())
+        }
+
+        // TODO: sendMiddlewares 和 agentTools 的桥接需要将 Tool/Middleware 源码
+        // 迁移至 app target 或引入 LumiCoreKit 版本的协议抽象后恢复
+
+        // 数据库目录
+        ConversationListRuntime.databaseDirectoryProvider = {
+            AppConfig.getDBFolderURL()
+        }
     }
 
     private static func targetWindowContainer(
