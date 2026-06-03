@@ -66,7 +66,7 @@ public struct XcodeStatusBarDetailView: View {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 14))
                     .foregroundStyle(.blue)
-                Text(String(localized: "Xcode Build Context", table: "EditorXcodePlugin"))
+                Text(String(localized: "Xcode Build Context", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 buildStatusBadge
@@ -77,7 +77,7 @@ public struct XcodeStatusBarDetailView: View {
             if let snapshot = viewModel.latestEditorSnapshot {
                 infoSection(snapshot: snapshot)
             } else {
-                Text(String(localized: "No editor context snapshot available.", table: "EditorXcodePlugin"))
+                Text(String(localized: "No editor context snapshot available.", bundle: .module))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -93,11 +93,11 @@ public struct XcodeStatusBarDetailView: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "Re-resolving...", table: "EditorXcodePlugin"))
+                            Text(String(localized: "Re-resolving...", bundle: .module))
                         }
                     } else {
                         Label(
-                            String(localized: "Re-resolve", table: "EditorXcodePlugin"),
+                            String(localized: "Re-resolve", bundle: .module),
                             systemImage: "arrow.clockwise"
                         )
                     }
@@ -128,35 +128,35 @@ public struct XcodeStatusBarDetailView: View {
     private func infoSection(snapshot: XcodeEditorContextSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             detailRow(
-                String(localized: "Scheme", table: "EditorXcodePlugin"),
-                viewModel.activeScheme ?? String(localized: "Not Selected", table: "EditorXcodePlugin")
+                String(localized: "Scheme", bundle: .module),
+                viewModel.activeScheme ?? String(localized: "Not Selected", bundle: .module)
             )
             detailRow(
-                String(localized: "Configuration", table: "EditorXcodePlugin"),
-                viewModel.activeConfiguration ?? String(localized: "Not Selected", table: "EditorXcodePlugin")
+                String(localized: "Configuration", bundle: .module),
+                viewModel.activeConfiguration ?? String(localized: "Not Selected", bundle: .module)
             )
             detailRow(
-                String(localized: "Destination", table: "EditorXcodePlugin"),
-                viewModel.activeDestination ?? String(localized: "Undetermined", table: "EditorXcodePlugin")
+                String(localized: "Destination", bundle: .module),
+                viewModel.activeDestination ?? String(localized: "Undetermined", bundle: .module)
             )
             detailRow(
-                String(localized: "Workspace", table: "EditorXcodePlugin"),
+                String(localized: "Workspace", bundle: .module),
                 snapshot.workspaceName
             )
             detailRow(
-                String(localized: "Current File", table: "EditorXcodePlugin"),
-                snapshot.currentFilePath ?? String(localized: "No File Open", table: "EditorXcodePlugin")
+                String(localized: "Current File", bundle: .module),
+                snapshot.currentFilePath ?? String(localized: "No File Open", bundle: .module)
             )
             detailRow(
-                String(localized: "Preferred Target", table: "EditorXcodePlugin"),
-                snapshot.currentFileTarget ?? String(localized: "Undetermined", table: "EditorXcodePlugin")
+                String(localized: "Preferred Target", bundle: .module),
+                snapshot.currentFileTarget ?? String(localized: "Undetermined", bundle: .module)
             )
         }
 
         if !viewModel.semanticReport.reasons.isEmpty {
             Divider()
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "Semantic Availability", table: "EditorXcodePlugin"))
+                Text(String(localized: "Semantic Availability", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                 ForEach(viewModel.semanticReport.reasons) { reason in
                     reasonRow(reason)
