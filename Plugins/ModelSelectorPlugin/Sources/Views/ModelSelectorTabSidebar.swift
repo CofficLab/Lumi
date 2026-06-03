@@ -19,14 +19,14 @@ public struct ModelSelectorTabSidebar: View {
         VStack(spacing: 4) {
             // MARK: - 上半区：快捷 Tab
 
-            quickTabButton(tab: .current, icon: "scope", title: String(localized: "Current Provider", table: "AgentChat"))
-            quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: String(localized: "Frequent", table: "AgentChat"))
-            quickTabButton(tab: .fast, icon: "bolt.fill", title: String(localized: "Fast", table: "AgentChat"))
+            quickTabButton(tab: .current, icon: "scope", title: String(localized: "Current Provider", bundle: .module))
+            quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: String(localized: "Frequent", bundle: .module))
+            quickTabButton(tab: .fast, icon: "bolt.fill", title: String(localized: "Fast", bundle: .module))
             quickTabButton(tab: .auto, icon: "wand.and.sparkles", title: "Auto")
             quickTabButton(
                 tab: .availability,
                 icon: "network",
-                title: String(localized: "Availability", table: "LLMAvailability"),
+                title: String(localized: "Availability", bundle: .module),
                 trailingText: availabilitySummaryText
             )
 
@@ -35,7 +35,7 @@ public struct ModelSelectorTabSidebar: View {
 
             // MARK: - 下半区：供应商列表（可滚动）
 
-            Text(String(localized: "Providers", table: "AgentChat"))
+            Text(String(localized: "Providers", bundle: .module))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color(hex: "98989E"))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -52,7 +52,7 @@ public struct ModelSelectorTabSidebar: View {
             Divider()
                 .padding(.vertical, 4)
 
-            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentChat"))
+            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", bundle: .module))
         }
         .padding()
     }

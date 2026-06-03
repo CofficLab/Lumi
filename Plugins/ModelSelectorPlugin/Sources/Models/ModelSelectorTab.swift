@@ -26,17 +26,17 @@ public enum ModelSelectorTab: Equatable {
     public var displayTitle: String {
         switch self {
         case .current:
-            return String(localized: "Current Provider", table: "AgentChat")
+            return String(localized: "Current Provider", bundle: .module)
         case .frequent:
-            return String(localized: "Frequent", table: "AgentChat")
+            return String(localized: "Frequent", bundle: .module)
         case .fast:
-            return String(localized: "Fast", table: "AgentChat")
+            return String(localized: "Fast", bundle: .module)
         case .auto:
             return "Auto"
         case .availability:
-            return String(localized: "Availability", table: "LLMAvailability")
+            return String(localized: "Availability", bundle: .module)
         case .all:
-            return String(localized: "All", table: "AgentChat")
+            return String(localized: "All", bundle: .module)
         case .provider:
             return ""  // 供应商标题由外部传入
         }

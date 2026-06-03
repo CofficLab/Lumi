@@ -98,7 +98,7 @@ public struct ModelSelectorView: View, SuperLog {
                                 searchText: searchText,
                                 localModelInfosByProvider: localModelInfosByProvider
                             ),
-                            emptyMessage: String(localized: "No Providers", table: "AgentChat")
+                            emptyMessage: String(localized: "No Providers", bundle: .module)
                         )
                     case .provider(let providerId):
                         singleProviderList(providerId: providerId)
@@ -283,7 +283,7 @@ public struct ModelSelectorView: View, SuperLog {
                 provider: provider,
                 searchText: searchText
             )
-            let fallbackSeries = String(localized: "Other", table: "AgentChat")
+            let fallbackSeries = String(localized: "Other", bundle: .module)
             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                 Section(header: Text(seriesName).font(.system(size: 13, weight: .regular)).foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))) {

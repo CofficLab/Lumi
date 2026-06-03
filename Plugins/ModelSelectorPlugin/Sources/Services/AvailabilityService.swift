@@ -26,30 +26,30 @@ public enum LLMProviderUsageStatus: Equatable {
     public var title: String {
         switch self {
         case .active:
-            return String(localized: "In Use", table: "LLMAvailability")
+            return String(localized: "In Use", bundle: .module)
         case .idle:
-            return String(localized: "Idle", table: "LLMAvailability")
+            return String(localized: "Idle", bundle: .module)
         case .checking:
-            return String(localized: "Checking", table: "LLMAvailability")
+            return String(localized: "Checking", bundle: .module)
         case .unavailable:
-            return String(localized: "Unavailable", table: "LLMAvailability")
+            return String(localized: "Unavailable", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", table: "LLMAvailability")
+            return String(localized: "Unknown", bundle: .module)
         }
     }
 
     public var helpText: String {
         switch self {
         case .active:
-            return String(localized: "Current selected provider", table: "LLMAvailability")
+            return String(localized: "Current selected provider", bundle: .module)
         case .idle:
-            return String(localized: "Provider has available models", table: "LLMAvailability")
+            return String(localized: "Provider has available models", bundle: .module)
         case .checking:
-            return String(localized: "Checking provider availability", table: "LLMAvailability")
+            return String(localized: "Checking provider availability", bundle: .module)
         case .unavailable(let reason):
-            return reason ?? String(localized: "Provider has no available models", table: "LLMAvailability")
+            return reason ?? String(localized: "Provider has no available models", bundle: .module)
         case .unknown:
-            return String(localized: "Availability has not been checked", table: "LLMAvailability")
+            return String(localized: "Availability has not been checked", bundle: .module)
         }
     }
 }
