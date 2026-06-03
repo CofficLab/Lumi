@@ -11,7 +11,7 @@ public struct NetworkDashboardView: View {
                     // Header Stats
                     HStack(spacing: 20) {
                         SpeedCard(
-                            title: String(localized: "Download"),
+                            title: String(localized: "Download", bundle: .module),
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
@@ -20,7 +20,7 @@ public struct NetworkDashboardView: View {
                         )
 
                         SpeedCard(
-                            title: String(localized: "Upload"),
+                            title: String(localized: "Upload", bundle: .module),
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
@@ -34,12 +34,12 @@ public struct NetworkDashboardView: View {
 
                     // Info Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        NetworkInfoCard(title: String(localized: "Local IP"), value: viewModel.networkState.localIP ?? String(localized: "Unknown"), icon: "pc")
-                        NetworkInfoCard(title: String(localized: "Public IP"), value: viewModel.networkState.publicIP ?? String(localized: "Fetching..."), icon: "globe")
-                        NetworkInfoCard(title: String(localized: "Wi-Fi"), value: viewModel.networkState.wifiSSID ?? String(localized: "Not Connected"), icon: "wifi")
-                        NetworkInfoCard(title: String(localized: "Signal"), value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
-                        NetworkInfoCard(title: String(localized: "Latency (Ping)"), value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
-                        NetworkInfoCard(title: String(localized: "Interface"), value: viewModel.networkState.interfaceName, icon: "cable.connector")
+                        NetworkInfoCard(title: String(localized: "Local IP", bundle: .module), value: viewModel.networkState.localIP ?? String(localized: "Unknown", bundle: .module), icon: "pc")
+                        NetworkInfoCard(title: String(localized: "Public IP", bundle: .module), value: viewModel.networkState.publicIP ?? String(localized: "Fetching...", bundle: .module), icon: "globe")
+                        NetworkInfoCard(title: String(localized: "Wi-Fi", bundle: .module), value: viewModel.networkState.wifiSSID ?? String(localized: "Not Connected", bundle: .module), icon: "wifi")
+                        NetworkInfoCard(title: String(localized: "Signal", bundle: .module), value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
+                        NetworkInfoCard(title: String(localized: "Latency (Ping)", bundle: .module), value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
+                        NetworkInfoCard(title: String(localized: "Interface", bundle: .module), value: viewModel.networkState.interfaceName, icon: "cable.connector")
                     }
                     .padding(.horizontal)
                 }
@@ -84,7 +84,7 @@ public struct SpeedCard: View {
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(String(localized: "Total: \(Double(total).formattedBytes())"))
+                Text(String(localized: "Total: \(Double(total).formattedBytes())", bundle: .module))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color(hex: "98989E"))
             }

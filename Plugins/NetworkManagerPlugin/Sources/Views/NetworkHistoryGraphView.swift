@@ -51,7 +51,7 @@ public struct NetworkHistoryGraphView: View {
                             GraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .stroke(Color(hex: "FF453A"), lineWidth: 1.5)
                         } else {
-                            Text(String(localized: "收集数据中...", table: "NetworkManager"))
+                            Text(String(localized: "收集数据中...", bundle: .module))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)

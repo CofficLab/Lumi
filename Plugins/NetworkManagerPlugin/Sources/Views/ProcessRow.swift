@@ -32,7 +32,7 @@ public struct ProcessRow: View {
                         .lineLimit(1)
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "PID: \(process.id)", table: "NetworkManager"))
+                    Text(String(localized: "PID: \(process.id)", bundle: .module))
                         .font(.system(size: 10))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
