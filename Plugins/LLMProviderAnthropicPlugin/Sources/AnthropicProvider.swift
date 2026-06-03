@@ -37,9 +37,9 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
     // MARK: - Basic Info
 
     public static let id = "anthropic"
-    public static let displayName = String(localized: "Anthropic", table: "Anthropic")
+    public static let displayName = String(localized: "Anthropic", bundle: .module)
     public static let shortName = "AT"
-    public static let description = String(localized: "Claude AI by Anthropic", table: "Anthropic")
+    public static let description = String(localized: "Claude AI by Anthropic", bundle: .module)
 
     public static let websiteURL: String? = "https://anthropic.com"
 
