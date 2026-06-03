@@ -20,6 +20,7 @@ public actor ChatInputPlugin: SuperPlugin, SuperLog {
     public static let iconName = "keyboard"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 96 }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = ChatInputPlugin()
 
     // MARK: - UI Contributions
