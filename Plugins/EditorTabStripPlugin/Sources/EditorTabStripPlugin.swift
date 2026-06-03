@@ -16,9 +16,8 @@ public actor EditorTabStripPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let emoji = "📑"
     public static let id: String = "EditorTabStrip"
-    public static let displayName: String = String(localized: "Editor Tab Strip", table: "EditorTabStrip")
-    public static let description: String = String(
-        localized: "Tab bar for the editor panel", table: "EditorTabStrip")
+    public static let displayName: String = String(localized: "Editor Tab Strip", bundle: .module)
+    public static let description: String = String(localized: "Tab bar for the editor panel", bundle: .module)
     public static let iconName = "rectangle.topthird.inset.filled"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 88 }
