@@ -13,6 +13,11 @@ public final class WindowLayoutVM: ObservableObject {
     @Published public var selectedAgentDetailId: String
     @Published public var layoutRatios: [String: Double]
 
+    /// 首次回退：当磁盘没有保存过 activeViewContainerIcon 时，
+    /// 由 app 层设置此闭包返回默认图标（第一个 view container 的 icon）。
+    /// LayoutPlugin 在恢复阶段调用。
+    public var defaultIconProvider: (() -> String?)?
+
     public init(
         bottomPanelVisible: Bool = true,
         contentPanelVisible: Bool = true,

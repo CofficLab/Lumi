@@ -196,6 +196,7 @@ struct RootView<Content>: View where Content: View {
         syncPluginConversationContext()
         syncPluginLLMContext()
         syncLayoutPluginContext()
+        configureDefaultIconProvider()
         configurePluginProjectBridge()
         configureEditorStickySymbolBarPluginBridge()
         configureEditorTabStripPluginBridge()
@@ -209,6 +210,14 @@ struct RootView<Content>: View where Content: View {
         configureProjectsPluginBridge()
         configureAutoTaskPluginBridge()
         configureAgentTurnNotificationPluginBridge()
+    }
+
+    /// 设置首次回退图标提供者，供 LayoutPlugin 在磁盘无记录时使用
+    private func configureDefaultIconProvider() {
+        let pluginVM = container.pluginVM
+        pluginLayoutContext.defaultIconProvider = { [pluginVM] in
+            pluginVM.getViewContainerItems().first?.icon
+        }
     }
 
     private func syncPluginProjectContext() {

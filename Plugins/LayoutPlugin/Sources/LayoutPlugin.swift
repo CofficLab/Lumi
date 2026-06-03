@@ -139,6 +139,15 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             layoutVM.restoreFromPlugin(activeViewContainerIcon: savedIcon)
         }
 
+        // 首次回退：磁盘没有保存过图标时，使用 app 层提供的默认图标
+        if layoutVM.activeViewContainerIcon == nil,
+           let defaultIcon = layoutVM.defaultIconProvider?() {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)无磁盘记录，回退到默认图标: \(defaultIcon)")
+            }
+            layoutVM.restoreFromPlugin(activeViewContainerIcon: defaultIcon)
+        }
+
         // 恢复侧边栏 Tab
         if let savedTabId = store.loadSelectedAgentSidebarTabId() {
             if LayoutPlugin.verbose {

@@ -53,12 +53,8 @@ struct ActivityBar: View {
         .onAppear {
             let items = pluginProvider.getViewContainerItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
-            // 如果 LayoutPlugin 尚未恢复图标（或恢复的图标已失效），回退到第一个
-            if layoutVM.activeViewContainerIcon == nil {
-                if let first = items.first {
-                    layoutVM.activeViewContainerIcon = first.icon
-                }
-            }
+            // 首次回退（无磁盘记录时设置默认图标）由 LayoutPlugin 统一负责，
+            // 此处不再设置 activeViewContainerIcon，避免与 LayoutPlugin 恢复竞态。
         }
         .onChange(of: pluginProvider.getViewContainerItems()) { _, newItems in
             layoutVM.restoreSelectedTab(from: newItems.map(\.id))
