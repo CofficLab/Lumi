@@ -13,11 +13,8 @@ public actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔗"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorRailReferences"
-    public static let displayName: String = String(
-        localized: "Editor Rail References", table: "EditorRailReferences")
-    public static let description: String = String(
-        localized: "Editor sidebar references tab",
-        table: "EditorRailReferences")
+    public static let displayName: String = String(localized: "Editor Rail References", bundle: .module)
+    public static let description: String = String(localized: "Editor sidebar references tab", bundle: .module)
     public static let iconName: String = "arrow.triangle.branch"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 78 }
