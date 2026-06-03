@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "Xybbz"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xybbz"
+          }
         }
       }
     },
@@ -38,6 +44,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "xybbz 提供的 AI API 中轉服務"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "xybbz 提供的 AI API 中轉服務"

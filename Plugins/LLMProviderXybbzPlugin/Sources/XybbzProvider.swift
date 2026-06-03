@@ -15,9 +15,9 @@ public final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendabl
     // MARK: - 基础信息
 
     public static let id = "xybbz"
-    public static let displayName = String(localized: "Xybbz", table: "Xybbz")
+    public static let displayName = String(localized: "Xybbz", bundle: .module)
     public static let shortName = "XB"
-    public static let description = String(localized: "AI API Gateway by xybbz", table: "Xybbz")
+    public static let description = String(localized: "AI API Gateway by xybbz", bundle: .module)
 
     public static let websiteURL: String? = "https://sub2api.xybbz.xyz"
 
