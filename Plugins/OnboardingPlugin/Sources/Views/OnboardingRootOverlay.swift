@@ -57,7 +57,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
     public func show(forceReset: Bool) {
         if forceReset {
             guard store.setCompleted(false) else {
-                persistenceErrorMessage = String(localized: "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", table: "OnboardingPlugin")
+                persistenceErrorMessage = String(localized: "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
                 return
             }
         }
@@ -70,7 +70,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
 
     public func complete() {
         guard store.setCompleted(true) else {
-            persistenceErrorMessage = String(localized: "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", table: "OnboardingPlugin")
+            persistenceErrorMessage = String(localized: "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
             return
         }
         isPresentingOnboarding = false
@@ -429,10 +429,10 @@ private struct OnboardingSheetView: View {
                     id: "plugin-selection",
                     icon: "puzzlepiece.extension.fill",
                     iconGradient: [Color.indigo, Color.cyan],
-                    title: String(localized: "选择你的插件", table: "OnboardingPlugin"),
-                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", table: "OnboardingPlugin"),
+                    title: String(localized: "选择你的插件", bundle: .module),
+                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", bundle: .module),
                     features: [],
-                    tip: String(localized: "插件选择会在完成引导后立即生效", table: "OnboardingPlugin")
+                    tip: String(localized: "插件选择会在完成引导后立即生效", bundle: .module)
                 ),
                 at: quickStartIndex
             )
@@ -505,7 +505,7 @@ private struct OnboardingSheetView: View {
                 loadPluginSelectionIfNeeded()
             }
             .alert(
-                String(localized: "无法保存新手引导状态", table: "OnboardingPlugin"),
+                String(localized: "无法保存新手引导状态", bundle: .module),
                 isPresented: Binding(
                     get: { viewModel.persistenceErrorMessage != nil },
                     set: { isPresented in
@@ -515,7 +515,7 @@ private struct OnboardingSheetView: View {
                     }
                 )
             ) {
-                Button(String(localized: "好", table: "OnboardingPlugin"), role: .cancel) {}
+                Button(String(localized: "好", bundle: .module), role: .cancel) {}
             } message: {
                 Text(viewModel.persistenceErrorMessage ?? "")
             }
@@ -541,7 +541,7 @@ private struct OnboardingSheetView: View {
     /// 顶部导航栏
     private var topBar: some View {
         HStack {
-            Label(String(localized: "新手引导", table: "OnboardingPlugin"), systemImage: "graduationcap.fill")
+            Label(String(localized: "新手引导", bundle: .module), systemImage: "graduationcap.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -553,7 +553,7 @@ private struct OnboardingSheetView: View {
             Spacer()
 
             // 跳过按钮
-            Button(String(localized: "跳过", table: "OnboardingPlugin")) {
+            Button(String(localized: "跳过", bundle: .module)) {
                 viewModel.skip()
             }
             .font(.system(size: 13, weight: .medium))
@@ -795,7 +795,7 @@ private struct OnboardingSheetView: View {
                 Button {
                     viewModel.previousStep()
                 } label: {
-                    Label(String(localized: "上一步", table: "OnboardingPlugin"), systemImage: "chevron.left")
+                    Label(String(localized: "上一步", bundle: .module), systemImage: "chevron.left")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.plain)
@@ -818,8 +818,8 @@ private struct OnboardingSheetView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(isLastPage
-                        ? String(localized: "开始使用", table: "OnboardingPlugin")
-                        : String(localized: "下一步", table: "OnboardingPlugin"))
+                        ? String(localized: "开始使用", bundle: .module)
+                        : String(localized: "下一步", bundle: .module))
                         .font(.system(size: 13, weight: .semibold))
 
                     if !isLastPage {
