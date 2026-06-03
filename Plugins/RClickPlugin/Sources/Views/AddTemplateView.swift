@@ -15,17 +15,17 @@ public struct AddTemplateView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "Add New Template", table: "RClick"))
+            Text(String(localized: "Add New Template", bundle: .module))
                 .font(.appBodyEmphasized)
                 .foregroundColor(theme.textPrimary)
 
             Form {
-                TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)")), text: $name)
+                TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)", bundle: .module)), text: $name)
                     .onChange(of: name) { _, _ in showNameError = false }
-                TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)")), text: $ext)
+                TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)", bundle: .module)), text: $ext)
                     .onChange(of: ext) { _, _ in showExtensionError = false }
 
-                Section(header: Text(String(localized: "Default Content", table: "RClick"))) {
+                Section(header: Text(String(localized: "Default Content", bundle: .module))) {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
@@ -35,11 +35,11 @@ public struct AddTemplateView: View {
             .formStyle(.grouped)
 
             if showNameError {
-                AppErrorBanner(message: LocalizedStringKey(String(localized: "Template name cannot be empty or contain path separators", table: "RClick")))
+                AppErrorBanner(message: LocalizedStringKey(String(localized: "Template name cannot be empty or contain path separators", bundle: .module)))
             }
 
             if showExtensionError {
-                AppErrorBanner(message: LocalizedStringKey(String(localized: "Extension can only contain letters, numbers, hyphen, or underscore", table: "RClick")))
+                AppErrorBanner(message: LocalizedStringKey(String(localized: "Extension can only contain letters, numbers, hyphen, or underscore", bundle: .module)))
             }
 
             HStack {

@@ -16,8 +16,8 @@ public actor RClickPlugin: SuperPlugin, SuperLog {
 
     public static let id = "RClick"
     public static let navigationId: String? = "rclick"
-    public static let displayName = String(localized: "Right Click", table: "RClick")
-    public static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
+    public static let displayName = String(localized: "Right Click", bundle: .module)
+    public static let description = String(localized: "Customize Finder right-click menu actions", bundle: .module)
     public static let iconName = "cursorarrow.click.2"
     public static var order: Int { 50 }
     public nonisolated static let policy: PluginPolicy = .disabled
