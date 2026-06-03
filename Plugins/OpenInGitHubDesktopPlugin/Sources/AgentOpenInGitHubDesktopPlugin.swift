@@ -20,8 +20,8 @@ public actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     public nonisolated static let emoji = "🐙"
     public nonisolated static let verbose: Bool = true
     public static let id = "AgentOpenInGitHubDesktop"
-    public static let displayName = String(localized: "Open in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
-    public static let description = String(localized: "Open current project in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
+    public static let displayName = String(localized: "Open in GitHub Desktop", bundle: .module)
+    public static let description = String(localized: "Open current project in GitHub Desktop", bundle: .module)
     public static let iconName = "desktopcomputer"
     public static var category: PluginCategory { .integration }
     public static var order: Int { 97 }
@@ -92,7 +92,7 @@ public struct OpenInGitHubDesktopStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 GitHub Desktop 中打开当前项目", table: "AgentOpenInGitHubDesktop"))
+            .help(String(localized: "在 GitHub Desktop 中打开当前项目", bundle: .module))
         }
     }
 
@@ -102,13 +102,13 @@ public struct OpenInGitHubDesktopStatusBarView: View {
             Image(systemName: "desktopcomputer")
                 .font(.appMicro)
 
-            Text(String(localized: "GitHub Desktop", table: "OpenInGitHubDesktopPlugin"))
+            Text(String(localized: "GitHub Desktop", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", table: "AgentOpenInGitHubDesktop"))
+        .help(String(localized: "无项目", bundle: .module))
     }
 
     private func openInGitHubDesktop() {
@@ -133,7 +133,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                 Image(systemName: "desktopcomputer")
                     .font(.appBodyEmphasized)
 
-                Text(String(localized: "GitHub Desktop", table: "OpenInGitHubDesktopPlugin"))
+                Text(String(localized: "GitHub Desktop", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -144,7 +144,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", table: "OpenInGitHubDesktopPlugin"))
+                        Text(String(localized: "打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -155,7 +155,7 @@ public struct OpenInGitHubDesktopDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", table: "OpenInGitHubDesktopPlugin"))
+                Text(String(localized: "项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -176,7 +176,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", table: "OpenInGitHubDesktopPlugin"))
+                .help(String(localized: "复制路径", bundle: .module))
             }
         }
         .padding()
