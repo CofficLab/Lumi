@@ -16,7 +16,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
         return [
             .init(
                 id: "builtin.add-next-occurrence",
-                title: String(localized: "Add Next Occurrence", table: "LumiEditor"),
+                title: String(localized: "Add Next Occurrence", bundle: .module),
                 systemImage: "plus.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 51,
@@ -31,7 +31,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.remove-last-occurrence-selection",
-                title: String(localized: "Remove Last Occurrence Selection", table: "LumiEditor"),
+                title: String(localized: "Remove Last Occurrence Selection", bundle: .module),
                 systemImage: "minus.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 52,
@@ -45,7 +45,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.select-all-occurrences",
-                title: String(localized: "Select All Occurrences", table: "LumiEditor"),
+                title: String(localized: "Select All Occurrences", bundle: .module),
                 systemImage: "text.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 53,
@@ -60,7 +60,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.clear-additional-cursors",
-                title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
+                title: String(localized: "Clear Additional Cursors", bundle: .module),
                 systemImage: "cursorarrow.motionlines",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 54,

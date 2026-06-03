@@ -7,8 +7,8 @@ public actor MultiCursorCommandsEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = MultiCursorCommandsEditorPlugin()
     public static let id = "MultiCursorCommandsEditor"
-    public static let displayName = String(localized: "Multi-Cursor Commands", table: "MultiCursorCommandsEditor")
-    public static let description = String(localized: "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", table: "MultiCursorCommandsEditor")
+    public static let displayName = String(localized: "Multi-Cursor Commands", bundle: .module)
+    public static let description = String(localized: "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", bundle: .module)
     public static let iconName = "cursorarrow.and.square.on.square.dashed"
     public static let order = 13
     public static var category: PluginCategory { .editor }
