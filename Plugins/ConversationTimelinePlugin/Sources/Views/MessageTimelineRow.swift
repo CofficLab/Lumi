@@ -114,7 +114,7 @@ public struct MessageTimelineRow: View {
                                 .font(.system(size: 10))
                         }
                         if totalTokens > 0 {
-                            Text(String(format: String(localized: "Total %@", table: "ConversationTimeline"), timelineService.formatToken(totalTokens)))
+                            Text(String(format: String(localized: "Total %@", bundle: .module), timelineService.formatToken(totalTokens)))
                                 .font(.system(size: 10))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -131,7 +131,7 @@ public struct MessageTimelineRow: View {
     private var messagePreview: String {
         let content = item.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if content.isEmpty {
-            return String(localized: "[Empty]", table: "ConversationTimeline")
+            return String(localized: "[Empty]", bundle: .module)
         }
         if content.count <= 50 {
             return content
@@ -171,19 +171,19 @@ public struct MessageTimelineRow: View {
     private var roleLabel: String {
         switch item.role {
         case .user:
-            return String(localized: "User", table: "ConversationTimeline")
+            return String(localized: "User", bundle: .module)
         case .assistant:
-            return String(localized: "Assistant", table: "ConversationTimeline")
+            return String(localized: "Assistant", bundle: .module)
         case .system:
-            return String(localized: "System", table: "ConversationTimeline")
+            return String(localized: "System", bundle: .module)
         case .tool:
-            return String(localized: "Tool", table: "ConversationTimeline")
+            return String(localized: "Tool", bundle: .module)
         case .status:
-            return String(localized: "Status", table: "ConversationTimeline")
+            return String(localized: "Status", bundle: .module)
         case .error:
-            return String(localized: "Error", table: "ConversationTimeline")
+            return String(localized: "Error", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", table: "ConversationTimeline")
+            return String(localized: "Unknown", bundle: .module)
         }
     }
 

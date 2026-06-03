@@ -14,8 +14,8 @@ public actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
 
     public static let id: String = "ConversationTimeline"
     public static let navigationId: String? = nil
-    public static let displayName: String = String(localized: "Conversation Timeline", table: "ConversationTimeline")
-    public static let description: String = String(localized: "Display conversation message timeline in status bar", table: "ConversationTimeline")
+    public static let displayName: String = String(localized: "Conversation Timeline", bundle: .module)
+    public static let description: String = String(localized: "Display conversation message timeline in status bar", bundle: .module)
     public static let iconName: String = "timeline.selection"
     public static var order: Int { 74 }
 

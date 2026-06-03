@@ -11,12 +11,12 @@ public struct ConversationTimelineHeader: View {
     public var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "对话时间线", table: "ConversationTimeline"))
+                Text(String(localized: "对话时间线", bundle: .module))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 HStack(spacing: 12) {
-                    Text(String(format: String(localized: "%lld messages", table: "ConversationTimeline"), itemCount))
+                    Text(String(format: String(localized: "%lld messages", bundle: .module), itemCount))
                         .font(.system(size: 11))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -28,10 +28,10 @@ public struct ConversationTimelineHeader: View {
                             let currentText = timelineService.formatToken(currentContextTokens)
                             if contextLimit > 0 {
                                 let limitText = timelineService.formatToken(contextLimit)
-                                Text(String(format: String(localized: "Context %@/%@", table: "ConversationTimeline"), currentText, limitText))
+                                Text(String(format: String(localized: "Context %@/%@", bundle: .module), currentText, limitText))
                                     .font(.system(size: 11))
                             } else {
-                                Text(String(format: String(localized: "Context %@", table: "ConversationTimeline"), currentText))
+                                Text(String(format: String(localized: "Context %@", bundle: .module), currentText))
                                     .font(.system(size: 11))
                             }
                         }
@@ -49,7 +49,7 @@ public struct ConversationTimelineHeader: View {
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .buttonStyle(.plain)
-            .help(String(localized: "刷新", table: "ConversationTimeline"))
+            .help(String(localized: "刷新", bundle: .module))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
