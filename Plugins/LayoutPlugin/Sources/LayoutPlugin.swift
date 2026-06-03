@@ -33,6 +33,7 @@ public actor LayoutPlugin: SuperPlugin, SuperLog {
     public static let description: String = "Persist and restore layout state across app launches"
     public static let iconName: String = "sidebar.left"
     public static var order: Int { 99 }
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public nonisolated var instanceLabel: String { Self.id }
 
