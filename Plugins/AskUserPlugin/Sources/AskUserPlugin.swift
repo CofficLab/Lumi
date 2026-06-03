@@ -36,8 +36,8 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
 
     public static let shared = AskUserPlugin()
     public static let id = "plugin-ask-user"
-    public static let displayName = String(localized: "用户询问插件", table: "AskUser")
-    public static let description = String(localized: "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答", table: "AskUser")
+    public static let displayName = String(localized: "用户询问插件", bundle: .module)
+    public static let description = String(localized: "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答", bundle: .module)
     public static let iconName = "questionmark.circle.fill"
     public static var category: PluginCategory { .general }
     public static var order: Int { 100 }
