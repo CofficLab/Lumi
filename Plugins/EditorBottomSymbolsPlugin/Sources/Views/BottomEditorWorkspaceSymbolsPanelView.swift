@@ -19,7 +19,7 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Text(String(localized: "Workspace symbols not available", table: "EditorBottomSymbols"))
+                Text(String(localized: "Workspace symbols not available", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -52,6 +52,6 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
 
     private var panelTitle: String {
         let count = service.workspaceSymbolProvider.symbols.count
-        return count > 0 ? String(localized: "Workspace Symbols (\(count))", table: "EditorBottomSymbols") : String(localized: "Workspace Symbols", table: "EditorBottomSymbols")
+        return count > 0 ? String(localized: "Workspace Symbols (\(count))", bundle: .module) : String(localized: "Workspace Symbols", bundle: .module)
     }
 }

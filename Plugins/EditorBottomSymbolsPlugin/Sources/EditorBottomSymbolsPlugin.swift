@@ -16,11 +16,8 @@ public actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔣"
     public nonisolated static let verbose: Bool = true
     public static let id: String = "EditorBottomSymbols"
-    public static let displayName: String = String(
-        localized: "Editor Bottom Symbols", table: "EditorBottomSymbols")
-    public static let description: String = String(
-        localized: "Workspace Symbols panel in the editor bottom area",
-        table: "EditorBottomSymbols")
+    public static let displayName: String = String(localized: "Editor Bottom Symbols", bundle: .module)
+    public static let description: String = String(localized: "Workspace Symbols panel in the editor bottom area", bundle: .module)
     public static let iconName: String = "text.magnifyingglass"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 79 }
