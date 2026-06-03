@@ -14,8 +14,8 @@ public actor HTMLEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = HTMLEditorPlugin()
     public static let id = "HTMLEditor"
-    public static let displayName = String(localized: "HTML Editor", table: "HTMLEditor")
-    public static let description = String(localized: "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", table: "HTMLEditor")
+    public static let displayName = String(localized: "HTML Editor", bundle: .module)
+    public static let description = String(localized: "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", bundle: .module)
     public static let iconName = "curlybraces"
     public static let order = 31
     public static var category: PluginCategory { .editor }
