@@ -240,6 +240,7 @@ struct RootView<Content>: View where Content: View {
         syncPluginLLMContext()
         syncLayoutPluginContext()
         configureDefaultIconProvider()
+        configurePluginRuntimeContext()
         configurePluginProjectBridge()
         configureConversationListContext()
         configureBreadcrumbNavPluginBridge()
@@ -266,6 +267,41 @@ struct RootView<Content>: View where Content: View {
         pluginLayoutContext.defaultIconProvider = { [pluginVM] in
             pluginVM.getViewContainerItems().first?.icon
         }
+    }
+
+    private func configurePluginRuntimeContext() {
+        container.pluginVM.configureRuntime(context: PluginRuntimeContext(
+            editorServiceProvider: { [container, windowContainer] context in
+                Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                    .editorVM.service
+            },
+            openFile: { [container, windowContainer] url, projectRoot, context in
+                let targetWindow = Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                if let projectRoot {
+                    await targetWindow.editorVM.service.refreshProjectContext(for: projectRoot)
+                }
+                targetWindow.editorVM.service.open(at: url)
+            },
+            currentProjectPath: { [container, windowContainer] context in
+                let path = Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                    .projectVM.currentProjectPath
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                return path.isEmpty ? nil : path
+            },
+            activeWindowId: { [container] in
+                container.windowManagerVM.activeWindowId
+            },
+            editorThemeId: { [container] in
+                container.themeVM.activeEditorThemeId
+            },
+            addToChat: { text, context in
+                NotificationCenter.postAddToChat(text: text, windowId: context.windowId)
+            },
+            selectConversation: { [container, windowContainer] conversationId, context in
+                Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                    .switchToConversation(conversationId, reason: "pluginRuntime")
+            }
+        ))
     }
 
     private func syncPluginProjectContext() {

@@ -315,6 +315,9 @@ public protocol SuperPlugin: Actor {
 
     // MARK: - Lifecycle Hooks
 
+    /// 注入插件注册期运行时能力。
+    @MainActor func configureRuntime(context: PluginRuntimeContext)
+
     /// 插件注册完成后的回调
     nonisolated func onRegister()
 

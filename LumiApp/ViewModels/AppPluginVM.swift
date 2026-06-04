@@ -74,6 +74,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var sidebarLeadingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var sidebarTrailingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var enabledPluginIDs = Set<String>()
+    private var runtimeContext = PluginRuntimeContext()
 
     // MARK: - Tools Cache
 
@@ -123,6 +124,17 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private func invalidatePluginAggregates() {
         clearPluginMetadataCaches()
         cachedSuperSendMiddlewares = nil
+    }
+
+    /// 注入插件注册期运行时能力。
+    ///
+    /// App 层只构造通用能力对象，具体插件在自己的 `configureRuntime`
+    /// 中决定是否消费这些能力。
+    func configureRuntime(context: PluginRuntimeContext) {
+        runtimeContext = context
+        for plugin in plugins {
+            plugin.configureRuntime(context: context)
+        }
     }
 
     #if DEBUG
@@ -321,6 +333,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
+            plugin.configureRuntime(context: runtimeContext)
             plugin.onRegister()
             // 如果插件被启用，调用 onEnable
             if self.isPluginEnabled(plugin) {

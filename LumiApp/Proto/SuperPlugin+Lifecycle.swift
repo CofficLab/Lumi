@@ -3,6 +3,9 @@ import Foundation
 // MARK: - Lifecycle Default Implementation
 
 extension SuperPlugin {
+    /// 默认实现：不读取运行时能力
+    @MainActor func configureRuntime(context: PluginRuntimeContext) {}
+
     /// 插件注册完成后的回调
     ///
     /// 当插件被自动发现并注册到系统后调用。

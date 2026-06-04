@@ -184,6 +184,11 @@ actor PackagePluginAdapter<Packaged: LumiCoreKit.SuperPlugin>: SuperPlugin {
         Packaged.shared.registerEditorExtensions(into: registry)
     }
 
+    @MainActor
+    func configureRuntime(context: PluginRuntimeContext) {
+        Packaged.shared.configureRuntime(context: context)
+    }
+
     nonisolated func onRegister() {
         Packaged.shared.onRegister()
     }
@@ -383,6 +388,11 @@ actor AnyPackagePluginAdapter: SuperPlugin {
     @MainActor
     func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         packaged.registerEditorExtensions(into: registry)
+    }
+
+    @MainActor
+    func configureRuntime(context: PluginRuntimeContext) {
+        packaged.configureRuntime(context: context)
     }
 
     nonisolated func onRegister() {
