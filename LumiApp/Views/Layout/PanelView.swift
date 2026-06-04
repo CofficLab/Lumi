@@ -20,6 +20,7 @@ struct PanelView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeItem?.supportsAIChat ?? false,
             showsProjectToolbar: activeItem?.showsProjectToolbar ?? false,
+            showsFileTree: activeItem?.showsFileTree ?? false,
             windowId: windowContainer?.id
         )
         let hasBottomTabs = pluginProvider.hasBottomPanelTabs(context: pluginContext)

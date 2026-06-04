@@ -102,6 +102,7 @@ struct ContentView: View, SuperLog {
                 isEditorVisible: layoutVM.editorVisible,
                 supportsAIChat: activeContainer?.supportsAIChat ?? false,
                 showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
+                showsFileTree: activeContainer?.showsFileTree ?? false,
                 windowId: windowContainer?.id,
                 messageRenderer: renderMessage
             )
