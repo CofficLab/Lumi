@@ -27,6 +27,12 @@ public struct EditorFileTreeView: View, SuperLog {
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
 
+    /// 点击文件后立即更新的本地选中态。
+    ///
+    /// `EditorContext.currentFileURL` 仍然是编辑器真实状态，但打开文件前会先刷新项目上下文。
+    /// 用本地状态可以避免刷新期间文件树继续高亮上一个文件。
+    @State private var selectedFileURL: URL?
+
     public var body: some View {
         VStack(spacing: 0) {
             if projectVM.currentProjectPath.isEmpty {
@@ -37,7 +43,7 @@ public struct EditorFileTreeView: View, SuperLog {
                         EditorFileTreeNodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
-                            selectedURL: editorContext.currentFileURL,
+                            selectedURL: selectedFileURL ?? editorContext.currentFileURL,
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
@@ -98,6 +104,7 @@ public struct EditorFileTreeView: View, SuperLog {
     }
 
     private func openProjectFile(_ url: URL) {
+        selectedFileURL = url.standardizedFileURL
         let projectPath = projectVM.currentProjectPath
         Task { @MainActor in
             await editorContext.refreshProjectContext(for: projectPath)
@@ -109,6 +116,7 @@ public struct EditorFileTreeView: View, SuperLog {
         // 项目路径变化时，更新协调器并递增刷新令牌
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
         packageStore.setProjectRootPath(projectVM.currentProjectPath)
+        selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
         rootRefreshToken += 1
         if Self.verbose {
             if Self.verbose {
@@ -122,6 +130,7 @@ public struct EditorFileTreeView: View, SuperLog {
         if !projectVM.currentProjectPath.isEmpty {
             coordinator.setProjectRootPath(projectVM.currentProjectPath)
             packageStore.setProjectRootPath(projectVM.currentProjectPath)
+            selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
             rootRefreshToken += 1
             if Self.verbose {
                 if Self.verbose {
@@ -132,7 +141,7 @@ public struct EditorFileTreeView: View, SuperLog {
     }
 
     private func onSelectedFileChanged() {
-        // 自动展开到选中文件的逻辑需要在 EditorFileTreeNodeView 中处理
+        selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
     }
 
     private func onDisappear() {

@@ -126,7 +126,7 @@ public struct EditorFileTreeNodeView: View {
     // MARK: - Body
 
     public var body: some View {
-        let isSelected = selectedURL == url
+        let isSelected = selectedURL?.standardizedFileURL == url.standardizedFileURL
         guard let theme = editorContext.activeChromeTheme else {
             return AnyView(Color.clear)
         }
