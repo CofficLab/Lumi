@@ -1,4 +1,5 @@
 import Foundation
+import CodeEditTextView
 import EditorService
 import LumiCoreKit
 
@@ -14,6 +15,17 @@ public actor MultiCursorCommandsEditorPlugin: SuperPlugin {
     public static var category: PluginCategory { .editor }
 
     public nonisolated var providesEditorExtensions: Bool { true }
+
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        context.registerEditorTextInputInstaller { textView, state in
+            guard let textView = textView as? TextView,
+                  let state = state as? EditorState else {
+                return
+            }
+            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+        }
+    }
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }

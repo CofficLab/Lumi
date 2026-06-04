@@ -30,6 +30,12 @@ public struct PluginRuntimeContext {
     /// 是否显示助手消息头部。
     public let showsAssistantHeader: @MainActor () -> Bool
 
+    /// 注册编辑器文本输入安装器。
+    ///
+    /// LumiCoreKit 不直接依赖 EditorService/CodeEditTextView，因此使用类型擦除。
+    /// 具体编辑器插件可在自己的包内强转为需要的宿主类型。
+    public let registerEditorTextInputInstaller: @MainActor (@escaping @MainActor (AnyObject, AnyObject) -> Void) -> Void
+
     /// 应用编辑器字体名称。
     public let applyEditorFontName: @MainActor (String?, PluginContext) -> Void
 
@@ -55,6 +61,7 @@ public struct PluginRuntimeContext {
         activeWindowId: @escaping @MainActor () -> UUID? = { nil },
         editorThemeId: @escaping @MainActor () -> String = { "xcode-dark" },
         showsAssistantHeader: @escaping @MainActor () -> Bool = { false },
+        registerEditorTextInputInstaller: @escaping @MainActor (@escaping @MainActor (AnyObject, AnyObject) -> Void) -> Void = { _ in },
         applyEditorFontName: @escaping @MainActor (String?, PluginContext) -> Void = { _, _ in },
         databaseDirectory: @escaping @Sendable () -> URL = {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -74,6 +81,7 @@ public struct PluginRuntimeContext {
         self.activeWindowId = activeWindowId
         self.editorThemeId = editorThemeId
         self.showsAssistantHeader = showsAssistantHeader
+        self.registerEditorTextInputInstaller = registerEditorTextInputInstaller
         self.applyEditorFontName = applyEditorFontName
         self.databaseDirectory = databaseDirectory
         self.enqueueUserMessage = enqueueUserMessage

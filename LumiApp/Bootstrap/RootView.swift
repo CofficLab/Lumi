@@ -267,6 +267,11 @@ struct RootView<Content>: View where Content: View {
             showsAssistantHeader: { [container] in
                 container.agentSessionConfig.verbosity == .detailed
             },
+            registerEditorTextInputInstaller: { installer in
+                EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
+                    installer(textView, state)
+                }
+            },
             applyEditorFontName: { [container, windowContainer] fontName, context in
                 Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                     .editorVM.service.state.fontName = fontName

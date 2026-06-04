@@ -1,7 +1,6 @@
 import CodeEditTextView
 import EditorService
 import Foundation
-import MultiCursorCommandsEditorPlugin
 import SwiftData
 import os
 
@@ -192,10 +191,6 @@ final class RootContainer: ObservableObject, SuperLog {
                       plugin.pluginCategory == .theme else { continue }
                 plugin.registerEditorExtensions(into: registry)
             }
-        }
-        
-        EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
-            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
         }
         
         // 初始化时创建一个编辑器实例，用于配置全局 EditorSettingsState
