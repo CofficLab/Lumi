@@ -25,9 +25,45 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "自主模式：可執行工具和修改代碼，高風險自動批准"
+            "value": "自主模式：可執行工具和修改程式碼，高風險自動核准"
           }
         }
+      }
+    },
+    "Autonomous Mode Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A3 Autonomous: tools and code changes, high-risk auto-approved" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "A3 自主：可执行工具，高风险自动批准" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "A3 自主：可執行工具，高風險自動批准" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "A3 自主：可執行工具，高風險自動核准" } }
+      }
+    },
+    "Autonomous Mode Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Autonomous" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自主" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "自主" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自主" } }
+      }
+    },
+    "Auto Approve Risk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Auto-approve risk" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "风险自动批准" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "風險自動批准" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "風險自動核准" } }
+      }
+    },
+    "Autonomy Level": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Autonomy Level" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自主级别" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "自主級別" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自主級別" } }
       }
     },
     "Build Mode Description": {
@@ -36,27 +72,45 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build mode: can execute tools and modify code"
+            "value": "Build mode: tools and code changes, high-risk requires confirmation"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "构建模式：可执行工具和修改代码"
+            "value": "构建模式：可执行工具和修改代码，高风险需要确认"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "構建模式：可執行工具和修改代碼"
+            "value": "構建模式：可執行工具和修改代碼，高風險需要確認"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "構建模式：可執行工具和修改代碼"
+            "value": "建置模式：可執行工具和修改程式碼，高風險需要確認"
           }
         }
+      }
+    },
+    "Build Mode Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A2 Build: tools available, high-risk requires confirmation" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "A2 构建：可执行工具，高风险需确认" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "A2 構建：可執行工具，高風險需確認" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "A2 建置：可執行工具，高風險需確認" } }
+      }
+    },
+    "Build Mode Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Build" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "构建" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "構建" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "建置" } }
       }
     },
     "Chat Mode": {
@@ -83,7 +137,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "聊天模式"
+            "value": "對話模式"
           }
         }
       }
@@ -117,6 +171,15 @@
         }
       }
     },
+    "Chat Mode Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A1 Chat: chat only, no actions performed" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "A1 对话：只聊天，不执行操作" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "A1 對話：只聊天，不執行操作" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "A1 對話：只聊天，不執行操作" } }
+      }
+    },
     "Chat Mode Hint": {
       "extractionState": "manual",
       "localizations": {
@@ -141,9 +204,36 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "切換對話、構建或自主模式"
+            "value": "切換對話、建置或自主模式"
           }
         }
+      }
+    },
+    "Chat Mode Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Chat" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "对话" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "對話" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "對話" } }
+      }
+    },
+    "Confirm Risk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Confirm risk" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "风险需确认" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "風險需確認" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "風險需確認" } }
+      }
+    },
+    "No Code Changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No code changes" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "不改代码" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "不改代碼" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "不改程式碼" } }
       }
     },
     "Switch between Chat and Build modes": {
@@ -173,6 +263,24 @@
             "value": "在聊天和構建模式之間切換"
           }
         }
+      }
+    },
+    "Tools Off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tools off" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "工具关闭" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "工具關閉" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "工具關閉" } }
+      }
+    },
+    "Tools On": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tools on" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "工具可用" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "工具可用" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "工具可用" } }
       }
     }
   },
