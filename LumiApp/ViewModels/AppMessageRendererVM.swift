@@ -56,10 +56,9 @@ final class AppMessageRendererVM: ObservableObject {
     /// 初始化
     ///
     /// 私有初始化，确保只通过 `shared` 单例访问。
-    /// 内置渲染器由 CoreMessageRendererPlugin 注册。
+    /// 内置渲染器由插件注册阶段统一收集。
     private init() {
-        // 内置渲染器由 CoreMessageRendererPlugin 注册
-        // 这里不自动注册，避免职责分散
+        // 这里不自动注册，避免职责分散。
     }
     
     // MARK: - 注册管理

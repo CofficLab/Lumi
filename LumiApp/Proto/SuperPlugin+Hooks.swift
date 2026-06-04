@@ -21,7 +21,7 @@ extension SuperPlugin {
     /// ## 使用示例
     ///
     /// ```swift
-    /// actor OpenRouterPlugin: SuperPlugin {
+    /// actor CustomProviderPlugin: SuperPlugin {
     ///     func llmProviderType() -> (any SuperLLMProvider.Type)? {
     ///         OpenRouterProvider.self
     ///     }

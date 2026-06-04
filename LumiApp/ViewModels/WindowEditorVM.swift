@@ -34,7 +34,7 @@ final class WindowEditorVM: ObservableObject {
 
     // MARK: - Theme Sync
 
-    /// 由外层插件（ThemeStatusBarPlugin）调用，将 AppThemeVM 当前主题同步到编辑器。
+    /// 由外层主题同步入口调用，将 AppThemeVM 当前主题同步到编辑器。
     ///
     /// 解决 AppThemeVM 初始化时发出的通知在 EditorState 注册监听之前已发出的时序问题。
     func syncInitialEditorTheme(_ editorThemeId: String) {

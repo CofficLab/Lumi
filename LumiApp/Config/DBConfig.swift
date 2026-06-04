@@ -194,7 +194,7 @@ enum DBConfig {
     /// 插件自行管理该目录下的文件或数据库。
     /// 路径格式：`getDBFolderURL() / pluginName`
     ///
-    /// - Parameter pluginName: 插件名称，建议与插件模块名一致（如 "GitHubToolsPlugin"）
+    /// - Parameter pluginName: 插件名称，建议与插件模块名一致
     /// - Returns: 该插件的存储目录 URL，不存在时会自动创建
     static func getPluginDBFolderURL(pluginName: String) -> URL {
         let base = getDBFolderURL()

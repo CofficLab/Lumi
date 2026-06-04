@@ -79,7 +79,7 @@ final class AppGitVM: ObservableObject, SuperLog {
 
     // MARK: - Unpushed Commits Management
 
-    /// 更新未推送的 commit 哈希集合（供 GitCommitHistorySidebarView 调用）
+    /// 更新未推送的 commit 哈希集合。
     /// - Parameter hashes: 未推送的 commit 哈希数组
     func updateUnpushedCommitHashes(_ hashes: [String]) {
         let newSet = Set(hashes)
