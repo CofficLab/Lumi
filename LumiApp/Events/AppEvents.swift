@@ -48,7 +48,7 @@ extension Notification.Name {
     /// 请求将当前窗口状态写入磁盘（如项目切换后）
     static let windowStateShouldPersist = Notification.Name("windowStateShouldPersist")
 
-    /// 窗口关闭通知（`WindowPersistencePlugin` 等用于刷盘）
+    /// 窗口关闭通知（窗口状态持久化等用于刷盘）
     static let windowClosed = Notification.Name("windowClosed")
 }
 

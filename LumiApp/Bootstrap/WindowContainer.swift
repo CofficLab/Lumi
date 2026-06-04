@@ -2,8 +2,8 @@ import AppKit
 import Combine
 import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SwiftUI
-import WindowPersistencePlugin
 
 /// 窗口作用域容器
 ///

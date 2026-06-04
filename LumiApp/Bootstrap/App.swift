@@ -42,7 +42,7 @@ struct CoreApp: App {
         // 主窗口（可多开）
         //
         // 禁用系统场景恢复：会话/项目/编辑器等状态均绑定稳定的 windowId 并由
-        // CoreWindowIDStore + WindowPersistencePlugin 写盘；若与 macOS 默认恢复叠加会重复开窗。
+        // 核心窗口状态存储写盘；若与 macOS 默认恢复叠加会重复开窗。
         WindowGroup("Lumi", id: AppConfig.mainWindowID, for: LumiWindowRoute.self) { route in
             MainWindowSceneContent(route: route)
         }
