@@ -584,9 +584,16 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .flatMap { $0.addSidebarSections(context: context) }
     }
 
+    /// 获取所有固定在右侧栏底部的 Section 视图
+    func getSidebarBottomSections(context: PluginContext) -> [AnyView] {
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .flatMap { $0.addSidebarBottomSections(context: context) }
+    }
+
     /// 当前是否有右侧栏 Section 视图
     func hasSidebars(context: PluginContext) -> Bool {
-        !getSidebarSections(context: context).isEmpty
+        !getSidebarSections(context: context).isEmpty || !getSidebarBottomSections(context: context).isEmpty
     }
 
     // MARK: - Sidebar Toolbar Items

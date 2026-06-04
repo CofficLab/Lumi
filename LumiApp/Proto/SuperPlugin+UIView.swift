@@ -66,6 +66,9 @@ extension SuperPlugin {
     /// 默认实现：不提供右侧栏 Section 视图
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView] { [] }
 
+    /// 默认实现：不提供右侧栏底部固定 Section 视图
+    @MainActor func addSidebarBottomSections(context: PluginContext) -> [AnyView] { [] }
+
     /// 默认实现：不提供右侧栏底部工具栏左侧项
     @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] { [] }
 

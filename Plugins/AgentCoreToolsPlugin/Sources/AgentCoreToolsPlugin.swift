@@ -8,7 +8,7 @@ import os
 /// 将核心工具集从内核硬编码迁移到插件系统，便于增删与组合。
 /// 该插件不可配置且默认启用，确保基础工具始终可用。
 public actor AgentCoreToolsPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-core-tools")
     public static let id: String = "AgentCoreTools"
     public static let displayName: String = String(localized: "Agent Core Tools", bundle: .module)

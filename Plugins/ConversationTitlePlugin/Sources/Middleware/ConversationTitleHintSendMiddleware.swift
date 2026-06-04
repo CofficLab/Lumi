@@ -1,7 +1,7 @@
 import AgentToolKit
+import LumiCoreKit
 import SuperLogKit
 import Foundation
-import LLMKit
 
 /// 对话标题提示中间件
 ///
@@ -23,19 +23,19 @@ public final class ConversationTitleHintSendMiddleware: SuperSendMiddleware, Sup
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
-        guard let conversation = ctx.chatHistoryService.fetchConversation(id: ctx.conversationId) else {
+        guard let title = ctx.conversationTitleProvider(ctx.conversationId)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty else {
             await next(ctx)
             return
         }
 
-        let title = conversation.displayTitle
-        let language = ctx.projectVM.languagePreference
+        let language = ctx.languagePreference
 
         let prompt = Self.buildHintPrompt(currentTitle: title, language: language)
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            AppLogger.core.debug("\(Self.t)🏷️ 已注入对话标题提示: \"\(title)\"")
+            ConversationTitlePlugin.logger.debug("\(Self.t)🏷️ 已注入对话标题提示: \"\(title)\"")
         }
 
         await next(ctx)

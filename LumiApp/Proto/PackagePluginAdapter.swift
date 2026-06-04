@@ -92,6 +92,11 @@ actor PackagePluginAdapter<Packaged: LumiCoreKit.SuperPlugin>: SuperPlugin {
     }
 
     @MainActor
+    func addSidebarBottomSections(context: PluginContext) -> [AnyView] {
+        Packaged.shared.addSidebarBottomSections(context: context)
+    }
+
+    @MainActor
     func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
         Packaged.shared.addSidebarLeadingToolbarItems(context: context).map(SidebarToolbarItem.init(package:))
     }
@@ -285,6 +290,11 @@ actor AnyPackagePluginAdapter: SuperPlugin {
     @MainActor
     func addSidebarSections(context: PluginContext) -> [AnyView] {
         packaged.addSidebarSections(context: context)
+    }
+
+    @MainActor
+    func addSidebarBottomSections(context: PluginContext) -> [AnyView] {
+        packaged.addSidebarBottomSections(context: context)
     }
 
     @MainActor

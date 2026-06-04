@@ -37,6 +37,15 @@ open class SendMessageContext {
     /// 最近历史消息。插件 package 只能依赖这份快照，不能直接读取 App 的历史服务。
     public let previousMessages: [ChatMessage]
 
+    /// 当前会话标题读取回调。
+    public var conversationTitleProvider: @MainActor (UUID) -> String?
+
+    /// 对话标题生成回调。
+    public var conversationTitleGenerator: @MainActor (_ userMessage: String) async -> String?
+
+    /// 对话标题更新回调。
+    public var conversationTitleUpdater: @MainActor (_ conversationId: UUID, _ title: String) -> Bool
+
     // MARK: - Mutable Properties
 
     /// 仅在当前发送轮次有效的 system 提示词（不落库）
@@ -60,7 +69,10 @@ open class SendMessageContext {
         currentFileURL: URL? = nil,
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
-        previousMessages: [ChatMessage] = []
+        previousMessages: [ChatMessage] = [],
+        conversationTitleProvider: @escaping @MainActor (UUID) -> String? = { _ in nil },
+        conversationTitleGenerator: @escaping @MainActor (_ userMessage: String) async -> String? = { _ in nil },
+        conversationTitleUpdater: @escaping @MainActor (_ conversationId: UUID, _ title: String) -> Bool = { _, _ in false }
     ) {
         self.conversationId = conversationId
         self.message = message
@@ -68,6 +80,9 @@ open class SendMessageContext {
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference
         self.previousMessages = previousMessages
+        self.conversationTitleProvider = conversationTitleProvider
+        self.conversationTitleGenerator = conversationTitleGenerator
+        self.conversationTitleUpdater = conversationTitleUpdater
     }
 
     // MARK: - Public Methods

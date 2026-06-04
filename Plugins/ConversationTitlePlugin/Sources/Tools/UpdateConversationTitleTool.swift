@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import AgentToolKit
 
@@ -11,10 +12,10 @@ public struct UpdateConversationTitleTool: SuperAgentTool, SuperLog {
     public let name = "update_conversation_title"
 
     /// 通过构造器注入的依赖
-    private let conversationVM: WindowConversationVM
+    private let conversationListContext: ConversationListContext
 
-    public init(conversationVM: WindowConversationVM) {
-        self.conversationVM = conversationVM
+    public init(conversationListContext: ConversationListContext) {
+        self.conversationListContext = conversationListContext
     }
     
     public func description(for language: LanguagePreference) -> String {
@@ -107,13 +108,13 @@ public struct UpdateConversationTitleTool: SuperAgentTool, SuperLog {
 
         // 在主线程上完成所有 Conversation 操作
         let result = await MainActor.run { () -> (success: Bool, oldTitle: String?, newTitle: String) in
-            guard let conversation = conversationVM.fetchConversation(id: conversationId) else {
+            guard let conversation = conversationListContext.fetchConversation(id: conversationId) else {
                 return (false, nil, trimmedTitle)
             }
 
             let oldTitle = conversation.title
-            conversationVM.updateConversationTitle(conversation, newTitle: trimmedTitle)
-            return (true, oldTitle, trimmedTitle)
+            let didUpdate = conversationListContext.updateConversationTitle(id: conversationId, title: trimmedTitle)
+            return (didUpdate, oldTitle, trimmedTitle)
         }
 
         guard result.success else {

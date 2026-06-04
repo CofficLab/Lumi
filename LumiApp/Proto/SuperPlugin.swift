@@ -328,6 +328,11 @@ protocol SuperPlugin: Actor {
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]
 
+    /// 添加固定在右侧栏底部的 Section 视图
+    ///
+    /// 适合输入框这类必须始终可见的区域。内核会把这些 Section 放在普通
+    /// Section 之后、底部工具栏之前，不参与上方消息列表的弹性高度分配。
+    @MainActor func addSidebarBottomSections(context: PluginContext) -> [AnyView]
 
     /// 提供右侧栏底部工具栏左侧项列表
     ///

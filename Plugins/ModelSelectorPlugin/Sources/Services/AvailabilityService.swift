@@ -1,4 +1,5 @@
 import Foundation
+import LLMAvailabilityPlugin
 import LumiCoreKit
 
 public struct AvailabilitySummary: Equatable {
@@ -125,12 +126,19 @@ public enum AvailabilityService {
     @MainActor
     public static func initializeIfNeeded(llmVM: AppLLMVM) {
         let store = LLMAvailabilityStore.shared
-        store.initialize(from: llmVM)
+        store.initialize(providers: llmVM.allProviders)
+
+        let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
+        Task {
+            await checker.checkAll()
+        }
     }
 
     @MainActor
     public static func refresh(llmVM: AppLLMVM) async {
-        LLMAvailabilityStore.shared.initialize(from: llmVM)
+        LLMAvailabilityStore.shared.initialize(providers: llmVM.allProviders)
+        let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
+        await checker.checkAll()
     }
 
     @MainActor
@@ -138,6 +146,9 @@ public enum AvailabilityService {
         _ provider: LLMProviderAvailability,
         llmVM: AppLLMVM
     ) async {
-        LLMAvailabilityStore.shared.initialize(from: llmVM)
+        let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
+        for model in provider.models {
+            await checker.checkModel(providerId: provider.providerId, modelId: model.modelId)
+        }
     }
 }

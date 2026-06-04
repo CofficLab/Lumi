@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiCoreKit
 
 /// 消息发送上下文
@@ -52,7 +53,27 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
             currentFileURL: currentFileURL,
             currentProjectPath: projectVM.currentProjectPath,
             languagePreference: projectVM.languagePreference,
-            previousMessages: chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+            previousMessages: chatHistoryService.loadMessages(forConversationId: conversationId) ?? [],
+            conversationTitleProvider: { [chatHistoryService] conversationId in
+                chatHistoryService.fetchConversation(id: conversationId)?.title
+            },
+            conversationTitleGenerator: { [chatHistoryService, agentSessionConfig] userMessage in
+                let config: LLMConfig
+                if let conversation = chatHistoryService.fetchConversation(id: conversationId),
+                   let providerId = conversation.providerId,
+                   let model = conversation.model,
+                   let conversationConfig = agentSessionConfig.makeConfig(providerId: providerId, model: model) {
+                    config = conversationConfig
+                } else {
+                    config = agentSessionConfig.getCurrentConfig()
+                }
+                return await chatHistoryService.generateConversationTitle(from: userMessage, config: config)
+            },
+            conversationTitleUpdater: { [chatHistoryService] conversationId, title in
+                guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return false }
+                chatHistoryService.updateConversationTitle(conversation, newTitle: title)
+                return true
+            }
         )
         self.abortWithMessage = { [chatHistoryService, conversationId] message in
             chatHistoryService.saveMessage(message, toConversationId: conversationId)

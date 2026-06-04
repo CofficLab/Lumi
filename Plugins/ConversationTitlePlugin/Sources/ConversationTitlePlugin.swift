@@ -34,7 +34,10 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     /// 发送管线中间件：首条消息后自动生成标题 + 注入标题漂移提示
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        []
+        [
+            AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware()),
+            AnySuperSendMiddleware(ConversationTitleHintSendMiddleware()),
+        ]
     }
 
     // MARK: - Agent Tools
@@ -42,6 +45,9 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     /// 提供对话标题相关的 Agent 工具
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        []
+        guard let conversationListContext = context.conversationListContext else { return [] }
+        return [
+            UpdateConversationTitleTool(conversationListContext: conversationListContext),
+        ]
     }
 }

@@ -107,15 +107,18 @@ struct ContentView: View, SuperLog {
                 messageRenderer: renderMessage
             )
             let rawSidebarSections = pluginProvider.getSidebarSections(context: pluginContext)
+            let rawSidebarBottomSections = pluginProvider.getSidebarBottomSections(context: pluginContext)
             let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
+            let sidebarBottomSections = layoutVM.rightSidebarVisible ? rawSidebarBottomSections : []
             let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
             let showRail = hasRailTabs && layoutVM.railVisible
             let showEditor = layoutVM.editorVisible
 
-            let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: !sidebarSections.isEmpty)
+            let hasSidebar = !sidebarSections.isEmpty || !sidebarBottomSections.isEmpty
+            let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: hasSidebar)
             let autosaveName = "Unified_MainSplit_\(layoutSignature)"
 
-            if !sidebarSections.isEmpty && showRail {
+            if hasSidebar && showRail {
                 HSplitView {
                     ActivityBar()
                         .frame(maxHeight: .infinity)
@@ -129,7 +132,7 @@ struct ContentView: View, SuperLog {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    RightSidebarContainerView(sections: sidebarSections)
+                    RightSidebarContainerView(sections: sidebarSections, bottomSections: sidebarBottomSections)
                         .frame(maxHeight: .infinity)
                         .background(SplitViewWidthPersistence(
                             storageKey: "Layout.Main.RightSidebar",
@@ -137,7 +140,7 @@ struct ContentView: View, SuperLog {
                         ))
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-            } else if !sidebarSections.isEmpty {
+            } else if hasSidebar {
                 HSplitView {
                     ActivityBar()
                         .frame(maxHeight: .infinity)
@@ -145,7 +148,7 @@ struct ContentView: View, SuperLog {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    RightSidebarContainerView(sections: sidebarSections)
+                    RightSidebarContainerView(sections: sidebarSections, bottomSections: sidebarBottomSections)
                         .frame(maxHeight: .infinity)
                         .background(SplitViewWidthPersistence(
                             storageKey: "Layout.Main.RightSidebar",

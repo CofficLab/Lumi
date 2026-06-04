@@ -1,5 +1,5 @@
 import Foundation
-import LLMKit
+import LumiCoreKit
 
 /// 在管线继续后异步生成标题，避免阻塞后续 `send`。
 @MainActor
@@ -18,8 +18,10 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
                 conversationId: snapshot.conversationId,
                 userText: snapshot.text,
                 role: snapshot.role,
-                chatHistoryService: ctx.chatHistoryService,
-                agentSessionConfig: ctx.agentSessionConfig
+                previousMessages: ctx.previousMessages,
+                currentTitle: ctx.conversationTitleProvider(snapshot.conversationId),
+                generateTitle: ctx.conversationTitleGenerator,
+                updateTitle: ctx.conversationTitleUpdater
             )
         }
     }
@@ -30,11 +32,11 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         conversationId: UUID,
         userText: String,
         role: MessageRole,
-        chatHistoryService: ChatHistoryService,
-        agentSessionConfig: AppLLMVM
+        previousMessages: [ChatMessage],
+        currentTitle: String?,
+        generateTitle: @escaping @MainActor (_ userMessage: String) async -> String?,
+        updateTitle: @escaping @MainActor (_ conversationId: UUID, _ title: String) -> Bool
     ) async {
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
-
         let newConversation = String(localized: "New Conversation", bundle: .module)
         let newChat = String(localized: "New Chat", bundle: .module)
         let policy = AutoConversationTitlePolicy()
@@ -42,26 +44,17 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
             AutoConversationTitlePolicy.PreflightInput(
                 role: role,
                 userText: userText,
-                currentTitle: conversation.title,
+                currentTitle: currentTitle ?? "",
                 newConversationTitle: newConversation,
                 newChatTitlePrefix: newChat
             )
         )
         guard preflight.shouldGenerate, let trimmed = preflight.trimmedUserText else { return }
 
-        let history = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
-        let userCount = history.filter { $0.role == .user }.count
+        let userCount = previousMessages.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
-        let config: LLMConfig
-        if let providerId = conversation.providerId,
-           let model = conversation.model,
-           let conversationConfig = agentSessionConfig.makeConfig(providerId: providerId, model: model) {
-            config = conversationConfig
-        } else {
-            config = agentSessionConfig.getCurrentConfig()
-        }
-        let title = await chatHistoryService.generateConversationTitle(from: trimmed, config: config)
-        chatHistoryService.updateConversationTitle(conversation, newTitle: title)
+        guard let title = await generateTitle(trimmed) else { return }
+        _ = updateTitle(conversationId, title)
     }
 }

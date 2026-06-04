@@ -29,10 +29,6 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
-            exclude: [
-                "Middleware",
-                "Tools",
-            ],
             resources: [
                 .process("Resources")
             ]

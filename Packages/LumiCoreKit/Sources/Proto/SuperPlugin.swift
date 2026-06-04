@@ -234,6 +234,9 @@ public protocol SuperPlugin: Actor {
     /// 添加右侧栏 Section 视图
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]
 
+    /// 添加固定在右侧栏底部的 Section 视图
+    @MainActor func addSidebarBottomSections(context: PluginContext) -> [AnyView]
+
     /// 提供右侧栏底部工具栏左侧项列表
     @MainActor func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem]
 

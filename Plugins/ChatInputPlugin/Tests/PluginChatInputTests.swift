@@ -4,6 +4,15 @@ import LumiCoreKit
 @testable import ChatInputPlugin
 
 @MainActor
+@Test func chatInputContributesFixedBottomSidebarSection() throws {
+    let context = PluginContext(supportsAIChat: true)
+
+    #expect(ChatInputPlugin.shared.addSidebarSections(context: context).isEmpty)
+    #expect(ChatInputPlugin.shared.addSidebarBottomSections(context: context).count == 1)
+    #expect(ChatInputPlugin.shared.addSidebarBottomSections(context: PluginContext()).isEmpty)
+}
+
+@MainActor
 @Test func windowConversationVMSubmitsDraftText() async throws {
     var hostDraft = ""
     var submittedTexts: [String] = []

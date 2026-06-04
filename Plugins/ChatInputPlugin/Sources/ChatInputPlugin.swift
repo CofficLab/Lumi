@@ -27,6 +27,11 @@ public actor ChatInputPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section：输入区域
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
+        []
+    }
+
+    /// 右侧栏底部固定 Section：输入区域
+    @MainActor public func addSidebarBottomSections(context: PluginContext) -> [AnyView] {
         guard context.supportsAIChat else { return [] }
         return [AnyView(InputView())]
     }
