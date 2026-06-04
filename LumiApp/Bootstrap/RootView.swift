@@ -483,6 +483,16 @@ struct RootView<Content>: View where Content: View {
 
         // 桥接 provider 查询方法，让插件 VM 能获取已注册的供应商列表
         let appLLMVM = container.agentSessionConfig
+        let appLLMService = appLLMVM.llmService
+        pluginLLMVM.llmService = LumiCoreKit.LLMService(
+            sendMessageHandler: { messages, config, tools in
+                try await appLLMService.sendMessage(messages: messages, config: config, tools: tools)
+            },
+            providersProvider: { appLLMVM.allProviders },
+            providerTypeProvider: { appLLMVM.providerType(forId: $0) },
+            providerFactory: { appLLMVM.createProvider(id: $0) },
+            apiKeyProvider: { appLLMVM.getApiKey(for: $0) }
+        )
         pluginLLMVM.providersProvider = { appLLMVM.allProviders }
         pluginLLMVM.providerTypeProvider = { appLLMVM.providerType(forId: $0) }
         pluginLLMVM.providerFactory = { appLLMVM.createProvider(id: $0) }
