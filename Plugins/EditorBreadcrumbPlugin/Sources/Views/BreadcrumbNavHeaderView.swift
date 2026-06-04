@@ -1,4 +1,6 @@
 import CodeEditLanguages
+import EditorService
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -8,12 +10,16 @@ import SwiftUI
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 public struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var editorVM: WindowEditorVM
+    @ObservedObject private var service: EditorService
+
+    public init(service: EditorService) {
+        self.service = service
+    }
 
     public var body: some View {
         // 仅在有文件打开时显示
-        if let fileURL = editorVM.service.currentFileURL, projectVM.isProjectSelected {
-            BreadcrumbNavPathView(fileURL: fileURL)
+        if let fileURL = service.currentFileURL, projectVM.isProjectSelected {
+            BreadcrumbNavPathView(fileURL: fileURL, service: service)
         }
     }
 }
@@ -25,10 +31,15 @@ public struct BreadcrumbNavPathView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var editorVM: WindowEditorVM
+    @ObservedObject private var service: EditorService
     @LumiMotionPreferenceReader private var motionPreference
 
     public let fileURL: URL
+
+    public init(fileURL: URL, service: EditorService) {
+        self.fileURL = fileURL
+        self.service = service
+    }
 
     /// 面包屑路径段列表
     private var breadcrumbItems: [BreadcrumbItem] {
@@ -99,8 +110,8 @@ public struct BreadcrumbNavPathView: View {
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
                                     Task { @MainActor in
-                                        await editorVM.service.refreshProjectContext(for: projectVM.currentProjectPath)
-                                        editorVM.service.open(at: url)
+                                        await service.refreshProjectContext(for: projectVM.currentProjectPath)
+                                        service.open(at: url)
                                     }
                                 }
                             )

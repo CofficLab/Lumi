@@ -1,14 +1,20 @@
 import LumiCoreKit
+import EditorService
 import SuperLogKit
 import Foundation
 import SwiftUI
 import os
 
+@MainActor
+public enum BreadcrumbNavBridge {
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
+}
+
 /// 面包屑导航插件：在编辑器面板头部显示当前文件路径的面包屑导航
 ///
 /// 类似 VS Code 的面包屑导航，提供可点击的文件路径段，支持快速导航到同级文件/文件夹。
 public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .optOut
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.breadcrumb-nav")
 
@@ -33,6 +39,8 @@ public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     /// 在编辑器面板头部显示面包屑导航（Tab 栏下方）
     @MainActor
     public func addPanelHeaderView(context: PluginContext) -> AnyView? {
-        nil
+        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        guard let service = BreadcrumbNavBridge.editorServiceProvider?(context) else { return nil }
+        return AnyView(BreadcrumbNavHeaderView(service: service))
     }
 }

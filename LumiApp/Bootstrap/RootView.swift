@@ -5,6 +5,7 @@ import SwiftData
 import SwiftUI
 import LumiCoreKit
 import AgentTurnNotificationPlugin
+import EditorBreadcrumbPlugin
 import EditorStickySymbolBarPlugin
 import EditorTabStripPlugin
 import EditorRailWorkspaceSymbolsPlugin
@@ -229,6 +230,7 @@ struct RootView<Content>: View where Content: View {
         configureDefaultIconProvider()
         configurePluginProjectBridge()
         configureConversationListContext()
+        configureBreadcrumbNavPluginBridge()
         configureEditorStickySymbolBarPluginBridge()
         configureEditorTabStripPluginBridge()
         configureEditorRailWorkspaceSymbolsPluginBridge()
@@ -544,6 +546,13 @@ struct RootView<Content>: View where Content: View {
 
     private func configureEditorStickySymbolBarPluginBridge() {
         EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
+            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .editorVM.service
+        }
+    }
+
+    private func configureBreadcrumbNavPluginBridge() {
+        BreadcrumbNavBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
         }

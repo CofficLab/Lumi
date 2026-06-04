@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/CodeEditLanguages"),
+        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -24,14 +25,12 @@ let package = Package(
             name: "EditorBreadcrumbPlugin",
             dependencies: [
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
+                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
-            exclude: [
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]
