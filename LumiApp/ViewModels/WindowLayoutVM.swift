@@ -1,7 +1,11 @@
 import Foundation
-import GitPlugin
 import SwiftUI
 import os
+
+private enum LegacyLayoutTabID {
+    static let gitCommitHistory = "GitCommitHistory"
+    static let gitPlugin = "GitPlugin"
+}
 
 /// 布局 ViewModel - 负责管理界面布局相关的状态（纯内存状态）
 ///
@@ -152,7 +156,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
 
     /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID
     func restoreFromPlugin(tabId: String) {
-        let normalizedTabId = tabId == "GitCommitHistory" ? GitPlugin.id : tabId
+        let normalizedTabId = tabId == LegacyLayoutTabID.gitCommitHistory ? LegacyLayoutTabID.gitPlugin : tabId
         guard selectedAgentSidebarTabId != normalizedTabId else { return }
         selectedAgentSidebarTabId = normalizedTabId
     }

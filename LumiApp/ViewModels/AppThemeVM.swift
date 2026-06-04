@@ -1,6 +1,6 @@
 import Combine
+import LumiCoreKit
 import LumiUI
-import ThemeStatusBarPlugin
 import SwiftUI
 
 /// 主题 ViewModel：委托 ``LumiUIThemeRegistry``，由 ``ThemeService`` 从插件同步贡献。
@@ -42,8 +42,8 @@ final class AppThemeVM: ObservableObject {
     init(
         registry: LumiUIThemeRegistry = .shared,
         syncThemes: @escaping (LumiUIThemeRegistry) -> Void = { ThemeService.shared.syncFromPlugins(registry: $0) },
-        loadSelectedThemeID: () -> String? = { ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() },
-        saveSelectedThemeID: @escaping (String) -> Void = { ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID($0) },
+        loadSelectedThemeID: () -> String? = { ThemeSelectionStore.shared.loadSelectedThemeID() },
+        saveSelectedThemeID: @escaping (String) -> Void = { ThemeSelectionStore.shared.saveSelectedThemeID($0) },
         postThemeDidChangeNotification: @escaping (String, String) -> Void = { themeId, editorThemeId in
             NotificationCenter.default.post(
                 name: .lumiThemeDidChange,
@@ -113,7 +113,7 @@ final class AppThemeVM: ObservableObject {
     static func currentEditorThemeId() -> String {
         let registry = LumiUIThemeRegistry.shared
         let themes = registry.themes
-        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID(),
+        if let savedThemeId = ThemeSelectionStore.shared.loadSelectedThemeID(),
            let match = themes.first(where: { $0.id == savedThemeId }) {
             return match.editorThemeId
         }
