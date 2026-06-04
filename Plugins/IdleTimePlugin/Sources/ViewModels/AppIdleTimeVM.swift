@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import LumiCoreKit
 import SwiftUI
 
 private final class AppIdleTimeTimerHolder: @unchecked Sendable {
@@ -61,7 +62,7 @@ public final class AppIdleTimeVM: ObservableObject {
             guard let self else { return }
             defer { self.refreshTask = nil }
 
-            let snapshot = await IdleTimeService.shared.currentSnapshot()
+            let snapshot = await IdleTimeSnapshotProvider.shared.currentSnapshot()
 
             self.snapshot = snapshot
             self.restWindow = snapshot.restWindow

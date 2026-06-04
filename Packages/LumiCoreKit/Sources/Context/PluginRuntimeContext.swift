@@ -51,6 +51,9 @@ public struct PluginRuntimeContext {
     /// 选择对话。
     public let selectConversation: @MainActor (UUID, PluginContext) -> Void
 
+    /// 注册空闲时间快照提供器。
+    public let registerIdleTimeSnapshotProvider: @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void
+
     public init(
         editorServiceProvider: @escaping @MainActor (PluginContext) -> AnyObject? = { _ in nil },
         openFile: @escaping @MainActor (URL, String?, PluginContext) async -> Void = { _, _, _ in },
@@ -72,7 +75,8 @@ public struct PluginRuntimeContext {
         },
         enqueueUserMessage: @escaping @MainActor (ChatMessage, TurnFinishedContext) -> Void = { _, _ in },
         addToChat: @escaping @MainActor (String, PluginContext) -> Void = { _, _ in },
-        selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in }
+        selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in },
+        registerIdleTimeSnapshotProvider: @escaping @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void = { _ in }
     ) {
         self.editorServiceProvider = editorServiceProvider
         self.openFile = openFile
@@ -87,5 +91,6 @@ public struct PluginRuntimeContext {
         self.enqueueUserMessage = enqueueUserMessage
         self.addToChat = addToChat
         self.selectConversation = selectConversation
+        self.registerIdleTimeSnapshotProvider = registerIdleTimeSnapshotProvider
     }
 }

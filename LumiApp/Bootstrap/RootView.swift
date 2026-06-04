@@ -289,6 +289,14 @@ struct RootView<Content>: View where Content: View {
             selectConversation: { [container, windowContainer] conversationId, context in
                 Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                     .switchToConversation(conversationId, reason: "pluginRuntime")
+            },
+            registerIdleTimeSnapshotProvider: { provider in
+                Task {
+                    await IdleTimeSnapshotProvider.shared.register(provider)
+                    await MainActor.run {
+                        NotificationCenter.default.post(name: .idleTimeSnapshotDidChange, object: nil)
+                    }
+                }
             }
         ))
     }

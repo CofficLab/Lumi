@@ -19,6 +19,13 @@ public actor IdleTimePlugin: SuperPlugin, SuperLog {
     public static let shared = IdleTimePlugin()
 
     @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        context.registerIdleTimeSnapshotProvider { date in
+            await IdleTimeService.shared.currentSnapshot(for: date)
+        }
+    }
+
+    @MainActor
     public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(IdleTimeRootObserver(content: content()))
     }

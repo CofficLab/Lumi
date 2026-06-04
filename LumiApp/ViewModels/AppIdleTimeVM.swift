@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import IdleTimePlugin
+import LumiCoreKit
 import SwiftUI
 
 private final class AppIdleTimeTimerHolder: @unchecked Sendable {
@@ -14,8 +14,8 @@ private final class AppIdleTimeTimerHolder: @unchecked Sendable {
 
 /// 空闲时间 ViewModel
 ///
-/// 数据来源：`IdleTimePlugin` 内部的 `IdleTimeService` 通过
-/// `NotificationCenter` 推送快照变更，VM 在主线程更新 `@Published` 属性。
+/// 数据来源：运行时注册的空闲时间快照提供器通过 `NotificationCenter` 推送快照变更，
+/// VM 在主线程更新 `@Published` 属性。
 ///
 /// **生命周期约束：**
 /// - 必须且只能在 ``RootContainer`` 中初始化（全局唯一实例）。
@@ -91,7 +91,7 @@ final class AppIdleTimeVM: ObservableObject {
             guard let self else { return }
             defer { self.refreshTask = nil }
 
-            let snapshot = await IdleTimeService.shared.currentSnapshot()
+            let snapshot = await IdleTimeSnapshotProvider.shared.currentSnapshot()
 
             self.snapshot = snapshot
             self.restWindow = snapshot.restWindow

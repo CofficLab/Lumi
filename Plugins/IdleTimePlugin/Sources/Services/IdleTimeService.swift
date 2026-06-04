@@ -1,9 +1,6 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-
-extension Notification.Name {
-    public static let idleTimeSnapshotDidChange = Notification.Name("IdleTimeSnapshotDidChange")
-}
 
 public actor IdleTimeService {
     public static let shared = IdleTimeService()
