@@ -52,7 +52,7 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
-        guard context.isEditorVisible else { return [] }
+        guard context.showsBottomPanel else { return [] }
         return [
             BottomPanelTab(
                 id: Self.bottomPanelTabId,
@@ -64,7 +64,7 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor public func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
-        guard context.isEditorVisible, tabId == Self.bottomPanelTabId else { return nil }
+        guard context.showsBottomPanel, tabId == Self.bottomPanelTabId else { return nil }
         return AnyView(EditorPreviewDetailView(context: context))
     }
 }

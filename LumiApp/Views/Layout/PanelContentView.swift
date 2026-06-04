@@ -22,6 +22,7 @@ struct PanelContentView: View {
             supportsAIChat: activeItem?.supportsAIChat ?? false,
             showsProjectToolbar: activeItem?.showsProjectToolbar ?? false,
             showsRail: activeItem?.showsRail ?? false,
+            showsBottomPanel: activeItem?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
         let headerViews = pluginProvider.getActivePanelHeaderViews(context: pluginContext)

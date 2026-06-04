@@ -31,6 +31,7 @@ struct RightSidebarContainerView: View {
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
+            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id,
             messageRenderer: renderMessage
         )
@@ -131,6 +132,7 @@ private struct SidebarToolbarBar: View {
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
+            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id,
             messageRenderer: renderMessage
         )

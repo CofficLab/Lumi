@@ -11,15 +11,15 @@ import LumiCoreKit
 }
 
 @MainActor
-@Test func editorPreviewContributesBottomPanelTabWhenEditorIsVisible() async throws {
-    let editorContext = PluginContext(activeIcon: nil, isEditorVisible: true)
-    let hiddenEditorContext = PluginContext(activeIcon: nil, isEditorVisible: false)
+@Test func editorPreviewContributesBottomPanelTabWhenContainerShowsBottomPanel() async throws {
+    let editorContext = PluginContext(activeIcon: nil, isEditorVisible: true, showsBottomPanel: true)
+    let hiddenBottomPanelContext = PluginContext(activeIcon: nil, isEditorVisible: true, showsBottomPanel: false)
 
     let tabs = EditorPreviewPlugin.shared.addBottomPanelTabs(context: editorContext)
 
     #expect(tabs.map(\.id) == ["editor-bottom-inline-preview"])
     #expect(tabs.first?.title == EditorPreviewPlugin.displayName)
-    #expect(EditorPreviewPlugin.shared.addBottomPanelTabs(context: hiddenEditorContext).isEmpty)
+    #expect(EditorPreviewPlugin.shared.addBottomPanelTabs(context: hiddenBottomPanelContext).isEmpty)
     #expect(EditorPreviewPlugin.shared.addBottomPanelContentView(tabId: "editor-bottom-inline-preview", context: editorContext) != nil)
     #expect(EditorPreviewPlugin.shared.addBottomPanelContentView(tabId: "unknown", context: editorContext) == nil)
 }

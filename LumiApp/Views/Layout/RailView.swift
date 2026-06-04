@@ -33,6 +33,7 @@ struct RailView: View {
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
+            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
         let tabs = pluginProvider.getRailTabs(context: pluginContext)
@@ -104,6 +105,7 @@ struct RailView: View {
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
+            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
         let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }

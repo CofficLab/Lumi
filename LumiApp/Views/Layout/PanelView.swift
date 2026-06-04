@@ -21,9 +21,11 @@ struct PanelView: View {
             supportsAIChat: activeItem?.supportsAIChat ?? false,
             showsProjectToolbar: activeItem?.showsProjectToolbar ?? false,
             showsRail: activeItem?.showsRail ?? false,
+            showsBottomPanel: activeItem?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
-        let hasBottomTabs = pluginProvider.hasBottomPanelTabs(context: pluginContext)
+        let canShowBottomPanel = activeItem?.showsBottomPanel ?? false
+        let hasBottomTabs = canShowBottomPanel && pluginProvider.hasBottomPanelTabs(context: pluginContext)
         let showBottomPanel = hasBottomTabs && layoutVM.bottomPanelVisible
         let showContentPanel = layoutVM.contentPanelVisible
 

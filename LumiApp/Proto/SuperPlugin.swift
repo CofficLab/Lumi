@@ -86,6 +86,8 @@ struct ViewContainerItem: Identifiable, Equatable {
     let supportsAIChat: Bool
     /// 是否显示 Rail
     let showsRail: Bool
+    /// 是否显示底部面板
+    let showsBottomPanel: Bool
 
     init(
         id: String,
@@ -94,6 +96,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         showsProjectToolbar: Bool = false,
         supportsAIChat: Bool = false,
         showsRail: Bool = false,
+        showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
     ) {
         self.id = id
@@ -102,6 +105,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         self.showsProjectToolbar = showsProjectToolbar
         self.supportsAIChat = supportsAIChat
         self.showsRail = showsRail
+        self.showsBottomPanel = showsBottomPanel
         self.makeView = makeView
     }
 

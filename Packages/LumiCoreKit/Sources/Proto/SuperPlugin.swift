@@ -107,6 +107,12 @@ public struct ViewContainerItem: Identifiable, Equatable {
     /// 设为 `true` 的容器（如编辑器）表示其工作流需要侧栏辅助区域。
     public let showsRail: Bool
 
+    /// 是否显示底部面板
+    ///
+    /// 当此容器处于激活状态时，底部面板插件会注册对应标签页。
+    /// 设为 `true` 的容器（如编辑器）表示其工作流需要底部辅助区域。
+    public let showsBottomPanel: Bool
+
     public init(
         id: String,
         title: String,
@@ -114,6 +120,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         showsProjectToolbar: Bool = false,
         supportsAIChat: Bool = false,
         showsRail: Bool = false,
+        showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
     ) {
         self.id = id
@@ -122,6 +129,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         self.showsProjectToolbar = showsProjectToolbar
         self.supportsAIChat = supportsAIChat
         self.showsRail = showsRail
+        self.showsBottomPanel = showsBottomPanel
         self.makeView = makeView
     }
 

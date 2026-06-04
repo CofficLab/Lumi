@@ -47,6 +47,12 @@ public struct PluginContext {
     /// Rail 插件据此决定是否注册标签页。
     public let showsRail: Bool
 
+    /// 当前激活的 ViewContainer 是否显示底部面板
+    ///
+    /// 由 ViewContainerItem 的 `showsBottomPanel` 属性投影而来。
+    /// 底部面板插件据此决定是否注册标签页。
+    public let showsBottomPanel: Bool
+
     /// 当前正在构建插件视图的窗口 ID。
     ///
     /// 多窗口插件贡献需要用它选择窗口级服务，避免进程级 bridge 误用其他窗口状态。
@@ -89,6 +95,7 @@ public struct PluginContext {
         supportsAIChat: Bool = false,
         showsProjectToolbar: Bool = false,
         showsRail: Bool = false,
+        showsBottomPanel: Bool = false,
         windowId: UUID? = nil,
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
@@ -104,6 +111,7 @@ public struct PluginContext {
         self.supportsAIChat = supportsAIChat
         self.showsProjectToolbar = showsProjectToolbar
         self.showsRail = showsRail
+        self.showsBottomPanel = showsBottomPanel
         self.windowId = windowId
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference

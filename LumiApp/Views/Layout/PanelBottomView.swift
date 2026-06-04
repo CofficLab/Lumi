@@ -26,6 +26,7 @@ struct PanelBottomView: View {
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
+            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
         let tabs = pluginProvider.getBottomPanelTabs(context: pluginContext)

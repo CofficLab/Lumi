@@ -51,6 +51,7 @@ extension ViewContainerItem {
             showsProjectToolbar: item.showsProjectToolbar,
             supportsAIChat: item.supportsAIChat,
             showsRail: item.showsRail,
+            showsBottomPanel: item.showsBottomPanel,
             makeView: item.makeView
         )
     }

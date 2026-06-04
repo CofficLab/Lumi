@@ -103,6 +103,7 @@ struct ContentView: View, SuperLog {
                 supportsAIChat: activeContainer?.supportsAIChat ?? false,
                 showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
                 showsRail: activeContainer?.showsRail ?? false,
+                showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
                 windowId: windowContainer?.id,
                 messageRenderer: renderMessage
             )
