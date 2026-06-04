@@ -405,6 +405,28 @@ public final class ToolService: @unchecked Sendable {
     }
 }
 
+public struct ChatCommandSuggestion: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let command: String
+    public let description: String
+    public let category: String
+    public let isSelected: Bool
+
+    public init(
+        id: String? = nil,
+        command: String,
+        description: String,
+        category: String = "",
+        isSelected: Bool = false
+    ) {
+        self.id = id ?? command
+        self.command = command
+        self.description = description
+        self.category = category
+        self.isSelected = isSelected
+    }
+}
+
 @MainActor
 public final class WindowConversationVM: ObservableObject {
     @Published public var windowId: UUID?
@@ -413,6 +435,7 @@ public final class WindowConversationVM: ObservableObject {
     @Published public private(set) var attachmentVersion: Int
     @Published public private(set) var statusVersion: Int
     @Published public private(set) var draftText: String
+    @Published public private(set) var commandSuggestionsVersion: Int
 
     public var currentPreferenceProvider: @MainActor () -> ModelPreference?
     public var preferenceProvider: @MainActor (UUID) -> ModelPreference?
@@ -421,6 +444,9 @@ public final class WindowConversationVM: ObservableObject {
     public var verbosityPreferenceProvider: @MainActor () -> ResponseVerbosity?
     public var verbosityPreferenceSaver: @MainActor (ResponseVerbosity?) -> Void
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
+    public var messagePageLoader: @MainActor (UUID, Int, Date?) async -> (messages: [ChatMessage], hasMore: Bool)
+    public var messageCountProvider: @MainActor (UUID) async -> Int
+    public var messageDeleteHandler: @MainActor ([UUID], UUID) async -> Int
     public var statusMessageProvider: @MainActor (UUID) -> ChatMessage?
     public var pendingMessagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var pendingMessageRemover: @MainActor (UUID) -> Void
@@ -431,6 +457,14 @@ public final class WindowConversationVM: ObservableObject {
     public var draftTextAppender: @MainActor (String) -> Void
     public var draftTextSetter: @MainActor (String) -> Void
     public var textSubmitter: @MainActor (String) async -> Void
+    public var textEnqueuer: @MainActor (String) -> Void
+    public var commandSuggestionsProvider: @MainActor (String) -> [ChatCommandSuggestion]
+    public var commandSuggestionsUpdater: @MainActor (String) -> Void
+    public var commandSuggestionsVisibilityProvider: @MainActor () -> Bool
+    public var currentCommandSuggestionProvider: @MainActor () -> ChatCommandSuggestion?
+    public var commandSuggestionNextSelector: @MainActor () -> Void
+    public var commandSuggestionPreviousSelector: @MainActor () -> Void
+    public var commandSuggestionsVisibilitySetter: @MainActor (Bool) -> Void
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
     public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
 
@@ -441,6 +475,7 @@ public final class WindowConversationVM: ObservableObject {
         attachmentVersion: Int = 0,
         statusVersion: Int = 0,
         draftText: String = "",
+        commandSuggestionsVersion: Int = 0,
         currentPreferenceProvider: @escaping @MainActor () -> ModelPreference? = { nil },
         preferenceProvider: @escaping @MainActor (UUID) -> ModelPreference? = { _ in nil },
         preferenceSaver: @escaping @MainActor (UUID?, String, String) -> Void = { _, _, _ in },
@@ -448,6 +483,9 @@ public final class WindowConversationVM: ObservableObject {
         verbosityPreferenceProvider: @escaping @MainActor () -> ResponseVerbosity? = { nil },
         verbosityPreferenceSaver: @escaping @MainActor (ResponseVerbosity?) -> Void = { _ in },
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        messagePageLoader: @escaping @MainActor (UUID, Int, Date?) async -> (messages: [ChatMessage], hasMore: Bool) = { _, _, _ in ([], false) },
+        messageCountProvider: @escaping @MainActor (UUID) async -> Int = { _ in 0 },
+        messageDeleteHandler: @escaping @MainActor ([UUID], UUID) async -> Int = { _, _ in 0 },
         statusMessageProvider: @escaping @MainActor (UUID) -> ChatMessage? = { _ in nil },
         pendingMessagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         pendingMessageRemover: @escaping @MainActor (UUID) -> Void = { _ in },
@@ -458,6 +496,14 @@ public final class WindowConversationVM: ObservableObject {
         draftTextAppender: @escaping @MainActor (String) -> Void = { _ in },
         draftTextSetter: @escaping @MainActor (String) -> Void = { _ in },
         textSubmitter: @escaping @MainActor (String) async -> Void = { _ in },
+        textEnqueuer: @escaping @MainActor (String) -> Void = { _ in },
+        commandSuggestionsProvider: @escaping @MainActor (String) -> [ChatCommandSuggestion] = { _ in [] },
+        commandSuggestionsUpdater: @escaping @MainActor (String) -> Void = { _ in },
+        commandSuggestionsVisibilityProvider: @escaping @MainActor () -> Bool = { false },
+        currentCommandSuggestionProvider: @escaping @MainActor () -> ChatCommandSuggestion? = { nil },
+        commandSuggestionNextSelector: @escaping @MainActor () -> Void = {},
+        commandSuggestionPreviousSelector: @escaping @MainActor () -> Void = {},
+        commandSuggestionsVisibilitySetter: @escaping @MainActor (Bool) -> Void = { _ in },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
         createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
     ) {
@@ -467,6 +513,7 @@ public final class WindowConversationVM: ObservableObject {
         self.attachmentVersion = attachmentVersion
         self.statusVersion = statusVersion
         self.draftText = draftText
+        self.commandSuggestionsVersion = commandSuggestionsVersion
         self.currentPreferenceProvider = currentPreferenceProvider
         self.preferenceProvider = preferenceProvider
         self.preferenceSaver = preferenceSaver
@@ -474,6 +521,9 @@ public final class WindowConversationVM: ObservableObject {
         self.verbosityPreferenceProvider = verbosityPreferenceProvider
         self.verbosityPreferenceSaver = verbosityPreferenceSaver
         self.messagesProvider = messagesProvider
+        self.messagePageLoader = messagePageLoader
+        self.messageCountProvider = messageCountProvider
+        self.messageDeleteHandler = messageDeleteHandler
         self.statusMessageProvider = statusMessageProvider
         self.pendingMessagesProvider = pendingMessagesProvider
         self.pendingMessageRemover = pendingMessageRemover
@@ -484,6 +534,14 @@ public final class WindowConversationVM: ObservableObject {
         self.draftTextAppender = draftTextAppender
         self.draftTextSetter = draftTextSetter
         self.textSubmitter = textSubmitter
+        self.textEnqueuer = textEnqueuer
+        self.commandSuggestionsProvider = commandSuggestionsProvider
+        self.commandSuggestionsUpdater = commandSuggestionsUpdater
+        self.commandSuggestionsVisibilityProvider = commandSuggestionsVisibilityProvider
+        self.currentCommandSuggestionProvider = currentCommandSuggestionProvider
+        self.commandSuggestionNextSelector = commandSuggestionNextSelector
+        self.commandSuggestionPreviousSelector = commandSuggestionPreviousSelector
+        self.commandSuggestionsVisibilitySetter = commandSuggestionsVisibilitySetter
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
     }
@@ -522,6 +580,22 @@ public final class WindowConversationVM: ObservableObject {
 
     public func messages(for conversationId: UUID) -> [ChatMessage] {
         messagesProvider(conversationId)
+    }
+
+    public func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date? = nil
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        await messagePageLoader(conversationId, limit, beforeTimestamp)
+    }
+
+    public func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        await messageCountProvider(conversationId)
+    }
+
+    public func deleteMessages(messageIds: [UUID], conversationId: UUID) async -> Int {
+        await messageDeleteHandler(messageIds, conversationId)
     }
 
     public func currentMessages() -> [ChatMessage] {
@@ -569,7 +643,7 @@ public final class WindowConversationVM: ObservableObject {
     }
 
     public var canSubmitText: Bool {
-        hasSelectedConversation
+        hasSelectedConversation || !pendingAttachments.isEmpty
     }
 
     public func removeAttachment(id attachmentId: UUID) {
@@ -585,6 +659,17 @@ public final class WindowConversationVM: ObservableObject {
     }
 
     public func appendDraftText(_ text: String) {
+        let trimmedNewText = text.trimmingCharacters(in: .whitespaces)
+        let needsLeadingSpace = !draftText.isEmpty && !draftText.hasSuffix(" ")
+        let needsTrailingSpace = !trimmedNewText.hasSuffix(" ")
+        var finalText = trimmedNewText
+        if needsLeadingSpace {
+            finalText = " " + finalText
+        }
+        if needsTrailingSpace {
+            finalText += " "
+        }
+        draftText += finalText
         draftTextAppender(text)
     }
 
@@ -601,10 +686,50 @@ public final class WindowConversationVM: ObservableObject {
 
     public func submitDraftText(_ text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard canSubmitText, !trimmed.isEmpty else { return }
+        guard canSubmitText, !trimmed.isEmpty || !pendingAttachments.isEmpty else { return }
         updateDraftTextFromHost("")
         draftTextSetter("")
         await textSubmitter(trimmed)
+    }
+
+    public func enqueueText(_ text: String) {
+        textEnqueuer(text)
+    }
+
+    public func commandSuggestions(for input: String) -> [ChatCommandSuggestion] {
+        commandSuggestionsProvider(input)
+    }
+
+    public func updateCommandSuggestions(for input: String) {
+        commandSuggestionsUpdater(input)
+        commandSuggestionsVersion += 1
+    }
+
+    public var isCommandSuggestionVisible: Bool {
+        commandSuggestionsVisibilityProvider()
+    }
+
+    public func currentCommandSuggestion() -> ChatCommandSuggestion? {
+        currentCommandSuggestionProvider()
+    }
+
+    public func selectNextCommandSuggestion() {
+        commandSuggestionNextSelector()
+        commandSuggestionsVersion += 1
+    }
+
+    public func selectPreviousCommandSuggestion() {
+        commandSuggestionPreviousSelector()
+        commandSuggestionsVersion += 1
+    }
+
+    public func setCommandSuggestionsVisible(_ isVisible: Bool) {
+        commandSuggestionsVisibilitySetter(isVisible)
+        commandSuggestionsVersion += 1
+    }
+
+    public func notifyCommandSuggestionsChanged() {
+        commandSuggestionsVersion += 1
     }
 
     public func notifyAttachmentsChanged() {

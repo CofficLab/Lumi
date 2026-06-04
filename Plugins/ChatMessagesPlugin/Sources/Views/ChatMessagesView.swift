@@ -4,7 +4,9 @@ import SwiftUI
 
 public struct ChatMessagesView: View {
     @EnvironmentObject private var conversationVM: LumiCoreKit.WindowConversationVM
-    @State private var refreshVersion = 0
+    @EnvironmentObject private var projectVM: LumiCoreKit.WindowProjectVM
+    @EnvironmentObject private var themeVM: LumiCoreKit.AppThemeVM
+
     private let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
 
     public init(messageRenderer: @escaping (ChatMessage, Binding<Bool>) -> AnyView? = { _, _ in nil }) {
@@ -12,29 +14,19 @@ public struct ChatMessagesView: View {
     }
 
     public var body: some View {
-        let messages = conversationVM.currentDisplayMessages()
-
         Group {
-            if !conversationVM.hasSelectedConversation {
-                EmptyStateView()
-            } else if messages.isEmpty {
-                EmptyMessagesView()
+            if !projectVM.isProjectSelected {
+                VStack {}
+                    .frame(maxHeight: .infinity)
+            } else if conversationVM.hasSelectedConversation {
+                MessageListView(messageRenderer: messageRenderer)
             } else {
-                MessageListView(messages: messages, messageRenderer: messageRenderer)
+                EmptyStateView()
             }
         }
-        .id(refreshVersion)
-        .onChange(of: conversationVM.selectedConversationId) { _, _ in
-            refreshVersion += 1
-        }
-        .onChange(of: conversationVM.statusVersion) { _, _ in
-            refreshVersion += 1
-        }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("messageSaved"))) { notification in
-            guard let conversationId = notification.userInfo?["conversationId"] as? UUID,
-                  conversationId == conversationVM.selectedConversationId
-            else { return }
-            refreshVersion += 1
-        }
+        .frame(maxHeight: .infinity)
+        .background(themeVM.activeChromeTheme.workspaceBackgroundColor().opacity(0.6))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Chat Messages Area", bundle: .module))
     }
 }

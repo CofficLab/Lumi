@@ -4,58 +4,70 @@ import SwiftUI
 
 public struct ChatBubble: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var conversationVM: LumiCoreKit.WindowConversationVM
+    @EnvironmentObject private var timelineViewModel: WindowChatTimelineViewModel
+
     public let message: ChatMessage
+    public let isLastMessage: Bool
+    public let isStreaming: Bool
+
     private let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
     @State private var showRawMessage = false
+    @State private var showDeleteConfirmation = false
 
     public init(
         message: ChatMessage,
+        isLastMessage: Bool,
+        isStreaming: Bool = false,
         messageRenderer: @escaping (ChatMessage, Binding<Bool>) -> AnyView? = { _, _ in nil }
     ) {
         self.message = message
+        self.isLastMessage = isLastMessage
+        self.isStreaming = isStreaming
         self.messageRenderer = messageRenderer
     }
 
     public var body: some View {
-        if let rendered = messageRenderer(message, $showRawMessage) {
-            rendered
-        } else {
-            fallbackBubble
+        ZStack {
+            if let rendered = messageRenderer(message, $showRawMessage) {
+                rendered
+            } else {
+                fallbackBubble
+            }
+        }
+        .contextMenu {
+            if message.role == .user, !message.content.isEmpty {
+                Button {
+                    conversationVM.enqueueText(message.content)
+                } label: {
+                    Label(String(localized: "Resend", bundle: .module), systemImage: "arrow.clockwise")
+                }
+            }
+
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label(String(localized: "Delete Message", bundle: .module), systemImage: "trash")
+            }
+        }
+        .alert(String(localized: "Delete Message", bundle: .module), isPresented: $showDeleteConfirmation) {
+            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
+                timelineViewModel.deleteMessage(message.id)
+            }
+        } message: {
+            Text(String(localized: "Are you sure you want to delete this message? This action cannot be undone.", bundle: .module))
         }
     }
 
     private var fallbackBubble: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text(roleTitle)
-                    .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textSecondary)
-                Spacer()
-                Text(message.timestamp, style: .time)
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-            }
-
+        VStack(alignment: .leading, spacing: 4) {
             Text(message.content)
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
                 .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(10)
-        .background(theme.textSecondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private var roleTitle: String {
-        switch message.role {
-        case .user: return "User"
-        case .assistant: return "Assistant"
-        case .system: return "System"
-        case .tool: return "Tool"
-        case .status: return "Status"
-        case .error: return "Error"
-        case .unknown: return "Unknown"
-        }
+        .padding()
+        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }

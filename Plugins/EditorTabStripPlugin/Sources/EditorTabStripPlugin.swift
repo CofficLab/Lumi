@@ -13,7 +13,7 @@ public enum EditorTabStripBridge {
 /// 作为 Panel Header 提供者，当编辑器面板激活时，
 /// 在面板内容上方渲染 Tab 栏。
 public actor EditorTabStripPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "📑"
     public static let id: String = "EditorTabStrip"
     public static let displayName: String = String(localized: "Editor Tab Strip", bundle: .module)

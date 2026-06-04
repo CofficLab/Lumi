@@ -1,22 +1,30 @@
+import LumiCoreKit
 import SwiftUI
 
 public struct CommandSuggestionView: View {
-    private let input: String
-    private let onSelect: (String) -> Void
+    private let suggestions: [ChatCommandSuggestion]
+    private let isVisible: Bool
+    private let version: Int
+    private let onSelect: (ChatCommandSuggestion) -> Void
 
-    public init(input: String = "", onSelect: @escaping (String) -> Void = { _ in }) {
-        self.input = input
+    public init(
+        suggestions: [ChatCommandSuggestion] = [],
+        isVisible: Bool = false,
+        version: Int = 0,
+        onSelect: @escaping (ChatCommandSuggestion) -> Void = { _ in }
+    ) {
+        self.suggestions = suggestions
+        self.isVisible = isVisible
+        self.version = version
         self.onSelect = onSelect
     }
 
     public var body: some View {
-        let suggestions = Self.suggestions(for: input)
-
-        if !suggestions.isEmpty {
+        if isVisible, !suggestions.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(suggestions) { suggestion in
                     Button {
-                        onSelect(suggestion.command)
+                        onSelect(suggestion)
                     } label: {
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
                             Text(suggestion.command)
@@ -33,6 +41,7 @@ public struct CommandSuggestionView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
+                        .background(suggestion.isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -40,6 +49,7 @@ public struct CommandSuggestionView: View {
             }
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .id(version)
         }
     }
 

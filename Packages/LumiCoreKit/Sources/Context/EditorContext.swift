@@ -73,6 +73,7 @@ public final class EditorContext: ObservableObject {
 
     /// 打开指定文件。
     public func openFile(at url: URL) {
+        updateCurrentFileURL(url)
         openFileHandler(url)
     }
 

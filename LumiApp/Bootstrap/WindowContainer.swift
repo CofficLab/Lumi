@@ -231,7 +231,9 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     func handleInputEnqueueRequest(_ request: WindowInputQueueVM.InputEnqueueRequest) {
         guard !hasCleanedUp else { return }
 
-        _ = inputQueueVM.consumePendingRequest(id: request.id)
+        guard inputQueueVM.consumePendingRequest(id: request.id) != nil else {
+            return
+        }
         guard let conversationId = conversationVM.selectedConversationId else {
             return
         }

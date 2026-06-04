@@ -6,6 +6,7 @@ import SwiftUI
 
 public struct InputView: View {
     @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isFocused = false
     @State private var editorHeight: CGFloat = ChatInputEditorView.minHeight
@@ -22,13 +23,18 @@ public struct InputView: View {
                 .background(theme.textSecondary.opacity(0.06))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
-                    if isImageDragHovering {
+                    if conversationVM.canAttachToCurrentConversation, isImageDragHovering {
                         imageDropHoverOverlay
                     }
                 }
 
-            CommandSuggestionView(input: conversationVM.draftText) { command in
-                conversationVM.setDraftText(command + " ")
+            CommandSuggestionView(
+                suggestions: conversationVM.commandSuggestions(for: conversationVM.draftText),
+                isVisible: conversationVM.isCommandSuggestionVisible,
+                version: conversationVM.commandSuggestionsVersion
+            ) { suggestion in
+                conversationVM.setDraftText(suggestion.command + " ")
+                conversationVM.setCommandSuggestionsVisible(false)
                 isFocused = true
             }
         }
@@ -56,15 +62,20 @@ public struct InputView: View {
                 ChatInputPlugin.logger.info("\(ChatInputPlugin.t)\(message)")
             },
             onSubmit: submit,
+            onArrowUp: handleArrowUp,
+            onArrowDown: handleArrowDown,
             onEnter: handleEnter,
             onFileDrop: { url in
-                conversationVM.handleImageUpload(url: url)
+                handleFileDrop(url)
             },
             isFocused: $isFocused,
             cursorPosition: $cursorPosition,
             isImageDragHovering: $isImageDragHovering
         )
         .animation(.easeInOut(duration: 0.15), value: editorHeight)
+        .onChange(of: conversationVM.draftText) { _, newValue in
+            conversationVM.updateCommandSuggestions(for: newValue)
+        }
     }
 
     private var imageDropHoverOverlay: some View {
@@ -99,9 +110,21 @@ public struct InputView: View {
         )
     }
 
+    private func handleArrowUp() {
+        guard conversationVM.isCommandSuggestionVisible else { return }
+        conversationVM.selectPreviousCommandSuggestion()
+    }
+
+    private func handleArrowDown() {
+        guard conversationVM.isCommandSuggestionVisible else { return }
+        conversationVM.selectNextCommandSuggestion()
+    }
+
     private func handleEnter() {
-        if let suggestion = CommandSuggestionView.suggestions(for: conversationVM.draftText).first {
+        if conversationVM.isCommandSuggestionVisible,
+           let suggestion = conversationVM.currentCommandSuggestion() {
             conversationVM.setDraftText(suggestion.command + " ")
+            conversationVM.setCommandSuggestionsVisible(false)
             isFocused = true
             return
         }
@@ -110,19 +133,42 @@ public struct InputView: View {
     }
 
     private func submit() {
-        let value = conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
+        let text = conversationVM.draftText
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !conversationVM.pendingAttachments.isEmpty else { return }
+
+        conversationVM.setDraftText("")
         editorHeight = ChatInputEditorView.minHeight
         cursorPosition = 0
-        Task { await conversationVM.submitDraftText(value) }
+        conversationVM.setCommandSuggestionsVisible(false)
+
+        Task { @MainActor in
+            await ensureConversationSelected()
+            conversationVM.enqueueText(text)
+        }
+    }
+
+    private func ensureConversationSelected() async {
+        guard conversationVM.selectedConversationId == nil else { return }
+
+        await conversationVM.createNewConversation(
+            projectName: projectVM.isProjectSelected ? projectVM.currentProjectName : nil,
+            projectPath: projectVM.isProjectSelected ? projectVM.currentProjectPath : nil,
+            languagePreference: projectVM.languagePreference
+        )
+    }
+
+    private func handleFileDrop(_ url: URL) {
+        let fileURL = url.standardizedFileURL
+        if ChatInputEditorRules.isChatImageFileURL(fileURL) {
+            conversationVM.handleImageUpload(url: fileURL)
+        } else {
+            conversationVM.appendDraftText(fileURL.path)
+        }
     }
 
     private func appendToDraft(_ value: String) {
-        if conversationVM.draftText.isEmpty {
-            conversationVM.setDraftText(value)
-        } else {
-            conversationVM.setDraftText("\(conversationVM.draftText)\n\n\(value)")
-        }
+        conversationVM.appendDraftText(value)
         cursorPosition = conversationVM.draftText.count
     }
 

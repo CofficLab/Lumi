@@ -106,6 +106,9 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.projectVM.currentProjectName) { _, _ in
             syncPluginConversationListContext()
         }
+        .onReceive(windowContainer.editorVM.service.state.$currentFileURL) { _ in
+            syncEditorContextFileURL()
+        }
         .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
             syncPluginConversationContext()
         }
@@ -119,6 +122,9 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.agentAttachmentsVM.pendingAttachments) { _, _ in
             syncPluginConversationContext()
             pluginConversationVM.notifyAttachmentsChanged()
+        }
+        .onReceive(windowContainer.commandSuggestionVM.objectWillChange) { _ in
+            pluginConversationVM.notifyCommandSuggestionsChanged()
         }
         .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
             syncPluginConversationListContext()
@@ -278,6 +284,22 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.messagesProvider = { [container] conversationId in
             container.chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) ?? []
         }
+        pluginConversationVM.messagePageLoader = { [container] conversationId, limit, beforeTimestamp in
+            await container.chatHistoryVM.loadMessagesPage(
+                forConversationId: conversationId,
+                limit: limit,
+                beforeTimestamp: beforeTimestamp
+            )
+        }
+        pluginConversationVM.messageCountProvider = { [container] conversationId in
+            await container.chatHistoryVM.getMessageCount(forConversationId: conversationId)
+        }
+        pluginConversationVM.messageDeleteHandler = { [container] messageIds, conversationId in
+            await container.chatHistoryVM.deleteMessagesAsync(
+                messageIds: messageIds,
+                conversationId: conversationId
+            )
+        }
         pluginConversationVM.statusMessageProvider = { [windowContainer] conversationId in
             windowContainer.conversationSendStatusVM.statusMessage(for: conversationId)
         }
@@ -315,6 +337,43 @@ struct RootView<Content>: View where Content: View {
         }
         pluginConversationVM.textSubmitter = { [windowContainer] text in
             windowContainer.inputQueueVM.enqueueText(text)
+        }
+        pluginConversationVM.textEnqueuer = { [windowContainer] text in
+            windowContainer.inputQueueVM.enqueueText(text)
+        }
+        pluginConversationVM.commandSuggestionsProvider = { [windowContainer] _ in
+            windowContainer.commandSuggestionVM.suggestions.enumerated().map { index, suggestion in
+                LumiCoreKit.ChatCommandSuggestion(
+                    command: suggestion.command,
+                    description: suggestion.description,
+                    category: suggestion.category,
+                    isSelected: index == windowContainer.commandSuggestionVM.selectedIndex
+                )
+            }
+        }
+        pluginConversationVM.commandSuggestionsUpdater = { [windowContainer] input in
+            windowContainer.commandSuggestionVM.updateSuggestions(for: input)
+        }
+        pluginConversationVM.commandSuggestionsVisibilityProvider = { [windowContainer] in
+            windowContainer.commandSuggestionVM.isVisible
+        }
+        pluginConversationVM.currentCommandSuggestionProvider = { [windowContainer] in
+            guard let suggestion = windowContainer.commandSuggestionVM.getCurrentSuggestion() else { return nil }
+            return LumiCoreKit.ChatCommandSuggestion(
+                command: suggestion.command,
+                description: suggestion.description,
+                category: suggestion.category,
+                isSelected: true
+            )
+        }
+        pluginConversationVM.commandSuggestionNextSelector = { [windowContainer] in
+            windowContainer.commandSuggestionVM.selectNext()
+        }
+        pluginConversationVM.commandSuggestionPreviousSelector = { [windowContainer] in
+            windowContainer.commandSuggestionVM.selectPrevious()
+        }
+        pluginConversationVM.commandSuggestionsVisibilitySetter = { [windowContainer] isVisible in
+            windowContainer.commandSuggestionVM.setIsVisible(isVisible)
         }
     }
 
