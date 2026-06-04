@@ -25,6 +25,13 @@ public actor EditorTabStripPlugin: SuperPlugin {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorTabStripPlugin()
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorTabStripBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
+
     // MARK: - UI Contributions
 
     /// 当编辑器面板激活时，提供 Panel Header 视图

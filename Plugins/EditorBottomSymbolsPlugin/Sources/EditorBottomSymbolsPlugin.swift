@@ -31,6 +31,13 @@ public actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorBottomSymbolsPlugin()
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorBottomSymbolsBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
+
     // MARK: - Bottom Panel Tabs
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {

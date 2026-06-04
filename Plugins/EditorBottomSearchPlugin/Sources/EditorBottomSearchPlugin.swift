@@ -31,6 +31,13 @@ public actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorBottomSearchPlugin()
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorBottomSearchBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
+
     // MARK: - Bottom Panel Tabs
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {

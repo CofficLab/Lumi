@@ -1,3 +1,4 @@
+import EditorService
 import LumiCoreKit
 import LumiUI
 import SuperLogKit
@@ -30,6 +31,16 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorPreviewPlugin()
     private static let bottomPanelTabId = "editor-bottom-inline-preview"
+
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorPreviewRuntimeBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+        EditorPreviewRuntimeBridge.addToChatHandler = { text, pluginContext in
+            context.addToChat(text, pluginContext)
+        }
+    }
 
     // MARK: - 底部面板
 

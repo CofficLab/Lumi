@@ -1,3 +1,4 @@
+import EditorService
 import LumiCoreKit
 import SuperLogKit
 import SwiftUI
@@ -24,6 +25,13 @@ public actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorStickySymbolBarPlugin()
+
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorStickySymbolBarBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
 
     @MainActor
     public func addPanelHeaderView(context: PluginContext) -> AnyView? {

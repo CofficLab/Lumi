@@ -5,16 +5,7 @@ import SwiftData
 import SwiftUI
 import LumiCoreKit
 import AgentTurnNotificationPlugin
-import EditorBreadcrumbPlugin
-import EditorBottomCallHierarchyPlugin
-import EditorBottomProblemsPlugin
-import EditorBottomReferencesPlugin
-import EditorBottomSearchPlugin
-import EditorBottomSymbolsPlugin
 import EditorBottomTerminalPlugin
-import EditorStickySymbolBarPlugin
-import EditorTabStripPlugin
-import EditorRailWorkspaceSymbolsPlugin
 import FontConfigPlugin
 import GitPlugin
 import GoEditorPlugin
@@ -243,11 +234,7 @@ struct RootView<Content>: View where Content: View {
         configurePluginRuntimeContext()
         configurePluginProjectBridge()
         configureConversationListContext()
-        configureBreadcrumbNavPluginBridge()
-        configureEditorStickySymbolBarPluginBridge()
-        configureEditorTabStripPluginBridge()
-        configureEditorRailWorkspaceSymbolsPluginBridge()
-        configureEditorBottomPanelPluginBridges()
+        configureEditorBottomTerminalPluginBridge()
         configurePluginFontBridge()
         configureGoEditorPluginBridge()
         configureJSEditorPluginBridge()
@@ -656,45 +643,7 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func configureEditorStickySymbolBarPluginBridge() {
-        EditorStickySymbolBarBridge.editorServiceProvider = { [container, windowContainer] context in
-            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
-                .editorVM.service
-        }
-    }
-
-    private func configureBreadcrumbNavPluginBridge() {
-        BreadcrumbNavBridge.editorServiceProvider = { [container, windowContainer] context in
-            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
-                .editorVM.service
-        }
-    }
-
-    private func configureEditorTabStripPluginBridge() {
-        EditorTabStripBridge.editorServiceProvider = { [container, windowContainer] context in
-            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
-                .editorVM.service
-        }
-    }
-
-    private func configureEditorRailWorkspaceSymbolsPluginBridge() {
-        EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
-            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
-                .editorVM.service
-        }
-    }
-
-    private func configureEditorBottomPanelPluginBridges() {
-        let editorServiceProvider: (PluginContext) -> EditorService? = { [container, windowContainer] context in
-            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
-                .editorVM.service
-        }
-        EditorBottomProblemsBridge.editorServiceProvider = editorServiceProvider
-        EditorBottomSearchBridge.editorServiceProvider = editorServiceProvider
-        EditorBottomReferencesBridge.editorServiceProvider = editorServiceProvider
-        EditorBottomSymbolsBridge.editorServiceProvider = editorServiceProvider
-        EditorBottomCallHierarchyBridge.editorServiceProvider = editorServiceProvider
-
+    private func configureEditorBottomTerminalPluginBridge() {
         EditorBottomTerminalBridge.currentProjectPathProvider = { [container, windowContainer] context in
             let path = Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .projectVM.currentProjectPath

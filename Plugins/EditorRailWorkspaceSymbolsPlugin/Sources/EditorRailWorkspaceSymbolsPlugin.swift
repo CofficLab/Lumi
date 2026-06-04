@@ -32,6 +32,13 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
     public nonisolated func onEnable() {}
     public nonisolated func onDisable() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
+
     // MARK: - UI Contributions
 
     @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {

@@ -34,6 +34,13 @@ public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     public nonisolated func onEnable() {}
     public nonisolated func onDisable() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        BreadcrumbNavBridge.editorServiceProvider = { pluginContext in
+            context.editorServiceProvider(pluginContext) as? EditorService
+        }
+    }
+
     // MARK: - UI Contributions
 
     /// 在编辑器面板头部显示面包屑导航（Tab 栏下方）
