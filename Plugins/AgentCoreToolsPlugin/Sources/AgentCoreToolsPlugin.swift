@@ -21,7 +21,18 @@ public actor AgentCoreToolsPlugin: SuperPlugin {
 
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [
+        context.toolService.registerProgressSnapshotProvider(for: "run_command") {
+            guard let snapshot = await ShellService.shared.progressSnapshot() else {
+                return nil
+            }
+            return ToolProgressSnapshot(
+                totalLines: snapshot.totalLines,
+                totalBytes: snapshot.totalBytes,
+                latestOutputPreview: snapshot.latestOutputPreview
+            )
+        }
+
+        return [
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),

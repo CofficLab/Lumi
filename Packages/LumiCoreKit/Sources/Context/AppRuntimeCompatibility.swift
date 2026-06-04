@@ -382,18 +382,22 @@ public final class LLMService: @unchecked Sendable {
 
 public final class ToolService: @unchecked Sendable {
     public typealias ExecuteToolHandler = @Sendable (String, String, ToolExecutionContext) async throws -> String
+    public typealias RegisterProgressSnapshotProviderHandler = @MainActor @Sendable (String, @escaping ToolProgressSnapshotProvider) -> Void
 
     public var tools: [SuperAgentTool]
     private let executeToolHandler: ExecuteToolHandler
+    private let registerProgressSnapshotProviderHandler: RegisterProgressSnapshotProviderHandler
 
     public init(
         tools: [SuperAgentTool] = [],
         executeToolHandler: @escaping ExecuteToolHandler = { name, _, _ in
             "Tool '\(name)' is not available in this runtime context."
-        }
+        },
+        registerProgressSnapshotProviderHandler: @escaping RegisterProgressSnapshotProviderHandler = { _, _ in }
     ) {
         self.tools = tools
         self.executeToolHandler = executeToolHandler
+        self.registerProgressSnapshotProviderHandler = registerProgressSnapshotProviderHandler
     }
 
     public func executeTool(
@@ -402,6 +406,14 @@ public final class ToolService: @unchecked Sendable {
         context: ToolExecutionContext
     ) async throws -> String {
         try await executeToolHandler(name, argumentsJSON, context)
+    }
+
+    @MainActor
+    public func registerProgressSnapshotProvider(
+        for toolName: String,
+        provider: @escaping ToolProgressSnapshotProvider
+    ) {
+        registerProgressSnapshotProviderHandler(toolName, provider)
     }
 }
 

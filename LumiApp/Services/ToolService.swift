@@ -30,6 +30,9 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 插件提供的工具列表
     private var pluginTools: [SuperAgentTool] = []
 
+    /// 插件按工具名注册的执行进度快照。
+    private var progressSnapshotProviders: [String: ToolProgressSnapshotProvider] = [:]
+
     // MARK: - Dependencies
 
     /// LLM 服务（可选，传递给插件构建工具上下文）
@@ -210,6 +213,20 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 检查工具是否存在
     func hasTool(named name: String) -> Bool {
         tool(named: name) != nil
+    }
+
+    @MainActor
+    func registerProgressSnapshotProvider(
+        for toolName: String,
+        provider: @escaping ToolProgressSnapshotProvider
+    ) {
+        progressSnapshotProviders[toolName] = provider
+    }
+
+    @MainActor
+    func progressSnapshot(for toolName: String) async -> ToolProgressSnapshot? {
+        guard let provider = progressSnapshotProviders[toolName] else { return nil }
+        return await provider()
     }
 
     /// 执行工具（JSON 字符串参数版本）

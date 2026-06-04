@@ -29,7 +29,10 @@ final class SendController: ObservableObject, SuperLog {
             permissionRequestVM: windowContainer.permissionRequestVM,
             conversationSendStatusVM: windowContainer.conversationSendStatusVM,
             conversationVM: windowContainer.conversationVM,
-            projectVM: windowContainer.projectVM
+            projectVM: windowContainer.projectVM,
+            recentProjectPathsProvider: { [global] in
+                global.recentProjectsVM.getRecentProjects().map(\.path)
+            }
         )
         self.agentTurnService = AgentTurnService(
             llmService: global.llmService,

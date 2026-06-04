@@ -1,7 +1,5 @@
 import Foundation
 import AgentToolKit
-import AgentCoreToolsPlugin
-import ProjectsPlugin
 
 /// 工具调用执行器
 ///
@@ -47,6 +45,7 @@ final class ToolCallExecutor: SuperLog {
     private let conversationSendStatusVM: WindowConversationStatusVM
     private let conversationVM: WindowConversationVM
     private let projectVM: WindowProjectVM
+    private let recentProjectPathsProvider: @MainActor () -> [String]
 
     init(
         toolService: ToolService,
@@ -54,7 +53,8 @@ final class ToolCallExecutor: SuperLog {
         permissionRequestVM: WindowPermissionRequestVM,
         conversationSendStatusVM: WindowConversationStatusVM,
         conversationVM: WindowConversationVM,
-        projectVM: WindowProjectVM
+        projectVM: WindowProjectVM,
+        recentProjectPathsProvider: @escaping @MainActor () -> [String] = { [] }
     ) {
         self.toolService = toolService
         self.agentSessionConfig = agentSessionConfig
@@ -62,6 +62,7 @@ final class ToolCallExecutor: SuperLog {
         self.conversationSendStatusVM = conversationSendStatusVM
         self.conversationVM = conversationVM
         self.projectVM = projectVM
+        self.recentProjectPathsProvider = recentProjectPathsProvider
     }
 
     // MARK: - 权限评估
@@ -209,7 +210,7 @@ final class ToolCallExecutor: SuperLog {
         conversationId: UUID
     ) async -> ToolCallResult {
         let startedAt = Date()
-        let initialShellStats = await Self.shellStats(for: toolCall.name)
+        let initialShellStats = await shellStats(for: toolCall.name)
 
         // 通过工具实例获取面向用户的操作描述
         let displayName = toolService.displayDescription(
@@ -332,7 +333,7 @@ final class ToolCallExecutor: SuperLog {
         return Task { [weak statusVM] in
             while !Task.isCancelled {
                 let elapsed = Int(Date().timeIntervalSince(startedAt))
-                let shellStats = await Self.shellStats(for: toolCall.name)
+                let shellStats = await self.shellStats(for: toolCall.name)
                 await MainActor.run {
                     statusVM?.applyToolProgressEvent(
                         conversationId: conversationId,
@@ -359,11 +360,8 @@ final class ToolCallExecutor: SuperLog {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? "未知错误"
     }
 
-    private static func shellStats(for toolName: String) async -> ToolProgressShellStats? {
-        guard toolName == "run_command",
-              let snapshot = await ShellService.shared.progressSnapshot() else {
-            return nil
-        }
+    private func shellStats(for toolName: String) async -> ToolProgressShellStats? {
+        guard let snapshot = await toolService.progressSnapshot(for: toolName) else { return nil }
         return ToolProgressShellStats(
             totalLines: snapshot.totalLines,
             totalBytes: snapshot.totalBytes,
@@ -382,11 +380,8 @@ final class ToolCallExecutor: SuperLog {
             dirs.append(ToolExecutionContext.resolvePath(projectVM.currentProjectPath))
         }
 
-        // 最近项目路径
-        let store = ProjectsStore()
-        let recentProjects = store.loadProjects()
-        for project in recentProjects {
-            let resolved = ToolExecutionContext.resolvePath(project.path)
+        for path in recentProjectPathsProvider() {
+            let resolved = ToolExecutionContext.resolvePath(path)
             if !dirs.contains(resolved) {
                 dirs.append(resolved)
             }

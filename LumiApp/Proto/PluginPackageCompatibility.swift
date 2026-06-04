@@ -152,6 +152,9 @@ extension ToolContext {
                     argumentsJSON: argumentsJSON,
                     context: executionContext
                 )
+            },
+            registerProgressSnapshotProviderHandler: { [toolService] toolName, provider in
+                toolService.registerProgressSnapshotProvider(for: toolName, provider: provider)
             }
         )
 
