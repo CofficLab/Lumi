@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 import Network
-import EditorPreviewPlugin
+import LumiCoreKit
 import SwiftUI
 import os
 

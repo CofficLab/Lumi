@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import EditorPreviewPlugin
+import LumiCoreKit
 import os
 
 /// 自动化控制器 — 集中处理自动化测试动作
@@ -31,16 +31,6 @@ final class AutomationController: SuperLog {
 
     /// 启动自动化控制器，注册通知监听
     func start() {
-        EditorPreviewRuntimeBridge.editorServiceProvider = { context in
-            Self.targetWindowContainer(for: context)?.editorVM.service
-        }
-        EditorPreviewRuntimeBridge.addToChatHandler = { text, context in
-            NotificationCenter.postAddToChat(
-                text: text,
-                windowId: Self.targetWindowContainer(for: context)?.id
-            )
-        }
-
         NotificationCenter.default.publisher(for: .automationActionReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -241,14 +231,6 @@ final class AutomationController: SuperLog {
         }
 
         return URL(fileURLWithPath: expandedPath, isDirectory: true).standardizedFileURL
-    }
-
-    private static func targetWindowContainer(for context: PluginContext) -> WindowContainer? {
-        if let windowId = context.windowId,
-           let targetWindow = RootContainer.shared.windowManagerVM.getContainer(windowId) {
-            return targetWindow
-        }
-        return RootContainer.shared.windowManagerVM.activeWindowContainer
     }
 
     private static func targetWindowContainer(payload: [String: Any]?) -> WindowContainer? {
