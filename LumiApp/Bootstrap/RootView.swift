@@ -133,28 +133,28 @@ struct RootView<Content>: View where Content: View {
 
     private var appLayoutLifecycleScene: some View {
         llmLifecycleScene
-        .onChange(of: windowContainer.layoutVM.bottomPanelVisible) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.contentPanelVisible) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.editorVisible) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.railVisible) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.rightSidebarVisible) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.activeViewContainerIcon) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.selectedAgentSidebarTabId) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.selectedAgentDetailId) { _, _ in syncLayoutPluginContext() }
-        .onChange(of: windowContainer.layoutVM.layoutRatios) { _, _ in syncLayoutPluginContext() }
+        .onChange(of: windowContainer.layoutVM.bottomPanelVisible) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.contentPanelVisible) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.editorVisible) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.railVisible) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.rightSidebarVisible) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.activeViewContainerIcon) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentSidebarTabId) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.selectedAgentDetailId) { _, _ in syncLayoutContext() }
+        .onChange(of: windowContainer.layoutVM.layoutRatios) { _, _ in syncLayoutContext() }
     }
 
     private var pluginLayoutLifecycleScene: some View {
         appLayoutLifecycleScene
-        .onChange(of: pluginLayoutContext.bottomPanelVisible) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.contentPanelVisible) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.editorVisible) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.railVisible) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.rightSidebarVisible) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.activeViewContainerIcon) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.selectedAgentSidebarTabId) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.selectedAgentDetailId) { _, _ in propagateLayoutPluginContextToApp() }
-        .onChange(of: pluginLayoutContext.layoutRatios) { _, _ in propagateLayoutPluginContextToApp() }
+        .onChange(of: pluginLayoutContext.bottomPanelVisible) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.contentPanelVisible) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.editorVisible) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.railVisible) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.rightSidebarVisible) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.activeViewContainerIcon) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.selectedAgentSidebarTabId) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.selectedAgentDetailId) { _, _ in applyLayoutContextToWindow() }
+        .onChange(of: pluginLayoutContext.layoutRatios) { _, _ in applyLayoutContextToWindow() }
     }
 
     private var configuredContent: some View {
@@ -217,16 +217,16 @@ struct RootView<Content>: View where Content: View {
         syncPluginConversationContext()
         syncPluginConversationListContext()
         syncPluginLLMContext()
-        syncLayoutPluginContext()
+        syncLayoutContext()
         configureDefaultIconProvider()
         configurePluginRuntimeContext()
-        configurePluginProjectBridge()
+        configureProjectContextActions()
         configureConversationListContext()
         configureProjectConversationContext()
-        configureEditorContextBridge()
+        configureEditorContextActions()
     }
 
-    /// 设置首次回退图标提供者，供 LayoutPlugin 在磁盘无记录时使用
+    /// 设置首次回退图标提供者，供布局持久化恢复时使用
     private func configureDefaultIconProvider() {
         let pluginVM = container.pluginVM
         pluginLayoutContext.defaultIconProvider = { [pluginVM] in
@@ -514,7 +514,7 @@ struct RootView<Content>: View where Content: View {
         pluginLLMVM.updateChatModeFromHost(LumiCoreKit.ChatMode(rawValue: container.agentSessionConfig.chatMode.rawValue) ?? .build)
         pluginLLMVM.updateVerbosityFromHost(LumiCoreKit.ResponseVerbosity(rawValue: container.agentSessionConfig.verbosity.rawValue) ?? .brief)
 
-        // 桥接 provider 查询方法，让插件 VM 能获取已注册的供应商列表
+        // 提供 provider 查询能力，让插件 VM 能获取已注册的供应商列表
         let appLLMVM = container.agentSessionConfig
         let appLLMService = appLLMVM.llmService
         pluginLLMVM.llmService = LumiCoreKit.LLMService(
@@ -543,7 +543,7 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func syncLayoutPluginContext() {
+    private func syncLayoutContext() {
         pluginLayoutContext.update(
             bottomPanelVisible: windowContainer.layoutVM.bottomPanelVisible,
             contentPanelVisible: windowContainer.layoutVM.contentPanelVisible,
@@ -557,20 +557,20 @@ struct RootView<Content>: View where Content: View {
         )
     }
 
-    private func propagateLayoutPluginContextToApp() {
+    private func applyLayoutContextToWindow() {
         let layoutVM = windowContainer.layoutVM
-        layoutVM.restoreFromPlugin(activeViewContainerIcon: pluginLayoutContext.activeViewContainerIcon)
-        layoutVM.restoreFromPlugin(tabId: pluginLayoutContext.selectedAgentSidebarTabId)
-        layoutVM.restoreFromPlugin(detailId: pluginLayoutContext.selectedAgentDetailId)
-        layoutVM.restoreFromPlugin(ratios: pluginLayoutContext.layoutRatios)
-        layoutVM.restoreFromPlugin(bottomPanelVisible: pluginLayoutContext.bottomPanelVisible)
-        layoutVM.restoreFromPlugin(contentPanelVisible: pluginLayoutContext.contentPanelVisible)
-        layoutVM.restoreFromPlugin(editorVisible: pluginLayoutContext.editorVisible)
-        layoutVM.restoreFromPlugin(railVisible: pluginLayoutContext.railVisible)
-        layoutVM.restoreFromPlugin(rightSidebarVisible: pluginLayoutContext.rightSidebarVisible)
+        layoutVM.restorePersisted(activeViewContainerIcon: pluginLayoutContext.activeViewContainerIcon)
+        layoutVM.restorePersisted(tabId: pluginLayoutContext.selectedAgentSidebarTabId)
+        layoutVM.restorePersisted(detailId: pluginLayoutContext.selectedAgentDetailId)
+        layoutVM.restorePersisted(ratios: pluginLayoutContext.layoutRatios)
+        layoutVM.restorePersisted(bottomPanelVisible: pluginLayoutContext.bottomPanelVisible)
+        layoutVM.restorePersisted(contentPanelVisible: pluginLayoutContext.contentPanelVisible)
+        layoutVM.restorePersisted(editorVisible: pluginLayoutContext.editorVisible)
+        layoutVM.restorePersisted(railVisible: pluginLayoutContext.railVisible)
+        layoutVM.restorePersisted(rightSidebarVisible: pluginLayoutContext.rightSidebarVisible)
     }
 
-    private func configurePluginProjectBridge() {
+    private func configureProjectContextActions() {
         PluginProjectContext.switchProjectHandler = { [container, windowContainer] project, reason in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             targetWindow.projectVM.switchProject(
@@ -593,15 +593,15 @@ struct RootView<Content>: View where Content: View {
         }
     }
 
-    private func configureEditorContextBridge() {
-        // 桥接主题提供者
+    private func configureEditorContextActions() {
+        // 提供主题能力
         pluginEditorContext.configureThemeProvider { [container] in
             container.themeVM.activeChromeTheme
         }
         pluginEditorContext.configureFileIconThemeProvider { [container] in
             container.themeVM.activeFileIconTheme
         }
-        // 桥接编辑器操作
+        // 提供编辑器操作能力
         pluginEditorContext.openFileHandler = { [container, windowContainer] url in
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             targetWindow.editorVM.service.open(at: url)

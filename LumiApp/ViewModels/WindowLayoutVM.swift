@@ -2,11 +2,6 @@ import Foundation
 import SwiftUI
 import os
 
-private enum LegacyLayoutTabID {
-    static let gitCommitHistory = "GitCommitHistory"
-    static let gitPlugin = "GitPlugin"
-}
-
 /// 布局 ViewModel - 负责管理界面布局相关的状态（纯内存状态）
 ///
 /// 包括 Agent 模式侧边栏 Tab、Detail 视图、分栏宽度比例等。
@@ -14,7 +9,7 @@ private enum LegacyLayoutTabID {
 /// ## 初始化规则
 ///
 /// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
-/// 持久化由 LayoutPlugin 插件负责，WindowLayoutVM 不直接读写磁盘。
+/// 持久化由外部布局状态提供方负责，WindowLayoutVM 不直接读写磁盘。
 ///
 /// ## 初始化规则
 ///
@@ -47,7 +42,7 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     ///
     /// 窗口级状态：每个窗口可以激活不同的面板。
     /// 点击 ActivityBar 图标时更新，驱动面板内容区切换。
-    /// 持久化由 LayoutPlugin 负责。
+    /// 持久化由外部布局状态提供方负责。
     @Published var activeViewContainerIcon: String?
 
     /// 当前选中的 Agent 模式侧边栏 Tab ID
@@ -59,13 +54,13 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
     /// 分栏布局宽度比例缓存
     ///
     /// Key: storageKey（如 "Split.Panel.xxx"），Value: 比例（0.0~1.0）
-    /// 由 SplitViewPersistence 组件更新，LayoutPlugin 负责持久化。
+    /// 由 SplitViewPersistence 组件更新，外部布局状态提供方负责持久化。
     @Published var layoutRatios: [String: Double] = [:]
 
     // MARK: - Initialization
     
     init() {
-        // 不再从磁盘恢复，由 LayoutPlugin 在 onAppear 时恢复
+        // 不直接从磁盘恢复，由外部布局状态提供方在生命周期中恢复。
     }
     
     // MARK: - Agent Sidebar Tab
@@ -146,59 +141,58 @@ final class WindowLayoutVM: ObservableObject, SuperLog {
         selectedAgentDetailId = ""
     }
     
-    // MARK: - Plugin Restore
-    
-    /// 由 LayoutPlugin 调用，从本地存储恢复视图容器图标
-    func restoreFromPlugin(activeViewContainerIcon: String?) {
+    // MARK: - Persisted Layout Restore
+
+    /// 从持久化状态恢复视图容器图标。
+    func restorePersisted(activeViewContainerIcon: String?) {
         guard self.activeViewContainerIcon != activeViewContainerIcon else { return }
         self.activeViewContainerIcon = activeViewContainerIcon
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复侧边栏 Tab ID
-    func restoreFromPlugin(tabId: String) {
-        let normalizedTabId = tabId == LegacyLayoutTabID.gitCommitHistory ? LegacyLayoutTabID.gitPlugin : tabId
-        guard selectedAgentSidebarTabId != normalizedTabId else { return }
-        selectedAgentSidebarTabId = normalizedTabId
+    /// 从持久化状态恢复侧边栏 Tab ID。
+    func restorePersisted(tabId: String) {
+        guard selectedAgentSidebarTabId != tabId else { return }
+        selectedAgentSidebarTabId = tabId
     }
     
-    /// 由 LayoutPlugin 调用，从本地存储恢复 Detail 视图 ID
-    func restoreFromPlugin(detailId: String) {
+    /// 从持久化状态恢复 Detail 视图 ID。
+    func restorePersisted(detailId: String) {
         guard selectedAgentDetailId != detailId else { return }
         selectedAgentDetailId = detailId
     }
     
-    /// 由 LayoutPlugin 调用，从本地存储恢复分栏比例
-    func restoreFromPlugin(ratios: [String: Double]) {
+    /// 从持久化状态恢复分栏比例。
+    func restorePersisted(ratios: [String: Double]) {
         guard layoutRatios != ratios else { return }
         layoutRatios = ratios
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复底部面板可见性
-    func restoreFromPlugin(bottomPanelVisible: Bool) {
+    /// 从持久化状态恢复底部面板可见性。
+    func restorePersisted(bottomPanelVisible: Bool) {
         guard self.bottomPanelVisible != bottomPanelVisible else { return }
         self.bottomPanelVisible = bottomPanelVisible
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复内容面板可见性
-    func restoreFromPlugin(contentPanelVisible: Bool) {
+    /// 从持久化状态恢复内容面板可见性。
+    func restorePersisted(contentPanelVisible: Bool) {
         guard self.contentPanelVisible != contentPanelVisible else { return }
         self.contentPanelVisible = contentPanelVisible
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复编辑器区域可见性
-    func restoreFromPlugin(editorVisible: Bool) {
+    /// 从持久化状态恢复编辑器区域可见性。
+    func restorePersisted(editorVisible: Bool) {
         guard self.editorVisible != editorVisible else { return }
         self.editorVisible = editorVisible
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复 Rail 区域可见性
-    func restoreFromPlugin(railVisible: Bool) {
+    /// 从持久化状态恢复 Rail 区域可见性。
+    func restorePersisted(railVisible: Bool) {
         guard self.railVisible != railVisible else { return }
         self.railVisible = railVisible
     }
 
-    /// 由 LayoutPlugin 调用，从本地存储恢复右侧栏可见性
-    func restoreFromPlugin(rightSidebarVisible: Bool) {
+    /// 从持久化状态恢复右侧栏可见性。
+    func restorePersisted(rightSidebarVisible: Bool) {
         guard self.rightSidebarVisible != rightSidebarVisible else { return }
         self.rightSidebarVisible = rightSidebarVisible
     }

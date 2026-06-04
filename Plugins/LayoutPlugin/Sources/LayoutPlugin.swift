@@ -5,6 +5,11 @@ import Foundation
 import SwiftUI
 import os
 
+private enum LegacyLayoutTabID {
+    static let gitCommitHistory = "GitCommitHistory"
+    static let gitPlugin = "GitPlugin"
+}
+
 /// 布局持久化插件
 ///
 /// 负责观察 WindowLayoutVM 和 AppPluginVM 中的布局状态变化并持久化到磁盘，
@@ -136,7 +141,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                                     LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复视图容器图标: \(savedIcon)")
                 }
             }
-            layoutVM.restoreFromPlugin(activeViewContainerIcon: savedIcon)
+            layoutVM.restorePersisted(activeViewContainerIcon: savedIcon)
         }
 
         // 首次回退：磁盘没有保存过图标时，使用 app 层提供的默认图标
@@ -145,7 +150,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)无磁盘记录，回退到默认图标: \(defaultIcon)")
             }
-            layoutVM.restoreFromPlugin(activeViewContainerIcon: defaultIcon)
+            layoutVM.restorePersisted(activeViewContainerIcon: defaultIcon)
         }
 
         // 恢复侧边栏 Tab
@@ -155,7 +160,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                                     LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复侧边栏 Tab: \(savedTabId)")
                 }
             }
-            layoutVM.restoreFromPlugin(tabId: savedTabId)
+            layoutVM.restorePersisted(tabId: normalizedTabId(savedTabId))
         }
 
         // 恢复 Detail 视图
@@ -165,7 +170,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                                     LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Detail 视图: \(savedDetailId)")
                 }
             }
-            layoutVM.restoreFromPlugin(detailId: savedDetailId)
+            layoutVM.restorePersisted(detailId: savedDetailId)
         }
 
         // 恢复分栏比例
@@ -176,7 +181,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                                     LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复分栏比例: \(savedRatios.count) 项")
                 }
             }
-            layoutVM.restoreFromPlugin(ratios: savedRatios)
+            layoutVM.restorePersisted(ratios: savedRatios)
         }
 
         // 恢复底部面板可见性
@@ -184,7 +189,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复底部面板可见性: \(savedBottomPanelVisible)")
             }
-            layoutVM.restoreFromPlugin(bottomPanelVisible: savedBottomPanelVisible)
+            layoutVM.restorePersisted(bottomPanelVisible: savedBottomPanelVisible)
         }
 
         // 恢复内容面板可见性
@@ -192,7 +197,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复内容面板可见性: \(savedContentPanelVisible)")
             }
-            layoutVM.restoreFromPlugin(contentPanelVisible: savedContentPanelVisible)
+            layoutVM.restorePersisted(contentPanelVisible: savedContentPanelVisible)
         }
 
         // 恢复编辑器区域可见性
@@ -200,7 +205,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复编辑器区域可见性: \(savedEditorVisible)")
             }
-            layoutVM.restoreFromPlugin(editorVisible: savedEditorVisible)
+            layoutVM.restorePersisted(editorVisible: savedEditorVisible)
         }
 
         // 恢复 Rail 区域可见性
@@ -208,7 +213,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Rail 区域可见性: \(savedRailVisible)")
             }
-            layoutVM.restoreFromPlugin(railVisible: savedRailVisible)
+            layoutVM.restorePersisted(railVisible: savedRailVisible)
         }
 
         // 恢复右侧栏可见性
@@ -216,8 +221,12 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             if LayoutPlugin.verbose {
                 LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复右侧栏可见性: \(savedRightSidebarVisible)")
             }
-            layoutVM.restoreFromPlugin(rightSidebarVisible: savedRightSidebarVisible)
+            layoutVM.restorePersisted(rightSidebarVisible: savedRightSidebarVisible)
         }
+    }
+
+    private func normalizedTabId(_ tabId: String) -> String {
+        tabId == LegacyLayoutTabID.gitCommitHistory ? LegacyLayoutTabID.gitPlugin : tabId
     }
 
     // MARK: - Observe

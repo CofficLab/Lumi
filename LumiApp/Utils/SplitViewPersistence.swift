@@ -89,8 +89,8 @@ enum SplitViewFinder {
 ///
 /// 数据流：
 /// - 读取/写入通过 `WindowLayoutVM.layoutRatios`（纯内存）
-/// - `LayoutPlugin` 观察 `WindowLayoutVM` 变化并持久化到磁盘
-/// - 应用启动时，`LayoutPlugin` 将保存的比例写回 `WindowLayoutVM`
+/// - 外部布局状态提供方观察 `WindowLayoutVM` 变化并持久化到磁盘
+/// - 应用启动时，外部布局状态提供方将保存的比例写回 `WindowLayoutVM`
 ///
 /// 用法：
 /// ```swift
@@ -227,7 +227,7 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        // 从当前窗口的 WindowLayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
+        // 从当前窗口的 WindowLayoutVM 读取比例（由布局状态提供方在启动时从磁盘恢复）
         let savedRatio = layoutVM?.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             scheduleApplyRetry()
@@ -295,7 +295,7 @@ final class SplitViewWidthPersistenceView: NSView {
         let ratio = columnSizeValue / usableSize
         guard ratio > 0.0, ratio < 1.0 else { return }
 
-        // 写入当前窗口的 WindowLayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
+        // 写入当前窗口的 WindowLayoutVM（布局状态提供方会观察变化并持久化到磁盘）
         layoutVM?.setLayoutRatio(ratio, forKey: storageKey)
     }
 

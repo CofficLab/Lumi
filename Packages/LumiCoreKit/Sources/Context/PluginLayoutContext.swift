@@ -15,7 +15,7 @@ public final class WindowLayoutVM: ObservableObject {
 
     /// 首次回退：当磁盘没有保存过 activeViewContainerIcon 时，
     /// 由 app 层设置此闭包返回默认图标（第一个 view container 的 icon）。
-    /// LayoutPlugin 在恢复阶段调用。
+    /// 布局状态提供方在恢复阶段调用。
     public var defaultIconProvider: (() -> String?)?
 
     public init(
@@ -40,12 +40,12 @@ public final class WindowLayoutVM: ObservableObject {
         self.layoutRatios = layoutRatios
     }
 
-    public func restoreFromPlugin(activeViewContainerIcon: String?) {
+    public func restorePersisted(activeViewContainerIcon: String?) {
         guard self.activeViewContainerIcon != activeViewContainerIcon else { return }
         self.activeViewContainerIcon = activeViewContainerIcon
     }
 
-    public func restoreFromPlugin(tabId: String) {
+    public func restorePersisted(tabId: String) {
         guard selectedAgentSidebarTabId != tabId else { return }
         selectedAgentSidebarTabId = tabId
     }
@@ -55,37 +55,37 @@ public final class WindowLayoutVM: ObservableObject {
         selectedAgentSidebarTabId = tabId
     }
 
-    public func restoreFromPlugin(detailId: String) {
+    public func restorePersisted(detailId: String) {
         guard selectedAgentDetailId != detailId else { return }
         selectedAgentDetailId = detailId
     }
 
-    public func restoreFromPlugin(ratios: [String: Double]) {
+    public func restorePersisted(ratios: [String: Double]) {
         guard layoutRatios != ratios else { return }
         layoutRatios = ratios
     }
 
-    public func restoreFromPlugin(bottomPanelVisible: Bool) {
+    public func restorePersisted(bottomPanelVisible: Bool) {
         guard self.bottomPanelVisible != bottomPanelVisible else { return }
         self.bottomPanelVisible = bottomPanelVisible
     }
 
-    public func restoreFromPlugin(contentPanelVisible: Bool) {
+    public func restorePersisted(contentPanelVisible: Bool) {
         guard self.contentPanelVisible != contentPanelVisible else { return }
         self.contentPanelVisible = contentPanelVisible
     }
 
-    public func restoreFromPlugin(editorVisible: Bool) {
+    public func restorePersisted(editorVisible: Bool) {
         guard self.editorVisible != editorVisible else { return }
         self.editorVisible = editorVisible
     }
 
-    public func restoreFromPlugin(railVisible: Bool) {
+    public func restorePersisted(railVisible: Bool) {
         guard self.railVisible != railVisible else { return }
         self.railVisible = railVisible
     }
 
-    public func restoreFromPlugin(rightSidebarVisible: Bool) {
+    public func restorePersisted(rightSidebarVisible: Bool) {
         guard self.rightSidebarVisible != rightSidebarVisible else { return }
         self.rightSidebarVisible = rightSidebarVisible
     }
