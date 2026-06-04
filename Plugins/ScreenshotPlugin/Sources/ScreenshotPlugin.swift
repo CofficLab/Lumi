@@ -30,6 +30,13 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
     public nonisolated func onEnable() {}
     public nonisolated func onDisable() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        ScreenshotBridge.activeWindowIdProvider = {
+            context.activeWindowId()
+        }
+    }
+
     // MARK: - Sidebar Toolbar
 
     @MainActor public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {

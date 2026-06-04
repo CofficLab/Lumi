@@ -61,6 +61,13 @@ public actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
         }
     }
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        AgentTurnNotificationRuntime.selectConversation = { conversationId in
+            context.selectConversation(conversationId, PluginContext())
+        }
+    }
+
     // MARK: - Root View
 
     @MainActor public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {

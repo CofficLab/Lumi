@@ -34,6 +34,13 @@ public actor JSEditorPlugin: SuperPlugin, SuperLog {
 
     public nonisolated var providesEditorExtensions: Bool { true }
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        JSEditorBridge.openFileHandler = { url, projectRoot in
+            await context.openFile(url, projectRoot, PluginContext())
+        }
+    }
+
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let taskManager = JSTaskManager()

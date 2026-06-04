@@ -34,6 +34,13 @@ public actor TerminalPlugin: SuperPlugin, SuperLog {
         }
     }
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        TerminalPluginBridge.editorThemeIdProvider = {
+            context.editorThemeId()
+        }
+    }
+
     // MARK: - UI (Sidebar Panel)
 
     @MainActor

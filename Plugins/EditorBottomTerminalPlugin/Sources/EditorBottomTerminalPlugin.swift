@@ -36,6 +36,16 @@ public actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorBottomTerminalPlugin()
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        EditorBottomTerminalBridge.currentProjectPathProvider = { pluginContext in
+            context.currentProjectPath(pluginContext)
+        }
+        EditorBottomTerminalBridge.editorThemeIdProvider = {
+            context.editorThemeId()
+        }
+    }
+
     // MARK: - Bottom Panel Tabs
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {

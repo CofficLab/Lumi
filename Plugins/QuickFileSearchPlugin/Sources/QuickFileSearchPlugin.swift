@@ -69,6 +69,16 @@ public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
         }
     }
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        QuickFileSearchBridge.activeWindowIdProvider = {
+            context.activeWindowId()
+        }
+        QuickFileSearchBridge.selectFileHandler = { path, windowId in
+            context.openFilePath(path, windowId)
+        }
+    }
+
     // MARK: - UI Contributions
 
     /// 提供根视图包裹层

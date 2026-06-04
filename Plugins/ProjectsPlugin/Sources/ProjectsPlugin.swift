@@ -36,6 +36,13 @@ public actor ProjectsPlugin: SuperPlugin, SuperLog {
     public nonisolated func onEnable() {}
     public nonisolated func onDisable() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        ProjectsBridge.currentProjectPathProvider = {
+            context.currentProjectPath(PluginContext())
+        }
+    }
+
     // MARK: - UI Contributions
 
     @MainActor

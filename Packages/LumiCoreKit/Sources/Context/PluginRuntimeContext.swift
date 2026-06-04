@@ -15,6 +15,9 @@ public struct PluginRuntimeContext {
     /// 打开文件能力。
     public let openFile: @MainActor (URL, String?, PluginContext) async -> Void
 
+    /// 按文件路径打开文件能力。
+    public let openFilePath: @MainActor (String, UUID?) -> Void
+
     /// 当前项目路径能力。
     public let currentProjectPath: @MainActor (PluginContext) -> String?
 
@@ -33,6 +36,7 @@ public struct PluginRuntimeContext {
     public init(
         editorServiceProvider: @escaping @MainActor (PluginContext) -> AnyObject? = { _ in nil },
         openFile: @escaping @MainActor (URL, String?, PluginContext) async -> Void = { _, _, _ in },
+        openFilePath: @escaping @MainActor (String, UUID?) -> Void = { _, _ in },
         currentProjectPath: @escaping @MainActor (PluginContext) -> String? = { context in
             context.currentProjectPath.isEmpty ? nil : context.currentProjectPath
         },
@@ -43,6 +47,7 @@ public struct PluginRuntimeContext {
     ) {
         self.editorServiceProvider = editorServiceProvider
         self.openFile = openFile
+        self.openFilePath = openFilePath
         self.currentProjectPath = currentProjectPath
         self.activeWindowId = activeWindowId
         self.editorThemeId = editorThemeId
