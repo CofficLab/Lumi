@@ -25,6 +25,13 @@ public actor MessageRendererPlugin: SuperPlugin {
     public static var order: Int { 10 } // 最先加载，确保内置渲染器先注册
 
     @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        MessageRendererRuntime.showsAssistantHeaderProvider = {
+            context.showsAssistantHeader()
+        }
+    }
+
+    @MainActor
     public func messageRenderers() -> [any SuperMessageRenderer] {
         [
             // 系统消息渲染器（优先级最高）

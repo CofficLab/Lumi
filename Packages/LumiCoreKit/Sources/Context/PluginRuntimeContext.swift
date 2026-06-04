@@ -27,6 +27,18 @@ public struct PluginRuntimeContext {
     /// 当前编辑器主题 ID。
     public let editorThemeId: @MainActor () -> String
 
+    /// 是否显示助手消息头部。
+    public let showsAssistantHeader: @MainActor () -> Bool
+
+    /// 应用编辑器字体名称。
+    public let applyEditorFontName: @MainActor (String?, PluginContext) -> Void
+
+    /// 插件数据库根目录。
+    public let databaseDirectory: @Sendable () -> URL
+
+    /// 将用户消息入队。
+    public let enqueueUserMessage: @MainActor (ChatMessage, TurnFinishedContext) -> Void
+
     /// 将文本添加到当前对话。
     public let addToChat: @MainActor (String, PluginContext) -> Void
 
@@ -42,6 +54,16 @@ public struct PluginRuntimeContext {
         },
         activeWindowId: @escaping @MainActor () -> UUID? = { nil },
         editorThemeId: @escaping @MainActor () -> String = { "xcode-dark" },
+        showsAssistantHeader: @escaping @MainActor () -> Bool = { false },
+        applyEditorFontName: @escaping @MainActor (String?, PluginContext) -> Void = { _, _ in },
+        databaseDirectory: @escaping @Sendable () -> URL = {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? FileManager.default.temporaryDirectory
+            let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+            return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+                .appendingPathComponent("db", isDirectory: true)
+        },
+        enqueueUserMessage: @escaping @MainActor (ChatMessage, TurnFinishedContext) -> Void = { _, _ in },
         addToChat: @escaping @MainActor (String, PluginContext) -> Void = { _, _ in },
         selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in }
     ) {
@@ -51,6 +73,10 @@ public struct PluginRuntimeContext {
         self.currentProjectPath = currentProjectPath
         self.activeWindowId = activeWindowId
         self.editorThemeId = editorThemeId
+        self.showsAssistantHeader = showsAssistantHeader
+        self.applyEditorFontName = applyEditorFontName
+        self.databaseDirectory = databaseDirectory
+        self.enqueueUserMessage = enqueueUserMessage
         self.addToChat = addToChat
         self.selectConversation = selectConversation
     }

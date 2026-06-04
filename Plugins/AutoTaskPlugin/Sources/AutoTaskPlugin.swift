@@ -35,6 +35,15 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        AutoTaskRuntimeBridge.databaseDirectoryProvider = context.databaseDirectory
+        AutoTaskRuntimeBridge.enqueueUserMessage = { message, turnContext in
+            context.enqueueUserMessage(message, turnContext)
+        }
+        Self.configuration = RuntimeAutoTaskConfiguration()
+    }
+
     // MARK: - Agent Tools
 
     @MainActor
@@ -83,6 +92,24 @@ private struct AutoTaskSidebarViewWrapper: View {
 }
 
 // MARK: - Default Configuration
+
+private enum AutoTaskRuntimeBridge {
+    nonisolated(unsafe) static var databaseDirectoryProvider: @Sendable () -> URL = {
+        DefaultAutoTaskConfiguration().databaseDirectory()
+    }
+    nonisolated(unsafe) static var enqueueUserMessage: @MainActor (ChatMessage, TurnFinishedContext) -> Void = { _, _ in }
+}
+
+private struct RuntimeAutoTaskConfiguration: AutoTaskConfiguration {
+    func databaseDirectory() -> URL {
+        AutoTaskRuntimeBridge.databaseDirectoryProvider()
+    }
+
+    @MainActor
+    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext) {
+        AutoTaskRuntimeBridge.enqueueUserMessage(message, turnContext)
+    }
+}
 
 /// 默认配置（fallback，实际运行时由 App 侧覆盖）
 private struct DefaultAutoTaskConfiguration: AutoTaskConfiguration {

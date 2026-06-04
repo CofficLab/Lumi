@@ -19,6 +19,13 @@ public actor FontConfigPlugin: SuperPlugin, SuperLog {
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = FontConfigPlugin()
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        FontConfigViewModel.applyFontNameHandler = { fontName in
+            context.applyEditorFontName(fontName, PluginContext())
+        }
+    }
+
     // MARK: - UI Contributions
 
     @MainActor

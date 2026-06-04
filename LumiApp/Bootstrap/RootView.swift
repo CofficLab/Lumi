@@ -4,9 +4,6 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
-import FontConfigPlugin
-import MessageRendererPlugin
-import AutoTaskPlugin
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
@@ -225,10 +222,7 @@ struct RootView<Content>: View where Content: View {
         configurePluginRuntimeContext()
         configurePluginProjectBridge()
         configureConversationListContext()
-        configurePluginFontBridge()
-        configureMessageRendererPluginBridge()
         configureProjectConversationContext()
-        configureAutoTaskPluginBridge()
         configureEditorContextBridge()
     }
 
@@ -269,6 +263,20 @@ struct RootView<Content>: View where Content: View {
             },
             editorThemeId: { [container] in
                 container.themeVM.activeEditorThemeId
+            },
+            showsAssistantHeader: { [container] in
+                container.agentSessionConfig.verbosity == .detailed
+            },
+            applyEditorFontName: { [container, windowContainer] fontName, context in
+                Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                    .editorVM.service.state.fontName = fontName
+            },
+            databaseDirectory: {
+                AppConfig.getDBFolderURL()
+            },
+            enqueueUserMessage: { message, turnContext in
+                guard let appContext = turnContext as? AppTurnFinishedContext else { return }
+                appContext.messageQueueVM.enqueueMessage(message)
             },
             addToChat: { text, context in
                 NotificationCenter.postAddToChat(text: text, windowId: context.windowId)
@@ -601,23 +609,6 @@ struct RootView<Content>: View where Content: View {
         pluginEditorContext.updateCurrentFileURL(windowContainer.editorVM.service.currentFileURL)
     }
 
-    private func configureMessageRendererPluginBridge() {
-        MessageRendererRuntime.showsAssistantHeaderProvider = { [container] in
-            container.agentSessionConfig.verbosity == .detailed
-        }
-    }
-
-    private func configurePluginFontBridge() {
-        FontConfigViewModel.applyFontNameHandler = { [container, windowContainer] fontName in
-            Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
-                .editorVM.service.state.fontName = fontName
-        }
-    }
-
-    private func configureAutoTaskPluginBridge() {
-        AutoTaskPlugin.configuration = AppAutoTaskConfiguration()
-    }
-
     private func configureConversationListContext() {
         syncPluginConversationListContext()
     }
@@ -663,18 +654,6 @@ struct RootView<Content>: View where Content: View {
         rootContainer: RootContainer
     ) -> WindowContainer {
         rootContainer.windowManagerVM.activeWindowContainer ?? fallback
-    }
-}
-
-private struct AppAutoTaskConfiguration: AutoTaskConfiguration {
-    func databaseDirectory() -> URL {
-        AppConfig.getDBFolderURL()
-    }
-
-    @MainActor
-    func enqueueUserMessage(_ message: ChatMessage, turnContext: TurnFinishedContext) {
-        guard let appContext = turnContext as? AppTurnFinishedContext else { return }
-        appContext.messageQueueVM.enqueueMessage(message)
     }
 }
 
