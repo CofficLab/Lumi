@@ -14,6 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/EditorService"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -21,13 +23,12 @@ let package = Package(
         .target(
             name: "EditorBottomReferencesPlugin",
             dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
-            exclude: [
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]

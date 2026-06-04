@@ -6,6 +6,12 @@ import SwiftUI
 import LumiCoreKit
 import AgentTurnNotificationPlugin
 import EditorBreadcrumbPlugin
+import EditorBottomCallHierarchyPlugin
+import EditorBottomProblemsPlugin
+import EditorBottomReferencesPlugin
+import EditorBottomSearchPlugin
+import EditorBottomSymbolsPlugin
+import EditorBottomTerminalPlugin
 import EditorStickySymbolBarPlugin
 import EditorTabStripPlugin
 import EditorRailWorkspaceSymbolsPlugin
@@ -240,6 +246,7 @@ struct RootView<Content>: View where Content: View {
         configureEditorStickySymbolBarPluginBridge()
         configureEditorTabStripPluginBridge()
         configureEditorRailWorkspaceSymbolsPluginBridge()
+        configureEditorBottomPanelPluginBridges()
         configurePluginFontBridge()
         configureGoEditorPluginBridge()
         configureJSEditorPluginBridge()
@@ -570,7 +577,7 @@ struct RootView<Content>: View where Content: View {
             let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
             await targetWindow.editorVM.service.refreshProjectContext(for: projectPath)
         }
-        pluginEditorContext.addToConversationHandler = { [container] fileURL, windowId in
+        pluginEditorContext.addToConversationHandler = { fileURL, windowId in
             NotificationCenter.postFileDroppedToChat(fileURL: fileURL, windowId: windowId)
         }
         EditorContext.syncSelectedFileNotificationName = .syncSelectedFile
@@ -628,6 +635,28 @@ struct RootView<Content>: View where Content: View {
         EditorRailWorkspaceSymbolsBridge.editorServiceProvider = { [container, windowContainer] context in
             Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
                 .editorVM.service
+        }
+    }
+
+    private func configureEditorBottomPanelPluginBridges() {
+        let editorServiceProvider: (PluginContext) -> EditorService? = { [container, windowContainer] context in
+            Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .editorVM.service
+        }
+        EditorBottomProblemsBridge.editorServiceProvider = editorServiceProvider
+        EditorBottomSearchBridge.editorServiceProvider = editorServiceProvider
+        EditorBottomReferencesBridge.editorServiceProvider = editorServiceProvider
+        EditorBottomSymbolsBridge.editorServiceProvider = editorServiceProvider
+        EditorBottomCallHierarchyBridge.editorServiceProvider = editorServiceProvider
+
+        EditorBottomTerminalBridge.currentProjectPathProvider = { [container, windowContainer] context in
+            let path = Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
+                .projectVM.currentProjectPath
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return path.isEmpty ? nil : path
+        }
+        EditorBottomTerminalBridge.editorThemeIdProvider = { [container] in
+            container.themeVM.activeEditorThemeId
         }
     }
 

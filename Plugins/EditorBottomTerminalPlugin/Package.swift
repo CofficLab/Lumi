@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/TerminalCoreKit"),
     ],
@@ -23,6 +24,7 @@ let package = Package(
             name: "EditorBottomTerminalPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),
             ],

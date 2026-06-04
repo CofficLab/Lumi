@@ -1,3 +1,5 @@
+import EditorService
+import LSPWorkspaceSymbolEditorPlugin
 import LumiUI
 import SwiftUI
 

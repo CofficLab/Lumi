@@ -1,15 +1,21 @@
 import LumiCoreKit
+import EditorService
 import SuperLogKit
 import Foundation
 import SwiftUI
 import os
+
+@MainActor
+public enum EditorBottomProblemsBridge {
+    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
+}
 
 /// 编辑器底部面板 - Problems 标签页插件
 ///
 /// 向内核全局底部面板注册 Problems Tab 入口，
 /// 内核负责 Tab 栏渲染和切换，本插件只提供 Tab 定义和内容视图。
 public actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .optOut
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-problems")
 
@@ -28,10 +34,21 @@ public actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
     // MARK: - Bottom Panel Tabs
 
     @MainActor public func addBottomPanelTabs(context: PluginContext) -> [BottomPanelTab] {
-        []
+        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return [] }
+        return [
+            BottomPanelTab(
+                id: "editor-bottom-problems",
+                title: String(localized: "Problems", bundle: .module),
+                systemImage: "exclamationmark.bubble",
+                priority: 0
+            ),
+        ]
     }
 
     @MainActor public func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? {
-        nil
+        guard tabId == "editor-bottom-problems",
+              context.activeIcon == "chevron.left.forwardslash.chevron.right",
+              let service = EditorBottomProblemsBridge.editorServiceProvider?(context) else { return nil }
+        return AnyView(BottomEditorProblemsPanelView(service: service, showsHeader: false))
     }
 }

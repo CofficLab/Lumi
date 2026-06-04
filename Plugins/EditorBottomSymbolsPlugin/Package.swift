@@ -14,6 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/EditorService"),
+        .package(path: "../LSPWorkspaceSymbolEditorPlugin"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -22,14 +24,13 @@ let package = Package(
         .target(
             name: "EditorBottomSymbolsPlugin",
             dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "LSPWorkspaceSymbolEditorPlugin", package: "LSPWorkspaceSymbolEditorPlugin"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
-            exclude: [
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]

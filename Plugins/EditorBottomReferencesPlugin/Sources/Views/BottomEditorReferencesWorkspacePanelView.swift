@@ -1,7 +1,9 @@
+import EditorService
+import LumiUI
 import SwiftUI
 
 public struct BottomEditorReferencesWorkspacePanelView: View {
-    @EnvironmentObject private var themeVM: AppThemeVM
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @ObservedObject var service: EditorService
     public var showsHeader: Bool = true
 
@@ -19,8 +21,8 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(panelTitle)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             Spacer(minLength: 0)
 
@@ -28,8 +30,8 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
                 service.performPanelCommand(.closeReferences)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -83,22 +85,22 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
             HStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceTextColor())
+                    .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(badge)
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05))
+                    .background(theme.textPrimary.opacity(0.05))
                     .clipShape(Capsule())
             }
 
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.system(size: 10))
-                    .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(theme.textSecondary)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -110,14 +112,14 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(
                     isSelected
-                        ? themeVM.activeChromeTheme.workspaceTextColor().opacity(0.1)
-                        : themeVM.activeChromeTheme.workspaceTextColor().opacity(0.05)
+                        ? theme.textPrimary.opacity(0.1)
+                        : theme.textPrimary.opacity(0.05)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(
                             isSelected
-                                ? themeVM.activeChromeTheme.workspaceTextColor().opacity(0.18)
+                                ? theme.textPrimary.opacity(0.18)
                                 : Color.clear,
                             lineWidth: 1
                         )
@@ -129,10 +131,10 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceTertiaryTextColor())
+                .foregroundColor(theme.textTertiary)
             Text(title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
+                .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)
