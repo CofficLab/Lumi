@@ -24,6 +24,9 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../LSPDocumentHighlightEditorPlugin"),
+        .package(path: "../LSPRealtimeSignalsEditorPlugin"),
+        .package(path: "../LSPSignatureHelpEditorPlugin"),
     ],
     targets: [
         .target(
@@ -39,13 +42,11 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LSPDocumentHighlightEditorPlugin", package: "LSPDocumentHighlightEditorPlugin"),
+                .product(name: "LSPRealtimeSignalsEditorPlugin", package: "LSPRealtimeSignalsEditorPlugin"),
+                .product(name: "LSPSignatureHelpEditorPlugin", package: "LSPSignatureHelpEditorPlugin"),
             ],
             path: "Sources",
-            exclude: [
-                "Coordinators",
-                "Services",
-                "Views",
-            ],
             resources: [
                 .process("Resources")
             ]

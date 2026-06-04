@@ -34,6 +34,16 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
     private var activeFallbackTypeItems: [LocalTypeSuggestionEntry] = []
     private let requestGeneration = RequestGeneration()
 
+    public func configure(
+        lspClient: (any SuperEditorLSPClient)?,
+        editorExtensionRegistry: EditorExtensionRegistry?,
+        editorState: EditorState?
+    ) {
+        self.lspClient = lspClient
+        self.editorExtensionRegistry = editorExtensionRegistry
+        self.editorState = editorState
+    }
+
     public func completionTriggerCharacters() -> Set<String> {
         let characters = lspClient?.completionTriggerCharacters() ?? []
         return characters.isEmpty ? ["."] : characters

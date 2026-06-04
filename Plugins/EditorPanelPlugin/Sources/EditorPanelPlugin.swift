@@ -48,12 +48,8 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
     /// 面板视图：编辑器
     @MainActor
     public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, supportsAIChat: true, showsFileTree: true) {
-            AnyView(AppEmptyState(
-                icon: Self.iconName,
-                title: Self.displayName,
-                description: Self.description
-            ))
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, supportsAIChat: true, showsRail: true) {
+            AnyView(EditorPanelView())
         }
     }
 }

@@ -1,5 +1,6 @@
 import SwiftUI
 import CodeEditSourceEditor
+import EditorService
 import LumiUI
 
 /// 编辑器命令面板视图。

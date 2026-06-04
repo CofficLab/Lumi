@@ -176,6 +176,7 @@ struct RootView<Content>: View where Content: View {
             // 窗口级 VM（每窗口独立）
             .environmentObject(windowContainer)
             .environmentObject(windowContainer.editorVM)
+            .environmentObject(windowContainer.editorVM.service)
             .environmentObject(windowContainer.conversationVM)
             .environmentObject(pluginConversationVM)
             .environmentObject(pluginConversationListContext)

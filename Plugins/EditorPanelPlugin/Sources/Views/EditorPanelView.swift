@@ -1,6 +1,8 @@
 import CodeEditSourceEditor
 import Combine
+import EditorService
 import FilePreviewKit
+import LumiCoreKit
 import MarkdownKit
 import SwiftUI
 import LumiUI
@@ -14,10 +16,10 @@ public struct EditorPanelView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
-    @EnvironmentObject private var editorVM: WindowEditorVM
+    @EnvironmentObject private var service: EditorService
 
     /// 便利访问
-    private var service: EditorService { editorVM.service }
+    private var editorState: EditorState { service.state }
 
     /// 面板业务逻辑
     @StateObject private var panelService = EditorPanelService()
@@ -66,7 +68,7 @@ public struct EditorPanelView: View {
         .onDisappear {
             coordinator.handleDisappear()
         }
-        .onApplicationDidResignActive {
+        .onReceive(NotificationCenter.default.publisher(for: .applicationDidResignActive)) { _ in
             coordinator.handleApplicationDidResignActive()
         }
         .onReceive(coordinator.subscribeEditorCommands(isCommandPalettePresented: $panelService.isCommandPalettePresented)) { event in

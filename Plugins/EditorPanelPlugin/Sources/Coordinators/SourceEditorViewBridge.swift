@@ -3,6 +3,8 @@ import EditorService
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
+import LSPDocumentHighlightEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
 
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?
@@ -77,9 +79,11 @@ public struct SourceEditorViewBridge {
         state.jumpDelegate = jumpDelegate
         textCoordinator?.jumpDelegate = jumpDelegate
 
-        completionDelegate.lspClient = state.lspClient
-        completionDelegate.editorExtensionRegistry = state.editorExtensions
-        completionDelegate.editorState = state
+        completionDelegate.configure(
+            lspClient: state.lspClient,
+            editorExtensionRegistry: state.editorExtensions,
+            editorState: state
+        )
     }
 
     public func binding(for state: EditorState) -> Binding<SourceEditorState> {

@@ -11,6 +11,10 @@ public struct SignatureHelpView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     
     public let item: SignatureHelpItem
+
+    public init(item: SignatureHelpItem) {
+        self.item = item
+    }
     
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {

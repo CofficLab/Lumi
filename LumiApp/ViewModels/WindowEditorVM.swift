@@ -1,4 +1,5 @@
 import Combine
+import EditorService
 import Foundation
 import SwiftUI
 
@@ -6,33 +7,6 @@ import SwiftUI
 ///
 /// 作为插件视图与内核 Editor 服务之间的桥梁，通过 SwiftUI 环境注入。
 /// 在 `RootViewContainer` 中初始化，插件视图通过 `@EnvironmentObject` 访问。
-///
-/// ## 架构说明
-///
-/// WindowEditorVM 持有一个 `EditorService` 实例，所有编辑器能力通过它访问。
-/// 同时订阅 service 内部 `sessionStore` 的变化通知并转发，
-/// 确保所有通过 `@EnvironmentObject` 观察 WindowEditorVM 的视图（如 Tab 栏）
-/// 都能在 session/tab 变更时自动刷新，而不依赖 `selectedFileURL` 间接驱动。
-///
-/// ## 使用方式
-///
-/// ```swift
-/// @EnvironmentObject private var editorVM: WindowEditorVM
-///
-/// editorVM.service.currentFileURL
-/// editorVM.service.open(at: url)
-/// editorVM.service.performCommand(id: "builtin.find")
-///
-/// ## 初始化规则
-///
-/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。n每个窗口有独立的 `EditorService` 实例。
-/// ```
-///
-/// ## 初始化规则
-///
-/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
-/// View 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。
-/// 每个窗口有独立的 `EditorService` 实例。
 @MainActor
 final class WindowEditorVM: ObservableObject {
 
@@ -47,17 +21,11 @@ final class WindowEditorVM: ObservableObject {
     init(service: EditorService) {
         self.service = service
 
-        // 将 sessionStore 的 objectWillChange 转发到 WindowEditorVM，
-        // 使依赖 @EnvironmentObject editorVM 的视图能感知 tabs/session 的增删改。
-        // ⚠️ 此处仍需直接访问 sessionStore，因为 objectWillChange 是 Combine 管道，
-        // 无法通过门面方法转发（门面不暴露 ObservableObject 协议）。
         service.sessionObjectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
 
-        // 将 EditorState 的 objectWillChange 转发到 WindowEditorVM，
-        // 使依赖 editorVM 的视图（如文件树高亮）能响应 currentFileURL 等状态变化。
         service.state.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }

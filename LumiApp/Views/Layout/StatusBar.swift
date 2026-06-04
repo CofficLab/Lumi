@@ -31,7 +31,7 @@ struct StatusBar: View {
             activeProviderId: activeProviderId,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsFileTree: activeContainer?.showsFileTree ?? false,
+            showsRail: activeContainer?.showsRail ?? false,
             windowId: windowContainer?.id,
             currentProjectPath: projectVM.currentProjectPath,
             languagePreference: projectVM.languagePreference,

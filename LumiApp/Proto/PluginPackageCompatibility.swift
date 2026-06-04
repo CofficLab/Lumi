@@ -50,7 +50,7 @@ extension ViewContainerItem {
             icon: item.icon,
             showsProjectToolbar: item.showsProjectToolbar,
             supportsAIChat: item.supportsAIChat,
-            showsFileTree: item.showsFileTree,
+            showsRail: item.showsRail,
             makeView: item.makeView
         )
     }

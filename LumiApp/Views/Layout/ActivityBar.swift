@@ -52,12 +52,32 @@ struct ActivityBar: View {
         .background(theme.sidebarBackgroundColor())
         .onAppear {
             let items = pluginProvider.getViewContainerItems()
-            layoutVM.restoreSelectedTab(from: items.map(\.id))
-            // 首次回退（无磁盘记录时设置默认图标）由 LayoutPlugin 统一负责，
-            // 此处不再设置 activeViewContainerIcon，避免与 LayoutPlugin 恢复竞态。
+            restoreAvailableSelection(from: items, fallbackWhenNil: true)
         }
         .onChange(of: pluginProvider.getViewContainerItems()) { _, newItems in
-            layoutVM.restoreSelectedTab(from: newItems.map(\.id))
+            restoreAvailableSelection(from: newItems, fallbackWhenNil: true)
+        }
+        .onChange(of: layoutVM.activeViewContainerIcon) { _, newIcon in
+            guard newIcon != nil else { return }
+            let items = pluginProvider.getViewContainerItems()
+            restoreAvailableSelection(from: items, fallbackWhenNil: false)
+        }
+    }
+
+    private func restoreAvailableSelection(from items: [ViewContainerItem], fallbackWhenNil: Bool) {
+        layoutVM.restoreSelectedTab(from: items.map(\.id))
+
+        guard let fallbackIcon = items.first?.icon else {
+            if layoutVM.activeViewContainerIcon != nil {
+                layoutVM.activeViewContainerIcon = nil
+            }
+            return
+        }
+
+        let activeIcon = layoutVM.activeViewContainerIcon
+        let shouldFallback = activeIcon == nil ? fallbackWhenNil : !items.contains { $0.icon == activeIcon }
+        if shouldFallback {
+            layoutVM.activeViewContainerIcon = fallbackIcon
         }
     }
 }

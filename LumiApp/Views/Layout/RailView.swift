@@ -32,7 +32,7 @@ struct RailView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsFileTree: activeContainer?.showsFileTree ?? false,
+            showsRail: activeContainer?.showsRail ?? false,
             windowId: windowContainer?.id
         )
         let tabs = pluginProvider.getRailTabs(context: pluginContext)
@@ -103,7 +103,7 @@ struct RailView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsFileTree: activeContainer?.showsFileTree ?? false,
+            showsRail: activeContainer?.showsRail ?? false,
             windowId: windowContainer?.id
         )
         let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }

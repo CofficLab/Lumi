@@ -29,7 +29,7 @@ struct RightSidebarContainerView: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsFileTree: activeContainer?.showsFileTree ?? false,
+            showsRail: activeContainer?.showsRail ?? false,
             windowId: windowContainer?.id,
             messageRenderer: renderMessage
         )
@@ -115,7 +115,7 @@ private struct SidebarToolbarBar: View {
             isEditorVisible: layoutVM.editorVisible,
             supportsAIChat: activeContainer?.supportsAIChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsFileTree: activeContainer?.showsFileTree ?? false,
+            showsRail: activeContainer?.showsRail ?? false,
             windowId: windowContainer?.id,
             messageRenderer: renderMessage
         )

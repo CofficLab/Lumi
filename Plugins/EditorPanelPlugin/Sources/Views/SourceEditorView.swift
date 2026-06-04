@@ -5,6 +5,10 @@ import CodeEditTextView
 import CodeEditLanguages
 import EditorOverlayKit
 import EditorService
+import LSPDocumentHighlightEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
+import LSPSignatureHelpEditorPlugin
+import LumiCoreKit
 import LumiUI
 
 /// 代码编辑器主视图。
@@ -54,15 +58,15 @@ public struct SourceEditorView: View, SuperLog {
     }
     
     public var body: some View {
-        let base = editorContent
+        let base = AnyView(editorContent
             .onAppear {
                 initializeCoordinators()
                 wireDelegates()
                 updateContentLineTable()
                 state.refreshFoldingRanges()
-            }
+            })
 
-        let appearanceObserved = base
+        let appearanceObserved = AnyView(base
             .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
             .onChange(of: state.fontName) { _, _ in updateConfigCache() }
             .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
@@ -72,11 +76,11 @@ public struct SourceEditorView: View, SuperLog {
             .onChange(of: state.tabWidth) { _, _ in updateConfigCache() }
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
-            .onChange(of: themeVM.currentThemeId) { _, _ in updateConfigCache() }
+            .onChange(of: themeVM.activeChromeTheme.identifier) { _, _ in updateConfigCache() }
             .onChange(of: colorScheme) { _, _ in updateConfigCache() }
-            .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() }
+            .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() })
 
-        let runtimeObserved = appearanceObserved
+        let runtimeObserved = AnyView(appearanceObserved
             .onChange(of: state.isSyntaxHighlightingEnabledInViewport) { _, isEnabled in
                 semanticTokenProvider?.setEnabled(isEnabled)
             }
@@ -99,9 +103,9 @@ public struct SourceEditorView: View, SuperLog {
             }
             .onChange(of: state.areCodeActionsEnabled) { _, isEnabled in
                 state.handleCodeActionRuntimeAvailabilityChange(isEnabled)
-            }
+            })
 
-        return runtimeObserved
+        return AnyView(runtimeObserved
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
                 updateContentLineTable()
@@ -122,7 +126,7 @@ public struct SourceEditorView: View, SuperLog {
                 state.refreshFoldingRanges()
             }
             .contentShape(Rectangle())
-            .clipped()
+            .clipped())
     }
 
     // MARK: - Editor Content
@@ -417,16 +421,11 @@ public struct SourceEditorView: View, SuperLog {
     /// 以 AppThemeVM 为单一来源解析编辑器语法主题，不依赖 EditorState 通知链。
     @MainActor
     private func applyAppChromeTheme(to config: inout SourceEditorConfiguration) {
-        guard let contribution = themeVM.currentTheme ?? themeVM.themes.first else { return }
-        let editorThemeId = contribution.chromeTheme.resolvedEditorThemeId(
-            defaultEditorThemeId: contribution.editorThemeId,
-            colorScheme: effectiveColorScheme(for: contribution.chromeTheme)
+        let chromeTheme = themeVM.activeChromeTheme
+        let editorThemeId = chromeTheme.resolvedEditorThemeId(
+            defaultEditorThemeId: "xcode-dark",
+            colorScheme: effectiveColorScheme(for: chromeTheme)
         )
-        if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
-            config.appearance.theme = contributor.createTheme()
-            config.appearance.themeIdentifier = editorThemeId
-            return
-        }
         if let contributor = state.editorExtensions.theme(for: editorThemeId) {
             config.appearance.theme = contributor.createTheme()
             config.appearance.themeIdentifier = editorThemeId

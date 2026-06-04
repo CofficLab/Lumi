@@ -1,4 +1,6 @@
 import Combine
+import EditorService
+import LumiCoreKit
 import SwiftUI
 import os
 
@@ -157,7 +159,7 @@ public final class EditorPanelCoordinator: ObservableObject {
 
         let commandPublishers = notificationMap.map { name, commandID in
             NotificationCenter.default.publisher(for: name)
-                .compactMap { [weak self] notification in
+                .compactMap { [weak self] notification -> EditorCommandEvent? in
                     guard self?.isTargeted(notification) == true else { return nil }
                     return EditorCommandEvent.command(commandID)
                 }
@@ -165,14 +167,14 @@ public final class EditorPanelCoordinator: ObservableObject {
         }
 
         let commandPalettePublisher = NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)
-            .compactMap { [weak self] notification in
+            .compactMap { [weak self] notification -> EditorCommandEvent? in
                 guard self?.isTargeted(notification) == true else { return nil }
                 return EditorCommandEvent.showCommandPalette
             }
             .eraseToAnyPublisher()
 
         let toggleOutlinePublisher = NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)
-            .compactMap { [weak self] notification in
+            .compactMap { [weak self] notification -> EditorCommandEvent? in
                 guard self?.isTargeted(notification) == true else { return nil }
                 return EditorCommandEvent.toggleOutlinePanel
             }
