@@ -12,7 +12,7 @@ import os
 /// 通过子进程 `LumiPreviewHostApp` 运行用户编译的预览 dylib，
 /// 自动扫描 `#Preview` 宏并构建渲染。
 public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.editor-inline-preview"

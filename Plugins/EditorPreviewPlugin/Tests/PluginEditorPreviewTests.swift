@@ -1,10 +1,27 @@
 import Testing
 import EditorService
 import Foundation
+import LumiCoreKit
 @testable import EditorPreviewPlugin
 
 @Test func packageLoads() async throws {
-    #expect(Bool(true))
+    #expect(EditorPreviewPlugin.policy == .alwaysOn)
+    #expect(EditorPreviewPlugin.shouldRegister)
+    #expect(EditorPreviewPlugin.enabledByDefault)
+}
+
+@MainActor
+@Test func editorPreviewContributesBottomPanelTabWhenEditorIsVisible() async throws {
+    let editorContext = PluginContext(activeIcon: nil, isEditorVisible: true)
+    let hiddenEditorContext = PluginContext(activeIcon: nil, isEditorVisible: false)
+
+    let tabs = EditorPreviewPlugin.shared.addBottomPanelTabs(context: editorContext)
+
+    #expect(tabs.map(\.id) == ["editor-bottom-inline-preview"])
+    #expect(tabs.first?.title == EditorPreviewPlugin.displayName)
+    #expect(EditorPreviewPlugin.shared.addBottomPanelTabs(context: hiddenEditorContext).isEmpty)
+    #expect(EditorPreviewPlugin.shared.addBottomPanelContentView(tabId: "editor-bottom-inline-preview", context: editorContext) != nil)
+    #expect(EditorPreviewPlugin.shared.addBottomPanelContentView(tabId: "unknown", context: editorContext) == nil)
 }
 
 @MainActor
