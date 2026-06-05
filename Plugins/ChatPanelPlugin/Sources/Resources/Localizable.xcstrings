@@ -12,19 +12,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat"
+            "value": "对话"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat"
+            "value": "對話"
           }
         }
       }
@@ -40,19 +34,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Conversation list with chat surface"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation list with chat surface"
+            "value": "对话列表与聊天界面"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Conversation list with chat surface"
+            "value": "對話列表與聊天介面"
           }
         }
       }
@@ -68,19 +56,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Conversations"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Conversations"
+            "value": "暂无对话"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Conversations"
+            "value": "暫無對話"
           }
         }
       }
