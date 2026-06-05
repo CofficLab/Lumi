@@ -41,15 +41,22 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {
+    @MainActor public func addRailItems(context: PluginContext) -> [RailItem] {
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return [] }
-        return [RailTab(id: "workspaceSymbols", title: String(localized: "Symbols", bundle: .module), systemImage: "text.magnifyingglass", priority: 13)]
-    }
-
-    @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        guard tabId == "workspaceSymbols", context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        guard let service = EditorRailWorkspaceSymbolsBridge.editorServiceProvider?(context) else { return nil }
-        return AnyView(EditorWorkspaceSymbolsRailContentView(service: service))
+        return [
+            RailItem(
+                id: "workspaceSymbols",
+                title: String(localized: "Symbols", bundle: .module),
+                systemImage: "text.magnifyingglass",
+                priority: 13,
+                makeView: {
+                    guard let service = EditorRailWorkspaceSymbolsBridge.editorServiceProvider?(context) else {
+                        return AnyView(Color.clear)
+                    }
+                    return AnyView(EditorWorkspaceSymbolsRailContentView(service: service))
+                }
+            )
+        ]
     }
 }
 

@@ -47,11 +47,8 @@ extension SuperPlugin {
     /// 默认实现：不提供底部面板内容视图
     @MainActor public func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView? { nil }
 
-    /// 默认实现：不提供 Rail 标签页
-    @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] { [] }
-
-    /// 默认实现：不提供 Rail 内容视图
-    @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? { nil }
+    /// 默认实现：不提供 Rail 项
+    @MainActor public func addRailItems(context: PluginContext) -> [RailItem] { [] }
 
     /// 默认实现：不提供右侧栏 Section 视图
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] { [] }

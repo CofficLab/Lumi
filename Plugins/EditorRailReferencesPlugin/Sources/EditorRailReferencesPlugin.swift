@@ -28,11 +28,7 @@ public actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {
+    @MainActor public func addRailItems(context: PluginContext) -> [RailItem] {
         []
-    }
-
-    @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        nil
     }
 }

@@ -70,7 +70,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
     private var viewContainerItemsCache: [ViewContainerItem]?
     private var bottomPanelTabsCache: (key: String, tabs: [BottomPanelTab])?
-    private var railTabsCache: (key: String, tabs: [RailTab])?
+    private var railItemsCache: (key: String, items: [RailItem])?
     private var sidebarLeadingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var sidebarTrailingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var enabledPluginIDs = Set<String>()
@@ -112,7 +112,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private func clearPluginMetadataCaches() {
         viewContainerItemsCache = nil
         bottomPanelTabsCache = nil
-        railTabsCache = nil
+        railItemsCache = nil
         sidebarLeadingToolbarItemsCache = nil
         sidebarTrailingToolbarItemsCache = nil
     }
@@ -554,34 +554,26 @@ final class AppPluginVM: ObservableObject, SuperLog {
             .contains { $0.addViewContainer() != nil }
     }
 
-    /// 聚合所有插件提供的 Rail 标签页
+    /// 聚合所有插件提供的 Rail 项
     ///
-    /// 收集所有启用插件通过 `addRailTabs()` 提供的标签页，
+    /// 收集所有启用插件通过 `addRailItems()` 提供的项，
     /// 按 priority 升序排列。
-    func getRailTabs(context: PluginContext) -> [RailTab] {
+    func getRailItems(context: PluginContext) -> [RailItem] {
         let key = activeIconCacheKey(context.activeIcon)
-        if let cached = railTabsCache, cached.key == key {
-            return cached.tabs
+        if let cached = railItemsCache, cached.key == key {
+            return cached.items
         }
-        let tabs = plugins
+        let items = plugins
             .filter { isPluginEnabled($0) }
-            .flatMap { $0.addRailTabs(context: context) }
+            .flatMap { $0.addRailItems(context: context) }
             .sorted { $0.priority < $1.priority }
-        railTabsCache = (key, tabs)
-        return tabs
+        railItemsCache = (key, items)
+        return items
     }
 
-    /// 获取指定 Rail tab 对应的内容视图
-    func getRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        return plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRailContentView(tabId: tabId, context: context) }
-            .first
-    }
-
-    /// 当前是否有 Rail 标签页
-    func hasRailTabs(context: PluginContext) -> Bool {
-        !getRailTabs(context: context).isEmpty
+    /// 当前是否有 Rail 项
+    func hasRailItems(context: PluginContext) -> Bool {
+        !getRailItems(context: context).isEmpty
     }
 
     /// 获取所有插件提供的右侧栏 Section 视图

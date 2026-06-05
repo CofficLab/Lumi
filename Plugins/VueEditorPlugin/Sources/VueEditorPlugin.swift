@@ -71,21 +71,23 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor public func addRailTabs(context: PluginContext) -> [RailTab] {
+    @MainActor public func addRailItems(context: PluginContext) -> [RailItem] {
         guard context.activeIcon == Self.iconName else { return [] }
         return [
-            RailTab(
+            RailItem(
                 id: "vue-outline",
                 title: String(localized: "Vue Outline", bundle: .module),
                 systemImage: "curlybraces",
-                priority: 2
+                priority: 2,
+                makeView: { [weak self] in
+                    guard let self else { return AnyView(Color.clear) }
+                    return self.makeOutlineRailView()
+                }
             )
         ]
     }
 
-    @MainActor public func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        guard tabId == "vue-outline", context.activeIcon == Self.iconName else { return nil }
-
+    @MainActor private func makeOutlineRailView() -> AnyView {
         if outlineViewModel == nil {
             outlineViewModel = VueOutlineViewModel()
         }

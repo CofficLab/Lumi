@@ -144,13 +144,13 @@ struct LumiCoreKitTests {
         #expect(url.path == "/tmp/Home/Library/Application Support/com.coffic.Lumi")
     }
 
-    @Test("RailTab Equatable")
-    func railTabEquatable() {
-        let tab1 = RailTab(id: "tab1", title: "Tab 1", systemImage: "star", priority: 0)
-        let tab2 = RailTab(id: "tab1", title: "Tab 2", systemImage: "circle", priority: 1)
-        let tab3 = RailTab(id: "tab2", title: "Tab 1", systemImage: "star", priority: 0)
-        #expect(tab1 == tab2) // same id
-        #expect(tab1 != tab3) // different id
+    @Test("RailItem Equatable")
+    func railItemEquatable() {
+        let item1 = RailItem(id: "tab1", title: "Tab 1", systemImage: "star", priority: 0) { AnyView(EmptyView()) }
+        let item2 = RailItem(id: "tab1", title: "Tab 2", systemImage: "circle", priority: 1) { AnyView(EmptyView()) }
+        let item3 = RailItem(id: "tab2", title: "Tab 1", systemImage: "star", priority: 0) { AnyView(EmptyView()) }
+        #expect(item1 == item2) // same id
+        #expect(item1 != item3) // different id
     }
 }
 

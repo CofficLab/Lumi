@@ -4,8 +4,7 @@ import LumiUI
 
 /// Rail 视图：位于活动栏与面板内容区之间的辅助栏
 ///
-/// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailTabs()` 提供 tab 定义，
-/// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
+/// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailItems()` 同时提供 tab 定义和内容视图。
 struct RailView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var pluginProvider: AppPluginVM
@@ -36,16 +35,16 @@ struct RailView: View {
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id
         )
-        let tabs = pluginProvider.getRailTabs(context: pluginContext)
+        let items = pluginProvider.getRailItems(context: pluginContext)
 
         Group {
-            if !tabs.isEmpty {
+            if !items.isEmpty {
                 VStack(spacing: 0) {
                     // Tab Bar
-                    railTabBar(tabs: tabs)
+                    railTabBar(items: items)
                     GlassDivider()
                     // Content Area
-                    railContent(tabs: tabs)
+                    railContent(items: items)
                 }
                 .frame(minWidth: Self.minWidth, maxWidth: Self.maxWidth)
             } else {
@@ -55,24 +54,24 @@ struct RailView: View {
         .background(themeVM.activeChromeTheme.sidebarBackgroundColor())
         .onAppear {
             if selectedTabId == nil {
-                restoreSelection(from: tabs)
+                restoreSelection(from: items)
             }
         }
-        .onChange(of: tabs.map(\.id)) { _, newIds in
+        .onChange(of: items.map(\.id)) { _, newIds in
             if let current = selectedTabId, !newIds.contains(current) {
-                selectedTabId = tabs.first?.id
+                selectedTabId = items.first?.id
             }
         }
     }
 
     // MARK: - Tab Bar
 
-    private func railTabBar(tabs: [RailTab]) -> some View {
+    private func railTabBar(items: [RailItem]) -> some View {
         HStack(spacing: 6) {
             AppTabBar(
-                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                tabs: items.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
                 selectedTab: Binding(
-                    get: { selectedTabId ?? tabs.first?.id ?? "" },
+                    get: { selectedTabId ?? items.first?.id ?? "" },
                     set: { newValue in
                         selectedTabId = newValue
                         persistSelection(newValue)
@@ -95,20 +94,9 @@ struct RailView: View {
 
     // MARK: - Content
 
-    private func railContent(tabs: [RailTab]) -> some View {
-        let currentId = selectedTabId ?? tabs.first?.id
-        let activeIcon = layoutVM.activeViewContainerIcon
-        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
-        let railContext = PluginContext(
-            activeIcon: activeIcon,
-            isEditorVisible: layoutVM.editorVisible,
-            supportsAIChat: activeContainer?.supportsAIChat ?? false,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsRail: activeContainer?.showsRail ?? false,
-            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
-            windowId: windowContainer?.id
-        )
-        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0, context: railContext) }
+    private func railContent(items: [RailItem]) -> some View {
+        let currentId = selectedTabId ?? items.first?.id
+        let contentView = items.first { $0.id == currentId }?.makeView()
 
         return Group {
             if let contentView {
@@ -125,12 +113,12 @@ struct RailView: View {
 
     // MARK: - Persistence
 
-    private func restoreSelection(from tabs: [RailTab]) {
+    private func restoreSelection(from items: [RailItem]) {
         if let saved = UserDefaults.standard.string(forKey: selectedTabStorageKey),
-           tabs.contains(where: { $0.id == saved }) {
+           items.contains(where: { $0.id == saved }) {
             selectedTabId = saved
         } else {
-            selectedTabId = tabs.first?.id
+            selectedTabId = items.first?.id
         }
     }
 

@@ -5,10 +5,11 @@ import Foundation
 import SwiftUI
 import LumiCoreKit
 
-/// Rail 标签页定义
+/// Rail 项定义
 ///
-/// 插件通过 `addRailTabs()` 返回此结构体，由内核聚合渲染为统一的 Tab Bar。
-struct RailTab: Identifiable, Equatable {
+/// 插件通过 `addRailItems()` 返回此结构体，由内核渲染 Rail Tab 入口，
+/// 并在入口激活时延迟创建对应的内容视图。
+struct RailItem: Identifiable, Equatable {
     /// 唯一标识
     let id: String
     /// 显示标题
@@ -17,8 +18,24 @@ struct RailTab: Identifiable, Equatable {
     let systemImage: String
     /// 排序优先级（数字越小越靠前）
     let priority: Int
+    /// 延迟创建内容视图
+    let makeView: @MainActor () -> AnyView
 
-    static func == (lhs: RailTab, rhs: RailTab) -> Bool {
+    init(
+        id: String,
+        title: String,
+        systemImage: String,
+        priority: Int,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.priority = priority
+        self.makeView = makeView
+    }
+
+    static func == (lhs: RailItem, rhs: RailItem) -> Bool {
         lhs.id == rhs.id
     }
 }
@@ -301,21 +318,13 @@ protocol SuperPlugin: Actor {
     /// - Parameter context: 插件视图构建上下文。
     @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView?
 
-    /// 提供 Rail 标签页列表
+    /// 提供 Rail 项列表
     ///
-    /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。
-    /// 每个 tab 包含 id、标题、图标和排序优先级。
+    /// 插件返回一个或多个 `RailItem`，由内核聚合渲染为统一的 Tab Bar，
+    /// 并在用户选中某个 item 时调用其 `makeView` 创建内容视图。
     ///
     /// - Parameter context: 插件视图构建上下文。
-    @MainActor func addRailTabs(context: PluginContext) -> [RailTab]
-
-    /// 提供指定 Rail tab 对应的内容视图
-    ///
-    /// 内核在用户选中某个 tab 时调用此方法获取对应的内容视图。
-    ///
-    /// - Parameter tabId: 选中的 tab id，与 `addRailTabs()` 返回的 `RailTab.id` 对应。
-    /// - Parameter context: 插件视图构建上下文。
-    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView?
+    @MainActor func addRailItems(context: PluginContext) -> [RailItem]
 
     /// 添加右侧栏 Section 视图
     ///

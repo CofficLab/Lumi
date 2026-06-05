@@ -111,8 +111,8 @@ struct ContentView: View, SuperLog {
             let rawSidebarBottomSections = pluginProvider.getSidebarBottomSections(context: pluginContext)
             let sidebarSections = layoutVM.rightSidebarVisible ? rawSidebarSections : []
             let sidebarBottomSections = layoutVM.rightSidebarVisible ? rawSidebarBottomSections : []
-            let hasRailTabs = pluginProvider.hasRailTabs(context: pluginContext)
-            let showRail = hasRailTabs && layoutVM.railVisible
+            let hasRailItems = pluginProvider.hasRailItems(context: pluginContext)
+            let showRail = hasRailItems && layoutVM.railVisible
             let showEditor = layoutVM.editorVisible
 
             let hasSidebar = !sidebarSections.isEmpty || !sidebarBottomSections.isEmpty

@@ -77,13 +77,8 @@ actor PackagePluginAdapter<Packaged: LumiCoreKit.SuperPlugin>: SuperPlugin {
     }
 
     @MainActor
-    func addRailTabs(context: PluginContext) -> [RailTab] {
-        Packaged.shared.addRailTabs(context: context).map(RailTab.init(package:))
-    }
-
-    @MainActor
-    func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        Packaged.shared.addRailContentView(tabId: tabId, context: context)
+    func addRailItems(context: PluginContext) -> [RailItem] {
+        Packaged.shared.addRailItems(context: context).map(RailItem.init(package:))
     }
 
     @MainActor
@@ -283,13 +278,8 @@ actor AnyPackagePluginAdapter: SuperPlugin {
     }
 
     @MainActor
-    func addRailTabs(context: PluginContext) -> [RailTab] {
-        packaged.addRailTabs(context: context).map(RailTab.init(package:))
-    }
-
-    @MainActor
-    func addRailContentView(tabId: String, context: PluginContext) -> AnyView? {
-        packaged.addRailContentView(tabId: tabId, context: context)
+    func addRailItems(context: PluginContext) -> [RailItem] {
+        packaged.addRailItems(context: context).map(RailItem.init(package:))
     }
 
     @MainActor

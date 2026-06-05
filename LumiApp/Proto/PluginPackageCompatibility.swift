@@ -9,13 +9,14 @@ extension PluginCategory {
     }
 }
 
-extension RailTab {
-    init(package item: LumiCoreKit.RailTab) {
+extension RailItem {
+    init(package item: LumiCoreKit.RailItem) {
         self.init(
             id: item.id,
             title: item.title,
             systemImage: item.systemImage,
-            priority: item.priority
+            priority: item.priority,
+            makeView: item.makeView
         )
     }
 }

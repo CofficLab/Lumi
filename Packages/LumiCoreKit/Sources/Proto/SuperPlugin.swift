@@ -4,10 +4,11 @@ import Foundation
 import LumiUI
 import SwiftUI
 
-/// Rail 标签页定义
+/// Rail 项定义
 ///
-/// 插件通过 `addRailTabs()` 返回此结构体，由内核聚合渲染为统一的 Tab Bar。
-public struct RailTab: Identifiable, Equatable {
+/// 插件通过 `addRailItems()` 返回此结构体，由内核渲染 Rail Tab 入口，
+/// 并在入口激活时延迟创建对应的内容视图。
+public struct RailItem: Identifiable, Equatable {
     /// 唯一标识
     public let id: String
     /// 显示标题
@@ -16,15 +17,24 @@ public struct RailTab: Identifiable, Equatable {
     public let systemImage: String
     /// 排序优先级（数字越小越靠前）
     public let priority: Int
+    /// 延迟创建内容视图
+    public let makeView: @MainActor () -> AnyView
 
-    public init(id: String, title: String, systemImage: String, priority: Int) {
+    public init(
+        id: String,
+        title: String,
+        systemImage: String,
+        priority: Int,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.priority = priority
+        self.makeView = makeView
     }
 
-    public static func == (lhs: RailTab, rhs: RailTab) -> Bool {
+    public static func == (lhs: RailItem, rhs: RailItem) -> Bool {
         lhs.id == rhs.id
     }
 }
@@ -233,11 +243,8 @@ public protocol SuperPlugin: Actor {
     /// 提供指定底部面板 Tab 对应的内容视图
     @MainActor func addBottomPanelContentView(tabId: String, context: PluginContext) -> AnyView?
 
-    /// 提供 Rail 标签页列表
-    @MainActor func addRailTabs(context: PluginContext) -> [RailTab]
-
-    /// 提供指定 Rail tab 对应的内容视图
-    @MainActor func addRailContentView(tabId: String, context: PluginContext) -> AnyView?
+    /// 提供 Rail 项列表
+    @MainActor func addRailItems(context: PluginContext) -> [RailItem]
 
     /// 添加右侧栏 Section 视图
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]
