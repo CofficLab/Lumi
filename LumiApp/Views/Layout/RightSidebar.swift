@@ -28,7 +28,7 @@ struct RightSidebarContainerView: View {
         let pluginContext = PluginContext(
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
-            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showChat: activeContainer?.showChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
@@ -129,7 +129,7 @@ private struct SidebarToolbarBar: View {
         let toolbarContext = PluginContext(
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
-            supportsAIChat: activeContainer?.supportsAIChat ?? false,
+            showChat: activeContainer?.showChat ?? false,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,

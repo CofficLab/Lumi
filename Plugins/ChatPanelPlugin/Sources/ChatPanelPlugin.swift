@@ -45,7 +45,7 @@ public actor ChatPanelPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, supportsAIChat: true) {
+        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, showChat: true) {
             AnyView(ChatPanelView())
         }
     }

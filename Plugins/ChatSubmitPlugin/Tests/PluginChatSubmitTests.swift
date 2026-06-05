@@ -13,7 +13,7 @@ import LumiCoreKit
 
 @MainActor
 @Test func chatSubmitToolbarProvidesClickableCustomView() async throws {
-    let context = PluginContext(activeIcon: nil, isEditorVisible: false, supportsAIChat: true, showsProjectToolbar: false)
+    let context = PluginContext(activeIcon: nil, isEditorVisible: false, showChat: true, showsProjectToolbar: false)
 
     let item = ChatSubmitPlugin.shared.addSidebarTrailingToolbarItems(context: context).first
     let view = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "chat-submit", context: context)

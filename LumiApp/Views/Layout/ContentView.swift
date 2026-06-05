@@ -100,7 +100,7 @@ struct ContentView: View, SuperLog {
             let pluginContext = PluginContext(
                 activeIcon: activeIcon,
                 isEditorVisible: layoutVM.editorVisible,
-                supportsAIChat: activeContainer?.supportsAIChat ?? false,
+                showChat: activeContainer?.showChat ?? false,
                 showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
                 showsRail: activeContainer?.showsRail ?? false,
                 showsBottomPanel: activeContainer?.showsBottomPanel ?? false,

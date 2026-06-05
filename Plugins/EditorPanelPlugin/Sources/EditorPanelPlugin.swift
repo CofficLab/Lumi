@@ -1,10 +1,10 @@
 import Combine
+import Foundation
 import LumiCoreKit
 import LumiUI
-import SuperLogKit
-import Foundation
-import SwiftUI
 import os
+import SuperLogKit
+import SwiftUI
 
 /// 代码编辑器
 public actor EditorPlugin: SuperPlugin, SuperLog {
@@ -53,7 +53,7 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
             title: Self.displayName,
             icon: Self.iconName,
             showsProjectToolbar: true,
-            supportsAIChat: true,
+            showChat: true,
             showsRail: true,
             showsBottomPanel: true
         ) {

@@ -28,7 +28,7 @@ public actor ConversationNewHeaderPlugin: SuperPlugin {
     /// 工具栏右侧：新建对话按钮
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.supportsAIChat else { return nil }
+        guard context.showChat else { return nil }
         return AnyView(NewChatButton())
     }
 }

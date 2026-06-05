@@ -71,7 +71,7 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func addSidebarSections(context: PluginContext) -> [AnyView] {
-        guard context.supportsAIChat else { return [] }
+        guard context.showChat else { return [] }
         return [AnyView(AutoTaskSidebarViewWrapper())]
     }
 }

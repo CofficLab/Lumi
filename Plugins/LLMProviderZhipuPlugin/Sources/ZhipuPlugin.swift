@@ -45,7 +45,7 @@ public actor ZhipuPlugin: SuperPlugin, SuperLog {
     /// 仅在当前活跃供应商为智谱且 ViewContainer 支持 AI 聊天时返回视图，
     /// 避免非智谱场景或非 AI 聊天场景下不必要的 UI 和网络请求。
     @MainActor public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeProviderId == ZhipuProvider.id, context.supportsAIChat else {
+        guard context.activeProviderId == ZhipuProvider.id, context.showChat else {
             return nil
         }
         return AnyView(ZhipuQuotaStatusBarView())

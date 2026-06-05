@@ -30,7 +30,7 @@ public actor ChatPendingMessagesPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
-        guard context.supportsAIChat else { return [] }
+        guard context.showChat else { return [] }
         return [AnyView(PendingMessagesView())]
     }
 }

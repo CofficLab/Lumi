@@ -104,12 +104,12 @@ public struct ViewContainerItem: Identifiable, Equatable {
     /// 设为 `true` 的容器（如编辑器、Git）表示其工作流与项目上下文紧密相关。
     public let showsProjectToolbar: Bool
 
-    /// 是否支持 AI 聊天
+    /// 是否显示聊天区域
     ///
     /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
     /// 会在右侧栏贡献各自的 Section 视图。
-    /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
-    public let supportsAIChat: Bool
+    /// 设为 `true` 的容器（如编辑器、聊天面板）会展示 AI Chat 相关 UI。
+    public let showChat: Bool
 
     /// 是否显示 Rail
     ///
@@ -128,7 +128,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
-        supportsAIChat: Bool = false,
+        showChat: Bool = false,
         showsRail: Bool = false,
         showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
@@ -137,7 +137,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         self.title = title
         self.icon = icon
         self.showsProjectToolbar = showsProjectToolbar
-        self.supportsAIChat = supportsAIChat
+        self.showChat = showChat
         self.showsRail = showsRail
         self.showsBottomPanel = showsBottomPanel
         self.makeView = makeView

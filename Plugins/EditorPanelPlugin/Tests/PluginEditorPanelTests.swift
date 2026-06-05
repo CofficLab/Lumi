@@ -10,7 +10,7 @@ import Testing
     let container = EditorPlugin.shared.addViewContainer()
 
     #expect(container?.showsProjectToolbar == true)
-    #expect(container?.supportsAIChat == true)
+    #expect(container?.showChat == true)
     #expect(container?.showsRail == true)
     #expect(container?.showsBottomPanel == true)
 }

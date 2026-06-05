@@ -95,12 +95,12 @@ struct ViewContainerItem: Identifiable, Equatable {
     let makeView: @MainActor () -> AnyView
     /// 是否在工具栏显示项目管理控件
     let showsProjectToolbar: Bool
-    /// 是否支持 AI 聊天
+    /// 是否显示聊天区域
     ///
     /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
     /// 会在右侧栏贡献各自的 Section 视图。
-    /// 设为 `true` 的容器（如编辑器、聊天面板）表示其工作流与 AI 聊天紧密相关。
-    let supportsAIChat: Bool
+    /// 设为 `true` 的容器（如编辑器、聊天面板）会展示 AI Chat 相关 UI。
+    let showChat: Bool
     /// 是否显示 Rail
     let showsRail: Bool
     /// 是否显示底部面板
@@ -111,7 +111,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
-        supportsAIChat: Bool = false,
+        showChat: Bool = false,
         showsRail: Bool = false,
         showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView
@@ -120,7 +120,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         self.title = title
         self.icon = icon
         self.showsProjectToolbar = showsProjectToolbar
-        self.supportsAIChat = supportsAIChat
+        self.showChat = showChat
         self.showsRail = showsRail
         self.showsBottomPanel = showsBottomPanel
         self.makeView = makeView
@@ -336,7 +336,7 @@ protocol SuperPlugin: Actor {
     ///
     /// - Parameter context: 插件视图构建上下文。
     ///   插件可从 context 中读取当前 ViewContainer 的能力声明
-    ///   （如 `supportsAIChat`、`showsProjectToolbar`），决定是否贡献右侧栏 Section。
+    ///   （如 `showChat`、`showsProjectToolbar`），决定是否贡献右侧栏 Section。
     ///
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
     @MainActor func addSidebarSections(context: PluginContext) -> [AnyView]

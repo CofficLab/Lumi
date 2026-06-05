@@ -13,7 +13,7 @@ import LumiCoreKit
 
 @MainActor
 @Test func verbosityToolbarProvidesCustomView() async throws {
-    let context = PluginContext(activeIcon: nil, isEditorVisible: false, supportsAIChat: true, showsProjectToolbar: false)
+    let context = PluginContext(activeIcon: nil, isEditorVisible: false, showChat: true, showsProjectToolbar: false)
 
     let item = VerbosityPlugin.shared.addSidebarLeadingToolbarItems(context: context).first
     let view = VerbosityPlugin.shared.addSidebarToolbarItemView(itemId: "verbosity-toggle", context: context)
