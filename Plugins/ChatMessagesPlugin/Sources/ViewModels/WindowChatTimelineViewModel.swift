@@ -7,6 +7,7 @@ public final class WindowChatTimelineViewModel: ObservableObject {
     public nonisolated static let pageSize: Int = 10
 
     @Published public private(set) var state = ConversationRenderState()
+    @Published public private(set) var initialLoadVersion: UInt64 = 0
 
     private var conversationVM: LumiCoreKit.WindowConversationVM?
     private var cancellables = Set<AnyCancellable>()
@@ -187,6 +188,7 @@ public final class WindowChatTimelineViewModel: ObservableObject {
             state.hasMoreMessages = false
             state.totalMessageCount = 0
             state.oldestLoadedTimestamp = nil
+            initialLoadVersion &+= 1
             return
         }
 
@@ -202,6 +204,8 @@ public final class WindowChatTimelineViewModel: ObservableObject {
             beforeTimestamp: nil
         )
 
+        guard state.selectedConversationId == conversationId else { return }
+
         if let firstMessage = result.messages.first {
             state.oldestLoadedTimestamp = firstMessage.timestamp
         } else {
@@ -211,6 +215,7 @@ public final class WindowChatTimelineViewModel: ObservableObject {
         state.queuedMessages.removeAll()
         state.hasMoreMessages = result.hasMore
         refreshActiveStreamingMessage()
+        initialLoadVersion &+= 1
     }
 
     private func mergedVisibleMessages() -> [ChatMessage] {

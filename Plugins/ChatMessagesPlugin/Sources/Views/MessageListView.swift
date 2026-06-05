@@ -40,7 +40,6 @@ public struct MessageListView: View {
         }
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
             requestScrollToBottom()
-            timelineViewModel.handleConversationChanged()
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("messageSaved"))) { notification in
             guard let message = notification.object as? ChatMessage,
@@ -62,41 +61,43 @@ public struct MessageListView: View {
 private extension MessageListView {
     func messageListView(displayRows: [ChatMessage]) -> some View {
         ScrollViewReader { proxy in
-            List {
-                if timelineViewModel.hasMoreMessages {
-                    loadMoreButton
-                        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                        .listRowSeparator(.hidden)
-                }
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    if timelineViewModel.hasMoreMessages {
+                        loadMoreButton
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                    }
 
-                ForEach(displayRows) { message in
-                    ChatBubble(
-                        message: message,
-                        isLastMessage: message.id == displayRows.last?.id,
-                        isStreaming: false,
-                        messageRenderer: messageRenderer
-                    )
-                    .id(message.id)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowSeparator(.hidden)
-                }
+                    ForEach(displayRows) { message in
+                        ChatBubble(
+                            message: message,
+                            isLastMessage: message.id == displayRows.last?.id,
+                            isStreaming: false,
+                            messageRenderer: messageRenderer
+                        )
+                        .id(message.id)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                    }
 
-                bottomAnchor
+                    bottomAnchor
+                }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
             .environment(\.preferOuterScroll, true)
             .accessibilityLabel(String(localized: "Message List", bundle: .module))
             .accessibilityHint(String(localized: "Message List Hint", bundle: .module))
             .onAppear {
-                scrollToBottom(proxy: proxy, animated: false)
+                scrollToBottom(proxy: proxy, animated: false, settleLayout: true)
                 shouldScrollToBottomOnRowsChange = false
             }
             .onChange(of: displayRows.map(\.id)) { _, _ in
                 guard shouldScrollToBottomOnRowsChange else { return }
                 scrollToBottom(proxy: proxy, animated: true)
+                shouldScrollToBottomOnRowsChange = false
+            }
+            .onChange(of: timelineViewModel.initialLoadVersion) { _, _ in
+                scrollToBottom(proxy: proxy, animated: false, settleLayout: true)
                 shouldScrollToBottomOnRowsChange = false
             }
             .onChange(of: scrollToBottomRequest) { _, _ in
@@ -109,8 +110,6 @@ private extension MessageListView {
         Color.clear
             .frame(height: 1)
             .id(Self.bottomAnchorId)
-            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowSeparator(.hidden)
             .accessibilityHidden(true)
     }
 
@@ -119,14 +118,26 @@ private extension MessageListView {
         scrollToBottomRequest &+= 1
     }
 
-    func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
-        DispatchQueue.main.async {
+    func scrollToBottom(proxy: ScrollViewProxy, animated: Bool, settleLayout: Bool = false) {
+        func performScroll(animated: Bool) {
             if animated {
                 withAnimation(.easeOut(duration: 0.18)) {
                     proxy.scrollTo(Self.bottomAnchorId, anchor: .bottom)
                 }
             } else {
                 proxy.scrollTo(Self.bottomAnchorId, anchor: .bottom)
+            }
+        }
+
+        DispatchQueue.main.async {
+            performScroll(animated: animated)
+            guard settleLayout else { return }
+
+            DispatchQueue.main.async {
+                performScroll(animated: false)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                performScroll(animated: false)
             }
         }
     }
