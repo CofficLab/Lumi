@@ -57,7 +57,10 @@ struct ConversationListView: View {
                 } else {
                     List(selection: $selectedId) {
                         ForEach(conversations) { item in
-                            ConversationRow(item: item)
+                            ConversationRow(
+                                item: item,
+                                isProcessing: context.isConversationProcessing(item.id)
+                            )
                                 .id(item.id)
                                 .tag(item.id)
                                 .onAppear {
@@ -94,6 +97,7 @@ struct ConversationListView: View {
                 guard let change else { return }
                 handleConversationChange(change, proxy: proxy)
             }
+            .onChange(of: context.statusVersion) { _, _ in }
         }
     }
 
@@ -163,22 +167,96 @@ struct ConversationListView: View {
 
 /// 单行对话列表项
 struct ConversationRow: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let item: ConversationListItem
+    let isProcessing: Bool
+
+    private let recentActivityWindow: TimeInterval = 5 * 60
+
+    private var isRecentlyActive: Bool {
+        Date().timeIntervalSince(item.updatedAt) < recentActivityWindow
+    }
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "message.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.displayTitle)
-                    .lineLimit(1)
-                Text(item.updatedAt, style: .date)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.appMicro)
+                    .foregroundColor(isProcessing ? theme.primary : theme.textTertiary)
+                    .padding(3)
+
+                if isProcessing {
+                    ProcessingPulseIndicator(color: theme.primary)
+                } else if isRecentlyActive {
+                    RecentActivityIndicator(color: theme.primary)
+                }
             }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.displayTitle)
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                metadataSection
+            }
+
             Spacer()
         }
         .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var metadataSection: some View {
+        HStack(spacing: 4) {
+            if let projectPath = item.projectPath {
+                Text(URL(fileURLWithPath: projectPath).lastPathComponent)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .lineLimit(1)
+
+                Text(verbatim: "•")
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
+            }
+
+            Text(item.updatedAt, style: .relative)
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
+        }
+    }
+}
+
+private struct ProcessingPulseIndicator: View {
+    let color: Color
+
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .fill(color.opacity(0.3))
+            .frame(width: 12, height: 12)
+            .scaleEffect(isAnimating ? 1.8 : 1.0)
+            .opacity(isAnimating ? 0 : 0.5)
+            .animation(
+                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
+                value: isAnimating
+            )
+            .onAppear {
+                isAnimating = true
+            }
+    }
+}
+
+private struct RecentActivityIndicator: View {
+    let color: Color
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 4, height: 4)
+            .offset(x: 4, y: -4)
     }
 }
