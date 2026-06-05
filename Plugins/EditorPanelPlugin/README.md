@@ -45,11 +45,19 @@ This plugin integrates with the Lumi application. It provides:
 ### Project Structure
 
 ```
+Resources/
+└── Localizable.xcstrings             # Localization strings
 Sources/
 ├── EditorPanelPlugin.swift           # Plugin entry point
 ├── Coordinators/
 │   ├── EditorPanelCoordinator.swift  # Main coordinator
 │   └── SourceEditorViewBridge.swift  # Editor view bridge
+├── Guide/
+│   ├── EditorEmptyStateView.swift
+│   ├── EditorLoadingStateView.swift
+│   ├── EditorLoadFailureView.swift
+│   ├── EditorEmptyContentStateView.swift
+│   └── DragPreview.swift
 ├── Services/
 │   └── EditorPanelService.swift      # Editor panel service
 ├── Views/
@@ -57,15 +65,7 @@ Sources/
 │   ├── SourceEditorView.swift        # Source editor
 │   ├── FileInfoBannerView.swift      # File info display
 │   ├── EditorCommandPaletteView.swift# Command palette
-│   ├── EditorUnsupportedFileView.swift
-│   └── Guide/
-│       ├── EditorEmptyStateView.swift
-│       ├── EditorLoadingStateView.swift
-│       ├── EditorLoadFailureView.swift
-│       ├── EditorEmptyContentStateView.swift
-│       └── DragPreview.swift
-└── Resources/
-    └── LumiEditor.xcstrings          # Localization strings
+│   └── EditorUnsupportedFileView.swift
 Tests/
 └── EditorPanelPluginTests/           # Unit tests
 ```
