@@ -7,7 +7,13 @@ public struct ChatPanelView: View {
 
     public var body: some View {
         ChatPanelConversationList(context: context)
-            .frame(minWidth: 260, idealWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+            .frame(
+                minWidth: ChatPanelSplitWidth.defaultMinimumWidth,
+                idealWidth: ChatPanelSplitWidth.defaultWidth,
+                maxWidth: ChatPanelSplitWidth.defaultMaximumWidth,
+                maxHeight: .infinity
+            )
+            .background(ChatPanelSplitWidthPersistence(config: .default))
     }
 }
 
