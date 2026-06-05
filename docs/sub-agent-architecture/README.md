@@ -360,7 +360,7 @@ struct GitCommitSubAgentDefinition: SubAgentDefinitionProtocol {
 |------|------|
 | `Core/Proto/SuperPlugin.swift` | 新增 `subAgentDefinitions()` hook |
 | `Core/Bootstrap/RootContainer.swift` | 启动时注册子 Agent 定义到 SubAgentScheduler |
-| `Core/Bootstrap/AutomationServer.swift` | 将内核工具注入到 Agent 管线 |
+| `Core/Services/ToolService.swift` | 将内核工具注入到 Agent 管线 |
 | `Plugins/GitPlugin/GitPlugin.swift` | 注册 `git.commit` 和 `git.push` 定义 |
 
 ## 实现阶段
@@ -376,7 +376,7 @@ struct GitCommitSubAgentDefinition: SubAgentDefinitionProtocol {
 
 - [ ] 实现 `SpawnSubAgentTool`
 - [ ] 实现 `CollectSubAgentTool`
-- [ ] 将工具注册到 Agent 管线（AutomationServer）
+- [ ] 将工具注册到 Agent 管线（ToolService）
 
 ### Phase 3: 插件注册
 

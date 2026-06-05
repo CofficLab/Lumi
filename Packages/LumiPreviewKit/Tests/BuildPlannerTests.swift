@@ -950,7 +950,7 @@ struct BuildPlannerTests {
         //   root/
         //     Core/
         //       Bootstrap/
-        //         AutomationController.swift
+        //         AppController.swift
         //     Info.plist              ← 排除项
         //     Plugins/
         //       EditorPanelPlugin.swift
@@ -960,13 +960,13 @@ struct BuildPlannerTests {
         let coreBootstrap = rootDirectory.appendingPathComponent("Core/Bootstrap", isDirectory: true)
         let pluginsDirectory = rootDirectory.appendingPathComponent("Plugins", isDirectory: true)
 
-        let automationFile = coreBootstrap.appendingPathComponent("AutomationController.swift")
+        let appControllerFile = coreBootstrap.appendingPathComponent("AppController.swift")
         let editorPluginFile = pluginsDirectory.appendingPathComponent("EditorPanelPlugin.swift")
         let infoPlist = rootDirectory.appendingPathComponent("Info.plist")
 
         try FileManager.default.createDirectory(at: coreBootstrap, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
-        try "struct AutomationController {}\n".write(to: automationFile, atomically: true, encoding: .utf8)
+        try "struct AppController {}\n".write(to: appControllerFile, atomically: true, encoding: .utf8)
         try "struct EditorPlugin {}\n".write(to: editorPluginFile, atomically: true, encoding: .utf8)
         try "<plist/>".write(to: infoPlist, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
@@ -980,8 +980,8 @@ struct BuildPlannerTests {
         )
 
         let names = Set(sources.map { $0.lastPathComponent })
-        #expect(names.contains("AutomationController.swift"),
-                "Core/Bootstrap/AutomationController.swift should be collected")
+        #expect(names.contains("AppController.swift"),
+                "Core/Bootstrap/AppController.swift should be collected")
         #expect(names.contains("EditorPanelPlugin.swift"),
                 "Plugins/EditorPanelPlugin.swift should be collected even though Info.plist (excluded regular file) precedes it alphabetically")
         #expect(sources.count == 2)
@@ -992,7 +992,7 @@ struct BuildPlannerTests {
         // 端到端测试：通过 Xcode 项目结构验证排除普通文件后仍能收集所有子目录
         //   APP/
         //     Core/
-        //       AutomationController.swift  (引用 EditorPlugin)
+        //       AppController.swift  (引用 EditorPlugin)
         //     Info.plist                    ← 排除项
         //     Plugins/
         //       EditorPanelPlugin.swift     (定义 EditorPlugin)
@@ -1004,15 +1004,15 @@ struct BuildPlannerTests {
         let coreDirectory = appDirectory.appendingPathComponent("Core", isDirectory: true)
         let pluginsDirectory = appDirectory.appendingPathComponent("Plugins", isDirectory: true)
 
-        let automationFile = coreDirectory.appendingPathComponent("AutomationController.swift")
+        let appControllerFile = coreDirectory.appendingPathComponent("AppController.swift")
         let editorPluginFile = pluginsDirectory.appendingPathComponent("EditorPanelPlugin.swift")
         let infoPlist = appDirectory.appendingPathComponent("Info.plist")
 
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
-        try "import Foundation\nstruct AutomationController { let icon = EditorPlugin.iconName }\n"
-            .write(to: automationFile, atomically: true, encoding: .utf8)
+        try "import Foundation\nstruct AppController { let icon = EditorPlugin.iconName }\n"
+            .write(to: appControllerFile, atomically: true, encoding: .utf8)
         try "import Foundation\nstruct EditorPlugin { static let iconName = \"editor\" }\n"
             .write(to: editorPluginFile, atomically: true, encoding: .utf8)
         try "<plist/>".write(to: infoPlist, atomically: true, encoding: .utf8)
@@ -1056,12 +1056,12 @@ struct BuildPlannerTests {
         let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
             projectURL: projectURL,
             scheme: "SyncedApp",
-            containing: automationFile
+            containing: appControllerFile
         )
 
         let names = Set(sources.map { $0.lastPathComponent })
-        #expect(names.contains("AutomationController.swift"),
-                "Core/AutomationController.swift should be collected")
+        #expect(names.contains("AppController.swift"),
+                "Core/AppController.swift should be collected")
         #expect(names.contains("EditorPanelPlugin.swift"),
                 "Plugins/EditorPanelPlugin.swift must be collected")
         #expect(sources.count == 2)
