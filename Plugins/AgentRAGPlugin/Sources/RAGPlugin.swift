@@ -14,7 +14,7 @@ import LumiUI
 /// - 通过中间件机制集成到消息发送流程
 /// - 服务在插件启用时自动初始化
 public actor RAGPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "🦞"
     public nonisolated static let verbose: Bool = true
 
