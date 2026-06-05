@@ -34,12 +34,12 @@ This plugin integrates with the Lumi application. It provides:
 ### Project Structure
 
 ```
+Resources/                                 # Localizable strings
 Sources/
 ├── ChatPanelPlugin.swift                  # Plugin entry point
 ├── ChatPanelView.swift                    # Main chat panel view
 ├── LocalStore.swift                       # Plugin settings persistence
-├── SplitWidthPersistence.swift            # Split view width persistence
-└── Resources/                             # Localizable strings
+└── SplitWidthPersistence.swift            # Split view width persistence
 Tests/
 └── ChatPanelPluginTests/                  # Unit tests
 ```
