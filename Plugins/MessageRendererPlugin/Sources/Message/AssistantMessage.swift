@@ -54,15 +54,10 @@ public struct AssistantMessage: View {
                             message: message,
                         )
                     } else {
-                        CollapsibleMessageContent(
-                            rawContent: message.content,
-                            collapsedLineLimit: 40
-                        ) {
-                            MarkdownView(
-                                message: message,
-                                showRawMessage: showRawMessage
-                            )
-                        }
+                        MarkdownView(
+                            message: message,
+                            showRawMessage: showRawMessage
+                        )
                         .messageBubbleStyle(role: message.role, isError: message.isError)
                     }
                 }
