@@ -5,6 +5,12 @@ enum SplitWidth {
     static let defaultWidth: CGFloat = 280
     static let defaultMinimumWidth: CGFloat = 220
     static let defaultMaximumWidth: CGFloat = 520
+
+    static func preferredWidth(databaseDirectory: URL) -> CGFloat {
+        let savedWidth = LocalStore(databaseDirectory: databaseDirectory).loadConversationListWidth()
+        let requestedWidth = savedWidth > 0 ? CGFloat(savedWidth) : defaultWidth
+        return min(max(requestedWidth, defaultMinimumWidth), defaultMaximumWidth)
+    }
 }
 
 struct SplitWidthPersistence: NSViewRepresentable {
@@ -139,12 +145,10 @@ final class SplitWidthPersistenceView: NSView {
         let maximumAvailableWidth = max(config.minimumWidth, usableWidth - otherColumnsMinimumWidth)
         let targetWidth = min(max(requestedWidth, config.minimumWidth), min(config.maximumWidth, maximumAvailableWidth))
 
-        DispatchQueue.main.async { [weak self, weak splitView] in
-            guard let self, let splitView else { return }
-            guard let currentIndex = self.containingColumnIndex(in: splitView) else { return }
-            self.setColumn(currentIndex, width: targetWidth, in: splitView)
-            self.didApplyWidth = true
-        }
+        guard let currentIndex = containingColumnIndex(in: splitView) else { return }
+        setColumn(currentIndex, width: targetWidth, in: splitView)
+        splitView.layoutSubtreeIfNeeded()
+        didApplyWidth = true
     }
 
     private func persistCurrentWidth() {

@@ -6,16 +6,19 @@ public struct ChatPanelView: View {
     @EnvironmentObject private var context: ConversationListContext
 
     public var body: some View {
+        let databaseDirectory = context.databaseDirectory()
+        let preferredWidth = SplitWidth.preferredWidth(databaseDirectory: databaseDirectory)
+
         ConversationListView(context: context)
             .frame(
                 minWidth: SplitWidth.defaultMinimumWidth,
-                idealWidth: SplitWidth.defaultWidth,
+                idealWidth: preferredWidth,
                 maxWidth: SplitWidth.defaultMaximumWidth,
                 maxHeight: .infinity
             )
             .background(
                 SplitWidthPersistence(
-                    config: .default(databaseDirectory: context.databaseDirectory())
+                    config: .default(databaseDirectory: databaseDirectory)
                 )
             )
     }
