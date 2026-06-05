@@ -1,7 +1,25 @@
 import Foundation
+import LumiCoreKit
 import LLMKit
+import SwiftUI
 import Testing
 @testable import ModelSelectorPlugin
+
+@MainActor
+@Test func toolbarViewRequiresModelSelectionCapability() {
+    let context = PluginContext(
+        showChat: .wide,
+        modelSelectionContext: ModelSelectionContext(
+            displayTextProvider: { "OpenAI · gpt-5" },
+            detailViewProvider: { AnyView(Text("models")) }
+        )
+    )
+    let missingCapabilityContext = PluginContext(showChat: .wide)
+
+    #expect(ModelSelectorPlugin.shared.addSidebarToolbarItemView(itemId: "model-selector", context: context) != nil)
+    #expect(ModelSelectorPlugin.shared.addSidebarToolbarItemView(itemId: "model-selector", context: missingCapabilityContext) == nil)
+    #expect(ModelSelectorPlugin.shared.addSidebarToolbarItemView(itemId: "unknown", context: context) == nil)
+}
 
 @Test func providerMapByIdKeepsFirstProviderForDuplicateIds() {
     let firstOpenAI = makeProvider(

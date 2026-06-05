@@ -1,5 +1,6 @@
 import LumiCoreKit
 import LumiUI
+import ModelSelectorPlugin
 import SwiftUI
 
 /// 右侧栏容器视图
@@ -13,6 +14,8 @@ struct RightSidebarContainerView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
     @EnvironmentObject private var llmVM: AppLLMVM
+    @EnvironmentObject private var pluginLLMVM: LumiCoreKit.AppLLMVM
+    @EnvironmentObject private var pluginConversationVM: LumiCoreKit.WindowConversationVM
     @Environment(\.windowContainer) private var windowContainer
 
     /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
@@ -38,6 +41,8 @@ struct RightSidebarContainerView: View {
             languagePreferenceContext: windowContainer?.languagePreferenceContext,
             chatModePreferenceContext: makeChatModePreferenceContext(),
             verbosityPreferenceContext: makeVerbosityPreferenceContext(),
+            chatSubmitContext: pluginConversationVM.chatSubmitContext,
+            modelSelectionContext: makeModelSelectionContext(),
             messageRenderer: renderMessage
         )
 
@@ -97,6 +102,43 @@ struct RightSidebarContainerView: View {
     private func makeVerbosityPreferenceContext() -> VerbosityPreferenceContext? {
         windowContainer?.makeVerbosityPreferenceContext(llmVM: llmVM)
     }
+
+    private func makeModelSelectionContext() -> ModelSelectionContext {
+        ModelSelectionContext(
+            displayTextProvider: { [weak pluginLLMVM, weak pluginConversationVM] in
+                Self.modelDisplayText(llmVM: pluginLLMVM, conversationVM: pluginConversationVM)
+            },
+            detailViewProvider: { [pluginLLMVM, pluginConversationVM] in
+                AnyView(
+                    ModelSelectorView()
+                        .environmentObject(pluginLLMVM)
+                        .environmentObject(pluginConversationVM)
+                )
+            }
+        )
+    }
+
+    fileprivate static func modelDisplayText(
+        llmVM: LumiCoreKit.AppLLMVM?,
+        conversationVM: LumiCoreKit.WindowConversationVM?
+    ) -> String {
+        guard let llmVM else {
+            return String(localized: "No Model Selected", bundle: .main)
+        }
+        let preference = conversationVM?.getModelPreference()
+        let providerId = preference?.providerId ?? llmVM.selectedProviderId
+        let model = preference?.model ?? llmVM.currentModel
+        guard !model.isEmpty else {
+            return llmVM.isAutoMode ? "Auto" : String(localized: "No Model Selected", bundle: .main)
+        }
+        if llmVM.isAutoMode {
+            return "Auto · \(model)"
+        }
+        guard let providerType = llmVM.providerType(forId: providerId) else {
+            return model
+        }
+        return "\(providerType.shortName) · \(model)"
+    }
 }
 
 // MARK: - Sidebar Toolbar Bar
@@ -111,6 +153,8 @@ private struct SidebarToolbarBar: View {
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
     @EnvironmentObject private var llmVM: AppLLMVM
+    @EnvironmentObject private var pluginLLMVM: LumiCoreKit.AppLLMVM
+    @EnvironmentObject private var pluginConversationVM: LumiCoreKit.WindowConversationVM
     @Environment(\.windowContainer) private var windowContainer
 
     let leadingItems: [SidebarToolbarItem]
@@ -152,6 +196,8 @@ private struct SidebarToolbarBar: View {
             languagePreferenceContext: windowContainer?.languagePreferenceContext,
             chatModePreferenceContext: makeChatModePreferenceContext(),
             verbosityPreferenceContext: makeVerbosityPreferenceContext(),
+            chatSubmitContext: pluginConversationVM.chatSubmitContext,
+            modelSelectionContext: makeModelSelectionContext(),
             messageRenderer: renderMessage
         )
         if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, context: toolbarContext) {
@@ -184,6 +230,21 @@ private struct SidebarToolbarBar: View {
 
     private func makeVerbosityPreferenceContext() -> VerbosityPreferenceContext? {
         windowContainer?.makeVerbosityPreferenceContext(llmVM: llmVM)
+    }
+
+    private func makeModelSelectionContext() -> ModelSelectionContext {
+        ModelSelectionContext(
+            displayTextProvider: { [weak pluginLLMVM, weak pluginConversationVM] in
+                RightSidebarContainerView.modelDisplayText(llmVM: pluginLLMVM, conversationVM: pluginConversationVM)
+            },
+            detailViewProvider: { [pluginLLMVM, pluginConversationVM] in
+                AnyView(
+                    ModelSelectorView()
+                        .environmentObject(pluginLLMVM)
+                        .environmentObject(pluginConversationVM)
+                )
+            }
+        )
     }
 }
 
@@ -230,6 +291,23 @@ private extension WindowContainer {
                 guard let appVerbosity = ResponseVerbosity(rawValue: verbosity.rawValue) else { return }
                 llmVM?.setVerbosity(appVerbosity)
                 self?.conversationVM.saveVerbosityPreference(appVerbosity)
+            }
+        )
+    }
+
+}
+
+private extension LumiCoreKit.WindowConversationVM {
+    var chatSubmitContext: ChatSubmitContext {
+        ChatSubmitContext(
+            canSubmitProvider: { [weak self] in
+                self?.canSubmitText ?? false
+            },
+            draftTextProvider: { [weak self] in
+                self?.draftText ?? ""
+            },
+            submitter: { [weak self] draftText in
+                await self?.submitDraftText(draftText)
             }
         )
     }

@@ -12,6 +12,7 @@ struct AppTitleToolbar: View {
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var conversationListContext: ConversationListContext
+    @EnvironmentObject private var llmVM: AppLLMVM
     @Environment(\.windowContainer) private var windowContainer
 
     private let height: CGFloat = 44
@@ -28,6 +29,9 @@ struct AppTitleToolbar: View {
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id,
+            languagePreference: windowContainer?.projectVM.languagePreference ?? .current,
+            conversationCreationContext: makeConversationCreationContext(),
+            layoutControlContext: makeLayoutControlContext(),
             conversationListContext: conversationListContext
         )
         let leadingViews = pluginProvider.getToolbarLeadingViews(context: pluginContext)
@@ -77,6 +81,62 @@ struct AppTitleToolbar: View {
         }
         .frame(height: height)
         .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func makeConversationCreationContext() -> ConversationCreationContext? {
+        windowContainer?.makeConversationCreationContext(llmVM: llmVM)
+    }
+
+    private func makeLayoutControlContext() -> LayoutControlContext {
+        LayoutControlContext(
+            editorVisible: $layoutVM.editorVisible,
+            contentPanelVisible: $layoutVM.contentPanelVisible,
+            bottomPanelVisible: $layoutVM.bottomPanelVisible,
+            railVisible: $layoutVM.railVisible,
+            rightSidebarVisible: $layoutVM.rightSidebarVisible
+        )
+    }
+}
+
+private extension WindowContainer {
+    func makeConversationCreationContext(llmVM: AppLLMVM) -> ConversationCreationContext {
+        ConversationCreationContext(
+            isProjectSelectedProvider: { [weak self] in
+                self?.projectVM.isProjectSelected ?? false
+            },
+            projectNameProvider: { [weak self] in
+                self?.projectVM.currentProjectName ?? ""
+            },
+            projectPathProvider: { [weak self] in
+                self?.projectVM.currentProjectPath ?? ""
+            },
+            languagePreferenceProvider: { [weak self] in
+                self?.projectVM.languagePreference ?? .current
+            },
+            currentChatModeProvider: { [weak llmVM] in
+                guard let rawValue = llmVM?.chatMode.rawValue else { return .build }
+                return LumiCoreKit.ChatMode(rawValue: rawValue) ?? .build
+            },
+            defaultChatModeProvider: { [weak self] in
+                guard self != nil else { return nil }
+                let databaseDirectory = AppConfig.getDBFolderURL()
+                return ConversationCreationPreferenceStore(databaseDirectory: databaseDirectory).loadDefaultChatMode()
+            },
+            defaultChatModeSaver: { [weak self] chatMode in
+                guard self != nil else { return }
+                let databaseDirectory = AppConfig.getDBFolderURL()
+                ConversationCreationPreferenceStore(databaseDirectory: databaseDirectory).saveDefaultChatMode(chatMode)
+            },
+            conversationCreator: { [weak self] projectName, projectPath, languagePreference, chatMode in
+                let appChatMode = chatMode.flatMap { ChatMode(rawValue: $0.rawValue) }
+                await self?.conversationVM.createNewConversation(
+                    projectName: projectName,
+                    projectPath: projectPath,
+                    languagePreference: languagePreference,
+                    chatMode: appChatMode
+                )
+            }
+        )
     }
 }
 

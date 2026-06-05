@@ -5,24 +5,28 @@ import SwiftUI
 ///
 /// 提供下拉菜单，控制各面板区域的显示/隐藏。
 public struct LayoutMenuButton: View {
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    let layoutContext: LayoutControlContext
+
+    public init(layoutContext: LayoutControlContext) {
+        self.layoutContext = layoutContext
+    }
 
     public var body: some View {
         Menu {
-            Toggle(isOn: $layoutVM.editorVisible) {
+            Toggle(isOn: layoutContext.editorVisible) {
                 Label(String(localized: "Editor", bundle: .module), systemImage: "rectangle.center.inset.filled")
             }
-            Toggle(isOn: $layoutVM.contentPanelVisible) {
+            Toggle(isOn: layoutContext.contentPanelVisible) {
                 Label(String(localized: "Content Panel", bundle: .module), systemImage: "rectangle.topthird.inset.filled")
             }
-            Toggle(isOn: $layoutVM.bottomPanelVisible) {
+            Toggle(isOn: layoutContext.bottomPanelVisible) {
                 Label(String(localized: "Bottom Panel", bundle: .module), systemImage: "square.bottomthird.inset.filled")
             }
-            Toggle(isOn: $layoutVM.railVisible) {
+            Toggle(isOn: layoutContext.railVisible) {
                 Label(String(localized: "Rail", bundle: .module), systemImage: "sidebar.right")
             }
             Divider()
-            Toggle(isOn: $layoutVM.rightSidebarVisible) {
+            Toggle(isOn: layoutContext.rightSidebarVisible) {
                 Label(String(localized: "Right Sidebar", bundle: .module), systemImage: "rectangle.rightthird.inset.filled")
             }
         } label: {

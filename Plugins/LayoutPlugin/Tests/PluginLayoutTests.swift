@@ -1,6 +1,29 @@
 import Foundation
+import LumiCoreKit
+import SwiftUI
 import Testing
 @testable import LayoutPlugin
+
+@MainActor
+@Test
+func toolbarViewRequiresLayoutControlCapability() {
+    let context = PluginContext(
+        activeIcon: "bubble.left.and.bubble.right.fill",
+        layoutControlContext: LayoutControlContext(
+            editorVisible: .constant(true),
+            contentPanelVisible: .constant(true),
+            bottomPanelVisible: .constant(false),
+            railVisible: .constant(true),
+            rightSidebarVisible: .constant(true)
+        )
+    )
+    let missingCapabilityContext = PluginContext(activeIcon: "bubble.left.and.bubble.right.fill")
+    let hiddenContext = PluginContext(activeIcon: "sidebar")
+
+    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: context) != nil)
+    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: missingCapabilityContext) == nil)
+    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: hiddenContext) == nil)
+}
 
 @Test
 func localStorePersistsLayoutSettings() throws {

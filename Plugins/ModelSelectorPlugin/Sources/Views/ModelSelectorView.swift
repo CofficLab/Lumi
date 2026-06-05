@@ -46,6 +46,8 @@ public struct ModelSelectorView: View, SuperLog {
     /// 本地模型详情是否正在加载
     @State private var isLoadingLocalModels = false
 
+    public init() {}
+
     /// 当前供应商信息
     private var currentProvider: LLMProviderInfo? {
         llmVM.allProviders.first(where: { $0.id == currentProviderId })

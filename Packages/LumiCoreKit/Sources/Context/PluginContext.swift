@@ -82,6 +82,26 @@ public struct PluginContext {
     /// 需要读写对话级 verbosity 偏好的插件应优先使用这个显式 capability。
     public let verbosityPreferenceContext: VerbosityPreferenceContext?
 
+    /// 聊天提交能力（由内核注入）。
+    ///
+    /// 右侧栏提交按钮通过此 capability 读取草稿并提交消息。
+    public let chatSubmitContext: ChatSubmitContext?
+
+    /// 新建会话能力（由内核注入）。
+    ///
+    /// 标题栏新建按钮通过此 capability 创建新会话。
+    public let conversationCreationContext: ConversationCreationContext?
+
+    /// 模型选择入口能力（由内核注入）。
+    ///
+    /// 模型选择 toolbar 入口通过此 capability 显示当前模型并打开选择视图。
+    public let modelSelectionContext: ModelSelectionContext?
+
+    /// 布局菜单控制能力（由内核注入）。
+    ///
+    /// 布局插件通过此 capability 读写可见性状态。
+    public let layoutControlContext: LayoutControlContext?
+
     /// 当前运行时可用的 Agent 工具。
     public let availableTools: [SuperAgentTool]
 
@@ -118,6 +138,10 @@ public struct PluginContext {
         languagePreferenceContext: LanguagePreferenceContext? = nil,
         chatModePreferenceContext: ChatModePreferenceContext? = nil,
         verbosityPreferenceContext: VerbosityPreferenceContext? = nil,
+        chatSubmitContext: ChatSubmitContext? = nil,
+        conversationCreationContext: ConversationCreationContext? = nil,
+        modelSelectionContext: ModelSelectionContext? = nil,
+        layoutControlContext: LayoutControlContext? = nil,
         availableTools: [SuperAgentTool] = [],
         toolLanguagePreference: LanguagePreference = .current,
         historyService: (any HistoryQueryService)? = nil,
@@ -137,6 +161,10 @@ public struct PluginContext {
         self.languagePreferenceContext = languagePreferenceContext
         self.chatModePreferenceContext = chatModePreferenceContext
         self.verbosityPreferenceContext = verbosityPreferenceContext
+        self.chatSubmitContext = chatSubmitContext
+        self.conversationCreationContext = conversationCreationContext
+        self.modelSelectionContext = modelSelectionContext
+        self.layoutControlContext = layoutControlContext
         self.availableTools = availableTools
         self.toolLanguagePreference = toolLanguagePreference
         self.historyService = historyService

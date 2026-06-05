@@ -29,7 +29,8 @@ public actor ConversationNewHeaderPlugin: SuperPlugin {
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
         guard context.showChat.isVisible else { return nil }
-        return AnyView(NewChatButton())
+        guard let conversationCreationContext = context.conversationCreationContext else { return nil }
+        return AnyView(NewChatButton(creationContext: conversationCreationContext))
     }
 }
 

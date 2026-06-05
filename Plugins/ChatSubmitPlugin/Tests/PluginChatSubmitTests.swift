@@ -13,13 +13,27 @@ import LumiCoreKit
 
 @MainActor
 @Test func chatSubmitToolbarProvidesClickableCustomView() async throws {
-    let context = PluginContext(activeIcon: nil, isEditorVisible: false, showChat: .narrow, showsProjectToolbar: false)
+    let submitContext = ChatSubmitContext(
+        canSubmitProvider: { true },
+        draftTextProvider: { "hello" },
+        submitter: { _ in }
+    )
+    let context = PluginContext(
+        activeIcon: nil,
+        isEditorVisible: false,
+        showChat: .narrow,
+        showsProjectToolbar: false,
+        chatSubmitContext: submitContext
+    )
+    let missingCapabilityContext = PluginContext(activeIcon: nil, isEditorVisible: false, showChat: .narrow, showsProjectToolbar: false)
 
     let item = ChatSubmitPlugin.shared.addSidebarTrailingToolbarItems(context: context).first
     let view = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "chat-submit", context: context)
+    let missingCapabilityView = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "chat-submit", context: missingCapabilityContext)
     let unknownView = ChatSubmitPlugin.shared.addSidebarToolbarItemView(itemId: "unknown", context: context)
 
     #expect(item?.id == "chat-submit")
     #expect(view != nil)
+    #expect(missingCapabilityView == nil)
     #expect(unknownView == nil)
 }

@@ -3,8 +3,8 @@ import LumiUI
 import SwiftUI
 
 struct ChatSubmitToolbarButton: View {
-    @EnvironmentObject private var conversationVM: WindowConversationVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let submitContext: ChatSubmitContext
 
     var body: some View {
         sidebarToolbarButton(
@@ -25,13 +25,12 @@ struct ChatSubmitToolbarButton: View {
     }
 
     private var canSubmit: Bool {
-        conversationVM.canSubmitText && !conversationVM.draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        submitContext.canSubmit
     }
 
     private func submit() {
-        let draftText = conversationVM.draftText
         Task {
-            await conversationVM.submitDraftText(draftText)
+            await submitContext.submitDraft()
         }
     }
 }

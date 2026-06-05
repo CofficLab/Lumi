@@ -38,6 +38,7 @@ public actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     @MainActor
     public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "chat-submit" else { return nil }
-        return AnyView(ChatSubmitToolbarButton())
+        guard let chatSubmitContext = context.chatSubmitContext else { return nil }
+        return AnyView(ChatSubmitToolbarButton(submitContext: chatSubmitContext))
     }
 }

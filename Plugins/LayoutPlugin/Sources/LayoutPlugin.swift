@@ -48,7 +48,10 @@ public actor LayoutPlugin: SuperPlugin, SuperLog {
     @MainActor
     public func addToolBarTrailingView(context: PluginContext) -> AnyView? {
         guard context.activeIcon == "chevron.left.forwardslash.chevron.right" || context.activeIcon == "bubble.left.and.bubble.right.fill" else { return nil }
-        return AnyView(LayoutMenuButton())
+        guard let layoutControlContext = context.layoutControlContext else {
+            return nil
+        }
+        return AnyView(LayoutMenuButton(layoutContext: layoutControlContext))
     }
 
     // MARK: - Root View（布局持久化锚点）

@@ -64,7 +64,10 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         switch itemId {
         case "model-selector":
-            return AnyView(ModelSelectorToolbarButton())
+            guard let modelSelectionContext = context.modelSelectionContext else {
+                return nil
+            }
+            return AnyView(ModelSelectorToolbarButton(modelSelectionContext: modelSelectionContext))
         default:
             return nil
         }
