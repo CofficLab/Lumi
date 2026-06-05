@@ -18,3 +18,25 @@ import Testing
         .appendingPathComponent("settings.plist")
     #expect(FileManager.default.fileExists(atPath: settingsURL.path))
 }
+
+@Test func preferredConversationListWidthAllowsWidePanels() throws {
+    let databaseDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LocalStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: databaseDirectory) }
+
+    let store = LocalStore(databaseDirectory: databaseDirectory)
+    store.saveConversationListWidth(780)
+
+    #expect(SplitWidth.preferredWidth(databaseDirectory: databaseDirectory) == 780)
+}
+
+@Test func preferredConversationListWidthClampsOversizedValues() throws {
+    let databaseDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LocalStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: databaseDirectory) }
+
+    let store = LocalStore(databaseDirectory: databaseDirectory)
+    store.saveConversationListWidth(1_200)
+
+    #expect(SplitWidth.preferredWidth(databaseDirectory: databaseDirectory) == SplitWidth.defaultMaximumWidth)
+}

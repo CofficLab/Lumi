@@ -4,7 +4,7 @@ import SwiftUI
 enum SplitWidth {
     static let defaultWidth: CGFloat = 280
     static let defaultMinimumWidth: CGFloat = 220
-    static let defaultMaximumWidth: CGFloat = 520
+    static let defaultMaximumWidth: CGFloat = 960
 
     static func preferredWidth(databaseDirectory: URL) -> CGFloat {
         let savedWidth = LocalStore(databaseDirectory: databaseDirectory).loadConversationListWidth()

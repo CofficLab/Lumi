@@ -13,7 +13,7 @@ public struct ChatPanelView: View {
             .frame(
                 minWidth: SplitWidth.defaultMinimumWidth,
                 idealWidth: preferredWidth,
-                maxWidth: SplitWidth.defaultMaximumWidth,
+                maxWidth: .infinity,
                 maxHeight: .infinity
             )
             .background(
