@@ -1006,7 +1006,6 @@
 				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
 			);
@@ -1806,10 +1805,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiCoreKit;
-		};
 		52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/NettoPlugin;
