@@ -32,7 +32,6 @@
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
-		9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = B58B244CDF214E2CB80C1953 /* LLMKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
@@ -459,7 +458,6 @@
 				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
-				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
@@ -1007,7 +1005,6 @@
 				0B9A100230C9000000CE0001 /* ChatInputEditorKit */,
 				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
-				B58B244CDF214E2CB80C1953 /* LLMKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
@@ -1095,7 +1092,6 @@
 				0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */,
 				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
-				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
@@ -1912,10 +1908,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/NettoPlugin;
 		};
-		6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LLMKit;
-		};
 		A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
@@ -2173,11 +2165,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */;
 			productName = SuperLogKit;
-		};
-		B58B244CDF214E2CB80C1953 /* LLMKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */;
-			productName = LLMKit;
 		};
 		C0FF1C122FB4000000000001 /* HttpKit */ = {
 			isa = XCSwiftPackageProductDependency;
