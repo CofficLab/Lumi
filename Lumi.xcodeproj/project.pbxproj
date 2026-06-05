@@ -8,43 +8,23 @@
 
 /* Begin PBXBuildFile section */
 		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
-		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
-		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
-		0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F822F662D8500F15618 /* MLXFast */; };
-		0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F842F662D8500F15618 /* MLXLinalg */; };
-		0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F862F662D8500F15618 /* MLXNN */; };
-		0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F882F662D8500F15618 /* MLXOptimizers */; };
-		0B1A4F8B2F662D8500F15618 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8A2F662D8500F15618 /* MLXRandom */; };
 		0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8C2F662D8500F15618 /* MLXLLM */; };
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
 		0BB994802FC492FC003720A4 /* ProjectOverviewPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */; };
 		0BB9F7702FC48DF6003720A4 /* AutoTaskPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF6003720A4 /* AutoTaskPlugin */; };
 		0BB9F7712FC48DF7003720A5 /* AskUserPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF7003720A5 /* AskUserPlugin */; };
-		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
-		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
-		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
-		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
-		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
-		C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7B022FD1000000000001 /* WorkspaceFileKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
 		F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A6407F2F3ED7060039A761 /* PostgresNIO */; };
-		F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640812F3ED7060039A761 /* _ConnectionPoolModule */; };
-		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
-		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
-		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
-		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		NETTOEXTPLUGINNETTO00001 /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
 /* End PBXBuildFile section */
@@ -442,38 +422,18 @@
 			files = (
 				AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
-				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
-				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
-				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
-				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
-				0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */,
-				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
 				0BB994802FC492FC003720A4 /* ProjectOverviewPlugin in Frameworks */,
 				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
-				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
-				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
-				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
-				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
-				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
-				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
-				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
 				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
-				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
-				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
-				0B1A4F8B2F662D8500F15618 /* MLXRandom in Frameworks */,
 				0BB9F7702FC48DF6003720A4 /* AutoTaskPlugin in Frameworks */,
 				0BB9F7712FC48DF7003720A5 /* AskUserPlugin in Frameworks */,
 				0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */,
 				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
 				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
-				F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */,
-				0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */,
-				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
-				C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -974,27 +934,7 @@
 				5F6F4F3AD385478337B1AF43 /* NettoPlugin */,
 				F53C41592F1A3E6500929321 /* Sparkle */,
 				A1B2C4612F70000100AAA107 /* SuperLogKit */,
-				F5A6407F2F3ED7060039A761 /* PostgresNIO */,
-				F5A640812F3ED7060039A761 /* _ConnectionPoolModule */,
-				F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */,
-				F5A640862F3ED72C0039A761 /* MySQLNIO */,
-				0BE04A742F409A6E0028FDF4 /* MCP */,
-				0B1A4F7E2F662D8500F15618 /* MLX */,
-				0B1A4F802F662D8500F15618 /* MLXFFT */,
-				0B1A4F822F662D8500F15618 /* MLXFast */,
-				0B1A4F842F662D8500F15618 /* MLXLinalg */,
-				0B1A4F862F662D8500F15618 /* MLXNN */,
-				0B1A4F882F662D8500F15618 /* MLXOptimizers */,
-				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
-				F5BE65D02F6BB1130091C1FD /* Markdown */,
-				0BBB11DF2F85467D00F53902 /* SwiftTerm */,
-				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
-				0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */,
-				0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */,
-				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
-				F5DF6D172FA3461A00673F72 /* XcodeProj */,
-				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
@@ -1064,22 +1004,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
-				F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */,
-				F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */,
-				0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */,
-				0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */,
-				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
-				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
-				0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */,
-				0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
-				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
-				0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */,
-				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
-				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
-				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
@@ -1884,10 +1810,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCoreKit;
 		};
-		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LLMProviderKit;
-		};
 		52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/NettoPlugin;
@@ -1900,10 +1822,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SuperLogKit;
 		};
-		C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/WorkspaceFileKit;
-		};
 		LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiPluginRegistry;
@@ -1911,68 +1829,12 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.30.6;
-			};
-		};
 		0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm.git";
 			requirement = {
 				kind = revision;
 				revision = bc3c20ef4644c86f2b347debcfe1efe4308712a6;
-			};
-		};
-		0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ChimeHQ/LanguageClient";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.8.2;
-			};
-		};
-		0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
-			};
-		};
-		0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nookery/MagicDiffView";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-		0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nookery/Libgit2swift";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-		0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.10.2;
-			};
-		};
-		0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/lukilabs/beautiful-mermaid-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
 			};
 		};
 		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
@@ -1983,79 +1845,12 @@
 				minimumVersion = 2.8.1;
 			};
 		};
-		F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/vapor/postgres-nio";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.30.1;
-			};
-		};
-		F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/vapor/mysql-nio";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.9.0;
-			};
-		};
-		F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swiftlang/swift-markdown.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.7.3;
-			};
-		};
-		F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/tuist/XcodeProj";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 9.11.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0B12E9172FC3111D00F7DC5D /* LumiCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LumiCoreKit;
-		};
-		0B1A4F7E2F662D8500F15618 /* MLX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLX;
-		};
-		0B1A4F802F662D8500F15618 /* MLXFFT */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXFFT;
-		};
-		0B1A4F822F662D8500F15618 /* MLXFast */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXFast;
-		};
-		0B1A4F842F662D8500F15618 /* MLXLinalg */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXLinalg;
-		};
-		0B1A4F862F662D8500F15618 /* MLXNN */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXNN;
-		};
-		0B1A4F882F662D8500F15618 /* MLXOptimizers */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXOptimizers;
-		};
-		0B1A4F8A2F662D8500F15618 /* MLXRandom */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXRandom;
 		};
 		0B1A4F8C2F662D8500F15618 /* MLXLLM */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2071,11 +1866,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
-		};
-		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
-			productName = LanguageClient;
 		};
 		0B7A440B2FC1FA390056DFA2 /* MemoryKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2093,34 +1883,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AskUserPlugin;
 		};
-		0BBB11DF2F85467D00F53902 /* SwiftTerm */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
-			productName = SwiftTerm;
-		};
-		0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */;
-			productName = MagicDiffView;
-		};
-		0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */;
-			productName = LibGit2Swift;
-		};
-		0BE04A742F409A6E0028FDF4 /* MCP */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */;
-			productName = MCP;
-		};
 		0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LLMProviderKit;
-		};
-		223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */;
-			productName = BeautifulMermaid;
 		};
 		5F6F4F3AD385478337B1AF43 /* NettoPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2137,45 +1902,10 @@
 			package = A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */;
 			productName = SuperLogKit;
 		};
-		C0FF7B022FD1000000000001 /* WorkspaceFileKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */;
-			productName = WorkspaceFileKit;
-		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
-		};
-		F5A6407F2F3ED7060039A761 /* PostgresNIO */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
-			productName = PostgresNIO;
-		};
-		F5A640812F3ED7060039A761 /* _ConnectionPoolModule */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
-			productName = _ConnectionPoolModule;
-		};
-		F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
-			productName = _ConnectionPoolTestUtils;
-		};
-		F5A640862F3ED72C0039A761 /* MySQLNIO */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */;
-			productName = MySQLNIO;
-		};
-		F5BE65D02F6BB1130091C1FD /* Markdown */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */;
-			productName = Markdown;
-		};
-		F5DF6D172FA3461A00673F72 /* XcodeProj */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
-			productName = XcodeProj;
 		};
 		LPR1000000000000000001 /* LumiPluginRegistry */ = {
 			isa = XCSwiftPackageProductDependency;
