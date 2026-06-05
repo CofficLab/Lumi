@@ -107,13 +107,19 @@ final class ChatHistoryService: SuperLog, Sendable {
 extension ChatHistoryService {
 
     /// 创建新对话
-    func createConversation(projectId: String? = nil, title: String = "", chatMode: String? = nil) -> Conversation {
+    func createConversation(
+        projectId: String? = nil,
+        title: String = "",
+        chatMode: String? = nil,
+        languagePreference: String? = nil
+    ) -> Conversation {
         let conversation = Conversation(
             projectId: projectId,
             title: title,
             createdAt: Date(),
             updatedAt: Date(),
-            chatMode: chatMode
+            chatMode: chatMode,
+            languagePreference: languagePreference
         )
 
         saveConversation(conversation)
@@ -353,6 +359,25 @@ extension ChatHistoryService {
                 AppLogger.core.info("\(Self.t)📝 已保存对话 '\(conversation.title)' 的详细程度：\(verbosity)")
             } else {
                 AppLogger.core.info("\(Self.t)📝 已清除对话 '\(conversation.title)' 的详细程度")
+            }
+        }
+    }
+
+    /// 更新对话的语言偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - languagePreference: 语言偏好 rawValue，nil 表示清除对话级偏好（回退到当前窗口偏好）
+    func updateLanguagePreference(_ conversation: Conversation, languagePreference: String?) {
+        conversation.languagePreference = languagePreference
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let languagePreference {
+                AppLogger.core.info("\(Self.t)🌐 已保存对话 '\(conversation.title)' 的语言偏好：\(languagePreference)")
+            } else {
+                AppLogger.core.info("\(Self.t)🌐 已清除对话 '\(conversation.title)' 的语言偏好")
             }
         }
     }

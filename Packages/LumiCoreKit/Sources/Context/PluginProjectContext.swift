@@ -65,6 +65,10 @@ public final class PluginProjectContext: ObservableObject {
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference
     }
+
+    public func setLanguagePreference(_ languagePreference: LanguagePreference) {
+        self.languagePreference = languagePreference
+    }
 }
 
 public typealias WindowProjectVM = PluginProjectContext

@@ -29,7 +29,7 @@ public actor AgentLanguagePlugin: SuperPlugin {
 
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        []
+        [AnySuperSendMiddleware(LanguageSendMiddleware())]
     }
 
     // MARK: - Sidebar Toolbar
@@ -51,6 +51,7 @@ public actor AgentLanguagePlugin: SuperPlugin {
     /// 语言切换按钮的自定义视图
     @MainActor
     public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
-        nil
+        guard itemId == "language-toggle" else { return nil }
+        return AnyView(LanguageToggleButton())
     }
 }

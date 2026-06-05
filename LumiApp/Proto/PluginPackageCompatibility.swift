@@ -1,4 +1,5 @@
 import LumiCoreKit
+import AgentToolKit
 import EditorService
 import Combine
 import SwiftUI
@@ -177,6 +178,12 @@ extension ToolContext {
                 },
                 chatModePreferenceProvider: {
                     vm.getChatModePreference().flatMap { LumiCoreKit.ChatMode(rawValue: $0.rawValue) }
+                },
+                languagePreferenceProvider: {
+                    vm.getLanguagePreference().flatMap { LanguagePreference(rawValue: $0.rawValue) }
+                },
+                languagePreferenceSaver: { languagePreference in
+                    vm.saveLanguagePreference(languagePreference.flatMap { LanguagePreference(rawValue: $0.rawValue) })
                 }
             )
         }

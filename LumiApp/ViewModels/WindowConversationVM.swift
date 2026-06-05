@@ -209,6 +209,30 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         return ResponseVerbosity(rawValue: rawValue)
     }
 
+    /// 保存当前对话的语言偏好
+    /// - Parameter languagePreference: 语言偏好，传入 nil 表示清除对话级偏好
+    func saveLanguagePreference(_ languagePreference: LanguagePreference?) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存语言偏好")
+            }
+            return
+        }
+        chatHistoryService.updateLanguagePreference(conversation, languagePreference: languagePreference?.rawValue)
+    }
+
+    /// 获取当前对话的语言偏好
+    /// - Returns: 语言偏好，如果对话未指定则返回 nil
+    func getLanguagePreference() -> LanguagePreference? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let rawValue = conversation.languagePreference else {
+            return nil
+        }
+        return LanguagePreference(rawValue: rawValue)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
@@ -350,7 +374,8 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ) async {
         let conversation = chatHistoryService.createConversation(
             projectId: projectPath,
-            chatMode: (chatMode ?? agentSessionConfig.chatMode).rawValue
+            chatMode: (chatMode ?? agentSessionConfig.chatMode).rawValue,
+            languagePreference: languagePreference.rawValue
         )
 
         // 继承同项目上一条对话的模型偏好

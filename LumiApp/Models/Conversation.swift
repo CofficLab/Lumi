@@ -18,10 +18,22 @@ final class Conversation {
     var chatMode: String?
     /// 对话级响应详细程度，nil 表示未指定（回退到全局偏好）
     var verbosity: String?
+    /// 对话级语言偏好，nil 表示未指定（回退到当前窗口偏好）
+    var languagePreference: String?
 
     @Relationship(deleteRule: .cascade) var messages: [ChatMessageEntity]
 
-    init(id: UUID = UUID(), projectId: String? = nil, title: String = "", createdAt: Date = Date(), updatedAt: Date = Date(), chatMode: String? = nil, verbosity: String? = nil, messages: [ChatMessageEntity] = []) {
+    init(
+        id: UUID = UUID(),
+        projectId: String? = nil,
+        title: String = "",
+        createdAt: Date = Date(),
+        updatedAt: Date = Date(),
+        chatMode: String? = nil,
+        verbosity: String? = nil,
+        languagePreference: String? = nil,
+        messages: [ChatMessageEntity] = []
+    ) {
         self.id = id
         self.projectId = projectId
         self.title = title
@@ -29,6 +41,7 @@ final class Conversation {
         self.updatedAt = updatedAt
         self.chatMode = chatMode
         self.verbosity = verbosity
+        self.languagePreference = languagePreference
         self.messages = messages
     }
 }

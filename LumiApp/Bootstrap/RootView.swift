@@ -4,6 +4,7 @@ import MagicAlert
 import SwiftData
 import SwiftUI
 import LumiCoreKit
+import AgentToolKit
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
@@ -83,6 +84,7 @@ struct RootView<Content>: View where Content: View {
             syncPluginRecentProjectsContext()
         }
         .onChange(of: windowContainer.conversationVM.selectedConversationId) { _, _ in
+            restoreSelectedConversationLanguagePreference()
             syncPluginConversationListContext()
         }
         .onChange(of: windowContainer.projectVM.currentProjectPath) { _, _ in
@@ -212,6 +214,7 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func performInitialLifecycleSetup() {
+        restoreSelectedConversationLanguagePreference()
         syncPluginProjectContext()
         syncPluginRecentProjectsContext()
         syncPluginConversationContext()
@@ -309,6 +312,11 @@ struct RootView<Content>: View where Content: View {
         )
     }
 
+    private func restoreSelectedConversationLanguagePreference() {
+        guard let preference = windowContainer.conversationVM.getLanguagePreference() else { return }
+        windowContainer.projectVM.setLanguagePreference(preference)
+    }
+
     private func syncPluginRecentProjectsContext() {
         pluginRecentProjectsVM.setRecentProjects(
             container.recentProjectsVM.recentProjects.map {
@@ -350,6 +358,17 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.verbosityPreferenceSaver = { [windowContainer] verbosity in
             let appVerbosity = verbosity.flatMap { ResponseVerbosity(rawValue: $0.rawValue) }
             windowContainer.conversationVM.saveVerbosityPreference(appVerbosity)
+        }
+        pluginConversationVM.languagePreferenceProvider = { [windowContainer] in
+            windowContainer.conversationVM.getLanguagePreference()
+                .flatMap { LanguagePreference(rawValue: $0.rawValue) }
+        }
+        pluginConversationVM.languagePreferenceSaver = { [windowContainer] languagePreference in
+            let appLanguagePreference = languagePreference.flatMap { LanguagePreference(rawValue: $0.rawValue) }
+            windowContainer.conversationVM.saveLanguagePreference(appLanguagePreference)
+            if let appLanguagePreference {
+                windowContainer.projectVM.setLanguagePreference(appLanguagePreference)
+            }
         }
         pluginConversationVM.pendingMessagesProvider = { [windowContainer] conversationId in
             windowContainer.messageQueueVM.pendingMessages(for: conversationId)

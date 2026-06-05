@@ -85,12 +85,14 @@ final class AppChatHistoryVM: ObservableObject {
     func createConversation(
         projectId: String? = nil,
         title: String = "",
-        chatMode: String? = nil
+        chatMode: String? = nil,
+        languagePreference: String? = nil
     ) -> Conversation {
         chatHistoryService.createConversation(
             projectId: projectId,
             title: title,
-            chatMode: chatMode
+            chatMode: chatMode,
+            languagePreference: languagePreference
         )
     }
 
@@ -145,6 +147,11 @@ final class AppChatHistoryVM: ObservableObject {
     /// 更新对话的响应详细程度偏好
     func updateVerbosity(_ conversation: Conversation, verbosity: String?) {
         chatHistoryService.updateVerbosity(conversation, verbosity: verbosity)
+    }
+
+    /// 更新对话的语言偏好
+    func updateLanguagePreference(_ conversation: Conversation, languagePreference: String?) {
+        chatHistoryService.updateLanguagePreference(conversation, languagePreference: languagePreference)
     }
 
     /// 删除对话

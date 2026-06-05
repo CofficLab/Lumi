@@ -473,6 +473,8 @@ public final class WindowConversationVM: ObservableObject {
     public var chatModePreferenceProvider: @MainActor () -> ChatMode?
     public var verbosityPreferenceProvider: @MainActor () -> ResponseVerbosity?
     public var verbosityPreferenceSaver: @MainActor (ResponseVerbosity?) -> Void
+    public var languagePreferenceProvider: @MainActor () -> LanguagePreference?
+    public var languagePreferenceSaver: @MainActor (LanguagePreference?) -> Void
     public var messagesProvider: @MainActor (UUID) -> [ChatMessage]
     public var messagePageLoader: @MainActor (UUID, Int, Date?) async -> (messages: [ChatMessage], hasMore: Bool)
     public var messageCountProvider: @MainActor (UUID) async -> Int
@@ -513,6 +515,8 @@ public final class WindowConversationVM: ObservableObject {
         chatModePreferenceProvider: @escaping @MainActor () -> ChatMode? = { nil },
         verbosityPreferenceProvider: @escaping @MainActor () -> ResponseVerbosity? = { nil },
         verbosityPreferenceSaver: @escaping @MainActor (ResponseVerbosity?) -> Void = { _ in },
+        languagePreferenceProvider: @escaping @MainActor () -> LanguagePreference? = { nil },
+        languagePreferenceSaver: @escaping @MainActor (LanguagePreference?) -> Void = { _ in },
         messagesProvider: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         messagePageLoader: @escaping @MainActor (UUID, Int, Date?) async -> (messages: [ChatMessage], hasMore: Bool) = { _, _, _ in ([], false) },
         messageCountProvider: @escaping @MainActor (UUID) async -> Int = { _ in 0 },
@@ -555,6 +559,8 @@ public final class WindowConversationVM: ObservableObject {
         self.chatModePreferenceProvider = chatModePreferenceProvider
         self.verbosityPreferenceProvider = verbosityPreferenceProvider
         self.verbosityPreferenceSaver = verbosityPreferenceSaver
+        self.languagePreferenceProvider = languagePreferenceProvider
+        self.languagePreferenceSaver = languagePreferenceSaver
         self.messagesProvider = messagesProvider
         self.messagePageLoader = messagePageLoader
         self.messageCountProvider = messageCountProvider
@@ -608,6 +614,14 @@ public final class WindowConversationVM: ObservableObject {
 
     public func saveVerbosityPreference(_ verbosity: ResponseVerbosity?) {
         verbosityPreferenceSaver(verbosity)
+    }
+
+    public func getLanguagePreference() -> LanguagePreference? {
+        languagePreferenceProvider()
+    }
+
+    public func saveLanguagePreference(_ languagePreference: LanguagePreference?) {
+        languagePreferenceSaver(languagePreference)
     }
 
     public var hasSelectedConversation: Bool {
