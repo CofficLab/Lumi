@@ -22,7 +22,6 @@
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
-		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
 		0BB994802FC492FC003720A4 /* ProjectOverviewPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */; };
 		0BB9F7702FC48DF6003720A4 /* AutoTaskPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF6003720A4 /* AutoTaskPlugin */; };
 		0BB9F7712FC48DF7003720A5 /* AskUserPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF7003720A5 /* AskUserPlugin */; };
@@ -444,7 +443,6 @@
 			files = (
 				AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
-				0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
@@ -999,7 +997,6 @@
 				A1B2C4132F70000100AAA101 /* LumiUI */,
 				C0FF2B112FB6000000000001 /* ProjectProfileKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
-				0B9A100230C9000000CE0001 /* ChatInputEditorKit */,
 				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
@@ -1085,7 +1082,6 @@
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */,
 				A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */,
 				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
@@ -1892,10 +1888,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCoreKit;
 		};
-		0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ChatInputEditorKit;
-		};
 		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMProviderKit;
@@ -2096,11 +2088,6 @@
 		0B7A440B2FC1FA390056DFA2 /* MemoryKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MemoryKit;
-		};
-		0B9A100230C9000000CE0001 /* ChatInputEditorKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */;
-			productName = ChatInputEditorKit;
 		};
 		0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
