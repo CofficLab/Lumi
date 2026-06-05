@@ -22,7 +22,6 @@
 		0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiPreviewKit */; };
-		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
 		0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B9A100230C9000000CE0001 /* ChatInputEditorKit */; };
@@ -36,22 +35,15 @@
 		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
 		9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = B58B244CDF214E2CB80C1953 /* LLMKit */; };
-		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
-		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
-		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
-		A1B2C3E62F70000100AAA101 /* StringCatalogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E82F70000100AAA101 /* StringCatalogKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
 		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
-		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
-		A1B2C4652F70000100AAA108 /* OpenInKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4642F70000100AAA108 /* OpenInKit */; };
 		AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
 		C0FF1C112FB4000000000001 /* HttpKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C122FB4000000000001 /* HttpKit */; };
 		C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF2B112FB6000000000001 /* ProjectProfileKit */; };
-		C0FF7A012FD0000000000001 /* MCPKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7A022FD0000000000001 /* MCPKit */; };
 		C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF7B022FD1000000000001 /* WorkspaceFileKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
@@ -468,8 +460,6 @@
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
-				A1B2C3E62F70000100AAA101 /* StringCatalogKit in Frameworks */,
-				A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
@@ -479,8 +469,6 @@
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
 				C0FF2B102FB6000000000001 /* ProjectProfileKit in Frameworks */,
 				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
-				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
-				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
@@ -489,7 +477,6 @@
 				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
 				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
-				0B52000330C3000000AA0001 /* RAGKit in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				0B1A4F8B2F662D8500F15618 /* MLXRandom in Frameworks */,
@@ -505,10 +492,7 @@
 				0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */,
 				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
-				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
-				A1B2C4652F70000100AAA108 /* OpenInKit in Frameworks */,
 				B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */,
-				C0FF7A012FD0000000000001 /* MCPKit in Frameworks */,
 				C0FF7B012FD1000000000001 /* WorkspaceFileKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1010,7 +994,6 @@
 				5F6F4F3AD385478337B1AF43 /* NettoPlugin */,
 				F53C41592F1A3E6500929321 /* Sparkle */,
 				A1B2C4612F70000100AAA107 /* SuperLogKit */,
-				A1B2C4642F70000100AAA108 /* OpenInKit */,
 				F5A6407F2F3ED7060039A761 /* PostgresNIO */,
 				F5A640812F3ED7060039A761 /* _ConnectionPoolModule */,
 				F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */,
@@ -1029,26 +1012,19 @@
 				0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */,
 				0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */,
 				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
-				A1B2C3E82F70000100AAA101 /* StringCatalogKit */,
-				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
-				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
 				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
 				C0FF1C022FB3000000000001 /* WebFetchKit */,
 				C0FF1C122FB4000000000001 /* HttpKit */,
 				C0FF2B112FB6000000000001 /* ProjectProfileKit */,
-				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4412F70000100AAA105 /* TerminalCoreKit */,
-				A1B2C4512F70000100AAA106 /* ShellKit */,
 				B1C2D3512F80000200BBB201 /* XcodeKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 				0B9A100230C9000000CE0001 /* ChatInputEditorKit */,
-				C0FF7A022FD0000000000001 /* MCPKit */,
 				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
 				0B462A912FB976B4007E52B1 /* LumiPreviewKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				B58B244CDF214E2CB80C1953 /* LLMKit */,
-				0B52000230C3000000AA0001 /* RAGKit */,
 				MRK100000000000000001 /* ModelRouterKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
@@ -1130,27 +1106,19 @@
 				0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */,
 				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
 				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
-				A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */,
-				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
 				C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */,
 				C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */,
 				C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */,
-				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
-				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
 				A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				A1B2C4632F70000100AAA108 /* XCLocalSwiftPackageReference "Packages/OpenInKit" */,
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
 				0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */,
-				C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */,
 				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
-				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
 				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
-				0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
@@ -1955,14 +1923,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCoreKit;
 		};
-		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/RAGKit;
-		};
-		0B7A440A2FC1FA380056DFA2 /* XCLocalSwiftPackageReference "Packages/MemoryKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/MemoryKit;
-		};
 		0B9A100130C9000000CE0001 /* XCLocalSwiftPackageReference "Packages/ChatInputEditorKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ChatInputEditorKit;
@@ -1979,18 +1939,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LLMKit;
 		};
-		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SkillKit;
-		};
-		A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/MarkdownKit;
-		};
-		A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/StringCatalogKit;
-		};
 		A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
@@ -2003,17 +1951,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/TerminalCoreKit;
 		};
-		A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ShellKit;
-		};
 		A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SuperLogKit;
-		};
-		A1B2C4632F70000100AAA108 /* XCLocalSwiftPackageReference "Packages/OpenInKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/OpenInKit;
 		};
 		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2030,10 +1970,6 @@
 		C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ProjectProfileKit;
-		};
-		C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/MCPKit;
 		};
 		C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2216,11 +2152,6 @@
 			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
 			productName = LumiPreviewKit;
 		};
-		0B52000230C3000000AA0001 /* RAGKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */;
-			productName = RAGKit;
-		};
 		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
@@ -2281,26 +2212,6 @@
 			package = 52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */;
 			productName = NettoPlugin;
 		};
-		A1B2C3A12F70000200AAA101 /* SkillKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */;
-			productName = SkillKit;
-		};
-		A1B2C3D62F70000100AAA101 /* MarkdownKitCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
-			productName = MarkdownKitCore;
-		};
-		A1B2C3E12F70000100AAA101 /* MarkdownKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
-			productName = MarkdownKit;
-		};
-		A1B2C3E82F70000100AAA101 /* StringCatalogKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */;
-			productName = StringCatalogKit;
-		};
 		A1B2C4132F70000100AAA101 /* LumiUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
@@ -2316,20 +2227,10 @@
 			package = A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */;
 			productName = TerminalCoreKit;
 		};
-		A1B2C4512F70000100AAA106 /* ShellKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */;
-			productName = ShellKit;
-		};
 		A1B2C4612F70000100AAA107 /* SuperLogKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */;
 			productName = SuperLogKit;
-		};
-		A1B2C4642F70000100AAA108 /* OpenInKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C4632F70000100AAA108 /* XCLocalSwiftPackageReference "Packages/OpenInKit" */;
-			productName = OpenInKit;
 		};
 		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2355,11 +2256,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */;
 			productName = ProjectProfileKit;
-		};
-		C0FF7A022FD0000000000001 /* MCPKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C0FF7A032FD0000000000001 /* XCLocalSwiftPackageReference "Packages/MCPKit" */;
-			productName = MCPKit;
 		};
 		C0FF7B022FD1000000000001 /* WorkspaceFileKit */ = {
 			isa = XCSwiftPackageProductDependency;
