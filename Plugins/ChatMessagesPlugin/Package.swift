@@ -30,7 +30,9 @@ let package = Package(
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

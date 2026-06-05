@@ -36,7 +36,9 @@ let package = Package(
                 .product(name: "StringCatalogKit", package: "StringCatalogKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

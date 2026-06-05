@@ -30,7 +30,9 @@ let package = Package(
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

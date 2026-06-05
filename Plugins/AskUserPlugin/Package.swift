@@ -24,7 +24,9 @@ let package = Package(
                 "LumiCoreKit",
                 "LumiUI",
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ],

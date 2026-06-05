@@ -42,8 +42,16 @@ let package = Package(
         .target(
             name: "CodeEditLanguages",
             dependencies: [codeLanguagesContainerDependency, "SwiftTreeSitter"],
-            path: "Sources",
-            exclude: ["CodeLanguages_Container"],
+            path: ".",
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/CodeLanguages_Container",
+                "CodeLanguages-Container",
+                "DerivedData",
+                "build_framework.sh",
+            ],
+            sources: ["Sources"],
             resources: [
                 .copy("Resources")
             ],

@@ -28,10 +28,9 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources",
-            exclude: [
-                "EditorLSPContextCommandContributor.swift",
-            ],
+            path: ".",
+            exclude: ["Tests", "README.md", "Sources/EditorLSPContextCommandContributor.swift"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

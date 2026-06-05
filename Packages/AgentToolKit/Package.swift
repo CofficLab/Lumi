@@ -20,7 +20,9 @@ let package = Package(
         .target(
             name: "AgentToolKit",
             dependencies: ["SuperLogKit"],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

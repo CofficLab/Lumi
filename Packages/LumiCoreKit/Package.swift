@@ -38,7 +38,9 @@ let package = Package(
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

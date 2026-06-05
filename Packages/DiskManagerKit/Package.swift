@@ -17,7 +17,9 @@ let package = Package(
     targets: [
         .target(
             name: "DiskManagerKit",
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

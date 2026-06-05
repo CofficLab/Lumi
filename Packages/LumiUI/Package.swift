@@ -20,7 +20,9 @@ let package = Package(
         .target(
             name: "LumiUI",
             dependencies: ["AgentToolKit"],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

@@ -24,10 +24,9 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources",
-            exclude: [
-                "Views",
-            ],
+            path: ".",
+            exclude: ["Tests", "README.md", "Sources/Views"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

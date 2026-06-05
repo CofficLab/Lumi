@@ -36,7 +36,9 @@ let package = Package(
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
-            path: "Sources",
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]
