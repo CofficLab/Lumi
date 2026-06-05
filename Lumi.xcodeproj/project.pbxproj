@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */ = {isa = PBXBuildFile; productRef = MRK100000000000000001 /* ModelRouterKit */; };
 		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
 		0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F7E2F662D8500F15618 /* MLX */; };
 		0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F802F662D8500F15618 /* MLXFFT */; };
@@ -446,7 +445,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */,
-				0B0EBF952FC150F100570C26 /* ModelRouterKit in Frameworks */,
 				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
 				0B9A100330C9000000CE0001 /* ChatInputEditorKit in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
@@ -1010,7 +1008,6 @@
 				C0FF7B022FD1000000000001 /* WorkspaceFileKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				B58B244CDF214E2CB80C1953 /* LLMKit */,
-				MRK100000000000000001 /* ModelRouterKit */,
 				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
 				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
@@ -1099,7 +1096,6 @@
 				C0FF7B032FD1000000000001 /* XCLocalSwiftPackageReference "Packages/WorkspaceFileKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 				6770313F915049D3B00A7905 /* XCLocalSwiftPackageReference "Packages/LLMKit" */,
-				MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */,
 				0B12E9162FC3111D00F7DC5D /* XCLocalSwiftPackageReference "Packages/LumiCoreKit" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
@@ -1944,10 +1940,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiPluginRegistry;
 		};
-		MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ModelRouterKit;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2241,11 +2233,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */;
 			productName = LumiPluginRegistry;
-		};
-		MRK100000000000000001 /* ModelRouterKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = MRK200000000000000002 /* XCLocalSwiftPackageReference "Packages/ModelRouterKit" */;
-			productName = ModelRouterKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
