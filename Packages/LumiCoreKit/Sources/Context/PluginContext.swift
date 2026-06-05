@@ -29,11 +29,11 @@ public struct PluginContext {
     /// 供应商插件可据此决定是否展示供应商专属 UI（如配额状态栏）。
     public let activeProviderId: String?
 
-    /// 当前激活的 ViewContainer 是否显示聊天区域
+    /// 当前激活的 ViewContainer 聊天区域显示模式
     ///
     /// 由 ViewContainerItem 的 `showChat` 属性投影而来。
     /// 聊天相关插件（消息列表、输入框、附件等）可据此决定是否贡献右侧栏 Section。
-    public let showChat: Bool
+    public let showChat: ChatDisplayMode
 
     /// 当前激活的 ViewContainer 是否显示项目工具栏
     ///
@@ -92,7 +92,7 @@ public struct PluginContext {
         activeIcon: String? = nil,
         isEditorVisible: Bool = true,
         activeProviderId: String? = nil,
-        showChat: Bool = false,
+        showChat: ChatDisplayMode = .hidden,
         showsProjectToolbar: Bool = false,
         showsRail: Bool = false,
         showsBottomPanel: Bool = false,

@@ -37,7 +37,7 @@ public actor AgentLanguagePlugin: SuperPlugin {
     /// 右侧栏底部工具栏左侧：语言切换按钮（在 ChatMode 按钮左侧）
     @MainActor
     public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [
             SidebarToolbarItem(
                 id: "language-toggle",

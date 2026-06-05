@@ -5,7 +5,7 @@ import LumiCoreKit
 
 @MainActor
 @Test func chatInputContributesFixedBottomSidebarSection() throws {
-    let context = PluginContext(showChat: true)
+    let context = PluginContext(showChat: .narrow)
 
     #expect(ChatInputPlugin.shared.addSidebarSections(context: context).isEmpty)
     #expect(ChatInputPlugin.shared.addSidebarBottomSections(context: context).count == 1)

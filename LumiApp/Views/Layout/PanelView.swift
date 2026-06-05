@@ -18,7 +18,7 @@ struct PanelView: View {
         let pluginContext = PluginContext(
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
-            showChat: activeItem?.showChat ?? false,
+            showChat: activeItem?.showChat ?? .hidden,
             showsProjectToolbar: activeItem?.showsProjectToolbar ?? false,
             showsRail: activeItem?.showsRail ?? false,
             showsBottomPanel: activeItem?.showsBottomPanel ?? false,

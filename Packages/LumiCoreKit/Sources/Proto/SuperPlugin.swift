@@ -89,6 +89,16 @@ public struct BottomPanelTab: Identifiable, Equatable {
 ///
 /// 插件通过 `addViewContainer()` 返回此结构体，由内核渲染 Activity Bar 入口，
 /// 并在入口激活时延迟创建对应的面板视图。
+public enum ChatDisplayMode: String, Sendable {
+    case hidden
+    case wide
+    case narrow
+
+    public var isVisible: Bool {
+        self != .hidden
+    }
+}
+
 public struct ViewContainerItem: Identifiable, Equatable {
     /// 唯一标识
     public let id: String
@@ -104,12 +114,12 @@ public struct ViewContainerItem: Identifiable, Equatable {
     /// 设为 `true` 的容器（如编辑器、Git）表示其工作流与项目上下文紧密相关。
     public let showsProjectToolbar: Bool
 
-    /// 是否显示聊天区域
+    /// 聊天区域显示模式
     ///
     /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
     /// 会在右侧栏贡献各自的 Section 视图。
-    /// 设为 `true` 的容器（如编辑器、聊天面板）会展示 AI Chat 相关 UI。
-    public let showChat: Bool
+    /// `.wide` 适合聊天面板，`.narrow` 适合编辑器这类主内容优先的容器。
+    public let showChat: ChatDisplayMode
 
     /// 是否显示 Rail
     ///
@@ -128,7 +138,7 @@ public struct ViewContainerItem: Identifiable, Equatable {
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
-        showChat: Bool = false,
+        showChat: ChatDisplayMode = .hidden,
         showsRail: Bool = false,
         showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView

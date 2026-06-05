@@ -84,6 +84,8 @@ struct BottomPanelTab: Identifiable, Equatable {
 ///
 /// 插件通过 `addViewContainer()` 返回此结构体，由内核渲染 Activity Bar 入口，
 /// 并在入口激活时延迟创建对应的面板视图。
+typealias ChatDisplayMode = LumiCoreKit.ChatDisplayMode
+
 struct ViewContainerItem: Identifiable, Equatable {
     /// 唯一标识
     let id: String
@@ -95,12 +97,12 @@ struct ViewContainerItem: Identifiable, Equatable {
     let makeView: @MainActor () -> AnyView
     /// 是否在工具栏显示项目管理控件
     let showsProjectToolbar: Bool
-    /// 是否显示聊天区域
+    /// 聊天区域显示模式
     ///
     /// 当此容器处于激活状态时，聊天相关插件（消息列表、输入框、附件等）
     /// 会在右侧栏贡献各自的 Section 视图。
-    /// 设为 `true` 的容器（如编辑器、聊天面板）会展示 AI Chat 相关 UI。
-    let showChat: Bool
+    /// `.wide` 适合聊天面板，`.narrow` 适合编辑器这类主内容优先的容器。
+    let showChat: ChatDisplayMode
     /// 是否显示 Rail
     let showsRail: Bool
     /// 是否显示底部面板
@@ -111,7 +113,7 @@ struct ViewContainerItem: Identifiable, Equatable {
         title: String,
         icon: String,
         showsProjectToolbar: Bool = false,
-        showChat: Bool = false,
+        showChat: ChatDisplayMode = .hidden,
         showsRail: Bool = false,
         showsBottomPanel: Bool = false,
         makeView: @escaping @MainActor () -> AnyView

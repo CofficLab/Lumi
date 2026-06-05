@@ -16,7 +16,8 @@ import SwiftUI
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
     nonisolated static var verbose: Bool { false }
-    private static let defaultRightSidebarRatio = 0.30
+    private static let narrowRightSidebarRatio = 0.30
+    private static let wideRightSidebarRatio = 0.55
 
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var themeVM: AppThemeVM
@@ -101,7 +102,7 @@ struct ContentView: View, SuperLog {
             let pluginContext = PluginContext(
                 activeIcon: activeIcon,
                 isEditorVisible: layoutVM.editorVisible,
-                showChat: activeContainer?.showChat ?? false,
+                showChat: activeContainer?.showChat ?? .hidden,
                 showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
                 showsRail: activeContainer?.showsRail ?? false,
                 showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
@@ -120,6 +121,7 @@ struct ContentView: View, SuperLog {
             let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: hasSidebar)
             let autosaveName = "Unified_MainSplit_\(layoutSignature)"
             let rightSidebarStorageKey = Self.rightSidebarStorageKey(for: activeContainer)
+            let defaultRightSidebarRatio = Self.defaultRightSidebarRatio(for: activeContainer?.showChat ?? .hidden)
 
             if hasSidebar && showRail {
                 HSplitView {
@@ -141,7 +143,7 @@ struct ContentView: View, SuperLog {
                         .background(SplitViewWidthPersistence(
                             storageKey: rightSidebarStorageKey,
                             columnIndex: 3,
-                            defaultRatio: Self.defaultRightSidebarRatio
+                            defaultRatio: defaultRightSidebarRatio
                         ))
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -159,7 +161,7 @@ struct ContentView: View, SuperLog {
                         .background(SplitViewWidthPersistence(
                             storageKey: rightSidebarStorageKey,
                             columnIndex: 2,
-                            defaultRatio: Self.defaultRightSidebarRatio
+                            defaultRatio: defaultRightSidebarRatio
                         ))
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -212,6 +214,17 @@ struct ContentView: View, SuperLog {
     private static func rightSidebarStorageKey(for container: ViewContainerItem?) -> String {
         guard let container else { return "Layout.Main.RightSidebar" }
         return "Layout.Main.RightSidebar.\(container.id)"
+    }
+
+    private static func defaultRightSidebarRatio(for mode: ChatDisplayMode) -> Double? {
+        switch mode {
+        case .hidden:
+            nil
+        case .wide:
+            wideRightSidebarRatio
+        case .narrow:
+            narrowRightSidebarRatio
+        }
     }
 
     private func renderMessage(_ message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView? {

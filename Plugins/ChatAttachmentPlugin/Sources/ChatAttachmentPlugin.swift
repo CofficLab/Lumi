@@ -22,19 +22,19 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
     public static let shared = ChatAttachmentPlugin()
 
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [AnyView(ChatAttachmentSectionView())]
     }
 
     @MainActor public func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
-        guard context.showChat else { return content }
+        guard context.showChat.isVisible else { return content }
         return AnyView(ChatAttachmentDropRootView(content: content))
     }
 
     // MARK: - Sidebar Toolbar
 
     @MainActor public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [
             SidebarToolbarItem(
                 id: "image-upload",

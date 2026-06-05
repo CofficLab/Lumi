@@ -1,8 +1,8 @@
-import SwiftUI
 import LumiCoreKit
 import LumiUI
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
 /// Chat workspace panel.
 ///
@@ -45,8 +45,13 @@ public actor ChatPanelPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName, showsProjectToolbar: true, showChat: true) {
-            AnyView(ChatPanelView())
-        }
+        ViewContainerItem(
+            id: Self.id,
+            title: Self.displayName,
+            icon: Self.iconName,
+            showsProjectToolbar: true,
+            showChat: .wide) {
+                AnyView(ChatPanelView())
+            }
     }
 }

@@ -29,7 +29,7 @@ struct StatusBar: View {
             activeIcon: activeIcon,
             isEditorVisible: layoutVM.editorVisible,
             activeProviderId: activeProviderId,
-            showChat: activeContainer?.showChat ?? false,
+            showChat: activeContainer?.showChat ?? .hidden,
             showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,

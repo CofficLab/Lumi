@@ -30,7 +30,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
     // MARK: - Sidebar Toolbar
 
     @MainActor public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [
             SidebarToolbarItem(
                 id: "verbosity-toggle",

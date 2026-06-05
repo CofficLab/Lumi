@@ -39,7 +39,7 @@ public actor AgentChatPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section：消息列表
     @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [AnyView(ChatMessagesView(messageRenderer: context.messageRenderer))]
     }
 }

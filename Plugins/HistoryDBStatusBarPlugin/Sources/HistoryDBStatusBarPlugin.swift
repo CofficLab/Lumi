@@ -21,7 +21,7 @@ public actor HistoryDBStatusBarPlugin: SuperPlugin {
 
     @MainActor
     public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.showChat else { return nil }
+        guard context.showChat.isVisible else { return nil }
         return AnyView(StatusBarView(historyService: context.historyService))
     }
 }

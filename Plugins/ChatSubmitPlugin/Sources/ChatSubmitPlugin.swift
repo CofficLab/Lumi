@@ -24,7 +24,7 @@ public actor ChatSubmitPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func addSidebarTrailingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.showChat else { return [] }
+        guard context.showChat.isVisible else { return [] }
         return [
             SidebarToolbarItem(
                 id: "chat-submit",

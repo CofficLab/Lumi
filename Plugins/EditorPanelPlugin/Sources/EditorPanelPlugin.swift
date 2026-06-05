@@ -53,7 +53,7 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
             title: Self.displayName,
             icon: Self.iconName,
             showsProjectToolbar: true,
-            showChat: true,
+            showChat: .narrow,
             showsRail: true,
             showsBottomPanel: true
         ) {
