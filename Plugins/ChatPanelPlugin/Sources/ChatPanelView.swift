@@ -39,57 +39,61 @@ struct ConversationListView: View {
     @State private var didInitialLoad: Bool = false
 
     private let pageSize: Int = 40
+    private let creationScrollAnimation = Animation.easeOut(duration: 0.18)
 
     var body: some View {
-        VStack(spacing: 0) {
-            if conversations.isEmpty {
-                if isLoadingPage {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollViewReader { proxy in
+            VStack(spacing: 0) {
+                if conversations.isEmpty {
+                    if isLoadingPage {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        AppEmptyState(
+                            icon: "message.fill",
+                            title: String(localized: "No Conversations", bundle: .module)
+                        )
+                    }
                 } else {
-                    AppEmptyState(
-                        icon: "message.fill",
-                        title: String(localized: "No Conversations", bundle: .module)
-                    )
-                }
-            } else {
-                List(selection: $selectedId) {
-                    ForEach(conversations) { item in
-                        ConversationRow(item: item)
-                            .tag(item.id)
-                            .onAppear {
-                                if item.id == conversations.last?.id {
-                                    loadNextPage()
+                    List(selection: $selectedId) {
+                        ForEach(conversations) { item in
+                            ConversationRow(item: item)
+                                .id(item.id)
+                                .tag(item.id)
+                                .onAppear {
+                                    if item.id == conversations.last?.id {
+                                        loadNextPage()
+                                    }
                                 }
-                            }
+                        }
                     }
-                }
-                .listStyle(.plain)
+                    .listStyle(.plain)
 
-                if isLoadingPage {
-                    HStack {
-                        Spacer()
-                        ProgressView().controlSize(.small)
-                        Spacer()
+                    if isLoadingPage {
+                        HStack {
+                            Spacer()
+                            ProgressView().controlSize(.small)
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.vertical, 8)
                 }
             }
-        }
-        .onAppear(perform: initialLoad)
-        .onChange(of: selectedId) { _, newId in
-            if let newId {
-                context.selectConversation(newId, reason: "chatPanelSelect")
+            .onAppear(perform: initialLoad)
+            .onChange(of: selectedId) { _, newId in
+                if let newId {
+                    context.selectConversation(newId, reason: "chatPanelSelect")
+                }
             }
-        }
-        .onChange(of: context.selectedConversationId) { _, newId in
-            if selectedId != newId {
-                selectedId = newId
+            .onChange(of: context.selectedConversationId) { _, newId in
+                if selectedId != newId {
+                    selectedId = newId
+                }
             }
-        }
-        .onChange(of: context.lastChange) { _, change in
-            guard let change else { return }
-            handleConversationChange(change)
+            .onChange(of: context.lastChange) { _, change in
+                guard let change else { return }
+                handleConversationChange(change, proxy: proxy)
+            }
         }
     }
 
@@ -126,7 +130,7 @@ struct ConversationListView: View {
         isLoadingPage = false
     }
 
-    private func handleConversationChange(_ change: ConversationListChange) {
+    private func handleConversationChange(_ change: ConversationListChange, proxy: ScrollViewProxy) {
         switch change.type {
         case .created:
             if let item = context.fetchConversation(id: change.conversationId),
@@ -134,6 +138,7 @@ struct ConversationListView: View {
                 conversations.insert(item, at: 0)
                 nextOffset += 1
                 selectedId = item.id
+                scrollToConversation(item.id, proxy: proxy)
             }
         case .updated:
             if let updated = context.fetchConversation(id: change.conversationId),
@@ -144,6 +149,14 @@ struct ConversationListView: View {
             conversations.removeAll { $0.id == change.conversationId }
             nextOffset = max(0, nextOffset - 1)
             if conversations.count < pageSize { hasMore = true }
+        }
+    }
+
+    private func scrollToConversation(_ id: UUID, proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            withAnimation(creationScrollAnimation) {
+                proxy.scrollTo(id, anchor: .top)
+            }
         }
     }
 }
