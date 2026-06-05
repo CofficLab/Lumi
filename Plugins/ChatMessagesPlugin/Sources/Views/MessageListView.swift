@@ -4,9 +4,13 @@ import MarkdownKit
 import SwiftUI
 
 public struct MessageListView: View {
+    private static let bottomAnchorId = "message-list-bottom-anchor"
+
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @EnvironmentObject private var conversationVM: LumiCoreKit.WindowConversationVM
     @StateObject private var timelineViewModel = WindowChatTimelineViewModel()
+    @State private var scrollToBottomRequest: UInt64 = 0
+    @State private var shouldScrollToBottomOnRowsChange = true
 
     private let messageRenderer: (ChatMessage, Binding<Bool>) -> AnyView?
 
@@ -32,8 +36,10 @@ public struct MessageListView: View {
         }
         .onAppear {
             timelineViewModel.configure(conversationVM: conversationVM)
+            requestScrollToBottom()
         }
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
+            requestScrollToBottom()
             timelineViewModel.handleConversationChanged()
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("messageSaved"))) { notification in
@@ -41,8 +47,12 @@ public struct MessageListView: View {
                   let conversationId = notification.userInfo?["conversationId"] as? UUID
             else { return }
             timelineViewModel.handleMessageSaved(message, conversationId: conversationId)
+            if conversationId == timelineViewModel.selectedConversationId {
+                requestScrollToBottom()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("agentInputDidSendMessage"))) { _ in
+            requestScrollToBottom()
             timelineViewModel.handleUserDidSendMessage()
         }
         .environmentObject(timelineViewModel)
@@ -51,32 +61,74 @@ public struct MessageListView: View {
 
 private extension MessageListView {
     func messageListView(displayRows: [ChatMessage]) -> some View {
-        List {
-            if timelineViewModel.hasMoreMessages {
-                loadMoreButton
-                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                    .listRowSeparator(.hidden)
-            }
+        ScrollViewReader { proxy in
+            List {
+                if timelineViewModel.hasMoreMessages {
+                    loadMoreButton
+                        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                        .listRowSeparator(.hidden)
+                }
 
-            ForEach(displayRows) { message in
-                ChatBubble(
-                    message: message,
-                    isLastMessage: message.id == displayRows.last?.id,
-                    isStreaming: false,
-                    messageRenderer: messageRenderer
-                )
-                .id(message.id)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 4)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparator(.hidden)
+                ForEach(displayRows) { message in
+                    ChatBubble(
+                        message: message,
+                        isLastMessage: message.id == displayRows.last?.id,
+                        isStreaming: false,
+                        messageRenderer: messageRenderer
+                    )
+                    .id(message.id)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparator(.hidden)
+                }
+
+                bottomAnchor
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .environment(\.preferOuterScroll, true)
+            .accessibilityLabel(String(localized: "Message List", bundle: .module))
+            .accessibilityHint(String(localized: "Message List Hint", bundle: .module))
+            .onAppear {
+                scrollToBottom(proxy: proxy, animated: false)
+                shouldScrollToBottomOnRowsChange = false
+            }
+            .onChange(of: displayRows.map(\.id)) { _, _ in
+                guard shouldScrollToBottomOnRowsChange else { return }
+                scrollToBottom(proxy: proxy, animated: true)
+                shouldScrollToBottomOnRowsChange = false
+            }
+            .onChange(of: scrollToBottomRequest) { _, _ in
+                scrollToBottom(proxy: proxy, animated: true)
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .environment(\.preferOuterScroll, true)
-        .accessibilityLabel(String(localized: "Message List", bundle: .module))
-        .accessibilityHint(String(localized: "Message List Hint", bundle: .module))
+    }
+
+    var bottomAnchor: some View {
+        Color.clear
+            .frame(height: 1)
+            .id(Self.bottomAnchorId)
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            .listRowSeparator(.hidden)
+            .accessibilityHidden(true)
+    }
+
+    func requestScrollToBottom() {
+        shouldScrollToBottomOnRowsChange = true
+        scrollToBottomRequest &+= 1
+    }
+
+    func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
+        DispatchQueue.main.async {
+            if animated {
+                withAnimation(.easeOut(duration: 0.18)) {
+                    proxy.scrollTo(Self.bottomAnchorId, anchor: .bottom)
+                }
+            } else {
+                proxy.scrollTo(Self.bottomAnchorId, anchor: .bottom)
+            }
+        }
     }
 
     var loadingOverlay: some View {
