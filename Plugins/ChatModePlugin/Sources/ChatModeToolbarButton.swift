@@ -3,21 +3,25 @@ import LumiCoreKit
 import SwiftUI
 
 public struct ChatModeToolbarButton: View {
-    @EnvironmentObject private var llmVM: AppLLMVM
-    @EnvironmentObject private var conversationVM: WindowConversationVM
+    let chatModeContext: ChatModePreferenceContext
+
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPopoverPresented = false
+    @State private var selectedMode: ChatMode
 
-    public init() {}
+    public init(chatModeContext: ChatModePreferenceContext) {
+        self.chatModeContext = chatModeContext
+        self._selectedMode = State(initialValue: chatModeContext.restoredMode())
+    }
 
     public var body: some View {
         Button {
             isPopoverPresented.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: llmVM.chatMode.iconName)
+                Image(systemName: currentMode.iconName)
                     .font(.system(size: 13))
-                Text(llmVM.chatMode.levelCode)
+                Text(currentMode.levelCode)
                     .font(.system(size: 11, weight: .medium))
             }
             .foregroundColor(foregroundColor)
@@ -32,30 +36,37 @@ public struct ChatModeToolbarButton: View {
         .accessibilityHint(String(localized: "Chat Mode Hint", bundle: .module))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ChatModeLevelPopover(
-                selectedMode: llmVM.chatMode,
+                selectedMode: currentMode,
                 onSelect: selectMode
             )
         }
-        .onAppear(perform: restoreConversationPreference)
-        .onChange(of: conversationVM.selectedConversationId) { _, _ in
-            restoreConversationPreference()
+        .onAppear(perform: syncMode)
+        .onChange(of: chatModeContext.selectedConversationId) { _, _ in
+            syncMode()
+        }
+        .onChange(of: chatModeContext.currentMode) { _, newValue in
+            selectedMode = newValue
         }
     }
 
     private func selectMode(_ mode: ChatMode) {
         withAnimation {
-            llmVM.setChatMode(mode)
+            selectedMode = mode
         }
+        chatModeContext.save(mode)
         isPopoverPresented = false
     }
 
-    private func restoreConversationPreference() {
-        guard let preference = conversationVM.getChatModePreference() else { return }
-        llmVM.setChatMode(preference)
+    private func syncMode() {
+        selectedMode = chatModeContext.restoredMode()
+    }
+
+    private var currentMode: ChatMode {
+        selectedMode
     }
 
     private var foregroundColor: Color {
-        switch llmVM.chatMode {
+        switch currentMode {
         case .chat: return .orange
         case .build: return theme.textSecondary
         case .autonomous: return .red
@@ -67,7 +78,7 @@ public struct ChatModeToolbarButton: View {
     }
 
     private var helpText: String {
-        llmVM.chatMode.localizedHelpText
+        currentMode.localizedHelpText
     }
 }
 

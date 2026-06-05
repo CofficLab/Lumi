@@ -6,22 +6,26 @@ import SwiftUI
 ///
 /// 这里的详细程度只控制消息列表 UI 的渲染密度，不改变发送给模型的请求。
 public struct VerbosityToolbarButton: View {
-    @EnvironmentObject private var llmVM: AppLLMVM
-    @EnvironmentObject private var conversationVM: WindowConversationVM
+    let verbosityContext: VerbosityPreferenceContext
+
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @State private var isPopoverPresented = false
+    @State private var selectedVerbosity: ResponseVerbosity
 
-    public init() {}
+    public init(verbosityContext: VerbosityPreferenceContext) {
+        self.verbosityContext = verbosityContext
+        self._selectedVerbosity = State(initialValue: verbosityContext.restoredVerbosity())
+    }
 
     public var body: some View {
         Button {
             isPopoverPresented.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: llmVM.verbosity.iconName)
+                Image(systemName: currentVerbosity.iconName)
                     .font(.system(size: 13))
-                Text(llmVM.verbosity.levelCode)
+                Text(currentVerbosity.levelCode)
                     .font(.system(size: 11, weight: .medium))
             }
             .foregroundColor(foregroundColor)
@@ -31,37 +35,40 @@ public struct VerbosityToolbarButton: View {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
-        .help(llmVM.verbosity.description)
+        .help(currentVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityLevelPopover(
-                selectedLevel: llmVM.verbosity,
+                selectedLevel: currentVerbosity,
                 onSelect: selectLevel
             )
         }
-        .onAppear(perform: restoreConversationPreference)
-        .onChange(of: conversationVM.selectedConversationId) { _, _ in
-            restoreConversationPreference()
+        .onAppear(perform: syncVerbosity)
+        .onChange(of: verbosityContext.selectedConversationId) { _, _ in
+            syncVerbosity()
+        }
+        .onChange(of: verbosityContext.currentVerbosity) { _, newValue in
+            selectedVerbosity = newValue
         }
     }
 
     private func selectLevel(_ level: ResponseVerbosity) {
         withAnimation {
-            llmVM.setVerbosity(level)
+            selectedVerbosity = level
         }
-        conversationVM.saveVerbosityPreference(level)
+        verbosityContext.save(level)
         isPopoverPresented = false
     }
 
-    private func restoreConversationPreference() {
-        if let preference = conversationVM.getVerbosityPreference() {
-            llmVM.setVerbosity(preference)
-        } else {
-            llmVM.setVerbosity(.brief)
-        }
+    private func syncVerbosity() {
+        selectedVerbosity = verbosityContext.restoredVerbosity()
+    }
+
+    private var currentVerbosity: ResponseVerbosity {
+        selectedVerbosity
     }
 
     private var foregroundColor: Color {
-        switch llmVM.verbosity {
+        switch currentVerbosity {
         case .brief:
             return .blue
         case .standard:

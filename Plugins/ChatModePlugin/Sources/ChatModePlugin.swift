@@ -6,7 +6,7 @@ import os
 /// 聊天模式切换插件
 ///
 /// 在右侧栏底部工具栏注入 Chat/Build 模式切换按钮。
-/// 通过 `AppLLMVM` 读写当前模式状态。
+/// 通过 `ChatModePreferenceContext` 读写当前模式状态。
 public actor ChatModePlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-mode")
 
@@ -43,6 +43,7 @@ public actor ChatModePlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "chat-mode-toggle" else { return nil }
-        return AnyView(ChatModeToolbarButton())
+        guard let chatModePreferenceContext = context.chatModePreferenceContext else { return nil }
+        return AnyView(ChatModeToolbarButton(chatModeContext: chatModePreferenceContext))
     }
 }

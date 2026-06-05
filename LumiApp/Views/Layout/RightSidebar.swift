@@ -12,6 +12,7 @@ struct RightSidebarContainerView: View {
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @Environment(\.windowContainer) private var windowContainer
 
     /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
@@ -33,6 +34,10 @@ struct RightSidebarContainerView: View {
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id,
+            languagePreference: windowContainer?.projectVM.languagePreference ?? .current,
+            languagePreferenceContext: windowContainer?.languagePreferenceContext,
+            chatModePreferenceContext: makeChatModePreferenceContext(),
+            verbosityPreferenceContext: makeVerbosityPreferenceContext(),
             messageRenderer: renderMessage
         )
 
@@ -84,6 +89,14 @@ struct RightSidebarContainerView: View {
         }
         return renderer.render(message: message, showRawMessage: showRawMessage)
     }
+
+    private func makeChatModePreferenceContext() -> ChatModePreferenceContext? {
+        windowContainer?.makeChatModePreferenceContext(llmVM: llmVM)
+    }
+
+    private func makeVerbosityPreferenceContext() -> VerbosityPreferenceContext? {
+        windowContainer?.makeVerbosityPreferenceContext(llmVM: llmVM)
+    }
 }
 
 // MARK: - Sidebar Toolbar Bar
@@ -97,6 +110,7 @@ private struct SidebarToolbarBar: View {
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var messageRendererVM: AppMessageRendererVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @Environment(\.windowContainer) private var windowContainer
 
     let leadingItems: [SidebarToolbarItem]
@@ -134,6 +148,10 @@ private struct SidebarToolbarBar: View {
             showsRail: activeContainer?.showsRail ?? false,
             showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
             windowId: windowContainer?.id,
+            languagePreference: windowContainer?.projectVM.languagePreference ?? .current,
+            languagePreferenceContext: windowContainer?.languagePreferenceContext,
+            chatModePreferenceContext: makeChatModePreferenceContext(),
+            verbosityPreferenceContext: makeVerbosityPreferenceContext(),
             messageRenderer: renderMessage
         )
         if let customView = pluginProvider.getSidebarToolbarItemView(itemId: item.id, context: toolbarContext) {
@@ -158,6 +176,62 @@ private struct SidebarToolbarBar: View {
             return nil
         }
         return renderer.render(message: message, showRawMessage: showRawMessage)
+    }
+
+    private func makeChatModePreferenceContext() -> ChatModePreferenceContext? {
+        windowContainer?.makeChatModePreferenceContext(llmVM: llmVM)
+    }
+
+    private func makeVerbosityPreferenceContext() -> VerbosityPreferenceContext? {
+        windowContainer?.makeVerbosityPreferenceContext(llmVM: llmVM)
+    }
+}
+
+private extension WindowContainer {
+    var languagePreferenceContext: LanguagePreferenceContext {
+        LanguagePreferenceContext(
+            currentLanguage: projectVM.languagePreference,
+            selectedConversationId: conversationVM.selectedConversationId,
+            conversationLanguageProvider: { [weak self] in
+                self?.conversationVM.getLanguagePreference()
+            },
+            languageSaver: { [weak self] language in
+                self?.conversationVM.saveLanguagePreference(language)
+                self?.projectVM.setLanguagePreference(language)
+            }
+        )
+    }
+
+    func makeChatModePreferenceContext(llmVM: AppLLMVM) -> ChatModePreferenceContext {
+        ChatModePreferenceContext(
+            currentMode: LumiCoreKit.ChatMode(rawValue: llmVM.chatMode.rawValue) ?? .build,
+            selectedConversationId: conversationVM.selectedConversationId,
+            conversationModeProvider: { [weak self] in
+                guard let preference = self?.conversationVM.getChatModePreference() else { return nil }
+                return LumiCoreKit.ChatMode(rawValue: preference.rawValue)
+            },
+            modeSaver: { [weak self, weak llmVM] mode in
+                guard let appMode = ChatMode(rawValue: mode.rawValue) else { return }
+                llmVM?.setChatMode(appMode)
+                self?.conversationVM.saveChatModePreference(appMode)
+            }
+        )
+    }
+
+    func makeVerbosityPreferenceContext(llmVM: AppLLMVM) -> VerbosityPreferenceContext {
+        VerbosityPreferenceContext(
+            currentVerbosity: LumiCoreKit.ResponseVerbosity(rawValue: llmVM.verbosity.rawValue) ?? .brief,
+            selectedConversationId: conversationVM.selectedConversationId,
+            conversationVerbosityProvider: { [weak self] in
+                guard let preference = self?.conversationVM.getVerbosityPreference() else { return nil }
+                return LumiCoreKit.ResponseVerbosity(rawValue: preference.rawValue)
+            },
+            verbositySaver: { [weak self, weak llmVM] verbosity in
+                guard let appVerbosity = ResponseVerbosity(rawValue: verbosity.rawValue) else { return }
+                llmVM?.setVerbosity(appVerbosity)
+                self?.conversationVM.saveVerbosityPreference(appVerbosity)
+            }
+        )
     }
 }
 

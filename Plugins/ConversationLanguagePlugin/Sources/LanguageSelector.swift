@@ -4,10 +4,15 @@ import SwiftUI
 
 /// 语言切换按钮：每个对话保存独立语言偏好。
 struct LanguageToggleButton: View {
-    @EnvironmentObject private var projectVM: PluginProjectContext
-    @EnvironmentObject private var conversationVM: WindowConversationVM
+    let languageContext: LanguagePreferenceContext
 
     @State private var isPopoverPresented = false
+    @State private var selectedLanguage: LanguagePreference
+
+    init(languageContext: LanguagePreferenceContext) {
+        self.languageContext = languageContext
+        self._selectedLanguage = State(initialValue: languageContext.restoredLanguage())
+    }
 
     var body: some View {
         Button {
@@ -31,27 +36,29 @@ struct LanguageToggleButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             LanguagePopover(selectedLanguage: currentLanguage, onSelect: selectLanguage)
         }
-        .onAppear(perform: restoreConversationPreference)
-        .onChange(of: conversationVM.selectedConversationId) { _, _ in
-            restoreConversationPreference()
+        .onAppear(perform: syncLanguage)
+        .onChange(of: languageContext.selectedConversationId) { _, _ in
+            syncLanguage()
+        }
+        .onChange(of: languageContext.currentLanguage) { _, newValue in
+            selectedLanguage = newValue
         }
     }
 
     private var currentLanguage: LanguagePreference {
-        projectVM.languagePreference
+        selectedLanguage
     }
 
     private func selectLanguage(_ language: LanguagePreference) {
         withAnimation {
-            projectVM.setLanguagePreference(language)
+            selectedLanguage = language
         }
-        conversationVM.saveLanguagePreference(language)
+        languageContext.save(language)
         isPopoverPresented = false
     }
 
-    private func restoreConversationPreference() {
-        guard let preference = conversationVM.getLanguagePreference() else { return }
-        projectVM.setLanguagePreference(preference)
+    private func syncLanguage() {
+        selectedLanguage = languageContext.restoredLanguage()
     }
 
     private var foregroundColor: Color {

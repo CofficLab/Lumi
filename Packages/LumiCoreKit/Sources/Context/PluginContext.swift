@@ -66,6 +66,22 @@ public struct PluginContext {
     /// 当前窗口的语言偏好。
     public let languagePreference: LanguagePreference
 
+    /// 语言偏好读写能力（由内核注入）。
+    ///
+    /// 需要读写对话级语言设置的插件应优先使用这个显式 capability，
+    /// 避免依赖宿主 SwiftUI 树中必须存在特定 `@EnvironmentObject`。
+    public let languagePreferenceContext: LanguagePreferenceContext?
+
+    /// 聊天模式读写能力（由内核注入）。
+    ///
+    /// 需要读写对话级 Chat/Build/Autonomous 偏好的插件应优先使用这个显式 capability。
+    public let chatModePreferenceContext: ChatModePreferenceContext?
+
+    /// 响应详细程度读写能力（由内核注入）。
+    ///
+    /// 需要读写对话级 verbosity 偏好的插件应优先使用这个显式 capability。
+    public let verbosityPreferenceContext: VerbosityPreferenceContext?
+
     /// 当前运行时可用的 Agent 工具。
     public let availableTools: [SuperAgentTool]
 
@@ -99,6 +115,9 @@ public struct PluginContext {
         windowId: UUID? = nil,
         currentProjectPath: String = "",
         languagePreference: LanguagePreference = .current,
+        languagePreferenceContext: LanguagePreferenceContext? = nil,
+        chatModePreferenceContext: ChatModePreferenceContext? = nil,
+        verbosityPreferenceContext: VerbosityPreferenceContext? = nil,
         availableTools: [SuperAgentTool] = [],
         toolLanguagePreference: LanguagePreference = .current,
         historyService: (any HistoryQueryService)? = nil,
@@ -115,6 +134,9 @@ public struct PluginContext {
         self.windowId = windowId
         self.currentProjectPath = currentProjectPath
         self.languagePreference = languagePreference
+        self.languagePreferenceContext = languagePreferenceContext
+        self.chatModePreferenceContext = chatModePreferenceContext
+        self.verbosityPreferenceContext = verbosityPreferenceContext
         self.availableTools = availableTools
         self.toolLanguagePreference = toolLanguagePreference
         self.historyService = historyService

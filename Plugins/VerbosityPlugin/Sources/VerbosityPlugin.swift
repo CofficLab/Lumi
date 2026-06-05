@@ -6,7 +6,7 @@ import os
 /// 响应详细程度切换插件
 ///
 /// 在右侧栏底部工具栏注入简洁/正常/详细切换按钮。
-/// 通过 `AppLLMVM` 读写当前详细程度状态。
+/// 通过 `VerbosityPreferenceContext` 读写当前详细程度状态。
 public actor VerbosityPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.verbosity")
 
@@ -43,6 +43,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "verbosity-toggle" else { return nil }
-        return AnyView(VerbosityToolbarButton())
+        guard let verbosityPreferenceContext = context.verbosityPreferenceContext else { return nil }
+        return AnyView(VerbosityToolbarButton(verbosityContext: verbosityPreferenceContext))
     }
 }

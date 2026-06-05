@@ -52,6 +52,7 @@ public actor ConversationLanguagePlugin: SuperPlugin {
     @MainActor
     public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "language-toggle" else { return nil }
-        return AnyView(LanguageToggleButton())
+        guard let languagePreferenceContext = context.languagePreferenceContext else { return nil }
+        return AnyView(LanguageToggleButton(languageContext: languagePreferenceContext))
     }
 }
