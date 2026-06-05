@@ -118,14 +118,22 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
     let storageKey: String
     /// 控制第几个子视图的比例（默认 0，向后兼容）
     var columnIndex: Int = 0
+    /// 没有已保存比例时使用的初始比例。
+    var defaultRatio: Double?
 
     func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
-        SplitViewWidthPersistenceView(storageKey: storageKey, columnIndex: columnIndex, layoutVM: layoutVM)
+        SplitViewWidthPersistenceView(
+            storageKey: storageKey,
+            columnIndex: columnIndex,
+            defaultRatio: defaultRatio,
+            layoutVM: layoutVM
+        )
     }
 
     func updateNSView(_ nsView: SplitViewWidthPersistenceView, context: Context) {
         nsView.storageKey = storageKey
         nsView.columnIndex = columnIndex
+        nsView.defaultRatio = defaultRatio
         nsView.layoutVM = layoutVM
         nsView.attachIfNeeded()
     }
@@ -140,6 +148,7 @@ final class SplitViewWidthPersistenceView: NSView {
 
     var storageKey: String
     var columnIndex: Int
+    var defaultRatio: Double?
     weak var layoutVM: WindowLayoutVM?
     private var observedSplitView: NSSplitView?
     private var resizeObserver: NSObjectProtocol?
@@ -151,9 +160,10 @@ final class SplitViewWidthPersistenceView: NSView {
     /// 所有栏的最小保护尺寸
     static let minimumColumnSize: CGFloat = 48
 
-    init(storageKey: String, columnIndex: Int = 0, layoutVM: WindowLayoutVM?) {
+    init(storageKey: String, columnIndex: Int = 0, defaultRatio: Double? = nil, layoutVM: WindowLayoutVM?) {
         self.storageKey = storageKey
         self.columnIndex = columnIndex
+        self.defaultRatio = defaultRatio
         self.layoutVM = layoutVM
         super.init(frame: .zero)
     }
@@ -227,9 +237,11 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        // 从当前窗口的 WindowLayoutVM 读取比例（由布局状态提供方在启动时从磁盘恢复）
+        // 从当前窗口的 WindowLayoutVM 读取比例（由布局状态提供方在启动时从磁盘恢复）。
+        // 没有保存值时才使用默认比例，避免覆盖用户手动调整过的宽度。
         let savedRatio = layoutVM?.layoutRatios[storageKey]
-        guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
+        let targetRatio = savedRatio ?? defaultRatio
+        guard let targetRatio, targetRatio > 0.0, targetRatio < 1.0 else {
             scheduleApplyRetry()
             return
         }
@@ -251,7 +263,7 @@ final class SplitViewWidthPersistenceView: NSView {
             let dividersCount = splitView.arrangedSubviews.count - 1
             let usableSize = max(1, total - CGFloat(dividersCount) * splitView.dividerThickness)
 
-            let targetSize = max(Self.minimumColumnSize, min(usableSize - Self.minimumColumnSize, usableSize * savedRatio))
+            let targetSize = max(Self.minimumColumnSize, min(usableSize - Self.minimumColumnSize, usableSize * targetRatio))
 
             let dividerIndex: Int
             let position: CGFloat

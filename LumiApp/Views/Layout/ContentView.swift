@@ -16,6 +16,7 @@ import SwiftUI
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
     nonisolated static var verbose: Bool { false }
+    private static let defaultRightSidebarRatio = 0.30
 
     @EnvironmentObject var pluginProvider: AppPluginVM
     @EnvironmentObject var themeVM: AppThemeVM
@@ -118,6 +119,7 @@ struct ContentView: View, SuperLog {
             let hasSidebar = !sidebarSections.isEmpty || !sidebarBottomSections.isEmpty
             let layoutSignature = Self.layoutSignature(hasRail: showRail, hasSidebar: hasSidebar)
             let autosaveName = "Unified_MainSplit_\(layoutSignature)"
+            let rightSidebarStorageKey = Self.rightSidebarStorageKey(for: activeContainer)
 
             if hasSidebar && showRail {
                 HSplitView {
@@ -132,12 +134,14 @@ struct ContentView: View, SuperLog {
                     if showEditor {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .layoutPriority(1)
                     }
                     RightSidebarContainerView(sections: sidebarSections, bottomSections: sidebarBottomSections)
                         .frame(maxHeight: .infinity)
                         .background(SplitViewWidthPersistence(
-                            storageKey: "Layout.Main.RightSidebar",
-                            columnIndex: 3
+                            storageKey: rightSidebarStorageKey,
+                            columnIndex: 3,
+                            defaultRatio: Self.defaultRightSidebarRatio
                         ))
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -148,12 +152,14 @@ struct ContentView: View, SuperLog {
                     if showEditor {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .layoutPriority(1)
                     }
                     RightSidebarContainerView(sections: sidebarSections, bottomSections: sidebarBottomSections)
                         .frame(maxHeight: .infinity)
                         .background(SplitViewWidthPersistence(
-                            storageKey: "Layout.Main.RightSidebar",
-                            columnIndex: 2
+                            storageKey: rightSidebarStorageKey,
+                            columnIndex: 2,
+                            defaultRatio: Self.defaultRightSidebarRatio
                         ))
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -170,6 +176,7 @@ struct ContentView: View, SuperLog {
                     if showEditor {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .layoutPriority(1)
                     }
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
@@ -180,6 +187,7 @@ struct ContentView: View, SuperLog {
                     if showEditor {
                         PanelView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .layoutPriority(1)
                     } else {
                         EmptyContentGuideView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -199,6 +207,11 @@ struct ContentView: View, SuperLog {
         if hasRail { signature += "R" }
         signature += "B"
         return signature
+    }
+
+    private static func rightSidebarStorageKey(for container: ViewContainerItem?) -> String {
+        guard let container else { return "Layout.Main.RightSidebar" }
+        return "Layout.Main.RightSidebar.\(container.id)"
     }
 
     private func renderMessage(_ message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView? {
