@@ -44,7 +44,6 @@
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
-		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
 		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
 		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
@@ -516,7 +515,6 @@
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */,
 				0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */,
-				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
 				GBK1000000000000000001 /* GitBranchMonitorKit in Frameworks */,
@@ -1060,7 +1058,6 @@
 				C0FF2B112FB6000000000001 /* ProjectProfileKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
-				A1B2C4182F70000100AAA102 /* DockerKit */,
 				A1B2C4212F70000100AAA103 /* DiskManagerKit */,
 				A1B2C4412F70000100AAA105 /* TerminalCoreKit */,
 				A1B2C4512F70000100AAA106 /* ShellKit */,
@@ -1169,7 +1166,6 @@
 				C0FF2B122FB6000000000001 /* XCLocalSwiftPackageReference "Packages/ProjectProfileKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
-				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
 				A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */,
 				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
 				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
@@ -2043,10 +2039,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DeviceMonitorKit;
 		};
-		A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/DockerKit;
-		};
 		A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DiskManagerKit;
@@ -2392,11 +2384,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */;
 			productName = DeviceMonitorKit;
-		};
-		A1B2C4182F70000100AAA102 /* DockerKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */;
-			productName = DockerKit;
 		};
 		A1B2C4212F70000100AAA103 /* DiskManagerKit */ = {
 			isa = XCSwiftPackageProductDependency;
