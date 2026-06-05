@@ -1,5 +1,5 @@
 import Testing
-@testable import AgentLanguagePlugin
+@testable import ConversationLanguagePlugin
 
 @Test func packageLoads() async throws {
     #expect(true)

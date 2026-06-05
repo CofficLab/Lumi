@@ -388,7 +388,6 @@
 				AgentCoreToolsPlugin,
 				AgentDelayMessagePlugin,
 				AgentGitHubToolsPlugin,
-				AgentLanguagePlugin,
 				AgentMCPToolsPlugin,
 				AgentRAGPlugin,
 				AgentRulesPlugin,

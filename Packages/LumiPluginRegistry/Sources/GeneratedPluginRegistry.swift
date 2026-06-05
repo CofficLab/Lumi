@@ -4,7 +4,7 @@ import AgentContextSyncPlugin
 import AgentCoreToolsPlugin
 import AgentDelayMessagePlugin
 import AgentGitHubToolsPlugin
-import AgentLanguagePlugin
+import ConversationLanguagePlugin
 import AgentMCPToolsPlugin
 import MessageRendererPlugin
 import AgentRAGPlugin
@@ -181,7 +181,7 @@ public enum GeneratedPluginRegistry {
         plugins.append(AgentCoreToolsPlugin.shared)
         plugins.append(DelayMessagePlugin.shared)
         plugins.append(GitHubToolsPlugin.shared)
-        plugins.append(AgentLanguagePlugin.shared)
+        plugins.append(ConversationLanguagePlugin.shared)
         plugins.append(AgentMCPToolsPlugin.shared)
         plugins.append(MessageRendererPlugin.shared)
         plugins.append(RAGPlugin.shared)

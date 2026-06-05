@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentLanguagePlugin",
+    name: "ConversationLanguagePlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "AgentLanguagePlugin",
-            targets: ["AgentLanguagePlugin"]
+            name: "ConversationLanguagePlugin",
+            targets: ["ConversationLanguagePlugin"]
         )
     ],
     dependencies: [
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AgentLanguagePlugin",
+            name: "ConversationLanguagePlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
@@ -34,8 +34,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "AgentLanguagePluginTests",
-            dependencies: ["AgentLanguagePlugin"],
+            name: "ConversationLanguagePluginTests",
+            dependencies: ["ConversationLanguagePlugin"],
             path: "Tests"
         )
     ]
