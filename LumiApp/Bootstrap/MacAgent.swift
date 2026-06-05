@@ -72,12 +72,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
         setupControllers()
 
-        // 启动自动化 HTTP 服务器（用于自动化测试）
-        AutomationServer.shared.start()
-
-        // 启动自动化控制器（用于路由和处理自动化动作）
-        AutomationController.shared.start()
-
         // 发送应用启动完成的通知
         // 让其他组件知道应用已准备好接受交互
         NotificationCenter.postApplicationDidFinishLaunching()

@@ -29,7 +29,6 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
     private let pluginContext: PluginContext
-    @StateObject private var automationState = InlinePreviewAutomationState.shared
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
     @State private var isConfirmingProjectStringCatalogClean = false
@@ -75,23 +74,6 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 viewModel.wireEditorService(editorService)
             }
             viewModel.viewDidAppear(fileURL: currentFileURL, sourceText: sourceText)
-
-            // 消费 AutomationController 可能在 View 出现之前就写入的 pending sessionAction。
-            if let pendingAction = automationState.sessionAction {
-                automationState.sessionAction = nil
-                switch pendingAction {
-                case .start:
-                    if Self.verbose {
-                        Self.logger.info("\(self.t)🤖 onAppear 消费 pending sessionAction=.start")
-                    }
-                    viewModel.startSession()
-                case .stop:
-                    if Self.verbose {
-                        Self.logger.info("\(self.t)🤖 onAppear 消费 pending sessionAction=.stop")
-                    }
-                    viewModel.stopSession()
-                }
-            }
         }
         .onDisappear {
             viewModel.viewDidDisappear()
@@ -110,23 +92,6 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
         .onChange(of: editorService?.contentRevision ?? 0) { _, _ in
             viewModel.updateBufferText(sourceText)
-        }
-        // 监听自动化共享状态
-        .onChange(of: automationState.sessionAction) { oldAction, newAction in
-            guard let newAction else { return }
-            automationState.sessionAction = nil
-            switch newAction {
-            case .start:
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.start")
-                }
-                viewModel.startSession()
-            case .stop:
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.stop")
-                }
-                viewModel.stopSession()
-            }
         }
     }
 

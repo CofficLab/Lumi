@@ -137,9 +137,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     // MARK: - 已发布状态
 
-    @Published private(set) var currentFrame: LumiPreviewFacade.IOSurfaceFrame? {
-        didSet { publishAutomationDebugState() }
-    }
+    @Published private(set) var currentFrame: LumiPreviewFacade.IOSurfaceFrame?
     @Published private(set) var canvasSize: CGSize = .zero {
         didSet {
             let oldStr = "\(oldValue.width)×\(oldValue.height)"
@@ -157,43 +155,27 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                             Self.logger.info("\(self.t)🔄 status 变化：\(oldDesc) → \(newDesc)")
             }
-            publishAutomationDebugState()
         }
     }
-    @Published private(set) var policy: LumiPreviewFacade.FrameStreamPolicy = .stopped {
-        didSet { publishAutomationDebugState() }
-    }
+    @Published private(set) var policy: LumiPreviewFacade.FrameStreamPolicy = .stopped
     @Published private(set) var entryStatus: EntryStatus = .noPreview {
         didSet {
             let desc = entryStatus.description
             if Self.verbose {
                             Self.logger.info("\(self.t)📦 entryStatus 变化：\(desc)")
             }
-            publishAutomationDebugState()
         }
     }
-    @Published private(set) var previewMode: PreviewMode = .unsupported(nil) {
-        didSet { publishAutomationDebugState() }
-    }
-    @Published private(set) var availablePreviews: [LumiPreviewFacade.PreviewBuilder.PreviewSummary] = [] {
-        didSet { publishAutomationDebugState() }
-    }
-    @Published private(set) var selectedPreviewIndex: Int = 0 {
-        didSet { publishAutomationDebugState() }
-    }
-    @Published private(set) var lastBuildInfo: BuildInfo? {
-        didSet { publishAutomationDebugState() }
-    }
+    @Published private(set) var previewMode: PreviewMode = .unsupported(nil)
+    @Published private(set) var availablePreviews: [LumiPreviewFacade.PreviewBuilder.PreviewSummary] = []
+    @Published private(set) var selectedPreviewIndex: Int = 0
+    @Published private(set) var lastBuildInfo: BuildInfo?
     @Published private(set) var cacheSummary: EditorPreviewStorage.CacheSummary = .init(fileCount: 0, byteCount: 0)
-    @Published private(set) var entryDebugState: String? {
-        didSet { publishAutomationDebugState() }
-    }
+    @Published private(set) var entryDebugState: String?
     @Published private(set) var isRequestingEntryDebugState = false
     @Published private(set) var cursorShape: LumiPreviewFacade.PreviewCursorShape = .arrow
     /// 最近一次构建失败时写入的日志文件 URL，用于在 UI 上提供「查看日志文件」入口。
-    @Published private(set) var lastBuildLogURL: URL? {
-        didSet { publishAutomationDebugState() }
-    }
+    @Published private(set) var lastBuildLogURL: URL?
 
     // MARK: - 私有
 
@@ -442,7 +424,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         }
         activeFileURL = url
         latestSourceText = sourceText
-        publishAutomationDebugState()
         updatePreviewMode(for: url)
         guard previewMode == .swift else {
             resetInlineStateForStaticPreview()
@@ -459,7 +440,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
                     Self.logger.info("\(self.t)💾 应用保存修订，有源码=\(sourceText != nil)")
         }
         latestSourceText = sourceText
-        publishAutomationDebugState()
         guard previewMode == .swift else { return }
         refreshAvailablePreviews()
         startSessionIfNeededForActiveFile()
@@ -469,7 +449,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     /// 由 Combine 订阅（内容变化）触发，也可由 View 层直接调用。
     public func updateBufferText(_ sourceText: String?) {
         latestSourceText = sourceText
-        publishAutomationDebugState()
         guard previewMode == .swift else { return }
         refreshAvailablePreviews()
         startSessionIfNeededForActiveFile()
@@ -802,7 +781,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         receivedFrameCount = 0
         entryDebugState = nil
         cursorShape = .arrow
-        publishAutomationDebugState()
     }
 
     private func failEntry(kind: EntryFailureKind, message: String) {
@@ -1036,50 +1014,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         let pixelWidth = max(1, Int((pointWidth * scale).rounded()))
         let pixelHeight = max(1, Int((pointHeight * scale).rounded()))
         return (pixelWidth, pixelHeight, Double(scale))
-    }
-
-    private func publishAutomationDebugState() {
-        let state = InlinePreviewAutomationState.shared
-        state.previewSessionStatus = status.description
-        state.previewEntryStatus = entryStatus.description
-        state.previewModeName = automationPreviewModeName
-        state.previewActiveFilePath = activeFileURL?.path ?? ""
-        state.previewHasSource = latestSourceText != nil
-        state.previewAvailablePreviewCount = availablePreviews.count
-        state.previewSelectedIndex = selectedPreviewIndex
-        state.previewHasCurrentFrame = currentFrame != nil
-        state.previewReceivedFrameCount = receivedFrameCount
-        state.previewLastFrameSeq = lastFrameSeq ?? 0
-        state.previewLastBuildTitle = lastBuildInfo?.selectedTitle ?? ""
-        state.previewLastBuildPreviewCount = lastBuildInfo?.previewCount ?? 0
-        state.previewLastBuildUsedCache = lastBuildInfo?.usedCache ?? false
-        state.previewEntryDebugState = entryDebugState ?? ""
-        state.previewLastBuildLogPath = lastBuildLogURL?.path ?? ""
-    }
-
-    private var automationPreviewModeName: String {
-        switch previewMode {
-        case .swift:
-            return "swift"
-        case .image:
-            return "image"
-        case .markdown:
-            return "markdown"
-        case .stringCatalog:
-            return "stringCatalog"
-        case .json:
-            return "json"
-        case .plist:
-            return "plist"
-        case .csv:
-            return "csv"
-        case .html:
-            return "html"
-        case .pdf:
-            return "pdf"
-        case .unsupported:
-            return "unsupported"
-        }
     }
 
     private func sendResizeIfNeeded() {
