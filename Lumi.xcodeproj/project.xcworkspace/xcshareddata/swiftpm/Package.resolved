@@ -177,8 +177,8 @@
         "repositoryURL": "https://github.com/ChimeHQ/Rearrange",
         "state": {
           "branch": null,
-          "revision": "f1d74e1642956f0300756ad8d1d64e9034857bc3",
-          "version": "2.0.0"
+          "revision": "4de8be41dba304192e87dc0a11e0aa39e72aa2e8",
+          "version": "2.1.1"
         }
       },
       {
@@ -222,8 +222,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser",
         "state": {
           "branch": null,
-          "revision": "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
-          "version": "1.7.1"
+          "revision": "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+          "version": "1.8.2"
         }
       },
       {

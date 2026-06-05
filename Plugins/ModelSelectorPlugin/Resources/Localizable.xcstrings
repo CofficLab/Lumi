@@ -528,6 +528,7 @@
       }
     },
     "No Model Selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
