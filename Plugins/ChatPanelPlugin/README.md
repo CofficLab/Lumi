@@ -37,7 +37,8 @@ This plugin integrates with the Lumi application. It provides:
 Sources/
 ├── ChatPanelPlugin.swift                  # Plugin entry point
 ├── ChatPanelView.swift                    # Main chat panel view
-├── ChatPanelSplitWidthPersistence.swift   # Split view width persistence
+├── LocalStore.swift                       # Plugin settings persistence
+├── SplitWidthPersistence.swift            # Split view width persistence
 └── Resources/                             # Localizable strings
 Tests/
 └── ChatPanelPluginTests/                  # Unit tests

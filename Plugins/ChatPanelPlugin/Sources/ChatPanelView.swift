@@ -6,14 +6,18 @@ public struct ChatPanelView: View {
     @EnvironmentObject private var context: ConversationListContext
 
     public var body: some View {
-        ChatPanelConversationList(context: context)
+        ConversationListView(context: context)
             .frame(
-                minWidth: ChatPanelSplitWidth.defaultMinimumWidth,
-                idealWidth: ChatPanelSplitWidth.defaultWidth,
-                maxWidth: ChatPanelSplitWidth.defaultMaximumWidth,
+                minWidth: SplitWidth.defaultMinimumWidth,
+                idealWidth: SplitWidth.defaultWidth,
+                maxWidth: SplitWidth.defaultMaximumWidth,
                 maxHeight: .infinity
             )
-            .background(ChatPanelSplitWidthPersistence(config: .default))
+            .background(
+                SplitWidthPersistence(
+                    config: .default(databaseDirectory: context.databaseDirectory())
+                )
+            )
     }
 }
 
@@ -21,7 +25,7 @@ public struct ChatPanelView: View {
 ///
 /// 通过 @EnvironmentObject 获取内核注入的 ConversationListContext，
 /// 实现分页加载、选中同步、变更响应等功能。
-struct ChatPanelConversationList: View {
+struct ConversationListView: View {
     @ObservedObject var context: ConversationListContext
 
     @State private var conversations: [ConversationListItem] = []
@@ -48,7 +52,7 @@ struct ChatPanelConversationList: View {
             } else {
                 List(selection: $selectedId) {
                     ForEach(conversations) { item in
-                        ChatPanelConversationRow(item: item)
+                        ConversationRow(item: item)
                             .tag(item.id)
                             .onAppear {
                                 if item.id == conversations.last?.id {
@@ -142,7 +146,7 @@ struct ChatPanelConversationList: View {
 }
 
 /// 单行对话列表项
-struct ChatPanelConversationRow: View {
+struct ConversationRow: View {
     let item: ConversationListItem
 
     var body: some View {

@@ -1,47 +1,48 @@
 import AppKit
 import SwiftUI
 
-enum ChatPanelSplitWidth {
-    static let storageKey = "ChatPanelPlugin.ConversationListWidth"
+enum SplitWidth {
     static let defaultWidth: CGFloat = 280
     static let defaultMinimumWidth: CGFloat = 220
     static let defaultMaximumWidth: CGFloat = 520
 }
 
-struct ChatPanelSplitWidthPersistence: NSViewRepresentable {
+struct SplitWidthPersistence: NSViewRepresentable {
     struct Config {
-        var storageKey: String
+        var store: LocalStore
         var defaultWidth: CGFloat
         var minimumWidth: CGFloat
         var maximumWidth: CGFloat
 
-        static let `default` = Config(
-            storageKey: ChatPanelSplitWidth.storageKey,
-            defaultWidth: ChatPanelSplitWidth.defaultWidth,
-            minimumWidth: ChatPanelSplitWidth.defaultMinimumWidth,
-            maximumWidth: ChatPanelSplitWidth.defaultMaximumWidth
-        )
+        static func `default`(databaseDirectory: URL) -> Config {
+            Config(
+                store: LocalStore(databaseDirectory: databaseDirectory),
+                defaultWidth: SplitWidth.defaultWidth,
+                minimumWidth: SplitWidth.defaultMinimumWidth,
+                maximumWidth: SplitWidth.defaultMaximumWidth
+            )
+        }
     }
 
     let config: Config
 
-    func makeNSView(context: Context) -> ChatPanelSplitWidthPersistenceView {
-        ChatPanelSplitWidthPersistenceView(config: config)
+    func makeNSView(context: Context) -> SplitWidthPersistenceView {
+        SplitWidthPersistenceView(config: config)
     }
 
-    func updateNSView(_ nsView: ChatPanelSplitWidthPersistenceView, context: Context) {
+    func updateNSView(_ nsView: SplitWidthPersistenceView, context: Context) {
         nsView.config = config
     }
 
-    static func dismantleNSView(_ nsView: ChatPanelSplitWidthPersistenceView, coordinator: ()) {
+    static func dismantleNSView(_ nsView: SplitWidthPersistenceView, coordinator: ()) {
         nsView.detach()
     }
 }
 
-final class ChatPanelSplitWidthPersistenceView: NSView {
+final class SplitWidthPersistenceView: NSView {
     private static let maxApplyRetryCount = 20
 
-    var config: ChatPanelSplitWidthPersistence.Config {
+    var config: SplitWidthPersistence.Config {
         didSet {
             didApplyWidth = false
             applyWidthIfPossible()
@@ -54,7 +55,7 @@ final class ChatPanelSplitWidthPersistenceView: NSView {
     private var applyRetryCount = 0
     private var pendingRetryWorkItem: DispatchWorkItem?
 
-    init(config: ChatPanelSplitWidthPersistence.Config) {
+    init(config: SplitWidthPersistence.Config) {
         self.config = config
         super.init(frame: .zero)
     }
@@ -132,7 +133,7 @@ final class ChatPanelSplitWidthPersistenceView: NSView {
 
         let dividersWidth = CGFloat(splitView.arrangedSubviews.count - 1) * splitView.dividerThickness
         let usableWidth = max(1, totalWidth - dividersWidth)
-        let savedWidth = UserDefaults.standard.double(forKey: config.storageKey)
+        let savedWidth = config.store.loadConversationListWidth()
         let requestedWidth = savedWidth > 0 ? CGFloat(savedWidth) : config.defaultWidth
         let otherColumnsMinimumWidth = CGFloat(splitView.arrangedSubviews.count - 1) * config.minimumWidth
         let maximumAvailableWidth = max(config.minimumWidth, usableWidth - otherColumnsMinimumWidth)
@@ -156,7 +157,7 @@ final class ChatPanelSplitWidthPersistenceView: NSView {
         let width = splitView.arrangedSubviews[columnIndex].frame.width
         guard width.isFinite, width >= config.minimumWidth else { return }
         let clampedWidth = min(max(width, config.minimumWidth), config.maximumWidth)
-        UserDefaults.standard.set(Double(clampedWidth), forKey: config.storageKey)
+        config.store.saveConversationListWidth(Double(clampedWidth))
     }
 
     private func setColumn(_ columnIndex: Int, width: CGFloat, in splitView: NSSplitView) {
