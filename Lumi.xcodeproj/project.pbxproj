@@ -234,7 +234,6 @@
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
 		F6716FCEFE4C936C9418D933 /* SampleInsightsEditorPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 09EFB72F5DA8A0A7A2BEE6C3 /* SampleInsightsEditorPlugin */; };
-		F695A1225EE724C3B3472E1F /* AgentLanguagePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 75E88D92D53FA3E545C39E17 /* AgentLanguagePlugin */; };
 		F8436C654D86B4A86BFEA2F0 /* RegistryManagerPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = D1C00D2ECA84580C41D51314 /* RegistryManagerPlugin */; };
 		FA4A0DF462ED747AD5424D7D /* OpenInGitOKPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 18BCD88DED4AFD6DB26615AA /* OpenInGitOKPlugin */; };
 		FAD21E63E42ACF18B3F0B47F /* VueEditorPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 2CAF5CCEB4916D41FC30FA1C /* VueEditorPlugin */; };
@@ -642,7 +641,6 @@
 				B9BC9BCBCB384FC7BFD6A25D /* AgentCoreToolsPlugin in Frameworks */,
 				110CA997C62F1EABA1192424 /* AgentDelayMessagePlugin in Frameworks */,
 				DE2BAD45B5E01C7870351ACB /* AgentGitHubToolsPlugin in Frameworks */,
-				F695A1225EE724C3B3472E1F /* AgentLanguagePlugin in Frameworks */,
 				7C2A50AD6255CB6CA6590E56 /* AgentMCPToolsPlugin in Frameworks */,
 				D4D80C0D6F8934D748BBAB65 /* MessageRendererPlugin in Frameworks */,
 				CA887353886BBA1B3F940CAA /* AgentRAGPlugin in Frameworks */,
@@ -1369,7 +1367,6 @@
 				BD7E70D4D1B6285FA55DF1A4 /* AgentCoreToolsPlugin */,
 				C987521DF47CD2B78A18DEEA /* AgentDelayMessagePlugin */,
 				30E2D969ABAB2E8661190487 /* AgentGitHubToolsPlugin */,
-				75E88D92D53FA3E545C39E17 /* AgentLanguagePlugin */,
 				6AC603D847F506F371242CD7 /* AgentMCPToolsPlugin */,
 				E7A6066A71F4DE1B69B489A7 /* MessageRendererPlugin */,
 				1C295BDFECB699C46510D2D4 /* AgentRAGPlugin */,
@@ -1760,7 +1757,6 @@
 				42004787393870A6F7669878 /* XCLocalSwiftPackageReference "Plugins/AgentCoreToolsPlugin" */,
 				625027296DBBC8DCBDA468DA /* XCLocalSwiftPackageReference "Plugins/AgentDelayMessagePlugin" */,
 				7B13B52D4919470F99CF077E /* XCLocalSwiftPackageReference "Plugins/AgentGitHubToolsPlugin" */,
-				450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Plugins/AgentLanguagePlugin" */,
 				E74763AAEF20F46DDE0340FA /* XCLocalSwiftPackageReference "Plugins/AgentMCPToolsPlugin" */,
 				BA348C1F84667BBC687E8E14 /* XCLocalSwiftPackageReference "Plugins/MessageRendererPlugin" */,
 				9E5C3801F915BEB60845BC0E /* XCLocalSwiftPackageReference "Plugins/AgentRAGPlugin" */,
@@ -3042,10 +3038,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/AgentContextSyncPlugin;
 		};
-		450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Plugins/AgentLanguagePlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/AgentLanguagePlugin;
-		};
 		457662F287CAEA1F2516EDB3 /* XCLocalSwiftPackageReference "Plugins/LSPWorkspaceSymbolEditorPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/LSPWorkspaceSymbolEditorPlugin;
@@ -4294,11 +4286,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 43EE5A99B7EDF6FE1F4BE938 /* XCLocalSwiftPackageReference "Plugins/AgentContextSyncPlugin" */;
 			productName = AgentContextSyncPlugin;
-		};
-		75E88D92D53FA3E545C39E17 /* AgentLanguagePlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 450191677A65CAF74DE27624 /* XCLocalSwiftPackageReference "Plugins/AgentLanguagePlugin" */;
-			productName = AgentLanguagePlugin;
 		};
 		7BF09B47A508DCAE88D0A48C /* ConversationNewPlugin */ = {
 			isa = XCSwiftPackageProductDependency;

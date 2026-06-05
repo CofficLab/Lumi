@@ -1,3 +1,4 @@
+import AgentToolKit
 import SwiftUI
 
 struct LanguagePopover: View {
