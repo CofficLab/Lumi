@@ -1,5 +1,12 @@
 import Foundation
 import AgentToolKit
+import AskUserPlugin
+
+/// 工具执行结果摘要
+struct ToolExecutionSummary {
+    var hadUserRejection: Bool = false
+    var hasAwaitingUserResponse: Bool = false
+}
 
 /// 工具调用执行器
 ///
@@ -154,13 +161,16 @@ final class ToolCallExecutor: SuperLog {
 
     /// 执行某条助手消息中的全部工具调用，将结果写回 assistant 消息内的 `ToolCall.result`。
     ///
-    /// - Returns: 是否存在用户拒绝的工具调用
+    /// - Returns: 执行结果摘要（是否有用户拒绝、是否有等待用户回答的工具）
     @discardableResult
-    func executeAll(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
-        guard var updatedCalls = assistantMessage.toolCalls, !updatedCalls.isEmpty else { return false }
+    func executeAll(assistantMessage: ChatMessage, conversationId: UUID) async -> ToolExecutionSummary {
+        guard var updatedCalls = assistantMessage.toolCalls, !updatedCalls.isEmpty else {
+            return ToolExecutionSummary()
+        }
 
         let totalCount = updatedCalls.count
         var hadUserRejection = false
+        var hasAwaitingUserResponse = false
 
         for (index, toolCall) in updatedCalls.enumerated() where toolCall.result == nil {
             if Task.isCancelled {
@@ -186,19 +196,31 @@ final class ToolCallExecutor: SuperLog {
                 )
             }
 
-            updatedCalls[index].result = await executeOne(
+            let result = await executeOne(
                 toolCall: toolCall,
                 step: index + 1,
                 total: totalCount,
                 conversationId: conversationId
             )
+            updatedCalls[index].result = result
+
+            // 检测到等待用户回答，标记并暂停后续工具执行
+            if result.awaitingUserResponse {
+                hasAwaitingUserResponse = true
+                // 将后续未执行的工具标记为取消
+                Self.markUnfinishedToolCallsCancelled(&updatedCalls, startingAt: index + 1)
+                break
+            }
         }
 
         var updatedAssistant = assistantMessage
         updatedAssistant.toolCalls = updatedCalls
         conversationVM.saveMessage(updatedAssistant, to: conversationId)
 
-        return hadUserRejection
+        return ToolExecutionSummary(
+            hadUserRejection: hadUserRejection,
+            hasAwaitingUserResponse: hasAwaitingUserResponse
+        )
     }
 
     // MARK: - 私有
@@ -260,18 +282,23 @@ final class ToolCallExecutor: SuperLog {
             let elapsedDuration = Date().timeIntervalSince(startedAt)
 
             let toolResult: ToolCallResult
+            // 检测等待用户回答的标记
+            let isAwaitingUser = result.hasPrefix(AskUserTool.pendingPrefix)
+
             if let decoded = ToolImageResultCodec.decode(result) {
                 toolResult = ToolCallResult(
                     content: decoded.content,
                     images: decoded.images,
                     isError: Self.isToolErrorOutput(decoded.content),
-                    duration: elapsedDuration
+                    duration: elapsedDuration,
+                    awaitingUserResponse: isAwaitingUser
                 )
             } else {
                 toolResult = ToolCallResult(
                     content: result,
                     isError: Self.isToolErrorOutput(result),
-                    duration: elapsedDuration
+                    duration: elapsedDuration,
+                    awaitingUserResponse: isAwaitingUser
                 )
             }
 

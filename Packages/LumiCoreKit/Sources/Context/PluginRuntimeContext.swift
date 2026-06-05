@@ -54,6 +54,17 @@ public struct PluginRuntimeContext {
     /// 注册空闲时间快照提供器。
     public let registerIdleTimeSnapshotProvider: @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void
 
+    /// 恢复等待用户回答的工具调用。
+    ///
+    /// 当 `ask_user` 等工具暂停了 Agent 循环后，用户在 UI 上做出选择，
+    /// 渲染器通过此回调将用户答案写回 `ToolCall.result` 并恢复 `AgentTurnService.run()`。
+    ///
+    /// - Parameters:
+    ///   - conversationId: 会话 ID（UUID 字符串）
+    ///   - toolCallId: 工具调用 ID
+    ///   - answer: 用户的回答
+    public let resumeToolCall: @MainActor (String, String, String) -> Void
+
     public init(
         editorServiceProvider: @escaping @MainActor (PluginContext) -> AnyObject? = { _ in nil },
         openFile: @escaping @MainActor (URL, String?, PluginContext) async -> Void = { _, _, _ in },
@@ -76,7 +87,8 @@ public struct PluginRuntimeContext {
         enqueueUserMessage: @escaping @MainActor (ChatMessage, TurnFinishedContext) -> Void = { _, _ in },
         addToChat: @escaping @MainActor (String, PluginContext) -> Void = { _, _ in },
         selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in },
-        registerIdleTimeSnapshotProvider: @escaping @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void = { _ in }
+        registerIdleTimeSnapshotProvider: @escaping @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void = { _ in },
+        resumeToolCall: @escaping @MainActor (String, String, String) -> Void = { _, _, _ in }
     ) {
         self.editorServiceProvider = editorServiceProvider
         self.openFile = openFile
@@ -92,5 +104,6 @@ public struct PluginRuntimeContext {
         self.addToChat = addToChat
         self.selectConversation = selectConversation
         self.registerIdleTimeSnapshotProvider = registerIdleTimeSnapshotProvider
+        self.resumeToolCall = resumeToolCall
     }
 }

@@ -238,6 +238,7 @@ struct RootView<Content>: View where Content: View {
     }
 
     private func configurePluginRuntimeContext() {
+        container.conversationTurnServices.setRootContainer(container)
         container.pluginVM.configureRuntime(context: PluginRuntimeContext(
             editorServiceProvider: { [container, windowContainer] context in
                 Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
@@ -300,6 +301,17 @@ struct RootView<Content>: View where Content: View {
                         NotificationCenter.default.post(name: .idleTimeSnapshotDidChange, object: nil)
                     }
                 }
+            },
+            resumeToolCall: { [container, windowContainer] conversationIdStr, toolCallId, answer in
+                guard let conversationId = UUID(uuidString: conversationIdStr) else { return }
+                let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+                container.conversationTurnServices.resumeAwaitingToolCall(
+                    conversationId: conversationId,
+                    toolCallId: toolCallId,
+                    answer: answer,
+                    conversationVM: targetWindow.conversationVM,
+                    messageQueueVM: targetWindow.messageQueueVM
+                )
             }
         ))
     }

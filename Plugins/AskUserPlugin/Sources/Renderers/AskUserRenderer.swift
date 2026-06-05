@@ -2,33 +2,41 @@ import SwiftUI
 import LumiCoreKit
 import LumiUI
 import Foundation
+import AgentToolKit
 
 /// 询问用户消息渲染器
 ///
-/// 匹配 ask_user 工具的输出消息，渲染用户选择界面。
-/// 当工具返回 __ASK_USER_PENDING__ 标记时触发此渲染器。
+/// 匹配 assistant 消息中包含 `ask_user` 工具调用且处于 pending 状态的 toolCall，
+/// 渲染用户选择界面。
+///
+/// 当 `AskUserTool.execute()` 返回 `__ASK_USER_PENDING__` 后，
+/// `ToolCallExecutor` 将 `result.awaitingUserResponse` 设为 `true`，
+/// `AgentTurnService` 据此暂停循环。此渲染器检测到该状态后显示选择 UI。
 public struct AskUserRenderer: SuperMessageRenderer {
     public static let id = "ask-user"
-    public static let priority = 95 // 较高优先级，在 ToolOutputRenderer 之前匹配
+    public static let priority = 95 // 较高优先级
 
     public init() {}
 
     public func canRender(message: ChatMessage) -> Bool {
-        // 匹配 ask_user 工具的等待响应消息
-        // 工具返回以 __ASK_USER_PENDING__ 或 __ASK_USER_ERROR__ 开头的内容
-        message.role == .tool && (
-            message.content.hasPrefix("__ASK_USER_PENDING__")
-            || message.content.hasPrefix("__ASK_USER_ERROR__")
-        )
+        // 匹配 assistant 消息中 ask_user 工具处于 awaitingUserResponse 状态
+        guard message.role == .assistant, let toolCalls = message.toolCalls else { return false }
+        return toolCalls.contains { call in
+            call.name == "ask_user"
+                && call.result?.awaitingUserResponse == true
+        }
     }
 
     @MainActor
     public func render(message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView {
-        if message.content.hasPrefix("__ASK_USER_ERROR__") {
-            return AnyView(AskUserErrorView(message: message))
+        // 找到 pending 的 ask_user toolCall
+        guard let toolCall = message.toolCalls?.first(where: {
+            $0.name == "ask_user" && $0.result?.awaitingUserResponse == true
+        }) else {
+            return AnyView(Text("无法解析问题内容"))
         }
 
-        return AnyView(AskUserPendingView(message: message))
+        return AnyView(AskUserPendingView(toolCall: toolCall))
     }
 }
 
@@ -36,16 +44,16 @@ public struct AskUserRenderer: SuperMessageRenderer {
 
 /// 等待用户回答的视图
 ///
-/// 显示问题和选项按钮，用户点击后发送回答消息
+/// 显示问题和选项按钮，用户点击后通过 AskUserBridge 提交结果并恢复 Agent 循环。
 public struct AskUserPendingView: View {
-    let message: ChatMessage
+    let toolCall: ToolCall
 
     @State private var responded = false
     @State private var selectedAnswer: String?
     @State private var freeInputText: String = ""
 
     public var body: some View {
-        guard let response = parsePendingResponse(from: message.content) else {
+        guard let response = parsePendingResponse(from: toolCall.result?.content ?? "") else {
             return AnyView(Text("无法解析问题内容"))
         }
 
@@ -178,78 +186,23 @@ public struct AskUserPendingView: View {
         selectedAnswer = answer
         responded = true
 
-        // 发送用户回答消息
-        let userMessage = ChatMessage(
-            role: .user,
-            conversationId: UUID(uuidString: response.conversationId) ?? UUID(),
-            content: answer
-        )
-
-        // 通过通知系统发送回答
-        NotificationCenter.postAskUserResponse(
+        // 通过 AskUserBridge 提交结果并恢复 Agent 循环
+        AskUserBridge.shared.resume(
+            conversationId: response.conversationId,
             toolCallId: response.toolCallId,
-            answer: answer,
-            conversationId: response.conversationId
+            answer: answer
         )
     }
 
     private func optionColor(for option: String, options: [String]) -> Color {
-        // 为选项分配不同的颜色
         let colors: [Color] = [
-            .adaptive(light: "007AFF", dark: "0A84FF"),  // 蓝
-            .adaptive(light: "34C759", dark: "30D158"),  // 绿
-            .adaptive(light: "FF3B30", dark: "FF453A"),  // 红
-            .adaptive(light: "FF9500", dark: "FF9F0A"),  // 橙
-            .adaptive(light: "5856D6", dark: "5E5CE6"),  // 紫
+            .adaptive(light: "007AFF", dark: "0A84FF"),
+            .adaptive(light: "34C759", dark: "30D158"),
+            .adaptive(light: "FF3B30", dark: "FF453A"),
+            .adaptive(light: "FF9500", dark: "FF9F0A"),
+            .adaptive(light: "5856D6", dark: "5E5CE6"),
         ]
-
         let index = options.firstIndex(of: option) ?? 0
         return colors[min(index, colors.count - 1)]
-    }
-
-    private func keyboardShortcutForOption(_ option: String, options: [String]) -> KeyboardShortcut? {
-        // 为是/否选项分配快捷键
-        if option.lowercased().contains("是") || option.lowercased() == "yes" {
-            return .init("y", modifiers: .command)
-        }
-        if option.lowercased().contains("否") || option.lowercased() == "no" {
-            return .init("n", modifiers: .command)
-        }
-        return nil
-    }
-}
-
-// MARK: - Error View
-
-/// 错误状态视图
-public struct AskUserErrorView: View {
-    let message: ChatMessage
-
-    public var body: some View {
-        guard let errorContent = parseError(from: message.content) else {
-            return AnyView(Text("未知错误"))
-        }
-
-        return AnyView(
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.adaptive(light: "FF3B30", dark: "FF453A"))
-                Text(errorContent.error)
-                    .font(.system(size: 13))
-                    .foregroundColor(.adaptive(light: "FF3B30", dark: "FF453A"))
-            }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.adaptive(light: "FFF5F5", dark: "3A1C1C"))
-            )
-        )
-    }
-
-    private func parseError(from content: String) -> AskUserErrorResponse? {
-        guard content.hasPrefix("__ASK_USER_ERROR__\n") else { return nil }
-        let jsonString = content.dropFirst("__ASK_USER_ERROR__\n".count)
-        guard let jsonData = jsonString.data(using: .utf8) else { return nil }
-        return try? JSONDecoder().decode(AskUserErrorResponse.self, from: jsonData)
     }
 }

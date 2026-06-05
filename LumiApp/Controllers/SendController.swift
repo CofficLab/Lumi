@@ -150,6 +150,16 @@ final class SendController: ObservableObject, SuperLog {
         await agentTurnService.run(conversationId: conversationId)
     }
 
+    // MARK: - 用户回答恢复入口
+
+    /// 恢复等待用户回答的工具调用后继续 Agent 循环。
+    ///
+    /// `AppConversationTurnVM.resumeAwaitingToolCall` 在写回 ToolCall.result 后调用此方法，
+    /// 重新触发 `AgentTurnService.run()` 继续处理。
+    func resumeAfterAwaitingUserResponse(conversationId: UUID) async {
+        await agentTurnService.run(conversationId: conversationId)
+    }
+
     // MARK: - 私有辅助
 
     private func consumeTransientSystemPrompts(for conversationId: UUID) -> [String] {

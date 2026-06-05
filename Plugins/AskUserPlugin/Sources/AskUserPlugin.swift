@@ -29,7 +29,7 @@ import os
 ///
 /// 用户点击"是"后，系统自动发送一条 user 消息 "是"，LLM 下一轮收到继续处理。
 public actor AskUserPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "❓"
     public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ask-user")
@@ -44,10 +44,19 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    // MARK: - Runtime
+
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        AskUserBridge.shared.resumeHandler = { conversationId, toolCallId, answer in
+            context.resumeToolCall(conversationId, toolCallId, answer)
+        }
+    }
+
     // MARK: - Tools
 
     @MainActor
-    public func tools() -> [any SuperAgentTool] {
+    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [AskUserTool()]
     }
 
@@ -58,12 +67,5 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
         [AskUserRenderer()]
     }
 
-    // MARK: - Hooks
 
-    /// Package 侧插件加载时不处理通知
-    /// App 侧适配器负责监听用户回答并触发 resume
-    public func onLoad(context: PluginContext) async {
-        // Package 侧只提供工具和渲染器
-        // App 侧适配器负责监听 askUserDidRespond 通知并触发 resume
-    }
 }

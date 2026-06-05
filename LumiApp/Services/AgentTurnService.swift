@@ -163,15 +163,24 @@ final class AgentTurnService: SuperLog {
                             return
                         }
 
-                        let hadUserRejection = await toolCallExecutor.executeAll(
+                        let summary = await toolCallExecutor.executeAll(
                             assistantMessage: last,
                             conversationId: conversationId
                         )
 
-                        if hadUserRejection {
+                        if summary.hadUserRejection {
                             finishTurnByUserRejection(conversationId: conversationId)
                             runTurnFinishedPipeline(conversationId: conversationId, endReason: .userRejection)
                             NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
+                            return
+                        }
+
+                        // 工具正在等待用户回答，暂停循环
+                        if summary.hasAwaitingUserResponse {
+                            conversationSendStatusVM.setStatus(
+                                conversationId: conversationId,
+                                content: "等待您的选择…"
+                            )
                             return
                         }
 
