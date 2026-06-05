@@ -345,11 +345,12 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     func createNewConversation(
         projectName: String? = nil,
         projectPath: String? = nil,
-        languagePreference: LanguagePreference = .chinese
+        languagePreference: LanguagePreference = .chinese,
+        chatMode: ChatMode? = nil
     ) async {
         let conversation = chatHistoryService.createConversation(
             projectId: projectPath,
-            chatMode: agentSessionConfig.chatMode.rawValue
+            chatMode: (chatMode ?? agentSessionConfig.chatMode).rawValue
         )
 
         // 继承同项目上一条对话的模型偏好

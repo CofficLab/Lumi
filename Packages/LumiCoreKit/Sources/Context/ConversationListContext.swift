@@ -62,7 +62,7 @@ public final class ConversationListContext: ObservableObject {
     public var deleteConversationHandler: (_ id: UUID) -> Bool
     public var updateConversationTitleHandler: (_ id: UUID, _ title: String) -> Bool
     public var updateProjectAssociationHandler: (_ id: UUID, _ projectPath: String?) -> Bool
-    public var createConversationHandler: (_ projectName: String?, _ projectPath: String?, _ languagePreference: LanguagePreference) async -> UUID?
+    public var createConversationHandler: (_ projectName: String?, _ projectPath: String?, _ languagePreference: LanguagePreference, _ chatMode: ChatMode?) async -> UUID?
     public var switchProjectHandler: (_ projectPath: String, _ reason: String) -> Void
     public var isConversationProcessingProvider: (_ id: UUID) -> Bool
     public var databaseDirectoryProvider: () -> URL
@@ -76,7 +76,7 @@ public final class ConversationListContext: ObservableObject {
         deleteConversationHandler: @escaping (_ id: UUID) -> Bool = { _ in false },
         updateConversationTitleHandler: @escaping (_ id: UUID, _ title: String) -> Bool = { _, _ in false },
         updateProjectAssociationHandler: @escaping (_ id: UUID, _ projectPath: String?) -> Bool = { _, _ in false },
-        createConversationHandler: @escaping (_ projectName: String?, _ projectPath: String?, _ languagePreference: LanguagePreference) async -> UUID? = { _, _, _ in nil },
+        createConversationHandler: @escaping (_ projectName: String?, _ projectPath: String?, _ languagePreference: LanguagePreference, _ chatMode: ChatMode?) async -> UUID? = { _, _, _, _ in nil },
         switchProjectHandler: @escaping (_ projectPath: String, _ reason: String) -> Void = { _, _ in },
         isConversationProcessingProvider: @escaping (_ id: UUID) -> Bool = { _ in false },
         databaseDirectoryProvider: @escaping () -> URL = {
@@ -133,9 +133,10 @@ public final class ConversationListContext: ObservableObject {
     public func createConversation(
         projectName: String?,
         projectPath: String?,
-        languagePreference: LanguagePreference
+        languagePreference: LanguagePreference,
+        chatMode: ChatMode? = nil
     ) async -> UUID? {
-        let id = await createConversationHandler(projectName, projectPath, languagePreference)
+        let id = await createConversationHandler(projectName, projectPath, languagePreference, chatMode)
         selectedConversationId = id ?? selectedConversationId
         return id
     }

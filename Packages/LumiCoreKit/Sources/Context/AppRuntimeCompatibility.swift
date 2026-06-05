@@ -496,7 +496,8 @@ public final class WindowConversationVM: ObservableObject {
     public var commandSuggestionPreviousSelector: @MainActor () -> Void
     public var commandSuggestionsVisibilitySetter: @MainActor (Bool) -> Void
     public var switchToLatestConversationHandler: @MainActor (String) -> Bool
-    public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference) async -> Void
+    public var createNewConversationHandler: @MainActor (String?, String?, LanguagePreference, ChatMode?) async -> Void
+    public var databaseDirectoryProvider: @MainActor () -> URL
 
     public init(
         windowId: UUID? = nil,
@@ -535,7 +536,11 @@ public final class WindowConversationVM: ObservableObject {
         commandSuggestionPreviousSelector: @escaping @MainActor () -> Void = {},
         commandSuggestionsVisibilitySetter: @escaping @MainActor (Bool) -> Void = { _ in },
         switchToLatestConversationHandler: @escaping @MainActor (String) -> Bool = { _ in false },
-        createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference) async -> Void = { _, _, _ in }
+        createNewConversationHandler: @escaping @MainActor (String?, String?, LanguagePreference, ChatMode?) async -> Void = { _, _, _, _ in },
+        databaseDirectoryProvider: @escaping @MainActor () -> URL = {
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? FileManager.default.temporaryDirectory
+        }
     ) {
         self.windowId = windowId
         self.selectedConversationId = selectedConversationId
@@ -574,6 +579,7 @@ public final class WindowConversationVM: ObservableObject {
         self.commandSuggestionsVisibilitySetter = commandSuggestionsVisibilitySetter
         self.switchToLatestConversationHandler = switchToLatestConversationHandler
         self.createNewConversationHandler = createNewConversationHandler
+        self.databaseDirectoryProvider = databaseDirectoryProvider
     }
 
     public func getModelPreference() -> ModelPreference? {
@@ -778,9 +784,14 @@ public final class WindowConversationVM: ObservableObject {
     public func createNewConversation(
         projectName: String? = nil,
         projectPath: String? = nil,
-        languagePreference: LanguagePreference = .chinese
+        languagePreference: LanguagePreference = .chinese,
+        chatMode: ChatMode? = nil
     ) async {
-        await createNewConversationHandler(projectName, projectPath, languagePreference)
+        await createNewConversationHandler(projectName, projectPath, languagePreference, chatMode)
+    }
+
+    public func databaseDirectory() -> URL {
+        databaseDirectoryProvider()
     }
 }
 

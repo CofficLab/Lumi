@@ -452,12 +452,13 @@ struct RootView<Content>: View where Content: View {
             windowContainer.conversationVM.updateProjectAssociation(for: conversation, projectPath: projectPath)
             return true
         }
-        pluginConversationListContext.createConversationHandler = { [weak windowContainer] projectName, projectPath, languagePreference in
+        pluginConversationListContext.createConversationHandler = { [weak windowContainer] projectName, projectPath, languagePreference, chatMode in
             guard let windowContainer else { return nil }
             await windowContainer.conversationVM.createNewConversation(
                 projectName: projectName,
                 projectPath: projectPath,
-                languagePreference: languagePreference
+                languagePreference: languagePreference,
+                chatMode: chatMode.flatMap { ChatMode(rawValue: $0.rawValue) }
             )
             return windowContainer.conversationVM.selectedConversationId
         }
@@ -584,12 +585,16 @@ struct RootView<Content>: View where Content: View {
         pluginConversationVM.switchToLatestConversationHandler = { [windowContainer] projectPath in
             windowContainer.conversationVM.switchToLatestConversation(forProject: projectPath)
         }
-        pluginConversationVM.createNewConversationHandler = { [windowContainer] projectName, projectPath, languagePreference in
+        pluginConversationVM.createNewConversationHandler = { [windowContainer] projectName, projectPath, languagePreference, chatMode in
             await windowContainer.conversationVM.createNewConversation(
                 projectName: projectName,
                 projectPath: projectPath,
-                languagePreference: languagePreference
+                languagePreference: languagePreference,
+                chatMode: chatMode.flatMap { ChatMode(rawValue: $0.rawValue) }
             )
+        }
+        pluginConversationVM.databaseDirectoryProvider = {
+            AppConfig.getDBFolderURL()
         }
     }
 
