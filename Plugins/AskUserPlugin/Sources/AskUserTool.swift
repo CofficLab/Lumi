@@ -28,12 +28,14 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
     public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.ask-user")
 
+    /// 工具名称，用于在整个插件中统一引用
+    public static let name = "ask_user"
+    public let name: String = Self.name
+
     /// 工具返回值中用于标记等待用户回答的前缀。
     ///
     /// `ToolCallExecutor` 检测到此前缀后会设置 `awaitingUserResponse = true`。
     public static let pendingPrefix = "__ASK_USER_PENDING__"
-
-    public let name = "ask_user"
 
     public init() {}
 

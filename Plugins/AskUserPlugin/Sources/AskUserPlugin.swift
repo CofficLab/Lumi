@@ -51,6 +51,9 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
         AskUserBridge.shared.resumeHandler = { conversationId, toolCallId, answer in
             context.resumeToolCall(conversationId, toolCallId, answer)
         }
+
+        // 注册 ToolCall 行级渲染器，替代旧的消息级 AskUserRenderer
+        ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
     }
 
     // MARK: - Tools
@@ -59,13 +62,4 @@ public actor AskUserPlugin: SuperPlugin, SuperLog {
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [AskUserTool()]
     }
-
-    // MARK: - Message Renderers
-
-    @MainActor
-    public func messageRenderers() -> [any SuperMessageRenderer] {
-        [AskUserRenderer()]
-    }
-
-
 }

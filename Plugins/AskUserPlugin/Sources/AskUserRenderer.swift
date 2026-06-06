@@ -1,42 +1,29 @@
 import SwiftUI
-import LumiCoreKit
 import LumiUI
 import Foundation
 import AgentToolKit
 
-/// 询问用户消息渲染器
+/// AskUser 的 ToolCall 行级渲染器
 ///
-/// 匹配 assistant 消息中包含 `ask_user` 工具调用且处于 pending 状态的 toolCall，
-/// 渲染用户选择界面。
+/// 当 `ask_user` 工具处于 `awaitingUserResponse` 状态时，
+/// 替代默认的 `ToolCallRow`，渲染用户选择界面。
 ///
-/// 当 `AskUserTool.execute()` 返回 `__ASK_USER_PENDING__` 后，
-/// `ToolCallExecutor` 将 `result.awaitingUserResponse` 设为 `true`，
-/// `AgentTurnService` 据此暂停循环。此渲染器检测到该状态后显示选择 UI。
-public struct AskUserRenderer: SuperMessageRenderer {
-    public static let id = "ask-user"
-    public static let priority = 95 // 较高优先级
+/// 通过 `ToolCallRowRendererRegistry` 注册到 `MessageRendererPlugin`，
+/// 无需插件间直接依赖。
+public struct AskUserRowRenderer: ToolCallRowRenderer {
+    public static let id = "ask-user-row"
+    public static let priority = 100
 
     public init() {}
 
-    public func canRender(message: ChatMessage) -> Bool {
-        // 匹配 assistant 消息中 ask_user 工具处于 awaitingUserResponse 状态
-        guard message.role == .assistant, let toolCalls = message.toolCalls else { return false }
-        return toolCalls.contains { call in
-            call.name == "ask_user"
-                && call.result?.awaitingUserResponse == true
-        }
+    public func canRender(toolCall: ToolCall) -> Bool {
+        toolCall.name == "ask_user"
+            && toolCall.result?.awaitingUserResponse == true
     }
 
     @MainActor
-    public func render(message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView {
-        // 找到 pending 的 ask_user toolCall
-        guard let toolCall = message.toolCalls?.first(where: {
-            $0.name == "ask_user" && $0.result?.awaitingUserResponse == true
-        }) else {
-            return AnyView(Text("无法解析问题内容"))
-        }
-
-        return AnyView(AskUserPendingView(toolCall: toolCall))
+    public func render(toolCall: ToolCall) -> AnyView {
+        AnyView(AskUserPendingView(toolCall: toolCall))
     }
 }
 

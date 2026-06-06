@@ -27,11 +27,15 @@ public struct MessageWithToolCallsView: View {
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(toolCalls.enumerated()), id: \.offset) { _, toolCall in
-                        ToolCallRow(
-                            toolCall: toolCall,
-                            parameterPopoverToolCallID: $parameterPopoverToolCallID,
-                            resultPopoverToolCallID: $resultPopoverToolCallID
-                        )
+                        if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall) {
+                            customRenderer.render(toolCall: toolCall)
+                        } else {
+                            ToolCallRow(
+                                toolCall: toolCall,
+                                parameterPopoverToolCallID: $parameterPopoverToolCallID,
+                                resultPopoverToolCallID: $resultPopoverToolCallID
+                            )
+                        }
                     }
                 }
                 .padding(.top, (message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || shouldHideMessageBody) ? 0 : 8)
