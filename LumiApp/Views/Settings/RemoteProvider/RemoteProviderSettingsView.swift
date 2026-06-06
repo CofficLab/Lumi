@@ -6,7 +6,7 @@ import LumiUI
 /// 云端大模型设置视图（仅展示远程/API 供应商）
 struct RemoteProviderSettingsView: View, SuperLog {
     nonisolated static let emoji = "☁️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
@@ -208,8 +208,8 @@ extension RemoteProviderSettingsView {
         guard let providerType = selectedProviderType else { return }
         let providerId = selectedProviderId
         isLoadingSettings = true
-        let hasKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) != nil
-        apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        let hasKey = !providerType.getApiKey().isEmpty
+        apiKey = providerType.getApiKey()
         if Self.verbose {
             AppLogger.core.info("\(Self.t)加载设置 \(r("provider=\(providerId)"))，apiKey 已配置=\(hasKey)")
         }
@@ -234,7 +234,7 @@ extension RemoteProviderSettingsView {
         if Self.verbose {
             AppLogger.core.info("\(Self.t)保存 API Key \(r("provider=\(providerId)"))，长度=\(keyLength)")
         }
-        APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        providerType.setApiKey(apiKey)
     }
 
     /// 保存选中的模型到持久化存储
