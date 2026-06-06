@@ -4,22 +4,11 @@ import LumiCoreKit
 import SuperLogKit
 import os
 
-public struct ZhipuPluginConfiguration: Sendable {
-    public var apiKeyProvider: @Sendable () -> String
-
-    public init(apiKeyProvider: @escaping @Sendable () -> String = { "" }) {
-        self.apiKeyProvider = apiKeyProvider
-    }
-
-    public static let empty = ZhipuPluginConfiguration()
-}
-
 /// 智谱 LLM 供应商插件
 public actor ZhipuPlugin: SuperPlugin, SuperLog {
-    nonisolated(unsafe) public static var configuration: ZhipuPluginConfiguration = .empty
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.zhipu")
     public nonisolated static let emoji = "🔴"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "LLMProviderZhipu"
     public static let navigationId: String? = nil
@@ -38,6 +27,17 @@ public actor ZhipuPlugin: SuperPlugin, SuperLog {
         ZhipuProvider.self
     }
 
+    @MainActor
+    public func messageRenderers() -> [any SuperMessageRenderer] {
+        [
+            ApiKeyMissingRenderer(),
+            Http401Renderer(),
+            Http403Renderer(),
+            HttpErrorRenderer(),
+            RequestFailedRenderer(),
+        ]
+    }
+
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
@@ -48,6 +48,6 @@ public actor ZhipuPlugin: SuperPlugin, SuperLog {
         guard context.activeProviderId == ZhipuProvider.id, context.showChat.isVisible else {
             return nil
         }
-        return AnyView(ZhipuQuotaStatusBarView())
+        return AnyView(StatusBarView())
     }
 }

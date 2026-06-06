@@ -38,6 +38,34 @@
         }
       }
     },
+    "Configure your Zhipu API Key below, then resend your message." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure your Zhipu API Key below, then resend your message."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在下方填写智谱 API Key，配置完成后重新发送消息即可。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方填寫智譜 API Key，設定完成後重新發送訊息即可。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方填寫智譜 API Key，設定完成後重新發送訊息即可。"
+          }
+        }
+      }
+    },
     "Display Zhipu GLM Coding Plan quota status in status bar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -63,6 +91,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在狀態欄顯示智譜 GLM Coding Plan 的配額狀態"
+          }
+        }
+      }
+    },
+    "Enter Zhipu API Key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Zhipu API Key"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入智谱 API Key"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入智譜 API Key"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入智譜 API Key"
+          }
+        }
+      }
+    },
+    "Get API Key on Zhipu Open Platform" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get API Key on Zhipu Open Platform"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往智谱开放平台获取 API Key"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往智譜開放平台取得 API Key"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往智譜開放平台取得 API Key"
           }
         }
       }
@@ -428,6 +512,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智譜 AI CodingPlan"
+          }
+        }
+      }
+    },
+    "Zhipu API Key required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhipu API Key required"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要配置智谱 API Key"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要配置智譜 API Key"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要配置智譜 API Key"
           }
         }
       }

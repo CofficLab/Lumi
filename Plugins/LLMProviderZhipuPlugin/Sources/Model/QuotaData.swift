@@ -1,7 +1,7 @@
 import Foundation
 
 /// 智谱配额数据
-struct ZhipuQuotaData {
+struct QuotaData {
     let level: String
     let usedPercent: Int
     let leftPercent: Int

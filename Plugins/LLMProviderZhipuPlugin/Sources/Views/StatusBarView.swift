@@ -8,10 +8,10 @@ import SuperLogKit
 ///
 /// 显示/隐藏由 ``ZhipuPlugin`` 在插件层根据 ``PluginContext.activeProviderId`` 控制，
 /// 此视图被创建时即可假定当前活跃供应商为智谱。
-struct ZhipuQuotaStatusBarView: View, SuperLog {
+struct StatusBarView: View, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = true
-    @State private var quotaStatus: ZhipuQuotaStatus = .loading
+    nonisolated static let verbose: Bool = false
+    @State private var quotaStatus: QuotaStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var timer: Timer?
 
@@ -47,7 +47,7 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
     /// 加载视图
     private var loadingView: some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+            detailView: QuotaDetailView(status: quotaStatus, onRefresh: {
                 refreshQuota()
             }),
             id: "zhipu-quota-status"
@@ -65,9 +65,9 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
     }
 
     /// 成功视图
-    private func successView(_ data: ZhipuQuotaData) -> some View {
+    private func successView(_ data: QuotaData) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+            detailView: QuotaDetailView(status: quotaStatus, onRefresh: {
                 refreshQuota()
             }),
             id: "zhipu-quota-status"
@@ -87,7 +87,7 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
     /// 错误视图
     private func errorView(_ message: String) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+            detailView: QuotaDetailView(status: quotaStatus, onRefresh: {
                 refreshQuota()
             }),
             id: "zhipu-quota-status"
@@ -124,7 +124,7 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
 
     private func refreshQuota() {
         Task {
-            let result = await ZhipuQuotaService.fetchQuota()
+            let result = await QuotaService.fetchQuota()
             await MainActor.run {
                 quotaStatus = result.status
                 lastUpdateTime = Date()

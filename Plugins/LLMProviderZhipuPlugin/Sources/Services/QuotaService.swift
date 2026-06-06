@@ -4,16 +4,16 @@ import os
 import SuperLogKit
 
 /// 智谱配额查询辅助工具
-enum ZhipuQuotaService: SuperLog {
+enum QuotaService: SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 请求超时时间（秒）
     private static let timeout: TimeInterval = 5.0
 
     /// 获取配额信息
     /// - Returns: 配额结果
-    static func fetchQuota() async -> (status: ZhipuQuotaStatus, data: ZhipuQuotaData?) {
+    static func fetchQuota() async -> (status: QuotaStatus, data: QuotaData?) {
         if Self.verbose {
             if ZhipuPlugin.verbose {
                 ZhipuPlugin.logger.info("\(Self.t)开始获取配额信息")
@@ -21,7 +21,7 @@ enum ZhipuQuotaService: SuperLog {
         }
 
         // 获取 API Key
-        let apiKey = ZhipuPlugin.configuration.apiKeyProvider()
+        let apiKey = ZhipuProvider.getApiKey()
         guard !apiKey.isEmpty else {
             if Self.verbose {
                 if ZhipuPlugin.verbose {
@@ -114,7 +114,7 @@ enum ZhipuQuotaService: SuperLog {
                 let mcpLeftPercent = mcpLimit?["remaining"] as? Int ?? 0
                 let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
 
-                let quotaData = ZhipuQuotaData(
+                let quotaData = QuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
@@ -147,7 +147,7 @@ enum ZhipuQuotaService: SuperLog {
                 let mcpLeftPercent = timeLimit["remaining"] as? Int ?? 0
                 let mcpNextResetTime = timeLimit["nextResetTime"] as? TimeInterval ?? nextResetTime
 
-                let quotaData = ZhipuQuotaData(
+                let quotaData = QuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,

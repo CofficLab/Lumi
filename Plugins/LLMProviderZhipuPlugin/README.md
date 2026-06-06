@@ -31,7 +31,7 @@ This plugin integrates with the Lumi application. It provides:
 
 - **LLM Provider Registration** — available models appear in the model selector
 - **Request Handling** — sends chat completion requests to 智谱
-- **Configuration** — API key and endpoint settings
+- **Configuration** — API key stored by `ZhipuProvider` via `SuperLLMProvider.getApiKey()` / `setApiKey()`
 
 ## License
 

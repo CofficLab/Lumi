@@ -1,9 +1,9 @@
 import Foundation
 
 /// 智谱配额状态
-enum ZhipuQuotaStatus {
+enum QuotaStatus {
     case loading
-    case success(ZhipuQuotaData)
+    case success(QuotaData)
     case authError
     case unavailable
 }

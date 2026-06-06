@@ -2,15 +2,15 @@ import SwiftUI
 import LumiUI
 
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
-struct ZhipuQuotaDetailView: View {
+struct QuotaDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    let status: ZhipuQuotaStatus
+    let status: QuotaStatus
     let onRefresh: (() -> Void)?
 
     @State private var isRefreshing: Bool = false
 
-    init(status: ZhipuQuotaStatus, onRefresh: (() -> Void)? = nil) {
+    init(status: QuotaStatus, onRefresh: (() -> Void)? = nil) {
         self.status = status
         self.onRefresh = onRefresh
     }
@@ -54,7 +54,7 @@ struct ZhipuQuotaDetailView: View {
     }
 
     /// 配额内容
-    private func quotaContent(_ data: ZhipuQuotaData) -> some View {
+    private func quotaContent(_ data: QuotaData) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             // 等级
             GlassKeyValueRow(

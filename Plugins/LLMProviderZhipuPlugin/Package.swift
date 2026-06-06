@@ -16,10 +16,12 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/HttpKit"),
+        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../MessageRendererPlugin"),
     ],
     targets: [
         .target(
@@ -27,9 +29,11 @@ let package = Package(
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
@@ -41,7 +45,12 @@ let package = Package(
         ),
         .testTarget(
             name: "LLMProviderZhipuPluginTests",
-            dependencies: ["LLMProviderZhipuPlugin"],
+            dependencies: [
+                "LLMProviderZhipuPlugin",
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests"
         )
     ]
