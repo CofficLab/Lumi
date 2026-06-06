@@ -9,7 +9,7 @@ import os
 /// 向目标模型发送一条轻量 ping 消息，验证其连通性并返回结果。
 public struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public let name = "check_model_availability"
     private let llmService: LLMService?

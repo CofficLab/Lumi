@@ -2,6 +2,8 @@ import Foundation
 import SuperLogKit
 import AgentToolKit
 import Combine
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import os
 
@@ -20,7 +22,7 @@ import os
 public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - Provider Info
 
     /// 供应商唯一标识符
@@ -57,7 +59,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
     public var baseURL: String { "" }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    public func buildRequest(url: URL) -> URLRequest {
         URLRequest(url: url)
     }
 
@@ -446,6 +448,39 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
 
         return totalSize >= minValidSize
+    }
+
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> ChatMessage {
+        try await LocalLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            onChunk: onChunk
+        )
+    }
+
+    public func sendMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> ChatMessage {
+        try await LocalLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
     }
 
     // MARK: - Availability

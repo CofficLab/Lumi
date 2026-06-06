@@ -1,5 +1,7 @@
 import Foundation
 import AgentToolKit
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import os
 import SuperLogKit
@@ -14,7 +16,7 @@ import SuperLogKit
 public final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     public nonisolated static let emoji = "🔵"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     public static let id = "aliyun"
@@ -49,10 +51,10 @@ public final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchec
         "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
     }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    public func buildRequest(url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("Bearer \(Self.getApiKey())", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }
@@ -426,6 +428,41 @@ private struct AliyunAnySendable: Decodable {
 // MARK: - Availability
 
 extension AliyunProvider {
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    public func sendMessage(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
+    }
+
     public func availabilityCheckStrategy(forModel modelId: String) -> LumiCoreKit.AvailabilityCheckStrategy {
         .chatPing()
     }

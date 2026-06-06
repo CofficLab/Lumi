@@ -80,7 +80,14 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     // MARK: - 配置管理
 
     func getCurrentConfig() -> LLMConfig {
-        makeConfig(providerId: selectedProviderId, model: currentModel) ?? LLMConfig.default
+        if let config = makeConfig(providerId: selectedProviderId, model: currentModel) {
+            return config
+        }
+        // 保留用户选择的 provider/model，避免静默回退到 LLMConfig.default（anthropic）
+        if !selectedProviderId.isEmpty, !currentModel.isEmpty {
+            return LLMConfig(model: currentModel, providerId: selectedProviderId)
+        }
+        return LLMConfig.default
     }
 
     func makeConfig(providerId: String, model: String) -> LLMConfig? {
@@ -93,10 +100,7 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
             return nil
         }
 
-        let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
-
         return LLMConfig(
-            apiKey: apiKey,
             model: model,
             providerId: providerId
         )
@@ -106,14 +110,14 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
         guard let providerType = llmService.providerType(forId: providerId) else {
             return ""
         }
-        return APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return providerType.getApiKey()
     }
 
     func setApiKey(_ apiKey: String, for providerId: String) {
         guard let providerType = llmService.providerType(forId: providerId) else {
             return
         }
-        APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        providerType.setApiKey(apiKey)
     }
 
     // MARK: - Chat Mode

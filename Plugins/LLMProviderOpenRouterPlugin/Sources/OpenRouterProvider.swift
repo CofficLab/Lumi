@@ -1,6 +1,8 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import SuperLogKit
 
@@ -76,8 +78,8 @@ public final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @un
         "https://openrouter.ai/api/v1/chat/completions"
     }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
-        adapter.buildRequest(url: url, apiKey: apiKey)
+    public func buildRequest(url: URL) -> URLRequest {
+        adapter.buildRequest(url: url, apiKey: Self.getApiKey())
     }
 
     public func buildRequestBody(
@@ -123,6 +125,41 @@ public final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @un
             return nil
         }
         return LumiCoreKit.StreamChunk(kit: kitChunk)
+    }
+
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    public func sendMessage(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
     }
 
     // MARK: - Availability

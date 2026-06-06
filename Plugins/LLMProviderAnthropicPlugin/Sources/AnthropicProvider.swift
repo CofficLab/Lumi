@@ -1,5 +1,8 @@
 import Foundation
+import LLMKit
+import LLMProviderKit
 import AgentToolKit
+import HttpKit
 import LumiCoreKit
 import os
 import SuperLogKit
@@ -33,7 +36,7 @@ import SuperLogKit
 public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     public nonisolated static let emoji = "🤖"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - Basic Info
 
     public static let id = "anthropic"
@@ -68,10 +71,10 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
         "https://api.anthropic.com/v1/messages"
     }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    public func buildRequest(url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue(Self.getApiKey(), forHTTPHeaderField: "x-api-key")
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
@@ -114,7 +117,7 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
         let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
 
         var textContent = ""
-        var toolCalls: [ToolCall] = []
+        var toolCalls: [AgentToolKit.ToolCall] = []
 
         for item in result.content {
             if item.type == "text", let text = item.text {
@@ -126,7 +129,7 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
                 let normalDict = inputDict.mapValues { $0.value }
                 let inputData = try JSONSerialization.data(withJSONObject: normalDict)
                 let inputString = String(data: inputData, encoding: .utf8) ?? "{}"
-                toolCalls.append(ToolCall(id: id, name: name, arguments: inputString))
+                toolCalls.append(AgentToolKit.ToolCall(id: id, name: name, arguments: inputString))
             }
         }
 
@@ -237,7 +240,7 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
                     if blockType == "tool_use" {
                         if let id = contentBlock["id"] as? String,
                            let name = contentBlock["name"] as? String {
-                            let toolCall = ToolCall(id: id, name: name, arguments: "{}")
+                            let toolCall = AgentToolKit.ToolCall(id: id, name: name, arguments: "{}")
                             return LumiCoreKit.StreamChunk(toolCalls: [toolCall], eventType: .contentBlockStart, rawEvent: text)
                         }
                     }
@@ -304,7 +307,7 @@ public final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unc
 // MARK: - 消息转换
 
 extension AnthropicProvider {
-    func transformMessage(_ message: ChatMessage) -> [String: Any] {
+    func transformMessage(_ message: LumiCoreKit.ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
             return AnthropicToolResultContentBuilder.message(for: message, toolCallID: toolCallID)
         }
@@ -447,7 +450,77 @@ private struct AnthropicAnySendable: Decodable {
 // MARK: - Availability
 
 extension AnthropicProvider {
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    public func sendMessage(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
+    }
+
     public func availabilityCheckStrategy(forModel modelId: String) -> LumiCoreKit.AvailabilityCheckStrategy {
         .chatPing()
     }
 }
+
+
+// MARK: - Remote transport overrides
+
+extension AnthropicProvider {
+    public func applyGenerationOptions(config: LLMConfig, model: String, to body: inout [String: Any]) {
+        LLMProviderKit.AnthropicCompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: model,
+            defaultMaxTokens: 8192,
+            to: &body
+        )
+    }
+
+    public func parseProviderHTTPError(data: Data?, statusCode: Int?) -> ProviderHTTPError? {
+        LLMProviderKit.ProviderHTTPErrorParser.parseAnthropicCompatible(data: data, statusCode: statusCode)
+    }
+
+    public func retryDecision(
+        for error: Error,
+        statusCode: Int?,
+        attempt: Int,
+        maxAttempts: Int,
+        retryAfter: TimeInterval? = nil
+    ) -> ProviderRetryDecision {
+        LLMProviderKit.AnthropicCompatibleProviderAdapter.retryDecision(
+            for: error,
+            statusCode: statusCode,
+            attempt: attempt,
+            maxAttempts: maxAttempts,
+            retryAfter: retryAfter
+        )
+    }
+}
+

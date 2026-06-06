@@ -1,12 +1,14 @@
 import AgentToolKit
 import Foundation
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import SuperLogKit
 import os
 
 public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "🔮"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.codex")
 
     public static let id = "codex"
@@ -36,7 +38,7 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
 
     public var baseURL: String { "" }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    public func buildRequest(url: URL) -> URLRequest {
         URLRequest(url: url)
     }
 
@@ -178,6 +180,39 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
 
     public func displayName(forModelId modelId: String) -> String? {
         Self.modelCatalog.first(where: { $0.id == modelId })?.description
+    }
+
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> ChatMessage {
+        try await LocalLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            onChunk: onChunk
+        )
+    }
+
+    public func sendMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> ChatMessage {
+        try await LocalLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
     }
 
     public func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {

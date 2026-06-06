@@ -89,7 +89,7 @@ public final class LLMAvailabilityChecker {
         }
 
         // 委托给内部实现
-        return await performCheck(providerId: providerId, modelId: modelId, apiKey: apiKey)
+        return await performCheck(providerId: providerId, modelId: modelId)
     }
 
     // MARK: - 内部实现
@@ -134,7 +134,7 @@ public final class LLMAvailabilityChecker {
 
         // 逐个检测模型
         for modelId in info.availableModels {
-            await performCheck(providerId: providerId, modelId: modelId, apiKey: apiKey)
+            await performCheck(providerId: providerId, modelId: modelId)
         }
 
         let availableCount = store.providers.first(where: { $0.providerId == providerId })?.availableModels.count ?? 0
@@ -148,7 +148,7 @@ public final class LLMAvailabilityChecker {
     /// 检测单个模型的可用性（内部实现）
     ///
     /// 通过供应商提供的 `availabilityCheckStrategy(forModel:)` 策略决定检测方式。
-    private func performCheck(providerId: String, modelId: String, apiKey: String) async -> ModelCheckResult {
+    private func performCheck(providerId: String, modelId: String) async -> ModelCheckResult {
         store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
 
         // 从供应商获取检测策略
@@ -175,12 +175,11 @@ public final class LLMAvailabilityChecker {
             return await performChatPing(
                 providerId: providerId,
                 modelId: modelId,
-                apiKey: apiKey,
                 maxTokens: maxTokens
             )
 
         case .custom(let check):
-            let result = await check(apiKey, modelId)
+            let result = await check(llmService.getApiKey(for: providerId), modelId)
             let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(result.reason ?? "检测失败")
             store.updateStatus(providerId: providerId, modelId: modelId, status: status)
             if Self.verbose {
@@ -200,11 +199,9 @@ public final class LLMAvailabilityChecker {
     private func performChatPing(
         providerId: String,
         modelId: String,
-        apiKey: String,
         maxTokens: Int?
     ) async -> ModelCheckResult {
         var config = LLMConfig(
-            apiKey: apiKey,
             model: modelId,
             providerId: providerId
         )

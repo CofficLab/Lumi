@@ -1,6 +1,8 @@
 import Foundation
 import AgentToolKit
 import LLMProviderKit
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import SuperLogKit
 
@@ -10,7 +12,7 @@ import SuperLogKit
 /// 使用 LLMProviderKit 的 OpenAICompatibleProviderAdapter 处理请求构建和响应解析。
 public final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     public nonisolated static let emoji = "⚡"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     // MARK: - 基础信息
 
@@ -61,8 +63,8 @@ public final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Send
         adapter.configuration.baseURL
     }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
-        adapter.buildRequest(url: url, apiKey: apiKey)
+    public func buildRequest(url: URL) -> URLRequest {
+        adapter.buildRequest(url: url, apiKey: Self.getApiKey())
     }
 
     public func buildRequestBody(
@@ -100,6 +102,41 @@ public final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Send
     public func parseStreamChunk(data: Data) throws -> LumiCoreKit.StreamChunk? {
         guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
         return LumiCoreKit.StreamChunk(kit: kitChunk)
+    }
+
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    public func sendMessage(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
     }
 
     // MARK: - Availability

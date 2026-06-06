@@ -6,7 +6,7 @@ import os
 /// 列出可用 LLM 模型工具
 public struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🤖"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public let name = "list_available_models"
     public func description(for language: LanguagePreference) -> String {

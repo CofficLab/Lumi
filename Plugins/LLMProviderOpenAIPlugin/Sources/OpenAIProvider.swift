@@ -1,6 +1,8 @@
 import Foundation
-import AgentToolKit
 import LLMProviderKit
+import AgentToolKit
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import SuperLogKit
 
@@ -53,8 +55,8 @@ public final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendab
         "https://api.openai.com/v1/chat/completions"
     }
 
-    public func buildRequest(url: URL, apiKey: String) -> URLRequest {
-        adapter.buildRequest(url: url, apiKey: apiKey)
+    public func buildRequest(url: URL) -> URLRequest {
+        adapter.buildRequest(url: url, apiKey: Self.getApiKey())
     }
 
     public func buildRequestBody(
@@ -102,9 +104,54 @@ public final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendab
         return LumiCoreKit.StreamChunk(kit: kitChunk)
     }
 
+
+    // MARK: - Transport
+
+    public func streamChat(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    public func sendMessage(
+        messages: [LumiCoreKit.ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> LumiCoreKit.ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
+    }
+
     // MARK: - Availability
 
     public func availabilityCheckStrategy(forModel modelId: String) -> LumiCoreKit.AvailabilityCheckStrategy {
         .chatPing()
     }
 }
+
+
+// MARK: - Remote transport overrides
+
+extension OpenAIProvider {
+    public func parseProviderHTTPError(data: Data?, statusCode: Int?) -> ProviderHTTPError? {
+        LLMProviderKit.ProviderHTTPErrorParser.parseOpenAICompatible(data: data, statusCode: statusCode)
+    }
+}
+
