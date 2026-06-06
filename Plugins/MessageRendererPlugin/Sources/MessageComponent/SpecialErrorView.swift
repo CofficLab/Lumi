@@ -141,6 +141,12 @@ public struct DefaultErrorView: View {
     public let message: String
     public let rawErrorDetail: String?
 
+    public init(title: String, message: String, rawErrorDetail: String? = nil) {
+        self.title = title
+        self.message = message
+        self.rawErrorDetail = rawErrorDetail
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !message.isEmpty {
