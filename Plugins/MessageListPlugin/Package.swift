@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChatMessagesPlugin",
+    name: "MessageListPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ChatMessagesPlugin",
-            targets: ["ChatMessagesPlugin"]
+            name: "MessageListPlugin",
+            targets: ["MessageListPlugin"]
         )
     ],
     dependencies: [
@@ -22,7 +22,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ChatMessagesPlugin",
+            name: "MessageListPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
@@ -38,9 +38,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ChatMessagesPluginTests",
+            name: "MessageListPluginTests",
             dependencies: [
-                "ChatMessagesPlugin",
+                "MessageListPlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Tests"

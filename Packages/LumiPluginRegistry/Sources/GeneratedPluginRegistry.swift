@@ -24,7 +24,7 @@ import CSSEditorPlugin
 import CaffeinatePlugin
 import ChatAttachmentPlugin
 import ChatInputPlugin
-import ChatMessagesPlugin
+import MessageListPlugin
 import ChatModePlugin
 import ChatPanelPlugin
 import ChatPendingMessagesPlugin

@@ -189,7 +189,7 @@
 				CaffeinatePlugin,
 				ChatAttachmentPlugin,
 				ChatInputPlugin,
-				ChatMessagesPlugin,
+				MessageListPlugin,
 				ChatModePlugin,
 				ChatPanelPlugin,
 				ChatPendingMessagesPlugin,
