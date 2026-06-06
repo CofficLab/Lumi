@@ -1,12 +1,7 @@
 import Foundation
 import AgentToolKit
 import AskUserPlugin
-
-/// 工具执行结果摘要
-struct ToolExecutionSummary {
-    var hadUserRejection: Bool = false
-    var hasAwaitingUserResponse: Bool = false
-}
+import LumiCoreKit
 
 /// 工具调用执行器
 ///
@@ -15,7 +10,7 @@ struct ToolExecutionSummary {
 @MainActor
 final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false // 链路日志见 AgentSendPipelineLog
 
     nonisolated static func userRejectedToolResult() -> ToolCallResult {
         ToolCallResult(content: "用户拒绝执行此工具", isError: true)
@@ -169,6 +164,9 @@ final class ToolCallExecutor: SuperLog {
         }
 
         let totalCount = updatedCalls.count
+        if AgentSendPipelineLog.enabled {
+            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ⑤ [ToolExecutor] executeAll count=\(totalCount)")
+        }
         var hadUserRejection = false
         var hasAwaitingUserResponse = false
 

@@ -20,7 +20,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // MARK: - 服务依赖
 
@@ -28,6 +28,8 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///
     /// 负责会话和消息的持久化操作。
     private let chatHistoryService: ChatHistoryService
+
+    private let conversationService: ConversationService
 
     /// 提示词服务
     ///
@@ -52,6 +54,9 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// ```
     @Published public fileprivate(set) var selectedConversationId: UUID?
 
+    /// 最近一次创建对话失败的错误信息（供 UI 展示）
+    @Published private(set) var conversationCreationError: String?
+
     // MARK: - 初始化
 
     /// 使用依赖服务初始化
@@ -62,10 +67,12 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///   - agentSessionConfig: Agent 会话配置
     init(
         chatHistoryService: ChatHistoryService,
+        conversationService: ConversationService,
         promptService: PromptService,
         agentSessionConfig: AppLLMVM
     ) {
         self.chatHistoryService = chatHistoryService
+        self.conversationService = conversationService
         self.promptService = promptService
         self.agentSessionConfig = agentSessionConfig
     }
@@ -101,25 +108,25 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///   - model: 模型名称
     func saveModelPreference(providerId: String, model: String) {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+              let conversation = conversationService.fetchConversation(id: conversationId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存模型偏好")
             }
             return
         }
-        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+        conversationService.updateModelPreference(conversation, providerId: providerId, model: model)
         objectWillChange.send()
     }
 
     /// 保存指定对话的供应商/模型偏好。
     func saveModelPreference(for conversationId: UUID, providerId: String, model: String) {
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+        guard let conversation = conversationService.fetchConversation(id: conversationId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚠️ 找不到会话，跳过保存模型偏好")
             }
             return
         }
-        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+        conversationService.updateModelPreference(conversation, providerId: providerId, model: model)
         if conversationId == selectedConversationId {
             objectWillChange.send()
         }
@@ -129,7 +136,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// - Returns: 包含供应商和模型的元组，如果对话未指定则返回 nil
     func getModelPreference() -> (providerId: String, model: String)? {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+              let conversation = conversationService.fetchConversation(id: conversationId) else {
             return nil
         }
         guard let providerId = conversation.providerId,
@@ -141,7 +148,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 获取指定对话的供应商/模型偏好。
     func getModelPreference(for conversationId: UUID) -> (providerId: String, model: String)? {
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId),
+        guard let conversation = conversationService.fetchConversation(id: conversationId),
               let providerId = conversation.providerId,
               let model = conversation.model else {
             return nil
@@ -151,12 +158,15 @@ final class WindowConversationVM: ObservableObject, SuperLog {
 
     /// 根据对话级模型偏好解析请求配置；未配置或配置失效时回退到应用默认配置。
     func resolveModelConfig(for conversationId: UUID, fallbackConfigProvider: AppLLMVM) -> LLMConfig {
-        if let preference = getModelPreference(for: conversationId),
-           let config = fallbackConfigProvider.makeConfig(
-               providerId: preference.providerId,
-               model: preference.model
-           ) {
-            return config
+        if let preference = getModelPreference(for: conversationId) {
+            if let config = fallbackConfigProvider.makeConfig(
+                providerId: preference.providerId,
+                model: preference.model
+            ) {
+                return config
+            }
+            // 会话已绑定模型时仍使用存储值，避免 UI 显示与请求 provider 不一致
+            return LLMConfig(model: preference.model, providerId: preference.providerId)
         }
         return fallbackConfigProvider.getCurrentConfig()
     }
@@ -165,20 +175,20 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// - Parameter chatMode: 聊天模式，传入 nil 表示清除对话级偏好
     func saveChatModePreference(_ chatMode: ChatMode?) {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+              let conversation = conversationService.fetchConversation(id: conversationId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存聊天模式")
             }
             return
         }
-        chatHistoryService.updateChatMode(conversation, chatMode: chatMode?.rawValue)
+        conversationService.updateChatMode(conversation, chatMode: chatMode?.rawValue)
     }
 
     /// 获取当前对话的聊天模式偏好
     /// - Returns: 聊天模式，如果对话未指定则返回 nil
     func getChatModePreference() -> ChatMode? {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let conversation = conversationService.fetchConversation(id: conversationId),
               let rawValue = conversation.chatMode else {
             return nil
         }
@@ -189,20 +199,20 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// - Parameter verbosity: 详细程度，传入 nil 表示清除对话级偏好
     func saveVerbosityPreference(_ verbosity: ResponseVerbosity?) {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+              let conversation = conversationService.fetchConversation(id: conversationId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存详细程度")
             }
             return
         }
-        chatHistoryService.updateVerbosity(conversation, verbosity: verbosity?.rawValue)
+        conversationService.updateVerbosity(conversation, verbosity: verbosity?.rawValue)
     }
 
     /// 获取当前对话的响应详细程度偏好
     /// - Returns: 详细程度，如果对话未指定则返回 nil
     func getVerbosityPreference() -> ResponseVerbosity? {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let conversation = conversationService.fetchConversation(id: conversationId),
               let rawValue = conversation.verbosity else {
             return nil
         }
@@ -213,20 +223,20 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// - Parameter languagePreference: 语言偏好，传入 nil 表示清除对话级偏好
     func saveLanguagePreference(_ languagePreference: LanguagePreference?) {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+              let conversation = conversationService.fetchConversation(id: conversationId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存语言偏好")
             }
             return
         }
-        chatHistoryService.updateLanguagePreference(conversation, languagePreference: languagePreference?.rawValue)
+        conversationService.updateLanguagePreference(conversation, languagePreference: languagePreference?.rawValue)
     }
 
     /// 获取当前对话的语言偏好
     /// - Returns: 语言偏好，如果对话未指定则返回 nil
     func getLanguagePreference() -> LanguagePreference? {
         guard let conversationId = selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId),
+              let conversation = conversationService.fetchConversation(id: conversationId),
               let rawValue = conversation.languagePreference else {
             return nil
         }
@@ -246,7 +256,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
             selectedConversationId = nil
         }
 
-        chatHistoryService.deleteConversation(conversation)
+        conversationService.deleteConversation(conversation)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
@@ -258,7 +268,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///   - conversation: 目标对话
     ///   - projectPath: 项目路径，nil 表示解除项目关联
     func updateProjectAssociation(for conversation: Conversation, projectPath: String?) {
-        chatHistoryService.updateProjectAssociation(conversation, projectPath: projectPath)
+        conversationService.updateProjectAssociation(conversation, projectPath: projectPath)
     }
 
     /// 更新对话标题
@@ -267,7 +277,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///   - conversation: 要更新的对话
     ///   - newTitle: 新标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
-        chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
+        conversationService.updateConversationTitle(conversation, newTitle: newTitle)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
@@ -313,7 +323,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 按时间倒序排列的会话列表
     func fetchAllConversations() -> [Conversation] {
-        chatHistoryService.fetchAllConversations()
+        conversationService.fetchAllConversations()
     }
 
     /// 分页获取对话
@@ -322,14 +332,14 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     ///   - offset: 偏移量
     /// - Returns: 当前页数据
     func fetchConversationsPage(limit: Int, offset: Int) -> [Conversation] {
-        chatHistoryService.fetchConversationsPage(limit: limit, offset: offset)
+        conversationService.fetchConversationsPage(limit: limit, offset: offset)
     }
 
     /// 根据 ID 获取会话
     /// - Parameter id: 会话 ID
     /// - Returns: 会话，不存在时返回 nil
     func fetchConversation(id: UUID) -> Conversation? {
-        chatHistoryService.fetchConversation(id: id)
+        conversationService.fetchConversation(id: id)
     }
 
     // MARK: - 项目-对话联动
@@ -339,7 +349,7 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// - Returns: 是否成功找到并切换到关联对话
     @discardableResult
     func switchToLatestConversation(forProject projectId: String) -> Bool {
-        guard let conversation = chatHistoryService.fetchLatestConversation(projectId: projectId) else {
+        guard let conversation = conversationService.fetchLatestConversation(projectId: projectId) else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)📁 项目 [\(projectId)] 无关联对话")
             }
@@ -360,36 +370,36 @@ final class WindowConversationVM: ObservableObject, SuperLog {
     /// 创建新会话
     ///
     /// 执行创建新会话的完整流程：创建会话记录、选中、注入欢迎消息。
-    /// 如果当前项目存在历史对话且带有模型偏好，新会话将自动继承该偏好。
-    ///
-    /// - Parameters:
-    ///   - projectName: 当前项目名称，为 nil 表示未选择项目
-    ///   - projectPath: 当前项目路径，为 nil 表示未选择项目
-    ///   - languagePreference: 语言偏好
+    /// 供应商/模型优先继承同项目最近对话，否则使用当前模型选择器中的配置。
     func createNewConversation(
         projectName: String? = nil,
         projectPath: String? = nil,
         languagePreference: LanguagePreference = .chinese,
         chatMode: ChatMode? = nil
     ) async {
-        let conversation = chatHistoryService.createConversation(
-            projectId: projectPath,
-            chatMode: (chatMode ?? agentSessionConfig.chatMode).rawValue,
-            languagePreference: languagePreference.rawValue
-        )
-
-        // 继承同项目上一条对话的模型偏好
-        if let projectPath,
-           let latestConversation = chatHistoryService.fetchLatestConversation(projectId: projectPath),
-           latestConversation.id != conversation.id,
-           let providerId = latestConversation.providerId,
-           let model = latestConversation.model {
-            chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)📋 新会话继承项目模型偏好：\(providerId) - \(model)")
-            }
+        guard let (providerId, model) = resolveModelPreference(forProjectPath: projectPath) else {
+            let message = ConversationCreationError.missingProviderAndModel.errorDescription ?? "创建对话失败"
+            conversationCreationError = message
+            AppLogger.core.error("\(Self.t)❌ \(message)")
+            return
         }
 
+        let conversation: Conversation
+        do {
+            conversation = try conversationService.createConversation(
+                providerId: providerId,
+                model: model,
+                projectId: projectPath,
+                chatMode: (chatMode ?? agentSessionConfig.chatMode).rawValue,
+                languagePreference: languagePreference.rawValue
+            )
+        } catch {
+            conversationCreationError = error.localizedDescription
+            AppLogger.core.error("\(Self.t)❌ 创建对话失败：\(error.localizedDescription)")
+            return
+        }
+
+        conversationCreationError = nil
         setSelectedConversation(conversation.id, reason: "createNewConversation")
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
 
@@ -404,5 +414,27 @@ final class WindowConversationVM: ObservableObject, SuperLog {
                 to: conversation.id
             )
         }
+    }
+
+    func clearConversationCreationError() {
+        conversationCreationError = nil
+    }
+
+    private func resolveModelPreference(forProjectPath projectPath: String?) -> (providerId: String, model: String)? {
+        if let projectPath,
+           let latestConversation = conversationService.fetchLatestConversation(projectId: projectPath),
+           let providerId = latestConversation.providerId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !providerId.isEmpty,
+           let model = latestConversation.model?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !model.isEmpty {
+            return (providerId, model)
+        }
+
+        guard !agentSessionConfig.isAutoMode else { return nil }
+
+        let providerId = agentSessionConfig.selectedProviderId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = agentSessionConfig.currentModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !providerId.isEmpty, !model.isEmpty else { return nil }
+        return (providerId, model)
     }
 }

@@ -11,11 +11,11 @@ extension Notification.Name {
     /// object: UUID (对话 ID)
     static let agentConversationCreated = Notification.Name("agentConversationCreated")
 
-    /// 工具授权流程结束（全部非 pending），应继续 `SendController.resumeAfterPermissionGranted(conversationId:)` 管线
+    /// 工具授权流程结束（全部非 pending），应继续 `setTurnPhase(.processing)` 管线
     /// object: UUID (对话 ID)
     static let resumeSendAfterToolPermission = Notification.Name("resumeSendAfterToolPermission")
 
-    /// Agent 模式：某对话一轮发送/处理已完成（`SendController.finishSendTurn`）
+    /// Agent 模式：某对话一轮发送/处理已完成（`TurnLifecyclePlugin finishAgentTurn`）
     /// object: UUID (对话 ID)
     static let agentConversationSendTurnFinished = Notification.Name("agentConversationSendTurnFinished")
 

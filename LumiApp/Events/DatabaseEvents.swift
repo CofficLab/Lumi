@@ -28,14 +28,13 @@ extension NotificationCenter {
     /// 发送消息已保存到数据库的通知
     /// 自动在主线程发送通知
     /// - Parameter message: 消息对象
+    @MainActor
     static func postMessageSaved(message: ChatMessage, conversationId: UUID) {
-        Task { @MainActor in
-            NotificationCenter.default.post(
-                name: .messageSaved,
-                object: message,
-                userInfo: ["conversationId": conversationId]
-            )
-        }
+        NotificationCenter.default.post(
+            name: .messageSaved,
+            object: message,
+            userInfo: ["conversationId": conversationId]
+        )
     }
 
     /// 发送对话已创建的通知

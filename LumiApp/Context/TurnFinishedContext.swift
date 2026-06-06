@@ -5,15 +5,6 @@ import LumiCoreKit
 ///
 /// 在 `LumiCoreKit.TurnFinishedContext` 基础上注入 App 层服务依赖，
 /// 让中间件可以通过上下文访问聊天记录、项目配置等能力。
-///
-/// ## 使用示例
-///
-/// ```swift
-/// func handleTurnFinished(ctx: TurnFinishedContext) async {
-///     guard let appCtx = ctx as? AppTurnFinishedContext else { return }
-///     let messages = await appCtx.chatHistoryService.loadMessagesAsync(...)
-/// }
-/// ```
 @MainActor
 final class AppTurnFinishedContext: TurnFinishedContext {
 
@@ -22,9 +13,6 @@ final class AppTurnFinishedContext: TurnFinishedContext {
 
     /// 当前项目视图模型
     let projectVM: WindowProjectVM
-
-    /// 消息队列 VM，用于入队消息触发新 Turn
-    let messageQueueVM: WindowMessageQueueVM
 
     /// 对话 VM，用于保存消息到会话
     let conversationVM: WindowConversationVM
@@ -35,12 +23,10 @@ final class AppTurnFinishedContext: TurnFinishedContext {
         turnMessages: [ChatMessage],
         chatHistoryService: ChatHistoryService,
         projectVM: WindowProjectVM,
-        messageQueueVM: WindowMessageQueueVM,
         conversationVM: WindowConversationVM
     ) {
         self.chatHistoryService = chatHistoryService
         self.projectVM = projectVM
-        self.messageQueueVM = messageQueueVM
         self.conversationVM = conversationVM
         super.init(
             conversationId: conversationId,

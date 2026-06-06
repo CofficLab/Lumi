@@ -9,9 +9,11 @@ import SwiftData
 @MainActor
 final class LiveHistoryQueryService: HistoryQueryService, Sendable {
     private let chatHistoryService: ChatHistoryService
+    private let conversationService: ConversationService
 
-    init(chatHistoryService: ChatHistoryService) {
+    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService) {
         self.chatHistoryService = chatHistoryService
+        self.conversationService = conversationService
     }
 
     // MARK: - HistoryQueryService
@@ -60,13 +62,11 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
     }
 
     func fetchConversationCount() async -> Int {
-        let context = chatHistoryService.getContext()
-        let descriptor = FetchDescriptor<Conversation>()
-        return (try? context.fetchCount(descriptor)) ?? 0
+        conversationService.fetchConversationCount()
     }
 
     func fetchConversationPage(limit: Int, offset: Int) async -> [HistoryConversationRow] {
-        let conversations = chatHistoryService.fetchConversationsPage(
+        let conversations = conversationService.fetchConversationsPage(
             limit: limit,
             offset: offset
         )

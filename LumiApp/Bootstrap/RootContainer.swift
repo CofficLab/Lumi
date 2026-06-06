@@ -38,6 +38,7 @@ final class RootContainer: ObservableObject, SuperLog {
     let toolService: ToolService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
+    let conversationService: ConversationService
     let performanceService: PerformanceService
     let conversationTurnServices: AppConversationTurnVM
     
@@ -112,9 +113,14 @@ final class RootContainer: ObservableObject, SuperLog {
         // 聊天历史服务
         // ========================================
         
+        self.conversationService = ConversationService(
+            modelContainer: modelContainer,
+            reason: "RootViewContainer"
+        )
+
         self.chatHistoryService = ChatHistoryService(
             llmService: llmService,
-            modelContainer: modelContainer,
+            conversationService: conversationService,
             reason: "RootViewContainer"
         )
 
@@ -125,6 +131,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
         self.chatHistoryVM = AppChatHistoryVM(
             chatHistoryService: chatHistoryService,
+            conversationService: conversationService,
             performanceService: performanceService
         )
         self.recentProjectsVM = AppProjectsVM()
@@ -145,6 +152,7 @@ final class RootContainer: ObservableObject, SuperLog {
         
         _fallbackWindowConversationVM = WindowConversationVM(
             chatHistoryService: chatHistoryService,
+            conversationService: conversationService,
             promptService: promptService,
             agentSessionConfig: agentSessionConfig
         )

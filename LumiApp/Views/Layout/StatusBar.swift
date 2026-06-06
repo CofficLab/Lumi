@@ -23,7 +23,8 @@ struct StatusBar: View {
         let activeIcon = layoutVM.activeViewContainerIcon
         let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
         let historyService = LiveHistoryQueryService(
-            chatHistoryService: chatHistoryVM.chatHistoryService
+            chatHistoryService: chatHistoryVM.chatHistoryService,
+            conversationService: chatHistoryVM.conversationService
         )
         let context = PluginContext(
             activeIcon: activeIcon,

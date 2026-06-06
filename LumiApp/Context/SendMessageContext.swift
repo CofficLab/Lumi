@@ -22,6 +22,7 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
 
     /// 聊天记录服务，用于读取/保存会话消息
     let chatHistoryService: ChatHistoryService
+    let conversationService: ConversationService
     
     /// LLM 代理会话配置（模型选择、参数设置等）
     let agentSessionConfig: AppLLMVM
@@ -38,12 +39,14 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
         conversationId: UUID,
         message: ChatMessage,
         chatHistoryService: ChatHistoryService,
+        conversationService: ConversationService,
         agentSessionConfig: AppLLMVM,
         projectVM: WindowProjectVM,
         recentProjectsVM: AppProjectsVM,
         currentFileURL: URL?
     ) {
         self.chatHistoryService = chatHistoryService
+        self.conversationService = conversationService
         self.agentSessionConfig = agentSessionConfig
         self.projectVM = projectVM
         self.recentProjectsVM = recentProjectsVM
@@ -54,12 +57,12 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
             currentProjectPath: projectVM.currentProjectPath,
             languagePreference: projectVM.languagePreference,
             previousMessages: chatHistoryService.loadMessages(forConversationId: conversationId) ?? [],
-            conversationTitleProvider: { [chatHistoryService] conversationId in
-                chatHistoryService.fetchConversation(id: conversationId)?.title
+            conversationTitleProvider: { [conversationService] conversationId in
+                conversationService.fetchConversation(id: conversationId)?.title
             },
-            conversationTitleGenerator: { [chatHistoryService, agentSessionConfig] userMessage in
+            conversationTitleGenerator: { [conversationService, chatHistoryService, agentSessionConfig] userMessage in
                 let config: LLMConfig
-                if let conversation = chatHistoryService.fetchConversation(id: conversationId),
+                if let conversation = conversationService.fetchConversation(id: conversationId),
                    let providerId = conversation.providerId,
                    let model = conversation.model,
                    let conversationConfig = agentSessionConfig.makeConfig(providerId: providerId, model: model) {
@@ -69,9 +72,9 @@ final class SendMessageContext: LumiCoreKit.SendMessageContext {
                 }
                 return await chatHistoryService.generateConversationTitle(from: userMessage, config: config)
             },
-            conversationTitleUpdater: { [chatHistoryService] conversationId, title in
-                guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return false }
-                chatHistoryService.updateConversationTitle(conversation, newTitle: title)
+            conversationTitleUpdater: { [conversationService] conversationId, title in
+                guard let conversation = conversationService.fetchConversation(id: conversationId) else { return false }
+                conversationService.updateConversationTitle(conversation, newTitle: title)
                 return true
             }
         )

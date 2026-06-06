@@ -1,6 +1,7 @@
-import Combine
 import AgentToolKit
+import Combine
 import Foundation
+import LumiCoreKit
 
 ///
 /// ## 初始化规则
@@ -15,7 +16,7 @@ import Foundation
 @MainActor
 final class WindowInputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { false } // 链路日志见 AgentSendPipelineLog
 
     struct InputEnqueueRequest: Identifiable, Equatable {
         let id: UUID
@@ -36,10 +37,6 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
 
     /// 发布输入入队请求
     func enqueueText(_ text: String, images: [ImageAttachment] = []) {
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)用户输入入队: \(text.max(count: 50))")
-        }
-
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !images.isEmpty else {
             return
@@ -49,6 +46,9 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
             text: trimmed,
             images: images
         )
+        if AgentSendPipelineLog.enabled {
+            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)① [InputQueue] enqueue text=\(trimmed.prefix(40)) images=\(images.count)")
+        }
         pendingRequest = request
         queueVersion += 1
         onEnqueueRequest?(request)

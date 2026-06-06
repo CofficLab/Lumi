@@ -21,6 +21,12 @@ final class Conversation {
     /// 对话级语言偏好，nil 表示未指定（回退到当前窗口偏好）
     var languagePreference: String?
 
+    /// Agent Turn 阶段（`AgentTurnPhase.rawValue`），nil 视为 idle
+    var turnPhase: String?
+
+    /// 发起 Turn 时的活跃窗口 ID（多窗口上下文解析）
+    var activeWindowId: UUID?
+
     @Relationship(deleteRule: .cascade) var messages: [ChatMessageEntity]
 
     init(

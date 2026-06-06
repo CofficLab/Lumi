@@ -13,16 +13,24 @@ import LLMKit
 final class AppChatHistoryVM: ObservableObject {
     // MARK: - Properties
 
-    /// 聊天历史服务（消息 + 对话 CRUD）
+    /// 聊天历史服务（消息）
     let chatHistoryService: ChatHistoryService
+
+    /// 对话持久化服务
+    let conversationService: ConversationService
 
     /// 性能统计服务
     let performanceService: PerformanceService
 
     // MARK: - Initialization
 
-    init(chatHistoryService: ChatHistoryService, performanceService: PerformanceService) {
+    init(
+        chatHistoryService: ChatHistoryService,
+        conversationService: ConversationService,
+        performanceService: PerformanceService
+    ) {
         self.chatHistoryService = chatHistoryService
+        self.conversationService = conversationService
         self.performanceService = performanceService
     }
 
@@ -78,17 +86,21 @@ final class AppChatHistoryVM: ObservableObject {
         await chatHistoryService.deleteMessagesAsync(messageIds: messageIds, conversationId: conversationId)
     }
 
-    // MARK: - 对话操作（委托给 ChatHistoryService）
+    // MARK: - 对话操作（委托给 ConversationService）
 
     /// 创建新对话
     @discardableResult
     func createConversation(
+        providerId: String,
+        model: String,
         projectId: String? = nil,
         title: String = "",
         chatMode: String? = nil,
         languagePreference: String? = nil
-    ) -> Conversation {
-        chatHistoryService.createConversation(
+    ) throws -> Conversation {
+        try conversationService.createConversation(
+            providerId: providerId,
+            model: model,
             projectId: projectId,
             title: title,
             chatMode: chatMode,
@@ -98,7 +110,7 @@ final class AppChatHistoryVM: ObservableObject {
 
     /// 获取所有对话（按创建时间倒序）
     func fetchAllConversations() -> [Conversation] {
-        chatHistoryService.fetchAllConversations()
+        conversationService.fetchAllConversations()
     }
 
     /// 分页获取对话
@@ -107,7 +119,7 @@ final class AppChatHistoryVM: ObservableObject {
         offset: Int,
         projectId: String? = nil
     ) -> [Conversation] {
-        chatHistoryService.fetchConversationsPage(
+        conversationService.fetchConversationsPage(
             limit: limit,
             offset: offset,
             projectId: projectId
@@ -116,17 +128,17 @@ final class AppChatHistoryVM: ObservableObject {
 
     /// 获取指定项目最近更新的一个对话
     func fetchLatestConversation(projectId: String) -> Conversation? {
-        chatHistoryService.fetchLatestConversation(projectId: projectId)
+        conversationService.fetchLatestConversation(projectId: projectId)
     }
 
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
-        chatHistoryService.fetchConversation(id: id)
+        conversationService.fetchConversation(id: id)
     }
 
     /// 更新对话标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
-        chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
+        conversationService.updateConversationTitle(conversation, newTitle: newTitle)
     }
 
     /// 基于用户消息自动生成会话标题
@@ -136,27 +148,27 @@ final class AppChatHistoryVM: ObservableObject {
 
     /// 更新对话的供应商/模型偏好
     func updateModelPreference(_ conversation: Conversation, providerId: String?, model: String?) {
-        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+        conversationService.updateModelPreference(conversation, providerId: providerId, model: model)
     }
 
     /// 更新对话的聊天模式偏好
     func updateChatMode(_ conversation: Conversation, chatMode: String?) {
-        chatHistoryService.updateChatMode(conversation, chatMode: chatMode)
+        conversationService.updateChatMode(conversation, chatMode: chatMode)
     }
 
     /// 更新对话的响应详细程度偏好
     func updateVerbosity(_ conversation: Conversation, verbosity: String?) {
-        chatHistoryService.updateVerbosity(conversation, verbosity: verbosity)
+        conversationService.updateVerbosity(conversation, verbosity: verbosity)
     }
 
     /// 更新对话的语言偏好
     func updateLanguagePreference(_ conversation: Conversation, languagePreference: String?) {
-        chatHistoryService.updateLanguagePreference(conversation, languagePreference: languagePreference)
+        conversationService.updateLanguagePreference(conversation, languagePreference: languagePreference)
     }
 
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
-        chatHistoryService.deleteConversation(conversation)
+        conversationService.deleteConversation(conversation)
     }
 
     // MARK: - 性能统计（委托给 PerformanceService）

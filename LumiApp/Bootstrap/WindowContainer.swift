@@ -24,7 +24,7 @@ import SwiftUI
 @MainActor
 final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     nonisolated static let emoji = "🪟"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false // 链路日志见 AgentSendPipelineLog
 
     // MARK: - Identity
 
@@ -44,9 +44,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
     /// 布局管理（每窗口独立的侧边栏/布局状态）
     let layoutVM: WindowLayoutVM
-
-    /// 消息发送队列（每窗口独立的消息发送队列）
-    let messageQueueVM: WindowMessageQueueVM
 
     /// 用户输入队列（每窗口独立的用户输入）
     let inputQueueVM: WindowInputQueueVM
@@ -80,8 +77,19 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
     // MARK: - Window-Level Controllers
 
-    /// 发送控制器（每窗口独立，直接访问窗口级 VM）
-    lazy var sendController: SendController = SendController(container: self, global: self._container)
+    /// 工具调用执行器（每窗口独立）
+    lazy var toolCallExecutor: ToolCallExecutor = ToolCallExecutor(
+        toolService: _container.toolService,
+        agentSessionConfig: _container.agentSessionConfig,
+        permissionRequestVM: permissionRequestVM,
+        conversationSendStatusVM: conversationSendStatusVM,
+        conversationVM: conversationVM,
+        projectVM: projectVM,
+        recentProjectPathsProvider: { [weak self] in
+            guard let self else { return [] }
+            return self._container.recentProjectsVM.getRecentProjects().map(\.path)
+        }
+    )
 
     /// 项目控制器
     lazy var projectController: ProjectController = ProjectController(container: self, global: self._container)
@@ -168,6 +176,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
         self.conversationVM = WindowConversationVM(
             chatHistoryService: container.chatHistoryService,
+            conversationService: container.conversationService,
             promptService: container.promptService,
             agentSessionConfig: container.agentSessionConfig
         )
@@ -176,7 +185,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             llmService: container.llmService
         )
         self.layoutVM = WindowLayoutVM()
-        self.messageQueueVM = WindowMessageQueueVM()
         self.inputQueueVM = WindowInputQueueVM()
         self.chatDraftVM = WindowChatDraftVM()
         self.agentAttachmentsVM = WindowAttachmentsVM()
@@ -303,12 +311,12 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
             content: text,
             images: images
         )
-        messageQueueVM.enqueueMessage(message)
-
-        Task { [weak self] in
-            guard let self, !self.hasCleanedUp else { return }
-            await self.sendController.attemptBeginNextQueuedSend()
+        var pendingMessage = message
+        pendingMessage.queueStatus = .pending
+        if AgentSendPipelineLog.enabled {
+            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ① [Input] 保存 pending 用户消息 id=\(message.id.uuidString.prefix(8)) text=\(text.prefix(40))")
         }
+        conversationVM.saveMessage(pendingMessage, to: conversationId)
     }
 
     private func saveSystemMessage(_ text: String, conversationId: UUID) {
@@ -587,6 +595,40 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         }
     }
 
+
+    // MARK: - Agent Turn Control
+
+    /// 取消当前会话的 Agent Turn。
+    func cancelAgentTurn(conversationId: UUID) {
+        let wasProcessing = _container.conversationService.loadTurnPhase(forConversationId: conversationId) != .idle
+
+        AgentConversationLock.shared.markCancelled(conversationId)
+        AgentConversationLock.shared.release(conversationId)
+
+        if permissionRequestVM.pendingToolPermissionSession?.conversationId == conversationId {
+            permissionRequestVM.setPendingPermissionRequest(nil)
+            permissionRequestVM.setPendingToolPermissionSession(nil)
+        }
+
+        conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+        conversationSendStatusVM.clearStatus(conversationId: conversationId)
+        _container.chatHistoryService.clearQueueStatus(forConversationId: conversationId)
+        _container.conversationService.setTurnPhase(.idle, forConversationId: conversationId)
+        AgentTransientPromptStore.shared.clear(for: conversationId)
+
+        guard wasProcessing else { return }
+        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: "用户主动取消了对话")
+        conversationVM.saveMessage(systemMessage, to: conversationId)
+    }
+
+    /// 窗口关闭时清理所有 Agent Turn 状态。
+    func cancelAllAgentTurnsForTeardown() {
+        AgentTransientPromptStore.shared.clearAll()
+        permissionRequestVM.clearPending()
+        conversationSendStatusVM.clearAll()
+        AgentConversationLock.shared.releaseAll()
+    }
+
     // MARK: - Teardown
 
     /// 释放窗口级资源。窗口关闭时由 `WindowManagerVM` 在移除 scope 前调用。
@@ -596,8 +638,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
 
         cancellables.removeAll()
         inputQueueVM.clearForTeardown()
-        sendController.cancelAllSendsForTeardown()
-        messageQueueVM.clearAll()
+        cancelAllAgentTurnsForTeardown()
         chatDraftVM.clear()
         agentAttachmentsVM.clearPendingAttachments()
         permissionRequestVM.clearPending()

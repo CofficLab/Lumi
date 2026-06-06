@@ -26,6 +26,12 @@ final class ChatMessageEntity {
     /// 原始错误详情（如 HTTP 状态码、响应体等），用于在 UI 底部折叠展示
     var rawErrorDetail: String?
 
+    /// 发送队列状态（pending / processing）
+    var queueStatus: String?
+
+    /// UI 渲染路由标识（如 zhipu-http-403）
+    var renderKind: String?
+
     /// 性能指标和请求元数据（1:1 关系，可选）
     @Relationship(deleteRule: .cascade)
     var metrics: MessageMetricsEntity?
@@ -170,7 +176,9 @@ final class ChatMessageEntity {
             temperature: temperature,
             maxTokens: maxTokens,
             thinkingContent: thinkingContent,
-            rawErrorDetail: rawErrorDetail
+            rawErrorDetail: rawErrorDetail,
+            queueStatus: queueStatus.flatMap { MessageQueueStatus(rawValue: $0) },
+            renderKind: renderKind
         )
     }
     
@@ -188,7 +196,9 @@ final class ChatMessageEntity {
         providerId = message.providerId
         modelName = message.modelName
         rawErrorDetail = message.rawErrorDetail
-        
+        queueStatus = message.queueStatus?.rawValue
+        renderKind = message.renderKind
+
         // 更新或创建性能指标
         if message.hasPerformanceData {
             if let existingMetrics = metrics {
@@ -233,8 +243,10 @@ final class ChatMessageEntity {
             modelName: message.modelName
         )
 
-        // 写入 rawErrorDetail（init 不包含该参数，需单独赋值）
+        // 写入 rawErrorDetail / queueStatus / renderKind（init 不包含该参数，需单独赋值）
         entity.rawErrorDetail = message.rawErrorDetail
+        entity.queueStatus = message.queueStatus?.rawValue
+        entity.renderKind = message.renderKind
 
         // 创建性能指标（如果有数据）
         if message.hasPerformanceData {

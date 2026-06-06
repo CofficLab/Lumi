@@ -102,7 +102,11 @@ struct RootView<Content>: View where Content: View {
         .onChange(of: windowContainer.chatDraftVM.text) { _, _ in
             syncPluginConversationContext()
         }
-        .onChange(of: windowContainer.messageQueueVM.queueVersion) { _, _ in
+        .onReceive(NotificationCenter.default.publisher(for: .messageSaved)) { _ in
+            syncPluginConversationContext()
+            pluginConversationVM.notifyPendingMessagesChanged()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .agentTurnPhaseChanged)) { _ in
             syncPluginConversationContext()
             pluginConversationVM.notifyPendingMessagesChanged()
         }
@@ -178,7 +182,6 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(pluginProjectContext)
             .environmentObject(windowContainer.layoutVM)
             .environmentObject(pluginLayoutContext)
-            .environmentObject(windowContainer.messageQueueVM)
             .environmentObject(windowContainer.agentAttachmentsVM)
             .environmentObject(windowContainer.inputQueueVM)
             .environmentObject(windowContainer.chatDraftVM)
@@ -188,6 +191,23 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.taskCancellationVM)
             .environmentObject(windowContainer.conversationSendStatusVM)
             .environmentObject(windowContainer.projectContextRequestVM)
+            .alert(
+                "无法创建对话",
+                isPresented: Binding(
+                    get: { windowContainer.conversationVM.conversationCreationError != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            windowContainer.conversationVM.clearConversationCreationError()
+                        }
+                    }
+                )
+            ) {
+                Button("确定") {
+                    windowContainer.conversationVM.clearConversationCreationError()
+                }
+            } message: {
+                Text(windowContainer.conversationVM.conversationCreationError ?? "")
+            }
     }
 
     private var globalEnvironmentContent: some View {
@@ -285,7 +305,9 @@ struct RootView<Content>: View where Content: View {
             },
             enqueueUserMessage: { message, turnContext in
                 guard let appContext = turnContext as? AppTurnFinishedContext else { return }
-                appContext.messageQueueVM.enqueueMessage(message)
+                var pending = message
+                pending.queueStatus = .pending
+                appContext.conversationVM.saveMessage(pending, to: appContext.conversationId)
             },
             addToChat: { text, context in
                 NotificationCenter.postAddToChat(text: text, windowId: context.windowId)
@@ -309,9 +331,122 @@ struct RootView<Content>: View where Content: View {
                     conversationId: conversationId,
                     toolCallId: toolCallId,
                     answer: answer,
-                    conversationVM: targetWindow.conversationVM,
-                    messageQueueVM: targetWindow.messageQueueVM
+                    conversationVM: targetWindow.conversationVM
                 )
+            },
+            saveMessage: { [container] message, conversationId in
+                _ = container.chatHistoryService.saveMessage(message, toConversationId: conversationId)
+            },
+            updateMessage: { [container] message, conversationId in
+                _ = container.chatHistoryService.updateMessage(message, conversationId: conversationId)
+            },
+            loadMessages: { [container] conversationId in
+                container.chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+            },
+            loadTurnPhase: { [container] conversationId in
+                container.conversationService.loadTurnPhase(forConversationId: conversationId)
+            },
+            setTurnPhase: { [container] phase, conversationId in
+                container.conversationService.setTurnPhase(phase, forConversationId: conversationId)
+            },
+            tryAcquireConversationLock: { conversationId in
+                AgentConversationLock.shared.tryAcquire(conversationId)
+            },
+            releaseConversationLock: { conversationId in
+                AgentConversationLock.shared.release(conversationId)
+            },
+            isConversationCancelled: { conversationId in
+                AgentConversationLock.shared.isCancelled(conversationId)
+            },
+            markConversationCancelled: { conversationId in
+                AgentConversationLock.shared.markCancelled(conversationId)
+            },
+            clearConversationCancelled: { conversationId in
+                AgentConversationLock.shared.clearCancelled(conversationId)
+            },
+            prepareMessagesForLLM: { [container, windowContainer] conversationId, messages in
+                let runtime = AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                return runtime.prepareMessages(conversationId: conversationId, messages: messages)
+            },
+            makeLLMSendDependencies: { [container, windowContainer] conversationId in
+                AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                    .makeLLMSendDependencies(conversationId: conversationId)
+            },
+            evaluateToolPermissions: { [container, windowContainer] message, conversationId in
+                AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                    .evaluateToolPermissions(for: message, conversationId: conversationId)
+            },
+            consumeTransientSystemPrompts: { conversationId in
+                AgentTransientPromptStore.shared.consume(for: conversationId)
+            },
+            buildLLMErrorMessage: { [container, windowContainer] error, conversationId, providerId in
+                AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                    .buildLLMErrorMessage(error, conversationId: conversationId, providerId: providerId)
+            },
+            currentProviderId: { [container, windowContainer] conversationId in
+                AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                    .currentProviderId(for: conversationId)
+            },
+            presentToolPermissionIfNeeded: { [container, windowContainer] message, conversationId async in
+                await windowContainer.toolCallExecutor.presentPermissionIfNeeded(
+                    assistantMessage: message,
+                    conversationId: conversationId
+                )
+            },
+            executeToolCalls: { [container, windowContainer] message, conversationId async in
+                let summary = await windowContainer.toolCallExecutor.executeAll(
+                    assistantMessage: message,
+                    conversationId: conversationId
+                )
+                return ToolExecutionSummary(
+                    hadUserRejection: summary.hadUserRejection,
+                    hasAwaitingUserResponse: summary.hasAwaitingUserResponse
+                )
+            },
+            finishAgentTurn: { [container, windowContainer] conversationId, endReason in
+                AgentTurnFinisher(container: container, windowContainer: windowContainer)
+                    .finish(conversationId: conversationId, endReason: endReason)
+            },
+            setConversationStatus: { [container, windowContainer] conversationId, content in
+                windowContainer.conversationSendStatusVM.setStatus(
+                    conversationId: conversationId,
+                    content: content
+                )
+            },
+            dequeueNextPendingMessage: { [container] conversationId in
+                container.chatHistoryService.dequeueNextPendingMessage(forConversationId: conversationId)
+            },
+            runSendPreparePipeline: { [container, windowContainer] conversationId, message in
+                await AgentSendPrepareRuntime.runPreparePipeline(
+                    conversationId: conversationId,
+                    message: message,
+                    container: container,
+                    windowContainer: windowContainer
+                )
+            },
+            storeTransientSystemPrompts: { prompts, conversationId in
+                AgentTransientPromptStore.shared.store(prompts, for: conversationId)
+            },
+            pendingMessages: { [container] conversationId in
+                container.chatHistoryService.pendingMessages(forConversationId: conversationId)
+            },
+            removePendingMessage: { [container] messageId, conversationId in
+                container.chatHistoryService.removePendingMessage(id: messageId, conversationId: conversationId)
+            },
+            providerTypeProvider: { [container] providerId in
+                container.agentSessionConfig.providerType(forId: providerId)
+            },
+            getProviderApiKey: { [container] providerId in
+                container.agentSessionConfig.getApiKey(for: providerId)
+            },
+            setProviderApiKey: { [container] providerId, apiKey in
+                container.agentSessionConfig.setApiKey(apiKey, for: providerId)
+            },
+            selectedProviderIdProvider: { [container] in
+                container.agentSessionConfig.selectedProviderId
+            },
+            providerInfoProvider: { [container] providerId in
+                container.agentSessionConfig.allProviders.first { $0.id == providerId }
             }
         ))
     }
@@ -382,11 +517,13 @@ struct RootView<Content>: View where Content: View {
                 windowContainer.projectVM.setLanguagePreference(appLanguagePreference)
             }
         }
-        pluginConversationVM.pendingMessagesProvider = { [windowContainer] conversationId in
-            windowContainer.messageQueueVM.pendingMessages(for: conversationId)
+        pluginConversationVM.pendingMessagesProvider = { [container] conversationId in
+            container.chatHistoryService.pendingMessages(forConversationId: conversationId)
         }
-        pluginConversationVM.pendingMessageRemover = { [windowContainer] messageId in
-            windowContainer.messageQueueVM.removeMessage(id: messageId)
+        pluginConversationVM.pendingMessageRemover = { [container, windowContainer, pluginConversationVM] messageId in
+            guard let conversationId = windowContainer.conversationVM.selectedConversationId else { return }
+            _ = container.chatHistoryService.removePendingMessage(id: messageId, conversationId: conversationId)
+            pluginConversationVM.notifyPendingMessagesChanged()
         }
         pluginConversationVM.pendingAttachmentsProvider = { [windowContainer] in
             windowContainer.agentAttachmentsVM.pendingAttachments

@@ -20,10 +20,6 @@ struct ConversationTitleGenerator {
             return fallbackTitle
         }
 
-        guard !config.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return fallbackTitle
-        }
-
         let titlePrompt = """
         请为以下用户消息生成一个简洁的对话标题（最多 10 个中文字符或 15 个英文字符）：
 
@@ -37,11 +33,7 @@ struct ConversationTitleGenerator {
         """
 
         do {
-            let titleConfig = LLMConfig(
-                apiKey: config.apiKey,
-                model: config.model,
-                providerId: config.providerId
-            )
+            let titleConfig = config
 
             let titleMessages: [ChatMessage] = [
                 ChatMessage(role: .user, conversationId: UUID(), content: titlePrompt),
