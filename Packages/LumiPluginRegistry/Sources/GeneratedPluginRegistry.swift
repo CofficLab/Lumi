@@ -7,6 +7,10 @@ import AgentGitHubToolsPlugin
 import ConversationLanguagePlugin
 import AgentMCPToolsPlugin
 import MessageRendererPlugin
+import SendQueuePlugin
+import MessageSenderPlugin
+import TurnLifecyclePlugin
+import ToolExecutorPlugin
 import AgentRAGPlugin
 import AgentRulesPlugin
 import AgentTurnNotificationPlugin
@@ -184,6 +188,10 @@ public enum GeneratedPluginRegistry {
         plugins.append(ConversationLanguagePlugin.shared)
         plugins.append(AgentMCPToolsPlugin.shared)
         plugins.append(MessageRendererPlugin.shared)
+        plugins.append(SendQueuePlugin.shared)
+        plugins.append(MessageSenderPlugin.shared)
+        plugins.append(TurnLifecyclePlugin.shared)
+        plugins.append(ToolExecutorPlugin.shared)
         plugins.append(RAGPlugin.shared)
         plugins.append(AgentRulesPlugin.shared)
         plugins.append(AgentTurnNotificationPlugin.shared)
@@ -209,7 +217,7 @@ public enum GeneratedPluginRegistry {
         plugins.append(ClipboardManagerPlugin.shared)
         plugins.append(CodeReviewPlugin.shared)
         plugins.append(ConversationListPlugin.shared)
-        plugins.append(ConversationNewHeaderPlugin.shared)
+        plugins.append(ConversationNewPlugin.shared)
         plugins.append(ConversationTimelinePlugin.shared)
         plugins.append(ConversationTitlePlugin.shared)
         plugins.append(DatabaseManagerPlugin.shared)

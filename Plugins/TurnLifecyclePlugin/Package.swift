@@ -2,29 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "MessageSenderPlugin",
-    platforms: [
-        .macOS(.v14)
-    ],
+    name: "TurnLifecyclePlugin",
+    platforms: [.macOS(.v14)],
     products: [
-        .library(
-            name: "MessageSenderPlugin",
-            targets: ["MessageSenderPlugin"]
-        )
+        .library(name: "TurnLifecyclePlugin", targets: ["TurnLifecyclePlugin"])
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
-            name: "MessageSenderPlugin",
+            name: "TurnLifecyclePlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources"
