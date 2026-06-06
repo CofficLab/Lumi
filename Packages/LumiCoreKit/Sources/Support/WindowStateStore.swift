@@ -5,7 +5,7 @@ import os
 /// 窗口状态持久化存储（`window_states.json` 读写）
 public final class WindowStateStore: @unchecked Sendable, SuperLog {
     public nonisolated static let emoji = "window"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "window-state-store")
 
     public static let shared = WindowStateStore()

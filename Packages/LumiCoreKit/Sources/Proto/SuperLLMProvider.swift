@@ -1,5 +1,7 @@
 import Foundation
 import AgentToolKit
+import HttpKit
+import LLMKit
 import OSLog
 
 /// 模型能力声明
@@ -129,7 +131,7 @@ public protocol SuperLLMProvider: Sendable {
 
     var baseURL: String { get }
 
-    func buildRequest(url: URL, apiKey: String) -> URLRequest
+    func buildRequest(url: URL) -> URLRequest
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
@@ -146,6 +148,25 @@ public protocol SuperLLMProvider: Sendable {
         systemPrompt: String
     ) throws -> [String: Any]
 
+    // MARK: - Transport
+
+    /// 流式对话：调用方提供消息与配置，供应商负责传输并返回完整助手消息。
+    func streamChat(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> ChatMessage
+
+    /// 非流式对话：调用方提供消息与配置，供应商负责传输并返回完整助手消息。
+    func sendMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> ChatMessage
+
     // MARK: - Availability
 
     /// 返回指定模型的可用性检测策略
@@ -160,6 +181,15 @@ public protocol SuperLLMProvider: Sendable {
     /// - Parameter modelId: 模型 ID
     /// - Returns: 该模型的检测策略
     func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy
+
+    // MARK: - Error Handling
+
+    /// 构建供应商自定义错误消息；返回 nil 时由 App 使用默认错误处理。
+    func buildErrorChatMessage(
+        error: Error,
+        conversationId: UUID,
+        rawDetail: String?
+    ) -> ChatMessage?
 }
 
 // MARK: - Default Implementation
@@ -199,5 +229,13 @@ extension SuperLLMProvider {
     public func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {
         let result = try parseResponse(data: data)
         return LLMProviderResponse(content: result.content, toolCalls: result.toolCalls)
+    }
+
+    public func buildErrorChatMessage(
+        error: Error,
+        conversationId: UUID,
+        rawDetail: String?
+    ) -> ChatMessage? {
+        nil
     }
 }

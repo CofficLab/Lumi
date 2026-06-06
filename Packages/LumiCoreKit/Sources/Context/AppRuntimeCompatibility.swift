@@ -254,7 +254,7 @@ public final class AppLLMVM: ObservableObject {
 
     public func makeConfig(providerId: String, model: String) -> LLMConfig? {
         guard !providerId.isEmpty, !model.isEmpty else { return nil }
-        return LLMConfig(apiKey: "", model: model, providerId: providerId)
+        return LLMConfig(model: model, providerId: providerId)
     }
 
     public func getCurrentConfig() -> LLMConfig {
@@ -262,7 +262,11 @@ public final class AppLLMVM: ObservableObject {
     }
 
     public func getApiKey(for providerId: String) -> String {
-        apiKeyProvider(providerId)
+        providerTypeProvider(providerId)?.getApiKey() ?? apiKeyProvider(providerId)
+    }
+
+    public func setApiKey(_ apiKey: String, for providerId: String) {
+        providerTypeProvider(providerId)?.setApiKey(apiKey)
     }
 
     public func setChatMode(_ chatMode: ChatMode) {
@@ -376,7 +380,12 @@ public final class LLMService: @unchecked Sendable {
 
     @MainActor
     public func getApiKey(for providerId: String) -> String {
-        apiKeyProvider(providerId)
+        providerTypeProvider(providerId)?.getApiKey() ?? apiKeyProvider(providerId)
+    }
+
+    @MainActor
+    public func setApiKey(_ apiKey: String, for providerId: String) {
+        providerTypeProvider(providerId)?.setApiKey(apiKey)
     }
 }
 

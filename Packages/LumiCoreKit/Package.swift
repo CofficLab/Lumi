@@ -47,7 +47,10 @@ let package = Package(
         ),
         .testTarget(
             name: "LumiCoreKitTests",
-            dependencies: ["LumiCoreKit"],
+            dependencies: [
+                "LumiCoreKit",
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+            ],
             path: "Tests"
         )
     ]

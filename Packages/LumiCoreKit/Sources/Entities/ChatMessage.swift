@@ -82,6 +82,9 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 消息队列状态（仅用于消息发送队列管理）
     public var queueStatus: MessageQueueStatus?
 
+    /// UI 渲染路由标识（如 `zhipu-http-403`），与 content 分离
+    public var renderKind: String?
+
     /// 是否应该发送到 LLM 作为对话上下文的一部分
     public var shouldSendToLLM: Bool {
         switch role {
@@ -157,7 +160,8 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
                 maxTokens: Int? = nil, thinkingContent: String? = nil,
                 rawErrorDetail: String? = nil,
                 isTransientStatus: Bool = false,
-                queueStatus: MessageQueueStatus? = nil) {
+                queueStatus: MessageQueueStatus? = nil,
+                renderKind: String? = nil) {
         self.id = UUID()
         self.role = role
         self.conversationId = conversationId
@@ -184,6 +188,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.rawErrorDetail = rawErrorDetail
         self.isTransientStatus = isTransientStatus
         self.queueStatus = queueStatus
+        self.renderKind = renderKind
     }
 
     /// 从数据库加载时使用的初始化方法（保留原有 ID）
@@ -199,7 +204,8 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
                 maxTokens: Int? = nil, thinkingContent: String? = nil,
                 rawErrorDetail: String? = nil,
                 isTransientStatus: Bool = false,
-                queueStatus: MessageQueueStatus? = nil) {
+                queueStatus: MessageQueueStatus? = nil,
+                renderKind: String? = nil) {
         self.id = id
         self.role = role
         self.conversationId = conversationId
@@ -225,6 +231,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.rawErrorDetail = rawErrorDetail
         self.isTransientStatus = isTransientStatus
         self.queueStatus = queueStatus
+        self.renderKind = renderKind
     }
 
     // MARK: - Equatable
@@ -241,6 +248,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             lhs.modelName == rhs.modelName &&
             lhs.latency == rhs.latency &&
             lhs.isTransientStatus == rhs.isTransientStatus &&
-            lhs.queueStatus == rhs.queueStatus
+            lhs.queueStatus == rhs.queueStatus &&
+            lhs.renderKind == rhs.renderKind
     }
 }

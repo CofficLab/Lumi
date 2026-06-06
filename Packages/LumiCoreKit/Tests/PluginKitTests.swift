@@ -1,6 +1,7 @@
 import Foundation
 import AgentToolKit
 import HttpKit
+import LLMKit
 import SwiftUI
 import Testing
 @testable import LumiCoreKit
@@ -200,7 +201,7 @@ private struct DuplicateModelProvider: SuperLLMProvider {
 
     init() {}
 
-    func buildRequest(url: URL, apiKey: String) -> URLRequest {
+    func buildRequest(url: URL) -> URLRequest {
         URLRequest(url: url)
     }
 
@@ -228,6 +229,39 @@ private struct DuplicateModelProvider: SuperLLMProvider {
         systemPrompt: String
     ) throws -> [String: Any] {
         [:]
+    }
+
+
+    func streamChat(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?,
+        maxThinkingLength: Int,
+        onChunk: @escaping @Sendable (StreamChunk) async -> Void,
+        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
+    ) async throws -> ChatMessage {
+        try await RemoteLLMProviderTransport.streamChat(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools,
+            maxThinkingLength: maxThinkingLength,
+            onChunk: onChunk,
+            onRequestStart: onRequestStart
+        )
+    }
+
+    func sendMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [SuperAgentTool]?
+    ) async throws -> ChatMessage {
+        try await RemoteLLMProviderTransport.sendMessage(
+            provider: self,
+            messages: messages,
+            config: config,
+            tools: tools
+        )
     }
 
     func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {

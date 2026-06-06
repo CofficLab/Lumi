@@ -1,5 +1,7 @@
 import Foundation
 import AgentToolKit
+import HttpKit
+import LLMKit
 
 // MARK: - Local Model Info
 
@@ -144,5 +146,57 @@ extension SuperLocalLLMProvider {
             images: images,
             onChunk: { _ in }
         )
+    }
+}
+
+// MARK: - Model Ready
+
+extension SuperLocalLLMProvider {
+    /// 确保本地模型已就绪：若为 .loading/.generating 则轮询等待，若为 .idle/.error 则尝试加载。
+    public func ensureModelReady(
+        modelId: String,
+        timeoutSeconds: Double = 300,
+        pollIntervalSeconds: Double = 1
+    ) async throws {
+        var state = await getModelState()
+        if state == .ready { return }
+
+        if state == .loading || state == .generating {
+            let deadline = CFAbsoluteTimeGetCurrent() + timeoutSeconds
+            while CFAbsoluteTimeGetCurrent() < deadline {
+                do {
+                    try Task.checkCancellation()
+                } catch is CancellationError {
+                    throw LLMServiceError.cancelled
+                }
+                state = await getModelState()
+                if state == .ready { return }
+                if case .error = state { break }
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+                } catch is CancellationError {
+                    throw LLMServiceError.cancelled
+                }
+            }
+            if state != .ready {
+                throw LLMServiceError.requestFailed("加载超时，请稍后重试或到设置中查看")
+            }
+            return
+        }
+
+        do {
+            try await loadModel(id: modelId)
+        } catch is CancellationError {
+            throw LLMServiceError.cancelled
+        } catch {
+            throw LLMServiceError.requestFailed(error.localizedDescription)
+        }
+
+        state = await getModelState()
+        if state != .ready {
+            let msg: String
+            if case .error(let s) = state { msg = s } else { msg = "模型未就绪" }
+            throw LLMServiceError.requestFailed(msg)
+        }
     }
 }

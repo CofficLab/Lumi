@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 
 /// 插件注册期运行时能力。
 ///
@@ -65,6 +66,96 @@ public struct PluginRuntimeContext {
     ///   - answer: 用户的回答
     public let resumeToolCall: @MainActor (String, String, String) -> Void
 
+    /// 保存消息到数据库。
+    public let saveMessage: @MainActor (ChatMessage, UUID) -> Void
+
+    /// 更新已存在的消息（同 ID 覆盖）。
+    public let updateMessage: @MainActor (ChatMessage, UUID) -> Void
+
+    /// 加载会话全部消息。
+    public let loadMessages: @MainActor (UUID) -> [ChatMessage]
+
+    /// 读取 Agent Turn 阶段。
+    public let loadTurnPhase: @MainActor (UUID) -> AgentTurnPhase
+
+    /// 设置 Agent Turn 阶段。
+    public let setTurnPhase: @MainActor (AgentTurnPhase, UUID) -> Void
+
+    /// 尝试获取会话处理锁。
+    public let tryAcquireConversationLock: @MainActor (UUID) -> Bool
+
+    /// 释放会话处理锁。
+    public let releaseConversationLock: @MainActor (UUID) -> Void
+
+    /// 会话是否已被用户取消。
+    public let isConversationCancelled: @MainActor (UUID) -> Bool
+
+    /// 标记会话已取消。
+    public let markConversationCancelled: @MainActor (UUID) -> Void
+
+    /// 清除会话取消标记。
+    public let clearConversationCancelled: @MainActor (UUID) -> Void
+
+    /// 裁剪并展开消息供 LLM 使用。
+    public let prepareMessagesForLLM: @MainActor (UUID, [ChatMessage]) -> [ChatMessage]
+
+    /// 构建 LLM 发送依赖（窗口/会话上下文）。
+    public let makeLLMSendDependencies: @MainActor (UUID) -> LLMSendDependencies
+
+    /// 评估助手消息中工具调用的权限状态。
+    public let evaluateToolPermissions: @MainActor (ChatMessage, UUID) -> ChatMessage
+
+    /// 消费并返回首轮临时 system prompts。
+    public let consumeTransientSystemPrompts: @MainActor (UUID) -> [String]
+
+    /// 将 LLM 错误转为可落库的 ChatMessage。
+    public let buildLLMErrorMessage: @MainActor (Error, UUID, String?) -> ChatMessage
+
+    /// 当前会话使用的 providerId。
+    public let currentProviderId: @MainActor (UUID) -> String?
+
+    /// 若需工具权限则弹出 UI；返回 true 表示已暂停。
+    public let presentToolPermissionIfNeeded: @MainActor (ChatMessage, UUID) async -> Bool
+
+    /// 执行助手消息中的工具调用并写库。
+    public let executeToolCalls: @MainActor (ChatMessage, UUID) async -> ToolExecutionSummary
+
+    /// Turn 正常/异常收尾（队列、状态 UI、TurnFinished 管线）。
+    public let finishAgentTurn: @MainActor (UUID, TurnEndReason) -> Void
+
+    /// 设置会话发送状态文案。
+    public let setConversationStatus: @MainActor (UUID, String) -> Void
+
+    /// 取出最早 pending user 消息并标记 processing。
+    public let dequeueNextPendingMessage: @MainActor (UUID) -> ChatMessage?
+
+    /// 运行 SendPipeline 发送前中间件，返回临时 system prompts。
+    public let runSendPreparePipeline: @MainActor (UUID, ChatMessage) async -> [String]
+
+    /// 存储 SendPipeline 产出的临时 system prompts。
+    public let storeTransientSystemPrompts: @MainActor ([String], UUID) -> Void
+
+    /// 查询 pending 队列消息。
+    public let pendingMessages: @MainActor (UUID) -> [ChatMessage]
+
+    /// 移除 pending 消息。
+    public let removePendingMessage: @MainActor (UUID, UUID) -> Bool
+
+    /// 按 ID 查找 LLM 供应商类型。
+    public let providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
+
+    /// 读取供应商 API Key。
+    public let getProviderApiKey: @MainActor (String) -> String
+
+    /// 保存供应商 API Key。
+    public let setProviderApiKey: @MainActor (String, String) -> Void
+
+    /// 当前全局选中的供应商 ID。
+    public let selectedProviderIdProvider: @MainActor () -> String
+
+    /// 按 ID 查找供应商信息。
+    public let providerInfoProvider: @MainActor (String) -> LLMProviderInfo?
+
     public init(
         editorServiceProvider: @escaping @MainActor (PluginContext) -> AnyObject? = { _ in nil },
         openFile: @escaping @MainActor (URL, String?, PluginContext) async -> Void = { _, _, _ in },
@@ -88,7 +179,40 @@ public struct PluginRuntimeContext {
         addToChat: @escaping @MainActor (String, PluginContext) -> Void = { _, _ in },
         selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in },
         registerIdleTimeSnapshotProvider: @escaping @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void = { _ in },
-        resumeToolCall: @escaping @MainActor (String, String, String) -> Void = { _, _, _ in }
+        resumeToolCall: @escaping @MainActor (String, String, String) -> Void = { _, _, _ in },
+        saveMessage: @escaping @MainActor (ChatMessage, UUID) -> Void = { _, _ in },
+        updateMessage: @escaping @MainActor (ChatMessage, UUID) -> Void = { _, _ in },
+        loadMessages: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        loadTurnPhase: @escaping @MainActor (UUID) -> AgentTurnPhase = { _ in .idle },
+        setTurnPhase: @escaping @MainActor (AgentTurnPhase, UUID) -> Void = { _, _ in },
+        tryAcquireConversationLock: @escaping @MainActor (UUID) -> Bool = { _ in false },
+        releaseConversationLock: @escaping @MainActor (UUID) -> Void = { _ in },
+        isConversationCancelled: @escaping @MainActor (UUID) -> Bool = { _ in false },
+        markConversationCancelled: @escaping @MainActor (UUID) -> Void = { _ in },
+        clearConversationCancelled: @escaping @MainActor (UUID) -> Void = { _ in },
+        prepareMessagesForLLM: @escaping @MainActor (UUID, [ChatMessage]) -> [ChatMessage] = { _, messages in messages },
+        makeLLMSendDependencies: @escaping @MainActor (UUID) -> LLMSendDependencies = { _ in LLMSendDependencies() },
+        evaluateToolPermissions: @escaping @MainActor (ChatMessage, UUID) -> ChatMessage = { message, _ in message },
+        consumeTransientSystemPrompts: @escaping @MainActor (UUID) -> [String] = { _ in [] },
+        buildLLMErrorMessage: @escaping @MainActor (Error, UUID, String?) -> ChatMessage = { error, conversationId, _ in
+            ChatMessage(role: .assistant, conversationId: conversationId, content: error.localizedDescription, isError: true)
+        },
+        currentProviderId: @escaping @MainActor (UUID) -> String? = { _ in nil },
+        presentToolPermissionIfNeeded: @escaping @MainActor (ChatMessage, UUID) async -> Bool = { _, _ in false },
+        executeToolCalls: @escaping @MainActor (ChatMessage, UUID) async -> ToolExecutionSummary = { _, _ in ToolExecutionSummary() },
+        finishAgentTurn: @escaping @MainActor (UUID, TurnEndReason) -> Void = { _, _ in },
+        setConversationStatus: @escaping @MainActor (UUID, String) -> Void = { _, _ in },
+
+        dequeueNextPendingMessage: @escaping @MainActor (UUID) -> ChatMessage? = { _ in nil },
+        runSendPreparePipeline: @escaping @MainActor (UUID, ChatMessage) async -> [String] = { _, _ in [] },
+        storeTransientSystemPrompts: @escaping @MainActor ([String], UUID) -> Void = { _, _ in },
+        pendingMessages: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
+        removePendingMessage: @escaping @MainActor (UUID, UUID) -> Bool = { _, _ in false },
+        providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
+        getProviderApiKey: @escaping @MainActor (String) -> String = { _ in "" },
+        setProviderApiKey: @escaping @MainActor (String, String) -> Void = { _, _ in },
+        selectedProviderIdProvider: @escaping @MainActor () -> String = { "" },
+        providerInfoProvider: @escaping @MainActor (String) -> LLMProviderInfo? = { _ in nil },
     ) {
         self.editorServiceProvider = editorServiceProvider
         self.openFile = openFile
@@ -105,5 +229,36 @@ public struct PluginRuntimeContext {
         self.selectConversation = selectConversation
         self.registerIdleTimeSnapshotProvider = registerIdleTimeSnapshotProvider
         self.resumeToolCall = resumeToolCall
+        self.saveMessage = saveMessage
+        self.updateMessage = updateMessage
+        self.loadMessages = loadMessages
+        self.loadTurnPhase = loadTurnPhase
+        self.setTurnPhase = setTurnPhase
+        self.tryAcquireConversationLock = tryAcquireConversationLock
+        self.releaseConversationLock = releaseConversationLock
+        self.isConversationCancelled = isConversationCancelled
+        self.markConversationCancelled = markConversationCancelled
+        self.clearConversationCancelled = clearConversationCancelled
+        self.prepareMessagesForLLM = prepareMessagesForLLM
+        self.makeLLMSendDependencies = makeLLMSendDependencies
+        self.evaluateToolPermissions = evaluateToolPermissions
+        self.consumeTransientSystemPrompts = consumeTransientSystemPrompts
+        self.buildLLMErrorMessage = buildLLMErrorMessage
+        self.currentProviderId = currentProviderId
+        self.presentToolPermissionIfNeeded = presentToolPermissionIfNeeded
+        self.executeToolCalls = executeToolCalls
+        self.finishAgentTurn = finishAgentTurn
+        self.setConversationStatus = setConversationStatus
+
+        self.dequeueNextPendingMessage = dequeueNextPendingMessage
+        self.runSendPreparePipeline = runSendPreparePipeline
+        self.storeTransientSystemPrompts = storeTransientSystemPrompts
+        self.pendingMessages = pendingMessages
+        self.removePendingMessage = removePendingMessage
+        self.providerTypeProvider = providerTypeProvider
+        self.getProviderApiKey = getProviderApiKey
+        self.setProviderApiKey = setProviderApiKey
+        self.selectedProviderIdProvider = selectedProviderIdProvider
+        self.providerInfoProvider = providerInfoProvider
     }
 }
