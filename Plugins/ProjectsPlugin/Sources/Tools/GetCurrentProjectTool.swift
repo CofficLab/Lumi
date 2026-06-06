@@ -6,7 +6,7 @@ import LumiCoreKit
 /// 获取当前项目工具
 public struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📁"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "get_current_project"
     public func description(for language: LanguagePreference) -> String {
         switch language {

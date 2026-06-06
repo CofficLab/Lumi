@@ -10,7 +10,7 @@ public actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📅"
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "ConversationTimeline"
     public static let navigationId: String? = nil

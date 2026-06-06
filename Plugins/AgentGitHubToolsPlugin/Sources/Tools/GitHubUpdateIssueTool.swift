@@ -6,7 +6,7 @@ import GitHubKit
 /// GitHub 更新 Issue 工具
 public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "✏️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "github_update_issue"
     public func description(for language: LanguagePreference) -> String {
         switch language {

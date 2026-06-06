@@ -8,7 +8,7 @@ import AgentToolKit
 /// 为指定对话设置自定义标题。
 public struct UpdateConversationTitleTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "✏️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "update_conversation_title"
 
     /// 通过构造器注入的依赖

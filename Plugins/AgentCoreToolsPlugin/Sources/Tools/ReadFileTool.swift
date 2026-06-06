@@ -9,7 +9,7 @@ import WorkspaceFileKit
 /// 允许 AI 助手读取指定路径的文件内容。
 public struct ReadFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     private static let supportedImageExtensions: [String: String] = [
         "png": "image/png",
         "jpg": "image/jpeg",

@@ -8,7 +8,7 @@ public actor ClipboardManagerPlugin: SuperPlugin {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
 
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "ClipboardManager"
     public static let navigationId = "clipboard_manager"
     public static let displayName = String(localized: "Clipboard", bundle: .module)

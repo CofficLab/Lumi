@@ -12,7 +12,7 @@ public actor EditorStickySymbolBarPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar")
 
     public nonisolated static let emoji = "🧩"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorStickySymbolBar"
     public static let displayName: String = String(localized: "Editor Sticky Symbol Bar", bundle: .module)
     public static let description: String = String(localized: "Current symbol breadcrumb for the editor panel", bundle: .module)

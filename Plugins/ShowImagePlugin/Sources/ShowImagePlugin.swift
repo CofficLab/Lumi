@@ -22,7 +22,7 @@ public actor ShowImagePlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
 
     public nonisolated static let emoji = "🖼️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "ShowImage"
     public static let displayName: String = PluginShowImageLocalization.string("Show Image")

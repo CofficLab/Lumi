@@ -13,7 +13,7 @@ import WorkspaceFileKit
 /// - 详细的 diff 输出
 public struct EditFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔧"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     private let editor = WorkspaceFileEditor()
     public let name = "edit_file"
     public func description(for language: LanguagePreference) -> String {

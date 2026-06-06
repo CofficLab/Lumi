@@ -15,7 +15,7 @@ import Foundation
 @MainActor
 public final class ConversationTitleHintSendMiddleware: SuperSendMiddleware, SuperLog {
     public nonisolated static let emoji = "🏷️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let id: String = "conversation-title-hint"
     public let order: Int = 5  // 在基础上下文注入之后执行
 

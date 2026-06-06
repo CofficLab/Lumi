@@ -8,7 +8,7 @@ import LumiCoreKit
 /// 创建一个全新的对话会话，自动继承当前项目的模型偏好并注入欢迎消息。
 public struct CreateNewConversationTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "✨"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "create_new_conversation"
 
     /// 通过构造器注入的依赖

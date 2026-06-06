@@ -5,7 +5,7 @@ import AgentToolKit
 /// Git 分支管理工具
 public struct GitBranchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔀"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "git_branch"
 
     public func description(for language: LanguagePreference) -> String {

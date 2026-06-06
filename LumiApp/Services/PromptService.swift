@@ -4,7 +4,7 @@ import AgentToolKit
 /// 提示词服务 - 负责管理和构建系统提示词
 actor PromptService: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     init() {
         if Self.verbose {

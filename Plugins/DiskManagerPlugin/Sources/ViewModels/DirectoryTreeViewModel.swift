@@ -5,7 +5,7 @@ import DiskManagerKit
 @MainActor
 final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var rootEntries: [DirectoryEntry] = []
     @Published var isScanning = false
     @Published var scanProgress: ScanProgress?

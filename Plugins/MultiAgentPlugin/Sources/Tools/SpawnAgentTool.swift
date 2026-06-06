@@ -13,7 +13,7 @@ import LLMKit
 /// 然后调用 collect_agents 一次性收集所有结果。
 public struct SpawnAgentTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🚀"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public let name = "spawn_agent"
 
@@ -119,9 +119,7 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
             return "Error: Model '\(modelId)' not found in provider '\(providerId)'. Available models: \(provider.availableModels.joined(separator: ", "))"
         }
 
-        // 获取 API Key
-        let apiKey = llmVM.getApiKey(for: providerId)
-        guard !apiKey.isEmpty else {
+        guard llmVM.providerType(forId: providerId)?.hasApiKey == true else {
             return "Error: API key not configured for provider '\(providerId)'. Please configure it in Settings first."
         }
 
@@ -135,7 +133,6 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
                 providerId: providerId,
                 modelId: modelId,
                 llmService: llmService,
-                apiKey: apiKey,
                 toolService: toolService
             )
         } catch {

@@ -6,7 +6,7 @@ import DiskManagerKit
 @MainActor
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
     @Published var isScanning = false

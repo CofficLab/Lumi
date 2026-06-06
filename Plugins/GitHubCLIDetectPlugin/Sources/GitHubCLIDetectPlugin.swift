@@ -12,7 +12,7 @@ public actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-cli-detect")
     public nonisolated static let emoji = "🐚"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "GitHubCLIDetect"
     public static let displayName: String = PluginGitHubCLIDetectLocalization.string("GitHub CLI Detect")

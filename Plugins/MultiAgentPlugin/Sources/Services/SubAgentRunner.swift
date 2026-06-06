@@ -48,7 +48,6 @@ public actor SubAgentRunner: SuperLog {
     ///   - providerId: LLM 供应商 ID
     ///   - modelId: 模型 ID
     ///   - llmService: LLM 服务实例
-    ///   - apiKey: API Key
     ///   - toolService: 工具服务（用于子智能体的工具调用）
     /// - Returns: agent_id
     public func spawn(
@@ -57,7 +56,6 @@ public actor SubAgentRunner: SuperLog {
         providerId: String,
         modelId: String,
         llmService: LLMService,
-        apiKey: String,
         toolService: ToolService
     ) throws -> String {
         // 并发限制检查
@@ -83,7 +81,6 @@ public actor SubAgentRunner: SuperLog {
             await self?.runAgentLoop(
                 context: context,
                 llmService: llmService,
-                apiKey: apiKey,
                 toolService: toolService
             )
         }
@@ -194,12 +191,10 @@ public actor SubAgentRunner: SuperLog {
     private func runAgentLoop(
         context: SubAgentContext,
         llmService: LLMService,
-        apiKey: String,
         toolService: ToolService
     ) async {
         let startTime = Date()
         let config = LLMConfig(
-            apiKey: apiKey,
             model: context.modelId,
             providerId: context.providerId
         )

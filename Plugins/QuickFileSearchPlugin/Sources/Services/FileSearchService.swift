@@ -27,7 +27,7 @@ private enum QuickFileSearchSignpost {
 @MainActor
 public final class FileSearchService: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let shared = FileSearchService()
 
     // MARK: - Published Properties

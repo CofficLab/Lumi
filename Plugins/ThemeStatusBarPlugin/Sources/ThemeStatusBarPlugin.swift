@@ -15,7 +15,7 @@ public actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-theme-status")
     public nonisolated static let emoji = "🎨"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "EditorThemeStatusBar"
     public static let displayName: String = String(localized: "Editor Theme Status", bundle: .module)

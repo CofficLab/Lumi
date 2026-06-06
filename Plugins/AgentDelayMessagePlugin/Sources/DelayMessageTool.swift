@@ -22,7 +22,7 @@ import AgentToolKit
 /// - 不依赖 `RootViewContainer.shared`
 public struct DelayMessageTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "⏳"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     static let defaultDelaySeconds: TimeInterval = 5
     static let minDelaySeconds: TimeInterval = 1
     static let maxDelaySeconds: TimeInterval = 3600

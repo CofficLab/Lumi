@@ -6,7 +6,7 @@ import GitHubKit
 /// GitHub 添加 Issue 评论工具
 public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "github_add_issue_comment"
     public func description(for language: LanguagePreference) -> String {
         switch language {

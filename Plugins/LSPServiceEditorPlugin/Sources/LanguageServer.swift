@@ -9,7 +9,7 @@ import os
 /// 注意：不使用 @MainActor，让调用方自行处理并发
 public final class LanguageServer: @unchecked Sendable, SuperLog {
     public static var emoji: String { "🌐" }
-    public static var verbose: Bool { true }
+    public static var verbose: Bool { false }
 
     public let languageId: String
     public let config: LSPConfig.ServerConfig

@@ -5,7 +5,7 @@ import AgentToolKit
 /// Git 未推送 Commit 查询工具
 public struct GitUnpushedTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📤"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "git_unpushed"
 
     public func description(for language: LanguagePreference) -> String {

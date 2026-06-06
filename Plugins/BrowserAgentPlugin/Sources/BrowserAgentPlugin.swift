@@ -12,7 +12,7 @@ public actor BrowserAgentPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser-agent")
 
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let policy: PluginPolicy = .alwaysOn
 
     public static let id: String = "BrowserAgent"

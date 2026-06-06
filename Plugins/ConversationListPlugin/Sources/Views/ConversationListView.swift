@@ -8,7 +8,7 @@ import SwiftUI
 /// 使用分页方式渲染会话列表，避免一次性加载全部历史记录。
 public struct ConversationListView: View, SuperLog {
     public nonisolated static let emoji = "🐶"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var context: ConversationListContext

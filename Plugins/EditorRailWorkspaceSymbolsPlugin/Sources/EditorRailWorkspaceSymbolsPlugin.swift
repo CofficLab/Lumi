@@ -17,7 +17,7 @@ public actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-symbols")
 
     public nonisolated static let emoji = "🔣"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorRailWorkspaceSymbols"
     public static let displayName: String = String(localized: "Editor Rail Workspace Symbols", bundle: .module)
     public static let description: String = String(localized: "Editor sidebar workspace symbols tab", bundle: .module)

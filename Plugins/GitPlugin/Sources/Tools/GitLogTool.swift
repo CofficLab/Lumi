@@ -5,7 +5,7 @@ import AgentToolKit
 /// Git 日志工具
 public struct GitLogTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📜"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "git_log"
     public func description(for language: LanguagePreference) -> String {
         switch language {

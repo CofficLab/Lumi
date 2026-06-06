@@ -100,7 +100,7 @@ public class ShellService: SuperLog {
     // MARK: - Logger
 
     public nonisolated static let emoji = "🐚"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - Singleton
 
     public static let shared = ShellService()

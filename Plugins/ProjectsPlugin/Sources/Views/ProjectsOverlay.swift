@@ -9,7 +9,7 @@ import SuperLogKit
 ///
 /// 各窗口当前项目的磁盘快照由 `WindowPersistencePlugin` 负责保存。
 public struct ProjectsOverlay<Content: View>: View, SuperLog {
-    public nonisolated static var verbose: Bool { true }
+    public nonisolated static var verbose: Bool { false }
     public nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: WindowProjectVM

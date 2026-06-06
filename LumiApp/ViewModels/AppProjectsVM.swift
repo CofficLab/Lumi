@@ -24,7 +24,7 @@ import SwiftUI
 @MainActor
 final class AppProjectsVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 最近使用的项目列表（全局唯一）
     @Published public fileprivate(set) var recentProjects: [Project] = []

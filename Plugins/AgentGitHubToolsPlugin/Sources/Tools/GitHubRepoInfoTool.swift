@@ -6,7 +6,7 @@ import GitHubKit
 /// GitHub 仓库信息工具
 public struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📦"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "github_repo_info"
     public func description(for language: LanguagePreference) -> String {
         switch language {

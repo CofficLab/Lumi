@@ -8,7 +8,7 @@ import LumiCoreKit
 /// 为指定对话设置或解除项目关联。
 public struct SetConversationProjectTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔗"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "set_conversation_project"
 
     /// 通过构造器注入的依赖

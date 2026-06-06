@@ -15,7 +15,7 @@ import Foundation
 @MainActor
 public final class ProjectSwitchSendMiddleware: SuperSendMiddleware, SuperLog {
     public nonisolated static let emoji = "📁"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let id: String = "project-switch-guide"
     public let order: Int = 6  // 在标题提示中间件之后执行
 

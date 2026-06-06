@@ -20,7 +20,7 @@ public actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-symbols")
 
     public nonisolated static let emoji = "🔣"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorBottomSymbols"
     public static let displayName: String = String(localized: "Editor Bottom Symbols", bundle: .module)
     public static let description: String = String(localized: "Workspace Symbols panel in the editor bottom area", bundle: .module)

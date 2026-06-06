@@ -18,7 +18,7 @@ import LumiCoreKit
 /// 6. **提示注入**：中间件读取未解决问题，注入 `transientSystemPrompts`。
 public actor ProjectIssueScannerPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔬"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "ProjectIssueScanner"
     public static let displayName: String = "Project Issue Scanner"

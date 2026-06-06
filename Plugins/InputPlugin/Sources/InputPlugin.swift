@@ -12,7 +12,7 @@ public actor InputPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "⌨️"
     public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "InputManager"
     public static let navigationId: String = "input_manager"

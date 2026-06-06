@@ -17,7 +17,7 @@ public actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "💬"
     public static var category: PluginCategory { .agent }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "ConversationList"
     public static let displayName: String = String(localized: "Conversation List", bundle: .module)
     public static let description: String = String(localized: "Show all conversation history", bundle: .module)

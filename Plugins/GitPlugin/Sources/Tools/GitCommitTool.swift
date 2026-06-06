@@ -5,7 +5,7 @@ import AgentToolKit
 /// Git 提交工具
 public struct GitCommitTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "💾"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "git_commit"
 
     public func description(for language: LanguagePreference) -> String {

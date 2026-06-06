@@ -15,8 +15,6 @@ public final class LanguageSendMiddleware: SuperSendMiddleware {
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
         let preference = ctx.languagePreference
-        os.Logger(subsystem: "com.coffic.lumi", category: "middleware.language")
-            .info("🌐 语言中间件：注入 \(preference.displayName)")
         ctx.transientSystemPrompts.append(preference.systemPromptDescription)
         await next(ctx)
     }

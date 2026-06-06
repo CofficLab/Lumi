@@ -17,7 +17,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     // MARK: - Logger
 
     nonisolated static let emoji = "🧰"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     // MARK: - Properties
 

@@ -20,7 +20,7 @@ public actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-call-hierarchy")
 
     public nonisolated static let emoji = "📞"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorBottomCallHierarchy"
     public static let displayName: String = String(localized: "Editor Bottom Call Hierarchy", bundle: .module)
     public static let description: String = String(localized: "Call Hierarchy panel in the editor bottom area", bundle: .module)

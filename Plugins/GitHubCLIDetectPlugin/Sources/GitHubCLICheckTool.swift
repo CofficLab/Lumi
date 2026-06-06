@@ -7,7 +7,7 @@ import SuperLogKit
 /// 检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
 public struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "github_cli_check"
 
     public init() {}

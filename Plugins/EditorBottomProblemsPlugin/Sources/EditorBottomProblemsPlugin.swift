@@ -20,7 +20,7 @@ public actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-problems")
 
     public nonisolated static let emoji = "⚠️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorBottomProblems"
     public static let displayName: String = String(localized: "Editor Bottom Problems", bundle: .module)
     public static let description: String = String(localized: "Problems panel in the editor bottom area", bundle: .module)

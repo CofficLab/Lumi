@@ -19,7 +19,7 @@ public actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = EditorLSPContextCommandsPlugin()
     public nonisolated static let emoji = "🔌"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "EditorLSPContextCommands"
     public static let displayName = String(localized: "LSP Context Commands", bundle: .module)

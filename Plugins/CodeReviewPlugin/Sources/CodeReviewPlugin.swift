@@ -9,7 +9,7 @@ public actor CodeReviewPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.code-review")
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "CodeReview"
     public static let displayName: String = "Code Review"

@@ -8,7 +8,7 @@ import SwiftUI
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Cursor 编辑器中打开当前项目。
 public actor AgentOpenInCursorPlugin: SuperPlugin {
     public nonisolated static let emoji = "↗️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "AgentOpenInCursor"
     public static let displayName = String(localized: "Open in Cursor", bundle: .module)
     public static let description = String(localized: "Open current project in Cursor editor", bundle: .module)

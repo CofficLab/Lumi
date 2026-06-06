@@ -9,7 +9,7 @@ import WorkspaceFileKit
 /// 允许 AI 助手创建新文件或覆盖现有文件。
 public struct WriteFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "✏️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     private let writer = WorkspaceFileWriter()
     public let name = "write_file"
     public func description(for language: LanguagePreference) -> String {

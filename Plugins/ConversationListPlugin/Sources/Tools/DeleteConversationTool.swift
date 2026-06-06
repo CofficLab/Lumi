@@ -8,7 +8,7 @@ import LumiCoreKit
 /// 允许 AI 助手通过对话 ID 永久删除指定的对话会话及其所有消息。
 public struct DeleteConversationTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🗑️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "delete_conversation"
 
     /// 通过构造器注入的依赖

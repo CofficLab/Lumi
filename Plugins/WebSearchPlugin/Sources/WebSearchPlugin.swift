@@ -14,7 +14,7 @@ public actor WebSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-search")
 
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "WebSearch"
     public static let displayName: String = PluginWebSearchLocalization.string("Web Search")

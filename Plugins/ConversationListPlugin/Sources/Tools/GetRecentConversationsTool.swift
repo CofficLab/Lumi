@@ -8,7 +8,7 @@ import LumiCoreKit
 /// 返回最近的 N 个对话的 ID 和标题。
 public struct GetRecentConversationsTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📜"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "get_recent_conversations"
 
     /// 通过构造器注入的依赖

@@ -31,7 +31,7 @@ public actor LayoutPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     public nonisolated static let emoji = "📐"
     public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "Layout"
     public static let displayName: String = "Layout Persistence"

@@ -13,7 +13,7 @@ import SuperLogKit
 @MainActor
 struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let id = "auto_task_context"
     let order: Int = 70

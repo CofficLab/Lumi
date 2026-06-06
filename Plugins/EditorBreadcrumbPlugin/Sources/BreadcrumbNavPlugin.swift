@@ -19,7 +19,7 @@ public actor BreadcrumbNavPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.breadcrumb-nav")
 
     public nonisolated static let emoji = "🧭"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "BreadcrumbNav"
     public static let displayName: String = String(localized: "Breadcrumb Navigation", bundle: .module)
     public static let description: String = String(localized: "File path breadcrumb navigation below editor tabs", bundle: .module)

@@ -175,7 +175,7 @@ struct FileTreeWatcherTests {
     func startWatchingVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = true
+        watcher.verbose = false
 
         watcher.startWatching(url: dir)
         #expect(watcher.watchCount == 1)
@@ -187,7 +187,7 @@ struct FileTreeWatcherTests {
     func stopWatchingVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = true
+        watcher.verbose = false
 
         watcher.startWatching(url: dir)
         watcher.stopWatching(url: dir)
@@ -198,7 +198,7 @@ struct FileTreeWatcherTests {
     func stopAllVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = true
+        watcher.verbose = false
 
         watcher.startWatching(url: dir)
         watcher.stopAll()

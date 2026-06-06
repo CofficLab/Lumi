@@ -11,7 +11,7 @@ import ShellKit
 /// 使用非流式 HTTP 请求，无需 SSE。
 public enum GitCommitService: SuperLog {
     public nonisolated static let emoji = "📝"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     /// Commit 语言偏好
     public enum Language {

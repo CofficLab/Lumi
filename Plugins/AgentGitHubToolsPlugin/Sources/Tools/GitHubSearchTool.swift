@@ -6,7 +6,7 @@ import GitHubKit
 /// GitHub 搜索工具
 public struct GitHubSearchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     static let minLimit = 1
     static let defaultLimit = 5
     static let maxLimit = 100

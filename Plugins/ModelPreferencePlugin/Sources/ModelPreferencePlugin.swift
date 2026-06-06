@@ -10,7 +10,7 @@ public actor ModelPreferencePlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "🎯"
     public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     /// 专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.model-preference")
 

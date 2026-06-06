@@ -11,7 +11,7 @@ public actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-search")
 
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorRailWorkspaceSearch"
     public static let displayName: String = String(localized: "Editor Rail Workspace Search", bundle: .module)
     public static let description: String = String(localized: "Editor sidebar search tab", bundle: .module)

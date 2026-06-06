@@ -37,7 +37,7 @@ public actor FileLogPlugin: SuperPlugin, SuperLog {
 
     nonisolated public static let emoji = "📋"
     public static var category: PluginCategory { .system }
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
     nonisolated public static let policy: PluginPolicy = .alwaysOn
 
     public static let id: String = "FileLog"

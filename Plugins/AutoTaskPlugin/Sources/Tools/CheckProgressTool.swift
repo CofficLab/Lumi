@@ -8,7 +8,7 @@ import SuperLogKit
 /// Agent 可以在需要时主动查询进度，以确认下一步应该做什么。
 public struct CheckProgressTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public let name = "check_progress"
 

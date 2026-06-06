@@ -18,7 +18,7 @@ import os
 @MainActor
 public final class ProjectsSendMiddleware: SuperSendMiddleware, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let id: String = "projects-context"
     /// 优先级设为 -5，在语言中间件之后执行
     public let order: Int = -5

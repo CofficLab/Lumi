@@ -16,7 +16,7 @@ import LumiUI
 public actor RAGPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "🦞"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "rag"
     public static let navigationId: String = "rag_settings"
@@ -117,6 +117,7 @@ public actor RAGPlugin: SuperPlugin, SuperLog {
     /// 提供状态栏右侧视图（仅在编辑器激活时显示）
     @MainActor
     public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
+        guard context.showChat != .hidden else {return nil}
         return AnyView(RAGStatusBarView())
     }
 

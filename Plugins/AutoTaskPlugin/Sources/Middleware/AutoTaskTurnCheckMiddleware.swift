@@ -9,7 +9,7 @@ import SuperLogKit
 @MainActor
 struct AutoTaskTurnCheckMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let id = "auto_task_turn_check"
     let order: Int = 200

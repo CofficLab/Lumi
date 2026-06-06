@@ -70,7 +70,7 @@ public enum ScannerModelPreference: Codable, Equatable, Hashable, Sendable {
 /// 支持自动模型路由或用户手动指定模型。
 public actor DeepIssueAnalyzer: SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     public static let shared = DeepIssueAnalyzer()
 
@@ -174,8 +174,7 @@ public actor DeepIssueAnalyzer: SuperLog {
             return nil
         }
 
-        let apiKey = apiKey(forProviderId: decision.providerId, llmService: llmService) ?? ""
-        return LLMConfig(apiKey: apiKey, model: decision.model, providerId: decision.providerId)
+        return LLMConfig(model: decision.model, providerId: decision.providerId)
     }
 
     /// 使用用户手动指定的模型
@@ -185,8 +184,7 @@ public actor DeepIssueAnalyzer: SuperLog {
             return nil
         }
 
-        let apiKey = apiKey(forProviderId: providerId, llmService: llmService) ?? ""
-        return LLMConfig(apiKey: apiKey, model: model, providerId: providerId)
+        return LLMConfig(model: model, providerId: providerId)
     }
 
     /// 收集路由候选模型
@@ -196,7 +194,7 @@ public actor DeepIssueAnalyzer: SuperLog {
 
             // 远程供应商必须有 API Key
             if !provider.isLocal,
-               apiKey(forProviderId: provider.id, llmService: llmService)?.isEmpty != false {
+               llmService.providerType(forId: provider.id)?.hasApiKey != true {
                 return []
             }
 
@@ -212,10 +210,6 @@ public actor DeepIssueAnalyzer: SuperLog {
         }
     }
 
-    /// 获取供应商的 API Key
-    private func apiKey(forProviderId providerId: String, llmService: any ProjectIssueScannerLLMService) -> String? {
-        nil
-    }
 
     // MARK: - Prompts
 

@@ -17,7 +17,7 @@ public actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🐙"
 
     /// 是否启用详细日志
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - Plugin Properties
 
     public static let id: String = "GitHubTools"

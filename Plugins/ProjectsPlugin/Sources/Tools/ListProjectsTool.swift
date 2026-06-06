@@ -5,7 +5,7 @@ import AgentToolKit
 /// 列出项目工具
 public struct ListProjectsTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "list_projects"
     public func description(for language: LanguagePreference) -> String {
         switch language {

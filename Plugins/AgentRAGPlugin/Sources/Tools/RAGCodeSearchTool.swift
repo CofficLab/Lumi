@@ -5,7 +5,7 @@ import SuperLogKit
 
 public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "RAG"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     /// 默认返回结果数量
     static let defaultTopK = 8

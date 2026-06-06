@@ -12,7 +12,7 @@ public actor VerbosityPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "📝"
     public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "Verbosity"
     public static let displayName = String(localized: "Verbosity", bundle: .module)
     public static let description = String(localized: "Switch between Brief, Normal, and Detailed response styles", bundle: .module)

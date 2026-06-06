@@ -9,7 +9,7 @@ import SwiftUI
 public actor ConversationLanguagePlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "AgentLanguageHeader"
     public static let displayName = String(localized: "Language Selector", bundle: .module)
     public static let description = String(localized: "AI response language in header", bundle: .module)

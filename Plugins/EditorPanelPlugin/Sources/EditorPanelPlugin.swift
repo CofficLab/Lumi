@@ -13,7 +13,7 @@ public actor EditorPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
 
     public nonisolated static let emoji = "✏️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "LumiEditor"
     public static let displayName: String = String(localized: "Code Editor", bundle: .module)
     public static let description: String = String(localized: "Code editor with file tree", bundle: .module)

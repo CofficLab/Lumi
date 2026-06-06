@@ -8,7 +8,7 @@ public struct RAGSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public nonisolated static var emoji: String { "🦞" }
-    public nonisolated static var verbose: Bool { true }
+    public nonisolated static var verbose: Bool { false }
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?

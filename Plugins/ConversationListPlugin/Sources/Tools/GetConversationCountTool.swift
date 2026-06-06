@@ -8,7 +8,7 @@ import LumiCoreKit
 /// 返回当前窗口中已保存的对话历史总数量。
 public struct GetConversationCountTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔢"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "get_conversation_count"
 
     /// 通过构造器注入的依赖

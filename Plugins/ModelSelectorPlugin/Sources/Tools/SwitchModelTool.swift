@@ -11,7 +11,7 @@ import os
 /// 并将选择保存为当前对话的模型偏好。
 public struct SwitchModelTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔄"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public let name = "switch_model"
 

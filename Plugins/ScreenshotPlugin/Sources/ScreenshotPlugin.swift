@@ -14,7 +14,7 @@ public actor ScreenshotPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.screenshot")
 
     public nonisolated static let emoji = "📸"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "Screenshot"
     public static let displayName = String(localized: "Screenshot", bundle: .module)
     public static let description = String(localized: "Capture screen region as chat attachment", bundle: .module)

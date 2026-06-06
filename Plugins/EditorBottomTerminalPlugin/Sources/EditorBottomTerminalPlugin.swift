@@ -25,7 +25,7 @@ public actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-terminal")
 
     public nonisolated static let emoji = "💻"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorBottomTerminal"
     public static let displayName: String = String(localized: "Editor Bottom Terminal", bundle: .module)
     public static let description: String = String(localized: "Terminal panel in the editor bottom area", bundle: .module)

@@ -22,7 +22,7 @@ final class DiskManagerScanTaskHolder: @unchecked Sendable {
 @MainActor
 class DiskManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💿"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var diskUsage: DiskUsage?
     @Published var largeFiles: [LargeFileEntry] = []
     @Published var rootEntries: [DirectoryEntry] = [] // Directory tree root nodes

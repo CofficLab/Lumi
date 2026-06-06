@@ -8,7 +8,7 @@ import SuperLogKit
 @Observable
 final class CaffeinateManager: SuperLog {
     nonisolated static let emoji = "🍽️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     // MARK: - Singleton
 

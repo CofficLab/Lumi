@@ -6,7 +6,7 @@ import LumiCoreKit
 /// 添加项目到列表工具
 public struct AddProjectTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📁"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "add_project"
     public func description(for language: LanguagePreference) -> String {
         switch language {

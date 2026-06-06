@@ -8,7 +8,7 @@ import SuperLogKit
 /// 可选择是否同时阻止屏幕休眠，以及设置持续时间。
 struct CaffeinateActivateTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "☕️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "caffeinate_activate"
     func description(for language: LanguagePreference) -> String {

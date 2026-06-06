@@ -9,7 +9,7 @@ public actor PortManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "🔌"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "PortManager"
     public static let navigationId = "port_manager"

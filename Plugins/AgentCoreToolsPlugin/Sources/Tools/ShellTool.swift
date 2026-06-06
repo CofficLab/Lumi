@@ -12,7 +12,7 @@ import AgentToolKit
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
 public struct ShellTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "💻"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "run_command"
 
     public func description(for language: LanguagePreference) -> String {

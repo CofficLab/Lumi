@@ -11,7 +11,7 @@ public actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "🛜"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "NetworkManager"
     public static let navigationId = "network_manager"

@@ -9,7 +9,7 @@ public actor AppStoreConnectPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect")
 
     public nonisolated static let emoji = ""
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id = "AppStoreConnect"
     public static let navigationId = "app_store_connect"

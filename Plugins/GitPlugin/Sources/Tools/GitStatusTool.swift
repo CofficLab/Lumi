@@ -5,7 +5,7 @@ import AgentToolKit
 /// Git 状态工具
 public struct GitStatusTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public let name = "git_status"
 
     public func description(for language: LanguagePreference) -> String {

@@ -13,7 +13,7 @@ public actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.turn-notification")
 
     public nonisolated static let emoji = "🔔"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "AgentTurnNotification"
     public static let displayName: String = String(localized: "Turn Notification", bundle: .module)

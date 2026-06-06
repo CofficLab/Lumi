@@ -28,7 +28,7 @@ public actor MultiAgentPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.multi-agent")
     public nonisolated static let emoji = "🤖"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let id: String = "MultiAgent"
     public static let displayName = String(localized: "Multi Agent", bundle: .module)

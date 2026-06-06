@@ -5,7 +5,7 @@ import RAGKit
 @MainActor
 public struct RAGSettingsPopoverView: View, SuperLog {
     public nonisolated static var emoji: String { "🦞" }
-    public nonisolated static var verbose: Bool { true }
+    public nonisolated static var verbose: Bool { false }
     @Environment(\.dismiss) private var dismiss
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]

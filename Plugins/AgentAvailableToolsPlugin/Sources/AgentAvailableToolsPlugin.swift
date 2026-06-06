@@ -10,7 +10,7 @@ import LumiCoreKit
 /// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
 public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🧰"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-available-tools")
 
     public static let id = "AgentAvailableToolsPlugin"

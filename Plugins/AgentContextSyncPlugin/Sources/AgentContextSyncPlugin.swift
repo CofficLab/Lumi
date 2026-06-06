@@ -18,7 +18,7 @@ public actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     public nonisolated static let emoji = "🔄"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id: String = "AgentContextSync"
     public static let displayName: String = String(localized: "Context Sync", bundle: .module)
     public static let description: String = String(

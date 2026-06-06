@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct ShowImageOverlay<Content: View>: View, SuperLog {
     nonisolated public static var emoji: String { "🖼️" }
-    nonisolated public static var verbose: Bool { true }
+    nonisolated public static var verbose: Bool { false }
     nonisolated public static var logger: Logger {
         Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
     }

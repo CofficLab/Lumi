@@ -16,7 +16,7 @@ public actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     nonisolated public static let emoji = "☕️"
 
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
 
     nonisolated public static let policy: PluginPolicy = .optOut
 

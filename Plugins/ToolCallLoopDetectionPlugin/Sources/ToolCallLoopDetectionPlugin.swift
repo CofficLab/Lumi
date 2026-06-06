@@ -11,7 +11,7 @@ public actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .disabled
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-call-loop-detection")
     public nonisolated static let emoji = "🔄"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let id = "tool-call-loop-detection"
     public static let displayName: String = String(localized: "工具调用循环检测", bundle: .module)
     public static let description: String = String(localized: "检测并防止工具调用进入无限循环。", bundle: .module)

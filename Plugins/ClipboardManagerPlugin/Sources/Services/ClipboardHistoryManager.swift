@@ -8,7 +8,7 @@ import SwiftData
 /// 使用 SwiftData 持久化到 `ClipboardManagerRuntime.databaseDirectory()/ClipboardManager/history.sqlite`
 public actor ClipboardHistoryManager: SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     static let maxFetchLimit = 5_000
     
     // MARK: - Singleton

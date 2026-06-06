@@ -10,7 +10,7 @@ import LumiUI
 /// 用于调试和审计。
 public actor RequestLogPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "📝"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let id = "RequestLog"
     public static let displayName: String = String(localized: "PluginName", bundle: .module)

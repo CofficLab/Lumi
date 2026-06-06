@@ -13,7 +13,7 @@ import SwiftUI
 /// App 侧通过薄适配器注册此插件，实际实现转发给 package。
 public actor AutoTaskPlugin: SuperPlugin, SuperLog {
     nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
     nonisolated public static let policy: PluginPolicy = .alwaysOn
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
 

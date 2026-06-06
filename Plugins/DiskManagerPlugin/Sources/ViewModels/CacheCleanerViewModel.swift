@@ -6,7 +6,7 @@ import DiskManagerKit
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false
