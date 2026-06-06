@@ -45,7 +45,7 @@ import LumiCoreKit
 }
 
 @MainActor
-@Test func toolbarViewRequiresConversationCreationCapability() async throws {
+@Test func toolbarViewShowsButtonWhenChatVisible() async throws {
     let missingCapabilityContext = PluginContext(showChat: .narrow)
     let hiddenChatContext = PluginContext(showChat: .hidden)
     let creationContext = ConversationCreationContext(
@@ -60,7 +60,7 @@ import LumiCoreKit
     )
     let context = PluginContext(showChat: .narrow, conversationCreationContext: creationContext)
 
-    #expect(ConversationNewPlugin.shared.addToolBarTrailingView(context: missingCapabilityContext) == nil)
+    #expect(ConversationNewPlugin.shared.addToolBarTrailingView(context: missingCapabilityContext) != nil)
     #expect(ConversationNewPlugin.shared.addToolBarTrailingView(context: hiddenChatContext) == nil)
     #expect(ConversationNewPlugin.shared.addToolBarTrailingView(context: context) != nil)
 }
