@@ -106,6 +106,7 @@ public protocol SuperLLMProvider: Sendable {
 
     static var id: String { get }
     static var displayName: String { get }
+    
     /// 供应商简写名称
     ///
     /// 用于工具栏等空间受限的 UI 区域显示。

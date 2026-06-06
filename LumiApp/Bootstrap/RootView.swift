@@ -259,6 +259,10 @@ struct RootView<Content>: View where Content: View {
 
     private func configurePluginRuntimeContext() {
         container.conversationTurnServices.setRootContainer(container)
+        let agentConversationStore = LiveAgentConversationStore(
+            chatHistoryService: container.chatHistoryService,
+            conversationService: container.conversationService
+        )
         container.pluginVM.configureRuntime(context: PluginRuntimeContext(
             editorServiceProvider: { [container, windowContainer] context in
                 Self.targetWindowContainer(for: context, fallback: windowContainer, rootContainer: container)
@@ -334,20 +338,21 @@ struct RootView<Content>: View where Content: View {
                     conversationVM: targetWindow.conversationVM
                 )
             },
-            saveMessage: { [container] message, conversationId in
-                _ = container.chatHistoryService.saveMessage(message, toConversationId: conversationId)
+            agentConversationStore: agentConversationStore,
+            saveMessage: { message, conversationId in
+                agentConversationStore.saveMessage(message, conversationId: conversationId)
             },
             updateMessage: { [container] message, conversationId in
                 _ = container.chatHistoryService.updateMessage(message, conversationId: conversationId)
             },
-            loadMessages: { [container] conversationId in
-                container.chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+            loadMessages: { conversationId in
+                agentConversationStore.loadMessages(for: conversationId)
             },
-            loadTurnPhase: { [container] conversationId in
-                container.conversationService.loadTurnPhase(forConversationId: conversationId)
+            loadTurnPhase: { conversationId in
+                agentConversationStore.loadTurnPhase(for: conversationId)
             },
-            setTurnPhase: { [container] phase, conversationId in
-                container.conversationService.setTurnPhase(phase, forConversationId: conversationId)
+            setTurnPhase: { phase, conversationId in
+                agentConversationStore.setTurnPhase(phase, conversationId: conversationId)
             },
             tryAcquireConversationLock: { conversationId in
                 AgentConversationLock.shared.tryAcquire(conversationId)
@@ -368,24 +373,12 @@ struct RootView<Content>: View where Content: View {
                 let runtime = AgentLLMRuntime(container: container, windowContainer: windowContainer)
                 return runtime.prepareMessages(conversationId: conversationId, messages: messages)
             },
-            makeLLMSendDependencies: { [container, windowContainer] conversationId in
-                AgentLLMRuntime(container: container, windowContainer: windowContainer)
-                    .makeLLMSendDependencies(conversationId: conversationId)
-            },
-            evaluateToolPermissions: { [container, windowContainer] message, conversationId in
-                AgentLLMRuntime(container: container, windowContainer: windowContainer)
-                    .evaluateToolPermissions(for: message, conversationId: conversationId)
-            },
+            llmSendService: {
+                let runtime = AgentLLMRuntime(container: container, windowContainer: windowContainer)
+                return runtime.makeLLMSendService()
+            }(),
             consumeTransientSystemPrompts: { conversationId in
                 AgentTransientPromptStore.shared.consume(for: conversationId)
-            },
-            buildLLMErrorMessage: { [container, windowContainer] error, conversationId, providerId in
-                AgentLLMRuntime(container: container, windowContainer: windowContainer)
-                    .buildLLMErrorMessage(error, conversationId: conversationId, providerId: providerId)
-            },
-            currentProviderId: { [container, windowContainer] conversationId in
-                AgentLLMRuntime(container: container, windowContainer: windowContainer)
-                    .currentProviderId(for: conversationId)
             },
             presentToolPermissionIfNeeded: { [container, windowContainer] message, conversationId async in
                 await windowContainer.toolCallExecutor.presentPermissionIfNeeded(
@@ -435,12 +428,6 @@ struct RootView<Content>: View where Content: View {
             },
             providerTypeProvider: { [container] providerId in
                 container.agentSessionConfig.providerType(forId: providerId)
-            },
-            getProviderApiKey: { [container] providerId in
-                container.agentSessionConfig.getApiKey(for: providerId)
-            },
-            setProviderApiKey: { [container] providerId, apiKey in
-                container.agentSessionConfig.setApiKey(apiKey, for: providerId)
             },
             selectedProviderIdProvider: { [container] in
                 container.agentSessionConfig.selectedProviderId
@@ -692,13 +679,11 @@ struct RootView<Content>: View where Content: View {
             },
             providersProvider: { appLLMVM.allProviders },
             providerTypeProvider: { appLLMVM.providerType(forId: $0) },
-            providerFactory: { appLLMVM.createProvider(id: $0) },
-            apiKeyProvider: { appLLMVM.getApiKey(for: $0) }
+            providerFactory: { appLLMVM.createProvider(id: $0) }
         )
         pluginLLMVM.providersProvider = { appLLMVM.allProviders }
         pluginLLMVM.providerTypeProvider = { appLLMVM.providerType(forId: $0) }
         pluginLLMVM.providerFactory = { appLLMVM.createProvider(id: $0) }
-        pluginLLMVM.apiKeyProvider = { appLLMVM.getApiKey(for: $0) }
 
         pluginLLMVM.chatModeSetter = { [container, windowContainer] chatMode in
             guard let appChatMode = ChatMode(rawValue: chatMode.rawValue) else { return }

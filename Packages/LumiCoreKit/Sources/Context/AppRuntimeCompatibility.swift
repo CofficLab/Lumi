@@ -196,7 +196,6 @@ public final class AppLLMVM: ObservableObject {
     public var providersProvider: @MainActor () -> [LLMProviderInfo]
     public var providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
     public var providerFactory: @MainActor (String) -> (any SuperLLMProvider)?
-    public var apiKeyProvider: @MainActor (String) -> String
     public var selectedProviderIdSetter: @MainActor (String) -> Void
     public var currentModelSetter: @MainActor (String) -> Void
     public var isAutoModeSetter: @MainActor (Bool) -> Void
@@ -216,7 +215,6 @@ public final class AppLLMVM: ObservableObject {
         providersProvider: @escaping @MainActor () -> [LLMProviderInfo] = { [] },
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
         providerFactory: @escaping @MainActor (String) -> (any SuperLLMProvider)? = { _ in nil },
-        apiKeyProvider: @escaping @MainActor (String) -> String = { _ in "" },
         selectedProviderIdSetter: @escaping @MainActor (String) -> Void = { _ in },
         currentModelSetter: @escaping @MainActor (String) -> Void = { _ in },
         isAutoModeSetter: @escaping @MainActor (Bool) -> Void = { _ in },
@@ -233,7 +231,6 @@ public final class AppLLMVM: ObservableObject {
         self.providersProvider = providersProvider
         self.providerTypeProvider = providerTypeProvider
         self.providerFactory = providerFactory
-        self.apiKeyProvider = apiKeyProvider
         self.selectedProviderIdSetter = selectedProviderIdSetter
         self.currentModelSetter = currentModelSetter
         self.isAutoModeSetter = isAutoModeSetter
@@ -259,14 +256,6 @@ public final class AppLLMVM: ObservableObject {
 
     public func getCurrentConfig() -> LLMConfig {
         makeConfig(providerId: selectedProviderId, model: currentModel) ?? .default
-    }
-
-    public func getApiKey(for providerId: String) -> String {
-        providerTypeProvider(providerId)?.getApiKey() ?? apiKeyProvider(providerId)
-    }
-
-    public func setApiKey(_ apiKey: String, for providerId: String) {
-        providerTypeProvider(providerId)?.setApiKey(apiKey)
     }
 
     public func setChatMode(_ chatMode: ChatMode) {
@@ -333,7 +322,6 @@ public final class LLMService: @unchecked Sendable {
     private let providersProvider: @MainActor () -> [LLMProviderInfo]
     private let providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
     private let providerFactory: @MainActor (String) -> (any SuperLLMProvider)?
-    private let apiKeyProvider: @MainActor (String) -> String
 
     public init(
         sendMessageHandler: @escaping SendMessageHandler = { messages, _, _ in
@@ -345,14 +333,12 @@ public final class LLMService: @unchecked Sendable {
         },
         providersProvider: @escaping @MainActor () -> [LLMProviderInfo] = { [] },
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
-        providerFactory: @escaping @MainActor (String) -> (any SuperLLMProvider)? = { _ in nil },
-        apiKeyProvider: @escaping @MainActor (String) -> String = { _ in "" }
+        providerFactory: @escaping @MainActor (String) -> (any SuperLLMProvider)? = { _ in nil }
     ) {
         self.sendMessageHandler = sendMessageHandler
         self.providersProvider = providersProvider
         self.providerTypeProvider = providerTypeProvider
         self.providerFactory = providerFactory
-        self.apiKeyProvider = apiKeyProvider
     }
 
     public func sendMessage(
@@ -378,15 +364,6 @@ public final class LLMService: @unchecked Sendable {
         providerFactory(id)
     }
 
-    @MainActor
-    public func getApiKey(for providerId: String) -> String {
-        providerTypeProvider(providerId)?.getApiKey() ?? apiKeyProvider(providerId)
-    }
-
-    @MainActor
-    public func setApiKey(_ apiKey: String, for providerId: String) {
-        providerTypeProvider(providerId)?.setApiKey(apiKey)
-    }
 }
 
 public struct ToolProgressSnapshot: Sendable {

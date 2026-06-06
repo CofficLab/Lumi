@@ -74,9 +74,6 @@ extension ToolContext {
                 },
                 providerFactory: { providerId in
                     service.createProvider(id: providerId)
-                },
-                apiKeyProvider: { [llmVM] providerId in
-                    llmVM?.getApiKey(for: providerId) ?? ""
                 }
             )
         }
@@ -97,9 +94,6 @@ extension ToolContext {
                 },
                 providerFactory: { providerId in
                     vm.createProvider(id: providerId)
-                },
-                apiKeyProvider: { providerId in
-                    vm.getApiKey(for: providerId)
                 },
                 selectedProviderIdSetter: { providerId in
                     vm.selectedProviderId = providerId

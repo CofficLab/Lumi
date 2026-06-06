@@ -3,7 +3,7 @@ import LumiCoreKit
 import SuperLogKit
 import os
 
-/// LLM 消息发送插件：监听 DB 事件，发送 LLM 并写库。
+/// LLM 消息发送插件：监听 DB 事件，发送 LLM，将结果写回数据库。
 public actor MessageSenderPlugin: SuperPlugin, SuperLog {
     nonisolated public static let emoji = "📬"
     public static var category: PluginCategory { .agent }
@@ -14,7 +14,7 @@ public actor MessageSenderPlugin: SuperPlugin, SuperLog {
 
     public static let id: String = "MessageSender"
     public static let displayName: String = "Message Sender"
-    public static let description: String = "Send Agent messages to LLM providers with streaming and retry"
+    public static let description: String = "Listen for DB events, send LLM requests, and persist responses"
     public static let iconName: String = "antenna.radiowaves.left.and.right"
     public static var order: Int { 200 }
 
@@ -25,45 +25,15 @@ public actor MessageSenderPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func configureRuntime(context: PluginRuntimeContext) {
-        AgentLLMSender.send = { request, dependencies in
-            await SenderService.send(request: request, dependencies: dependencies)
-        }
-
-        RuntimeBridge.loadMessages = context.loadMessages
-        RuntimeBridge.saveMessage = context.saveMessage
-        RuntimeBridge.loadTurnPhase = context.loadTurnPhase
-        RuntimeBridge.setTurnPhase = context.setTurnPhase
-        RuntimeBridge.tryAcquireConversationLock = context.tryAcquireConversationLock
-        RuntimeBridge.releaseConversationLock = context.releaseConversationLock
-        RuntimeBridge.isConversationCancelled = context.isConversationCancelled
-        RuntimeBridge.prepareMessagesForLLM = context.prepareMessagesForLLM
-        RuntimeBridge.makeLLMSendDependencies = context.makeLLMSendDependencies
-        RuntimeBridge.evaluateToolPermissions = context.evaluateToolPermissions
-        RuntimeBridge.consumeTransientSystemPrompts = context.consumeTransientSystemPrompts
-        RuntimeBridge.buildLLMErrorMessage = context.buildLLMErrorMessage
-        RuntimeBridge.currentProviderId = context.currentProviderId
-        RuntimeBridge.finishAgentTurn = context.finishAgentTurn
+        Self.senderService.configure(plugin: self, runtime: context)
     }
 
     @MainActor
     public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(DatabaseEventObserver(content: content()))
+        AnyView(DatabaseEventObserver(senderService: Self.senderService, content: content()))
     }
 }
 
-private struct DatabaseEventObserver<Content: View>: View {
-    let content: Content
-
-    var body: some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: .messageSaved)) { notification in
-                guard let conversationId = notification.userInfo?["conversationId"] as? UUID else { return }
-                SenderOrchestrator.handleMessageSaved(conversationId: conversationId)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .agentTurnPhaseChanged)) { notification in
-                guard let conversationId = notification.object as? UUID else { return }
-                guard notification.userInfo?["phase"] as? String == AgentTurnPhase.processing.rawValue else { return }
-                SenderOrchestrator.handleMessageSaved(conversationId: conversationId)
-            }
-    }
+extension MessageSenderPlugin {
+    @MainActor static let senderService = SenderService()
 }

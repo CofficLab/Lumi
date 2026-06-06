@@ -28,102 +28,25 @@ final class AgentLLMRuntime {
         ).messages
     }
 
-    func makeLLMSendDependencies(conversationId: UUID) -> LLMSendDependencies {
-        let llmService = container.llmService
-        let statusVM = windowContainer.conversationSendStatusVM
-        let pluginVM = container.pluginVM
-        let toolService = container.toolService
-        let projectVM = windowContainer.projectVM
-        let agentSessionConfig = container.agentSessionConfig
-        let conversationVM = windowContainer.conversationVM
+    func makeLLMSendService() -> LLMSendService {
+        LiveLLMSendService(runtime: self, container: container, windowContainer: windowContainer)
+    }
 
-        return LLMSendDependencies(
-            retryPolicy: .default,
-            resolveRequestConfig: { [weak self] convId, msgs, allowsTools in
-                guard let self else { return LLMConfig.default }
-                return self.resolveRequestConfig(
-                    conversationId: convId,
-                    messages: msgs,
-                    allowsTools: allowsTools,
-                    conversationVM: conversationVM,
-                    agentSessionConfig: agentSessionConfig,
-                    llmService: llmService
-                )
-            },
-            prepareTools: {
-                toolService.languagePreference = projectVM.languagePreference
-                let availableTools = ToolAvailabilityGuard().evaluate(
-                    tools: toolService.tools,
-                    allowsTools: agentSessionConfig.chatMode.allowsTools,
-                    isFinalStep: false
-                )
-                return availableTools.isEmpty ? nil : availableTools
-            },
-            sendStreamingMessage: { messages, config, tools, onChunk, onRequestStart in
-                try await llmService.sendStreamingMessage(
-                    messages: messages,
-                    config: config,
-                    tools: tools,
-                    onChunk: onChunk,
-                    onRequestStart: onRequestStart
-                )
-            },
-            applyStreamChunk: { convId, chunk in
-                statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-            },
-            setStatus: { convId, content in
-                statusVM.setStatus(conversationId: convId, content: content)
-            },
-            runPostPipeline: { metadata, response, error, duration in
-                var mutableMetadata = metadata
-                mutableMetadata.duration = duration
-                if let error {
-                    mutableMetadata.error = error
-                    if let llmError = error as? LLMServiceError,
-                       case let .requestFailed(_, statusCode) = llmError {
-                        mutableMetadata.responseStatusCode = statusCode
-                    } else if let apiError = error as? HTTPClientError,
-                              case let .httpError(statusCode, _) = apiError {
-                        mutableMetadata.responseStatusCode = statusCode
-                    }
-                } else {
-                    mutableMetadata.responseStatusCode = 200
-                }
-                let pipeline = SendPipeline(middlewares: pluginVM.getSuperSendMiddlewares())
-                await pipeline.runPost(metadata: mutableMetadata, response: response)
-            },
-            logInfo: { message in
-        if AgentSendPipelineLog.enabled {
-                    AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)④ [MessageSender] \(message)")
-                }
-            },
-            logError: { message in
-        if AgentSendPipelineLog.enabled {
-                    AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)④ [MessageSender] ❌ \(message)")
-                }
-            },
-            resolveRetryDecision: { [weak self] conversationId, error, statusCode, attempt in
-                guard let self else { return .doNotRetry }
-                guard let providerId = self.currentProviderId(for: conversationId),
-                      let provider = llmService.createProvider(id: providerId) else {
-                    return ProviderRetryDecision(shouldRetry: false)
-                }
-                return provider.retryDecision(
-                    for: error,
-                    statusCode: statusCode,
-                    attempt: attempt,
-                    maxAttempts: StreamRetryPolicy.default.maxRetries
-                )
-            },
+    func resolveLLMConfig(
+        for conversationId: UUID,
+        messages: [ChatMessage],
+        allowsTools: Bool
+    ) -> LLMConfig {
+        resolveRequestConfig(
+            conversationId: conversationId,
+            messages: messages,
+            allowsTools: allowsTools,
+            conversationVM: windowContainer.conversationVM,
+            agentSessionConfig: container.agentSessionConfig,
+            llmService: container.llmService
         )
     }
 
-    func evaluateToolPermissions(for message: ChatMessage, conversationId: UUID) -> ChatMessage {
-        windowContainer.toolCallExecutor.evaluatePermissions(
-            for: message,
-            conversationId: conversationId
-        )
-    }
 
     func currentProviderId(for conversationId: UUID) -> String? {
         windowContainer.conversationVM.resolveModelConfig(
@@ -132,34 +55,6 @@ final class AgentLLMRuntime {
         ).providerId
     }
 
-    func buildLLMErrorMessage(_ error: Error, conversationId: UUID, providerId: String?) -> ChatMessage {
-        let rawDetail = Self.extractRawErrorDetail(from: error)
-
-        if let providerId,
-           let provider = container.llmService.createProvider(id: providerId),
-           let custom = provider.buildErrorChatMessage(
-               error: error,
-               conversationId: conversationId,
-               rawDetail: rawDetail
-           ) {
-            return custom
-        }
-
-        var errorMessage: ChatMessage
-        if let llmError = error as? LLMServiceError {
-            errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: providerId)
-            errorMessage.rawErrorDetail = rawDetail
-        } else {
-            errorMessage = ChatMessage(
-                role: .assistant,
-                conversationId: conversationId,
-                content: error.localizedDescription,
-                isError: true,
-                rawErrorDetail: rawDetail
-            )
-        }
-        return errorMessage
-    }
 
     private func resolveContextWindowSize(for conversationId: UUID) -> Int? {
         let config = windowContainer.conversationVM.resolveModelConfig(
@@ -294,17 +189,4 @@ final class AgentLLMRuntime {
         return true
     }
 
-
-    private static func extractRawErrorDetail(from error: Error) -> String? {
-        if let llmError = error as? LLMServiceError,
-           case let .requestFailed(_, statusCode) = llmError,
-           let statusCode {
-            return "HTTP \(statusCode)"
-        }
-        if let apiError = error as? HTTPClientError,
-           case let .httpError(statusCode, message) = apiError {
-            return "HTTP \(statusCode)\n\(message)"
-        }
-        return nil
-    }
 }

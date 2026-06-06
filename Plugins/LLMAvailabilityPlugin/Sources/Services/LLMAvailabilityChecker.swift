@@ -69,21 +69,17 @@ public final class LLMAvailabilityChecker {
     /// - Returns: 检测结果
     @discardableResult
     public func checkModel(providerId: String, modelId: String) async -> ModelCheckResult {
-        // 查找供应商类型 → 获取 API Key
-        guard llmService.providerType(forId: providerId) != nil else {
+        guard let providerType = llmService.providerType(forId: providerId) else {
             let msg = "供应商 `\(providerId)` 未注册"
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
         }
 
-        let apiKey = llmService.getApiKey(for: providerId)
-
-        // 判断是否本地供应商
         let providerInfo = llmService.allProviders().first { $0.id == providerId }
         let isLocal = providerInfo?.isLocal ?? false
 
-        if apiKey.isEmpty && !isLocal {
-            let msg = "未配置 API Key"
+        if !providerType.hasApiKey && !isLocal {
+            let msg = "未配置凭证"
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
         }
@@ -104,8 +100,7 @@ public final class LLMAvailabilityChecker {
             }
         }
 
-        // 获取该供应商的 API Key
-        guard llmService.providerType(forId: providerId) != nil else {
+        guard let providerType = llmService.providerType(forId: providerId) else {
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
                                     LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
@@ -117,17 +112,14 @@ public final class LLMAvailabilityChecker {
             return
         }
 
-        let apiKey = llmService.getApiKey(for: providerId)
-
-        // 如果没有 API Key 且不是本地供应商，标记所有模型为不可用
-        if apiKey.isEmpty && !info.isLocal {
+        if !providerType.hasApiKey && !info.isLocal {
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
-                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置 API Key，跳过所有模型")
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置凭证，跳过所有模型")
                 }
             }
             for modelId in info.availableModels {
-                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置 API Key"))
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置凭证"))
             }
             return
         }
@@ -179,7 +171,8 @@ public final class LLMAvailabilityChecker {
             )
 
         case .custom(let check):
-            let result = await check(llmService.getApiKey(for: providerId), modelId)
+            let credential = llmService.providerType(forId: providerId)?.getApiKey() ?? ""
+            let result = await check(credential, modelId)
             let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(result.reason ?? "检测失败")
             store.updateStatus(providerId: providerId, modelId: modelId, status: status)
             if Self.verbose {

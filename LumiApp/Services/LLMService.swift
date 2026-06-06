@@ -117,12 +117,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage(conversationId: conversationId)
         }
 
-        let apiKeyLen = registry.providerType(forId: config.providerId)?
-            .getApiKey()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .count ?? -1
         if AgentSendPipelineLog.enabled {
-            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)🤖 [LLMService] streamChat provider=\(config.providerId) model=\(config.model) apiKeyLen=\(apiKeyLen) tools=\(tools?.count ?? 0)")
+            AppLogger.core.info("\(AgentSendPipelineLog.t)streamChat provider=\(config.providerId) model=\(config.model) tools=\(tools?.count ?? 0)")
         }
 
         do {

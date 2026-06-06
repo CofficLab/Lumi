@@ -31,9 +31,6 @@ import LumiCoreKit
         },
         providerFactory: { providerId in
             providerId == AvailabilityMockProvider.id ? AvailabilityMockProvider() : nil
-        },
-        apiKeyProvider: { providerId in
-            providerId == AvailabilityMockProvider.id ? "test-key" : ""
         }
     )
 

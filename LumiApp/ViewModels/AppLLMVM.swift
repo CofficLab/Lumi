@@ -106,20 +106,6 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
         )
     }
 
-    func getApiKey(for providerId: String) -> String {
-        guard let providerType = llmService.providerType(forId: providerId) else {
-            return ""
-        }
-        return providerType.getApiKey()
-    }
-
-    func setApiKey(_ apiKey: String, for providerId: String) {
-        guard let providerType = llmService.providerType(forId: providerId) else {
-            return
-        }
-        providerType.setApiKey(apiKey)
-    }
-
     // MARK: - Chat Mode
 
     func setChatMode(_ mode: ChatMode) {

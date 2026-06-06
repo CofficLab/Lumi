@@ -29,11 +29,8 @@ public actor MessageRendererPlugin: SuperPlugin {
         MessageRendererRuntime.showsAssistantHeaderProvider = {
             context.showsAssistantHeader()
         }
-        MessageRendererRuntime.apiKeyProvider = { providerId in
-            context.getProviderApiKey(providerId)
-        }
-        MessageRendererRuntime.apiKeySetter = { providerId, apiKey in
-            context.setProviderApiKey(providerId, apiKey)
+        MessageRendererRuntime.providerTypeProvider = { providerId in
+            context.providerTypeProvider(providerId)
         }
         MessageRendererRuntime.selectedProviderIdProvider = {
             context.selectedProviderIdProvider()

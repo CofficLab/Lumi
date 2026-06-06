@@ -428,8 +428,8 @@ extension ConversationService {
         conversation.updatedAt = Date()
         try? modelContext.save()
 
-        if AgentSendPipelineLog.enabled {
-            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ↔️ [Phase] → \(phase.rawValue)")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)↔️ [Phase] → \(phase.rawValue)")
         }
         NotificationCenter.default.post(
             name: .agentTurnPhaseChanged,

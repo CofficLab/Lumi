@@ -122,14 +122,14 @@ public struct ApiKeyMissingErrorView: View {
         reloadApiKeyFromKeychain()
     }
 
-    /// 从 Keychain 重新加载 API Key
+    /// 从供应商凭证存储重新加载
     private func reloadApiKeyFromKeychain() {
-        apiKey = MessageRendererRuntime.apiKeyProvider(currentProviderId)
+        apiKey = MessageRendererRuntime.providerTypeProvider(currentProviderId)?.getApiKey() ?? ""
     }
 
-    /// 保存 API Key 到 Keychain
+    /// 保存到供应商凭证存储
     private func saveApiKey(_ newValue: String) {
         guard !currentProviderId.isEmpty else { return }
-        MessageRendererRuntime.apiKeySetter(currentProviderId, newValue)
+        MessageRendererRuntime.providerTypeProvider(currentProviderId)?.setApiKey(newValue)
     }
 }

@@ -66,6 +66,11 @@ public struct PluginRuntimeContext {
     ///   - answer: 用户的回答
     public let resumeToolCall: @MainActor (String, String, String) -> Void
 
+    /// Agent 会话持久化服务（消息与 Turn 阶段）。
+    ///
+    /// 为 `nil` 时表示当前环境未注入（如测试或预览场景）。
+    public let agentConversationStore: (any AgentConversationStore)?
+
     /// 保存消息到数据库。
     public let saveMessage: @MainActor (ChatMessage, UUID) -> Void
 
@@ -99,20 +104,13 @@ public struct PluginRuntimeContext {
     /// 裁剪并展开消息供 LLM 使用。
     public let prepareMessagesForLLM: @MainActor (UUID, [ChatMessage]) -> [ChatMessage]
 
-    /// 构建 LLM 发送依赖（窗口/会话上下文）。
-    public let makeLLMSendDependencies: @MainActor (UUID) -> LLMSendDependencies
-
-    /// 评估助手消息中工具调用的权限状态。
-    public let evaluateToolPermissions: @MainActor (ChatMessage, UUID) -> ChatMessage
+    /// LLM 发送服务（解析配置、调用供应商、流式回调）。
+    ///
+    /// 为 `nil` 时表示当前环境未注入（如测试或预览场景）。
+    public let llmSendService: (any LLMSendService)?
 
     /// 消费并返回首轮临时 system prompts。
     public let consumeTransientSystemPrompts: @MainActor (UUID) -> [String]
-
-    /// 将 LLM 错误转为可落库的 ChatMessage。
-    public let buildLLMErrorMessage: @MainActor (Error, UUID, String?) -> ChatMessage
-
-    /// 当前会话使用的 providerId。
-    public let currentProviderId: @MainActor (UUID) -> String?
 
     /// 若需工具权限则弹出 UI；返回 true 表示已暂停。
     public let presentToolPermissionIfNeeded: @MainActor (ChatMessage, UUID) async -> Bool
@@ -144,12 +142,6 @@ public struct PluginRuntimeContext {
     /// 按 ID 查找 LLM 供应商类型。
     public let providerTypeProvider: @MainActor (String) -> (any SuperLLMProvider.Type)?
 
-    /// 读取供应商 API Key。
-    public let getProviderApiKey: @MainActor (String) -> String
-
-    /// 保存供应商 API Key。
-    public let setProviderApiKey: @MainActor (String, String) -> Void
-
     /// 当前全局选中的供应商 ID。
     public let selectedProviderIdProvider: @MainActor () -> String
 
@@ -180,6 +172,7 @@ public struct PluginRuntimeContext {
         selectConversation: @escaping @MainActor (UUID, PluginContext) -> Void = { _, _ in },
         registerIdleTimeSnapshotProvider: @escaping @MainActor (@escaping IdleTimeSnapshotProviderClosure) -> Void = { _ in },
         resumeToolCall: @escaping @MainActor (String, String, String) -> Void = { _, _, _ in },
+        agentConversationStore: (any AgentConversationStore)? = nil,
         saveMessage: @escaping @MainActor (ChatMessage, UUID) -> Void = { _, _ in },
         updateMessage: @escaping @MainActor (ChatMessage, UUID) -> Void = { _, _ in },
         loadMessages: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
@@ -191,13 +184,8 @@ public struct PluginRuntimeContext {
         markConversationCancelled: @escaping @MainActor (UUID) -> Void = { _ in },
         clearConversationCancelled: @escaping @MainActor (UUID) -> Void = { _ in },
         prepareMessagesForLLM: @escaping @MainActor (UUID, [ChatMessage]) -> [ChatMessage] = { _, messages in messages },
-        makeLLMSendDependencies: @escaping @MainActor (UUID) -> LLMSendDependencies = { _ in LLMSendDependencies() },
-        evaluateToolPermissions: @escaping @MainActor (ChatMessage, UUID) -> ChatMessage = { message, _ in message },
+        llmSendService: (any LLMSendService)? = nil,
         consumeTransientSystemPrompts: @escaping @MainActor (UUID) -> [String] = { _ in [] },
-        buildLLMErrorMessage: @escaping @MainActor (Error, UUID, String?) -> ChatMessage = { error, conversationId, _ in
-            ChatMessage(role: .assistant, conversationId: conversationId, content: error.localizedDescription, isError: true)
-        },
-        currentProviderId: @escaping @MainActor (UUID) -> String? = { _ in nil },
         presentToolPermissionIfNeeded: @escaping @MainActor (ChatMessage, UUID) async -> Bool = { _, _ in false },
         executeToolCalls: @escaping @MainActor (ChatMessage, UUID) async -> ToolExecutionSummary = { _, _ in ToolExecutionSummary() },
         finishAgentTurn: @escaping @MainActor (UUID, TurnEndReason) -> Void = { _, _ in },
@@ -209,8 +197,6 @@ public struct PluginRuntimeContext {
         pendingMessages: @escaping @MainActor (UUID) -> [ChatMessage] = { _ in [] },
         removePendingMessage: @escaping @MainActor (UUID, UUID) -> Bool = { _, _ in false },
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
-        getProviderApiKey: @escaping @MainActor (String) -> String = { _ in "" },
-        setProviderApiKey: @escaping @MainActor (String, String) -> Void = { _, _ in },
         selectedProviderIdProvider: @escaping @MainActor () -> String = { "" },
         providerInfoProvider: @escaping @MainActor (String) -> LLMProviderInfo? = { _ in nil },
     ) {
@@ -229,6 +215,7 @@ public struct PluginRuntimeContext {
         self.selectConversation = selectConversation
         self.registerIdleTimeSnapshotProvider = registerIdleTimeSnapshotProvider
         self.resumeToolCall = resumeToolCall
+        self.agentConversationStore = agentConversationStore
         self.saveMessage = saveMessage
         self.updateMessage = updateMessage
         self.loadMessages = loadMessages
@@ -240,11 +227,8 @@ public struct PluginRuntimeContext {
         self.markConversationCancelled = markConversationCancelled
         self.clearConversationCancelled = clearConversationCancelled
         self.prepareMessagesForLLM = prepareMessagesForLLM
-        self.makeLLMSendDependencies = makeLLMSendDependencies
-        self.evaluateToolPermissions = evaluateToolPermissions
+        self.llmSendService = llmSendService
         self.consumeTransientSystemPrompts = consumeTransientSystemPrompts
-        self.buildLLMErrorMessage = buildLLMErrorMessage
-        self.currentProviderId = currentProviderId
         self.presentToolPermissionIfNeeded = presentToolPermissionIfNeeded
         self.executeToolCalls = executeToolCalls
         self.finishAgentTurn = finishAgentTurn
@@ -256,8 +240,6 @@ public struct PluginRuntimeContext {
         self.pendingMessages = pendingMessages
         self.removePendingMessage = removePendingMessage
         self.providerTypeProvider = providerTypeProvider
-        self.getProviderApiKey = getProviderApiKey
-        self.setProviderApiKey = setProviderApiKey
         self.selectedProviderIdProvider = selectedProviderIdProvider
         self.providerInfoProvider = providerInfoProvider
     }

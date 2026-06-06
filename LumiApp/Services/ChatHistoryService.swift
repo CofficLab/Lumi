@@ -1,8 +1,8 @@
-import Foundation
 import AgentToolKit
-import SwiftData
+import Foundation
 import LLMKit
 import LumiCoreKit
+import SwiftData
 
 // MARK: - ToolCall / ChatMessage 便捷扩展
 
@@ -50,7 +50,7 @@ extension ChatMessage {
 @MainActor
 final class ChatHistoryService: SuperLog, Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false // 链路日志见 AgentSendPipelineLog
+    nonisolated static let verbose: Bool = true
     let conversationService: ConversationService
     let modelContainer: ModelContainer
     let modelContext: ModelContext
@@ -86,7 +86,6 @@ final class ChatHistoryService: SuperLog, Sendable {
 // MARK: - 对话标题生成
 
 extension ChatHistoryService {
-
     /// 基于用户消息生成会话标题
     func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
         await ConversationTitleGenerator().generate(userMessage: userMessage, config: config) { [llmService] messages, config in
@@ -98,7 +97,6 @@ extension ChatHistoryService {
 // MARK: - 消息保存
 
 extension ChatHistoryService {
-
     /// 保存消息到指定对话
     /// - Parameters:
     ///   - message: 要保存的消息
@@ -153,14 +151,14 @@ extension ChatHistoryService {
                         AppLogger.core.info("\(Self.t)✅ 同步 ID 消息已更新: \(message.id)")
                     }
                     let queueLabel = message.queueStatus?.rawValue ?? "nil"
-        if AgentSendPipelineLog.enabled {
-                        AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(fetchedConversation.id))] 💾 [DB] messageSaved (update) role=\(message.role.rawValue) queue=\(queueLabel) id=\(message.id.uuidString.prefix(8))")
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)messageSaved (update) role=\(message.role.rawValue) queue=\(queueLabel) id=\(message.id.uuidString.prefix(8))")
                     }
                     NotificationCenter.postMessageSaved(message: updated, conversationId: fetchedConversation.id)
                 }
                 return updated
             } catch {
-                AppLogger.core.error("\(Self.t)❌ 更新消息失败：\(error.localizedDescription)")
+                AppLogger.core.error("更新消息失败：\(error.localizedDescription)")
                 return nil
             }
         }
@@ -177,11 +175,11 @@ extension ChatHistoryService {
             try context.save()
             if let savedMessage = messageEntity.toChatMessage() {
                 if Self.verbose {
-                    AppLogger.core.debug("\(Self.t)💾 [\(conversationId)] 新消息已保存: \(message.id)")
+                    AppLogger.core.debug("\(Self.t)新消息已保存: \(message.id)")
                 }
                 let queueLabel = message.queueStatus?.rawValue ?? "nil"
-        if AgentSendPipelineLog.enabled {
-                    AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] 💾 [DB] messageSaved role=\(message.role.rawValue) queue=\(queueLabel) id=\(message.id.uuidString.prefix(8))")
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t)messageSaved role=\(message.role.rawValue) queue=\(queueLabel) id=\(message.id.uuidString.prefix(8))")
                 }
                 NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                 return savedMessage
@@ -272,7 +270,6 @@ extension ChatHistoryService {
 // MARK: - 消息加载
 
 extension ChatHistoryService {
-
     /// 加载对话消息
     ///
     /// 直接查询 `ChatMessageEntity` 表，而不是通过 `Conversation.messages` 关系。
@@ -535,9 +532,9 @@ extension ChatHistoryService {
                 msg.conversation?.id == conversationId &&
                     (
                         msg._role == "user" ||
-                        msg._role == "assistant" ||
-                        msg._role == "status" ||
-                        msg._role == "error"
+                            msg._role == "assistant" ||
+                            msg._role == "status" ||
+                            msg._role == "error"
                     )
             }
         )
@@ -549,7 +546,6 @@ extension ChatHistoryService {
 // MARK: - 消息展开（LLM 上下文）
 
 extension ChatHistoryService {
-
     /// 将存储中的 assistant/toolCalls 展开为 LLM 可消费的完整消息序列。
     func expandMessagesForLLM(_ messages: [ChatMessage]) -> [ChatMessage] {
         var expanded: [ChatMessage] = []
@@ -590,7 +586,6 @@ extension ChatHistoryService {
 // MARK: - 关系同步（私有）
 
 extension ChatHistoryService {
-
     /// 同步消息实体与图片附件的关系
     ///
     /// 将 ChatMessage 中的 ImageAttachment 转换为 ImageAttachmentEntity，
@@ -717,7 +712,6 @@ extension ChatHistoryService {
 // MARK: - 消息更新
 
 extension ChatHistoryService {
-
     @discardableResult
     func updateMessage(_ message: ChatMessage, conversationId: UUID) -> ChatMessage? {
         saveMessage(message, toConversationId: conversationId)
@@ -727,7 +721,6 @@ extension ChatHistoryService {
 // MARK: - Message Queue (DB)
 
 extension ChatHistoryService {
-
     /// 指定会话中 queueStatus == pending 的消息（按时间升序）。
     func pendingMessages(forConversationId conversationId: UUID) -> [ChatMessage] {
         let context = getContext()
@@ -762,7 +755,7 @@ extension ChatHistoryService {
         entity.queueStatus = MessageQueueStatus.processing.rawValue
         try? context.save()
         if let updated = entity.toChatMessage() {
-        if AgentSendPipelineLog.enabled {
+            if AgentSendPipelineLog.enabled {
                 AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] 💾 [DB] dequeue pending→processing id=\(updated.id.uuidString.prefix(8))")
             }
             NotificationCenter.postMessageSaved(message: updated, conversationId: conversationId)
