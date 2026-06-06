@@ -12,9 +12,17 @@ let package = Package(
             targets: ["LLMProviderKit"]
         ),
     ],
+    dependencies: [
+        .package(path: "../HttpKit"),
+        .package(path: "../LLMKit"),
+    ],
     targets: [
         .target(
             name: "LLMProviderKit",
+            dependencies: [
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LLMKit", package: "LLMKit"),
+            ],
             path: "Sources"
         ),
         .testTarget(

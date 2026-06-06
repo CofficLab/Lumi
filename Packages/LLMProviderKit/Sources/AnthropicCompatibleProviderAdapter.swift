@@ -1,4 +1,6 @@
 import Foundation
+import HttpKit
+import LLMKit
 
 /// Anthropic 兼容供应商适配器
 ///
@@ -85,6 +87,44 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         )
         body["stream"] = true
         return body
+    }
+
+    public func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [any LLMToolSchemaProviding]?,
+        systemPrompt: String,
+        config: LLMConfig
+    ) throws -> [String: Any] {
+        var body = try buildStreamingRequestBody(
+            messages: LLMMessagePreparer.prepare(messages),
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        AnthropicCompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: model,
+            defaultMaxTokens: configuration.defaultMaxTokens,
+            to: &body
+        )
+        return body
+    }
+
+    public static func retryDecision(
+        for error: Error,
+        statusCode: Int?,
+        attempt: Int,
+        maxAttempts: Int,
+        retryAfter: TimeInterval? = nil
+    ) -> ProviderRetryDecision {
+        OpenAICompatibleProviderAdapter.retryDecision(
+            for: error,
+            statusCode: statusCode,
+            attempt: attempt,
+            maxAttempts: maxAttempts,
+            retryAfter: retryAfter
+        )
     }
 
     // MARK: - 响应解析

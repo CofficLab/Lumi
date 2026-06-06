@@ -13,7 +13,8 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │  Host App / Provider Plugin                     │
-│  - 供应商元数据（id、模型目录、API Key 存储）      │
+│  - 供应商元数据（id、模型目录）                    │
+│  - API Key 由 SuperLLMProvider 自管（Keychain）   │
 │  - HTTP 会话与错误映射                            │
 │  - 实现 LLMToolSchemaProviding（可选）           │
 └─────────────────────────────────────────────────┘

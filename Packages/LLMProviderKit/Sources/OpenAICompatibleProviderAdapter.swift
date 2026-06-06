@@ -1,4 +1,6 @@
 import Foundation
+import HttpKit
+import LLMKit
 
 public struct OpenAICompatibleProviderAdapter: Sendable {
     public let configuration: OpenAICompatibleProviderConfiguration
@@ -71,6 +73,73 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return body
+    }
+
+    public func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [any LLMToolSchemaProviding]?,
+        systemPrompt: String,
+        config: LLMConfig
+    ) throws -> [String: Any] {
+        var body = try buildStreamingRequestBody(
+            messages: LLMMessagePreparer.prepare(messages),
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: model, to: &body)
+        return body
+    }
+
+    public static func retryDecision(
+        for error: Error,
+        statusCode: Int?,
+        attempt: Int,
+        maxAttempts: Int,
+        retryAfter: TimeInterval? = nil
+    ) -> ProviderRetryDecision {
+        if let llmError = error as? LLMServiceError {
+            switch llmError {
+            case .cancelled:
+                return .doNotRetry
+            case let .requestFailed(_, code):
+                return ProviderRetryPolicy.decision(
+                    statusCode: code ?? statusCode,
+                    retryAfter: retryAfter,
+                    attempt: attempt,
+                    maxAttempts: maxAttempts
+                )
+            default:
+                return .doNotRetry
+            }
+        }
+
+        if let apiError = error as? HTTPClientError {
+            switch apiError {
+            case let .httpError(code, _):
+                return ProviderRetryPolicy.decision(
+                    statusCode: code,
+                    retryAfter: retryAfter,
+                    attempt: attempt,
+                    maxAttempts: maxAttempts
+                )
+            case let .requestFailed(underlying):
+                return ProviderRetryPolicy.decision(
+                    forNetworkError: underlying,
+                    attempt: attempt,
+                    maxAttempts: maxAttempts
+                )
+            default:
+                break
+            }
+        }
+
+        return ProviderRetryPolicy.decision(
+            forNetworkError: error,
+            attempt: attempt,
+            maxAttempts: maxAttempts
+        )
     }
 
     public func transformMessage(_ message: ChatMessage) -> [String: Any] {

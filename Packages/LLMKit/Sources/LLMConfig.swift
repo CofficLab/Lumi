@@ -2,30 +2,18 @@ import Foundation
 
 /// LLM 配置模型
 ///
-/// 存储连接 LLM 供应商所需的配置信息。
-/// 用于配置 AI 助手的提供商、模型和认证信息。
+/// 存储连接 LLM 供应商所需的配置信息（供应商与模型）。
+/// API Key 由 `SuperLLMProvider` 各自管理，不再包含在此结构中。
 ///
 /// ## 使用示例
 ///
 /// ```swift
-/// // 配置 Anthropic Claude
 /// let config = LLMConfig(
-///     apiKey: "sk-ant-api03-...",
 ///     model: "claude-sonnet-4-20250514",
 ///     providerId: "anthropic"
 /// )
-///
-/// // 配置 OpenAI GPT-4
-/// let config = LLMConfig(
-///     apiKey: "sk-...",
-///     model: "gpt-4o",
-///     providerId: "openai"
-/// )
 /// ```
 public struct LLMConfig: Codable, Sendable, Equatable {
-    /// API 密钥
-    public var apiKey: String
-
     /// 模型名称
     public var model: String
 
@@ -49,7 +37,6 @@ public struct LLMConfig: Codable, Sendable, Equatable {
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
     public static let `default` = LLMConfig(
-        apiKey: "",
         model: "claude-sonnet-4-20250514",
         providerId: "anthropic",
         temperature: nil,
@@ -57,13 +44,11 @@ public struct LLMConfig: Codable, Sendable, Equatable {
     )
 
     public init(
-        apiKey: String,
         model: String,
         providerId: String,
         temperature: Double? = nil,
         maxTokens: Int? = nil
     ) {
-        self.apiKey = apiKey
         self.model = model
         self.providerId = providerId
         self.temperature = temperature
@@ -73,9 +58,6 @@ public struct LLMConfig: Codable, Sendable, Equatable {
     /// 校验配置完整性，在发起请求前调用以便给出明确错误提示。
     /// - Throws: `LLMServiceError` 当必填项为空或参数超出合理范围时
     public func validate() throws {
-        if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            throw LLMServiceError.apiKeyEmpty
-        }
         if model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             throw LLMServiceError.modelEmpty
         }
