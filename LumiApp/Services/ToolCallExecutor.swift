@@ -79,6 +79,15 @@ final class ToolCallExecutor: SuperLog {
         let currentProjectPath = projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath
 
         for i in calls.indices {
+            let parsed = ToolService.parseToolArgumentsDict(from: calls[i].arguments) ?? [:]
+
+            // 工具本身为安全/低风险：无论沙箱路径提升与否，均不弹授权
+            if let declaredRisk = toolService.declaredRiskLevel(toolName: calls[i].name, arguments: parsed),
+               !declaredRisk.requiresPermission {
+                calls[i].authorizationState = .noRisk
+                continue
+            }
+
             let context = ToolExecutionContext(
                 conversationId: conversationId ?? message.conversationId,
                 toolCallId: calls[i].id,
@@ -111,7 +120,12 @@ final class ToolCallExecutor: SuperLog {
 
     /// 若存在待授权的工具调用，返回 true（调用方应暂停循环；用户在消息列表内联授权）。
     func presentPermissionIfNeeded(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
-        guard let calls = assistantMessage.toolCalls,
+        let evaluated = evaluatePermissions(for: assistantMessage, conversationId: conversationId)
+        if evaluated.toolCalls != assistantMessage.toolCalls {
+            conversationVM.saveMessage(evaluated, to: conversationId)
+        }
+
+        guard let calls = evaluated.toolCalls,
               let firstPending = calls.first(where: { $0.authorizationState.needsAuthorizationPrompt }) else {
             return false
         }
