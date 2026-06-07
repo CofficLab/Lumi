@@ -18,7 +18,7 @@ import os
 /// - `ShowImageOverlay`（View）：通过 `addRootView` 挂载，监听图片显示状态变化
 /// - `ShowImageTool`：接收图片路径/URL，触发图片显示
 public actor ShowImagePlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
 
     public nonisolated static let emoji = "🖼️"
