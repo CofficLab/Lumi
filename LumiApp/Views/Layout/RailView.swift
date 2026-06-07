@@ -95,15 +95,15 @@ struct RailView: View {
     // MARK: - Content
 
     private func railContent(items: [RailItem]) -> some View {
-        let currentId = selectedTabId ?? items.first?.id
-        let contentView = items.first { $0.id == currentId }?.makeView()
+        let currentId = selectedTabId ?? items.first?.id ?? "empty"
+        let activeItem = items.first { $0.id == currentId }
 
         return Group {
-            if let contentView {
-                contentView
+            if let activeItem {
+                RailTabContentHost(tabId: activeItem.id, makeView: activeItem.makeView)
                     // Rail 内容切换时平滑过渡
                     .transition(.opacity.animation(LumiMotion.enabled(LumiMotion.reveal, preference: motionPreference)))
-                    .id(currentId ?? "empty")
+                    .id(activeItem.id)
             } else {
                 Color.clear
             }
@@ -124,5 +124,32 @@ struct RailView: View {
 
     private func persistSelection(_ tabId: String) {
         UserDefaults.standard.set(tabId, forKey: selectedTabStorageKey)
+    }
+}
+
+/// 缓存 Rail 标签内容，避免父视图每次 body 求值都调用 `makeView()` 导致子视图状态丢失。
+private struct RailTabContentHost: View {
+    let tabId: String
+    let makeView: @MainActor () -> AnyView
+
+    @State private var hostedTabId: String?
+    @State private var hostedView: AnyView?
+
+    var body: some View {
+        Group {
+            if let hostedView, hostedTabId == tabId {
+                hostedView
+            } else {
+                Color.clear
+            }
+        }
+        .onAppear(perform: ensureHostedView)
+        .onChange(of: tabId) { _, _ in ensureHostedView() }
+    }
+
+    private func ensureHostedView() {
+        guard hostedTabId != tabId else { return }
+        hostedTabId = tabId
+        hostedView = makeView()
     }
 }

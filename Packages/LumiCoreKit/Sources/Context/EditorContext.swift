@@ -27,6 +27,15 @@ public final class EditorContext: ObservableObject {
     /// 当前选中的文件 URL。
     @Published public private(set) var currentFileURL: URL?
 
+    /// 文件树当前高亮的文件 URL。
+    ///
+    /// 与 `currentFileURL` 分离，避免 Rail 内容视图重建或编辑器异步打开时，
+    /// 文件树高亮回退到上一个文件。
+    @Published public private(set) var fileTreeHighlightedFileURL: URL?
+
+    /// 文件树正在打开的目标文件；用于在编辑器异步加载完成前保护高亮。
+    private var fileTreeOpeningFileURL: URL?
+
     // MARK: - Callbacks (由内核注入)
 
     /// 打开文件。
@@ -67,6 +76,38 @@ public final class EditorContext: ObservableObject {
     /// 更新当前选中文件 URL（内核调用）。
     public func updateCurrentFileURL(_ url: URL?) {
         currentFileURL = url
+    }
+
+    /// 更新文件树高亮（文件树点击时立即调用）。
+    public func setFileTreeHighlightedFileURL(_ url: URL?) {
+        let standardized = url?.standardizedFileURL
+        fileTreeHighlightedFileURL = standardized
+        fileTreeOpeningFileURL = standardized
+    }
+
+    /// 取消进行中的文件树打开请求（连续点击或视图销毁时调用）。
+    public func clearFileTreeOpeningFileURL() {
+        fileTreeOpeningFileURL = nil
+    }
+
+    /// 将文件树高亮与编辑器当前文件对齐（内核在 EditorService 确认切换后调用）。
+    public func syncFileTreeHighlightFromEditor() {
+        let editorURL = currentFileURL?.standardizedFileURL
+        guard let editorURL else {
+            fileTreeHighlightedFileURL = nil
+            fileTreeOpeningFileURL = nil
+            return
+        }
+
+        if let openingURL = fileTreeOpeningFileURL {
+            if editorURL == openingURL {
+                fileTreeOpeningFileURL = nil
+                fileTreeHighlightedFileURL = editorURL
+            }
+            return
+        }
+
+        fileTreeHighlightedFileURL = editorURL
     }
 
     // MARK: - Actions

@@ -39,6 +39,15 @@ enum EditorFileTreePathFormatter {
         return includeLeadingSlash ? "/" + relative : relative
     }
 
+    static func normalizedFilePath(_ url: URL) -> String {
+        normalizedPath(url.path)
+    }
+
+    static func isSameFile(_ lhs: URL?, _ rhs: URL) -> Bool {
+        guard let lhs else { return false }
+        return normalizedFilePath(lhs) == normalizedFilePath(rhs)
+    }
+
     private static func normalizedPath(_ path: String) -> String {
         let standardized = (path as NSString).standardizingPath
         guard standardized.count > 1 else { return standardized }

@@ -815,6 +815,7 @@ struct RootView<Content>: View where Content: View {
 
     private func syncEditorContextFileURL() {
         pluginEditorContext.updateCurrentFileURL(windowContainer.editorVM.service.currentFileURL)
+        pluginEditorContext.syncFileTreeHighlightFromEditor()
     }
 
     private func configureConversationListContext() {

@@ -27,11 +27,12 @@ public struct EditorFileTreeView: View, SuperLog {
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
 
-    /// 点击文件后立即更新的本地选中态。
-    ///
-    /// `EditorContext.currentFileURL` 仍然是编辑器真实状态，但打开文件前会先刷新项目上下文。
-    /// 用本地状态可以避免刷新期间文件树继续高亮上一个文件。
-    @State private var selectedFileURL: URL?
+    /// 打开文件任务，连续点击时取消较早的请求，避免乱序完成。
+    @State private var openFileTask: Task<Void, Never>?
+
+    private var highlightedFileURL: URL? {
+        editorContext.fileTreeHighlightedFileURL ?? editorContext.currentFileURL
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -43,7 +44,7 @@ public struct EditorFileTreeView: View, SuperLog {
                         EditorFileTreeNodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
-                            selectedURL: selectedFileURL ?? editorContext.currentFileURL,
+                            selectedURL: highlightedFileURL,
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
@@ -75,7 +76,6 @@ public struct EditorFileTreeView: View, SuperLog {
         }
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
-        .onChange(of: editorContext.currentFileURL, onSelectedFileChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onReceive(
@@ -104,52 +104,51 @@ public struct EditorFileTreeView: View, SuperLog {
     }
 
     private func openProjectFile(_ url: URL) {
-        selectedFileURL = url.standardizedFileURL
+        openFileTask?.cancel()
+        editorContext.setFileTreeHighlightedFileURL(url)
+
         let projectPath = projectVM.currentProjectPath
-        Task { @MainActor in
+        openFileTask = Task { @MainActor in
             await editorContext.refreshProjectContext(for: projectPath)
+            guard !Task.isCancelled else { return }
             editorContext.openFile(at: url)
         }
     }
 
     private func onProjectPathChanged() {
-        // 项目路径变化时，更新协调器并递增刷新令牌
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
         packageStore.setProjectRootPath(projectVM.currentProjectPath)
-        selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
+        openFileTask?.cancel()
+        openFileTask = nil
+        editorContext.syncFileTreeHighlightFromEditor()
         rootRefreshToken += 1
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
-            }
+            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
         }
     }
 
     private func onAppear() {
-        // 首次渲染时初始化协调器（解决应用启动恢复上次项目时 onChange 不触发的问题）
         if !projectVM.currentProjectPath.isEmpty {
             coordinator.setProjectRootPath(projectVM.currentProjectPath)
             packageStore.setProjectRootPath(projectVM.currentProjectPath)
-            selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
-            rootRefreshToken += 1
+            if editorContext.fileTreeHighlightedFileURL == nil {
+                editorContext.syncFileTreeHighlightFromEditor()
+            }
+            if rootRefreshToken == 0 {
+                rootRefreshToken = 1
+            }
             if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
-                }
+                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
             }
         }
     }
 
-    private func onSelectedFileChanged() {
-        selectedFileURL = editorContext.currentFileURL?.standardizedFileURL
-    }
-
     private func onDisappear() {
+        openFileTask?.cancel()
+        openFileTask = nil
         coordinator.stop()
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
-            }
+            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
         }
     }
 
@@ -159,9 +158,7 @@ public struct EditorFileTreeView: View, SuperLog {
         rootRefreshToken += 1
         packageStore.refresh()
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
-            }
+            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
         }
     }
 
@@ -179,16 +176,12 @@ public struct EditorFileTreeView: View, SuperLog {
         if isExpanded {
             coordinator.addExpandedPath(relativePath)
             if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.info("\(Self.t)节点展开：\(relativePath)")
-                }
+                Self.logger.info("\(Self.t)节点展开：\(relativePath)")
             }
         } else {
             coordinator.removeExpandedPath(relativePath)
             if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
-                }
+                Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
             }
         }
     }
