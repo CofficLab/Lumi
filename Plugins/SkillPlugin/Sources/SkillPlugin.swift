@@ -1,9 +1,9 @@
-import SwiftUI
-import LumiUI
-import SuperLogKit
-import SkillKit
 import LumiCoreKit
+import LumiUI
 import os
+import SkillKit
+import SuperLogKit
+import SwiftUI
 
 /// Skill 插件
 ///
@@ -30,29 +30,11 @@ public actor SkillPlugin: SuperPlugin, SuperLog {
 
     // MARK: - 插件生命周期
 
-    public nonisolated func onRegister() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)✨ SkillPlugin 注册")
-            }
-        }
-    }
+    public nonisolated func onRegister() {}
 
-    public nonisolated func onEnable() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)✨ SkillPlugin 启用")
-            }
-        }
-    }
+    public nonisolated func onEnable() {}
 
-    public nonisolated func onDisable() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)✨ SkillPlugin 禁用")
-            }
-        }
-    }
+    public nonisolated func onDisable() {}
 
     // MARK: - 发送中间件
 
