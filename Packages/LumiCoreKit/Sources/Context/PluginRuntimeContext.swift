@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LLMKit
 
@@ -112,8 +113,14 @@ public struct PluginRuntimeContext {
     /// 消费并返回首轮临时 system prompts。
     public let consumeTransientSystemPrompts: @MainActor (UUID) -> [String]
 
-    /// 若需工具权限则弹出 UI；返回 true 表示已暂停。
+    /// 若需工具权限则暂停执行；返回 true 表示已暂停（用户在消息列表内联授权）。
     public let presentToolPermissionIfNeeded: @MainActor (ChatMessage, UUID) async -> Bool
+
+    /// 用户在消息列表中响应工具授权（同意/拒绝）。
+    public let respondToToolPermission: @MainActor (UUID, UUID, String, Bool) async -> Void
+
+    /// 评估工具调用的风险等级（供内联授权 UI 展示）。
+    public let evaluateToolPermissionRisk: @MainActor (String, String) -> CommandRiskLevel
 
     /// 执行助手消息中的工具调用并写库。
     public let executeToolCalls: @MainActor (ChatMessage, UUID) async -> ToolExecutionSummary
@@ -193,6 +200,8 @@ public struct PluginRuntimeContext {
         llmSendService: (any LLMSendService)? = nil,
         consumeTransientSystemPrompts: @escaping @MainActor (UUID) -> [String] = { _ in [] },
         presentToolPermissionIfNeeded: @escaping @MainActor (ChatMessage, UUID) async -> Bool = { _, _ in false },
+        respondToToolPermission: @escaping @MainActor (UUID, UUID, String, Bool) async -> Void = { _, _, _, _ in },
+        evaluateToolPermissionRisk: @escaping @MainActor (String, String) -> CommandRiskLevel = { _, _ in .high },
         executeToolCalls: @escaping @MainActor (ChatMessage, UUID) async -> ToolExecutionSummary = { _, _ in ToolExecutionSummary() },
         finishAgentTurn: @escaping @MainActor (UUID, TurnEndReason) -> Void = { _, _ in },
         setConversationStatus: @escaping @MainActor (UUID, String) -> Void = { _, _ in },
@@ -238,6 +247,8 @@ public struct PluginRuntimeContext {
         self.llmSendService = llmSendService
         self.consumeTransientSystemPrompts = consumeTransientSystemPrompts
         self.presentToolPermissionIfNeeded = presentToolPermissionIfNeeded
+        self.respondToToolPermission = respondToToolPermission
+        self.evaluateToolPermissionRisk = evaluateToolPermissionRisk
         self.executeToolCalls = executeToolCalls
         self.finishAgentTurn = finishAgentTurn
         self.setConversationStatus = setConversationStatus
