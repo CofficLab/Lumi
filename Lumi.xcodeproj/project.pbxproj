@@ -167,8 +167,6 @@
 		0B6131EE2FCF0FDD008E3867 /* Exceptions for "Plugins" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				ToolAvailablePlugin,
-				ToolCorePlugin,
 				AgentDelayMessagePlugin,
 				AgentGitHubToolsPlugin,
 				AgentMCPToolsPlugin,
@@ -212,6 +210,7 @@
 				EditorCallHierarchyRailPlugin,
 				EditorChatIntegrationPlugin,
 				EditorLSPContextCommandsPlugin,
+				EditorMultiCursorCommandsPlugin,
 				EditorOutlineRailPlugin,
 				EditorPanelPlugin,
 				EditorPreviewPlugin,
@@ -277,7 +276,6 @@
 				ModelPreferencePlugin,
 				ModelSelectorPlugin,
 				MultiAgentPlugin,
-				EditorMultiCursorCommandsPlugin,
 				NettoPlugin,
 				NetworkManagerPlugin,
 				OnboardingPlugin,
@@ -324,7 +322,9 @@
 				ThemeVscodeDarkPlugin,
 				ThemeVscodeLightPlugin,
 				ThemeWinterPlugin,
+				ToolAvailablePlugin,
 				ToolCallLoopDetectionPlugin,
+				ToolCorePlugin,
 				VerbosityPlugin,
 				VueEditorPlugin,
 				WebFetchPlugin,
