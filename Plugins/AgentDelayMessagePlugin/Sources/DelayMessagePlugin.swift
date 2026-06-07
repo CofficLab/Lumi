@@ -1,9 +1,9 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
-import SuperLogKit
-import AgentToolKit
-import SwiftUI
 import os
+import SuperLogKit
+import SwiftUI
 
 /// 延时消息插件
 ///
@@ -50,7 +50,7 @@ public actor DelayMessagePlugin: SuperPlugin, SuperLog {
     public nonisolated func onRegister() {
         if Self.verbose {
             if Self.verbose {
-                            Self.logger.info("\(self.t)📝 已注册")
+                Self.logger.info("\(self.t)📝 已注册")
             }
         }
     }
@@ -58,7 +58,7 @@ public actor DelayMessagePlugin: SuperPlugin, SuperLog {
     public nonisolated func onEnable() {
         if Self.verbose {
             if Self.verbose {
-                            Self.logger.info("\(self.t)✅ 已启用")
+                Self.logger.info("\(self.t)✅ 已启用")
             }
         }
     }
@@ -66,7 +66,7 @@ public actor DelayMessagePlugin: SuperPlugin, SuperLog {
     public nonisolated func onDisable() {
         if Self.verbose {
             if Self.verbose {
-                            Self.logger.info("\(self.t)⛔️ 已禁用")
+                Self.logger.info("\(self.t)⛔️ 已禁用")
             }
         }
     }

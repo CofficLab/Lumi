@@ -1,8 +1,8 @@
 import AgentToolKit
 import Foundation
 import LumiCoreKit
-import SuperLogKit
 import os
+import SuperLogKit
 import SwiftUI
 
 /// AutoTask 插件 Package 侧主入口
@@ -12,10 +12,10 @@ import SwiftUI
 ///
 /// App 侧通过薄适配器注册此插件，实际实现转发给 package。
 public actor AutoTaskPlugin: SuperPlugin, SuperLog {
-    nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose: Bool = false
-    nonisolated public static let policy: PluginPolicy = .alwaysOn
-    nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
 
     // MARK: - Plugin Properties
 
@@ -29,7 +29,7 @@ public actor AutoTaskPlugin: SuperPlugin, SuperLog {
     // MARK: - Configuration
 
     /// 插件配置（由 App 侧注册文件注入）
-    nonisolated(unsafe) public static var configuration: any AutoTaskConfiguration = DefaultAutoTaskConfiguration()
+    public nonisolated(unsafe) static var configuration: any AutoTaskConfiguration = DefaultAutoTaskConfiguration()
 
     public static let shared = AutoTaskPlugin()
 
@@ -97,6 +97,7 @@ private enum AutoTaskRuntimeBridge {
     nonisolated(unsafe) static var databaseDirectoryProvider: @Sendable () -> URL = {
         DefaultAutoTaskConfiguration().databaseDirectory()
     }
+
     nonisolated(unsafe) static var enqueueUserMessage: @MainActor (ChatMessage, TurnFinishedContext) -> Void = { _, _ in }
 }
 
