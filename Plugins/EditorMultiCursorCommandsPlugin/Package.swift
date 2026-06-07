@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "MultiCursorCommandsEditorPlugin",
+    name: "EditorMultiCursorCommandsPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "MultiCursorCommandsEditorPlugin",
-            targets: ["MultiCursorCommandsEditorPlugin"]
+            name: "EditorMultiCursorCommandsPlugin",
+            targets: ["EditorMultiCursorCommandsPlugin"]
         )
     ],
     dependencies: [
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MultiCursorCommandsEditorPlugin",
+            name: "EditorMultiCursorCommandsPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
@@ -34,8 +34,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MultiCursorCommandsEditorPluginTests",
-            dependencies: ["MultiCursorCommandsEditorPlugin"],
+            name: "EditorMultiCursorCommandsPluginTests",
+            dependencies: ["EditorMultiCursorCommandsPlugin"],
             path: "Tests"
         )
     ]

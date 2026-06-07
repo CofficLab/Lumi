@@ -117,7 +117,7 @@ import MenuBarManagerPlugin
 import ModelPreferencePlugin
 import ModelSelectorPlugin
 import MultiAgentPlugin
-import MultiCursorCommandsEditorPlugin
+import EditorMultiCursorCommandsPlugin
 import NettoPlugin
 import NetworkManagerPlugin
 import OnboardingPlugin
@@ -297,7 +297,7 @@ public enum GeneratedPluginRegistry {
         plugins.append(ModelPreferencePlugin.shared)
         plugins.append(ModelSelectorPlugin.shared)
         plugins.append(MultiAgentPlugin.shared)
-        plugins.append(MultiCursorCommandsEditorPlugin.shared)
+        plugins.append(EditorMultiCursorCommandsPlugin.shared)
         plugins.append(NettoPlugin.shared)
         plugins.append(NetworkManagerPlugin.shared)
         plugins.append(OnboardingPlugin.shared)

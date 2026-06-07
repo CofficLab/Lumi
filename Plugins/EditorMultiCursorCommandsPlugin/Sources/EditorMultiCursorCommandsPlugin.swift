@@ -4,10 +4,10 @@ import EditorService
 import LumiCoreKit
 
 /// 多光标命令编辑器插件：添加多光标编辑的上下文菜单操作
-public actor MultiCursorCommandsEditorPlugin: SuperPlugin {
+public actor EditorMultiCursorCommandsPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = MultiCursorCommandsEditorPlugin()
-    public static let id = "MultiCursorCommandsEditor"
+    public static let shared = EditorMultiCursorCommandsPlugin()
+    public static let id = "EditorMultiCursorCommands"
     public static let displayName = String(localized: "Multi-Cursor Commands", bundle: .module)
     public static let description = String(localized: "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", bundle: .module)
     public static let iconName = "cursorarrow.and.square.on.square.dashed"

@@ -279,7 +279,7 @@
 				ModelPreferencePlugin,
 				ModelSelectorPlugin,
 				MultiAgentPlugin,
-				MultiCursorCommandsEditorPlugin,
+				EditorMultiCursorCommandsPlugin,
 				NettoPlugin,
 				NetworkManagerPlugin,
 				OnboardingPlugin,
