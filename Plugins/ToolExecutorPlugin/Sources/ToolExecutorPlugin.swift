@@ -7,6 +7,7 @@ public actor ToolExecutorPlugin: SuperPlugin, SuperLog {
     nonisolated public static let emoji = "🔧"
     public static var category: PluginCategory { .agent }
     nonisolated public static let policy: PluginPolicy = .alwaysOn
+    nonisolated public static let verbose = false
 
     public static let id = "ToolExecutor"
     public static let displayName = "Tool Executor"
