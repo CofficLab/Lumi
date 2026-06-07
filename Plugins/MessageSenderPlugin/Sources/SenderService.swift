@@ -14,6 +14,7 @@ final class SenderService: SuperLog {
     private var llmSendService: any LLMSendService = UnavailableLLMSendService()
     private var prepareMessagesForLLM: (UUID, [ChatMessage]) -> [ChatMessage] = { _, messages in messages }
     private var consumeTransientSystemPrompts: (UUID) -> [String] = { _ in [] }
+    private var isConversationCancelled: (UUID) -> Bool = { _ in false }
     private var inFlightConversationIds = Set<UUID>()
 
     nonisolated var logger: Logger { MessageSenderPlugin.logger }
@@ -28,6 +29,7 @@ final class SenderService: SuperLog {
         }
         prepareMessagesForLLM = runtime.prepareMessagesForLLM
         consumeTransientSystemPrompts = runtime.consumeTransientSystemPrompts
+        isConversationCancelled = runtime.isConversationCancelled
     }
 
     func handleMessageSaved(conversationId: UUID) {
@@ -42,6 +44,12 @@ final class SenderService: SuperLog {
         guard phase == .processing else {
             if MessageSenderPlugin.verbose {
                 logger.info("\(Self.t)skip: phase=\(phase.rawValue)")
+            }
+            return
+        }
+        guard !isConversationCancelled(conversationId) else {
+            if MessageSenderPlugin.verbose {
+                logger.info("\(Self.t)skip: cancelled")
             }
             return
         }

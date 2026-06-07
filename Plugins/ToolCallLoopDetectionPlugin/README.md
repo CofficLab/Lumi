@@ -1,3 +1,4 @@
 # ToolCallLoopDetectionPlugin
 
-Detects and prevents tool call loops in agent workflows.
+Listens for database events and stops the agent turn when the same tool call
+(name + arguments) repeats too many times in recent history.

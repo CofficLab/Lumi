@@ -8,7 +8,7 @@ import SuperLogKit
 /// 在每轮对话中自动注入当前任务进度，保持 Agent 的全局视野。
 /// 注入内容包括：当前进行中的任务、下一个待办任务、整体进度。
 ///
-/// - Order: 70（位于 ToolCallLoopDetection(100) 之前、较早注入）
+/// - Order: 70（较早注入，在 SendPrepare 阶段优先于多数中间件）
 /// - 仅当该会话存在任务时才注入，无任务时不干扰正常对话
 @MainActor
 struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
