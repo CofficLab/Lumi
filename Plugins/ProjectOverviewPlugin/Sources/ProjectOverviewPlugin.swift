@@ -8,7 +8,7 @@ import os
 ///
 /// 提供 Agent 工具，返回项目类型、顶层结构、Git 信息、清单文件、README 预览和关键文件。
 public actor ProjectOverviewPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-overview")
 
     public nonisolated static let emoji = "📋"

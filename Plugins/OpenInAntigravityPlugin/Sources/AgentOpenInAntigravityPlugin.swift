@@ -17,7 +17,7 @@ public actor AgentOpenInAntigravityPlugin: SuperPlugin {
     public static var order: Int { 83 }
 
     /// 始终启用，用户不可关闭
-    public static let policy: PluginPolicy = .disabled
+    public static let policy: PluginPolicy = .optOut
 
     public static let shared = AgentOpenInAntigravityPlugin()
 
