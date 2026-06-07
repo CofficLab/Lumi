@@ -8,12 +8,12 @@ import LumiCoreKit
 /// 可用工具插件
 ///
 /// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
-public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
+public actor ToolAvailablePlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🧰"
     public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-available-tools")
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-available")
 
-    public static let id = "AgentAvailableToolsPlugin"
+    public static let id = "ToolAvailable"
     public static let displayName = String(localized: "Tools", bundle: .module)
     public static let description = String(localized: "Show all available tools", bundle: .module)
     public static let iconName = "wrench.and.screwdriver"
@@ -23,7 +23,7 @@ public actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
 
     /// 默认启用，用户可在设置中关闭。
 
-    public static let shared = AgentAvailableToolsPlugin()
+    public static let shared = ToolAvailablePlugin()
 
     public nonisolated func onRegister() {}
     public nonisolated func onEnable() {}

@@ -167,7 +167,7 @@
 		0B6131EE2FCF0FDD008E3867 /* Exceptions for "Plugins" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AgentAvailableToolsPlugin,
+				ToolAvailablePlugin,
 				AgentContextSyncPlugin,
 				AgentCoreToolsPlugin,
 				AgentDelayMessagePlugin,

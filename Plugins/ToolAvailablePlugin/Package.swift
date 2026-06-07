@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentAvailableToolsPlugin",
+    name: "ToolAvailablePlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "AgentAvailableToolsPlugin",
-            targets: ["AgentAvailableToolsPlugin"]
+            name: "ToolAvailablePlugin",
+            targets: ["ToolAvailablePlugin"]
         )
     ],
     dependencies: [
@@ -21,7 +21,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AgentAvailableToolsPlugin",
+            name: "ToolAvailablePlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
@@ -36,8 +36,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "AgentAvailableToolsPluginTests",
-            dependencies: ["AgentAvailableToolsPlugin"],
+            name: "ToolAvailablePluginTests",
+            dependencies: ["ToolAvailablePlugin"],
             path: "Tests"
         )
     ]

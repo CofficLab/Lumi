@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiCoreKit"),
-        .package(path: "../../Plugins/AgentAvailableToolsPlugin"),
+        .package(path: "../../Plugins/ToolAvailablePlugin"),
         .package(path: "../../Plugins/AgentContextSyncPlugin"),
         .package(path: "../../Plugins/AgentCoreToolsPlugin"),
         .package(path: "../../Plugins/AgentDelayMessagePlugin"),
@@ -187,7 +187,7 @@ let package = Package(
             name: "LumiPluginRegistry",
             dependencies: [
                 "LumiCoreKit",
-                "AgentAvailableToolsPlugin",
+                "ToolAvailablePlugin",
                 "AgentContextSyncPlugin",
                 "AgentCoreToolsPlugin",
                 "AgentDelayMessagePlugin",

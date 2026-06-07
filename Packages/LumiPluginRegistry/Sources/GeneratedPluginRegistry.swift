@@ -1,5 +1,5 @@
 import LumiCoreKit
-import AgentAvailableToolsPlugin
+import ToolAvailablePlugin
 import AgentContextSyncPlugin
 import AgentCoreToolsPlugin
 import AgentDelayMessagePlugin
@@ -177,7 +177,7 @@ public enum GeneratedPluginRegistry {
     @MainActor
     public static var plugins: [any LumiCoreKit.SuperPlugin] {
         var plugins: [any LumiCoreKit.SuperPlugin] = []
-        plugins.append(AgentAvailableToolsPlugin.shared)
+        plugins.append(ToolAvailablePlugin.shared)
         plugins.append(AgentContextSyncPlugin.shared)
         plugins.append(AgentCoreToolsPlugin.shared)
         plugins.append(DelayMessagePlugin.shared)
