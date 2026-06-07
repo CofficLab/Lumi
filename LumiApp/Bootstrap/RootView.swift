@@ -187,7 +187,6 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.chatDraftVM)
             .environmentObject(windowContainer.permissionHandlingVM)
             .environmentObject(windowContainer.commandSuggestionVM)
-            .environmentObject(windowContainer.permissionRequestVM)
             .environmentObject(windowContainer.taskCancellationVM)
             .environmentObject(windowContainer.conversationSendStatusVM)
             .environmentObject(windowContainer.projectContextRequestVM)
@@ -384,6 +383,34 @@ struct RootView<Content>: View where Content: View {
                 await windowContainer.toolCallExecutor.presentPermissionIfNeeded(
                     assistantMessage: message,
                     conversationId: conversationId
+                )
+            },
+            respondToToolPermission: { [container, windowContainer] conversationId, assistantMessageId, toolCallId, allowed async in
+                let targetWindow = Self.targetWindowContainer(fallback: windowContainer, rootContainer: container)
+                await targetWindow.permissionHandlingVM.respondToToolPermission(
+                    conversationId: conversationId,
+                    assistantMessageId: assistantMessageId,
+                    toolCallId: toolCallId,
+                    allowed: allowed
+                )
+            },
+            evaluateToolPermissionRisk: { [container, windowContainer] toolName, argumentsJSON in
+                let projectPath = windowContainer.projectVM.currentProjectPath
+                var allowedDirectories: [String] = []
+                if !projectPath.isEmpty {
+                    allowedDirectories.append(ToolExecutionContext.resolvePath(projectPath))
+                }
+                let context = ToolExecutionContext(
+                    conversationId: UUID(),
+                    toolCallId: "permission-preview",
+                    toolName: toolName,
+                    currentProjectPath: projectPath.isEmpty ? nil : projectPath,
+                    allowedDirectories: allowedDirectories
+                )
+                return container.toolService.evaluateRisk(
+                    toolName: toolName,
+                    argumentsJSON: argumentsJSON,
+                    context: context
                 )
             },
             executeToolCalls: { [container, windowContainer] message, conversationId async in

@@ -311,9 +311,6 @@ struct ContentViewBody<Content: View>: View {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .overlay {
-                ToolPermissionOverlay()
-            }
     }
 
     private func refreshSystemColorScheme() {
