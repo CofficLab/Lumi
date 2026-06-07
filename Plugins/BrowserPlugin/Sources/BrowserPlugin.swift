@@ -6,10 +6,11 @@ import os
 
 /// Browser 插件。
 ///
-/// 提供网页截图功能。
-/// 使用 WKWebView 渲染网页并截图，截图保存到系统临时目录返回文件路径。
+/// 提供网页截图与浏览器自动化功能。
+/// - `browser_screenshot`：使用 WKWebView 渲染网页并截图
+/// - `browser_agent`：基于 agent-browser CLI 的浏览器自动化
 public actor BrowserPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser")
 
     public nonisolated static let emoji = "🖼️"
@@ -17,10 +18,10 @@ public actor BrowserPlugin: SuperPlugin, SuperLog {
 
     public static let id: String = "Browser"
     public static let displayName: String = PluginBrowserLocalization.string("Browser")
-    public static let description: String = PluginBrowserLocalization.string("提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。")
+    public static let description: String = PluginBrowserLocalization.string("提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。")
 
     public static func description(for language: LanguagePreference) -> String {
-        PluginBrowserLocalization.string("提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。", for: language)
+        PluginBrowserLocalization.string("提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。", for: language)
     }
     public static let iconName: String = "safari"
     public static var category: PluginCategory { .general }
@@ -32,7 +33,10 @@ public actor BrowserPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [BrowserScreenshotTool()]
+        [
+            BrowserScreenshotTool(),
+            BrowserAgentTool(),
+        ]
     }
 }
 

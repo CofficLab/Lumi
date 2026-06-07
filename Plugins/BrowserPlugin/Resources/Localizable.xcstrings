@@ -30,31 +30,31 @@
         }
       }
     },
-    "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。": {
+    "提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provides web page rendering and screenshot capabilities using WKWebView."
+            "value": "Provides web page screenshots and browser automation via WKWebView and agent-browser CLI."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。"
+            "value": "提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
+            "value": "提供網頁截圖與瀏覽器自動化功能，包括 WKWebView 截圖和 agent-browser CLI 自動化。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
+            "value": "提供網頁截圖與瀏覽器自動化功能，包括 WKWebView 截圖和 agent-browser CLI 自動化。"
           }
         }
       }

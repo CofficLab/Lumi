@@ -23,7 +23,6 @@ import AskUserPlugin
 import AutoTaskPlugin
 import BrewManagerPlugin
 import BrowserPlugin
-import BrowserAgentPlugin
 import CSSEditorPlugin
 import CaffeinatePlugin
 import ChatAttachmentPlugin
@@ -202,7 +201,6 @@ public enum GeneratedPluginRegistry {
         plugins.append(AutoTaskPlugin.shared)
         plugins.append(BrewManagerPlugin.shared)
         plugins.append(BrowserPlugin.shared)
-        plugins.append(BrowserAgentPlugin.shared)
         plugins.append(CSSEditorPlugin.shared)
         plugins.append(CaffeinatePlugin.shared)
         plugins.append(ChatAttachmentPlugin.shared)

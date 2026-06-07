@@ -184,7 +184,6 @@
 				AskUserPlugin,
 				AutoTaskPlugin,
 				BrewManagerPlugin,
-				BrowserAgentPlugin,
 				BrowserPlugin,
 				CaffeinatePlugin,
 				ChatAttachmentPlugin,
