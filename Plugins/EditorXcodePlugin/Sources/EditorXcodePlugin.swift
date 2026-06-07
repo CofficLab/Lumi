@@ -1,11 +1,11 @@
-import Foundation
+import AgentToolKit
 import EditorService
+import Foundation
 import LumiCoreKit
+import os
 import SuperLogKit
 import SwiftUI
 import XcodeKit
-import AgentToolKit
-import os
 
 /// Xcode 插件日志辅助（插件内共享）
 public enum XcodePluginLog {
@@ -15,7 +15,7 @@ public enum XcodePluginLog {
 
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
 public actor EditorXcodePlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "🔧"
 
     public static let shared = EditorXcodePlugin()
@@ -23,7 +23,7 @@ public actor EditorXcodePlugin: SuperPlugin, SuperLog {
     public static let displayName = String(localized: "Xcode Project Editor", bundle: .module)
     public static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", bundle: .module)
     public static let iconName = "xmark.app"
-    public static let order = 4  // 在 LSP Service 之前加载，确保 build context 就绪
+    public static let order = 4 // 在 LSP Service 之前加载，确保 build context 就绪
     public static var category: PluginCategory { .editor }
 
     public nonisolated var providesEditorExtensions: Bool { true }
@@ -40,75 +40,73 @@ public actor EditorXcodePlugin: SuperPlugin, SuperLog {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)开始注册编辑器扩展")
+                XcodePluginLog.logger.info("\(self.t)开始注册编辑器扩展")
             }
         }
-        
+
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
+                XcodePluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
             }
         }
-        
+
         registry.registerCompletionContributor(XcodePlistCompletionContributor())
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistCompletionContributor")
+                XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistCompletionContributor")
             }
         }
-        
+
         registry.registerHoverContributor(XcodePlistHoverContributor())
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistHoverContributor")
+                XcodePluginLog.logger.info("\(self.t)已注册 XcodePlistHoverContributor")
             }
         }
-        
+
         registry.registerHoverContributor(XcodePackageManifestHoverContributor())
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 XcodePackageManifestHoverContributor")
+                XcodePluginLog.logger.info("\(self.t)已注册 XcodePackageManifestHoverContributor")
             }
         }
-        
+
         registry.registerQuickOpenContributor(XcodeProjectQuickOpenContributor())
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 XcodeProjectQuickOpenContributor")
+                XcodePluginLog.logger.info("\(self.t)已注册 XcodeProjectQuickOpenContributor")
             }
         }
-        
+
         registry.registerProjectContextCapability(projectContextCapability)
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 projectContextCapability")
+                XcodePluginLog.logger.info("\(self.t)已注册 projectContextCapability")
             }
         }
-        
+
         registry.registerSemanticCapability(semanticCapability)
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 semanticCapability")
+                XcodePluginLog.logger.info("\(self.t)已注册 semanticCapability")
             }
         }
-        
+
         registry.registerLanguageIntegrationCapability(languageIntegrationCapability)
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)已注册 languageIntegrationCapability")
+                XcodePluginLog.logger.info("\(self.t)已注册 languageIntegrationCapability")
             }
         }
-        
+
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(self.t)编辑器扩展注册完成")
+                XcodePluginLog.logger.info("\(self.t)编辑器扩展注册完成")
             }
         }
     }
-
-    /// 不再在工具栏/状态栏提供 UI
 
     /// 注册此插件暴露给 Agent 的工具。
     @MainActor public func agentTools(context: ToolContext) -> [SuperAgentTool] {

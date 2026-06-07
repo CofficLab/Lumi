@@ -4,7 +4,7 @@ import LumiCoreKit
 
 /// Editor Chat 集成插件：提供代码发送到 AI chat 的上下文菜单操作
 public actor EditorChatIntegrationPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = EditorChatIntegrationPlugin()
     public static let id = "EditorChatIntegration"
     public static let displayName = String(localized: "Chat Integration", bundle: .module)
