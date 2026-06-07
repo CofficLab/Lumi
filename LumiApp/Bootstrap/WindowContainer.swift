@@ -54,10 +54,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 图片附件（每窗口独立的附件）
     let agentAttachmentsVM: WindowAttachmentsVM
 
-    /// 权限请求（每窗口独立的权限弹窗）
-    let permissionRequestVM: WindowPermissionRequestVM
-
-    /// 权限处理（跟随 WindowPermissionRequestVM）
+    /// 权限处理（消息列表内联授权）
     let permissionHandlingVM: WindowPermissionHandlingVM
 
     /// 会话状态（按 conversationId 隔离，跟随窗口更自然）
@@ -81,7 +78,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     lazy var toolCallExecutor: ToolCallExecutor = ToolCallExecutor(
         toolService: _container.toolService,
         agentSessionConfig: _container.agentSessionConfig,
-        permissionRequestVM: permissionRequestVM,
         conversationSendStatusVM: conversationSendStatusVM,
         conversationVM: conversationVM,
         projectVM: projectVM,
@@ -188,12 +184,9 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         self.inputQueueVM = WindowInputQueueVM()
         self.chatDraftVM = WindowChatDraftVM()
         self.agentAttachmentsVM = WindowAttachmentsVM()
-        self.permissionRequestVM = WindowPermissionRequestVM()
         self.taskCancellationVM = WindowTaskCancellationVM()
         self.permissionHandlingVM = WindowPermissionHandlingVM(
-            permissionRequestViewModel: permissionRequestVM,
-            chatHistoryService: container.chatHistoryService,
-            toolService: container.toolService
+            chatHistoryService: container.chatHistoryService
         )
         self.conversationSendStatusVM = WindowConversationStatusVM()
         self.commandSuggestionVM = WindowCommandSuggestionVM(
@@ -605,12 +598,7 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         AgentConversationLock.shared.markCancelled(conversationId)
         AgentConversationLock.shared.release(conversationId)
 
-        if permissionRequestVM.pendingToolPermissionSession?.conversationId == conversationId {
-            permissionRequestVM.setPendingPermissionRequest(nil)
-            permissionRequestVM.setPendingToolPermissionSession(nil)
-        }
-
-        conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
         conversationSendStatusVM.clearStatus(conversationId: conversationId)
         _container.chatHistoryService.clearQueueStatus(forConversationId: conversationId)
         _container.conversationService.setTurnPhase(.idle, forConversationId: conversationId)
@@ -624,7 +612,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
     /// 窗口关闭时清理所有 Agent Turn 状态。
     func cancelAllAgentTurnsForTeardown() {
         AgentTransientPromptStore.shared.clearAll()
-        permissionRequestVM.clearPending()
         conversationSendStatusVM.clearAll()
         AgentConversationLock.shared.releaseAll()
     }
@@ -641,7 +628,6 @@ final class WindowContainer: ObservableObject, Identifiable, SuperLog {
         cancelAllAgentTurnsForTeardown()
         chatDraftVM.clear()
         agentAttachmentsVM.clearPendingAttachments()
-        permissionRequestVM.clearPending()
         conversationSendStatusVM.clearAll()
         editorVM.cleanupForTeardown()
         editorOpenFileURLs.removeAll()

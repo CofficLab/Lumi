@@ -43,7 +43,6 @@ final class ToolCallExecutor: SuperLog {
 
     private let toolService: ToolService
     private let agentSessionConfig: AppLLMVM
-    private let permissionRequestVM: WindowPermissionRequestVM
     private let conversationSendStatusVM: WindowConversationStatusVM
     private let conversationVM: WindowConversationVM
     private let projectVM: WindowProjectVM
@@ -52,7 +51,6 @@ final class ToolCallExecutor: SuperLog {
     init(
         toolService: ToolService,
         agentSessionConfig: AppLLMVM,
-        permissionRequestVM: WindowPermissionRequestVM,
         conversationSendStatusVM: WindowConversationStatusVM,
         conversationVM: WindowConversationVM,
         projectVM: WindowProjectVM,
@@ -60,7 +58,6 @@ final class ToolCallExecutor: SuperLog {
     ) {
         self.toolService = toolService
         self.agentSessionConfig = agentSessionConfig
-        self.permissionRequestVM = permissionRequestVM
         self.conversationSendStatusVM = conversationSendStatusVM
         self.conversationVM = conversationVM
         self.projectVM = projectVM
@@ -112,39 +109,13 @@ final class ToolCallExecutor: SuperLog {
         return message
     }
 
-    /// 若存在待授权的工具调用，弹出权限请求 UI 并返回 true（调用方应暂停循环）。
+    /// 若存在待授权的工具调用，返回 true（调用方应暂停循环；用户在消息列表内联授权）。
     func presentPermissionIfNeeded(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
         guard let calls = assistantMessage.toolCalls,
               let firstPending = calls.first(where: { $0.authorizationState.needsAuthorizationPrompt }) else {
             return false
         }
 
-        let context = ToolExecutionContext(
-            conversationId: conversationId,
-            toolCallId: firstPending.id,
-            toolName: firstPending.name,
-            currentProjectPath: projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath,
-            allowedDirectories: buildAllowedDirectories()
-        )
-        let risk = toolService.evaluateRisk(
-            toolName: firstPending.name,
-            argumentsJSON: firstPending.arguments,
-            context: context
-        )
-        let request = PermissionRequest(
-            toolName: firstPending.name,
-            argumentsString: firstPending.arguments,
-            toolCallID: firstPending.id,
-            riskLevel: risk
-        )
-
-        permissionRequestVM.setPendingPermissionRequest(request)
-        permissionRequestVM.setPendingToolPermissionSession(
-            PendingToolPermissionSession(
-                conversationId: conversationId,
-                assistantMessageId: assistantMessage.id
-            )
-        )
         conversationSendStatusVM.setStatus(
             conversationId: conversationId,
             content: "等待工具授权：\(firstPending.name)…"

@@ -1,74 +1,38 @@
 import Foundation
 import AgentToolKit
 
-///
-/// ## 初始化规则
-///
-/// 由 `WindowContainer` 持有，通过 `.environmentObject()` 注入。n处理工具权限授权流程。
-/// 处理工具权限浮层：写回 `ToolCall.authorizationState`，多工具依次询问，结束后通知继续发送管线。
-///
-/// ## 初始化规则
-///
-/// 由 `WindowContainer` 持有并通过 `.environmentObject()` 注入。
-/// 处理工具权限授权流程。
+/// 处理消息列表内联工具授权：写回 `ToolCall.authorizationState`，全部处理完后恢复发送管线。
 @MainActor
 final class WindowPermissionHandlingVM: ObservableObject {
-    private let permissionRequestViewModel: WindowPermissionRequestVM
     private let chatHistoryService: ChatHistoryService
-    private let toolService: ToolService
 
-    init(
-        permissionRequestViewModel: WindowPermissionRequestVM,
-        chatHistoryService: ChatHistoryService,
-        toolService: ToolService
-    ) {
-        self.permissionRequestViewModel = permissionRequestViewModel
+    init(chatHistoryService: ChatHistoryService) {
         self.chatHistoryService = chatHistoryService
-        self.toolService = toolService
     }
 
-    func respondToPermissionRequest(allowed: Bool) async {
-        guard let request = permissionRequestViewModel.pendingPermissionRequest,
-              let session = permissionRequestViewModel.pendingToolPermissionSession else { return }
-
-        let messages = chatHistoryService.loadMessages(forConversationId: session.conversationId) ?? []
-        guard var assistant = messages.first(where: { $0.id == session.assistantMessageId }),
+    func respondToToolPermission(
+        conversationId: UUID,
+        assistantMessageId: UUID,
+        toolCallId: String,
+        allowed: Bool
+    ) async {
+        let messages = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+        guard var assistant = messages.first(where: { $0.id == assistantMessageId }),
               var calls = assistant.toolCalls else {
-            clearPending()
             return
         }
 
-        guard let idx = calls.firstIndex(where: { $0.id == request.toolCallID }) else {
-            clearPending()
-            return
-        }
+        guard let idx = calls.firstIndex(where: { $0.id == toolCallId }) else { return }
 
         calls[idx].authorizationState = allowed ? .userApproved : .userRejected
         assistant.toolCalls = calls
 
-        _ = await chatHistoryService.updateMessageAsync(assistant, conversationId: session.conversationId)
+        _ = await chatHistoryService.updateMessageAsync(assistant, conversationId: conversationId)
 
-        permissionRequestViewModel.setPendingPermissionRequest(nil)
-
-        if let next = calls.first(where: { $0.authorizationState.needsAuthorizationPrompt }) {
-            let risk = toolService.evaluateRisk(toolName: next.name, argumentsJSON: next.arguments)
-            permissionRequestViewModel.setPendingPermissionRequest(
-                PermissionRequest(
-                    toolName: next.name,
-                    argumentsString: next.arguments,
-                    toolCallID: next.id,
-                    riskLevel: risk
-                )
-            )
+        guard !calls.contains(where: { $0.authorizationState.needsAuthorizationPrompt }) else {
             return
         }
 
-        permissionRequestViewModel.setPendingToolPermissionSession(nil)
-        NotificationCenter.postResumeSendAfterToolPermission(conversationId: session.conversationId)
-    }
-
-    private func clearPending() {
-        permissionRequestViewModel.setPendingPermissionRequest(nil)
-        permissionRequestViewModel.setPendingToolPermissionSession(nil)
+        NotificationCenter.postResumeSendAfterToolPermission(conversationId: conversationId)
     }
 }

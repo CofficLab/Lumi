@@ -17,7 +17,7 @@ import os
 ///
 /// **窗口作用域（在 WindowContainer 中）：**
 /// WindowEditorVM, WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessageQueueVM,
-/// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
+/// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionHandlingVM,
 /// WindowConversationStatusVM, WindowTaskCancellationVM, WindowCommandSuggestionVM,
 /// WindowProjectContextRequestVM
 @MainActor
