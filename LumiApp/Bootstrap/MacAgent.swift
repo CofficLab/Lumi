@@ -307,5 +307,4 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 #Preview("App") {
     ContentLayout()
         .inRootView()
-        .withDebugBar()
 }

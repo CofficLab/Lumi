@@ -71,5 +71,4 @@ extension ContentLayout {
 #Preview("App") {
     ContentLayout()
         .inRootView(container: WindowContainer(container: RootContainer.shared))
-        .withDebugBar()
 }

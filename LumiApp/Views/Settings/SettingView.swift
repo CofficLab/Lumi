@@ -181,5 +181,4 @@ struct SettingView: View {
 #Preview("App") {
     ContentLayout()
         .inRootView()
-        .withDebugBar()
 }

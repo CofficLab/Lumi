@@ -130,5 +130,4 @@ final class CheckForUpdatesViewModel: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .inRootView(container: WindowContainer(container: RootContainer.shared))
-        .withDebugBar()
 }
