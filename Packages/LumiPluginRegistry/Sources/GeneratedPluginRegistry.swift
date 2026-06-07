@@ -138,7 +138,6 @@ import RClickPlugin
 import RegistryManagerPlugin
 import RequestLogPlugin
 import SampleDecorationEditorPlugin
-import SampleInsightsEditorPlugin
 import ScreenshotPlugin
 import ShowImagePlugin
 import SkillPlugin
@@ -318,7 +317,6 @@ public enum GeneratedPluginRegistry {
         plugins.append(RegistryManagerPlugin.shared)
         plugins.append(RequestLogPlugin.shared)
         plugins.append(SampleDecorationEditorPlugin.shared)
-        plugins.append(SampleInsightsEditorPlugin.shared)
         plugins.append(ScreenshotPlugin.shared)
         plugins.append(ShowImagePlugin.shared)
         plugins.append(SkillPlugin.shared)

@@ -300,7 +300,6 @@
 				RegistryManagerPlugin,
 				RequestLogPlugin,
 				SampleDecorationEditorPlugin,
-				SampleInsightsEditorPlugin,
 				ScreenshotPlugin,
 				ShowImagePlugin,
 				SkillPlugin,
