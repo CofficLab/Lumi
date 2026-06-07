@@ -166,7 +166,6 @@ import ThemeVscodeDarkPlugin
 import ThemeVscodeLightPlugin
 import ThemeWinterPlugin
 import ToolCallLoopDetectionPlugin
-import ToolPermissionPlugin
 import VerbosityPlugin
 import VueEditorPlugin
 import WebFetchPlugin
@@ -347,7 +346,6 @@ public enum GeneratedPluginRegistry {
         plugins.append(ThemeVscodeLightPlugin.shared)
         plugins.append(ThemeWinterPlugin.shared)
         plugins.append(ToolCallLoopDetectionPlugin.shared)
-        plugins.append(AgentToolPermissionPlugin.shared)
         plugins.append(VerbosityPlugin.shared)
         plugins.append(VueEditorPlugin.shared)
         plugins.append(WebFetchPlugin.shared)

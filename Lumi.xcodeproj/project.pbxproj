@@ -328,7 +328,6 @@
 				ThemeVscodeLightPlugin,
 				ThemeWinterPlugin,
 				ToolCallLoopDetectionPlugin,
-				ToolPermissionPlugin,
 				VerbosityPlugin,
 				VueEditorPlugin,
 				WebFetchPlugin,
