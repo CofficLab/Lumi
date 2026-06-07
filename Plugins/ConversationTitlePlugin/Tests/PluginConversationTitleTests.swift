@@ -12,10 +12,10 @@ import LumiCoreKit
 }
 
 @MainActor
-@Test func pluginRegistersTitleMiddleware() {
+@Test func pluginRegistersTitleHintMiddlewareOnly() {
     let middlewareIds = ConversationTitlePlugin.shared.sendMiddlewares().map(\.id)
 
-    #expect(middlewareIds.contains("auto.conversation.title"))
+    #expect(!middlewareIds.contains("auto.conversation.title"))
     #expect(middlewareIds.contains("conversation-title-hint"))
 }
 

@@ -5,7 +5,9 @@ import LumiCoreKit
 enum ConversationTitleRuntimeBridge {
     static var fetchConversationTitle: (UUID) -> String? = { _ in nil }
     static var updateConversationTitle: (UUID, String) -> Bool = { _, _ in false }
+    static var loadMessages: (UUID) -> [ChatMessage] = { _ in [] }
     static var llmSendService: (any LLMSendService)?
+    static var inFlightConversationIds = Set<UUID>()
 }
 
 @MainActor

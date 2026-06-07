@@ -7,7 +7,7 @@ import SwiftUI
 
 /// Conversation Title Plugin: 自动对话标题生成
 ///
-/// 在首条用户消息发送后，通过 LLM 自动生成简洁的对话标题。
+/// 首条用户消息落库后，通过 DB 事件在后台独立生成简洁的对话标题。
 public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-title")
@@ -33,16 +33,21 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
     public func configureRuntime(context: PluginRuntimeContext) {
         ConversationTitleRuntimeBridge.fetchConversationTitle = context.fetchConversationTitle
         ConversationTitleRuntimeBridge.updateConversationTitle = context.updateConversationTitle
+        ConversationTitleRuntimeBridge.loadMessages = context.loadMessages
         ConversationTitleRuntimeBridge.llmSendService = context.llmSendService
+    }
+
+    @MainActor
+    public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(ConversationTitleEventObserver(content: content()))
     }
 
     // MARK: - Send Middlewares
 
-    /// 发送管线中间件：首条消息后自动生成标题 + 注入标题漂移提示
+    /// 发送管线中间件：注入标题漂移提示（标题生成已改为 DB 事件驱动）
     @MainActor
     public func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [
-            AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware()),
             AnySuperSendMiddleware(ConversationTitleHintSendMiddleware()),
         ]
     }
