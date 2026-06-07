@@ -9,8 +9,6 @@ import os
 @MainActor
 final class SenderService: SuperLog {
     nonisolated static let emoji = "📬"
-    nonisolated static let verbose: Bool = true
-
     private weak var plugin: MessageSenderPlugin?
     private var conversationStore: any AgentConversationStore = UnavailableAgentConversationStore()
     private var llmSendService: any LLMSendService = UnavailableLLMSendService()
@@ -34,30 +32,30 @@ final class SenderService: SuperLog {
 
     func handleMessageSaved(conversationId: UUID) {
         if inFlightConversationIds.contains(conversationId) {
-            if AgentSendPipelineLog.enabled {
-                AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] skip: inFlight")
+            if MessageSenderPlugin.verbose {
+                logger.info("\(Self.t)skip: inFlight")
             }
             return
         }
 
         let phase = conversationStore.loadTurnPhase(for: conversationId)
         guard phase == .processing else {
-            if AgentSendPipelineLog.enabled {
-                AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] skip: phase=\(phase.rawValue)")
+            if MessageSenderPlugin.verbose {
+                logger.info("\(Self.t)skip: phase=\(phase.rawValue)")
             }
             return
         }
 
         let messages = conversationStore.loadMessages(for: conversationId)
         guard AgentTurnDerivation.shouldRequestLLM(messages: messages) else {
-            if AgentSendPipelineLog.enabled {
-                AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] skip: shouldRequestLLM=false")
+            if MessageSenderPlugin.verbose {
+                logger.info("\(Self.t)skip: shouldRequestLLM=false")
             }
             return
         }
 
-        if AgentSendPipelineLog.enabled {
-            AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] 开始 LLM 请求 messages=\(messages.count)")
+        if MessageSenderPlugin.verbose {
+            logger.info("\(Self.t)开始 LLM 请求 messages=\(messages.count)")
         }
         Task {
             await performSend(conversationId: conversationId, storageMessages: messages)
@@ -81,20 +79,20 @@ final class SenderService: SuperLog {
         switch result {
         case let .success(assistantMessage):
             let toolCount = assistantMessage.toolCalls?.count ?? 0
-            if AgentSendPipelineLog.enabled {
-                AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] LLM 成功 toolCalls=\(toolCount) → saveMessage")
+            if MessageSenderPlugin.verbose {
+                logger.info("\(Self.t)LLM 成功 toolCalls=\(toolCount) → saveMessage")
             }
             conversationStore.saveMessage(assistantMessage, conversationId: conversationId)
 
         case .cancelled:
-            if AgentSendPipelineLog.enabled {
+            if MessageSenderPlugin.verbose {
                 AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] LLM 已取消")
             }
 
         case let .failed(errorMessage):
-            if AgentSendPipelineLog.enabled {
+            if MessageSenderPlugin.verbose {
                 let summary = errorMessage.rawErrorDetail ?? errorMessage.content
-                AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ④ [MessageSender] LLM 失败: \(summary) → saveMessage")
+                logger.info("\(Self.t)LLM 失败: \(summary) → saveMessage")
             }
             conversationStore.saveMessage(errorMessage, conversationId: conversationId)
         }
@@ -120,7 +118,7 @@ final class SenderService: SuperLog {
             }
         }
 
-        if Self.verbose {
+        if MessageSenderPlugin.verbose {
             logger.info("\(Self.t)流式请求 provider=\(config.providerId) model=\(config.model) messages=\(messagesForLLM.count) tools=\(toolsArg?.count ?? 0)")
         }
 
