@@ -4,20 +4,20 @@ import LumiCoreKit
 /// 桥接 `AgentConversationStore` 协议与 SwiftData 持久化服务。
 @MainActor
 final class LiveAgentConversationStore: AgentConversationStore, Sendable {
-    private let chatHistoryService: ChatHistoryService
+    private let messageService: MessageService
     private let conversationService: ConversationService
 
-    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService) {
-        self.chatHistoryService = chatHistoryService
+    init(messageService: MessageService, conversationService: ConversationService) {
+        self.messageService = messageService
         self.conversationService = conversationService
     }
 
     func loadMessages(for conversationId: UUID) -> [ChatMessage] {
-        chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+        messageService.loadMessages(forConversationId: conversationId) ?? []
     }
 
     func saveMessage(_ message: ChatMessage, conversationId: UUID) {
-        _ = chatHistoryService.saveMessage(message, toConversationId: conversationId)
+        _ = messageService.saveMessage(message, toConversationId: conversationId)
     }
 
     func loadTurnPhase(for conversationId: UUID) -> AgentTurnPhase {

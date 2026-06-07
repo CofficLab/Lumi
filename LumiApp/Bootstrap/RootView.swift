@@ -260,7 +260,7 @@ struct RootView<Content>: View where Content: View {
     private func configurePluginRuntimeContext() {
         container.conversationTurnServices.setRootContainer(container)
         let agentConversationStore = LiveAgentConversationStore(
-            chatHistoryService: container.chatHistoryService,
+            messageService: container.messageService,
             conversationService: container.conversationService
         )
         container.pluginVM.configureRuntime(context: PluginRuntimeContext(

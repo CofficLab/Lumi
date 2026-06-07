@@ -4,22 +4,22 @@ import SwiftData
 
 /// 历史数据查询服务的内核实现
 ///
-/// 桥接 `HistoryQueryService` 协议与 `ChatHistoryService` 的 SwiftData 操作。
+/// 桥接 `HistoryQueryService` 协议与 `MessageService` / `ConversationService` 的 SwiftData 操作。
 /// 所有查询在主线程执行，返回轻量 DTO，不暴露 Entity 细节给插件层。
 @MainActor
 final class LiveHistoryQueryService: HistoryQueryService, Sendable {
-    private let chatHistoryService: ChatHistoryService
+    private let messageService: MessageService
     private let conversationService: ConversationService
 
-    init(chatHistoryService: ChatHistoryService, conversationService: ConversationService) {
-        self.chatHistoryService = chatHistoryService
+    init(messageService: MessageService, conversationService: ConversationService) {
+        self.messageService = messageService
         self.conversationService = conversationService
     }
 
     // MARK: - HistoryQueryService
 
     func fetchMessageCount() async -> Int {
-        let context = chatHistoryService.getContext()
+        let context = messageService.getContext()
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { message in
                 message.conversation != nil
@@ -31,7 +31,7 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
     func fetchMessagePage(limit: Int, offset: Int) async -> [HistoryMessageRow] {
         guard limit > 0, offset >= 0 else { return [] }
 
-        let context = chatHistoryService.getContext()
+        let context = messageService.getContext()
 
         var descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { message in
@@ -72,8 +72,7 @@ final class LiveHistoryQueryService: HistoryQueryService, Sendable {
         )
 
         return conversations.map { conv in
-            // 获取该对话的消息数
-            let context = chatHistoryService.getContext()
+            let context = messageService.getContext()
             let convId = conv.id
             let countDescriptor = FetchDescriptor<ChatMessageEntity>(
                 predicate: #Predicate<ChatMessageEntity> { msg in

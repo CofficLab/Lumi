@@ -241,7 +241,7 @@ extension ConversationService {
 
 extension ConversationService {
 
-    /// 消息保存前刷新会话 `updatedAt`（由 ChatHistoryService 在同一 context.save 中一并持久化）。
+    /// 消息保存前刷新会话 `updatedAt`（由 MessageService 在同一 context.save 中一并持久化）。
     func touchUpdatedAt(forConversationId conversationId: UUID) {
         guard let conversation = fetchConversation(id: conversationId) else { return }
         conversation.updatedAt = Date()
