@@ -10,6 +10,7 @@ struct ConversationTitleGenerator {
 
     func generate(
         userMessage: String,
+        conversationId: UUID,
         config: LLMConfig,
         sendMessage: SendMessage
     ) async -> String {
@@ -33,13 +34,11 @@ struct ConversationTitleGenerator {
         """
 
         do {
-            let titleConfig = config
-
             let titleMessages: [ChatMessage] = [
-                ChatMessage(role: .user, conversationId: UUID(), content: titlePrompt),
+                ChatMessage(role: .user, conversationId: conversationId, content: titlePrompt),
             ]
 
-            let response = try await sendMessage(titleMessages, titleConfig)
+            let response = try await sendMessage(titleMessages, config)
             guard response.role == .assistant else {
                 return fallbackTitle
             }

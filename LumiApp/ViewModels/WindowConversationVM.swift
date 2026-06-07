@@ -284,17 +284,6 @@ final class WindowConversationVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 基于第一条消息生成会话标题
-    ///
-    /// 使用 LLM 根据用户的第一条消息自动生成会话标题。
-    ///
-    /// - Parameters:
-    ///   - userMessage: 用户的第一条消息
-    ///   - config: LLM 配置
-    /// - Returns: 生成的标题
-    func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
-        await chatHistoryService.generateConversationTitle(from: userMessage, config: config)
-    }
 
     // MARK: - 会话选择
 

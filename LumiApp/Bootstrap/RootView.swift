@@ -434,6 +434,16 @@ struct RootView<Content>: View where Content: View {
             },
             providerInfoProvider: { [container] providerId in
                 container.agentSessionConfig.allProviders.first { $0.id == providerId }
+            },
+            fetchConversationTitle: { [container] conversationId in
+                container.conversationService.fetchConversation(id: conversationId)?.title
+            },
+            updateConversationTitle: { [container] conversationId, title in
+                guard let conversation = container.conversationService.fetchConversation(id: conversationId) else {
+                    return false
+                }
+                container.conversationService.updateConversationTitle(conversation, newTitle: title)
+                return true
             }
         ))
     }
@@ -850,5 +860,4 @@ extension View {
 #Preview("App") {
     ContentLayout()
         .inRootView(container: WindowContainer(container: RootContainer.shared))
-        .withDebugBar()
 }

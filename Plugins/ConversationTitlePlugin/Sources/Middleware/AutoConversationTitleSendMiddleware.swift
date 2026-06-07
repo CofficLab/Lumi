@@ -18,10 +18,7 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
                 conversationId: snapshot.conversationId,
                 userText: snapshot.text,
                 role: snapshot.role,
-                previousMessages: ctx.previousMessages,
-                currentTitle: ctx.conversationTitleProvider(snapshot.conversationId),
-                generateTitle: ctx.conversationTitleGenerator,
-                updateTitle: ctx.conversationTitleUpdater
+                previousMessages: ctx.previousMessages
             )
         }
     }
@@ -32,10 +29,7 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         conversationId: UUID,
         userText: String,
         role: MessageRole,
-        previousMessages: [ChatMessage],
-        currentTitle: String?,
-        generateTitle: @escaping @MainActor (_ userMessage: String) async -> String?,
-        updateTitle: @escaping @MainActor (_ conversationId: UUID, _ title: String) -> Bool
+        previousMessages: [ChatMessage]
     ) async {
         let newConversation = String(localized: "New Conversation", bundle: .module)
         let newChat = String(localized: "New Chat", bundle: .module)
@@ -44,7 +38,7 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
             AutoConversationTitlePolicy.PreflightInput(
                 role: role,
                 userText: userText,
-                currentTitle: currentTitle ?? "",
+                currentTitle: ConversationTitleRuntimeBridge.fetchConversationTitle(conversationId) ?? "",
                 newConversationTitle: newConversation,
                 newChatTitlePrefix: newChat
             )
@@ -54,7 +48,11 @@ public struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         let userCount = previousMessages.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
-        guard let title = await generateTitle(trimmed) else { return }
-        _ = updateTitle(conversationId, title)
+        guard let title = await ConversationTitleService.generateTitle(
+            userMessage: trimmed,
+            conversationId: conversationId
+        ) else { return }
+
+        _ = ConversationTitleRuntimeBridge.updateConversationTitle(conversationId, title)
     }
 }

@@ -148,6 +148,12 @@ public struct PluginRuntimeContext {
     /// 按 ID 查找供应商信息。
     public let providerInfoProvider: @MainActor (String) -> LLMProviderInfo?
 
+    /// 读取会话标题。
+    public let fetchConversationTitle: @MainActor (UUID) -> String?
+
+    /// 更新会话标题。
+    public let updateConversationTitle: @MainActor (UUID, String) -> Bool
+
     public init(
         editorServiceProvider: @escaping @MainActor (PluginContext) -> AnyObject? = { _ in nil },
         openFile: @escaping @MainActor (URL, String?, PluginContext) async -> Void = { _, _, _ in },
@@ -199,6 +205,8 @@ public struct PluginRuntimeContext {
         providerTypeProvider: @escaping @MainActor (String) -> (any SuperLLMProvider.Type)? = { _ in nil },
         selectedProviderIdProvider: @escaping @MainActor () -> String = { "" },
         providerInfoProvider: @escaping @MainActor (String) -> LLMProviderInfo? = { _ in nil },
+        fetchConversationTitle: @escaping @MainActor (UUID) -> String? = { _ in nil },
+        updateConversationTitle: @escaping @MainActor (UUID, String) -> Bool = { _, _ in false },
     ) {
         self.editorServiceProvider = editorServiceProvider
         self.openFile = openFile
@@ -242,5 +250,7 @@ public struct PluginRuntimeContext {
         self.providerTypeProvider = providerTypeProvider
         self.selectedProviderIdProvider = selectedProviderIdProvider
         self.providerInfoProvider = providerInfoProvider
+        self.fetchConversationTitle = fetchConversationTitle
+        self.updateConversationTitle = updateConversationTitle
     }
 }

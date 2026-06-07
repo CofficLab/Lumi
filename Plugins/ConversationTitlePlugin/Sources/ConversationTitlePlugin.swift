@@ -29,6 +29,13 @@ public actor ConversationTitlePlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    @MainActor
+    public func configureRuntime(context: PluginRuntimeContext) {
+        ConversationTitleRuntimeBridge.fetchConversationTitle = context.fetchConversationTitle
+        ConversationTitleRuntimeBridge.updateConversationTitle = context.updateConversationTitle
+        ConversationTitleRuntimeBridge.llmSendService = context.llmSendService
+    }
+
     // MARK: - Send Middlewares
 
     /// 发送管线中间件：首条消息后自动生成标题 + 注入标题漂移提示

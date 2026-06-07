@@ -7,30 +7,25 @@ import Foundation
 ///
 /// 在每次发送用户消息前，将当前对话标题注入到 transientSystemPrompts 中，
 /// 并指导 LLM 在话题偏离标题时调用 `update_conversation_title` 工具更新标题。
-///
-/// ## 工作流程
-/// 1. 获取当前对话的标题
-/// 2. 将标题和提示词注入到 transientSystemPrompts
-/// 3. LLM 接收到提示后，如发现话题偏离，可调用工具更新标题
 @MainActor
 public final class ConversationTitleHintSendMiddleware: SuperSendMiddleware, SuperLog {
     public nonisolated static let emoji = "🏷️"
     public nonisolated static let verbose: Bool = false
     public let id: String = "conversation-title-hint"
-    public let order: Int = 5  // 在基础上下文注入之后执行
+    public let order: Int = 5
 
     public func handle(
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
-        guard let title = ctx.conversationTitleProvider(ctx.conversationId)?.trimmingCharacters(in: .whitespacesAndNewlines),
+        guard let title = ConversationTitleRuntimeBridge.fetchConversationTitle(ctx.conversationId)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
               !title.isEmpty else {
             await next(ctx)
             return
         }
 
         let language = ctx.languagePreference
-
         let prompt = Self.buildHintPrompt(currentTitle: title, language: language)
         ctx.transientSystemPrompts.append(prompt)
 
