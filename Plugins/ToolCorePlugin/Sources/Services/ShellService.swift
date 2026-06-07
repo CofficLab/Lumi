@@ -107,7 +107,7 @@ public class ShellService: SuperLog {
 
     private init() {
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t) Shell 服务已初始化（单例）")
+            ToolCorePlugin.logger.info("\(self.t) Shell 服务已初始化（单例）")
         }
     }
 
@@ -138,12 +138,12 @@ public class ShellService: SuperLog {
 
     public func execute(_ command: String) async throws -> String {
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t) 执行命令: \n\(command)")
+            ToolCorePlugin.logger.info("\(self.t) 执行命令: \n\(command)")
         }
         // Capture mutable state on MainActor
         let workingDirectory = await MainActor.run { self.currentDirectory }
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t) workingDirectory: \(workingDirectory)")
+            ToolCorePlugin.logger.info("\(self.t) workingDirectory: \(workingDirectory)")
         }
         await MainActor.run {
             isRunning = true
@@ -180,20 +180,20 @@ public class ShellService: SuperLog {
                 onOutputData: { chunk in
                     executionProgress.append(chunk)
                     if Self.verbose {
-                        AgentCoreToolsPlugin.logger.info("\(self.t) stdout +\(chunk.count) bytes")
+                        ToolCorePlugin.logger.info("\(self.t) stdout +\(chunk.count) bytes")
                     }
                 },
                 onErrorData: { chunk in
                     executionProgress.append(chunk)
                     if Self.verbose {
-                        AgentCoreToolsPlugin.logger.info("\(self.t) stderr +\(chunk.count) bytes")
+                        ToolCorePlugin.logger.info("\(self.t) stderr +\(chunk.count) bytes")
                     }
                 }
             )
             if Self.verbose {
                 let duration = Date().timeIntervalSince(startedAt)
-                AgentCoreToolsPlugin.logger.info("\(self.t) exitCode=\(shellResult.exitCode) duration=\(String(format: "%.3f", duration))s")
-                AgentCoreToolsPlugin.logger.info("\(self.t) stdout=\(shellResult.stdout.count) chars stderr=\(shellResult.stderr.count) chars")
+                ToolCorePlugin.logger.info("\(self.t) exitCode=\(shellResult.exitCode) duration=\(String(format: "%.3f", duration))s")
+                ToolCorePlugin.logger.info("\(self.t) stdout=\(shellResult.stdout.count) chars stderr=\(shellResult.stderr.count) chars")
             }
             result = shellResult.stdout + (shellResult.stderr.isEmpty ? "" : "\nError:\n\(shellResult.stderr)")
         } catch {

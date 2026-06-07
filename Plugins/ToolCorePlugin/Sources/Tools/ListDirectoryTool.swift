@@ -53,7 +53,7 @@ public struct ListDirectoryTool: SuperAgentTool, SuperLog {
     public func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
         let baseRisk: CommandRiskLevel = .low
         guard let context else { return baseRisk }
-        return AgentCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+        return ToolCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -79,31 +79,31 @@ public struct ListDirectoryTool: SuperAgentTool, SuperLog {
         let recursive = arguments["recursive"]?.value as? Bool ?? false
 
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)列出目录：\(path.components(separatedBy: "/").last ?? path)（递归：\(recursive ? "是" : "否")）")
+            ToolCorePlugin.logger.info("\(self.t)列出目录：\(path.components(separatedBy: "/").last ?? path)（递归：\(recursive ? "是" : "否")）")
         }
 
         do {
             let listing = try lister.list(path: path, recursive: recursive)
             if recursive {
                 if listing.truncated, Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)文件数量过多，已停止列表（限制 500 个）")
+                    ToolCorePlugin.logger.info("\(self.t)文件数量过多，已停止列表（限制 500 个）")
                 }
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)递归列表完成：\(listing.itemCount) 个项目")
+                    ToolCorePlugin.logger.info("\(self.t)递归列表完成：\(listing.itemCount) 个项目")
                 }
             } else {
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)目录列表完成：\(listing.itemCount) 个项目")
+                    ToolCorePlugin.logger.info("\(self.t)目录列表完成：\(listing.itemCount) 个项目")
                 }
             }
             return listing.output
         } catch let error as WorkspaceFileError {
             if Self.verbose {
-                AgentCoreToolsPlugin.logger.error("\(self.t)路径不存在：\(path)")
+                ToolCorePlugin.logger.error("\(self.t)路径不存在：\(path)")
             }
             return "Error: \(error.localizedDescription)"
         } catch {
-            AgentCoreToolsPlugin.logger.error("\(self.t)列出目录失败：\(error.localizedDescription)")
+            ToolCorePlugin.logger.error("\(self.t)列出目录失败：\(error.localizedDescription)")
             return "Error listing directory: \(error.localizedDescription)"
         }
     }

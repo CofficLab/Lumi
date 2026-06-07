@@ -1,7 +1,7 @@
 import LumiCoreKit
 import ToolAvailablePlugin
 import AgentContextSyncPlugin
-import AgentCoreToolsPlugin
+import ToolCorePlugin
 import AgentDelayMessagePlugin
 import AgentGitHubToolsPlugin
 import ConversationLanguagePlugin
@@ -179,7 +179,7 @@ public enum GeneratedPluginRegistry {
         var plugins: [any LumiCoreKit.SuperPlugin] = []
         plugins.append(ToolAvailablePlugin.shared)
         plugins.append(AgentContextSyncPlugin.shared)
-        plugins.append(AgentCoreToolsPlugin.shared)
+        plugins.append(ToolCorePlugin.shared)
         plugins.append(DelayMessagePlugin.shared)
         plugins.append(GitHubToolsPlugin.shared)
         plugins.append(ConversationLanguagePlugin.shared)

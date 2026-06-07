@@ -86,7 +86,7 @@ Usage:
     public func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
         let baseRisk: CommandRiskLevel = .high
         guard let context else { return baseRisk }
-        return AgentCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+        return ToolCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -110,7 +110,7 @@ Usage:
         let replaceAll = arguments["replace_all"]?.value as? Bool ?? false
 
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)编辑文件：\((filePath as NSString).expandingTildeInPath)")
+            ToolCorePlugin.logger.info("\(self.t)编辑文件：\((filePath as NSString).expandingTildeInPath)")
         }
 
         do {
@@ -118,14 +118,14 @@ Usage:
             switch outcome {
             case .createdNewFile:
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)创建新文件：\((filePath as NSString).expandingTildeInPath)")
+                    ToolCorePlugin.logger.info("\(self.t)创建新文件：\((filePath as NSString).expandingTildeInPath)")
                 }
                 return "Created new file: \(filePath)"
             case .wroteEmptyFile:
                 return "Wrote content to empty file: \(filePath)"
             case .updated(_, let matchCount, let replaceAll, let diff):
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)文件编辑成功：\((filePath as NSString).expandingTildeInPath)")
+                    ToolCorePlugin.logger.info("\(self.t)文件编辑成功：\((filePath as NSString).expandingTildeInPath)")
                 }
 
                 if replaceAll {

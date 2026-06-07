@@ -85,7 +85,7 @@ public struct ShellTool: SuperAgentTool, SuperLog {
 
         let riskLevel = CommandRiskEvaluator.evaluate(command: command)
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(String(command.prefix(40)))")
+            ToolCorePlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(String(command.prefix(40)))")
         }
 
         let shellService = ShellService.shared
@@ -95,7 +95,7 @@ public struct ShellTool: SuperAgentTool, SuperLog {
             try context.checkCancellation()
             return result
         } catch {
-            AgentCoreToolsPlugin.logger.error("\(self.t)Shell execution failed: \(error.localizedDescription)")
+            ToolCorePlugin.logger.error("\(self.t)Shell execution failed: \(error.localizedDescription)")
             throw ShellToolError.executionFailed(underlying: error)
         }
     }

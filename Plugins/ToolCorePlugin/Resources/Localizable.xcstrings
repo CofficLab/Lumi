@@ -1,60 +1,60 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Agent Core Tools": {
+    "Tool Core": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Agent Core Tools"
+            "value": "Tool Core"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Agent 核心工具"
+            "value": "核心工具"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Agent 核心工具"
+            "value": "核心工具"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Agent 核心工具"
+            "value": "核心工具"
           }
         }
       }
     },
-    "提供 Lumi 的基础 Agent 工具（文件/命令）。": {
+    "提供 Lumi 的基础工具（文件/命令）。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provides Lumi's basic Agent tools (file/command)."
+            "value": "Provides Lumi's core tools (file/command)."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供 Lumi 的基础 Agent 工具（文件/命令）。"
+            "value": "提供 Lumi 的基础工具（文件/命令）。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供 Lumi 的基礎 Agent 工具（檔案/命令）。"
+            "value": "提供 Lumi 的基礎工具（檔案/命令）。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供 Lumi 的基礎 Agent 工具（文件/命令）。"
+            "value": "提供 Lumi 的基礎工具（文件/命令）。"
           }
         }
       }

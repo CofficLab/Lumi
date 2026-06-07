@@ -169,7 +169,7 @@
 			membershipExceptions = (
 				ToolAvailablePlugin,
 				AgentContextSyncPlugin,
-				AgentCoreToolsPlugin,
+				ToolCorePlugin,
 				AgentDelayMessagePlugin,
 				AgentGitHubToolsPlugin,
 				AgentMCPToolsPlugin,

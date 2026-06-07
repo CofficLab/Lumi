@@ -1,5 +1,5 @@
 import Testing
-@testable import AgentCoreToolsPlugin
+@testable import ToolCorePlugin
 
 @Test func packageLoads() async throws {
     #expect(Bool(true))

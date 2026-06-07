@@ -56,7 +56,7 @@ public struct WriteFileTool: SuperAgentTool, SuperLog {
     public func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
         let baseRisk: CommandRiskLevel = .high
         guard let context else { return baseRisk }
-        return AgentCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+        return ToolCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -86,17 +86,17 @@ public struct WriteFileTool: SuperAgentTool, SuperLog {
 
         let fileName = path.components(separatedBy: "/").last ?? path
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)写入文件：\(fileName)（\(content.count) 字符）")
+            ToolCorePlugin.logger.info("\(self.t)写入文件：\(fileName)（\(content.count) 字符）")
         }
 
         do {
             try writer.write(path: path, content: content)
             if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t)文件写入成功：\(fileName)")
+                ToolCorePlugin.logger.info("\(self.t)文件写入成功：\(fileName)")
             }
             return "Successfully wrote to \(path)"
         } catch {
-            AgentCoreToolsPlugin.logger.error("\(self.t)写入文件失败：\(error.localizedDescription)")
+            ToolCorePlugin.logger.error("\(self.t)写入文件失败：\(error.localizedDescription)")
             return "Error writing file: \(error.localizedDescription)"
         }
     }

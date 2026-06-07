@@ -60,7 +60,7 @@ public struct ReadFileTool: SuperAgentTool, SuperLog {
     public func permissionRiskLevel(arguments: [String: ToolArgument], context: ToolExecutionContext?) -> CommandRiskLevel {
         let baseRisk: CommandRiskLevel = .low
         guard let context else { return baseRisk }
-        return AgentCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
+        return ToolCoreToolRisk.elevatedRiskIfPathOutOfBounds(arguments: arguments, baseRisk: baseRisk, context: context)
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -88,14 +88,14 @@ public struct ReadFileTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
+            ToolCorePlugin.logger.info("\(self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
         }
 
         do {
             switch try reader.read(path: path) {
             case .image(let data, let mimeType, let resolvedPath):
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)图片读取成功：\(resolvedPath)")
+                    ToolCorePlugin.logger.info("\(self.t)图片读取成功：\(resolvedPath)")
                 }
 
                 return ToolImageResultCodec.encode(
@@ -105,28 +105,28 @@ public struct ReadFileTool: SuperAgentTool, SuperLog {
 
             case .nonUTF8(_, let supportedImageExtensions):
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.error("\(self.t)文件内容不是有效的 UTF-8 文本")
+                    ToolCorePlugin.logger.error("\(self.t)文件内容不是有效的 UTF-8 文本")
                 }
                 return "Error: File content is not valid UTF-8 text. If this is an image, supported formats are: \(supportedImageExtensions.joined(separator: ", "))."
 
             case .text(let content, _, let truncated):
                 if truncated {
                     if Self.verbose {
-                        AgentCoreToolsPlugin.logger.info("\(self.t)文件过大，已截断输出（限制 50KB）")
+                        ToolCorePlugin.logger.info("\(self.t)文件过大，已截断输出（限制 50KB）")
                     }
                     return "\(content)\n... (File truncated due to size limit)"
                 }
 
                 if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t)文件读取成功：\(content.count) 字符")
+                    ToolCorePlugin.logger.info("\(self.t)文件读取成功：\(content.count) 字符")
                 }
                 return content
             }
         } catch let error as WorkspaceFileError {
-            AgentCoreToolsPlugin.logger.error("\(self.t)读取文件失败：\(error.localizedDescription)")
+            ToolCorePlugin.logger.error("\(self.t)读取文件失败：\(error.localizedDescription)")
             return "Error: \(error.localizedDescription)"
         } catch {
-            AgentCoreToolsPlugin.logger.error("\(self.t)读取文件失败：\(error.localizedDescription)")
+            ToolCorePlugin.logger.error("\(self.t)读取文件失败：\(error.localizedDescription)")
             return "Error reading file: \(error.localizedDescription)"
         }
     }

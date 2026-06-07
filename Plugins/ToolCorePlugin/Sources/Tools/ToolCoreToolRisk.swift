@@ -1,6 +1,6 @@
 import AgentToolKit
 
-enum AgentCoreToolRisk {
+enum ToolCoreToolRisk {
     static func elevatedRiskIfPathOutOfBounds(
         arguments: [String: ToolArgument],
         baseRisk: CommandRiskLevel,
