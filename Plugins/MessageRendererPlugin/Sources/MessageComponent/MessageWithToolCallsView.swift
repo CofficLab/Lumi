@@ -27,8 +27,20 @@ public struct MessageWithToolCallsView: View {
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(toolCalls.enumerated()), id: \.offset) { _, toolCall in
-                        if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall) {
-                            customRenderer.render(toolCall: toolCall)
+                        if toolCall.authorizationState == .pendingAuthorization, toolCall.result == nil {
+                            ToolPermissionPendingView(
+                                toolCall: toolCall,
+                                conversationId: message.conversationId,
+                                assistantMessageId: message.id
+                            )
+                        } else if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall) {
+                            customRenderer.render(
+                                toolCall: toolCall,
+                                message: ToolCallRowMessageContext(
+                                    conversationId: message.conversationId,
+                                    assistantMessageId: message.id
+                                )
+                            )
                         } else {
                             ToolCallRow(
                                 toolCall: toolCall,

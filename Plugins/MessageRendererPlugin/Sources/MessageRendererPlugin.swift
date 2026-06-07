@@ -38,6 +38,17 @@ public actor MessageRendererPlugin: SuperPlugin {
         MessageRendererRuntime.providerInfoProvider = { providerId in
             context.providerInfoProvider(providerId)
         }
+        MessageRendererRuntime.respondToToolPermission = { conversationId, assistantMessageId, toolCallId, allowed in
+            await context.respondToToolPermission(
+                conversationId,
+                assistantMessageId,
+                toolCallId,
+                allowed
+            )
+        }
+        MessageRendererRuntime.evaluateToolPermissionRisk = { toolName, argumentsJSON in
+            context.evaluateToolPermissionRisk(toolName, argumentsJSON)
+        }
     }
 
     @MainActor
