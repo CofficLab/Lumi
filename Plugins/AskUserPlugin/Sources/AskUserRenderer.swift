@@ -22,7 +22,7 @@ public struct AskUserRowRenderer: ToolCallRowRenderer {
     }
 
     @MainActor
-    public func render(toolCall: ToolCall) -> AnyView {
+    public func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
         AnyView(AskUserPendingView(toolCall: toolCall))
     }
 }

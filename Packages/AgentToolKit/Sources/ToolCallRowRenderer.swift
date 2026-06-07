@@ -1,4 +1,16 @@
+import Foundation
 import SwiftUI
+
+/// 行渲染器所需的助手消息上下文（避免 AgentToolKit 依赖 LumiCoreKit）。
+public struct ToolCallRowMessageContext: Sendable {
+    public let conversationId: UUID
+    public let assistantMessageId: UUID
+
+    public init(conversationId: UUID, assistantMessageId: UUID) {
+        self.conversationId = conversationId
+        self.assistantMessageId = assistantMessageId
+    }
+}
 
 /// 单个 ToolCall 的自定义行渲染器
 ///
@@ -21,7 +33,7 @@ import SwiftUI
 ///     }
 ///
 ///     @MainActor
-///     func render(toolCall: ToolCall) -> AnyView {
+///     func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
 ///         AskUserPendingView(toolCall: toolCall)
 ///     }
 /// }
@@ -38,7 +50,7 @@ public protocol ToolCallRowRenderer {
 
     /// 渲染自定义 ToolCall 行视图
     @MainActor
-    func render(toolCall: ToolCall) -> AnyView
+    func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView
 }
 
 /// 默认实现
