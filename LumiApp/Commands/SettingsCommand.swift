@@ -1,40 +1,14 @@
-import AppKit
 import SwiftUI
 
-/// 设置命令：在应用菜单中添加设置入口
-struct SettingsCommand: Commands, SuperLog {
-    /// 日志标识符
-    nonisolated static let emoji = "⚙️"
+struct SettingsCommand: Commands {
+    @Environment(\.openWindow) private var openWindow
 
-    /// 是否启用详细日志输出
-    nonisolated static let verbose: Bool = false
     var body: some Commands {
-        #if os(macOS)
-            CommandGroup(after: .appInfo) {
-                Button("设置...") {
-                    // 发送打开设置的通知
-                    NotificationCenter.postOpenSettings()
-                }
-                .keyboardShortcut(",", modifiers: .command)
+        CommandGroup(after: .appInfo) {
+            Button("设置...") {
+                openWindow(id: AppBootstrap.settingsWindowID)
             }
-        #endif
+            .keyboardShortcut(",", modifiers: .command)
+        }
     }
-}
-
-// MARK: - Preview
-
-#Preview("Settings Command") {
-    Text("Settings Command Preview")
-}
-
-#Preview("App - Small Screen") {
-    ContentLayout()
-        .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
 }

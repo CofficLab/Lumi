@@ -1,0 +1,45 @@
+import LumiUI
+import SwiftUI
+
+struct ProjectControlView: View {
+    @StateObject private var store = ProjectsStore()
+    @State private var isPopoverPresented = false
+
+    var body: some View {
+        Button {
+            isPopoverPresented = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "folder")
+                    .font(.system(size: 12, weight: .semibold))
+
+                Text(store.currentProject?.name ?? "Projects")
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 180)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+                    .rotationEffect(.degrees(isPopoverPresented ? 180 : 0))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .background {
+            RoundedRectangle(cornerRadius: 7)
+                .fill(Color.primary.opacity(0.06))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            ProjectsPopoverView(store: store)
+        }
+        .accessibilityLabel("Projects")
+    }
+}

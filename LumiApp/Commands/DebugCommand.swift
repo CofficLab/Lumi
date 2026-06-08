@@ -1,78 +1,66 @@
 import AppKit
+import LumiCoreKit
 import SwiftUI
 
-/// 调试命令：在应用菜单中添加调试相关的功能入口
-struct DebugCommand: Commands, SuperLog {
-    /// 日志标识符
-    nonisolated static let emoji = "🐛"
-
-    /// 是否启用详细日志输出
-    nonisolated static let verbose: Bool = false
+struct DebugCommand: Commands {
     var body: some Commands {
-        SidebarCommands()
-
         #if os(macOS)
             CommandMenu("调试") {
-                Button("打开App Support目录") {
-                    let dir = AppConfig.getCurrentAppSupportDir()
-                    NSWorkspace.shared.open(dir)
+                Button("打开 App Support 目录") {
+                    Self.openURL(Self.appSupportDirectory())
                 }
 
                 Button("打开容器目录") {
-                    guard let dir = AppConfig.localContainer else {
-                        // 显示错误提示
-                        let errorAlert = NSAlert()
-                        errorAlert.messageText = "打开容器目录出错"
-                        errorAlert.informativeText = "容器目录不存在"
-                        errorAlert.alertStyle = .critical
-                        errorAlert.addButton(withTitle: "好的")
-                        errorAlert.runModal()
-
+                    guard let directory = FileManager.default.containerURL(
+                        forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
+                    ) else {
+                        Self.showMissingDirectoryAlert(title: "打开容器目录出错", message: "容器目录不存在")
                         return
                     }
 
-                    NSWorkspace.shared.open(dir)
+                    Self.openURL(directory)
                 }
 
                 Button("打开文档目录") {
-                    guard let dir = AppConfig.localDocumentsDir else {
-                        // 显示错误提示
-                        let errorAlert = NSAlert()
-                        errorAlert.messageText = "打开文档目录出错"
-                        errorAlert.informativeText = "文档目录不存在"
-                        errorAlert.alertStyle = .critical
-                        errorAlert.addButton(withTitle: "好的")
-                        errorAlert.runModal()
-
+                    guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                        Self.showMissingDirectoryAlert(title: "打开文档目录出错", message: "文档目录不存在")
                         return
                     }
 
-                    NSWorkspace.shared.open(dir)
+                    Self.openURL(directory)
                 }
 
+                Divider()
+
                 Button("打开数据库目录") {
-                    let dir = AppConfig.getDBFolderURL()
-                    NSWorkspace.shared.open(dir)
+                    Self.openURL(LumiCore.dataRootDirectory)
                 }
             }
         #endif
     }
-}
 
-// MARK: - Preview
+    private static func appSupportDirectory() -> URL {
+        let fileManager = FileManager.default
+        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Unable to resolve Application Support directory.")
+        }
 
-#Preview("Debug Command") {
-    Text("Debug Command Preview")
-}
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
+        let directory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
+        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+        return directory
+    }
 
-#Preview("App - Small Screen") {
-    ContentLayout()
-        .inRootView()
-        .frame(width: 800, height: 600)
-}
+    private static func openURL(_ url: URL) {
+        NSWorkspace.shared.open(url)
+    }
 
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
+    private static func showMissingDirectoryAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "好的")
+        alert.runModal()
+    }
 }

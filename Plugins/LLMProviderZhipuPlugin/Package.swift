@@ -14,31 +14,40 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../MessageRendererPlugin"),
     ],
     targets: [
         .target(
             name: "LLMProviderZhipuPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/Model",
+                "Sources/Services",
+                "Sources/Views/QuotaDetailView.swift",
+                "Sources/Views/StatusBarView.swift",
+                "Sources/ZhipuProvider+ErrorMessage.swift",
+            ],
+            sources: [
+                "Sources/ZhipuPlugin.swift",
+                "Sources/ZhipuProvider.swift",
+                "Sources/ZhipuRenderKind.swift",
+                "Sources/Renderers",
+                "Sources/Views/ApiKeyMissingView.swift",
+                "Sources/Views/ErrorMessageLayout.swift",
+                "Sources/Views/HttpErrorView.swift",
+                "Sources/Views/ProviderBadge.swift",
+            ],
             resources: [
                 .process("Resources")
             ]
@@ -51,7 +60,10 @@ let package = Package(
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Tests"
+            path: "Tests",
+            exclude: [
+                "ZhipuChatTransportTests.swift",
+            ]
         )
     ]
 )

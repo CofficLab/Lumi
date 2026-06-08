@@ -7,7 +7,7 @@ struct WinterTheme: LumiAppChromeTheme {
     let compactName = "冬"
     let description = "霜雪凝光，清冷静谧"
     let iconName = "snowflake"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    let appearanceKind: ThemeAppearanceKind = .system
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "2563EB", dark: "60A5FA")

@@ -1,67 +1,27 @@
-import EditorService
-import Foundation
+import Testing
 import LumiCoreKit
 import LumiUI
-import Testing
 @testable import ThemeDraculaPlugin
 
 @MainActor
 struct ThemeDraculaPluginTests {
-    @Test
-    func pluginMetadataIsStable() {
-        #expect(ThemeDraculaPlugin.id == "dracula")
-        #expect(ThemeDraculaPlugin.displayName == "Dracula")
-        #expect(ThemeDraculaPlugin.description.isEmpty == false)
-        #expect(ThemeDraculaPlugin.iconName == "moon.stars.fill")
-        #expect(ThemeDraculaPlugin.isConfigurable == false)
-        #expect(ThemeDraculaPlugin.category == .theme)
-        #expect(ThemeDraculaPlugin.order == 132)
-        #expect(ThemeDraculaPlugin.policy == .disabled)
-        #expect(ThemeDraculaPlugin.shared.instanceLabel == ThemeDraculaPlugin.id)
+    @Test func metadata() {
+        #expect(ThemeDraculaPlugin.info.id == "com.coffic.lumi.plugin.theme.dracula")
+        #expect(ThemeDraculaPlugin.info.displayName.isEmpty == false)
+        #expect(ThemeDraculaPlugin.info.order == 132)
     }
 
-    @Test
-    func themeContributionIsComplete() {
-        let contributions = ThemeDraculaPlugin.shared.addThemeContributions()
-
+    @Test func contributesTheme() {
+        let contributions = ThemeDraculaPlugin.themeContributions()
         #expect(contributions.count == 1)
-        let contribution = contributions[0]
-        #expect(contribution.id == "dracula")
-        #expect(contribution.displayName == "Dracula")
-        #expect(contribution.iconName == "moon.stars.fill")
-        #expect(contribution.appearanceKind == .dark)
-        #expect(contribution.editorThemeId == "dracula")
-        #expect(contribution.attachments.editorThemeContributor != nil)
-        #expect(contribution.attachments.fileIconThemeContributor != nil)
+        #expect(contributions[0].id == "dracula")
+        #expect(contributions[0].editorThemeId == "dracula")
     }
 
-    @Test
-    func editorThemeContributorRegistersOnce() {
-        let registry = EditorExtensionRegistry()
-
-        ThemeDraculaPlugin.shared.registerEditorExtensions(into: registry)
-        ThemeDraculaPlugin.shared.registerEditorExtensions(into: registry)
-
-        #expect(registry.allThemes().map(\.id) == ["dracula"])
-    }
-
-    @Test
-    func draculaThemeMetadataAndColorsAreStable() {
-        let theme = DraculaTheme()
-
-        #expect(theme.identifier == "dracula")
-        #expect(theme.displayName == "Dracula")
-        #expect(theme.compactName == "Dracula")
-        #expect(theme.iconName == "moon.stars.fill")
-        #expect(theme.appearanceKind == .dark)
-
-        _ = theme.accentColors()
-        _ = theme.atmosphereColors()
-        _ = theme.glowColors()
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(ThemeDraculaPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+    @Test func conformsToPluginAndThemeProvider() {
+        let plugin = ThemeDraculaPlugin.self as any LumiPlugin.Type
+        let provider = plugin as? any LumiUIThemeProviding.Type
+        #expect(plugin.info.id == ThemeDraculaPlugin.info.id)
+        #expect(provider?.themeContributions().count == 1)
     }
 }

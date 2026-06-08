@@ -52,7 +52,7 @@ public struct NetworkDashboardView: View {
             // Process monitor list
             ProcessNetworkListView(viewModel: viewModel)
         }
-        .navigationTitle(NetworkManagerPlugin.displayName)
+        .navigationTitle(NetworkManagerPlugin.info.displayName)
         .task {
             await viewModel.refreshPublicIPIfNeeded()
         }
@@ -118,10 +118,4 @@ public struct NetworkInfoCard: View {
             .padding(8)
         }
     }
-}
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

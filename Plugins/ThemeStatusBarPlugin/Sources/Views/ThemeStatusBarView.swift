@@ -1,14 +1,18 @@
 import SwiftUI
 import LumiUI
 
-/// 统一主题选择器（全局状态栏入口）：
-/// 直接操作 LumiUIThemeRegistry 的单一主题状态。
 struct ThemeStatusBarView: View {
-    @ObservedObject private var registry = LumiUIThemeRegistry.shared
+    private let themeService: any LumiThemeServicing
+    @ObservedObject private var registry: LumiUIThemeRegistry
+
+    init(themeService: any LumiThemeServicing) {
+        self.themeService = themeService
+        self.registry = themeService.themeRegistry
+    }
 
     var body: some View {
         StatusBarHoverContainer(
-            detailView: ThemePickerDetailView(),
+            detailView: ThemePickerDetailView(themeService: themeService),
             popoverWidth: 320,
             id: "lumi-theme-picker"
         ) {

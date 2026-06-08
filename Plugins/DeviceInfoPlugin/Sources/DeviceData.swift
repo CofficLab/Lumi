@@ -166,9 +166,7 @@ class DeviceData: ObservableObject {
                 self.diskTotal = Int64(total)
                 self.diskUsed = Int64(total - available)
             }
-        } catch {
-            DeviceInfoPlugin.logger.error("Error retrieving disk usage: \(error)")
-        }
+        } catch {}
     }
 
     private func updateBatteryStatus() {

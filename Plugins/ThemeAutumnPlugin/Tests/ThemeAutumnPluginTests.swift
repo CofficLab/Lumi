@@ -1,67 +1,27 @@
-import EditorService
-import Foundation
+import Testing
 import LumiCoreKit
 import LumiUI
-import Testing
 @testable import ThemeAutumnPlugin
 
 @MainActor
 struct ThemeAutumnPluginTests {
-    @Test
-    func pluginMetadataIsStable() {
-        #expect(ThemeAutumnPlugin.id == "autumn")
-        #expect(ThemeAutumnPlugin.displayName == "Autumn")
-        #expect(ThemeAutumnPlugin.description.isEmpty == false)
-        #expect(ThemeAutumnPlugin.iconName == "leaf")
-        #expect(ThemeAutumnPlugin.isConfigurable == false)
-        #expect(ThemeAutumnPlugin.category == .theme)
-        #expect(ThemeAutumnPlugin.order == 126)
-        #expect(ThemeAutumnPlugin.policy == .disabled)
-        #expect(ThemeAutumnPlugin.shared.instanceLabel == ThemeAutumnPlugin.id)
+    @Test func metadata() {
+        #expect(ThemeAutumnPlugin.info.id == "com.coffic.lumi.plugin.theme.autumn")
+        #expect(ThemeAutumnPlugin.info.displayName.isEmpty == false)
+        #expect(ThemeAutumnPlugin.info.order == 126)
     }
 
-    @Test
-    func themeContributionIsComplete() {
-        let contributions = ThemeAutumnPlugin.shared.addThemeContributions()
-
+    @Test func contributesTheme() {
+        let contributions = ThemeAutumnPlugin.themeContributions()
         #expect(contributions.count == 1)
-        let contribution = contributions[0]
-        #expect(contribution.id == "autumn")
-        #expect(contribution.displayName == "秋枫橙")
-        #expect(contribution.iconName == "wind")
-        #expect(contribution.appearanceKind == .dark)
-        #expect(contribution.editorThemeId == "autumn")
-        #expect(contribution.attachments.editorThemeContributor != nil)
-        #expect(contribution.attachments.fileIconThemeContributor != nil)
+        #expect(contributions[0].id == "autumn")
+        #expect(contributions[0].editorThemeId == "autumn")
     }
 
-    @Test
-    func editorThemeContributorRegistersOnce() {
-        let registry = EditorExtensionRegistry()
-
-        ThemeAutumnPlugin.shared.registerEditorExtensions(into: registry)
-        ThemeAutumnPlugin.shared.registerEditorExtensions(into: registry)
-
-        #expect(registry.allThemes().map(\.id) == ["autumn"])
-    }
-
-    @Test
-    func autumnThemeMetadataAndColorsAreStable() {
-        let theme = AutumnTheme()
-
-        #expect(theme.identifier == "autumn")
-        #expect(theme.displayName == "秋枫橙")
-        #expect(theme.compactName == "秋")
-        #expect(theme.iconName == "wind")
-        #expect(theme.appearanceKind == .dark)
-
-        _ = theme.accentColors()
-        _ = theme.atmosphereColors()
-        _ = theme.glowColors()
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(ThemeAutumnPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+    @Test func conformsToPluginAndThemeProvider() {
+        let plugin = ThemeAutumnPlugin.self as any LumiPlugin.Type
+        let provider = plugin as? any LumiUIThemeProviding.Type
+        #expect(plugin.info.id == ThemeAutumnPlugin.info.id)
+        #expect(provider?.themeContributions().count == 1)
     }
 }

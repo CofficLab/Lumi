@@ -1,23 +1,13 @@
 import LumiCoreKit
 import LumiUI
-import MessageRendererPlugin
 import SwiftUI
 
-/// 智谱错误消息布局（与 App 默认 ErrorMessage 保持一致：header + 红色气泡）
 struct ErrorMessageLayout<Content: View>: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiTheme private var theme
 
-    let message: ChatMessage
+    let message: LumiChatMessage
     @Binding var showRawMessage: Bool
     @ViewBuilder let content: () -> Content
-
-    private var zh: Bool {
-        MessageRendererRuntime.languagePreference == .chinese
-    }
-
-    private var titleText: String {
-        zh ? "错误" : "Error"
-    }
 
     private var copyContent: String {
         if !message.content.isEmpty {
@@ -27,38 +17,55 @@ struct ErrorMessageLayout<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            MessageHeaderView {
-                HStack(alignment: .center, spacing: 6) {
-                    AvatarView.error
-                    AppIdentityRow(title: titleText)
-                    ProviderBadge()
-                }
-            } trailing: {
-                HStack(alignment: .center, spacing: 12) {
-                    CopyMessageButton(
-                        content: copyContent,
-                        showFeedback: .constant(false)
-                    )
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(theme.error)
 
-                    Text(formatTimestamp(message.timestamp))
+                Text("Error")
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textTertiary)
+
+                ProviderBadge()
+
+                Spacer()
+
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(copyContent, forType: .string)
+                } label: {
+                    Image(systemName: "doc.on.doc")
                         .font(.appMicro)
-                        .foregroundColor(theme.textSecondary)
-
-                    RawMessageToggleButton(showRawMessage: $showRawMessage)
                 }
+                .buttonStyle(.plain)
+                .foregroundColor(theme.textSecondary)
+                .help("Copy")
+
+                Button {
+                    showRawMessage.toggle()
+                } label: {
+                    Image(systemName: showRawMessage ? "eye.slash" : "eye")
+                        .font(.appMicro)
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(theme.textSecondary)
+                .help("Toggle raw message")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                content()
+            content()
+
+            if showRawMessage {
+                Text(copyContent.isEmpty ? message.renderKind ?? "" : copyContent)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .textSelection(.enabled)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .appSurface(style: .panel, cornerRadius: 6)
             }
-            .messageBubbleStyle(role: message.role, isError: true)
         }
-    }
-
-    private func formatTimestamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(for: date) ?? ""
+        .padding(12)
+        .frame(maxWidth: 680, alignment: .leading)
+        .appSurface(style: .listRow, cornerRadius: 8, borderColor: theme.error.opacity(0.28))
     }
 }

@@ -14,19 +14,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/LumiCodeEditSourceEditor"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "ThemeSkyPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
-                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiUI", package: "LumiUI")
             ],
             path: "Sources"
         ),

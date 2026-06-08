@@ -14,25 +14,31 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/ShellKit"),
-        .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/WorkspaceFileKit"),
     ],
     targets: [
         .target(
             name: "ToolCorePlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "ShellKit", package: "ShellKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "WorkspaceFileKit", package: "WorkspaceFileKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/CommandRiskEvaluator.swift",
+                "Sources/Services",
+                "Sources/Tools/EditFileTool.swift",
+                "Sources/Tools/SharedFileUtils.swift",
+                "Sources/Tools/ShellTool.swift",
+                "Sources/Tools/ToolCoreToolRisk.swift",
+                "Sources/Tools/WriteFileTool.swift",
+            ],
+            sources: [
+                "Sources/ToolCorePlugin.swift",
+                "Sources/Tools/ListDirectoryTool.swift",
+                "Sources/Tools/ReadFileTool.swift",
+            ],
             resources: [
                 .process("Resources")
             ]

@@ -1,5 +1,5 @@
 {
-  "originHash" : "e8e1f273863228ff4b7ee8111360ae2a31153f9f5a2b3fcabf2169d05029e124",
+  "originHash" : "7bbc251c793514ae780427a7213b7fbe65b79e75d88f19d042f215e87f9a9c0d",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -20,15 +20,6 @@
       }
     },
     {
-      "identity" : "rearrange",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/Rearrange",
-      "state" : {
-        "revision" : "4de8be41dba304192e87dc0a11e0aa39e72aa2e8",
-        "version" : "2.1.1"
-      }
-    },
-    {
       "identity" : "swift-cmark",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-cmark.git",
@@ -38,57 +29,12 @@
       }
     },
     {
-      "identity" : "swift-collections",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-collections.git",
-      "state" : {
-        "revision" : "fea17c02d767f46b23070fdfdacc28a03a39232a",
-        "version" : "1.5.1"
-      }
-    },
-    {
       "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-markdown.git",
       "state" : {
         "revision" : "3c6f9523da3a1ec2fd829673e472d95b8097a3b8",
         "version" : "0.8.0"
-      }
-    },
-    {
-      "identity" : "swifttreesitter",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter.git",
-      "state" : {
-        "revision" : "08ef81eb8620617b55b08868126707ad72bf754f",
-        "version" : "0.25.0"
-      }
-    },
-    {
-      "identity" : "textformation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/TextFormation",
-      "state" : {
-        "revision" : "b1ce9a14bd86042bba4de62236028dc4ce9db6a1",
-        "version" : "0.9.0"
-      }
-    },
-    {
-      "identity" : "textstory",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/TextStory",
-      "state" : {
-        "revision" : "a52db1a2eca74d37c8c19bf3165416941632ed45",
-        "version" : "0.9.2"
-      }
-    },
-    {
-      "identity" : "tree-sitter",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter",
-      "state" : {
-        "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
-        "version" : "0.25.10"
       }
     }
   ],

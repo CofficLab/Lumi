@@ -1,157 +1,143 @@
 import Foundation
-import LLMProviderKit
-import AgentToolKit
 import HttpKit
 import LLMKit
+import LLMProviderKit
 import LumiCoreKit
-import SuperLogKit
 
-/// OpenAI API 供应商实现
-///
-/// 集成 OpenAI GPT 系列模型，支持 Tool Calls 和流式响应。
-/// 使用 LLMProviderKit 的 OpenAICompatibleProviderAdapter 处理请求构建和响应解析。
-public final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-    public nonisolated static let emoji = "🟢"
-
-    // MARK: - 基础信息
-
-    public static let id = "openai"
-    public static let displayName = String(localized: "OpenAI", bundle: .module)
-    public static let shortName = "OA"
-    public static let description = String(localized: "GPT by OpenAI", bundle: .module)
-
-    public static let websiteURL: String? = "https://openai.com"
-
-    // MARK: - 配置相关
-
-    public static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
-    public static let defaultModel = "gpt-4o"
-
-    public static let modelCatalog: [LumiCoreKit.LLMModelCatalogItem] = [
-        .init(id: "gpt-4o", description: "GPT-4o，OpenAI 多模态旗舰模型，支持视觉和工具调用", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4o-mini", description: "GPT-4o Mini，轻量高效版本，适合快速响应", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4-turbo", description: "GPT-4 Turbo，高性能版本，支持更长上下文", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4", description: "GPT-4，经典旗舰模型，推理能力出色", spec: .init(contextWindowSize: 8_192, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-3.5-turbo", description: "GPT-3.5 Turbo，经济实惠模型，适合轻量任务", spec: .init(contextWindowSize: 16_385, supportsVision: false, supportsTools: true)),
-    ]
-
-    // MARK: - Adapter
-
-    private let adapter = OpenAICompatibleProviderAdapter(
-        configuration: OpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.openai.com/v1/chat/completions",
-            additionalHeaders: [:],
-            includeUsageInStreamOptions: true,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false
-        )
+public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
+    public static let info = LumiLLMProviderInfo(
+        id: "openai",
+        displayName: "OpenAI",
+        description: "GPT by OpenAI",
+        defaultModel: "gpt-4o",
+        availableModels: [
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+            "gpt-4",
+            "gpt-3.5-turbo"
+        ]
     )
 
-    public required override init() {
-        super.init()
-    }
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
 
-    public var baseURL: String {
-        "https://api.openai.com/v1/chat/completions"
-    }
+    private let apiService: LLMAPIService
+    private let adapter: OpenAICompatibleProviderAdapter
 
-    public func buildRequest(url: URL) -> URLRequest {
-        adapter.buildRequest(url: url, apiKey: Self.getApiKey())
-    }
-
-    public func buildRequestBody(
-        messages: [LumiCoreKit.ChatMessage],
-        model: String,
-        tools: [SuperAgentTool]?,
-        systemPrompt: String
-    ) throws -> [String: Any] {
-        let kitMessages = messages.map { LLMProviderKit.ChatMessage(app: $0) }
-        let kitTools = tools?.map { SuperAgentToolBridge(tool: $0) }
-        return try adapter.buildRequestBody(
-            messages: kitMessages,
-            model: model,
-            tools: kitTools,
-            systemPrompt: systemPrompt
+    public init(
+        apiService: LLMAPIService = LLMAPIService(),
+        adapter: OpenAICompatibleProviderAdapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(
+                baseURL: "https://api.openai.com/v1/chat/completions",
+                additionalHeaders: [:],
+                includeUsageInStreamOptions: true,
+                returnsEmptyChunkWhenNoDelta: false,
+                acceptsFunctionScopedToolCallID: false
+            )
         )
+    ) {
+        self.apiService = apiService
+        self.adapter = adapter
     }
 
-    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
-        let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { AgentToolKit.ToolCall(kit: $0) }
-        return (result.content, kitToolCalls)
-    }
-
-    public func buildStreamingRequestBody(
-        messages: [LumiCoreKit.ChatMessage],
-        model: String,
-        tools: [SuperAgentTool]?,
-        systemPrompt: String
-    ) throws -> [String: Any] {
-        let kitMessages = messages.map { LLMProviderKit.ChatMessage(app: $0) }
-        let kitTools = tools?.map { SuperAgentToolBridge(tool: $0) }
-        return try adapter.buildStreamingRequestBody(
-            messages: kitMessages,
-            model: model,
-            tools: kitTools,
-            systemPrompt: systemPrompt
-        )
-    }
-
-    public func parseStreamChunk(data: Data) throws -> LumiCoreKit.StreamChunk? {
-        guard let kitChunk = try adapter.parseStreamChunk(data: data) else {
-            return nil
+    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        guard let conversationID = request.messages.first?.conversationID else {
+            throw OpenAIProviderError.emptyConversation
         }
-        return LumiCoreKit.StreamChunk(kit: kitChunk)
-    }
 
+        let apiKey = try apiKey()
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            throw OpenAIProviderError.invalidBaseURL(adapter.configuration.baseURL)
+        }
 
-    // MARK: - Transport
+        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKey)
+        let body = try adapter.buildRequestBody(
+            messages: request.messages.map(Self.convertMessage),
+            model: request.model,
+            tools: request.tools.map(OpenAIToolSchema.init),
+            systemPrompt: ""
+        )
+        let data = try await apiService.sendChatRequest(request: httpRequest, body: body)
+        let response = try adapter.parseResponse(data: data)
 
-    public func streamChat(
-        messages: [LumiCoreKit.ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?,
-        maxThinkingLength: Int,
-        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
-        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
-    ) async throws -> LumiCoreKit.ChatMessage {
-        try await RemoteLLMProviderTransport.streamChat(
-            provider: self,
-            messages: messages,
-            config: config,
-            tools: tools,
-            maxThinkingLength: maxThinkingLength,
-            onChunk: onChunk,
-            onRequestStart: onRequestStart
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .assistant,
+            content: response.content,
+            providerID: Self.info.id,
+            modelName: request.model,
+            toolCalls: response.toolCalls?.map {
+                LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            }
         )
     }
 
-    public func sendMessage(
-        messages: [LumiCoreKit.ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?
-    ) async throws -> LumiCoreKit.ChatMessage {
-        try await RemoteLLMProviderTransport.sendMessage(
-            provider: self,
-            messages: messages,
-            config: config,
-            tools: tools
+    private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
+        LLMProviderKit.ChatMessage(
+            role: convertRole(message.role),
+            content: message.content,
+            toolCalls: message.toolCalls?.map {
+                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            },
+            toolCallID: message.toolCallID
         )
     }
 
-    // MARK: - Availability
+    private static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
+        switch role {
+        case .system:
+            .system
+        case .user:
+            .user
+        case .assistant:
+            .assistant
+        case .tool:
+            .tool
+        case .error:
+            .error
+        }
+    }
 
-    public func availabilityCheckStrategy(forModel modelId: String) -> LumiCoreKit.AvailabilityCheckStrategy {
-        .chatPing()
+    private func apiKey() throws -> String {
+        if let storedKey = UserDefaults.standard.string(forKey: Self.apiKeyStorageKey),
+           !storedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return storedKey
+        }
+
+        if let environmentKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"],
+           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return environmentKey
+        }
+
+        throw OpenAIProviderError.missingAPIKey
     }
 }
 
+private struct OpenAIToolSchema: LLMToolSchemaProviding {
+    let name: String
+    let toolDescription: String
+    let inputSchema: [String: Any]
 
-// MARK: - Remote transport overrides
-
-extension OpenAIProvider {
-    public func parseProviderHTTPError(data: Data?, statusCode: Int?) -> ProviderHTTPError? {
-        LLMProviderKit.ProviderHTTPErrorParser.parseOpenAICompatible(data: data, statusCode: statusCode)
+    init(_ tool: any LumiAgentTool) {
+        self.name = tool.name
+        self.toolDescription = tool.toolDescription
+        self.inputSchema = tool.inputSchema.anyValue as? [String: Any] ?? [:]
     }
 }
 
+enum OpenAIProviderError: LocalizedError {
+    case missingAPIKey
+    case invalidBaseURL(String)
+    case emptyConversation
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAPIKey:
+            "OpenAI API Key is not configured."
+        case let .invalidBaseURL(url):
+            "Invalid OpenAI base URL: \(url)"
+        case .emptyConversation:
+            "OpenAI request has no conversation."
+        }
+    }
+}

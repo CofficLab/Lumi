@@ -1,72 +1,145 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Chat": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+
+    },
+    "Active" : {
+
+    },
+    "Ask a question, paste context, or describe the task you want Lumi to handle." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "对话"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對話"
           }
         }
       }
     },
-    "Conversation list with chat surface": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation list with chat surface"
+    "Chats" : {
+
+    },
+    "Conversation list with chat surface" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation list with chat surface"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "对话列表与聊天界面"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话列表与聊天界面"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話列表與聊天介面"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對話列表與聊天介面"
           }
         }
       }
     },
-    "No Conversations": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Conversations"
+    "Copy" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete Conversation" : {
+
+    },
+    "Hide Raw Message" : {
+
+    },
+    "Message" : {
+
+    },
+    "New Chat" : {
+
+    },
+    "No Conversations" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Conversations"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暂无对话"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无对话"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "暫無對話"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無對話"
           }
         }
       }
+    },
+    "Providers" : {
+
+    },
+    "Search models or providers..." : {
+
+    },
+    "Select Model" : {
+
+    },
+    "Send" : {
+
+    },
+    "Sending" : {
+
+    },
+    "Show Raw Message" : {
+
+    },
+    "Start a conversation" : {
+
+    },
+    "Thinking" : {
+
+    },
+    "This conversation and its messages will be removed." : {
+
+    },
+    "Use as Draft" : {
+
+    },
+    "自动化程度" : {
+
+    },
+    "详细级别" : {
+
+    },
+    "语言" : {
+
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

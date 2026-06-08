@@ -1,150 +1,309 @@
 import Foundation
-import LLMProviderKit
-import LLMKit
-import AgentToolKit
 import HttpKit
+import LLMKit
 import LumiCoreKit
-import SuperLogKit
 
-/// Zhipu AI (智谱 AI) API 供应商实现
-///
-/// Zhipu AI 提供了兼容 Anthropic 的 API 接口，但在流式响应结束时会返回 OpenAI 格式的 `data: [DONE]` 标记。
-/// 因此需要同时兼容两种格式的解析。
-public final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
-    public nonisolated static let emoji = "🔴"
-    public nonisolated static let verbose: Bool = false
-
-    // MARK: - 基础信息
-
-    public static let id = "zhipu"
-    public static let displayName = String(localized: "Zhipu AI CodingPlan", bundle: .module)
+public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "ZhiPu"
-    public static let description = String(localized: "智谱 AI (GLM)", bundle: .module)
-
-    public static let websiteURL: String? = "https://open.bigmodel.cn"
-
-    /// 智谱开放平台 API Key 管理页（用于聊天内引导链接）
     public static let apiKeyHelpURL: String? = "https://open.bigmodel.cn/usercenter/apikeys"
-
-    // MARK: - 配置相关
-
     public static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
-    public static let defaultModel = "glm-4.7"
 
-    public static let modelCatalog: [LumiCoreKit.LLMModelCatalogItem] = [
-        .init(id: "glm-5.1", description: "GLM 5.1，智谱最新旗舰模型，推理和代码能力全面升级", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-5-turbo", description: "GLM 5 Turbo，高速推理版本，兼顾性能与速度", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-5", description: "GLM 5，智谱通用大模型，综合能力出色", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.7", description: "GLM 4.7，成熟稳定的通用语言模型", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.6", description: "GLM 4.6，性价比优秀的通用模型", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.5", description: "GLM 4.5，基础通用模型，适合日常对话", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.5-air", description: "GLM 4.5 Air，轻量快速版本，响应速度更快", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-    ]
+    public static let info = LumiLLMProviderInfo(
+        id: "zhipu",
+        displayName: "智谱",
+        description: "Zhipu AI GLM",
+        defaultModel: "glm-4.7",
+        availableModels: [
+            "glm-5.1",
+            "glm-5-turbo",
+            "glm-5",
+            "glm-4.7",
+            "glm-4.6",
+            "glm-4.5",
+            "glm-4.5-air",
+        ]
+    )
 
-    // MARK: - SuperLLMProvider
+    private let apiService: LLMAPIService
+    private let baseURL = "https://open.bigmodel.cn/api/anthropic/v1/messages"
 
-    public required override init() {
-        super.init()
+    public init(apiService: LLMAPIService = LLMAPIService()) {
+        self.apiService = apiService
     }
 
-    public var baseURL: String {
-        "https://open.bigmodel.cn/api/anthropic/v1/messages"
+    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        let conversationID = request.messages.first?.conversationID ?? UUID()
+
+        guard let apiKey = Self.getApiKeyIfConfigured() else {
+            return Self.errorMessage(
+                conversationID: conversationID,
+                renderKind: ZhipuRenderKind.apiKeyMissing,
+                rawDetail: "Zhipu API Key is not configured."
+            )
+        }
+
+        guard let url = URL(string: baseURL) else {
+            throw LLMServiceError.invalidBaseURL(baseURL)
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        urlRequest.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = Self.requestBody(messages: request.messages, model: request.model, tools: request.tools)
+
+        do {
+            let data = try await apiService.sendChatRequest(request: urlRequest, body: body)
+            let response = try Self.parseResponse(data: data)
+            return LumiChatMessage(
+                conversationID: conversationID,
+                role: .assistant,
+                content: response.content,
+                providerID: Self.info.id,
+                modelName: request.model,
+                toolCalls: response.toolCalls
+            )
+        } catch let error as HTTPClientError {
+            return Self.errorMessage(
+                conversationID: conversationID,
+                renderKind: Self.renderKind(for: error),
+                rawDetail: error.localizedDescription
+            )
+        } catch let error as LLMServiceError {
+            return Self.errorMessage(
+                conversationID: conversationID,
+                renderKind: Self.renderKind(for: error),
+                rawDetail: error.localizedDescription
+            )
+        }
     }
 
-    public func buildRequest(url: URL) -> URLRequest {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue(Self.getApiKey(), forHTTPHeaderField: "x-api-key")
-        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        return request
+    public static func getApiKey() -> String {
+        UserDefaults.standard.string(forKey: apiKeyStorageKey) ?? ""
     }
 
-    public func buildRequestBody(
-        messages: [LumiCoreKit.ChatMessage],
+    public static func setApiKey(_ apiKey: String) {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            UserDefaults.standard.removeObject(forKey: apiKeyStorageKey)
+        } else {
+            UserDefaults.standard.set(trimmed, forKey: apiKeyStorageKey)
+        }
+    }
+
+    private static func getApiKeyIfConfigured() -> String? {
+        let storedKey = getApiKey().trimmingCharacters(in: .whitespacesAndNewlines)
+        if !storedKey.isEmpty {
+            return storedKey
+        }
+
+        let environmentKey = ProcessInfo.processInfo.environment["ZHIPU_API_KEY"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return environmentKey?.isEmpty == false ? environmentKey : nil
+    }
+
+    private static func requestBody(
+        messages: [LumiChatMessage],
         model: String,
-        tools: [SuperAgentTool]?,
-        systemPrompt: String
-    ) throws -> [String: Any] {
-        try RequestBuilder.buildBody(
-            messages: messages,
-            model: model,
-            tools: tools,
-            systemPrompt: systemPrompt
+        tools: [any LumiAgentTool]
+    ) -> [String: Any] {
+        let system = messages
+            .filter { $0.role == .system }
+            .map(\.content)
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+
+        let conversationMessages = messages
+            .filter { $0.role == .user || $0.role == .assistant || $0.role == .tool }
+            .map { message -> [String: Any] in
+                switch message.role {
+                case .assistant:
+                    var contentBlocks: [[String: Any]] = []
+                    if !message.content.isEmpty {
+                        contentBlocks.append(["type": "text", "text": message.content])
+                    }
+
+                    for toolCall in message.toolCalls ?? [] {
+                        contentBlocks.append([
+                            "type": "tool_use",
+                            "id": toolCall.id,
+                            "name": toolCall.name,
+                            "input": argumentsDictionary(from: toolCall.arguments),
+                        ])
+                    }
+
+                    return [
+                        "role": "assistant",
+                        "content": contentBlocks.isEmpty ? message.content : contentBlocks,
+                    ]
+
+                case .tool:
+                    return [
+                        "role": "user",
+                        "content": [
+                            [
+                                "type": "tool_result",
+                                "tool_use_id": message.toolCallID ?? "",
+                                "content": message.content,
+                            ],
+                        ],
+                    ]
+
+                default:
+                    return [
+                        "role": "user",
+                        "content": message.content,
+                    ]
+                }
+            }
+
+        var body: [String: Any] = [
+            "model": model,
+            "max_tokens": 8192,
+            "system": system,
+            "messages": conversationMessages,
+        ]
+
+        if !tools.isEmpty {
+            body["tools"] = tools.map { tool in
+                [
+                    "name": tool.name,
+                    "description": tool.toolDescription,
+                    "input_schema": tool.inputSchema.anyValue,
+                ]
+            }
+        }
+
+        return body
+    }
+
+    private static func parseResponse(data: Data) throws -> (content: String, toolCalls: [LumiToolCall]?) {
+        let result = try JSONDecoder().decode(ZhipuResponse.self, from: data)
+        var textParts: [String] = []
+        var toolCalls: [LumiToolCall] = []
+
+        for item in result.content {
+            if item.type == "text", let text = item.text {
+                textParts.append(text)
+            } else if item.type == "tool_use",
+                      let id = item.id,
+                      let name = item.name {
+                toolCalls.append(
+                    LumiToolCall(
+                        id: id,
+                        name: name,
+                        arguments: jsonString(from: item.input ?? [:])
+                    )
+                )
+            }
+        }
+
+        let content = textParts.joined()
+        if content.isEmpty && toolCalls.isEmpty {
+            throw LLMServiceError.requestFailed("Zhipu response is empty")
+        }
+
+        return (content, toolCalls.isEmpty ? nil : toolCalls)
+    }
+
+    private static func argumentsDictionary(from json: String) -> [String: Any] {
+        guard let data = json.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return [:]
+        }
+
+        return object
+    }
+
+    private static func jsonString(from dictionary: [String: ZhipuAnyDecodable]) -> String {
+        let object = dictionary.reduce(into: [String: Any]()) { result, item in
+            result[item.key] = item.value.value
+        }
+
+        guard JSONSerialization.isValidJSONObject(object),
+              let data = try? JSONSerialization.data(withJSONObject: object),
+              let json = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+
+        return json
+    }
+
+    private static func errorMessage(
+        conversationID: UUID,
+        renderKind: String,
+        rawDetail: String?
+    ) -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: info.id,
+            isError: true,
+            rawErrorDetail: rawDetail,
+            renderKind: renderKind
         )
     }
 
-    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [AgentToolKit.ToolCall]?) {
-        try ResponseParser.parse(data: data)
+    private static func renderKind(for error: HTTPClientError) -> String {
+        switch error {
+        case let .httpError(statusCode, _):
+            ZhipuRenderKind.http(statusCode)
+        default:
+            ZhipuRenderKind.requestFailed
+        }
     }
 
-    public func buildStreamingRequestBody(
-        messages: [LumiCoreKit.ChatMessage],
-        model: String,
-        tools: [SuperAgentTool]?,
-        systemPrompt: String
-    ) throws -> [String: Any] {
-        try RequestBuilder.buildStreamingBody(
-            messages: messages,
-            model: model,
-            tools: tools,
-            systemPrompt: systemPrompt
-        )
+    private static func renderKind(for error: LLMServiceError) -> String {
+        switch error {
+        case .apiKeyEmpty:
+            ZhipuRenderKind.apiKeyMissing
+        case let .requestFailed(_, statusCode):
+            statusCode.map(ZhipuRenderKind.http) ?? ZhipuRenderKind.requestFailed
+        default:
+            ZhipuRenderKind.requestFailed
+        }
     }
+}
 
-    public func parseStreamChunk(data: Data) throws -> LumiCoreKit.StreamChunk? {
-        StreamParser.parseChunk(data: data)
+private struct ZhipuResponse: Decodable {
+    let content: [ContentBlock]
+
+    struct ContentBlock: Decodable {
+        let type: String
+        let text: String?
+        let id: String?
+        let name: String?
+        let input: [String: ZhipuAnyDecodable]?
     }
+}
 
+private struct ZhipuAnyDecodable: Decodable {
+    let value: Any
 
-    // MARK: - Transport
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
 
-    public func streamChat(
-        messages: [LumiCoreKit.ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?,
-        maxThinkingLength: Int,
-        onChunk: @escaping @Sendable (LumiCoreKit.StreamChunk) async -> Void,
-        onRequestStart: @escaping @Sendable (HTTPRequestMetadata) async -> Void
-    ) async throws -> LumiCoreKit.ChatMessage {
-        try await ZhipuChatTransport.streamChat(
-            provider: self,
-            messages: messages,
-            config: config,
-            tools: tools,
-            maxThinkingLength: maxThinkingLength,
-            onChunk: onChunk,
-            onRequestStart: onRequestStart
-        )
-    }
-
-    public func sendMessage(
-        messages: [LumiCoreKit.ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?
-    ) async throws -> LumiCoreKit.ChatMessage {
-        try await ZhipuChatTransport.sendMessage(
-            provider: self,
-            messages: messages,
-            config: config,
-            tools: tools
-        )
-    }
-
-    public func availabilityCheckStrategy(forModel modelId: String) -> LumiCoreKit.AvailabilityCheckStrategy {
-        .chatPing()
-    }
-
-    public func applyGenerationOptions(config: LLMConfig, model: String, to body: inout [String: Any]) {
-        AnthropicCompatibleGenerationOptionsApplier.apply(
-            config: config,
-            model: model,
-            defaultMaxTokens: RequestBuilder.defaultMaxTokens,
-            to: &body
-        )
-    }
-
-    public func parseProviderHTTPError(data: Data?, statusCode: Int?) -> ProviderHTTPError? {
-        ProviderHTTPErrorParser.parseAnthropicCompatible(data: data, statusCode: statusCode)
+        if container.decodeNil() {
+            value = NSNull()
+        } else if let bool = try? container.decode(Bool.self) {
+            value = bool
+        } else if let int = try? container.decode(Int.self) {
+            value = int
+        } else if let double = try? container.decode(Double.self) {
+            value = double
+        } else if let string = try? container.decode(String.self) {
+            value = string
+        } else if let array = try? container.decode([ZhipuAnyDecodable].self) {
+            value = array.map(\.value)
+        } else if let object = try? container.decode([String: ZhipuAnyDecodable].self) {
+            value = object.reduce(into: [String: Any]()) { result, item in
+                result[item.key] = item.value.value
+            }
+        } else {
+            value = NSNull()
+        }
     }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppInputField: View {
+    @LumiTheme private var theme
+
     public enum FieldType {
         case plain
         case secure
@@ -31,14 +33,15 @@ public struct AppInputField: View {
         }
         .textFieldStyle(.plain)
         .font(DesignTokens.Typography.body)
+        .foregroundColor(theme.textPrimary)
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                .fill(DesignTokens.Material.glass)
+                .fill(theme.appListRowBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(theme.appSubtleBorder, lineWidth: 1)
         )
     }
 }

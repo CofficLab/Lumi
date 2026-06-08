@@ -7,7 +7,7 @@ struct SpringTheme: LumiAppChromeTheme {
     let compactName = "春"
     let description = "春芽初醒，清新柔和"
     let iconName = "leaf.fill"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    let appearanceKind: ThemeAppearanceKind = .system
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "15803D", dark: "7CCF7A")

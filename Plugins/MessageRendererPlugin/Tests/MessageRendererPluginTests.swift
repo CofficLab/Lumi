@@ -1,34 +1,32 @@
+import Foundation
+import LumiCoreKit
 import Testing
-import AgentToolKit
 @testable import MessageRendererPlugin
 
-@Test func packageLoads() async throws {
-    #expect(true)
+@MainActor
+@Test func pluginRegistersCoreRenderers() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    #expect(renderers.map(\.id).contains("core-user-message"))
+    #expect(renderers.map(\.id).contains("core-assistant-message"))
+    #expect(renderers.map(\.id).contains("core-tool-message"))
+    #expect(renderers.map(\.id).contains("core-error-message"))
 }
 
-@Test func toolCallResultVisualStateReflectsFailureResults() {
-    let failed = ToolCallResult(content: "Error: missing file", isError: true)
-    let state = ToolCallResultVisualState(result: failed, isLoading: false)
+@MainActor
+@Test func coreRenderersMatchExpectedRoles() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    let conversationID = UUID()
+    let user = LumiChatMessage(conversationID: conversationID, role: .user, content: "hello")
+    let assistant = LumiChatMessage(conversationID: conversationID, role: .assistant, content: "hi")
+    let tool = LumiChatMessage(conversationID: conversationID, role: .tool, content: "ok")
+    let error = LumiChatMessage(conversationID: conversationID, role: .error, content: "failed", isError: true)
 
-    #expect(state == .failed)
-    #expect(state.systemImage == "exclamationmark.triangle.fill")
-    #expect(state.isFailure)
+    #expect(renderers.first { $0.id == "core-user-message" }?.canRender(user) == true)
+    #expect(renderers.first { $0.id == "core-assistant-message" }?.canRender(assistant) == true)
+    #expect(renderers.first { $0.id == "core-tool-message" }?.canRender(tool) == true)
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(error) == true)
 }
 
-@Test func toolCallResultVisualStatePrefersLoadingUntilResultArrives() {
-    let failed = ToolCallResult(content: "Error: still pending", isError: true)
-    let state = ToolCallResultVisualState(result: failed, isLoading: true)
-
-    #expect(state == .loading)
-    #expect(state.systemImage == "hourglass")
-    #expect(!state.isFailure)
-}
-
-@Test func toolCallResultVisualStateTreatsNonErrorResultsAsCompleted() {
-    let completed = ToolCallResult(content: "ok", isError: false)
-    let state = ToolCallResultVisualState(result: completed, isLoading: false)
-
-    #expect(state == .completed)
-    #expect(state.systemImage == "doc.text.magnifyingglass")
-    #expect(!state.isFailure)
+private var testContext: LumiPluginContext {
+    LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
 }

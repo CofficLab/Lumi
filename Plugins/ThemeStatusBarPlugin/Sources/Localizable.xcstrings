@@ -72,6 +72,7 @@
       }
     },
     "Editor Theme Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -139,9 +140,6 @@
           }
         }
       }
-    },
-    "Persist and switch editor theme in the status bar" : {
-
     },
     "System" : {
       "localizations" : {

@@ -1,43 +1,27 @@
-import LumiCoreKit
 import AppKit
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// Self-rendered title toolbar for the main window.
-///
-/// The plugin contribution points stay the same as the old system toolbar:
-/// leading, center, and trailing views are collected by `AppPluginVM`.
 struct AppTitleToolbar: View {
-    @EnvironmentObject private var pluginProvider: AppPluginVM
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
-    @EnvironmentObject private var themeVM: AppThemeVM
-    @EnvironmentObject private var conversationListContext: ConversationListContext
-    @EnvironmentObject private var llmVM: AppLLMVM
-    @Environment(\.windowContainer) private var windowContainer
+    @LumiTheme private var theme
+    @Binding var state: LayoutState
+    @ObservedObject var pluginService: PluginService
+    let activeID: String
+    let activeTitle: String
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let activeIcon = layoutVM.activeViewContainerIcon
-        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
-        let pluginContext = PluginContext(
-            activeIcon: activeIcon,
-            isEditorVisible: layoutVM.editorVisible,
-            showChat: activeContainer?.showChat ?? .hidden,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsRail: activeContainer?.showsRail ?? false,
-            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
-            windowId: windowContainer?.id,
-            languagePreference: windowContainer?.projectVM.languagePreference ?? .current,
-            conversationCreationContext: makeConversationCreationContext(),
-            layoutControlContext: makeLayoutControlContext(),
-            conversationListContext: conversationListContext
+        let context = LumiPluginContext(
+            activeSectionID: activeID,
+            activeSectionTitle: activeTitle
         )
-        let leadingViews = pluginProvider.getToolbarLeadingViews(context: pluginContext)
-        let centerViews = pluginProvider.getToolbarCenterViews(context: pluginContext)
-        let trailingViews = pluginProvider.getToolbarTrailingViews(context: pluginContext)
-        let theme = themeVM.activeChromeTheme
+        let items = pluginService.titleToolbarItems(context: context)
+        let leadingItems = items.filter { $0.placement == .leading }
+        let centerItems = items.filter { $0.placement == .center }
+        let trailingItems = items.filter { $0.placement == .trailing }
 
         ZStack {
             WindowDragRegion()
@@ -48,95 +32,39 @@ struct AppTitleToolbar: View {
                     .frame(width: trafficLightReserveWidth, height: height)
                     .accessibilityHidden(true)
 
-                toolbarGroup(leadingViews, idPrefix: "title_toolbar_leading")
+                toolbarGroup(leadingItems)
 
                 Spacer(minLength: 12)
 
-                toolbarGroup(trailingViews, idPrefix: "title_toolbar_trailing")
+                toolbarGroup(trailingItems)
             }
             .padding(.trailing, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            toolbarGroup(centerViews, idPrefix: "title_toolbar_center")
+            toolbarGroup(centerItems)
                 .frame(maxWidth: 420)
                 .padding(.horizontal, trafficLightReserveWidth + 12)
         }
         .frame(height: height)
         .frame(maxWidth: .infinity)
-        .foregroundColor(theme.workspaceTextColor())
-        .background(theme.sidebarBackgroundColor())
+        .foregroundStyle(theme.textPrimary)
+        .appSurface(style: .toolbar, cornerRadius: 0)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(theme.statusBarDividerColor())
+                .fill(theme.divider)
                 .frame(height: 1)
         }
     }
 
-    private func toolbarGroup(_ views: [AnyView], idPrefix: String) -> some View {
+    private func toolbarGroup(_ items: [LumiTitleToolbarItem]) -> some View {
         HStack(spacing: 8) {
-            ForEach(views.indices, id: \.self) { index in
-                views[index]
-                    .id("\(idPrefix)_\(index)")
+            ForEach(items) { item in
+                item.makeView()
+                    .help(item.title)
             }
         }
         .frame(height: height)
         .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private func makeConversationCreationContext() -> ConversationCreationContext? {
-        windowContainer?.makeConversationCreationContext(llmVM: llmVM)
-    }
-
-    private func makeLayoutControlContext() -> LayoutControlContext {
-        LayoutControlContext(
-            editorVisible: $layoutVM.editorVisible,
-            contentPanelVisible: $layoutVM.contentPanelVisible,
-            bottomPanelVisible: $layoutVM.bottomPanelVisible,
-            railVisible: $layoutVM.railVisible,
-            rightSidebarVisible: $layoutVM.rightSidebarVisible
-        )
-    }
-}
-
-private extension WindowContainer {
-    func makeConversationCreationContext(llmVM: AppLLMVM) -> ConversationCreationContext {
-        ConversationCreationContext(
-            isProjectSelectedProvider: { [weak self] in
-                self?.projectVM.isProjectSelected ?? false
-            },
-            projectNameProvider: { [weak self] in
-                self?.projectVM.currentProjectName ?? ""
-            },
-            projectPathProvider: { [weak self] in
-                self?.projectVM.currentProjectPath ?? ""
-            },
-            languagePreferenceProvider: { [weak self] in
-                self?.projectVM.languagePreference ?? .current
-            },
-            currentChatModeProvider: { [weak llmVM] in
-                guard let rawValue = llmVM?.chatMode.rawValue else { return .build }
-                return LumiCoreKit.ChatMode(rawValue: rawValue) ?? .build
-            },
-            defaultChatModeProvider: { [weak self] in
-                guard self != nil else { return nil }
-                let databaseDirectory = AppConfig.getDBFolderURL()
-                return ConversationCreationPreferenceStore(databaseDirectory: databaseDirectory).loadDefaultChatMode()
-            },
-            defaultChatModeSaver: { [weak self] chatMode in
-                guard self != nil else { return }
-                let databaseDirectory = AppConfig.getDBFolderURL()
-                ConversationCreationPreferenceStore(databaseDirectory: databaseDirectory).saveDefaultChatMode(chatMode)
-            },
-            conversationCreator: { [weak self] projectName, projectPath, languagePreference, chatMode in
-                let appChatMode = chatMode.flatMap { ChatMode(rawValue: $0.rawValue) }
-                await self?.conversationVM.createNewConversation(
-                    projectName: projectName,
-                    projectPath: projectPath,
-                    languagePreference: languagePreference,
-                    chatMode: appChatMode
-                )
-            }
-        )
     }
 }
 
@@ -152,10 +80,4 @@ private final class DragRegionView: NSView {
     override var mouseDownCanMoveWindow: Bool {
         true
     }
-}
-
-#Preview("App Title Toolbar") {
-    AppTitleToolbar()
-        .inRootView(container: WindowContainer(container: RootContainer.shared))
-        .frame(width: 900)
 }

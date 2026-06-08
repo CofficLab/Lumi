@@ -16,8 +16,6 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/ShellKit"),
-        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
@@ -25,15 +23,10 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ShellKit", package: "ShellKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
-            resources: [
-                .process("Resources")
-            ]
+            sources: ["Sources/PortManagerPlugin.swift"]
         ),
         .testTarget(
             name: "PortManagerPluginTests",

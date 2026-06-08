@@ -1,50 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeSkyPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeSkyPlugin()
-    public static let id: String = "sky"
-    public static let displayName: String = "Sky"
-    public static let description: String = "Sky inspired app theme that adapts to system appearance"
-    public static let iconName: String = "cloud.sun.fill"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 120 }
-
-    nonisolated public var instanceLabel: String { Self.id }
+public enum ThemeSkyPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.sky",
+        displayName: "Sky Theme",
+        description: "Sky inspired app theme that adapts to system appearance",
+        order: 120
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: SkyTheme(),
-                editorThemeId: "sky-dark",
-                editorThemeContributor: SkyDarkEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "sky-file-icons",
-                    displayName: "Sky File Icons",
-                    defaultFile: .systemImage("doc.text"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
-                    extraExtensions: [
-                        "swift": .systemImage("swift"),
-                        "md": .systemImage("cloud"),
-                        "markdown": .systemImage("cloud"),
-                        "json": .systemImage("curlybraces"),
-                        "png": .systemImage("photo"),
-                        "jpg": .systemImage("photo"),
-                        "jpeg": .systemImage("photo"),
-                    ]
-                )
-            ),
+                editorThemeId: "sky-dark"
+            )
         ]
-    }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(SkyDarkEditorThemeContributor())
-        registry.registerThemeContributor(SkyLightEditorThemeContributor())
     }
 }

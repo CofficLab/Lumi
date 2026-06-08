@@ -1,114 +1,96 @@
-import SwiftUI
-import LumiUI
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
-/// 底部状态栏视图
 struct StatusBar: View {
-    @EnvironmentObject var pluginProvider: AppPluginVM
-    @EnvironmentObject private var themeVM: AppThemeVM
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
-    @EnvironmentObject private var llmVM: AppLLMVM
-    @EnvironmentObject private var conversationVM: WindowConversationVM
-    @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var conversationTurnServices: AppConversationTurnVM
-    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
-    @Environment(\.windowContainer) private var windowContainer
-
-    /// 当前活跃的供应商 ID（优先对话级偏好，回退到全局选择）
-    private var activeProviderId: String? {
-        conversationVM.getModelPreference()?.providerId ?? llmVM.selectedProviderId
-    }
+    @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
+    let state: LayoutState
+    @ObservedObject var pluginService: PluginService
+    let activeID: String
+    let activeTitle: String
+    let lumiUIService: LumiUIService
 
     var body: some View {
-        let activeIcon = layoutVM.activeViewContainerIcon
-        let activeContainer = pluginProvider.getActiveViewContainer(activeIcon: activeIcon)
-        let historyService = LiveHistoryQueryService(
-            messageService: chatHistoryVM.messageService,
-            conversationService: chatHistoryVM.conversationService
-        )
-        let context = PluginContext(
-            activeIcon: activeIcon,
-            isEditorVisible: layoutVM.editorVisible,
-            activeProviderId: activeProviderId,
-            showChat: activeContainer?.showChat ?? .hidden,
-            showsProjectToolbar: activeContainer?.showsProjectToolbar ?? false,
-            showsRail: activeContainer?.showsRail ?? false,
-            showsBottomPanel: activeContainer?.showsBottomPanel ?? false,
-            windowId: windowContainer?.id,
-            currentProjectPath: projectVM.currentProjectPath,
-            languagePreference: projectVM.languagePreference,
-            availableTools: conversationTurnServices.toolService.allTools,
-            toolLanguagePreference: conversationTurnServices.toolService.languagePreference,
-            historyService: historyService
-        )
-        let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews(context: context)
-        let statusBarCenterViews = pluginProvider.getStatusBarCenterViews(context: context)
-        let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews(context: context)
-        let hasLeadingViews = !statusBarLeadingViews.isEmpty
-        let hasCenterViews = !statusBarCenterViews.isEmpty
-        let hasTrailingViews = !statusBarTrailingViews.isEmpty
-
-        return Group {
-            if hasLeadingViews || hasCenterViews || hasTrailingViews {
-                HStack(spacing: 12) {
-                    // 左侧视图
-                    if hasLeadingViews {
-                        HStack(spacing: 12) {
-                            ForEach(statusBarLeadingViews.indices, id: \.self) { index in
-                                statusBarLeadingViews[index]
-                                    .id("status_bar_leading_\(index)")
-                            }
-                        }
-                    }
-
-                    Spacer()
-
-                    // 中间视图
-                    if hasCenterViews {
-                        HStack(spacing: 12) {
-                            ForEach(statusBarCenterViews.indices, id: \.self) { index in
-                                statusBarCenterViews[index]
-                                    .id("status_bar_center_\(index)")
-                            }
-                        }
-                    }
-
-                    Spacer()
-
-                    // 右侧视图
-                    if hasTrailingViews {
-                        HStack(spacing: 12) {
-                            ForEach(statusBarTrailingViews.indices, id: \.self) { index in
-                                statusBarTrailingViews[index]
-                                    .id("status_bar_trailing_\(index)")
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 32)
-                .foregroundColor(statusBarForegroundColor)
-                .appSurface(style: .custom(statusBarBackground), cornerRadius: 0)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(statusBarDividerColor)
-                        .frame(height: 1)
-                }
+        let context = LumiPluginContext(
+            activeSectionID: activeID,
+            activeSectionTitle: activeTitle,
+            dependencies: LumiPluginDependencies { dependencies in
+                dependencies.register(LumiThemeServicing.self, lumiUIService)
             }
+        )
+        let items = pluginService.statusBarItems(context: context)
+        let leadingItems = items.filter { $0.placement == .leading }
+        let centerItems = items.filter { $0.placement == .center }
+        let trailingItems = items.filter { $0.placement == .trailing }
+
+        HStack(spacing: 14) {
+            ForEach(leadingItems) { item in
+                StatusBarPluginButton(item: item)
+            }
+
+            Spacer()
+
+            ForEach(centerItems) { item in
+                StatusBarPluginButton(item: item)
+            }
+
+            Spacer()
+
+            ForEach(trailingItems) { item in
+                StatusBarPluginButton(item: item)
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(statusBarForegroundColor)
+        .padding(.horizontal, 10)
+        .frame(height: 24)
+        .appSurface(style: .custom(statusBarBackgroundColor), cornerRadius: 0)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(statusBarDividerColor)
+                .frame(height: 1)
         }
     }
 
-    private var statusBarBackground: Color {
-        themeVM.activeChromeTheme.statusBarBackgroundColor()
+    private var chromeTheme: any LumiAppChromeTheme {
+        themeRegistry.chromeTheme
+    }
+
+    private var statusBarBackgroundColor: Color {
+        chromeTheme.statusBarBackgroundColor()
     }
 
     private var statusBarForegroundColor: Color {
-        themeVM.activeChromeTheme.statusBarForegroundColor()
+        chromeTheme.statusBarForegroundColor()
     }
 
     private var statusBarDividerColor: Color {
-        themeVM.activeChromeTheme.statusBarDividerColor()
+        chromeTheme.statusBarDividerColor()
+    }
+}
+
+private struct StatusBarPluginButton: View {
+    let item: LumiStatusBarItem
+    @State private var isPresented = false
+
+    var body: some View {
+        if let makeStatusBarView = item.makeStatusBarView {
+            makeStatusBarView()
+                .help(item.title)
+        } else {
+            AppIconButton(
+                systemImage: item.systemImage,
+                label: item.title,
+                isActive: isPresented
+            ) {
+                NSApp.keyWindow?.makeFirstResponder(nil)
+                NSApp.mainWindow?.makeFirstResponder(nil)
+                isPresented.toggle()
+            }
+            .help(item.title)
+            .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+                item.makePopoverView()
+            }
+        }
     }
 }

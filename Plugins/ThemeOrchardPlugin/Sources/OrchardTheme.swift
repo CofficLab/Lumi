@@ -7,7 +7,7 @@ struct OrchardTheme: LumiAppChromeTheme {
     let compactName = "果"
     let description = "果香微甜，鲜亮活力"
     let iconName = "apple.logo"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    let appearanceKind: ThemeAppearanceKind = .system
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "E11D48", dark: "F43F5E")

@@ -1,50 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeVscodeDarkPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeVscodeDarkPlugin()
-    public static let id: String = "vscode-dark"
-    public static let displayName: String = "VS Code 深色"
-    public static let description: String = "Visual Studio Code Dark+ IDE theme"
-    public static let iconName: String = "terminal.fill"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 129 }
-
-    nonisolated public var instanceLabel: String { Self.id }
+public enum ThemeVscodeDarkPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.vscode-dark",
+        displayName: "VS Code 深色 Theme",
+        description: "Visual Studio Code Dark+ IDE theme",
+        order: 129
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: VscodeDarkTheme(),
-                editorThemeId: "vscode-dark",
-                editorThemeContributor: VscodeDarkSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "vscode-dark-file-icons",
-                    displayName: "VS Code Dark File Icons",
-                    defaultFile: .systemImage("doc.text"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
-                    extraFileNames: [
-                        "package.json": .systemImage("shippingbox.fill"),
-                        "package.swift": .systemImage("swift"),
-                    ],
-                    extraExtensions: [
-                        "json": .systemImage("curlybraces.square.fill"),
-                        "md": .systemImage("doc.richtext"),
-                        "markdown": .systemImage("doc.richtext"),
-                    ]
-                )
+                editorThemeId: "vscode-dark"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(VscodeDarkSuperEditorThemeContributor())
-    }
-
 }

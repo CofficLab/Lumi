@@ -228,10 +228,10 @@ public struct AppButton: View {
                     .fill(isEffectivelyHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isEffectivelyHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
+                    .fill(isEffectivelyHovered ? theme.appListRowHoverBackground : theme.appStatusMutedFill)
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isEffectivelyHovered ? theme.primary : Color.clear)
+                    .fill(isEffectivelyHovered ? theme.appAccentSoftFill : Color.clear)
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
@@ -252,7 +252,7 @@ public struct AppButton: View {
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
-                        isEffectivelyHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
+                        isEffectivelyHovered ? theme.appHoverBorder : theme.appSubtleBorder,
                         lineWidth: 1
                     )
             case .ghost:

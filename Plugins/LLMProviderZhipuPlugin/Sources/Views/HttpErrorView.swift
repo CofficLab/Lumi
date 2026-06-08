@@ -1,30 +1,43 @@
 import LumiCoreKit
-import MessageRendererPlugin
+import LumiUI
 import SwiftUI
 
-/// 智谱 HTTP 错误视图（布局对齐 App 默认 ErrorMessage，正文展示原始 HTTP 信息）
 struct HttpErrorView: View {
-    let message: ChatMessage
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
     let statusCode: Int?
     @Binding var showRawMessage: Bool
+
+    private var title: String {
+        if let statusCode {
+            return "Zhipu HTTP \(statusCode)"
+        }
+        return "Zhipu request failed"
+    }
 
     private var displayText: String {
         if let raw = message.rawErrorDetail, !raw.isEmpty {
             return raw
         }
-        if let statusCode {
-            return "HTTP \(statusCode)"
-        }
-        return ""
+        return message.content
     }
 
     var body: some View {
         ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
-            DefaultErrorView(
-                title: "",
-                message: displayText,
-                rawErrorDetail: nil
-            )
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.appCallout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.textPrimary)
+
+                if !displayText.isEmpty {
+                    Text(displayText)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .textSelection(.enabled)
+                }
+            }
         }
     }
 }

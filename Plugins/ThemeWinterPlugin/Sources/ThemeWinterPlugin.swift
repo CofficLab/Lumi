@@ -1,46 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeWinterPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeWinterPlugin()
-    public static let id: String = "winter"
-    public static let displayName: String = "Winter"
-    public static let description: String = "Winter cool app theme"
-    public static let iconName: String = "snowflake"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 127 }
-
-    nonisolated public var instanceLabel: String { Self.id }
+public enum ThemeWinterPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.winter",
+        displayName: "Winter Theme",
+        description: "Winter cool app theme",
+        order: 127
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: WinterTheme(),
-                editorThemeId: "winter",
-                editorThemeContributor: WinterSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "winter-file-icons",
-                    displayName: "Winter File Icons",
-                    defaultFile: .systemImage("snowflake"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.questionmark", "folder.fill.badge.questionmark"),
-                    extraExtensions: [
-                        "sh": .systemImage("terminal.fill"),
-                        "bash": .systemImage("terminal.fill"),
-                        "zsh": .systemImage("terminal.fill"),
-                    ]
-                )
+                editorThemeId: "winter"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(WinterSuperEditorThemeContributor())
-    }
-
 }

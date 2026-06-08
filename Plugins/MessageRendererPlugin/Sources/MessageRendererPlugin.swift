@@ -1,73 +1,69 @@
-import SwiftUI
 import LumiCoreKit
+import SwiftUI
 
-// MARK: - 核心消息渲染插件
+public enum MessageRendererPlugin: LumiPlugin {
+    public static let info = LumiPluginInfo(
+        id: "CoreMessageRenderer",
+        displayName: String(localized: "核心消息渲染器", bundle: .module),
+        description: String(localized: "提供内置消息类型的渲染支持", bundle: .module),
+        order: 10
+    )
 
-/// 核心消息渲染插件
-///
-/// 负责注册所有内置消息渲染器，包括：
-/// - 用户消息渲染器
-/// - 助手消息渲染器
-/// - 系统消息渲染器（含工具输出、本地模型加载）
-/// - 状态消息渲染器（含轮次结束分隔线）
-/// - 错误消息渲染器
-///
-/// 渲染器实现在 `Renderers/` 目录下，每个渲染器一个文件。
-public actor MessageRendererPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-
-    public static let shared = MessageRendererPlugin()
-    public static let id = "CoreMessageRenderer"
-    public static let displayName = String(localized: "核心消息渲染器", bundle: .module)
-    public static let description = String(localized: "提供内置消息类型的渲染支持", bundle: .module)
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "paintbrush.fill"
-    public static var category: PluginCategory { .general }
-    public static var order: Int { 10 } // 最先加载，确保内置渲染器先注册
 
     @MainActor
-    public func configureRuntime(context: PluginRuntimeContext) {
-        MessageRendererRuntime.showsAssistantHeaderProvider = {
-            context.showsAssistantHeader()
-        }
-        MessageRendererRuntime.providerTypeProvider = { providerId in
-            context.providerTypeProvider(providerId)
-        }
-        MessageRendererRuntime.selectedProviderIdProvider = {
-            context.selectedProviderIdProvider()
-        }
-        MessageRendererRuntime.providerInfoProvider = { providerId in
-            context.providerInfoProvider(providerId)
-        }
-        MessageRendererRuntime.respondToToolPermission = { conversationId, assistantMessageId, toolCallId, allowed in
-            await context.respondToToolPermission(
-                conversationId,
-                assistantMessageId,
-                toolCallId,
-                allowed
-            )
-        }
-        MessageRendererRuntime.evaluateToolPermissionRisk = { toolName, argumentsJSON in
-            context.evaluateToolPermissionRisk(toolName, argumentsJSON)
-        }
-    }
-
-    @MainActor
-    public func messageRenderers() -> [any SuperMessageRenderer] {
+    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
         [
-            // 系统消息渲染器（优先级最高）
-            TurnCompletedRenderer(),
-            LoadingLocalModelRenderer(),
-            ToolOutputRenderer(),
-
-            // 角色消息渲染器
-            UserMessageRenderer(),
-            AssistantMessageRenderer(),
-            SystemMessageRenderer(),
-            StatusMessageRenderer(),
-            ErrorMessageRenderer(),
-
-            // 兜底渲染器（优先级最低）
-            DefaultMarkdownRenderer(),
+            LumiMessageRendererItem(
+                id: "core-error-message",
+                order: 300,
+                canRender: { $0.role == .error || $0.isError },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-tool-message",
+                order: 250,
+                canRender: { $0.role == .tool },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-user-message",
+                order: 200,
+                canRender: { $0.role == .user },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-assistant-message",
+                order: 190,
+                canRender: { $0.role == .assistant },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-system-message",
+                order: 160,
+                canRender: { $0.role == .system },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-default-markdown",
+                order: 0,
+                canRender: { !$0.content.isEmpty },
+                render: { message, showRawMessage in
+                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                }
+            ),
         ]
     }
 }

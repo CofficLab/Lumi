@@ -30,8 +30,14 @@ private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
 
 struct ThemePickerDetailView: View {
     @LumiTheme private var uiTheme: any LumiUITheme
-    @ObservedObject private var registry = LumiUIThemeRegistry.shared
+    private let themeService: any LumiThemeServicing
+    @ObservedObject private var registry: LumiUIThemeRegistry
     @State private var appearanceFilter: ThemeAppearanceFilter = .all
+
+    init(themeService: any LumiThemeServicing) {
+        self.themeService = themeService
+        self.registry = themeService.themeRegistry
+    }
 
     private var filteredThemes: [LumiUIThemeContribution] {
         registry.themes.filter { appearanceFilter.matches($0.appearanceKind) }
@@ -84,7 +90,7 @@ struct ThemePickerDetailView: View {
     private func themeRow(_ theme: LumiUIThemeContribution) -> some View {
         let isSelected = theme.id == registry.selectedThemeId
         AppListRow(isSelected: isSelected, action: {
-            try? registry.select(themeId: theme.id)
+            try? themeService.selectTheme(id: theme.id)
         }) {
             HStack(spacing: 10) {
                 Image(systemName: theme.iconName)

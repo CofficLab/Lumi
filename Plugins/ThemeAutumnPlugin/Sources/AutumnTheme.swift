@@ -7,7 +7,7 @@ public struct AutumnTheme: LumiAppChromeTheme {
     public let compactName = "秋"
     public let description = "枫影微红，温润深远"
     public let iconName = "wind"
-    public let appearanceKind: ThemeAppearanceKind = .dark
+    public let appearanceKind: ThemeAppearanceKind = .system
 
     public init() {}
 

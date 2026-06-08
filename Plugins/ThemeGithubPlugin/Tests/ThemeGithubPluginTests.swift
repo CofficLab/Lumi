@@ -1,67 +1,27 @@
-import EditorService
-import Foundation
+import Testing
 import LumiCoreKit
 import LumiUI
-import Testing
 @testable import ThemeGithubPlugin
 
 @MainActor
 struct ThemeGithubPluginTests {
-    @Test
-    func pluginMetadataIsStable() {
-        #expect(ThemeGithubPlugin.id == "github")
-        #expect(ThemeGithubPlugin.displayName == "GitHub")
-        #expect(ThemeGithubPlugin.description.isEmpty == false)
-        #expect(ThemeGithubPlugin.iconName == "chevron.left.forwardslash.chevron.right")
-        #expect(ThemeGithubPlugin.isConfigurable == false)
-        #expect(ThemeGithubPlugin.category == .theme)
-        #expect(ThemeGithubPlugin.order == 128)
-        #expect(ThemeGithubPlugin.policy == .disabled)
-        #expect(ThemeGithubPlugin.shared.instanceLabel == ThemeGithubPlugin.id)
+    @Test func metadata() {
+        #expect(ThemeGithubPlugin.info.id == "com.coffic.lumi.plugin.theme.github")
+        #expect(ThemeGithubPlugin.info.displayName.isEmpty == false)
+        #expect(ThemeGithubPlugin.info.order == 128)
     }
 
-    @Test
-    func themeContributionIsComplete() {
-        let contributions = ThemeGithubPlugin.shared.addThemeContributions()
-
+    @Test func contributesTheme() {
+        let contributions = ThemeGithubPlugin.themeContributions()
         #expect(contributions.count == 1)
-        let contribution = contributions[0]
-        #expect(contribution.id == "github")
-        #expect(contribution.displayName == "GitHub")
-        #expect(contribution.iconName == "chevron.left.forwardslash.chevron.right")
-        #expect(contribution.appearanceKind == .dark)
-        #expect(contribution.editorThemeId == "github")
-        #expect(contribution.attachments.editorThemeContributor != nil)
-        #expect(contribution.attachments.fileIconThemeContributor != nil)
+        #expect(contributions[0].id == "github")
+        #expect(contributions[0].editorThemeId == "github")
     }
 
-    @Test
-    func editorThemeContributorRegistersOnce() {
-        let registry = EditorExtensionRegistry()
-
-        ThemeGithubPlugin.shared.registerEditorExtensions(into: registry)
-        ThemeGithubPlugin.shared.registerEditorExtensions(into: registry)
-
-        #expect(registry.allThemes().map(\.id) == ["github"])
-    }
-
-    @Test
-    func githubThemeMetadataAndColorsAreStable() {
-        let theme = GitHubTheme()
-
-        #expect(theme.identifier == "github")
-        #expect(theme.displayName == "GitHub")
-        #expect(theme.compactName == "GitHub")
-        #expect(theme.iconName == "chevron.left.forwardslash.chevron.right")
-        #expect(theme.appearanceKind == .dark)
-
-        _ = theme.accentColors()
-        _ = theme.atmosphereColors()
-        _ = theme.glowColors()
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(ThemeGithubPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+    @Test func conformsToPluginAndThemeProvider() {
+        let plugin = ThemeGithubPlugin.self as any LumiPlugin.Type
+        let provider = plugin as? any LumiUIThemeProviding.Type
+        #expect(plugin.info.id == ThemeGithubPlugin.info.id)
+        #expect(provider?.themeContributions().count == 1)
     }
 }

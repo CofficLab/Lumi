@@ -7,339 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B12E9172FC3111D00F7DC5D /* LumiCoreKit */; };
-		0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8C2F662D8500F15618 /* MLXLLM */; };
-		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
-		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
-		0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
-		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7A440B2FC1FA390056DFA2 /* MemoryKit */; };
-		0BB994802FC492FC003720A4 /* ProjectOverviewPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */; };
-		0BB9F7702FC48DF6003720A4 /* AutoTaskPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF6003720A4 /* AutoTaskPlugin */; };
-		0BB9F7712FC48DF7003720A5 /* AskUserPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 0BB9F76F2FC48DF7003720A5 /* AskUserPlugin */; };
-		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
-		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
-		A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4612F70000100AAA107 /* SuperLogKit */; };
-		AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
-		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
-		F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
-		NETTOEXTPLUGINNETTO00001 /* NettoPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 5F6F4F3AD385478337B1AF43 /* NettoPlugin */; };
+		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0B2F7D602F3A301C00AD7E94;
-			remoteInfo = LumiFinder;
-		};
-		F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F5A640642F3ED1910039A761;
-			remoteInfo = NettoExtension;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5A640762F3ED1910039A761 /* Embed System Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
-			dstSubfolderSpec = 16;
-			files = (
-				F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */,
-			);
-			name = "Embed System Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5A9DB4A2F7635F600A47D9C /* Embed Libraries */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
-			name = "Embed Libraries";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5A9DB4E2F763C8700A47D9C /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		0B1780D12FAF5C0F00F8A599 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
-		0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
-		0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
-		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
-		0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
-		0B4630542FB9C747007E52B1 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
-		0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
-		0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
-		0BC901B12FAD5B56003651CA /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
-		0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
-		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
-		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F508C61C2FC9410400D95FBC /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
-		F508C6332FC9410400D95FBC /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
-		F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
-		F5370B292FB1E52500AF4705 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
-		F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MermaidPlayground.xcodeproj; sourceTree = "<group>"; };
-		F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
-		F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
-		F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
-		F5679DD72FAF405D0054AB4B /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
-		F5679E1B2FAF405D0054AB4B /* FileSharedAcrossTargets.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FileSharedAcrossTargets.xcodeproj; sourceTree = "<group>"; };
-		F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AppWithExtensions.xcodeproj; sourceTree = "<group>"; };
-		F5679E562FAF405D0054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
-		F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = BuildSettings.xcodeproj; sourceTree = "<group>"; };
-		F5679E5D2FAF405D0054AB4B /* Project.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Project.xcodeproj; sourceTree = "<group>"; };
-		F5679E5E2FAF405D0054AB4B /* ProjectWithoutProductsGroup.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithoutProductsGroup.xcodeproj; sourceTree = "<group>"; };
-		F5679E5F2FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
-		F5679E602FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReferences.xcodeproj; sourceTree = "<group>"; };
-		F5679E6E2FAF405D0054AB4B /* SynchronizedRootGroups.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SynchronizedRootGroups.xcodeproj; sourceTree = "<group>"; };
-		F5679E732FAF405D0054AB4B /* TargetWithCustomBuildRules.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TargetWithCustomBuildRules.xcodeproj; sourceTree = "<group>"; };
-		F5679E842FAF405D0054AB4B /* copy.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = copy.xcodeproj; sourceTree = "<group>"; };
-		F5679E862FAF405D0054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
-		F567FDCC2FAF42620054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
-		F567FDE32FAF42620054AB4B /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
-		F567FE272FAF42620054AB4B /* FileSharedAcrossTargets.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FileSharedAcrossTargets.xcodeproj; sourceTree = "<group>"; };
-		F567FE4E2FAF42620054AB4B /* AppWithExtensions.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AppWithExtensions.xcodeproj; sourceTree = "<group>"; };
-		F567FE622FAF42620054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
-		F567FE662FAF42620054AB4B /* BuildSettings.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = BuildSettings.xcodeproj; sourceTree = "<group>"; };
-		F567FE692FAF42620054AB4B /* Project.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Project.xcodeproj; sourceTree = "<group>"; };
-		F567FE6A2FAF42620054AB4B /* ProjectWithoutProductsGroup.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithoutProductsGroup.xcodeproj; sourceTree = "<group>"; };
-		F567FE6B2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
-		F567FE6C2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReferences.xcodeproj; sourceTree = "<group>"; };
-		F567FE7A2FAF42620054AB4B /* SynchronizedRootGroups.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SynchronizedRootGroups.xcodeproj; sourceTree = "<group>"; };
-		F567FE7F2FAF42620054AB4B /* TargetWithCustomBuildRules.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TargetWithCustomBuildRules.xcodeproj; sourceTree = "<group>"; };
-		F567FE902FAF42620054AB4B /* copy.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = copy.xcodeproj; sourceTree = "<group>"; };
-		F567FE922FAF42620054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
-		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
-		F5A640662F3ED1910039A761 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
-		F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Atomics.xcodeproj; sourceTree = "<group>"; };
-		F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
-		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
-		F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = iOSTerminal.xcodeproj; sourceTree = "<group>"; };
-		F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MacTerminal.xcodeproj; sourceTree = "<group>"; };
-		F5EA98E72FC5841000181A09 /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
-		F5FA20142FC540120046F3B9 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
-		F5FA20332FC540130046F3B9 /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0B2F7D692F3A301D00AD7E94 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
-		};
-		0B6131EE2FCF0FDD008E3867 /* Exceptions for "Plugins" folder in "Lumi" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AgentDelayMessagePlugin,
-				AgentGitHubToolsPlugin,
-				AgentMCPToolsPlugin,
-				AgentRAGPlugin,
-				AgentRulesPlugin,
-				AgentTurnNotificationPlugin,
-				AppIconDesignerPlugin,
-				AppLoadedPluginsPlugin,
-				AppManagerPlugin,
-				AppStoreConnectPlugin,
-				AppUpdateStatusBarPlugin,
-				AskUserPlugin,
-				AutoTaskPlugin,
-				BrewManagerPlugin,
-				BrowserPlugin,
-				CaffeinatePlugin,
-				ChatAttachmentPlugin,
-				ChatInputPlugin,
-				ChatModePlugin,
-				ChatPanelPlugin,
-				ChatPendingMessagesPlugin,
-				ChatSubmitPlugin,
-				ClipboardManagerPlugin,
-				CodeReviewPlugin,
-				ConversationListPlugin,
-				ConversationNewPlugin,
-				ConversationTimelinePlugin,
-				ConversationTitlePlugin,
-				CSSEditorPlugin,
-				DatabaseManagerPlugin,
-				DeviceInfoPlugin,
-				DiskManagerPlugin,
-				DockerManagerPlugin,
-				EditorBottomCallHierarchyPlugin,
-				EditorBottomProblemsPlugin,
-				EditorBottomReferencesPlugin,
-				EditorBottomSearchPlugin,
-				EditorBottomSymbolsPlugin,
-				EditorBottomTerminalPlugin,
-				EditorBreadcrumbPlugin,
-				EditorCallHierarchyRailPlugin,
-				EditorChatIntegrationPlugin,
-				EditorLSPContextCommandsPlugin,
-				EditorMultiCursorCommandsPlugin,
-				EditorOutlineRailPlugin,
-				EditorPanelPlugin,
-				EditorPreviewPlugin,
-				EditorRailFileTreePlugin,
-				EditorRailProblemsPlugin,
-				EditorRailReferencesPlugin,
-				EditorRailWorkspaceSearchPlugin,
-				EditorRailWorkspaceSymbolsPlugin,
-				EditorStickySymbolBarPlugin,
-				EditorSwiftKeywordHoverPlugin,
-				EditorTabStripPlugin,
-				EditorXcodePlugin,
-				FileLogPlugin,
-				FontConfigPlugin,
-				GitHubCLIDetectPlugin,
-				GitHubInsightPlugin,
-				GitPlugin,
-				GoEditorPlugin,
-				HistoryDBStatusBarPlugin,
-				HostsManagerPlugin,
-				HTMLEditorPlugin,
-				IdleTimePlugin,
-				InputPlugin,
-				JSEditorPlugin,
-				LayoutPlugin,
-				LLMAvailabilityPlugin,
-				LLMProviderAiRouterPlugin,
-				LLMProviderAliyunPlugin,
-				LLMProviderAnthropicPlugin,
-				LLMProviderCodexPlugin,
-				LLMProviderDeepSeekPlugin,
-				LLMProviderFeifeimiaoPlugin,
-				LLMProviderFlyMuxPlugin,
-				LLMProviderFreeModelPlugin,
-				LLMProviderHappyCodePlugin,
-				LLMProviderHyperAPIPlugin,
-				LLMProviderLPgptPlugin,
-				LLMProviderMegaLLMPlugin,
-				LLMProviderMLXPlugin,
-				LLMProviderOpenAIPlugin,
-				LLMProviderOpenRouterPlugin,
-				LLMProviderXiaomiPlugin,
-				LLMProviderXybbzPlugin,
-				LLMProviderZhipuPlugin,
-				LSPCallHierarchyEditorPlugin,
-				LSPCodeActionEditorPlugin,
-				LSPDocumentColorEditorPlugin,
-				LSPDocumentHighlightEditorPlugin,
-				LSPDocumentLinkEditorPlugin,
-				LSPFoldingRangeEditorPlugin,
-				LSPInlayHintEditorPlugin,
-				LSPRealtimeSignalsEditorPlugin,
-				LSPSelectionRangeEditorPlugin,
-				LSPServiceEditorPlugin,
-				LSPSheetsEditorPlugin,
-				LSPSignatureHelpEditorPlugin,
-				LSPToolbarEditorPlugin,
-				LSPWorkspaceSymbolEditorPlugin,
-				MarkdownEditorPlugin,
-				MemoryPlugin,
-				MenuBarManagerPlugin,
-				MessageListPlugin,
-				ModelPreferencePlugin,
-				ModelSelectorPlugin,
-				MultiAgentPlugin,
-				NettoPlugin,
-				NetworkManagerPlugin,
-				OnboardingPlugin,
-				OpenInAntigravityPlugin,
-				OpenInCursorPlugin,
-				OpenInFinderPlugin,
-				OpenInGitHubDesktopPlugin,
-				OpenInGitOKPlugin,
-				OpenInXcodePlugin,
-				OpenRemotePlugin,
-				PortManagerPlugin,
-				ProjectIssueScannerPlugin,
-				ProjectOverviewPlugin,
-				ProjectsPlugin,
-				QuickFileSearchPlugin,
-				QuickLauncherPlugin,
-				RClickPlugin,
-				RegistryManagerPlugin,
-				RequestLogPlugin,
-				SampleDecorationEditorPlugin,
-				ScreenshotPlugin,
-				ShowImagePlugin,
-				SkillPlugin,
-				SwiftPrimitiveTypesEditorPlugin,
-				SwiftSelectionCodeActionEditorPlugin,
-				TerminalPlugin,
-				TextActionsPlugin,
-				ThemeAuroraPlugin,
-				ThemeAutumnPlugin,
-				ThemeDraculaPlugin,
-				ThemeGithubPlugin,
-				ThemeLumiPlugin,
-				ThemeMidnightPlugin,
-				ThemeMountainPlugin,
-				ThemeNebulaPlugin,
-				ThemeOneDarkPlugin,
-				ThemeOrchardPlugin,
-				ThemeRiverPlugin,
-				ThemeSkyPlugin,
-				ThemeSpringPlugin,
-				ThemeStatusBarPlugin,
-				ThemeSummerPlugin,
-				ThemeVoidPlugin,
-				ThemeVscodeDarkPlugin,
-				ThemeVscodeLightPlugin,
-				ThemeWinterPlugin,
-				ToolAvailablePlugin,
-				ToolCallLoopDetectionPlugin,
-				ToolCorePlugin,
-				VerbosityPlugin,
-				VueEditorPlugin,
-				WebFetchPlugin,
-				WebSearchPlugin,
-				WindowPersistencePlugin,
-			);
-			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
-		};
-		0BB546B22F5BEA17009E1AEA /* Exceptions for "NettoExtension" folder in "NettoExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = F5A640642F3ED1910039A761 /* NettoExtension */;
-		};
 		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -349,54 +28,11 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		F57EEC332F7B4C97001233A2 /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			attributesByRelativePath = {
-				ThirdParty/sqlite/vec0.dylib = (CodeSignOnCopy, );
-			};
-			buildPhase = F5A9DB4A2F7635F600A47D9C /* Embed Libraries */;
-			membershipExceptions = (
-				ThirdParty/sqlite/vec0.dylib,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		0B2F7D622F3A301C00AD7E94 /* LumiFinder */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0B2F7D692F3A301D00AD7E94 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */,
-			);
-			path = LumiFinder;
-			sourceTree = "<group>";
-		};
-		0B6131ED2FCF0FDC008E3867 /* Plugins */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0B6131EE2FCF0FDD008E3867 /* Exceptions for "Plugins" folder in "Lumi" target */,
-			);
-			path = Plugins;
-			sourceTree = "<group>";
-		};
-		A1B2C3D82F70000100AAA101 /* Packages */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Packages;
-			sourceTree = "<group>";
-		};
-		F5A640682F3ED1910039A761 /* NettoExtension */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0BB546B22F5BEA17009E1AEA /* Exceptions for "NettoExtension" folder in "NettoExtension" target */,
-			);
-			path = NettoExtension;
-			sourceTree = "<group>";
-		};
 		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
-				F57EEC332F7B4C97001233A2 /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */,
 			);
 			path = LumiApp;
 			sourceTree = "<group>";
@@ -404,503 +40,31 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		0B2F7D5E2F3A301C00AD7E94 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A1B2C4622F70000100AAA107 /* SuperLogKit in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F54F8C7B2F1A3B6500AABB2A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AFA8E601EF5D2CF137AB66DD /* NettoPlugin in Frameworks */,
-				0B289C892FBF4E4D009F89A9 /* SuperLogKit in Frameworks */,
-				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
-				0BB994802FC492FC003720A4 /* ProjectOverviewPlugin in Frameworks */,
-				0B12E9182FC3111D00F7DC5D /* LumiCoreKit in Frameworks */,
+				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
+				LUI1000000000000000002 /* LumiUI in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
-				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
-				0BB9F7702FC48DF6003720A4 /* AutoTaskPlugin in Frameworks */,
-				0BB9F7712FC48DF7003720A5 /* AskUserPlugin in Frameworks */,
-				0B1A4F8D2F662D8500F15618 /* MLXLLM in Frameworks */,
-				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
-				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
-				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
-				0B7A440C2FC1FA390056DFA2 /* MemoryKit in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5A640622F3ED1910039A761 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				NETTOEXTPLUGINNETTO00001 /* NettoPlugin in Frameworks */,
-				F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0B1780D32FAF5C0F00F8A599 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B1781EB2FAF5C0F00F8A599 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B1781FB2FAF5C0F00F8A599 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B462F082FB9C743007E52B1 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B462F0A2FB9C743007E52B1 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B4631E72FB9C747007E52B1 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0B4631E92FB9C747007E52B1 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0BC901712FAD5B54003651CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0BC9031E2FAD5B56003651CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0BC903202FAD5B56003651CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0BC9FE082FAD5B49003651CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5050AA52FADA83D002AA7B5 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F508C63A2FC9410400D95FBC /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F508C63C2FC9410400D95FBC /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53707E72FB1E52400AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5370B2F2FB1E52500AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53711332FB1E52800AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53711352FB1E52800AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53711372FB1E52800AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F53711392FB1E52800AF4705 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
-				0B6131ED2FCF0FDC008E3867 /* Plugins */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
-				A1B2C3D82F70000100AAA101 /* Packages */,
-				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
-				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
-				F5A640682F3ED1910039A761 /* NettoExtension */,
-				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
-				F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */,
 			);
-			sourceTree = "<group>";
-		};
-		F567010F2FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701112FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701132FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701152FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701172FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701192FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F567011B2FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F567011D2FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F567011F2FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701212FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701232FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701252FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701272FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F56701292FAF42620054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F732FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F752FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F772FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F792FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F7B2FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F7D2FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F7F2FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F812FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F832FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F852FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F872FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F892FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F8B2FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5679F8D2FAF405D0054AB4B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5AB36082FBDB32800C953CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5AB360A2FBDB32800C953CA /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5AE9B752FAD6E0900F014F8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5AE9B772FAD6E0900F014F8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5CA2F3D2FADB75E00F67747 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5E211592FAEF3440005256B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5E2115B2FAEF3440005256B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5EA991F2FC5841000181A09 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5F4DFC92F3ABECF00C76EA0 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				F5A640662F3ED1910039A761 /* NetworkExtension.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		F5FA201A2FC540120046F3B9 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F5FA206B2FC540130046F3B9 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0B2F7D602F3A301C00AD7E94 /* LumiFinder */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 0B2F7D6A2F3A301D00AD7E94 /* Build configuration list for PBXNativeTarget "LumiFinder" */;
-			buildPhases = (
-				0B2F7D5D2F3A301C00AD7E94 /* Sources */,
-				0B2F7D5E2F3A301C00AD7E94 /* Frameworks */,
-				0B2F7D5F2F3A301C00AD7E94 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
-			);
-			name = LumiFinder;
-			packageProductDependencies = (
-				A1B2C4612F70000100AAA107 /* SuperLogKit */,
-			);
-			productName = LumiFinder;
-			productReference = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		F54F8C7D2F1A3B6500AABB2A /* Lumi */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */;
@@ -908,63 +72,23 @@
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
-				0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */,
-				F5A640762F3ED1910039A761 /* Embed System Extensions */,
-				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
-				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
-				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
-				A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */,
-				F5A640702F3ED1910039A761 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				0B6131ED2FCF0FDC008E3867 /* Plugins */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				5F6F4F3AD385478337B1AF43 /* NettoPlugin */,
-				F53C41592F1A3E6500929321 /* Sparkle */,
-				A1B2C4612F70000100AAA107 /* SuperLogKit */,
-				A1B2C4132F70000100AAA101 /* LumiUI */,
-				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
-				0B7A440B2FC1FA390056DFA2 /* MemoryKit */,
-				0B12E9172FC3111D00F7DC5D /* LumiCoreKit */,
+				LCK1000000000000000001 /* LumiChatKit */,
+				LUI1000000000000000001 /* LumiUI */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
-				0BB9F76F2FC48DF6003720A4 /* AutoTaskPlugin */,
-				0BB9F76F2FC48DF7003720A5 /* AskUserPlugin */,
-				0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
-		};
-		F5A640642F3ED1910039A761 /* NettoExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F5A640722F3ED1910039A761 /* Build configuration list for PBXNativeTarget "NettoExtension" */;
-			buildPhases = (
-				F5A640612F3ED1910039A761 /* Sources */,
-				F5A640622F3ED1910039A761 /* Frameworks */,
-				F5A640632F3ED1910039A761 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				F5A640682F3ED1910039A761 /* NettoExtension */,
-			);
-			name = NettoExtension;
-			packageProductDependencies = (
-				5F6F4F3AD385478337B1AF43 /* NettoPlugin */,
-			);
-			productName = NettoExtension;
-			productReference = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */;
-			productType = "com.apple.product-type.system-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -976,14 +100,8 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					0B2F7D602F3A301C00AD7E94 = {
-						CreatedOnToolsVersion = 26.2;
-					};
 					F54F8C7D2F1A3B6500AABB2A = {
 						CreatedOnToolsVersion = 16.4;
-					};
-					F5A640642F3ED1910039A761 = {
-						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -999,266 +117,21 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
-				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
-				A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
+				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
+				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
-				52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = F5679F7F2FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679DD72FAF405D0054AB4B /* AEXML.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701152FAF42620054AB4B /* Products */;
-					ProjectRef = F567FDE32FAF42620054AB4B /* AEXML.xcodeproj */;
-				},
-				{
-					ProductGroup = F508C63A2FC9410400D95FBC /* Products */;
-					ProjectRef = F508C6332FC9410400D95FBC /* AEXML.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701212FAF42620054AB4B /* Products */;
-					ProjectRef = F567FDCC2FAF42620054AB4B /* AEXMLDemo.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F812FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */;
-				},
-				{
-					ProductGroup = F508C63C2FC9410400D95FBC /* Products */;
-					ProjectRef = F508C61C2FC9410400D95FBC /* AEXMLDemo.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701252FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE4E2FAF42620054AB4B /* AppWithExtensions.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F7D2FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */;
-				},
-				{
-					ProductGroup = F5AB36082FBDB32800C953CA /* Products */;
-					ProjectRef = F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701292FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE662FAF42620054AB4B /* BuildSettings.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F832FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */;
-				},
-				{
-					ProductGroup = F5FA201A2FC540120046F3B9 /* Products */;
-					ProjectRef = F5FA20142FC540120046F3B9 /* Collections.xcodeproj */;
-				},
-				{
-					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;
-					ProjectRef = 0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */;
-				},
-				{
-					ProductGroup = F5370B2F2FB1E52500AF4705 /* Products */;
-					ProjectRef = F5370B292FB1E52500AF4705 /* Collections.xcodeproj */;
-				},
-				{
-					ProductGroup = F5AB360A2FBDB32800C953CA /* Products */;
-					ProjectRef = F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E842FAF405D0054AB4B /* copy.xcodeproj */;
-				},
-				{
-					ProductGroup = F567011F2FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE902FAF42620054AB4B /* copy.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B1781EB2FAF5C0F00F8A599 /* Products */;
-					ProjectRef = 0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */;
-				},
-				{
-					ProductGroup = F53711372FB1E52800AF4705 /* Products */;
-					ProjectRef = F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */;
-				},
-				{
-					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
-					ProjectRef = 0BC901B12FAD5B56003651CA /* Demo.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B4631E72FB9C747007E52B1 /* Products */;
-					ProjectRef = 0B4630542FB9C747007E52B1 /* Demo.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701272FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE272FAF42620054AB4B /* FileSharedAcrossTargets.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F732FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E1B2FAF405D0054AB4B /* FileSharedAcrossTargets.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B1781FB2FAF5C0F00F8A599 /* Products */;
-					ProjectRef = 0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */;
-				},
-				{
-					ProductGroup = F53711352FB1E52800AF4705 /* Products */;
-					ProjectRef = F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */;
-				},
-				{
-					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
-					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B4631E92FB9C747007E52B1 /* Products */;
-					ProjectRef = 0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */;
-				},
-				{
-					ProductGroup = F5E211592FAEF3440005256B /* Products */;
-					ProjectRef = F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */;
-				},
-				{
-					ProductGroup = F5E2115B2FAEF3440005256B /* Products */;
-					ProjectRef = F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */;
-				},
-				{
-					ProductGroup = F53711392FB1E52800AF4705 /* Products */;
-					ProjectRef = F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B462F0A2FB9C743007E52B1 /* Products */;
-					ProjectRef = 0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */;
-				},
-				{
-					ProductGroup = F53711332FB1E52800AF4705 /* Products */;
-					ProjectRef = F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701112FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE692FAF42620054AB4B /* Project.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F7B2FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E5D2FAF405D0054AB4B /* Project.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F772FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E5E2FAF405D0054AB4B /* ProjectWithoutProductsGroup.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701192FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE6A2FAF42620054AB4B /* ProjectWithoutProductsGroup.xcodeproj */;
-				},
-				{
-					ProductGroup = F567011B2FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE622FAF42620054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F8B2FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E562FAF405D0054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701232FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE6B2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F8D2FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E5F2FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701132FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE6C2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F792FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E602FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */;
-				},
-				{
-					ProductGroup = F5CA2F3D2FADB75E00F67747 /* Products */;
-					ProjectRef = F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */;
-				},
-				{
-					ProductGroup = F5AE9B772FAD6E0900F014F8 /* Products */;
-					ProjectRef = F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */;
-				},
-				{
-					ProductGroup = F5AE9B752FAD6E0900F014F8 /* Products */;
-					ProjectRef = F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */;
-				},
-				{
-					ProductGroup = F5050AA52FADA83D002AA7B5 /* Products */;
-					ProjectRef = F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */;
-				},
-				{
-					ProductGroup = F5FA206B2FC540130046F3B9 /* Products */;
-					ProjectRef = F5FA20332FC540130046F3B9 /* SwiftTreeSitterExample.xcodeproj */;
-				},
-				{
-					ProductGroup = 0BC9FE082FAD5B49003651CA /* Products */;
-					ProjectRef = 0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */;
-				},
-				{
-					ProductGroup = F5EA991F2FC5841000181A09 /* Products */;
-					ProjectRef = F5EA98E72FC5841000181A09 /* SwiftTreeSitterExample.xcodeproj */;
-				},
-				{
-					ProductGroup = F567011D2FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE7A2FAF42620054AB4B /* SynchronizedRootGroups.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F872FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E6E2FAF405D0054AB4B /* SynchronizedRootGroups.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F752FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E732FAF405D0054AB4B /* TargetWithCustomBuildRules.xcodeproj */;
-				},
-				{
-					ProductGroup = F56701172FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE7F2FAF42620054AB4B /* TargetWithCustomBuildRules.xcodeproj */;
-				},
-				{
-					ProductGroup = F567010F2FAF42620054AB4B /* Products */;
-					ProjectRef = F567FE922FAF42620054AB4B /* Test.xcodeproj */;
-				},
-				{
-					ProductGroup = F5679F852FAF405D0054AB4B /* Products */;
-					ProjectRef = F5679E862FAF405D0054AB4B /* Test.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B1780D32FAF5C0F00F8A599 /* Products */;
-					ProjectRef = 0B1780D12FAF5C0F00F8A599 /* ZIPFoundation.xcodeproj */;
-				},
-				{
-					ProductGroup = F53707E72FB1E52400AF4705 /* Products */;
-					ProjectRef = F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */;
-				},
-				{
-					ProductGroup = 0B462F082FB9C743007E52B1 /* Products */;
-					ProjectRef = 0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
-				0B2F7D602F3A301C00AD7E94 /* LumiFinder */,
-				F5A640642F3ED1910039A761 /* NettoExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		0B2F7D5F2F3A301C00AD7E94 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F54F8C7C2F1A3B6500AABB2A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1267,90 +140,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F5A640632F3ED1910039A761 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderer.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderLoop.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewDemoView.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotStdioPreviewHost.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewEventDispatcher.swift",
-				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
-			);
-			name = "Embed Inline Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
-		};
-		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Package.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostManifest.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostResponse.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostDylibInspector.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostSymbolResolver.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostRunner.swift",
-				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/main.swift",
-				"$(SRCROOT)/scripts/embed-swiftui-preview-host.sh",
-			);
-			name = "Embed SwiftUI Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiSwiftUIPreviewHost",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/embed-swiftui-preview-host.sh\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
-		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F54F8C7A2F1A3B6500AABB2A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5A640612F3ED1910039A761 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1359,115 +152,11 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
-			targetProxy = 0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */;
-		};
-		F5A640702F3ED1910039A761 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F5A640642F3ED1910039A761 /* NettoExtension */;
-			targetProxy = F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		0B2F7D6B2F3A301D00AD7E94 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = LumiFinder/LumiFinder.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = LumiFinder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LumiFinder;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		0B2F7D6C2F3A301D00AD7E94 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = LumiFinder/LumiFinder.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = LumiFinder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LumiFinder;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
 		F54F8C882F1A3B6600AABB2A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -1497,7 +186,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1534,7 +222,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -1598,43 +285,26 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 210;
+				CURRENT_PROJECT_VERSION = 220;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
-				INFOPLIST_KEY_SUPublicEDKey = "VRFIJExvMCeneBRzxR6mu2zPN9ggOUr0LNlcKYOb27o=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
-				);
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 4.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -1649,128 +319,34 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 210;
+				CURRENT_PROJECT_VERSION = 220;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
-				INFOPLIST_KEY_SUPublicEDKey = "VRFIJExvMCeneBRzxR6mu2zPN9ggOUr0LNlcKYOb27o=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
-				);
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 4.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
-		F5A640732F3ED1910039A761 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 203;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NettoExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NettoExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
-				PRODUCT_NAME = "$(inherited)";
-				REGISTER_APP_GROUPS = YES;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		F5A640742F3ED1910039A761 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 203;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NettoExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NettoExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
-				PRODUCT_NAME = "$(inherited)";
-				REGISTER_APP_GROUPS = YES;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0B2F7D6A2F3A301D00AD7E94 /* Build configuration list for PBXNativeTarget "LumiFinder" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				0B2F7D6B2F3A301D00AD7E94 /* Debug */,
-				0B2F7D6C2F3A301D00AD7E94 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1789,119 +365,38 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F5A640722F3ED1910039A761 /* Build configuration list for PBXNativeTarget "NettoExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F5A640732F3ED1910039A761 /* Debug */,
-				F5A640742F3ED1910039A761 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */ = {
+		LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/NettoPlugin;
-		};
-		A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiUI;
-		};
-		A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SuperLogKit;
+			relativePath = Packages/LumiChatKit;
 		};
 		LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiPluginRegistry;
 		};
+		LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiUI;
+		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm.git";
-			requirement = {
-				kind = revision;
-				revision = bc3c20ef4644c86f2b347debcfe1efe4308712a6;
-			};
-		};
-		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.8.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		0B12E9172FC3111D00F7DC5D /* LumiCoreKit */ = {
+		LCK1000000000000000001 /* LumiChatKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiCoreKit;
-		};
-		0B1A4F8C2F662D8500F15618 /* MLXLLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLLM;
-		};
-		0B1A4F8E2F662D8500F15618 /* MLXLMCommon */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLMCommon;
-		};
-		0B1A4F902F662D8500F15618 /* MLXVLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXVLM;
-		};
-		0B7A440B2FC1FA390056DFA2 /* MemoryKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MemoryKit;
-		};
-		0BB9947F2FC492FC003720A4 /* ProjectOverviewPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ProjectOverviewPlugin;
-		};
-		0BB9F76F2FC48DF6003720A4 /* AutoTaskPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AutoTaskPlugin;
-		};
-		0BB9F76F2FC48DF7003720A5 /* AskUserPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AskUserPlugin;
-		};
-		0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = LLMProviderKit;
-		};
-		5F6F4F3AD385478337B1AF43 /* NettoPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 52713200CC6647124CE4E1D9 /* XCLocalSwiftPackageReference "Plugins/NettoPlugin" */;
-			productName = NettoPlugin;
-		};
-		A1B2C4132F70000100AAA101 /* LumiUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
-			productName = LumiUI;
-		};
-		A1B2C4612F70000100AAA107 /* SuperLogKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C4602F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */;
-			productName = SuperLogKit;
-		};
-		F53C41592F1A3E6500929321 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
+			package = LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */;
+			productName = LumiChatKit;
 		};
 		LPR1000000000000000001 /* LumiPluginRegistry */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */;
 			productName = LumiPluginRegistry;
+		};
+		LUI1000000000000000001 /* LumiUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
+			productName = LumiUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

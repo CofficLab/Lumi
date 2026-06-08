@@ -1,73 +1,50 @@
-import AgentToolKit
-import SwiftUI
-import os
-import DeviceMonitorKit
 import LumiCoreKit
-import SuperLogKit
+import Foundation
 
-public actor DeviceInfoPlugin: SuperPlugin, SuperLog {
-    /// 插件专用 Logger
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
+public enum DeviceInfoPlugin: LumiPlugin {
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.device-info",
+        displayName: "Device Info",
+        description: "Shows basic device and system information.",
+        order: 20
+    )
+    public static let category: LumiPluginCategory = .system
+    public static let policy: LumiPluginPolicy = .optIn
 
-    // MARK: - Plugin Properties
-
-    public nonisolated static let emoji = "💻"
-    public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = false
-
-    public static let id: String = "DeviceInfo"
-    public static let navigationId: String = "device_info"
-    public static let displayName: String = PluginDeviceInfoLocalization.string("Device Info")
-    public static let description: String = PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.")
-
-    public static func description(for language: LanguagePreference) -> String {
-        PluginDeviceInfoLocalization.string("Show system status like CPU, Memory, Disk, Battery, etc.", for: language)
-    }
     public static let iconName = "macbook.and.iphone"
-    public static var order: Int { 10 }
-    public nonisolated static let policy: PluginPolicy = .optOut
-
-    // MARK: - Instance
-
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = DeviceInfoPlugin()
-
-    private init() {}
-
-    public nonisolated func onEnable() {
-        Task { @MainActor in
-            CPUHistoryService.shared.startRecording()
-            MemoryHistoryService.shared.startRecording()
-        }
-    }
-
-    public nonisolated func onDisable() {
-        Task { @MainActor in
-            CPUHistoryService.shared.stopRecording()
-            MemoryHistoryService.shared.stopRecording()
-        }
-    }
-
-    // MARK: - UI Contributions
 
     @MainActor
-    public func addMenuBarContentView() -> AnyView? {
-        AnyView(DeviceInfoMenuBarContentView())
-    }
-
-    @MainActor
-    public func addMenuBarPopupViews() -> [AnyView] {
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
-            AnyView(DeviceInfoMenuBarPopupView()),
-            AnyView(MemoryMenuBarPopupView()),
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                DeviceInfoView()
+            }
         ]
     }
 
     @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(DeviceInfoView())
-        }
+    public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
+        [
+            LumiMenuBarContentItem(id: "\(info.id).metrics", order: info.order) {
+                DeviceInfoMenuBarContentView()
+            }
+        ]
+    }
+
+    @MainActor
+    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+        [
+            LumiMenuBarPopupItem(id: "\(info.id).cpu", order: info.order) {
+                DeviceInfoMenuBarPopupView()
+            },
+            LumiMenuBarPopupItem(id: "\(info.id).memory", order: info.order + 1) {
+                MemoryMenuBarPopupView()
+            }
+        ]
     }
 }
 
@@ -76,10 +53,6 @@ enum PluginDeviceInfoLocalization {
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
+        NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
     }
 }

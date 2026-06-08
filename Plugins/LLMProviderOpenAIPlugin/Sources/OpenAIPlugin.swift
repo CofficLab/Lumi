@@ -1,19 +1,18 @@
-import Foundation
 import LumiCoreKit
 
-/// OpenAI LLM 供应商插件
-public actor OpenAIPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum OpenAIPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.openai",
+        displayName: "OpenAI",
+        description: "Contributes OpenAI GPT models to Lumi Chat.",
+        order: 100
+    )
 
-    public static let shared = OpenAIPlugin()
-    public static let id = "LLMProviderOpenAI"
-    public static let displayName = "OpenAI"
-    public static let description = "OpenAI GPT Models"
-    public static let iconName = "star.circle"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
-
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        OpenAIProvider.self
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [OpenAIProvider()]
     }
 }

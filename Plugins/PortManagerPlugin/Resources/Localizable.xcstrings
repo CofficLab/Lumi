@@ -1,18 +1,21 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "•" : {
+    ":%@" : {
 
     },
-    "Are you sure you want to kill process %@ (PID: %@)?" : {
+    "%@  %@  PID %@  %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Are you sure you want to kill process %1$@ (PID: %2$@)?"
+            "value" : "%1$@  %2$@  PID %3$@  %4$@"
           }
         }
       }
+    },
+    "%lld listening ports" : {
+
     },
     "Are you sure you want to kill process %1$@ (PID: %2$@)?" : {
       "extractionState" : "manual",
@@ -278,9 +281,6 @@
         }
       }
     },
-    "PID: %@" : {
-
-    },
     "Port Manager" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -454,6 +454,9 @@
           }
         }
       }
+    },
+    "搜索端口、PID 或进程" : {
+
     }
   },
   "version" : "1.1"

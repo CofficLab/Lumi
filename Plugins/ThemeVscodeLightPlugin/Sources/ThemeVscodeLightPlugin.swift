@@ -1,46 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeVscodeLightPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeVscodeLightPlugin()
-    public static let id: String = "vscode-light"
-    public static let displayName: String = "VS Code 亮色"
-    public static let description: String = "Visual Studio Code Light+ IDE theme"
-    public static let iconName: String = "terminal"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 130 }
-
-    nonisolated public var instanceLabel: String { Self.id }
+public enum ThemeVscodeLightPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.vscode-light",
+        displayName: "VS Code 亮色 Theme",
+        description: "Visual Studio Code Light+ IDE theme",
+        order: 130
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: VscodeLightTheme(),
-                editorThemeId: "vscode-light",
-                editorThemeContributor: VscodeLightSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "vscode-light-file-icons",
-                    displayName: "VS Code Light File Icons",
-                    defaultFile: .systemImage("doc.plaintext"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
-                    extraExtensions: [
-                        "json": .systemImage("curlybraces.square"),
-                        "md": .systemImage("book.pages"),
-                        "markdown": .systemImage("book.pages"),
-                    ]
-                )
+                editorThemeId: "vscode-light"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(VscodeLightSuperEditorThemeContributor())
-    }
-
 }

@@ -1,32 +1,20 @@
 import SwiftUI
 
-/// Owns the per-window container for a SwiftUI window scene.
 struct MainWindowSceneContent: View {
-    @StateObject private var windowContainer: WindowContainer
-    @State private var initialProjectPath: String?
-
-    init() {
-        self.init(route: CoreWindowIDStore.consumeNextWindowRoute())
-    }
-
-    init(route: Binding<LumiWindowRoute?>) {
-        self.init(route: CoreWindowIDStore.consumeRestoredWindowGroupRoute(route.wrappedValue))
-    }
-
-    init(route initialRoute: LumiWindowRoute) {
-        _windowContainer = StateObject(
-            wrappedValue: WindowContainer(
-                id: initialRoute.id,
-                container: RootContainer.shared,
-                projectPath: initialRoute.projectPath
-            )
-        )
-        _initialProjectPath = State(initialValue: initialRoute.projectPath)
-    }
+    @StateObject private var container = RootContainer.shared
 
     var body: some View {
-        ContentLayout(projectPath: initialProjectPath)
-            .inRootView(container: windowContainer)
-            .restoreCoreWindowIDs(windowId: windowContainer.id)
+        RootView(container: container) {
+            AppLayoutView(
+                pluginService: container.pluginService,
+                lumiUIService: container.lumiUIService,
+                chatService: container.chatCoreService.chatService
+            )
+        }
+        .background {
+            WindowAccessor { window in
+                window.configureForLumiMainChrome()
+            }
+        }
     }
 }

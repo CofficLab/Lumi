@@ -14,19 +14,19 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/HttpKit"),
+        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LLMProviderKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiCoreKit")
     ],
     targets: [
         .target(
             name: "LLMProviderOpenAIPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit")
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

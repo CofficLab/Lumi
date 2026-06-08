@@ -4,6 +4,16 @@
     "" : {
 
     },
+    "%lld / %lld apps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld apps"
+          }
+        }
+      }
+    },
     "%lld Apps" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -32,9 +42,6 @@
           }
         }
       }
-    },
-    "•" : {
-
     },
     "App Manager" : {
       "extractionState" : "stale",
@@ -151,6 +158,9 @@
           }
         }
       }
+    },
+    "Loading Applications" : {
+
     },
     "Manage installed applications" : {
       "extractionState" : "stale",
@@ -586,6 +596,9 @@
           }
         }
       }
+    },
+    "搜索应用" : {
+
     }
   },
   "version" : "1.0"

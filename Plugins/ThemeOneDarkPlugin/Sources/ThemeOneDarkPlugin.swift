@@ -1,50 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeOneDarkPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeOneDarkPlugin()
-    public static let id: String = "one-dark"
-    public static let displayName: String = "One Dark"
-    public static let description: String = "Atom One Dark classic dark theme"
-    public static let iconName: String = "circle.hexagongrid"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 131 }
-
-    public nonisolated var instanceLabel: String { Self.id }
-
-    private init() {}
+public enum ThemeOneDarkPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.one-dark",
+        displayName: "One Dark Theme",
+        description: "Atom One Dark classic dark theme",
+        order: 131
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: OneDarkTheme(),
-                editorThemeId: "one-dark",
-                editorThemeContributor: OneDarkSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "one-dark-file-icons",
-                    displayName: "One Dark File Icons",
-                    defaultFile: .systemImage("doc.circle"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.circle", "folder.circle.fill"),
-                    extraExtensions: [
-                        "swift": .systemImage("swift"),
-                        "json": .systemImage("curlybraces"),
-                    ]
-                )
+                editorThemeId: "one-dark"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(OneDarkSuperEditorThemeContributor())
-    }
-}
-
-public enum ThemeOneDarkPluginResources {
-    public static let bundle = Bundle.module
 }

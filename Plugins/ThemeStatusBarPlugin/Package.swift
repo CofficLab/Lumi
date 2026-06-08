@@ -15,16 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "ThemeStatusBarPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiUI", package: "LumiUI")
             ],
             path: "Sources",
             resources: [

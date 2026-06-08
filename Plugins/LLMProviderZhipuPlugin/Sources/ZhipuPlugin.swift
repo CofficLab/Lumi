@@ -1,53 +1,29 @@
-import Foundation
-import SwiftUI
 import LumiCoreKit
-import SuperLogKit
-import os
 
-/// 智谱 LLM 供应商插件
-public actor ZhipuPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.zhipu")
-    public nonisolated static let emoji = "🔴"
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "LLMProviderZhipu"
-    public static let navigationId: String? = nil
-    public static let displayName = "智谱"
-    public static let description = "Zhipu AI GLM Models"
+public enum ZhipuPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
     public static let iconName = "sparkles"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.zhipu",
+        displayName: "智谱",
+        description: "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.",
+        order: 110
+    )
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-
-    public static let shared = ZhipuPlugin()
-
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        ZhipuProvider.self
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [ZhipuProvider()]
     }
 
     @MainActor
-    public func messageRenderers() -> [any SuperMessageRenderer] {
+    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
         [
-            ApiKeyMissingRenderer(),
-            Http401Renderer(),
-            Http403Renderer(),
-            HttpErrorRenderer(),
-            RequestFailedRenderer(),
+            ApiKeyMissingRenderer.item,
+            Http401Renderer.item,
+            Http403Renderer.item,
+            HttpErrorRenderer.item,
+            RequestFailedRenderer.item,
         ]
-    }
-
-    // MARK: - UI Contributions
-
-    /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
-    ///
-    /// 仅在当前活跃供应商为智谱且 ViewContainer 支持 AI 聊天时返回视图，
-    /// 避免非智谱场景或非 AI 聊天场景下不必要的 UI 和网络请求。
-    @MainActor public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeProviderId == ZhipuProvider.id, context.showChat.isVisible else {
-            return nil
-        }
-        return AnyView(StatusBarView())
     }
 }

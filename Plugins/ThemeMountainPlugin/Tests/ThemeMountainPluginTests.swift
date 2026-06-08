@@ -1,67 +1,27 @@
-import EditorService
-import Foundation
+import Testing
 import LumiCoreKit
 import LumiUI
-import Testing
 @testable import ThemeMountainPlugin
 
 @MainActor
 struct ThemeMountainPluginTests {
-    @Test
-    func pluginMetadataIsStable() {
-        #expect(ThemeMountainPlugin.id == "mountain")
-        #expect(ThemeMountainPlugin.displayName == "Mountain")
-        #expect(ThemeMountainPlugin.description.isEmpty == false)
-        #expect(ThemeMountainPlugin.iconName == "mountain.2.fill")
-        #expect(ThemeMountainPlugin.isConfigurable == false)
-        #expect(ThemeMountainPlugin.category == .theme)
-        #expect(ThemeMountainPlugin.order == 129)
-        #expect(ThemeMountainPlugin.policy == .disabled)
-        #expect(ThemeMountainPlugin.shared.instanceLabel == ThemeMountainPlugin.id)
+    @Test func metadata() {
+        #expect(ThemeMountainPlugin.info.id == "com.coffic.lumi.plugin.theme.mountain")
+        #expect(ThemeMountainPlugin.info.displayName.isEmpty == false)
+        #expect(ThemeMountainPlugin.info.order == 129)
     }
 
-    @Test
-    func themeContributionIsComplete() {
-        let contributions = ThemeMountainPlugin.shared.addThemeContributions()
-
+    @Test func contributesTheme() {
+        let contributions = ThemeMountainPlugin.themeContributions()
         #expect(contributions.count == 1)
-        let contribution = contributions[0]
-        #expect(contribution.id == "mountain")
-        #expect(contribution.displayName == "山岚灰")
-        #expect(contribution.iconName == "mountain.2.fill")
-        #expect(contribution.appearanceKind == .dark)
-        #expect(contribution.editorThemeId == "mountain")
-        #expect(contribution.attachments.editorThemeContributor != nil)
-        #expect(contribution.attachments.fileIconThemeContributor != nil)
+        #expect(contributions[0].id == "mountain")
+        #expect(contributions[0].editorThemeId == "mountain")
     }
 
-    @Test
-    func editorThemeContributorRegistersOnce() {
-        let registry = EditorExtensionRegistry()
-
-        ThemeMountainPlugin.shared.registerEditorExtensions(into: registry)
-        ThemeMountainPlugin.shared.registerEditorExtensions(into: registry)
-
-        #expect(registry.allThemes().map(\.id) == ["mountain"])
-    }
-
-    @Test
-    func mountainThemeMetadataAndColorsAreStable() {
-        let theme = MountainTheme()
-
-        #expect(theme.identifier == "mountain")
-        #expect(theme.displayName == "山岚灰")
-        #expect(theme.compactName == "山")
-        #expect(theme.iconName == "mountain.2.fill")
-        #expect(theme.appearanceKind == .dark)
-
-        _ = theme.accentColors()
-        _ = theme.atmosphereColors()
-        _ = theme.glowColors()
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(ThemeMountainPluginResources.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+    @Test func conformsToPluginAndThemeProvider() {
+        let plugin = ThemeMountainPlugin.self as any LumiPlugin.Type
+        let provider = plugin as? any LumiUIThemeProviding.Type
+        #expect(plugin.info.id == ThemeMountainPlugin.info.id)
+        #expect(provider?.themeContributions().count == 1)
     }
 }

@@ -47,11 +47,11 @@ public struct AppListRow<Content: View>: View {
     private var rowBackground: some View {
         Group {
             if isSelected {
-                theme.primary.opacity(0.12)
+                theme.appListRowSelectedBackground
             } else if isHovered {
-                Color.white.opacity(0.08)
+                theme.appListRowHoverBackground
             } else {
-                Color.clear
+                theme.appListRowBackground
             }
         }
     }
@@ -63,7 +63,7 @@ public struct AppListRow<Content: View>: View {
                 .stroke(theme.primary.opacity(0.3), lineWidth: 1)
         } else if isHovered {
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(theme.appHoverBorder, lineWidth: 1)
         }
     }
 }

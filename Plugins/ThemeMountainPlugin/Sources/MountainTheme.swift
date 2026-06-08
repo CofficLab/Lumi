@@ -7,7 +7,7 @@ public struct MountainTheme: LumiAppChromeTheme {
     public let compactName = "山"
     public let description = "石色沉稳，松影清远"
     public let iconName = "mountain.2.fill"
-    public let appearanceKind: ThemeAppearanceKind = .dark
+    public let appearanceKind: ThemeAppearanceKind = .system
 
     public init() {}
 

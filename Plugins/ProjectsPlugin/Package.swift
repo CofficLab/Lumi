@@ -3,7 +3,6 @@ import PackageDescription
 
 let package = Package(
     name: "ProjectsPlugin",
-    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -14,35 +13,20 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/GitBranchMonitorKit"),
-        .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "ProjectsPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "GitBranchMonitorKit", package: "GitBranchMonitorKit"),
-                .product(name: "LibGit2Swift", package: "Libgit2swift"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-            ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
-            resources: [
-                .process("Resources")
+                "LumiCoreKit",
+                "LumiUI"
             ]
         ),
         .testTarget(
             name: "ProjectsPluginTests",
-            dependencies: ["ProjectsPlugin"],
-            path: "Tests"
+            dependencies: ["ProjectsPlugin"]
         )
     ]
 )

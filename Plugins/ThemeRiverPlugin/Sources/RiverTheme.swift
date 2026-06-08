@@ -7,7 +7,7 @@ struct RiverTheme: LumiAppChromeTheme {
     let compactName = "河"
     let description = "清流涟漪，澄净通透"
     let iconName = "drop.fill"
-    let appearanceKind: ThemeAppearanceKind = .dark
+    let appearanceKind: ThemeAppearanceKind = .system
 
     var iconColor: SwiftUI.Color {
         SwiftUI.Color.adaptive(light: "0284C7", dark: "0EA5E9")

@@ -1,55 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeGithubPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeGithubPlugin()
-    public static let id: String = "github"
-    public static let displayName: String = "GitHub"
-    public static let description: String = "GitHub style app theme"
-    public static let iconName: String = "chevron.left.forwardslash.chevron.right"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 128 }
-
-    nonisolated public var instanceLabel: String { Self.id }
-
-    private init() {}
+public enum ThemeGithubPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.github",
+        displayName: "GitHub Theme",
+        description: "GitHub style app theme",
+        order: 128
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: GitHubTheme(),
-                editorThemeId: "github",
-                editorThemeContributor: GithubSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "github-file-icons",
-                    displayName: "GitHub File Icons",
-                    defaultFile: .systemImage("doc"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder", "folder.fill"),
-                    extraFolders: [
-                        ".github": LumiFileIconThemeBuilder.folder("point.3.connected.trianglepath.dotted", "point.3.connected.trianglepath.dotted"),
-                    ],
-                    extraFileNames: [
-                        ".gitignore": .systemImage("arrow.triangle.branch"),
-                        ".gitattributes": .systemImage("arrow.triangle.branch"),
-                        ".gitmodules": .systemImage("arrow.triangle.branch"),
-                    ]
-                )
+                editorThemeId: "github"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(GithubSuperEditorThemeContributor())
-    }
-
-}
-
-enum ThemeGithubPluginResources {
-    static let bundle = Bundle.module
 }

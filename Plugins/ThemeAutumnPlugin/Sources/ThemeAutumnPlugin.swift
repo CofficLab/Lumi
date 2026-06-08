@@ -1,52 +1,23 @@
-import Foundation
-import EditorService
 import LumiCoreKit
 import LumiUI
 
-public actor ThemeAutumnPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = ThemeAutumnPlugin()
-    public static let id: String = "autumn"
-    public static let displayName: String = "Autumn"
-    public static let description: String = "Autumn orange app theme"
-    public static let iconName: String = "leaf"
-    public static var category: PluginCategory { .theme }
-    public static var order: Int { 126 }
-
-    nonisolated public var instanceLabel: String { Self.id }
-
-    private init() {}
+public enum ThemeAutumnPlugin: LumiPlugin, LumiUIThemeProviding {
+    public static let category: LumiPluginCategory = .theme
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.theme.autumn",
+        displayName: "Autumn Theme",
+        description: "Autumn orange app theme",
+        order: 126
+    )
 
     @MainActor
-    public func addThemeContributions() -> [LumiUIThemeContribution] {
+    public static func themeContributions() -> [LumiUIThemeContribution] {
         [
             LumiUIThemeContribution(
                 appTheme: AutumnTheme(),
-                editorThemeId: "autumn",
-                editorThemeContributor: AutumnSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiFileIconThemeBuilder.make(
-                    id: "autumn-file-icons",
-                    displayName: "Autumn File Icons",
-                    defaultFile: .systemImage("doc.text.image"),
-                    defaultFolder: LumiFileIconThemeBuilder.folder("folder.badge.gearshape", "folder.fill.badge.gearshape"),
-                    extraExtensions: [
-                        "yaml": .systemImage("list.bullet.rectangle"),
-                        "yml": .systemImage("list.bullet.rectangle"),
-                        "plist": .systemImage("gearshape.2"),
-                    ]
-                )
+                editorThemeId: "autumn"
             )
         ]
     }
-
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerThemeContributor(AutumnSuperEditorThemeContributor())
-    }
-
-}
-
-enum ThemeAutumnPluginResources {
-    static let bundle = Bundle.module
 }

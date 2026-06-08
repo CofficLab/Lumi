@@ -1,16 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "(%@)" : {
-
-    },
-    "（%@）" : {
-
-    },
-    "%lld%%" : {
-
-    },
     "Auth expired" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -65,6 +57,9 @@
           }
         }
       }
+    },
+    "Copy" : {
+
     },
     "Display Zhipu GLM Coding Plan quota status in status bar" : {
       "extractionState" : "stale",
@@ -123,6 +118,9 @@
         }
       }
     },
+    "Error" : {
+
+    },
     "Get API Key on Zhipu Open Platform" : {
       "localizations" : {
         "en" : {
@@ -152,6 +150,7 @@
       }
     },
     "Level" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -180,6 +179,7 @@
       }
     },
     "Loading..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -208,6 +208,7 @@
       }
     },
     "MCP Monthly Quota" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -236,6 +237,7 @@
       }
     },
     "Please check if Zhipu AI API Key is correctly configured" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -264,6 +266,7 @@
       }
     },
     "Please check network connection or try again later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -292,6 +295,7 @@
       }
     },
     "Quota unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -320,6 +324,7 @@
       }
     },
     "Remaining" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -348,6 +353,7 @@
       }
     },
     "Remaining %lld%%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -376,6 +382,7 @@
       }
     },
     "Reset" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -404,6 +411,7 @@
       }
     },
     "Reset Time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -431,7 +439,11 @@
         }
       }
     },
+    "Toggle raw message" : {
+
+    },
     "Total 5 hours" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -460,6 +472,7 @@
       }
     },
     "Usage Progress" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -545,6 +558,7 @@
       }
     },
     "Zhipu GLM Quota" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -573,6 +587,7 @@
       }
     },
     "加载中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -109,6 +109,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
             }
             .onTapGesture {
                 guard detailView != nil else { return }
+                clearAppKitFirstResponder()
 
                 AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
                     if isPresented {
@@ -387,6 +388,7 @@ public struct SidebarToolbarHoverContainer<Content: View, Detail: View>: View {
             }
             .onTapGesture {
                 guard detailView != nil else { return }
+                clearAppKitFirstResponder()
 
                 AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
                     if isPresented {
@@ -439,6 +441,12 @@ public struct SidebarToolbarHoverContainer<Content: View, Detail: View>: View {
                 }
         }
     }
+}
+
+@MainActor
+private func clearAppKitFirstResponder() {
+    NSApp.keyWindow?.makeFirstResponder(nil)
+    NSApp.mainWindow?.makeFirstResponder(nil)
 }
 
 // MARK: - Sidebar Toolbar Hover Container Extensions

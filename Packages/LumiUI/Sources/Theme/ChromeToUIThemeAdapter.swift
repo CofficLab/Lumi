@@ -23,7 +23,7 @@ public struct ChromeToUIThemeAdapter: LumiUITheme {
     public var surface: Color { chrome.atmosphereColors().medium }
     public var elevatedSurface: Color { chrome.atmosphereColors().light }
     public var overlay: Color { chrome.atmosphereColors().medium.opacity(0.85) }
-    public var divider: Color { Color.white.opacity(0.15) }
+    public var divider: Color { chrome.statusBarDividerColor() }
 
     public var success: Color { Color.adaptive(light: "30D158", dark: "30D158") }
     public var warning: Color { Color.adaptive(light: "FF9F0A", dark: "FF9F0A") }

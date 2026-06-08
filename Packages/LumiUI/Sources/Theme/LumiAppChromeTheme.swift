@@ -75,23 +75,23 @@ public extension LumiAppChromeTheme {
     }
 
     func sidebarSelectionTextColor() -> Color {
-        isDarkTheme ? Color.white : Color.white
+        workspaceTextColor()
     }
 
     func workspaceTextColor() -> Color {
-        isDarkTheme ? Color.white : Color(hex: "1C1C1E")
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
     }
 
     func workspaceSecondaryTextColor() -> Color {
-        isDarkTheme ? Color.white.opacity(0.6) : Color(hex: "6B6B7B")
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.72)
     }
 
     func workspaceTertiaryTextColor() -> Color {
-        isDarkTheme ? Color.white.opacity(0.4) : Color(hex: "98989E")
+        Color.adaptive(light: "98989E", dark: "EBEBF5").opacity(0.48)
     }
 
     func statusBarBackgroundColor() -> Color {
-        isDarkTheme ? atmosphereColors().deep : atmosphereColors().medium
+        atmosphereColors().medium
     }
 
     func statusBarForegroundColor() -> Color {
