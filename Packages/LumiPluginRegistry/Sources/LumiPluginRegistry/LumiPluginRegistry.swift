@@ -20,7 +20,11 @@ import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
 import LLMProviderCodexPlugin
 import LLMProviderMLXPlugin
-import ChatMiddlewarePlugin
+import AgentRAGPlugin
+import AgentRulesPlugin
+import MemoryPlugin
+import RequestLogPlugin
+import SkillPlugin
 import ProjectsPlugin
 import AppManagerPlugin
 import DiskManagerPlugin
@@ -95,7 +99,11 @@ public enum LumiPluginRegistry {
         PortManagerPlugin.self,
         ToolCorePlugin.self,
         MessageRendererPlugin.self,
-        ChatMiddlewarePlugin.self,
+        MemoryPlugin.self,
+        AgentRulesPlugin.self,
+        SkillPlugin.self,
+        RequestLogPlugin.self,
+        RAGPlugin.self,
         ProjectsPlugin.self
     ]
 }

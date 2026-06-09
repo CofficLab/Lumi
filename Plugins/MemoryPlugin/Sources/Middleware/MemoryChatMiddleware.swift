@@ -2,42 +2,38 @@ import Foundation
 import LumiCoreKit
 import MemoryKit
 
-enum ChatMemoryRuntime {
-    private static let retrieval = MemoryRetrievalService()
-    private static let memoryRoot: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        return base
-            .appendingPathComponent("Lumi", isDirectory: true)
-            .appendingPathComponent("PluginData", isDirectory: true)
-            .appendingPathComponent("Memory", isDirectory: true)
-    }()
-
+enum MemoryPromptBuilder {
     static func buildPrompt(projectPath: String, userMessage: String) async -> String? {
-        let storage = MemoryStorageService(rootURL: memoryRoot)
-        let globalIndex = await storage.readIndex(scope: MemoryScope.global)
+        let config = MemoryPlugin.config
+        let storage = MemoryStorageService.shared
+        let retrieval = MemoryRetrievalService.shared
+
+        var globalIndex = ""
         var projectIndex = ""
         var globalRelevant: [MemoryItem] = []
         var projectRelevant: [MemoryItem] = []
 
-        if !globalIndex.isEmpty {
-            globalRelevant = await retrieval.findRelevant(
-                query: userMessage,
-                scope: .global,
-                storage: storage,
-                maxResults: 5
-            )
+        if config.injectGlobalIndex {
+            globalIndex = await storage.readIndex(scope: .global)
+            if !globalIndex.isEmpty {
+                globalRelevant = await retrieval.findRelevant(
+                    query: userMessage,
+                    scope: .global,
+                    maxResults: config.maxRelevantMemories
+                )
+            }
         }
 
-        if !projectPath.isEmpty {
+        if config.injectProjectIndex, !projectPath.isEmpty {
             let projectScope = MemoryScope.project(projectPath)
             projectIndex = await storage.readIndex(scope: projectScope)
-            projectRelevant = await retrieval.findRelevant(
-                query: userMessage,
-                scope: projectScope,
-                storage: storage,
-                maxResults: 5
-            )
+            if !projectIndex.isEmpty {
+                projectRelevant = await retrieval.findRelevant(
+                    query: userMessage,
+                    scope: projectScope,
+                    maxResults: config.maxRelevantMemories
+                )
+            }
         }
 
         guard !globalIndex.isEmpty || !projectIndex.isEmpty else {
@@ -63,7 +59,7 @@ enum ChatMemoryRuntime {
         if !allRelevant.isEmpty {
             lines.append("### Relevant Memories")
             for memory in allRelevant {
-                lines.append(memory.formattedContent(staleThresholdDays: 30))
+                lines.append(memory.formattedContent(staleThresholdDays: config.staleThresholdDays))
             }
         }
 
@@ -74,15 +70,13 @@ enum ChatMemoryRuntime {
 struct MemoryChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
         var updated = context
-        let projectPath = ChatMiddlewareRuntime.currentProjectPath.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectPath = context.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let userMessage = context.messages.last(where: { $0.role == .user })?.content ?? ""
 
-        let prompt = await ChatMemoryRuntime.buildPrompt(
+        if let prompt = await MemoryPromptBuilder.buildPrompt(
             projectPath: projectPath,
             userMessage: userMessage
-        )
-
-        if let prompt, !prompt.isEmpty {
+        ), !prompt.isEmpty {
             updated.systemPromptFragments.append(prompt)
         }
 

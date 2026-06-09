@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/RAGKit"),
@@ -25,6 +26,7 @@ let package = Package(
             name: "AgentRAGPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "RAGKit", package: "RAGKit"),

@@ -4,7 +4,7 @@ import AgentToolKit
 @testable import AgentRulesPlugin
 
 @Test func packageLoads() async throws {
-    #expect(AgentRulesPlugin.id == "AgentRules")
+    #expect(AgentRulesPlugin.info.id == "com.coffic.lumi.plugin.agent-rules")
 }
 
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {

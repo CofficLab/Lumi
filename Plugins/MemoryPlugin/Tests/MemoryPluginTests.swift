@@ -9,17 +9,17 @@ import Testing
 struct PluginMemoryTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(MemoryPlugin.id == "Memory")
-        #expect(MemoryPlugin.displayName == "Memory")
+        #expect(MemoryPlugin.info.id == "com.coffic.lumi.plugin.memory")
+        #expect(MemoryPlugin.info.displayName == PluginMemoryLocalization.string("Memory"))
         #expect(MemoryPlugin.iconName == "brain.head.profile")
         #expect(MemoryPlugin.category == .agent)
-        #expect(MemoryPlugin.order == 15)
+        #expect(MemoryPlugin.info.order == 15)
     }
 
     @MainActor
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
-        let tools = MemoryPlugin.shared.agentTools(context: ToolContext())
+        let tools = MemoryPlugin.agentTools(context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
 
         #expect(tools.count == 4)
         let names = tools.map(\.name)
@@ -27,6 +27,13 @@ struct PluginMemoryTests {
         #expect(names.contains("recall_memory"))
         #expect(names.contains("list_memories"))
         #expect(names.contains("delete_memory"))
+    }
+
+    @MainActor
+    @Test("plugin registers send middleware")
+    func pluginRegistersSendMiddleware() {
+        let context = LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+        #expect(MemoryPlugin.sendMiddlewares(context: context).count == 1)
     }
 
     @Test("save memory tool schema has required fields")
@@ -66,7 +73,7 @@ struct PluginMemoryTests {
 
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
-        #expect(PluginMemoryLocalization.bundle.url(forResource: "Memory", withExtension: "xcstrings") != nil)
+        #expect(PluginMemoryLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(PluginMemoryLocalization.string("Memory").isEmpty == false)
     }
 

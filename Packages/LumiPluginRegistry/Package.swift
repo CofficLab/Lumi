@@ -60,7 +60,11 @@ let package = Package(
         .package(path: "../../Plugins/PortManagerPlugin"),
         .package(path: "../../Plugins/ToolCorePlugin"),
         .package(path: "../../Plugins/MessageRendererPlugin"),
-        .package(path: "../../Plugins/ChatMiddlewarePlugin")
+        .package(path: "../../Plugins/AgentRulesPlugin"),
+        .package(path: "../../Plugins/SkillPlugin"),
+        .package(path: "../../Plugins/MemoryPlugin"),
+        .package(path: "../../Plugins/AgentRAGPlugin"),
+        .package(path: "../../Plugins/RequestLogPlugin")
     ],
     targets: [
         .target(
@@ -113,7 +117,11 @@ let package = Package(
                 .product(name: "PortManagerPlugin", package: "PortManagerPlugin"),
                 .product(name: "ToolCorePlugin", package: "ToolCorePlugin"),
                 .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
-                .product(name: "ChatMiddlewarePlugin", package: "ChatMiddlewarePlugin")
+                .product(name: "AgentRulesPlugin", package: "AgentRulesPlugin"),
+                .product(name: "SkillPlugin", package: "SkillPlugin"),
+                .product(name: "MemoryPlugin", package: "MemoryPlugin"),
+                .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
+                .product(name: "RequestLogPlugin", package: "RequestLogPlugin")
             ]
         )
     ]

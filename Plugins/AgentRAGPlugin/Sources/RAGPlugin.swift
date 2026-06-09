@@ -1,130 +1,48 @@
 import AgentToolKit
-import SuperLogKit
-import RAGKit
-import SwiftUI
-import os
+import LumiChatKit
 import LumiCoreKit
-import LumiUI
 
-/// RAG 插件
-///
-/// ## 架构原则
-/// - RAG 服务完全由插件内部管理
-/// - 内核不知道 RAG 的存在
-/// - 通过中间件机制集成到消息发送流程
-/// - 服务在插件启用时自动初始化
-public actor RAGPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public nonisolated static let emoji = "🦞"
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "rag"
-    public static let navigationId: String = "rag_settings"
-    public static let displayName = String(localized: "RAG", bundle: .module)
-    public static let description = String(localized: "Retrieval-Augmented Generation", bundle: .module)
+/// RAG 插件：检索增强生成。
+public enum RAGPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .agent
     public static let iconName = "doc.text.magnifyingglass"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 200 }
 
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
-
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = RAGPlugin()
-
-    /// RAG 服务 - 由插件内部管理，内核不可见
-    ///
-    /// 在插件启用时自动初始化
-    @MainActor
-    private(set) static var service: RAGKit.RAGService = RAGKit.RAGService(
-        databaseDirectoryProvider: {
-            RAGPluginRuntime.databaseDirectoryProvider()
-        },
-        onProgress: { event in
-            NotificationCenter.postRAGIndexProgress(event)
-        }
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.rag",
+        displayName: String(localized: "RAG", bundle: .module),
+        description: String(localized: "Retrieval-Augmented Generation", bundle: .module),
+        order: 200
     )
 
-    // MARK: - Lifecycle
-
-    public nonisolated func onEnable() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)RAG 插件已启用，开始初始化服务...")
-        }
-
-        // 在后台异步初始化 RAG 服务
-        Task { @MainActor in
-            do {
-                try await Self.service.initialize()
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)RAG 服务初始化失败：\(error.localizedDescription)")
-                }
-            }
-        }
+    @MainActor
+    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+        RAGPluginService.initializeIfNeeded()
+        return [RAGChatMiddleware()]
     }
 
-    // MARK: - Plugin Methods
-
     @MainActor
-    public func addPosterViews() -> [AnyView] {
-        [
-            PluginPosterSupport.poster(
-                title: "RAG 代码检索",
-                subtitle: "为项目建立检索索引，让助手用本地代码上下文回答问题。",
-                icon: Self.iconName,
-                accent: .teal,
-                metrics: [
-                    PluginPosterSupport.metric("Index", "索引"),
-                    PluginPosterSupport.metric("Search", "检索"),
-                ],
-                rows: ["自动索引", "代码搜索工具", "发送上下文增强"],
-                chips: ["Agent", "RAG", "代码上下文"]
-            ),
-            PluginPosterSupport.poster(
-                title: "索引进度可见",
-                subtitle: "在编辑器状态栏显示索引状态，并提供 RAG 设置入口。",
-                icon: "gauge.with.dots.needle.67percent",
-                accent: .cyan,
-                rows: ["状态栏进度", "RAG 设置", "插件数据库"],
-                chips: ["索引", "状态栏", "设置"]
-            ),
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.activeSectionID == LumiChatPanelSection.id else {
+            return []
+        }
+
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).status",
+                title: String(localized: "RAG", bundle: .module),
+                systemImage: iconName,
+                placement: .trailing,
+                statusBarView: {
+                    RAGStatusBarView()
+                }
+            )
         ]
     }
 
     @MainActor
-    public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)RAG 中间件已注册")
-        }
-        return []
-    }
-
-    @MainActor
-    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [RAGCodeSearchTool()]
-    }
-
-    @MainActor
-    public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        nil
-    }
-
-    @MainActor
-    public func addSettingsView() -> AnyView? {
-        nil
-    }
-
-    /// 提供状态栏右侧视图（仅在编辑器激活时显示）
-    @MainActor
-    public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.showChat != .hidden else {return nil}
-        return AnyView(RAGStatusBarView())
-    }
-
-    /// 获取 RAG 服务实例
-    /// - Returns: RAGService 单例
-    @MainActor
-    public static func getService() -> RAGKit.RAGService {
-        service
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        RAGPluginService.initializeIfNeeded()
+        return [RAGCodeSearchTool().asLumiAgentTool()]
     }
 }

@@ -6,16 +6,17 @@ import os
 import SkillKit
 import SwiftUI
 
+private enum SkillStatusBarLogging {
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.skill")
+    static let verbose = false
+}
+
 /// Skill 状态栏视图
 ///
 /// 在 Agent 模式底部状态栏显示当前项目的可用 Skill 数量。
 /// 点击弹出 Skill 列表面板。
 /// 当 Skill 数量为 0 时自动隐藏。
-public struct SkillStatusBarView: View, SuperLog {
-    public nonisolated static let emoji = "✨"
-    public nonisolated static var verbose: Bool { SkillPlugin.verbose }
-    public nonisolated static var logger: Logger { SkillPlugin.logger }
-
+public struct SkillStatusBarView: View {
     private let projectPath: String
     @State private var skills: [SkillMetadata] = []
     @State private var refreshTask: Task<Void, Never>?
@@ -64,16 +65,12 @@ public struct SkillStatusBarView: View, SuperLog {
 
     private func refreshSkills() {
         let projectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
-            }
+        if SkillStatusBarLogging.verbose {
+            SkillStatusBarLogging.logger.info("刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
         guard !projectPath.isEmpty else {
-            if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
-                }
+            if SkillStatusBarLogging.verbose {
+                SkillStatusBarLogging.logger.info("项目路径为空，清空 Skill 列表")
             }
             refreshTask?.cancel()
             refreshTask = nil
@@ -90,15 +87,8 @@ public struct SkillStatusBarView: View, SuperLog {
                 guard !Task.isCancelled else { return }
                 skills = loaded
             }
-            if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
-                }
-                for s in loaded {
-                    if Self.verbose {
-                                            Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
-                    }
-                }
+            if SkillStatusBarLogging.verbose {
+                SkillStatusBarLogging.logger.info("刷新完成，找到 \(loaded.count) 个 Skill")
             }
         }
     }

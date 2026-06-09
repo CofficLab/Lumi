@@ -2,23 +2,11 @@ import Foundation
 import LumiCoreKit
 import RAGKit
 
-enum ChatRAGRuntime {
-    private static let databaseDirectory: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        return base
-            .appendingPathComponent("Lumi", isDirectory: true)
-            .appendingPathComponent("PluginData", isDirectory: true)
-            .appendingPathComponent("RAG", isDirectory: true)
-            .appendingPathComponent("database", isDirectory: true)
-    }()
-
-    private static let onProgress: @Sendable (RAGIndexProgressEvent) -> Void = { _ in }
-
+enum RAGRetrievalRuntime {
     static func performRetrieval(projectPath: String, userMessage: String) async -> String? {
         let service = RAGService(
-            databaseDirectoryProvider: { databaseDirectory },
-            onProgress: onProgress
+            databaseDirectoryProvider: RAGPluginRuntime.databaseDirectoryProvider,
+            onProgress: { _ in }
         )
 
         if !service.isInitialized {
@@ -66,13 +54,13 @@ struct RAGChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
         var updated = context
         let userMessage = context.messages.last(where: { $0.role == .user })?.content ?? ""
-        let projectPath = ChatMiddlewareRuntime.currentProjectPath.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectPath = context.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard RAGIntentAnalyzer.shouldUseRAG(for: userMessage), !projectPath.isEmpty else {
             return updated
         }
 
-        if let prompt = await ChatRAGRuntime.performRetrieval(
+        if let prompt = await RAGRetrievalRuntime.performRetrieval(
             projectPath: projectPath,
             userMessage: userMessage
         ), !prompt.isEmpty {
