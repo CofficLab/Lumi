@@ -1,6 +1,5 @@
 import Foundation
 import LumiCoreKit
-import SkillKit
 
 struct SkillChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {

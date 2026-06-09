@@ -3,7 +3,6 @@ import LumiUI
 import LumiCoreKit
 import SuperLogKit
 import os
-import SkillKit
 import SwiftUI
 
 private enum SkillStatusBarLogging {
