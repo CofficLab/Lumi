@@ -1,7 +1,6 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
-import WebFetchKit
 
 /// 网页抓取工具。
 ///
