@@ -55,7 +55,8 @@ struct ChatMessageListView: View {
                             .id(message.id)
                         }
 
-                        if isSending, !visibleMessages.contains(where: { $0.role == .status }) {
+                        if isSending,
+                           !visibleMessages.contains(where: { $0.metadata["isTransientStatus"] == "true" }) {
                             ChatTypingIndicator()
                                 .id("typing-indicator")
                         }

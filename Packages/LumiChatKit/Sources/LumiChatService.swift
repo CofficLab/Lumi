@@ -238,10 +238,14 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         var result = messages(for: conversationID).filter {
             $0.role != .status || $0.renderKind == "turn-completed"
         }
-        if let status = statusState.statusMessage(for: conversationID) {
+        if let status = transientStatusMessage(for: conversationID) {
             result.append(status)
         }
         return result
+    }
+
+    public func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage? {
+        statusState.statusMessage(for: conversationID)
     }
 
     public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
@@ -410,6 +414,8 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
                 metadata: userMetadata
             )
         )
+        statusState.setStatus(conversationID: conversationID, content: "正在发送消息…")
+        revision += 1
 
         do {
             try await runAgentTurn(

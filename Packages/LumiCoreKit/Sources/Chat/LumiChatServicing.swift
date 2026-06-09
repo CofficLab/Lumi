@@ -36,6 +36,7 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem?
     func messages(for conversationID: UUID) -> [LumiChatMessage]
     func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
+    func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage?
     func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage]
     func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool
     func enqueueText(_ text: String, in conversationID: UUID?)

@@ -26,7 +26,8 @@ public struct ChatPanelView: View {
     public var body: some View {
         let conversations = chatService.conversations
         let selectedID = chatService.selectedConversationID ?? conversations.first?.id
-        let messages = selectedID.map { displayedMessages(for: $0) } ?? []
+        let statusRevision = chatService.revision
+        let messages = selectedID.map { displayedMessages(for: $0, statusRevision: statusRevision) } ?? []
         let isSending = chatService.isSending(for: selectedID)
         let pending = selectedID.map { pendingMessages(for: $0) } ?? []
 
@@ -191,20 +192,28 @@ public struct ChatPanelView: View {
         }
     }
 
-    private func displayedMessages(for conversationID: UUID) -> [LumiChatMessage] {
+    private func displayedMessages(for conversationID: UUID, statusRevision: Int) -> [LumiChatMessage] {
+        _ = statusRevision
+
+        let transientStatus = chatService.transientStatusMessage(for: conversationID)
+        let page: [LumiChatMessage]
         if let oldestVisibleMessageID {
-            return chatService.visibleMessages(
+            page = chatService.visibleMessages(
                 for: conversationID,
                 limit: 10,
                 beforeMessageID: oldestVisibleMessageID
-            ) + chatService.displayMessages(for: conversationID).filter { $0.role == .status }
+            )
+        } else {
+            let persisted = chatService.messages(for: conversationID).filter {
+                $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+            }
+            page = Array(persisted.suffix(10))
         }
 
-        let persisted = chatService.messages(for: conversationID).filter {
-            $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+        guard let transientStatus else {
+            return page
         }
-        let page = persisted.suffix(10)
-        return Array(page) + chatService.displayMessages(for: conversationID).filter { $0.role == .status }
+        return page + [transientStatus]
     }
 
     private func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {

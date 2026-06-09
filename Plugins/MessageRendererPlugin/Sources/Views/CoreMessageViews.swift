@@ -11,8 +11,14 @@ struct CoreMessageView: View {
     @Binding var showRawMessage: Bool
     @State private var didCopy = false
 
+    private static let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+
     var body: some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
+        VStack(alignment: .leading, spacing: 4) {
             messageHeader
             
             switch message.role {
@@ -38,43 +44,30 @@ struct CoreMessageView: View {
     }
 
     private var messageHeader: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: headerIcon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(headerTint)
-                .frame(width: 28, height: 28)
-                .background(headerTint.opacity(0.12), in: Circle())
+        CompactMessageHeaderView {
+            HStack(alignment: .center, spacing: 6) {
+                ChatAvatarView(kind: avatarKind)
+                AppIdentityRow(title: headerTitle, metadata: metadataItems)
+            }
+        } trailing: {
+            HStack(alignment: .center, spacing: 12) {
+                CopyMessageButton(content: copyContent, showFeedback: $didCopy)
 
-            Text(headerTitle)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            metadataText
-
-            Spacer(minLength: 12)
-
-            CopyMessageButton(content: copyContent, showFeedback: $didCopy)
-
-            Text(message.createdAt, style: .time)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(theme.textSecondary)
+                AppIdentityRow(
+                    title: formatTimestamp(message.createdAt),
+                    titleColor: theme.textSecondary
+                )
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .background(headerBackground, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 
     private var userContent: some View {
         Text(message.content)
-            .font(.system(size: 17, weight: .semibold))
+            .font(.appBody)
             .foregroundColor(theme.textPrimary)
             .lineSpacing(3)
             .textSelection(.enabled)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .appMessageBubble(role: .user, isError: message.isError)
     }
 
     @ViewBuilder
@@ -159,18 +152,37 @@ struct CoreMessageView: View {
             items.append(providerID)
         }
         if let modelName = message.modelName, !modelName.isEmpty {
-            items.append(modelName)
+            items.append(formatModelName(modelName))
         }
         return items
     }
 
-    @ViewBuilder
-    private var metadataText: some View {
-        if !metadataItems.isEmpty {
-            Text(metadataItems.joined(separator: "  •  "))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(theme.textSecondary)
-                .lineLimit(1)
+    private func formatTimestamp(_ date: Date) -> String {
+        Self.timestampFormatter.string(from: date)
+    }
+
+    private func formatModelName(_ name: String) -> String {
+        let parts = name.split(separator: "-")
+        if parts.count > 2, let lastPart = parts.last, lastPart.allSatisfy({ $0.isNumber }) {
+            return parts.dropLast().joined(separator: "-")
+        }
+        return name
+    }
+
+    private var avatarKind: ChatAvatarKind {
+        switch message.role {
+        case .user:
+            .user
+        case .assistant:
+            .assistant
+        case .tool:
+            .tool
+        case .system:
+            .system
+        case .error:
+            .error
+        case .status:
+            .status
         }
     }
 
@@ -188,53 +200,6 @@ struct CoreMessageView: View {
             "Error"
         case .status:
             "Status"
-        }
-    }
-
-    private var headerIcon: String {
-        switch message.role {
-        case .user:
-            "person.fill"
-        case .assistant:
-            "cpu"
-        case .tool:
-            "wrench.and.screwdriver"
-        case .system:
-            "gearshape"
-        case .error:
-            "exclamationmark.triangle.fill"
-        case .status:
-            "ellipsis.message"
-        }
-    }
-
-    private var headerTint: Color {
-        switch message.role {
-        case .user:
-            theme.primary
-        case .assistant:
-            .purple
-        case .tool:
-            theme.success
-        case .system:
-            theme.textSecondary
-        case .error:
-            theme.error
-        case .status:
-            theme.textSecondary
-        }
-    }
-
-    private var headerBackground: Color {
-        message.role == .error ? theme.error.opacity(0.08) : theme.textPrimary.opacity(0.055)
-    }
-
-    private var contentSpacing: CGFloat {
-        switch message.role {
-        case .assistant:
-            14
-        default:
-            8
         }
     }
 
@@ -288,6 +253,51 @@ struct CoreMessageView: View {
 
         let isToolSummary = firstLine.hasPrefix("正在执行 ") || firstLine.hasPrefix("Executing ")
         return isToolSummary && lines.count <= toolCalls.count + 1
+    }
+}
+
+private struct CompactMessageHeaderView<Leading: View, Trailing: View>: View {
+    @LumiTheme private var theme
+
+    let leading: Leading
+    let trailing: Trailing
+
+    @LumiMotionPreferenceReader private var motionPreference
+    @State private var isHovered = false
+
+    init(
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.leading = leading()
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            leading
+            Spacer()
+            trailing
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .appSurface(
+            style: .custom(headerBackgroundColor),
+            cornerRadius: 8,
+            borderColor: theme.divider.opacity(isHovered ? 1.0 : 0.65)
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
+        }
+    }
+
+    private var headerBackgroundColor: Color {
+        isHovered
+            ? theme.textSecondary.opacity(0.14)
+            : theme.textSecondary.opacity(0.08)
     }
 }
 
@@ -662,23 +672,44 @@ struct StatusMessageView: View {
 
     let message: LumiChatMessage
 
+    private static let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+
     var body: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-                .scaleEffect(0.75)
+        VStack(alignment: .leading, spacing: 4) {
+            CompactMessageHeaderView {
+                HStack(alignment: .center, spacing: 6) {
+                    ChatAvatarView(kind: .status)
+                    AppIdentityRow(title: "Status")
+                }
+            } trailing: {
+                AppIdentityRow(
+                    title: Self.timestampFormatter.string(from: message.createdAt),
+                    titleColor: theme.textSecondary
+                )
+            }
 
-            Text(message.content)
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-                .lineLimit(3)
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.75)
 
-            Spacer(minLength: 0)
+                Text(message.content)
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+                    .lineLimit(4)
+                    .textSelection(.enabled)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .appMessageBubble(role: .status, isError: false)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: 520, alignment: .leading)
-        .background(theme.surface.opacity(0.55), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
