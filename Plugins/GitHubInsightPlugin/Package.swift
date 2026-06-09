@@ -18,7 +18,6 @@ let package = Package(
         .package(path: "../../Packages/GitHubKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/ProjectProfileKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -29,7 +28,6 @@ let package = Package(
                 .product(name: "GitHubKit", package: "GitHubKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ProjectProfileKit", package: "ProjectProfileKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
