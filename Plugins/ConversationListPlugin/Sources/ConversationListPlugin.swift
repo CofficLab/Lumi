@@ -17,4 +17,18 @@ public enum ConversationListPlugin: LumiPlugin {
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         [ProjectSwitchChatMiddleware()]
     }
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        guard let chatService = context.resolve((any LumiChatServicing).self) else {
+            return []
+        }
+        return [
+            CreateNewConversationLumiTool(chatService: chatService),
+            DeleteConversationLumiTool(chatService: chatService),
+            GetRecentConversationsLumiTool(chatService: chatService),
+            GetConversationCountLumiTool(chatService: chatService),
+            SetConversationProjectLumiTool(chatService: chatService),
+        ]
+    }
 }

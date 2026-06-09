@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import LumiChatKit
 import Testing
 @testable import ConversationListPlugin
 
@@ -17,6 +18,32 @@ import Testing
         context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
     )
     #expect(middlewares.count == 1)
+}
+
+@MainActor
+@Test func pluginRegistersConversationListToolsWhenChatServiceExists() {
+    let databaseDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ConversationListPluginTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: databaseDirectory) }
+
+    let chatService = LumiChatService(
+        configuration: .coreDatabase(directory: databaseDirectory)
+    )
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register((any LumiChatServicing).self, chatService)
+        }
+    )
+    let tools = ConversationListPlugin.agentTools(context: context)
+    let toolNames = Set(tools.map(\.name))
+
+    #expect(toolNames.contains("create_new_conversation"))
+    #expect(toolNames.contains("delete_conversation"))
+    #expect(toolNames.contains("get_recent_conversations"))
+    #expect(toolNames.contains("get_conversation_count"))
+    #expect(toolNames.contains("set_conversation_project"))
 }
 
 @Test func localStoreSavesAndReloadsSelectedConversationId() throws {
