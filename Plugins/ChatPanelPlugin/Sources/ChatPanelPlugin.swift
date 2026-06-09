@@ -53,7 +53,12 @@ public enum ChatPanelPlugin: LumiPlugin {
                 systemImage: iconName
             ) {
                 if let chatService = context.resolve(LumiChatServicing.self) as? LumiChatService {
-                    ChatPanelView(chatService: chatService)
+                    let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath
+                    ChatPanelView(
+                        chatService: chatService,
+                        currentProjectPath: projectPath,
+                        databaseDirectory: LumiCore.coreDataDirectory
+                    )
                 } else {
                     MissingChatServiceView()
                 }

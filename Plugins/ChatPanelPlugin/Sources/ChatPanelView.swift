@@ -9,6 +9,8 @@ import UniformTypeIdentifiers
 public struct ChatPanelView: View {
     @LumiTheme private var theme
     @ObservedObject private var chatService: LumiChatService
+    private let currentProjectPath: String?
+    private let localStore: LocalStore?
 
     @State private var draft = ""
     @State private var rawMessageIDs: Set<UUID> = []
@@ -19,8 +21,14 @@ public struct ChatPanelView: View {
     @State private var isImageDragHovering = false
     @State private var imageAttachments: [LumiImageAttachment] = []
     @State private var showCommandSuggestions = false
-    public init(chatService: LumiChatService) {
+    public init(
+        chatService: LumiChatService,
+        currentProjectPath: String? = nil,
+        databaseDirectory: URL? = nil
+    ) {
         self.chatService = chatService
+        self.currentProjectPath = currentProjectPath
+        self.localStore = databaseDirectory.map { LocalStore(databaseDirectory: $0) }
     }
 
     public var body: some View {
@@ -35,6 +43,8 @@ public struct ChatPanelView: View {
             ChatConversationListView(
                 conversations: conversations,
                 selectedID: selectedID,
+                currentProjectPath: currentProjectPath,
+                isSending: { chatService.isSending(for: $0) },
                 onCreateConversation: createConversation,
                 onSelectConversation: selectConversation,
                 onDeleteConversation: deleteConversation
@@ -154,6 +164,9 @@ public struct ChatPanelView: View {
         .appSurface(style: .panel, cornerRadius: 0)
         .onAppear {
             ensureSelection(conversations: conversations)
+        }
+        .onChange(of: chatService.selectedConversationID) { _, newValue in
+            localStore?.saveSelectedConversationID(newValue)
         }
         .onChange(of: selectedID) { _, _ in
             oldestVisibleMessageID = nil
@@ -352,8 +365,15 @@ public struct ChatPanelView: View {
     }
 
     private func ensureSelection(conversations: [LumiConversationSummary]) {
-        if chatService.selectedConversationID == nil,
-           let first = conversations.first {
+        if chatService.selectedConversationID != nil {
+            return
+        }
+        if let savedID = localStore?.loadSelectedConversationID(),
+           conversations.contains(where: { $0.id == savedID }) {
+            chatService.selectConversation(id: savedID)
+            return
+        }
+        if let first = conversations.first {
             chatService.selectConversation(id: first.id)
         }
     }

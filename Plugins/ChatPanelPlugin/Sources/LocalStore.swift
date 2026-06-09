@@ -6,6 +6,7 @@ import Foundation
 final class LocalStore: @unchecked Sendable {
     private enum Keys {
         static let conversationListWidth = "conversation_list_width"
+        static let selectedConversationID = "selected_conversation_id"
     }
 
     private let fileManager = FileManager.default
@@ -31,6 +32,17 @@ final class LocalStore: @unchecked Sendable {
 
     func saveConversationListWidth(_ width: Double) {
         set(width, forKey: Keys.conversationListWidth)
+    }
+
+    func loadSelectedConversationID() -> UUID? {
+        guard let raw = object(forKey: Keys.selectedConversationID) as? String else {
+            return nil
+        }
+        return UUID(uuidString: raw)
+    }
+
+    func saveSelectedConversationID(_ id: UUID?) {
+        set(id?.uuidString, forKey: Keys.selectedConversationID)
     }
 
     func set(_ value: Any?, forKey key: String) {
