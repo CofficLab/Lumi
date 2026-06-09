@@ -8,7 +8,8 @@ struct MainWindowSceneContent: View {
             AppLayoutView(
                 pluginService: container.pluginService,
                 lumiUIService: container.lumiUIService,
-                chatService: container.chatCoreService.chatService
+                chatService: container.chatCoreService.chatService,
+                projectPathStore: container.projectPathStore
             )
         }
         .background {

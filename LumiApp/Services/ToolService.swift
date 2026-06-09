@@ -5,6 +5,7 @@ import LumiCoreKit
 final class ToolService: LumiToolServicing {
     private(set) var tools: [any LumiAgentTool] = []
     private var toolsByName: [String: any LumiAgentTool] = [:]
+    var projectPathProvider: (any LumiCurrentProjectPathProviding)?
 
     func registerTools(_ tools: [any LumiAgentTool]) {
         let uniqueTools = tools.reduce(into: [String: any LumiAgentTool]()) { result, tool in
@@ -33,7 +34,8 @@ final class ToolService: LumiToolServicing {
         let context = LumiToolExecutionContext(
             conversationID: conversationID,
             toolCallID: toolCall.id,
-            toolName: toolCall.name
+            toolName: toolCall.name,
+            currentProjectPath: projectPathProvider?.currentProjectPath
         )
 
         do {

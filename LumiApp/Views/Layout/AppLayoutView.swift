@@ -7,6 +7,7 @@ struct AppLayoutView: View {
     @ObservedObject var pluginService: PluginService
     let lumiUIService: LumiUIService
     let chatService: any LumiChatServicing
+    let projectPathStore: LumiCurrentProjectPathStore
     @State private var state = LayoutState()
 
     var body: some View {
@@ -20,7 +21,8 @@ struct AppLayoutView: View {
                 state: $state,
                 pluginService: pluginService,
                 activeID: activeID,
-                activeTitle: activeTitle
+                activeTitle: activeTitle,
+                projectPathStore: projectPathStore
             )
 
             AppDivider()
@@ -50,7 +52,8 @@ struct AppLayoutView: View {
                 activeID: activeID,
                 activeTitle: activeTitle,
                 lumiUIService: lumiUIService,
-                chatService: chatService
+                chatService: chatService,
+                projectPathStore: projectPathStore
             )
         }
         .frame(minWidth: 860, minHeight: 560)
@@ -64,6 +67,7 @@ struct AppLayoutView: View {
             activeSectionTitle: "Main",
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)
+                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
             }
         )
     }

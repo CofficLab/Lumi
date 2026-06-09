@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 final class RootContainer: ObservableObject {
@@ -7,6 +8,7 @@ final class RootContainer: ObservableObject {
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
     let toolService: ToolService
+    let projectPathStore: LumiCurrentProjectPathStore
     let chatCoreService: ChatCoreService
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
@@ -15,10 +17,12 @@ final class RootContainer: ObservableObject {
         self.lumiCoreService = LumiCoreService()
         self.pluginService = PluginService()
         self.toolService = ToolService()
+        self.projectPathStore = LumiCurrentProjectPathStore()
         self.chatCoreService = ChatCoreService(
             lumiCoreService: lumiCoreService,
             pluginService: pluginService,
-            toolService: toolService
+            toolService: toolService,
+            projectPathStore: projectPathStore
         )
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)

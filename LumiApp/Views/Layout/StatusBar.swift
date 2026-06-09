@@ -10,6 +10,7 @@ struct StatusBar: View {
     let activeTitle: String
     let lumiUIService: LumiUIService
     let chatService: any LumiChatServicing
+    let projectPathStore: LumiCurrentProjectPathStore
 
     var body: some View {
         let context = LumiPluginContext(
@@ -18,6 +19,7 @@ struct StatusBar: View {
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiThemeServicing.self, lumiUIService)
                 dependencies.register(LumiChatServicing.self, chatService)
+                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
             }
         )
         let items = pluginService.statusBarItems(context: context)

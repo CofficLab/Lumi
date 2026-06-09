@@ -9,6 +9,7 @@ struct AppTitleToolbar: View {
     @ObservedObject var pluginService: PluginService
     let activeID: String
     let activeTitle: String
+    let projectPathStore: LumiCurrentProjectPathStore
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
@@ -16,7 +17,10 @@ struct AppTitleToolbar: View {
     var body: some View {
         let context = LumiPluginContext(
             activeSectionID: activeID,
-            activeSectionTitle: activeTitle
+            activeSectionTitle: activeTitle,
+            dependencies: LumiPluginDependencies { dependencies in
+                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+            }
         )
         let items = pluginService.titleToolbarItems(context: context)
         let leadingItems = items.filter { $0.placement == .leading }
