@@ -1,5 +1,4 @@
 import Foundation
-import MemoryKit
 
 /// 记忆检索服务。
 ///
@@ -7,15 +6,15 @@ import MemoryKit
 public actor MemoryRetrievalService {
     public static let shared = MemoryRetrievalService()
 
-    private let service: MemoryKit.MemoryRetrievalService
+    private let service: MemoryFileRetrieval
 
     private init() {
         let config = MemoryPlugin.config
-        let retrievalConfig = MemoryKit.MemoryRetrievalConfig(
+        let retrievalConfig = MemoryFileRetrievalConfig(
             halfLifeDays: config.halfLifeDays,
             maxResults: config.maxRelevantMemories
         )
-        self.service = MemoryKit.MemoryRetrievalService(
+        self.service = MemoryFileRetrieval(
             config: retrievalConfig,
             verbose: MemoryPlugin.verbose
         )

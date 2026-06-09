@@ -17,7 +17,7 @@ import os
 ///         ├── MEMORY.md
 ///         └── project-auth.md
 /// ```
-public actor MemoryStorageService {
+public actor MemoryFileStorage {
     private static let logger = Logger(
         subsystem: "com.coffic.lumi.memorykit", category: "storage")
 

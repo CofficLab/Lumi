@@ -1,5 +1,4 @@
 import Foundation
-import MemoryKit
 
 /// 记忆存储服务。
 ///
@@ -7,16 +6,16 @@ import MemoryKit
 public actor MemoryStorageService {
     public static let shared = MemoryStorageService()
 
-    private let service: MemoryKit.MemoryStorageService
+    private let service: MemoryFileStorage
 
     /// 暴露底层 MemoryKit 服务（供 MemoryRetrievalService 使用）
-    public var memoryKitStorage: MemoryKit.MemoryStorageService { service }
+    public var memoryKitStorage: MemoryFileStorage { service }
 
     private init() {
         let config = MemoryPlugin.config
         let rootURL = config.memoryRootURL
         try? FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
-        self.service = MemoryKit.MemoryStorageService(
+        self.service = MemoryFileStorage(
             rootURL: rootURL,
             verbose: MemoryPlugin.verbose
         )

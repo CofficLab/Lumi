@@ -1,6 +1,5 @@
 import AgentToolKit
 import Foundation
-import MemoryKit
 
 /// 删除记忆工具。
 ///

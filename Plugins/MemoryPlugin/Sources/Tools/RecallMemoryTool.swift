@@ -1,6 +1,5 @@
 import AgentToolKit
 import Foundation
-import MemoryKit
 
 /// 检索记忆工具。
 ///

@@ -4,7 +4,7 @@ import os
 /// 记忆检索配置
 ///
 /// 用于配置检索服务的参数，替代对 App 层 LocalStore 的硬编码依赖。
-public struct MemoryRetrievalConfig: Sendable {
+public struct MemoryFileRetrievalConfig: Sendable {
     /// 时效衰减半衰期（天），用于计算记忆的时效分数
     public var halfLifeDays: Double
     /// 最大检索结果数
@@ -25,11 +25,11 @@ public struct MemoryRetrievalConfig: Sendable {
 /// 2. **类型权重（20%）**：feedback 和 user 类型更可能通用
 /// 3. **时效衰减（20%）**：半衰期可配置，越新越好
 /// 4. **命中密度（20%）**：单条记忆中被命中关键词的比例
-public actor MemoryRetrievalService {
+public actor MemoryFileRetrieval {
     private static let logger = Logger(
         subsystem: "com.coffic.lumi.memorykit", category: "retrieval")
 
-    private let config: MemoryRetrievalConfig
+    private let config: MemoryFileRetrievalConfig
     private let verbose: Bool
 
     /// 类型权重
@@ -63,7 +63,7 @@ public actor MemoryRetrievalService {
 
     // MARK: - Initialization
 
-    public init(config: MemoryRetrievalConfig = MemoryRetrievalConfig(), verbose: Bool = false) {
+    public init(config: MemoryFileRetrievalConfig = MemoryFileRetrievalConfig(), verbose: Bool = false) {
         self.config = config
         self.verbose = verbose
     }
@@ -81,7 +81,7 @@ public actor MemoryRetrievalService {
     public func findRelevant(
         query: String,
         scope: MemoryScope,
-        storage: MemoryStorageService,
+        storage: MemoryFileStorage,
         maxResults: Int? = nil
     ) async -> [MemoryItem] {
         let limit = max(0, maxResults ?? config.maxResults)
