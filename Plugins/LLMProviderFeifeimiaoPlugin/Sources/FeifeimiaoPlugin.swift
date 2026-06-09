@@ -1,19 +1,53 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// Feifeimiao LLM 供应商插件
-public actor FeifeimiaoPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum FeifeimiaoPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.feifeimiao",
+        displayName: "Feifeimiao",
+        description: "Contributes Feifeimiao models to Lumi Chat.",
+        order: 93
+    )
 
-    public static let shared = FeifeimiaoPlugin()
-    public static let id = "LLMProviderFeifeimiao"
-    public static let displayName = "Feifeimiao"
-    public static let description = "Feifeimiao LLM API"
-    public static let iconName = "wind"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [FeifeimiaoProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        FeifeimiaoProvider.self
+public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "feifeimiao",
+            displayName: "Feifeimiao",
+            description: "LLM API by feifeimiao",
+            defaultModel: "gpt-5.5",
+            availableModels: [
+            "gpt-5.5",
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.3",
+            "gpt-5.2"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_Feifeimiao"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://api.feifeimiao.top/v1/chat/completions",
+            additionalHeaders: [:],
+            includeUsageInStreamOptions: true,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false
+        )
+        )
     }
 }

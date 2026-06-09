@@ -1,19 +1,50 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// LPgpt LLM 供应商插件
-public actor LPgptPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum LPgptPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.lpgpt",
+        displayName: "LPgpt",
+        description: "Contributes LPgpt models to Lumi Chat.",
+        order: 98
+    )
 
-    public static let shared = LPgptPlugin()
-    public static let id = "LLMProviderLPgpt"
-    public static let displayName = "LPgpt"
-    public static let description = "LPgpt LLM Gateway"
-    public static let iconName = "globe"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 12 }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [LPgptProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        LPgptProvider.self
+public final class LPgptProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "lpgpt",
+            displayName: "LPgpt",
+            description: "Free LLM Gateway by lpgpt.us",
+            defaultModel: "gpt-5.4",
+            availableModels: [
+            "gpt-5.4",
+            "gpt-5.5"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_LPgpt"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://lpgpt.us/v1/chat/completions",
+            additionalHeaders: [:],
+            includeUsageInStreamOptions: true,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false
+        )
+        )
     }
 }

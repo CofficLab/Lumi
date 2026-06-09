@@ -93,7 +93,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             .assistant
         case .tool:
             .tool
-        case .error:
+        case .error, .status:
             .error
         }
     }

@@ -10,13 +10,15 @@ struct LumiChatStore {
         var selectedConversationID: UUID?
         var selectedProviderID: String?
         var selectedModel: String?
+        var routingMode: LumiModelRoutingMode
 
         static let empty = Snapshot(
             conversations: [],
             messagesByConversationID: [:],
             selectedConversationID: nil,
             selectedProviderID: nil,
-            selectedModel: nil
+            selectedModel: nil,
+            routingMode: .manual
         )
     }
 
@@ -98,7 +100,8 @@ struct LumiChatStore {
                 messagesByConversationID: messagesByConversationID,
                 selectedConversationID: selectedID,
                 selectedProviderID: state?.selectedProviderID,
-                selectedModel: state?.selectedModel
+                selectedModel: state?.selectedModel,
+                routingMode: state?.routingMode.flatMap(LumiModelRoutingMode.init(rawValue:)) ?? .manual
             )
         } catch {
             assertionFailure("LumiChatKit failed to load SwiftData store: \(error)")
@@ -114,6 +117,7 @@ struct LumiChatStore {
             state.selectedConversationID = snapshot.selectedConversationID
             state.selectedProviderID = snapshot.selectedProviderID
             state.selectedModel = snapshot.selectedModel
+            state.routingMode = snapshot.routingMode.rawValue
             if state.modelContext == nil {
                 context.insert(state)
             }
@@ -147,6 +151,8 @@ struct LumiChatStore {
             entity.chatMode = conversation.automationLevel?.rawValue
             entity.verbosity = conversation.verbosity?.rawValue
             entity.languagePreference = conversation.language?.rawValue
+            entity.providerId = conversation.providerID
+            entity.model = conversation.modelName
         }
     }
 
@@ -210,7 +216,9 @@ struct LumiChatStore {
             updatedAt: entity.updatedAt,
             verbosity: entity.verbosity.flatMap(LumiResponseVerbosity.init(rawValue:)),
             language: entity.languagePreference.flatMap(LumiConversationLanguage.init(rawValue:)),
-            automationLevel: entity.chatMode.flatMap(LumiAutomationLevel.init(rawValue:))
+            automationLevel: entity.chatMode.flatMap(LumiAutomationLevel.init(rawValue:)),
+            providerID: entity.providerId,
+            modelName: entity.model
         )
     }
 

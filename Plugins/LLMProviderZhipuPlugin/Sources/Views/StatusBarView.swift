@@ -1,16 +1,12 @@
 import LumiUI
 import SwiftUI
 import Foundation
-import os
-import SuperLogKit
 
 /// 智谱 GLM 配额状态栏视图
 ///
 /// 显示/隐藏由 ``ZhipuPlugin`` 在插件层根据 ``PluginContext.activeProviderId`` 控制，
 /// 此视图被创建时即可假定当前活跃供应商为智谱。
-struct StatusBarView: View, SuperLog {
-    nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+struct StatusBarView: View {
     @State private var quotaStatus: QuotaStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var timer: Timer?
@@ -109,8 +105,10 @@ struct StatusBarView: View, SuperLog {
     private func startTimer() {
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-            if shouldRefresh {
-                refreshQuota()
+            Task { @MainActor in
+                if shouldRefresh {
+                    refreshQuota()
+                }
             }
         }
     }
@@ -128,18 +126,6 @@ struct StatusBarView: View, SuperLog {
             await MainActor.run {
                 quotaStatus = result.status
                 lastUpdateTime = Date()
-
-                if Self.verbose {
-                    if case .success(let data) = result.status {
-                        if ZhipuPlugin.verbose {
-                                                    ZhipuPlugin.logger.info("\(Self.t)配额刷新成功: \(data.statusText)")
-                        }
-                    } else {
-                        if ZhipuPlugin.verbose {
-                                                    ZhipuPlugin.logger.warning("\(Self.t)配额刷新失败")
-                        }
-                    }
-                }
             }
         }
     }

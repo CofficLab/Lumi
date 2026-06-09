@@ -14,8 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
             revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
@@ -32,7 +32,14 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/MLXPlugin.swift",
+                "Sources/MLXProvider.swift",
+                "Sources/MLXModelManager.swift",
+                "Sources/MLXDownloadManager.swift",
+            ],
             sources: ["Sources"],
             resources: [
                 .process("Resources")

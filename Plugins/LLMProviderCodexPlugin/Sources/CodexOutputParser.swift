@@ -1,6 +1,6 @@
 import Foundation
 
-struct CodexParsedOutput: Equatable {
+public struct CodexParsedOutput: Equatable {
     var agentMessages: [String]
     var errors: [String]
     var inputTokens: Int?
@@ -9,8 +9,8 @@ struct CodexParsedOutput: Equatable {
     var nonJSONLines: [String]
 }
 
-enum CodexOutputParser {
-    static func parse(_ output: String) -> CodexParsedOutput {
+public enum CodexOutputParser {
+    public static func parse(_ output: String) -> CodexParsedOutput {
         var agentMessages: [String] = []
         var errors: [String] = []
         var inputTokens: Int?

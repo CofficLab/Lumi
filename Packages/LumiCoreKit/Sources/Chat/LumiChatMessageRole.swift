@@ -4,4 +4,5 @@ public enum LumiChatMessageRole: String, Codable, Sendable, CaseIterable {
     case assistant
     case tool
     case error
+    case status
 }

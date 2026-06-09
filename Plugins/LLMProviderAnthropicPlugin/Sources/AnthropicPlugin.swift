@@ -1,19 +1,53 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// Anthropic LLM 供应商插件
-public actor AnthropicPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum AnthropicPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.anthropic",
+        displayName: "Anthropic",
+        description: "Contributes Anthropic Claude models to Lumi Chat.",
+        order: 104
+    )
 
-    public static let shared = AnthropicPlugin()
-    public static let id = "LLMProviderAnthropic"
-    public static let displayName = "Anthropic"
-    public static let description = "Claude AI by Anthropic"
-    public static let iconName = "brain"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [AnthropicProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        AnthropicProvider.self
+public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "anthropic",
+            displayName: "Anthropic",
+            description: "Claude AI by Anthropic",
+            defaultModel: "claude-sonnet-4-20250514",
+            availableModels: [
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_Anthropic"
+    }
+
+    public override class var environmentAPIKeyName: String? {
+        "ANTHROPIC_API_KEY"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiAnthropicCompatibleProviderConfiguration(baseURL: "https://api.anthropic.com/v1/messages")
+        )
     }
 }

@@ -1,23 +1,67 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// OpenRouter LLM 供应商插件
-///
-/// 将 OpenRouterProvider 注册到 LLM 供应商注册表。
-/// 通过 `SuperPlugin` 的 `llmProviderType()` 方法暴露供应商类型，
-/// 由 AppPluginVM 统一发现并注册。
-public actor OpenRouterPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum OpenRouterPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.openrouter",
+        displayName: "OpenRouter",
+        description: "Contributes OpenRouter models to Lumi Chat.",
+        order: 101
+    )
 
-    public static let shared = OpenRouterPlugin()
-    public static let id = "LLMProviderOpenRouter"
-    public static let displayName = "OpenRouter"
-    public static let description = "Multi-Provider LLM Router"
-    public static let iconName = "globe"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [OpenRouterProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        OpenRouterProvider.self
+public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "openrouter",
+            displayName: "OpenRouter",
+            description: "Multi-Provider LLM Router",
+            defaultModel: "alibaba/qwen3.5-397b",
+            availableModels: [
+            "alibaba/qwen3.5-397b",
+            "anthropic/claude-haiku-4-5-20251001",
+            "anthropic/claude-opus-4-5-20251101",
+            "anthropic/claude-sonnet-4-5-20250929",
+            "bytedance-seed/seedream-4.5",
+            "deepseek/deepseek-v3.1",
+            "google/gemma-3-27b-it:free",
+            "google/gemini-pro-2.5",
+            "meta-llama/llama-3.3-70b-instruct",
+            "minimax/minimax-m2.1",
+            "minimax/minimax-m2.5:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "openai/gpt-4o",
+            "openai/gpt-5",
+            "openai/gpt-5-mini",
+            "openai/gpt-oss-20b:free",
+            "qwen/qwen3.6-plus",
+            "stepfun/step-3.5-flash:free",
+            "z-ai/glm-4.5-air:free"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_OpenRouter"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://openrouter.ai/api/v1/chat/completions",
+            additionalHeaders: ["HTTP-Referer": "Lumi", "X-Title": "Lumi"],
+            includeUsageInStreamOptions: false,
+            returnsEmptyChunkWhenNoDelta: true,
+            acceptsFunctionScopedToolCallID: true
+        )
+        )
     }
 }

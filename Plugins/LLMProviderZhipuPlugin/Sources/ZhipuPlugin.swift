@@ -17,6 +17,26 @@ public enum ZhipuPlugin: LumiPlugin {
     }
 
     @MainActor
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.activeSectionID == "com.coffic.lumi.plugin.chat-panel",
+              context.resolve(LumiChatServicing.self)?.selectedProviderID == ZhipuProvider.info.id else {
+            return []
+        }
+
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).quota",
+                title: String(localized: "Zhipu GLM Quota", bundle: .module),
+                systemImage: "chart.bar.fill",
+                placement: .trailing,
+                statusBarView: {
+                    StatusBarView()
+                }
+            )
+        ]
+    }
+
+    @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
         [
             ApiKeyMissingRenderer.item,

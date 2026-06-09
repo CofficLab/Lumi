@@ -1,42 +1,23 @@
 import Foundation
 import HttpKit
-import os
-import SuperLogKit
 
 /// 智谱配额查询辅助工具
-enum QuotaService: SuperLog {
-    nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
-
+enum QuotaService {
     /// 请求超时时间（秒）
     private static let timeout: TimeInterval = 5.0
 
     /// 获取配额信息
     /// - Returns: 配额结果
     static func fetchQuota() async -> (status: QuotaStatus, data: QuotaData?) {
-        if Self.verbose {
-            if ZhipuPlugin.verbose {
-                ZhipuPlugin.logger.info("\(Self.t)开始获取配额信息")
-            }
-        }
-
         // 获取 API Key
         let apiKey = ZhipuProvider.getApiKey()
         guard !apiKey.isEmpty else {
-            if Self.verbose {
-                if ZhipuPlugin.verbose {
-                    ZhipuPlugin.logger.warning("\(Self.t)API Key 为空，跳过配额查询")
-                }
-            }
             return (.authError, nil)
         }
 
         let quotaURL = "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
 
         guard let url = URL(string: quotaURL) else {
-            if ZhipuPlugin.verbose {
-                ZhipuPlugin.logger.error("\(Self.t)配额 URL 构建失败: \(quotaURL)")
-            }
             return (.unavailable, nil)
         }
 
@@ -54,33 +35,14 @@ enum QuotaService: SuperLog {
             // 解析 JSON
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             guard let payload = json else {
-                if ZhipuPlugin.verbose {
-                    ZhipuPlugin.logger.error("\(Self.t)JSON 解析失败")
-                }
                 return (.unavailable, nil)
-            }
-
-            if Self.verbose {
-                if ZhipuPlugin.verbose {
-                    ZhipuPlugin.logger.debug("\(Self.t)API 原始响应：\(payload)")
-                }
             }
 
             // 检查 success 字段
             if payload["success"] as? Bool != true {
                 let code = payload["code"] as? Int
                 if code == 1001 || code == 401 {
-                    if Self.verbose {
-                        if ZhipuPlugin.verbose {
-                            ZhipuPlugin.logger.warning("\(Self.t)业务层认证失败，code: \(code ?? -1)")
-                        }
-                    }
                     return (.authError, nil)
-                }
-                if Self.verbose {
-                    if ZhipuPlugin.verbose {
-                        ZhipuPlugin.logger.warning("\(Self.t)业务层返回失败，code: \(code ?? -1)")
-                    }
                 }
                 return (.unavailable, nil)
             }
@@ -88,9 +50,6 @@ enum QuotaService: SuperLog {
             // 提取配额数据
             guard let dataDict = payload["data"] as? [String: Any],
                   let limits = dataDict["limits"] as? [[String: Any]] else {
-                if ZhipuPlugin.verbose {
-                    ZhipuPlugin.logger.error("\(Self.t)配额数据结构异常，缺少 data/limits")
-                }
                 return (.unavailable, nil)
             }
 
@@ -122,11 +81,6 @@ enum QuotaService: SuperLog {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                if Self.verbose {
-                    if ZhipuPlugin.verbose {
-                        ZhipuPlugin.logger.info("\(Self.t)配额查询成功(rolling): \(quotaData.statusText)")
-                    }
-                }
                 return (.success(quotaData), nil)
             }
 
@@ -155,40 +109,19 @@ enum QuotaService: SuperLog {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                if Self.verbose {
-                    if ZhipuPlugin.verbose {
-                        ZhipuPlugin.logger.info("\(Self.t)配额查询成功(timeLimit fallback): \(quotaData.statusText)")
-                    }
-                }
                 return (.success(quotaData), nil)
             }
 
-            if Self.verbose {
-                if ZhipuPlugin.verbose {
-                    ZhipuPlugin.logger.warning("\(Self.t)未找到匹配的配额限制类型")
-                }
-            }
             return (.unavailable, nil)
 
         } catch let error as HTTPClientError {
             if case let .httpError(statusCode, _) = error {
                 if statusCode == 401 || statusCode == 1001 {
-                    if Self.verbose {
-                        if ZhipuPlugin.verbose {
-                            ZhipuPlugin.logger.warning("\(Self.t)认证失败，HTTP \(statusCode)")
-                        }
-                    }
                     return (.authError, nil)
                 }
             }
-            if ZhipuPlugin.verbose {
-                ZhipuPlugin.logger.error("\(Self.t)网络请求失败: \(error.localizedDescription)")
-            }
             return (.unavailable, nil)
         } catch {
-            if ZhipuPlugin.verbose {
-                ZhipuPlugin.logger.error("\(Self.t)网络请求失败: \(error.localizedDescription)")
-            }
             return (.unavailable, nil)
         }
     }

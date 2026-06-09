@@ -1,19 +1,59 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// AiRouter LLM 供应商插件
-public actor AiRouterPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum AiRouterPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.airouter",
+        displayName: "AiRouter",
+        description: "Contributes AiRouter models to Lumi Chat.",
+        order: 91
+    )
 
-    public static let shared = AiRouterPlugin()
-    public static let id = "LLMProviderAiRouter"
-    public static let displayName = "AiRouter"
-    public static let description = "AiRouter LLM Gateway"
-    public static let iconName = "arrow.triangle.branch"
-    public static var category: PluginCategory { .llmProvider }
-    public static var order: Int { 10 }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [AiRouterProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        AiRouterProvider.self
+public final class AiRouterProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "airouter",
+            displayName: "AiRouter",
+            description: "LLM Router by airouter.org",
+            defaultModel: "gpt-5",
+            availableModels: [
+            "gpt-5.1-codex-max",
+            "gpt-5.2-codex",
+            "gpt-5.4-mini",
+            "gpt-5",
+            "gpt-5.1-codex-mini",
+            "gpt-5.2",
+            "gpt-5.3-codex",
+            "gpt-5.4",
+            "gpt-5-codex",
+            "gpt-5.1",
+            "gpt-5.1-codex"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_AiRouter"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://api.airouter.org/v1/chat/completions",
+            additionalHeaders: [:],
+            includeUsageInStreamOptions: true,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false
+        )
+        )
     }
 }

@@ -173,16 +173,19 @@ final class LumiChatStateEntity {
     var selectedConversationID: UUID?
     var selectedProviderID: String?
     var selectedModel: String?
+    var routingMode: String?
 
     init(
         id: String = "default",
         selectedConversationID: UUID? = nil,
         selectedProviderID: String? = nil,
-        selectedModel: String? = nil
+        selectedModel: String? = nil,
+        routingMode: String? = nil
     ) {
         self.id = id
         self.selectedConversationID = selectedConversationID
         self.selectedProviderID = selectedProviderID
         self.selectedModel = selectedModel
+        self.routingMode = routingMode
     }
 }

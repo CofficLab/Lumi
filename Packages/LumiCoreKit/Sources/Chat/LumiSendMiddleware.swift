@@ -2,11 +2,17 @@ import Foundation
 
 public struct LumiSendContext: Sendable {
     public let conversationID: UUID
-    public let messages: [LumiChatMessage]
+    public var messages: [LumiChatMessage]
+    public var systemPromptFragments: [String]
 
-    public init(conversationID: UUID, messages: [LumiChatMessage]) {
+    public init(
+        conversationID: UUID,
+        messages: [LumiChatMessage],
+        systemPromptFragments: [String] = []
+    ) {
         self.conversationID = conversationID
         self.messages = messages
+        self.systemPromptFragments = systemPromptFragments
     }
 }
 

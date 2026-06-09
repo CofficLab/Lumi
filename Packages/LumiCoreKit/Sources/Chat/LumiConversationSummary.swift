@@ -236,6 +236,8 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var verbosity: LumiResponseVerbosity?
     public var language: LumiConversationLanguage?
     public var automationLevel: LumiAutomationLevel?
+    public var providerID: String?
+    public var modelName: String?
 
     public init(
         id: UUID = UUID(),
@@ -245,7 +247,9 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         updatedAt: Date = Date(),
         verbosity: LumiResponseVerbosity? = nil,
         language: LumiConversationLanguage? = nil,
-        automationLevel: LumiAutomationLevel? = nil
+        automationLevel: LumiAutomationLevel? = nil,
+        providerID: String? = nil,
+        modelName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -255,5 +259,12 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.verbosity = verbosity
         self.language = language
         self.automationLevel = automationLevel
+        self.providerID = providerID
+        self.modelName = modelName
     }
+}
+
+public enum LumiModelRoutingMode: String, Codable, Sendable, CaseIterable {
+    case manual
+    case auto
 }

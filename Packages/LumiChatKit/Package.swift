@@ -13,13 +13,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../LumiCoreKit")
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../ModelRouterKit")
     ],
     targets: [
         .target(
             name: "LumiChatKit",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit")
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "ModelRouterKit", package: "ModelRouterKit")
             ],
             path: "Sources"
         ),

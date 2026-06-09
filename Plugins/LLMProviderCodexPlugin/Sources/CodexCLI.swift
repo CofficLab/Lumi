@@ -1,17 +1,17 @@
 import Foundation
 
-struct CodexCLI: Sendable {
-    let executablePath: String
+public struct CodexCLI: Sendable {
+    public let executablePath: String
 
-    init(executablePath: String = CodexCLI.defaultExecutablePath()) {
+    public init(executablePath: String = CodexCLI.defaultExecutablePath()) {
         self.executablePath = executablePath
     }
 
-    var isAvailable: Bool {
+    public var isAvailable: Bool {
         FileManager.default.isExecutableFile(atPath: executablePath)
     }
 
-    func arguments(prompt: String, model: String) -> [String] {
+    public func arguments(prompt: String, model: String) -> [String] {
         [
             "-a", "never",
             "exec",
@@ -23,7 +23,7 @@ struct CodexCLI: Sendable {
         ]
     }
 
-    static func defaultExecutablePath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
+    public static func defaultExecutablePath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
         let candidates = pathCandidates(environment: environment)
         return candidates.first { FileManager.default.isExecutableFile(atPath: $0) } ?? "/opt/homebrew/bin/codex"
     }

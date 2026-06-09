@@ -1,19 +1,49 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// HappyCode LLM 供应商插件
-public actor HappyCodePlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum HappyCodePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.happycode",
+        displayName: "HappyCode",
+        description: "Contributes HappyCode models to Lumi Chat.",
+        order: 96
+    )
 
-    public static let shared = HappyCodePlugin()
-    public static let id = "LLMProviderHappyCode"
-    public static let displayName = "HappyCode"
-    public static let description = "HappyCode LLM Gateway"
-    public static let iconName = "party.popper"
-    public static var order: Int { 12 }
-    public static var category: PluginCategory { .llmProvider }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [HappyCodeProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        HappyCodeProvider.self
+public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "happycode",
+            displayName: "HappyCode",
+            description: "AI API Gateway by HappyCode",
+            defaultModel: "gpt-5.5",
+            availableModels: [
+            "gpt-5.5"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_HappyCode"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://happycode.vip/v1/chat/completions",
+            additionalHeaders: [:],
+            includeUsageInStreamOptions: true,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false
+        )
+        )
     }
 }

@@ -1,19 +1,50 @@
-import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
-/// Xybbz LLM 供应商插件
-public actor XybbzPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+public enum XybbzPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .llmProvider
+    public static let iconName = "sparkles"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.llm-provider.xybbz",
+        displayName: "Xybbz",
+        description: "Contributes Xybbz models to Lumi Chat.",
+        order: 103
+    )
 
-    public static let shared = XybbzPlugin()
-    public static let id = "LLMProviderXybbz"
-    public static let displayName = "Xybbz"
-    public static let description = "Xybbz LLM Gateway"
-    public static let iconName = "server.rack"
-    public static var order: Int { 11 }
-    public static var category: PluginCategory { .llmProvider }
+    @MainActor
+    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+        [XybbzProvider()]
+    }
+}
 
-    public nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? {
-        XybbzProvider.self
+public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public override class var info: LumiLLMProviderInfo {
+        LumiLLMProviderInfo(
+            id: "xybbz",
+            displayName: "Xybbz",
+            description: "AI API Gateway by xybbz",
+            defaultModel: "gpt-5.5",
+            availableModels: [
+            "gpt-5.5",
+            "gpt-5.4"
+            ]
+        )
+    }
+
+    public override class var apiKeyStorageKey: String {
+        "DevAssistant_ApiKey_Xybbz"
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://sub2api.xybbz.xyz/v1/chat/completions",
+            additionalHeaders: [:],
+            includeUsageInStreamOptions: true,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false
+        )
+        )
     }
 }
