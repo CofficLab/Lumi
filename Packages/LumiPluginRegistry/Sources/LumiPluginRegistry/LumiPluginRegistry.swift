@@ -25,6 +25,7 @@ import AgentRulesPlugin
 import MemoryPlugin
 import RequestLogPlugin
 import SkillPlugin
+import ConversationTitlePlugin
 import ProjectsPlugin
 import AppManagerPlugin
 import DiskManagerPlugin
@@ -104,6 +105,7 @@ public enum LumiPluginRegistry {
         SkillPlugin.self,
         RequestLogPlugin.self,
         RAGPlugin.self,
+        ConversationTitlePlugin.self,
         ProjectsPlugin.self
     ]
 }

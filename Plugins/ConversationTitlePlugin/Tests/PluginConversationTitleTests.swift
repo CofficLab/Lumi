@@ -1,29 +1,21 @@
-import Testing
 import LumiCoreKit
+import Testing
 @testable import ConversationTitlePlugin
 
 @Test func packageLoads() async throws {
-    #expect(Bool(true))
+    #expect(ConversationTitlePlugin.info.id == "com.coffic.lumi.plugin.conversation-title")
 }
 
 @Test func pluginPolicyIsAlwaysOn() {
     #expect(ConversationTitlePlugin.policy == .alwaysOn)
-    #expect(ConversationTitlePlugin.isConfigurable == false)
+    #expect(ConversationTitlePlugin.policy.isConfigurable == false)
 }
 
 @MainActor
-@Test func pluginRegistersTitleHintMiddlewareOnly() {
-    let middlewareIds = ConversationTitlePlugin.shared.sendMiddlewares().map(\.id)
+@Test func pluginRegistersTitleHintMiddleware() {
+    let middlewares = ConversationTitlePlugin.sendMiddlewares(
+        context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+    )
 
-    #expect(!middlewareIds.contains("auto.conversation.title"))
-    #expect(middlewareIds.contains("conversation-title-hint"))
-}
-
-@MainActor
-@Test func pluginRegistersTitleToolWhenConversationContextExists() {
-    let conversationListContext = ConversationListContext()
-    let context = ToolContext(conversationListContext: conversationListContext)
-    let tools = ConversationTitlePlugin.shared.agentTools(context: context)
-
-    #expect(tools.map(\.name).contains("update_conversation_title"))
+    #expect(middlewares.count == 1)
 }

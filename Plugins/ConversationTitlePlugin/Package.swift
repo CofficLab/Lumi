@@ -14,22 +14,25 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ConversationTitlePlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/TitleOrchestrator.swift",
+                "Sources/ConversationTitleRuntimeBridge.swift",
+                "Sources/ConversationTitleEventObserver.swift",
+                "Sources/Services",
+                "Sources/Tools",
+                "Sources/Policy",
+            ],
             sources: ["Sources"],
             resources: [
                 .process("Resources")
