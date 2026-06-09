@@ -20,77 +20,62 @@ struct ChatMessageListView: View {
     var body: some View {
         let visibleMessages = messages.filter { $0.role != .tool }
 
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    if visibleMessages.filter({ $0.role != .status }).isEmpty, !isSending {
-                        ChatEmptyMessagesView(
-                            automationLevel: automationLevel,
-                            onQuickStart: onQuickStart
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 320)
-                    } else {
-                        if hasEarlierMessages {
-                            Button(action: onLoadEarlier) {
-                                Text("Load earlier messages")
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.textSecondary)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        ForEach(visibleMessages) { message in
-                            ChatMessageBubble(
-                                message: message,
-                                renderer: rendererForMessage(message),
-                                showRawMessage: rawMessageBinding(message.id),
-                                onUseAsDraft: {
-                                    onUseAsDraft(message)
-                                },
-                                onResend: message.role == .user ? { onResend(message) } : nil,
-                                onDelete: { onDelete(message) }
-                            )
-                            .id(message.id)
-                        }
-
-                        if isSending,
-                           !visibleMessages.contains(where: { $0.metadata["isTransientStatus"] == "true" }) {
-                            ChatTypingIndicator()
-                                .id("typing-indicator")
-                        }
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 22)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(theme.background.opacity(0.08))
-            .onAppear {
-                scrollToBottom(proxy: proxy, visibleMessages: visibleMessages)
-            }
-            .onChange(of: visibleMessages.last?.id) { _, _ in
-                scrollToBottom(proxy: proxy, visibleMessages: visibleMessages)
-            }
-            .onChange(of: isSending) { _, _ in
-                scrollToBottom(proxy: proxy, visibleMessages: visibleMessages)
+        Group {
+            if visibleMessages.filter({ $0.role != .status }).isEmpty, !isSending {
+                ChatEmptyMessagesView(
+                    automationLevel: automationLevel,
+                    onQuickStart: onQuickStart
+                )
+                .frame(maxWidth: .infinity, minHeight: 320)
+            } else {
+                messageListContent(visibleMessages: visibleMessages)
             }
         }
     }
 
-    private func scrollToBottom(proxy: ScrollViewProxy, visibleMessages: [LumiChatMessage]) {
-        DispatchQueue.main.async {
-            withAnimation(.easeOut(duration: 0.18)) {
-                if let statusID = visibleMessages.last(where: { $0.role == .status })?.id {
-                    proxy.scrollTo(statusID, anchor: .bottom)
-                } else if isSending {
-                    proxy.scrollTo("typing-indicator", anchor: .bottom)
-                } else if let lastID = visibleMessages.last(where: { $0.role != .status })?.id {
-                    proxy.scrollTo(lastID, anchor: .bottom)
+    private func messageListContent(visibleMessages: [LumiChatMessage]) -> some View {
+        List {
+            if hasEarlierMessages {
+                Button(action: onLoadEarlier) {
+                    Text("Load earlier messages")
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                 }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                .listRowSeparator(.hidden)
+            }
+
+            ForEach(visibleMessages) { message in
+                ChatMessageBubble(
+                    message: message,
+                    renderer: rendererForMessage(message),
+                    showRawMessage: rawMessageBinding(message.id),
+                    onUseAsDraft: {
+                        onUseAsDraft(message)
+                    },
+                    onResend: message.role == .user ? { onResend(message) } : nil,
+                    onDelete: { onDelete(message) }
+                )
+                .id(message.id)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
+            }
+
+            if isSending,
+               !visibleMessages.contains(where: { $0.metadata["isTransientStatus"] == "true" }) {
+                ChatTypingIndicator()
+                    .id("typing-indicator")
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparator(.hidden)
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 }
 
