@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import DeviceMonitorKit
 
 struct CPUHistoryDetailView: View {
     @ObservedObject private var historyService = CPUHistoryService.shared

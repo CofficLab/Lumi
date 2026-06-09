@@ -1,6 +1,5 @@
 import AppKit
 import Combine
-import DeviceMonitorKit
 import SwiftUI
 
 /// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）

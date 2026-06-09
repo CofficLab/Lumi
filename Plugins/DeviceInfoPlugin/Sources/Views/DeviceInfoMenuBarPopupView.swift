@@ -1,7 +1,6 @@
 import LumiUI
 import SwiftUI
 import Combine
-import DeviceMonitorKit
 
 /// Menu bar popup view for Device Info plugin
 /// Shows detailed CPU usage with progress bar and mini trend graph

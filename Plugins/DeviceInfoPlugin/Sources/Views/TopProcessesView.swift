@@ -1,6 +1,5 @@
 import SwiftUI
 import AppKit
-import DeviceMonitorKit
 
 struct TopProcessesView: View {
 

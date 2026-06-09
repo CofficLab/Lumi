@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import DeviceMonitorKit
 
 struct MemoryMenuBarPopupView: View {
     @StateObject private var viewModel = MemoryManagerViewModel()
