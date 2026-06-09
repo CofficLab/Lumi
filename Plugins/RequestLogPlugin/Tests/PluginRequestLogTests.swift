@@ -213,8 +213,11 @@ private final class MockChatService: LumiChatServicing {
 
     func isSending(for conversationID: UUID?) -> Bool { false }
     func createConversation(title: String?) -> UUID { UUID() }
+    func createConversation(title: String?, projectPath: String?, language: LumiConversationLanguage?) -> UUID { UUID() }
     func selectConversation(id: UUID) {}
     func deleteConversation(id: UUID) {}
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { false }
+    func setConversationProjectPath(_ projectPath: String?, for conversationID: UUID) -> Bool { false }
     func selectProvider(id: String, model: String?) {}
     func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
     func providerID(for conversationID: UUID?) -> String? { nil }

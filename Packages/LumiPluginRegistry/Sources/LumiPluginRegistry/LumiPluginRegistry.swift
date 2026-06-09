@@ -27,10 +27,49 @@ import RequestLogPlugin
 import SkillPlugin
 import ConversationListPlugin
 import ConversationTitlePlugin
+import AutoTaskPlugin
+import GitHubInsightPlugin
+import IdleTimePlugin
+import ProjectIssueScannerPlugin
 import ProjectsPlugin
+import WebSearchPlugin
+import WebFetchPlugin
+import GitPlugin
+import AskUserPlugin
+import CaffeinatePlugin
+import BrowserPlugin
+import ProjectOverviewPlugin
+import ShowImagePlugin
+import GitHubCLIDetectPlugin
 import AppManagerPlugin
 import DiskManagerPlugin
 import PortManagerPlugin
+import DockerManagerPlugin
+import BrewManagerPlugin
+import ClipboardManagerPlugin
+import HostsManagerPlugin
+import InputPlugin
+import NettoPlugin
+import RClickPlugin
+import RegistryManagerPlugin
+import AppStoreConnectPlugin
+import TerminalPlugin
+import MenuBarManagerPlugin
+import QuickLauncherPlugin
+import AppUpdateStatusBarPlugin
+import AppLoadedPluginsPlugin
+import FontConfigPlugin
+import OpenInCursorPlugin
+import OpenInXcodePlugin
+import OpenInFinderPlugin
+import OpenInGitOKPlugin
+import OpenInGitHubDesktopPlugin
+import OpenInAntigravityPlugin
+import OpenRemotePlugin
+import LayoutPlugin
+import OnboardingPlugin
+import AgentTurnNotificationPlugin
+import FileLogPlugin
 import ToolCorePlugin
 import MessageRendererPlugin
 import ThemeLumiPlugin
@@ -52,10 +91,19 @@ import ThemeVscodeLightPlugin
 import ThemeOneDarkPlugin
 import ThemeDraculaPlugin
 import ThemeStatusBarPlugin
+import AgentGitHubToolsPlugin
+import MultiAgentPlugin
+import DatabaseManagerPlugin
+import CodeReviewPlugin
+import AgentDelayMessagePlugin
+import AppIconDesignerPlugin
+import LLMAvailabilityPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
     public static let plugins: [any LumiPlugin.Type] = [
+        FileLogPlugin.self,
+        LayoutPlugin.self,
         ThemeLumiPlugin.self,
         ThemeMidnightPlugin.self,
         ThemeSkyPlugin.self,
@@ -75,8 +123,13 @@ public enum LumiPluginRegistry {
         ThemeOneDarkPlugin.self,
         ThemeDraculaPlugin.self,
         ThemeStatusBarPlugin.self,
+        OnboardingPlugin.self,
+        QuickLauncherPlugin.self,
+        AppUpdateStatusBarPlugin.self,
         DeviceInfoPlugin.self,
         NetworkManagerPlugin.self,
+        HostsManagerPlugin.self,
+        MenuBarManagerPlugin.self,
         ChatPanelPlugin.self,
         OpenAIPlugin.self,
         ZhipuPlugin.self,
@@ -96,9 +149,27 @@ public enum LumiPluginRegistry {
         XybbzPlugin.self,
         CodexLumiPlugin.self,
         MLXLumiPlugin.self,
-        AppManagerPlugin.self,
-        DiskManagerPlugin.self,
         PortManagerPlugin.self,
+        AppManagerPlugin.self,
+        DockerManagerPlugin.self,
+        DiskManagerPlugin.self,
+        AppStoreConnectPlugin.self,
+        BrewManagerPlugin.self,
+        RClickPlugin.self,
+        NettoPlugin.self,
+        RegistryManagerPlugin.self,
+        ClipboardManagerPlugin.self,
+        InputPlugin.self,
+        AgentOpenInAntigravityPlugin.self,
+        AgentOpenInCursorPlugin.self,
+        AgentOpenInXcodePlugin.self,
+        AgentOpenRemotePlugin.self,
+        AgentOpenInGitHubDesktopPlugin.self,
+        AgentOpenInFinderPlugin.self,
+        AgentOpenInGitOKPlugin.self,
+        TerminalPlugin.self,
+        FontConfigPlugin.self,
+        AppLoadedPluginsPlugin.self,
         ToolCorePlugin.self,
         MessageRendererPlugin.self,
         MemoryPlugin.self,
@@ -108,6 +179,27 @@ public enum LumiPluginRegistry {
         RAGPlugin.self,
         ConversationTitlePlugin.self,
         ConversationListPlugin.self,
-        ProjectsPlugin.self
+        AutoTaskPlugin.self,
+        GitHubInsightPlugin.self,
+        IdleTimePlugin.self,
+        ProjectIssueScannerPlugin.self,
+        AgentTurnNotificationPlugin.self,
+        ProjectsPlugin.self,
+        WebSearchPlugin.self,
+        WebFetchPlugin.self,
+        GitPlugin.self,
+        AskUserPlugin.self,
+        CaffeinatePlugin.self,
+        BrowserPlugin.self,
+        ProjectOverviewPlugin.self,
+        ShowImagePlugin.self,
+        GitHubCLIDetectPlugin.self,
+        GitHubToolsPlugin.self,
+        MultiAgentPlugin.self,
+        DatabaseManagerPlugin.self,
+        CodeReviewPlugin.self,
+        DelayMessagePlugin.self,
+        LLMAvailabilityPlugin.self,
+        AppIconDesignerPlugin.self
     ]
 }

@@ -17,11 +17,17 @@ final class ChatCoreService {
         self.toolService = toolService
         self.projectPathStore = projectPathStore
         toolService.projectPathProvider = projectPathStore
-        LumiPluginBootstrap.configurePluginRuntimes(
-            currentProjectPath: { [projectPathStore] in projectPathStore.currentProjectPath }
-        )
         self.chatService = LumiChatService(
             configuration: .coreDatabase(directory: lumiCoreService.coreDatabaseDirectory)
+        )
+        LumiPluginBootstrap.configurePluginRuntimes(
+            currentProjectPath: { [projectPathStore] in projectPathStore.currentProjectPath },
+            currentProjectName: { [projectPathStore] in
+                let path = projectPathStore.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !path.isEmpty else { return "" }
+                return URL(fileURLWithPath: path).lastPathComponent
+            },
+            chatServiceProvider: { [chatService] in chatService }
         )
         chatService.registerProjectPathProvider(projectPathStore)
         reloadPluginContributions(from: pluginService)
