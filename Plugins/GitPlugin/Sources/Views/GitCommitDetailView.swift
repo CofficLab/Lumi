@@ -17,7 +17,7 @@ public struct GitCommitDetailView: View {
 
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?
@@ -116,8 +116,8 @@ public struct GitCommitDetailView: View {
 
     /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
     private func activateCommitHistorySidebar() {
-        if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
-            layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "CommitDetail: view appeared")
+        if layoutState.activeViewContainerID != GitPlugin.info.id {
+            layoutState.activateViewContainer(id: GitPlugin.info.id)
         }
     }
 

@@ -11,7 +11,7 @@ import LumiUI
 public struct GitCommitHistorySidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
-    @EnvironmentObject var layoutVM: WindowLayoutVM
+    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -178,8 +178,8 @@ public struct GitCommitHistorySidebarView: View {
             selectedCommitHash = nil
             gitVM.selectCommit(hash: nil)
             // 确保侧边栏也选中这个标签
-            if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
-                layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "CommitHistory: working state tapped")
+            if layoutState.activeViewContainerID != GitPlugin.info.id {
+                layoutState.activateViewContainer(id: GitPlugin.info.id)
             }
         }
     }

@@ -6,6 +6,7 @@ import Testing
     #expect(GitPlugin.displayName.isEmpty == false)
     #expect(GitPlugin.iconName == "arrow.triangle.branch")
     #expect(GitPlugin.order == 11)
+    #expect(GitPlugin.category == .development)
 }
 
 @Test func gitLogToolNormalizesCount() throws {

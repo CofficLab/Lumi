@@ -6,7 +6,7 @@ import LumiCoreKit
 /// 监听 commit 选中事件，自动激活当前面板。
 public struct GitCommitHistoryRootOverlay<Content: View>: View {
     @EnvironmentObject private var gitVM: AppGitVM
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
 
     public let content: Content
 
@@ -25,8 +25,8 @@ public struct GitCommitHistoryRootOverlay<Content: View>: View {
             }
 
             // 有 commit 被选中时，自动激活当前面板
-            if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
-                layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "RootOverlay: commit selected")
+            if layoutState.activeViewContainerID != GitPlugin.info.id {
+                layoutState.activateViewContainer(id: GitPlugin.info.id)
             }
         }
     }

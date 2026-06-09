@@ -37,7 +37,11 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/GitCommitSubAgentDefinition.swift",
+            ],
             sources: ["Sources"],
             resources: [
                 .process("Resources")

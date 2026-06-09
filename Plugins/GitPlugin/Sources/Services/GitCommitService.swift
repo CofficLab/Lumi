@@ -2,7 +2,6 @@ import Foundation
 import LumiCoreKit
 import SuperLogKit
 import LibGit2Swift
-import LLMKit
 import ShellKit
 
 /// Git Commit 服务
@@ -110,19 +109,18 @@ public enum GitCommitService: SuperLog {
     }
 
     /// 生成 commit message
-    /// - Parameters:
-    ///   - changes: 变更摘要
-    ///   - language: 语言偏好
-    ///   - llmService: LLM 服务
-    ///   - config: LLM 配置
-    /// - Returns: 生成的 commit message
+    @MainActor
     public static func generateCommitMessage(
         changes: String,
         language: Language,
-        llmService: LLMService,
-        config: LLMConfig
+        chatService: any LumiChatServicing
     ) async throws -> String {
-        let systemPrompt = """
+        let conversationID = chatService.selectedConversationID ?? UUID()
+        guard let model = chatService.modelName(for: conversationID) ?? chatService.selectedModel else {
+            throw GitCommitError.llmError("No model selected")
+        }
+
+        let prompt = """
         You are an expert developer reviewing code changes. Generate a concise, descriptive commit message.
 
         Requirements:
@@ -134,10 +132,6 @@ public enum GitCommitService: SuperLog {
         6. Return ONLY the commit message, nothing else, no explanations
         7. Do NOT wrap in code blocks or quotes
 
-        Respond with the commit message directly.
-        """
-
-        let userPrompt = """
         Here are the code changes:
 
         \(changes)
@@ -145,26 +139,24 @@ public enum GitCommitService: SuperLog {
         Generate a commit message for these changes.
         """
 
-        let tempConvId = UUID()
-        let messages = [
-            ChatMessage(role: .system, conversationId: tempConvId, content: systemPrompt),
-            ChatMessage(role: .user, conversationId: tempConvId, content: userPrompt)
-        ]
-
-        let response = try await llmService.sendMessage(messages: messages, config: config)
+        let response = try await chatService.generateEphemeralCompletion(
+            messages: [
+                LumiChatMessage(conversationID: conversationID, role: .user, content: prompt),
+            ],
+            model: model,
+            conversationID: conversationID
+        )
 
         let rawContent = response.content.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         guard !rawContent.isEmpty else {
             throw GitCommitError.emptyResponse
         }
 
-        // 清理可能的 markdown code block
         var cleaned = rawContent
         if cleaned.hasPrefix("```") {
             cleaned = cleaned.replacingOccurrences(of: "```", with: "").trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         }
 
-        // 去除首尾空行
         let lines = cleaned.components(separatedBy: CharacterSet.newlines).filter { !$0.isEmpty }
         return lines.joined(separator: "\n")
     }

@@ -1,5 +1,4 @@
 import SwiftUI
-import LLMKit
 import LumiCoreKit
 import LumiUI
 
@@ -9,7 +8,6 @@ import LumiUI
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 public struct GitCommitInputView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject private var llmVM: AppLLMVM
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
@@ -199,20 +197,23 @@ public struct GitCommitInputView: View {
         let path = projectVM.currentProjectPath
         guard !path.isEmpty else { return }
 
+        guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
+            await MainActor.run {
+                resultType = .error
+                resultMessage = String(localized: "LLM not configured", bundle: .module)
+            }
+            return
+        }
+
         isGenerating = true
         resultMessage = nil
 
         do {
-            // 1. 收集变更
             let changes = try await GitCommitService.gatherChanges(at: path)
-
-            // 2. 生成 commit message
-            let config = llmVM.getCurrentConfig()
             let message = try await GitCommitService.generateCommitMessage(
                 changes: changes,
                 language: .english,
-                llmService: llmVM.llmService,
-                config: config
+                chatService: chatService
             )
 
             await MainActor.run {
@@ -233,8 +234,6 @@ public struct GitCommitInputView: View {
                     default:
                         resultMessage = error.localizedDescription
                     }
-                } else if error is LLMServiceError {
-                    resultMessage = String(localized: "AI request failed, please check API key", bundle: .module)
                 } else {
                     resultMessage = error.localizedDescription
                 }
