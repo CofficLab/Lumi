@@ -1,13 +1,22 @@
 import Foundation
+import LumiCoreKit
 import Testing
 @testable import ConversationListPlugin
 
 @Test func packageLoads() async throws {
-    #expect(ConversationListPlugin.id == "ConversationList")
-    #expect(ConversationListPlugin.displayName.isEmpty == false)
-    #expect(ConversationListPlugin.description.isEmpty == false)
+    #expect(ConversationListPlugin.info.id == "com.coffic.lumi.plugin.conversation-list")
+    #expect(ConversationListPlugin.info.displayName.isEmpty == false)
+    #expect(ConversationListPlugin.info.description.isEmpty == false)
     #expect(ConversationListPlugin.iconName == "message.fill")
     #expect(ConversationListPlugin.category == .agent)
+}
+
+@MainActor
+@Test func pluginRegistersProjectSwitchMiddleware() {
+    let middlewares = ConversationListPlugin.sendMiddlewares(
+        context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+    )
+    #expect(middlewares.count == 1)
 }
 
 @Test func localStoreSavesAndReloadsSelectedConversationId() throws {

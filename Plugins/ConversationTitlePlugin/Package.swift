@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiChatKit"),
     ],
     targets: [
         .target(
@@ -40,7 +41,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ConversationTitlePluginTests",
-            dependencies: ["ConversationTitlePlugin"],
+            dependencies: [
+                "ConversationTitlePlugin",
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
+            ],
             path: "Tests"
         )
     ]

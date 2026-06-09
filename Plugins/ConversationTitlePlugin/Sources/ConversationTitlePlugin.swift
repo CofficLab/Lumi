@@ -22,4 +22,12 @@ public enum ConversationTitlePlugin: LumiPlugin {
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         [ConversationTitleChatMiddleware()]
     }
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        guard let chatService = context.resolve((any LumiChatServicing).self) else {
+            return []
+        }
+        return [UpdateConversationTitleLumiTool(chatService: chatService)]
+    }
 }

@@ -21,6 +21,7 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
 
     func selectConversation(id: UUID)
     func deleteConversation(id: UUID)
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
     func selectProvider(id: String, model: String?)
     func selectProvider(id: String, model: String?, for conversationID: UUID?)
     func providerID(for conversationID: UUID?) -> String?

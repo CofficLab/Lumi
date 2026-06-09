@@ -65,7 +65,8 @@ let package = Package(
         .package(path: "../../Plugins/MemoryPlugin"),
         .package(path: "../../Plugins/AgentRAGPlugin"),
         .package(path: "../../Plugins/RequestLogPlugin"),
-        .package(path: "../../Plugins/ConversationTitlePlugin")
+        .package(path: "../../Plugins/ConversationTitlePlugin"),
+        .package(path: "../../Plugins/ConversationListPlugin")
     ],
     targets: [
         .target(
@@ -123,7 +124,8 @@ let package = Package(
                 .product(name: "MemoryPlugin", package: "MemoryPlugin"),
                 .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
                 .product(name: "RequestLogPlugin", package: "RequestLogPlugin"),
-                .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin")
+                .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin"),
+                .product(name: "ConversationListPlugin", package: "ConversationListPlugin")
             ]
         )
     ]

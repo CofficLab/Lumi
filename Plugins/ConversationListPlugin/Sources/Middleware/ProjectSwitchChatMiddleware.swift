@@ -1,60 +1,30 @@
-import AgentToolKit
-import LumiCoreKit
-import SuperLogKit
 import Foundation
+import LumiCoreKit
 
-/// 项目切换对话引导中间件
-///
-/// 在每次发送用户消息前，注入当前项目信息，
-/// 并指导 LLM 在用户话题完全切换到另一个项目时创建新对话。
-///
-/// ## 工作流程
-/// 1. 获取当前选中的项目
-/// 2. 将项目信息和切换指导注入到 transientSystemPrompts
-/// 3. LLM 接收后，如发现用户讨论的项目已完全切换，可调用工具创建新对话
-@MainActor
-public final class ProjectSwitchSendMiddleware: SuperSendMiddleware, SuperLog {
-    public nonisolated static let emoji = "📁"
-    public nonisolated static let verbose: Bool = false
-    public let id: String = "project-switch-guide"
-    public let order: Int = 6  // 在标题提示中间件之后执行
-
-    public func handle(
-        ctx: SendMessageContext,
-        next: @escaping @MainActor (SendMessageContext) async -> Void
-    ) async {
-        let projectPath = ctx.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+/// 项目切换对话引导中间件：注入当前项目信息，指导 LLM 在话题切换时创建新对话。
+struct ProjectSwitchChatMiddleware: LumiSendMiddleware {
+    func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
+        var updated = context
+        let projectPath = context.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectPath.isEmpty else {
-            if Self.verbose, ConversationListPlugin.verbose {
-                ConversationListPlugin.logger.debug("\(Self.t)📁 无当前项目，跳过项目切换提示")
-            }
-            await next(ctx)
-            return
+            return updated
         }
 
         let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
-        let language = ctx.languagePreference
-
-        let prompt = Self.buildPrompt(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: language
+        updated.systemPromptFragments.append(
+            Self.buildPrompt(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: context.conversationLanguage
+            )
         )
-        ctx.transientSystemPrompts.append(prompt)
-
-        if Self.verbose, ConversationListPlugin.verbose {
-            ConversationListPlugin.logger.debug("\(Self.t)📁 已注入项目切换提示: \"\(projectName)\"")
-        }
-
-        await next(ctx)
+        return updated
     }
-
-    // MARK: - 提示词构建
 
     private static func buildPrompt(
         projectName: String,
         projectPath: String,
-        language: LanguagePreference
+        language: LumiConversationLanguage
     ) -> String {
         switch language {
         case .chinese:

@@ -14,22 +14,21 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ConversationListPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/Views",
+                "Sources/Tools",
+            ],
             sources: ["Sources"],
             resources: [
                 .process("Resources")

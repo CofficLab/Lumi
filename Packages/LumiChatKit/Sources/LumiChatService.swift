@@ -127,6 +127,20 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         persist()
     }
 
+    @discardableResult
+    public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              let trimmed = normalizedTitle(title)
+        else {
+            return false
+        }
+
+        conversations[index].title = trimmed
+        conversations[index].updatedAt = Date()
+        persist()
+        return true
+    }
+
     public func selectProvider(id: String, model: String? = nil) {
         selectProvider(id: id, model: model, for: selectedConversationID)
     }
