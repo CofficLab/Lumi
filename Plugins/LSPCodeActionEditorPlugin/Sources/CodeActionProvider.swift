@@ -1,6 +1,6 @@
 import EditorService
 import EditorKernel
-import EditorPanelPlugin
+import EditorService
 import Combine
 import CodeEditSourceEditor
 import CodeEditTextView

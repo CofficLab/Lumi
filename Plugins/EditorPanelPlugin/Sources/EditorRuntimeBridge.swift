@@ -50,8 +50,7 @@ public enum EditorRuntimeBridge {
         }
 
         Task { @MainActor in
-            await GoEditorPlugin.shared.configureRuntime(context: runtime)
-            await JSEditorPlugin.shared.configureRuntime(context: runtime)
+            await EditorLanguageRuntimeBridge.configure?(runtime)
             await EditorPreviewPlugin.shared.configureRuntime(context: runtime)
         }
     }

@@ -1,5 +1,7 @@
 import Foundation
 import EditorService
+import LSPDocumentHighlightEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView

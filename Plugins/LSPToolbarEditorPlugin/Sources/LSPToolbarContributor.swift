@@ -1,5 +1,5 @@
 import Foundation
-import EditorPanelPlugin
+import EditorService
 import EditorService
 import SwiftUI
 

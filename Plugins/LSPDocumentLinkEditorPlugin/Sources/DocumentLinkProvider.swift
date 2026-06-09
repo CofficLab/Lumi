@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import EditorPanelPlugin
+import EditorService
 import Combine
 import CodeEditTextView
 import LanguageServerProtocol

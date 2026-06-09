@@ -5,6 +5,9 @@ import CodeEditTextView
 import CodeEditLanguages
 import EditorOverlayKit
 import EditorService
+import LSPDocumentHighlightEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
+import LSPSignatureHelpEditorPlugin
 import LumiCoreKit
 import LumiUI
 

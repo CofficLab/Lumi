@@ -113,6 +113,7 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     private var _documentSymbolProvider: (any SuperEditorDocumentSymbolProvider)?
     private var _semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     private var _diagnosticsProvider: (any SuperEditorLSPDiagnosticsProvider)?
+    private var railOutlineProvidersByLanguageID: [String: EditorRailOutlineRegistration] = [:]
 
     /// 当前已注册的 commandContributors 数量（用于调试日志）
     public var commandContributorsCount: Int { commandContributors.count }
@@ -152,6 +153,26 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         _documentSymbolProvider = nil
         _semanticTokenProvider = nil
         _diagnosticsProvider = nil
+        railOutlineProvidersByLanguageID.removeAll()
+    }
+
+    public func registerRailOutlineProvider(
+        languageId: String,
+        tabID: String,
+        title: String,
+        systemImage: String,
+        makeView: @escaping @MainActor () -> AnyView
+    ) {
+        railOutlineProvidersByLanguageID[languageId] = EditorRailOutlineRegistration(
+            tabID: tabID,
+            title: title,
+            systemImage: systemImage,
+            makeView: makeView
+        )
+    }
+
+    public func railOutlineRegistration(for languageId: String) -> EditorRailOutlineRegistration? {
+        railOutlineProvidersByLanguageID[languageId]
     }
 
     public func registerCompletionContributor(_ contributor: any SuperEditorCompletionContributor) {

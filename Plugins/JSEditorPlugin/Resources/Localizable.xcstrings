@@ -1,0 +1,192 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@:%lld:%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@:%2$lld:%3$lld"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "Browser" : {
+
+    },
+    "Building" : {
+
+    },
+    "Building..." : {
+
+    },
+    "Cancelled" : {
+
+    },
+    "Debug" : {
+
+    },
+    "Debug Current File" : {
+
+    },
+    "errors" : {
+
+    },
+    "ESLint Current File" : {
+
+    },
+    "failed" : {
+
+    },
+    "Format with Prettier" : {
+
+    },
+    "Formatting" : {
+
+    },
+    "Formatting..." : {
+
+    },
+    "JavaScript" : {
+
+    },
+    "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript 和 TypeScript 项目支持：package.json 解析、tsconfig 路径映射和脚本执行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript 和 TypeScript 項目支持：package.json 解析、tsconfig 路徑映射和腳本執行。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript 和 TypeScript 項目支持：package.json 解析、tsconfig 路徑映射和腳本執行。"
+          }
+        }
+      }
+    },
+    "JS Build" : {
+
+    },
+    "JS Output" : {
+
+    },
+    "JS Test" : {
+
+    },
+    "JS Tests" : {
+
+    },
+    "JS/TS Editor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS Editor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS 编辑器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS 編輯器"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS 編輯器"
+          }
+        }
+      }
+    },
+    "Linting" : {
+
+    },
+    "Linting..." : {
+
+    },
+    "Node" : {
+
+    },
+    "npm Scripts" : {
+
+    },
+    "passed" : {
+
+    },
+    "Run a JS task to see output" : {
+
+    },
+    "Run JS tests to see results" : {
+
+    },
+    "Run Script: %@" : {
+
+    },
+    "Running" : {
+
+    },
+    "Running tests..." : {
+
+    },
+    "Running..." : {
+
+    },
+    "skipped" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Task failed" : {
+
+    },
+    "Task succeeded" : {
+
+    },
+    "Testing" : {
+
+    },
+    "Testing..." : {
+
+    },
+    "warnings" : {
+
+    }
+  },
+  "version" : "1.0"
+}

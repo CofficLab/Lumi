@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import EditorPanelPlugin
+import EditorService
 import LanguageServerProtocol
 
 /// 选择范围扩展提供者

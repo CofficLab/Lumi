@@ -2,7 +2,6 @@ import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
-import VueEditorPlugin
 
 struct EditorRailView: View {
     @LumiTheme private var theme
@@ -33,8 +32,14 @@ struct EditorRailView: View {
     private var railTabBar: some View {
         HStack(spacing: 8) {
             railTabButton(id: "explorer", title: String(localized: "Explorer", bundle: .module), systemImage: "folder")
-            if isVueFileActive {
-                railTabButton(id: "vue-outline", title: "Vue", systemImage: "curlybraces")
+            railTabButton(id: "problems", title: String(localized: "Problems", bundle: .module), systemImage: "exclamationmark.bubble")
+            railTabButton(id: "references", title: String(localized: "References", bundle: .module), systemImage: "arrow.triangle.branch")
+            railTabButton(id: "search", title: String(localized: "Search", bundle: .module), systemImage: "magnifyingglass")
+            railTabButton(id: "symbols", title: String(localized: "Symbols", bundle: .module), systemImage: "number")
+            railTabButton(id: "outline", title: String(localized: "Outline", bundle: .module), systemImage: "list.bullet.indent")
+            railTabButton(id: "call-hierarchy", title: String(localized: "Calls", bundle: .module), systemImage: "point.3.connected.trianglepath.dotted")
+            if let outline = activeLanguageOutlineRegistration {
+                railTabButton(id: outline.tabID, title: outline.title, systemImage: outline.systemImage)
             }
             Spacer()
             Button {
@@ -68,25 +73,36 @@ struct EditorRailView: View {
 
     @ViewBuilder
     private var railContent: some View {
-        if layoutState.activeRailTabID == "vue-outline", isVueFileActive {
-            VueOutlineRailContainer()
-        } else {
-            EditorFileTreeView()
+        switch layoutState.activeRailTabID {
+        case "problems":
+            BottomEditorProblemsPanelView(service: service, showsHeader: false)
+        case "references":
+            BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
+        case "search":
+            BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
+        case "symbols":
+            BottomEditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)
+        case "outline":
+            if let provider = service.documentSymbolProvider as? DocumentSymbolProvider {
+                EditorOutlinePanelView(service: service, provider: provider, showsHeader: false, showsResizeHandle: false)
+            } else {
+                Text(String(localized: "Outline not available", bundle: .module))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        case "call-hierarchy":
+            BottomEditorCallHierarchyPanelView(service: service, showsHeader: false)
+        default:
+            if let outline = activeLanguageOutlineRegistration,
+               layoutState.activeRailTabID == outline.tabID {
+                outline.makeView()
+            } else {
+                EditorFileTreeView()
+            }
         }
     }
 
-    private var isVueFileActive: Bool {
-        service.currentFileURL?.pathExtension.lowercased() == "vue"
-    }
-}
-
-private struct VueOutlineRailContainer: View {
-    @State private var outlineView: AnyView = AnyView(Color.clear)
-
-    var body: some View {
-        outlineView
-            .task {
-                outlineView = await VueEditorPlugin.shared.makeOutlineRailView()
-            }
+    private var activeLanguageOutlineRegistration: EditorRailOutlineRegistration? {
+        guard let languageId = service.detectedLanguage?.tsName else { return nil }
+        return service.editorExtensions.railOutlineRegistration(for: languageId)
     }
 }

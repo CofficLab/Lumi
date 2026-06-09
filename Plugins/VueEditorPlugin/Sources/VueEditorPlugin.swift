@@ -67,6 +67,16 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
         registry.registerLanguageIntegrationCapability(
             VueLanguageIntegrationCapability()
         )
+
+        registry.registerRailOutlineProvider(
+            languageId: "vue",
+            tabID: "vue-outline",
+            title: String(localized: "Vue", bundle: .module),
+            systemImage: "curlybraces"
+        ) { [weak self] in
+            guard let self else { return AnyView(Color.clear) }
+            return self.makeOutlineRailViewPrivate()
+        }
     }
 
     // MARK: - UI Contributions

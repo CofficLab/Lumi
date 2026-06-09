@@ -87,6 +87,12 @@ public final class PluginRuntimeContext {
     }
 }
 
+/// Host hook for language editor plugins that need `PluginRuntimeContext` after the editor shell wires bridges.
+@MainActor
+public enum EditorLanguageRuntimeBridge {
+    public static var configure: (@MainActor (PluginRuntimeContext) async -> Void)?
+}
+
 /// Legacy tool execution context retained for editor extension packages.
 public struct ToolContext: Sendable {
     public var currentProjectPath: String?
