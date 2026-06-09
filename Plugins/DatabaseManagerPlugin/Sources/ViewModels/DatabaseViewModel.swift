@@ -16,7 +16,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     @Published var redisKeys: [String] = []
     @Published var sqliteTables: [String] = []
 
-    private let manager = DatabaseManager.shared
+    private let manager = DatabaseManagerCore.shared
     nonisolated(unsafe) private var connectedConfigId: UUID?
 
     public init() {

@@ -50,7 +50,7 @@ public actor DatabaseAgentToolService {
     public static let defaultRows = 100
     public static let maxCellLength = 2_000
 
-    private let manager = DatabaseManager.shared
+    private let manager = DatabaseManagerCore.shared
     private let registry = DatabaseAgentConnectionRegistry.shared
 
     private init() {}

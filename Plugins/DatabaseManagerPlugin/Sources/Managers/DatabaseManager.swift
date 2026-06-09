@@ -1,7 +1,4 @@
 import Foundation
-import DatabaseKit
-
-public typealias DatabaseManager = DatabaseKit.DatabaseManager
 
 public enum DatabaseDriverBootstrap {
     private actor State {
@@ -16,7 +13,7 @@ public enum DatabaseDriverBootstrap {
 
     private static let state = State()
 
-    public static func registerBuiltinsIfNeeded(on manager: DatabaseManager = .shared) async {
+    public static func registerBuiltinsIfNeeded(on manager: DatabaseManagerCore = .shared) async {
         guard await state.beginRegistration() else { return }
         await manager.register(driver: SQLiteDriver())
         await manager.register(driver: MySQLDriver())

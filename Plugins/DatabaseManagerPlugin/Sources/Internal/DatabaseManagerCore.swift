@@ -1,7 +1,7 @@
 import Foundation
 
-public actor DatabaseManager {
-    public static let shared = DatabaseManager()
+public actor DatabaseManagerCore {
+    public static let shared = DatabaseManagerCore()
 
     private var drivers: [DatabaseType: any DatabaseDriver] = [:]
     private var activeConnections: [UUID: any DatabaseConnection] = [:]
