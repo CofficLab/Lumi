@@ -1,9 +1,8 @@
 import CodeEditSourceEditor
-import EditorService
 import Foundation
 
 @MainActor
-enum EditorBuiltinSyntaxThemes {
+public enum EditorBuiltinSyntaxThemes {
     private static let lightThemeIDs: Set<String> = [
         "vscode-light",
         "github",
@@ -31,7 +30,7 @@ enum EditorBuiltinSyntaxThemes {
         "dracula",
     ]
 
-    static func registerAll(into registry: EditorExtensionRegistry) {
+    public static func registerAll(into registry: EditorExtensionRegistry) {
         for themeID in knownThemeIDs {
             let isDark = !lightThemeIDs.contains(themeID)
             registry.registerThemeContributor(BuiltinSyntaxThemeContributor(id: themeID, isDark: isDark))

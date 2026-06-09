@@ -10,32 +10,32 @@ public struct EditorPanelHostView: View {
     @StateObject private var conversationVM = WindowConversationVM()
     @StateObject private var editorContext: EditorContext
 
-    private let editorCore: EditorCore
+    private let editor: any LumiEditorServicing
 
     public init(
         projectPathStore: LumiCurrentProjectPathStore,
-        editorCore: EditorCore
+        editor: any LumiEditorServicing
     ) {
         _projectVM = StateObject(wrappedValue: WindowProjectVM(store: projectPathStore))
         _editorContext = StateObject(
-            wrappedValue: EditorContext(service: editorCore.editorService, themeVM: .shared)
+            wrappedValue: EditorContext(service: editor.editorService, themeVM: .shared)
         )
-        self.editorCore = editorCore
+        self.editor = editor
     }
 
     public var body: some View {
-        EditorWorkspaceView(service: editorCore.editorService)
+        EditorWorkspaceView(service: editor.editorService)
             .environmentObject(projectVM)
             .environmentObject(themeVM)
             .environmentObject(conversationVM)
             .environmentObject(recentProjectsVM)
             .environmentObject(editorContext)
-            .environmentObject(editorCore.editorService)
+            .environmentObject(editor.editorService)
             .onAppear {
-                editorCore.currentProjectPathProvider = { [projectVM] in
+                editor.currentProjectPathProvider = { [projectVM] in
                     projectVM.currentProjectPath
                 }
-                EditorRuntimeBridge.configure(core: editorCore)
+                EditorRuntimeBridge.configure(editor: editor)
                 syncEditorTheme()
             }
             .onChange(of: LumiUIThemeRegistry.shared.selectedThemeId) { _, _ in
@@ -45,6 +45,6 @@ public struct EditorPanelHostView: View {
 
     private func syncEditorTheme() {
         let themeID = LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
-        editorCore.editorService.syncInitialThemeFromExternal(themeID)
+        editor.editorService.syncInitialThemeFromExternal(themeID)
     }
 }

@@ -21,6 +21,7 @@ public enum EditorSettingsLifecycle {
     public nonisolated(unsafe) static var saveEditorCommandPaletteCategory: ((String?) -> Void)?
 
     /// 切换「编辑器功能插件」开关（宿主通常映射到 `AppPluginSettingsVM`）。
+    @available(*, deprecated, message: "Use Lumi plugin settings via PluginService instead.")
     public nonisolated(unsafe) static var setEditorFeaturePluginEnabled: ((String, Bool) -> Void)?
 
     /// 由各主题插件的 `registerEditorExtensions` 注册编辑器语法主题 contributor。

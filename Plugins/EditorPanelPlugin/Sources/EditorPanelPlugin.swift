@@ -1,5 +1,4 @@
 import AgentToolKit
-import EditorMultiCursorCommandsPlugin
 import EditorService
 import EditorTabStripPlugin
 import EditorXcodePlugin
@@ -28,49 +27,10 @@ public enum EditorPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    private static var sharedCore: EditorCore?
-
-    @MainActor
-    public static func bootstrap(
-        persistenceRootURL: @escaping @Sendable () -> URL,
-        themeRegistry: LumiUIThemeRegistry = .shared,
-        recentProjects: @escaping @Sendable () -> [Project] = { [] }
-    ) {
-        let core = EditorCore()
-        sharedCore = core
-
-        AppProjectsVM.recentProjectsProvider = recentProjects
-
-        EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
-        EditorSettingsLifecycle.onReinstallPlugins = { registry in
-            Task {
-                await EditorExtensionsBootstrap.registerAll(into: registry)
-            }
-        }
-        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { _ in
-            themeRegistry.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
-        }
-        EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
-            registerSyntaxThemes(from: themeRegistry, into: registry)
-        }
-        EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
-            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
-        }
-
-        core.reinstallExtensions()
-        EditorRuntimeBridge.configure(core: core)
-    }
-
-    @MainActor
-    public static func sharedEditorCore() -> EditorCore? {
-        sharedCore
-    }
-
-    @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         guard
             let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self) as? LumiCurrentProjectPathStore,
-            let core = sharedCore
+            let editor = context.resolve(LumiEditorServicing.self)
         else {
             return []
         }
@@ -81,7 +41,7 @@ public enum EditorPanelPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                EditorPanelHostView(projectPathStore: projectPathStore, editorCore: core)
+                EditorPanelHostView(projectPathStore: projectPathStore, editor: editor)
             }
         ]
     }
@@ -99,7 +59,9 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == info.id, let service = EditorRuntimeBridge.editorService else {
+        guard context.activeSectionID == info.id,
+              let service = context.resolve(LumiEditorServicing.self)?.editorService
+        else {
             return []
         }
 
@@ -123,19 +85,6 @@ public enum EditorPanelPlugin: LumiPlugin {
                 }
             ),
         ]
-    }
-
-    @MainActor
-    private static func registerSyntaxThemes(
-        from themeRegistry: LumiUIThemeRegistry,
-        into registry: EditorExtensionRegistry
-    ) {
-        EditorBuiltinSyntaxThemes.registerAll(into: registry)
-        for contribution in themeRegistry.themes {
-            if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
-                registry.registerThemeContributor(contributor)
-            }
-        }
     }
 }
 

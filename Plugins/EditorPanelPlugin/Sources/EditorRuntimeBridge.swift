@@ -17,19 +17,19 @@ import LumiUI
 
 @MainActor
 public enum EditorRuntimeBridge {
-    public private(set) static var core: EditorCore?
+    public private(set) static var editor: (any LumiEditorServicing)?
 
-    public static var editorService: EditorService? { core?.editorService }
-    public static var extensionRegistry: EditorExtensionRegistry? { core?.extensionRegistry }
+    public static var editorService: EditorService? { editor?.editorService }
+    public static var extensionRegistry: EditorExtensionRegistry? { editor?.extensionRegistry }
 
-    public static func configure(core: EditorCore) {
-        self.core = core
+    public static func configure(editor: any LumiEditorServicing) {
+        self.editor = editor
         wireBridges()
     }
 
     public static func wireBridges() {
-        guard let core else { return }
-        let service = core.editorService
+        guard let editor else { return }
+        let service = editor.editorService
 
         EditorTabStripBridge.editorServiceProvider = { _ in service }
         BreadcrumbNavBridge.editorServiceProvider = { _ in service }
@@ -42,7 +42,7 @@ public enum EditorRuntimeBridge {
         EditorStickySymbolBarBridge.editorServiceProvider = { _ in service }
 
         EditorBottomTerminalBridge.currentProjectPathProvider = { _ in
-            core.currentProjectPathProvider?() ?? ""
+            editor.currentProjectPathProvider?() ?? ""
         }
         EditorBottomTerminalBridge.editorThemeIdProvider = {
             LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
@@ -52,7 +52,7 @@ public enum EditorRuntimeBridge {
 
         let runtime = PluginRuntimeContext(
             editorServiceProvider: { _ in service },
-            currentProjectPath: { _ in core.currentProjectPathProvider?() }
+            currentProjectPath: { _ in editor.currentProjectPathProvider?() }
         )
         runtime.openFile = { url, projectRoot, _ in
             if let projectRoot {

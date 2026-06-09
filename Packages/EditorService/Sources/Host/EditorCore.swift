@@ -1,4 +1,3 @@
-import EditorService
 import Foundation
 import LumiCoreKit
 
@@ -9,6 +8,8 @@ public final class EditorCore: LumiEditorServicing {
 
     public var currentProjectPathProvider: (() -> String)?
 
+    public var extensionInstaller: (@MainActor (EditorExtensionRegistry) async -> Void)?
+
     public init() {
         let registry = EditorExtensionRegistry()
         self.extensionRegistry = registry
@@ -16,8 +17,9 @@ public final class EditorCore: LumiEditorServicing {
     }
 
     public func reinstallExtensions() {
+        guard let extensionInstaller else { return }
         Task {
-            await EditorExtensionsBootstrap.registerAll(into: extensionRegistry)
+            await extensionInstaller(extensionRegistry)
         }
     }
 }
