@@ -538,7 +538,9 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         var context = LumiSendContext(
             conversationID: conversationID,
             messages: messages,
-            currentProjectPath: projectPathProvider?.currentProjectPath ?? ""
+            currentProjectPath: projectPathProvider?.currentProjectPath ?? "",
+            conversationTitle: conversations.first(where: { $0.id == conversationID })?.title ?? "",
+            conversationLanguage: language(for: conversationID)
         )
         for middleware in middlewares {
             do {
