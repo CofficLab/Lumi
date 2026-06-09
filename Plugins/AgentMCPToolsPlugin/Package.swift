@@ -15,9 +15,10 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", .upToNextMajor(from: "0.10.2")),
-        .package(path: "../../Packages/MCPKit"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -25,9 +26,10 @@ let package = Package(
             name: "AgentMCPToolsPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "MCP", package: "swift-sdk"),
-                .product(name: "MCPKit", package: "MCPKit"),
+                .product(name: "Logging", package: "swift-log"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",

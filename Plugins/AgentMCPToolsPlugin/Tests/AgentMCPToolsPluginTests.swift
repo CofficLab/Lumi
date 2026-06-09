@@ -1,6 +1,5 @@
 import Testing
 import Foundation
-import MCPKit
 @testable import AgentMCPToolsPlugin
 
 @Test func packageLoads() async throws {

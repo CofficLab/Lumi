@@ -1,5 +1,4 @@
 import Foundation
-import MCPKit
 import os
 
 public final class AgentMCPPluginLocalStore: @unchecked Sendable {

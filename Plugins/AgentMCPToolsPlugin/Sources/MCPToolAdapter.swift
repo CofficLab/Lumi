@@ -2,7 +2,6 @@ import Foundation
 import SuperLogKit
 import AgentToolKit
 import MCP
-import MCPKit
 
 /// Adapts an MCP Tool to the SuperAgentTool protocol.
 public final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
