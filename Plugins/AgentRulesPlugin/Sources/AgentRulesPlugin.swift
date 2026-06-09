@@ -21,8 +21,8 @@ public enum AgentRulesPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            CreateAgentRuleTool().asLumiAgentTool(),
-            ListAgentRulesTool().asLumiAgentTool()
+            CreateAgentRuleLumiTool(),
+            ListAgentRulesLumiTool()
         ]
     }
 }

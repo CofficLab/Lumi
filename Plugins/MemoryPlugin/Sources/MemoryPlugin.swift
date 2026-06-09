@@ -28,10 +28,10 @@ public enum MemoryPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         Self.bootstrapFromLumiCoreIfNeeded()
         return [
-            SaveMemoryTool().asLumiAgentTool(),
-            RecallMemoryTool().asLumiAgentTool(),
-            ListMemoriesTool().asLumiAgentTool(),
-            DeleteMemoryTool().asLumiAgentTool()
+            SaveMemoryLumiTool(),
+            RecallMemoryLumiTool(),
+            ListMemoriesLumiTool(),
+            DeleteMemoryLumiTool()
         ]
     }
 }

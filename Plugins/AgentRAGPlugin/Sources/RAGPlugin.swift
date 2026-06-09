@@ -43,6 +43,6 @@ public enum RAGPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         RAGPluginService.initializeIfNeeded()
-        return [RAGCodeSearchTool().asLumiAgentTool()]
+        return [RAGCodeSearchLumiTool()]
     }
 }

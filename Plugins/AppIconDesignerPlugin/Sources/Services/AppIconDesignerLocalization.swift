@@ -11,7 +11,8 @@ enum AppIconDesignerLocalization {
     }
 
     static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
+        _ = language
+        return string(key)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
