@@ -85,7 +85,7 @@ public struct StatusBadge: View {
                 .frame(width: 8, height: 8)
             Text(status.description)
                 .font(.caption)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(.secondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -109,7 +109,7 @@ public struct NettoAppRow: View {
                     .font(.body)
                 Text(app.id)
                     .font(.caption)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(.secondary)
             }
             
             Spacer()
@@ -134,14 +134,14 @@ public struct EventRow: View {
                     .font(.system(.body, design: .monospaced))
                 Text(event.sourceAppIdentifier)
                     .font(.caption)
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(.secondary)
             }
             
             Spacer()
             
             Text(event.timeFormatted)
                 .font(.caption2)
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(.secondary)
         }
     }
 }

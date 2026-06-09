@@ -4,34 +4,31 @@ import AppKit
 import SwiftUI
 
 /// 在 Finder 中打开项目插件
-///
-/// 在 Agent 模式的状态栏左侧添加图标，点击后在 Finder 中打开当前项目目录。
-public actor AgentOpenInFinderPlugin: SuperPlugin {
-    public nonisolated static let emoji = "📂"
-    public nonisolated static let verbose: Bool = false
-    public static let id = "AgentOpenInFinder"
-    public static let displayName = String(localized: "Open in Finder", bundle: .module)
-    public static let description = String(localized: "Open current project in Finder", bundle: .module)
+public enum AgentOpenInFinderPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "folder"
-    public static var category: PluginCategory { .integration }
-    public static var order: Int { 96 }
-    public static let policy: PluginPolicy = .optOut
 
-    /// 始终启用，用户不可关闭
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-in-finder",
+        displayName: String(localized: "Open in Finder", bundle: .module),
+        description: String(localized: "Open current project in Finder", bundle: .module),
+        order: 96
+    )
 
-    public static let shared = AgentOpenInFinderPlugin()
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenInFinderStatusBarView())
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenInFinderStatusBarView()
+                }
+            )
+        ]
     }
 }
 

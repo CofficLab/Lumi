@@ -1,66 +1,31 @@
-import SwiftUI
-import LumiUI
 import LumiCoreKit
-import SuperLogKit
 import os
+import SwiftUI
 
-public actor InputPlugin: SuperPlugin, SuperLog {
-    /// 插件专用 Logger
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
-
-    // MARK: - Plugin Properties
-
-    public nonisolated static let emoji = "⌨️"
-    public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "InputManager"
-    public static let navigationId: String = "input_manager"
-    public static let displayName = String(localized: "Input Manager", bundle: .module)
-    public static let description = String(localized: "Manage input-related behaviors", bundle: .module)
+public enum InputPlugin: LumiPlugin {
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
+    public static let verbose = false
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "keyboard"
-    public static var order: Int { 70 }
-    public nonisolated static let policy: PluginPolicy = .disabled
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = InputPlugin()
-    
-    public init() {
-        Task { @MainActor in
-            _ = InputService.shared
-        }
-    }
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.input-manager",
+        displayName: String(localized: "Input Manager", bundle: .module),
+        description: String(localized: "Manage input-related behaviors", bundle: .module),
+        order: 70
+    )
 
     @MainActor
-    public func addPosterViews() -> [AnyView] {
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
-            PluginPosterSupport.poster(
-                title: "输入行为管理",
-                subtitle: "按应用或场景管理输入相关规则。",
-                icon: Self.iconName,
-                accent: .teal,
-                metrics: [
-                    PluginPosterSupport.metric("Rules", "规则"),
-                    PluginPosterSupport.metric("IME", "输入源"),
-                ],
-                rows: ["输入源规则", "规则列表", "空状态引导"],
-                chips: ["输入法", "规则", "系统"]
-            ),
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                InputSettingsView()
+            }
         ]
     }
-
-    @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(InputSettingsView())
-        }
-    }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

@@ -1,26 +1,25 @@
-import SwiftUI
 import LumiCoreKit
+import SwiftUI
 
-/// 首次运行引导插件
-public actor OnboardingPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let emoji = "🎉"
-    public nonisolated static let verbose: Bool = false
-    public static let id = "Onboarding"
-    public static let displayName = String(localized: "Onboarding", bundle: .module)
-    public static let description = String(localized: "Show first-run onboarding and guidance entry points", bundle: .module)
+/// First-run onboarding plugin.
+public enum OnboardingPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .agent
     public static let iconName = "hand.wave"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 10 }
 
-    public static let shared = OnboardingPlugin()
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.onboarding",
+        displayName: String(localized: "Onboarding", bundle: .module),
+        description: String(localized: "Show first-run onboarding and guidance entry points", bundle: .module),
+        order: 10
+    )
 
     @MainActor
-    public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(OnboardingRootOverlay(content: content()))
+    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: info.id, order: info.order) { content in
+                OnboardingRootOverlay(content: content)
+            }
+        ]
     }
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
 }

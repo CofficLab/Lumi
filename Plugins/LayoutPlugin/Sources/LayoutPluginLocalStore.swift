@@ -81,6 +81,18 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         set(icon, forKey: Keys.activeViewContainerIcon)
     }
 
+    /// 加载已保存的视图容器 ID
+    public func loadActiveViewContainerID() -> String? {
+        string(forKey: Keys.activeViewContainerID)
+            ?? string(forKey: Keys.activeViewContainerIcon)
+            ?? string(forKey: Keys.legacyActivePanelIcon)
+    }
+
+    /// 保存视图容器 ID
+    public func saveActiveViewContainerID(_ id: String?) {
+        set(id, forKey: Keys.activeViewContainerID)
+    }
+
     /// 加载已保存的侧边栏 Tab ID
     public func loadSelectedAgentSidebarTabId() -> String? {
         string(forKey: Keys.selectedAgentSidebarTabId)
@@ -212,6 +224,7 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     // MARK: - Keys
 
     private enum Keys {
+        static let activeViewContainerID = "activeViewContainerID"
         static let activeViewContainerIcon = "activeViewContainerIcon"
         static let legacyActivePanelIcon = "activePanelIcon"
         static let selectedAgentSidebarTabId = "selectedAgentSidebarTabId"

@@ -1,54 +1,34 @@
-import AgentToolKit
-import Foundation
 import LumiCoreKit
-import SuperLogKit
 import SwiftUI
-import os
 
-public actor AppUpdateStatusBarPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-update-status-bar")
-
-    public nonisolated static let emoji = "⬆️"
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "AppUpdateStatusBar"
-    public static let navigationId = "app_update_status_bar"
-    public static let displayName = PluginAppUpdateStatusBarLocalization.string("App Update Status")
-    public static let description = PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install.")
-
-    public static func description(for language: LanguagePreference) -> String {
-        PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install.", for: language)
-    }
+public enum AppUpdateStatusBarPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "arrow.down.circle"
-    public static var category: PluginCategory { .general }
-    public static var order: Int { 8 }
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = AppUpdateStatusBarPlugin()
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.app-update-status-bar",
+        displayName: PluginAppUpdateStatusBarLocalization.string("App Update Status"),
+        description: PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install."),
+        order: 8
+    )
 
-    private init() {}
-
-    nonisolated public func onEnable() {
-        Task { @MainActor in
-            AppUpdateStatusBarStore.shared.start()
-        }
-    }
-
-    nonisolated public func onDisable() {
-        Task { @MainActor in
-            AppUpdateStatusBarStore.shared.stop()
-        }
+    @MainActor
+    public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
+        [
+            LumiMenuBarContentItem(id: "\(info.id).content", order: info.order) {
+                AppUpdateStatusBarContentView(store: AppUpdateStatusBarStore.shared)
+            }
+        ]
     }
 
     @MainActor
-    public func addMenuBarContentView() -> AnyView? {
-        AnyView(AppUpdateStatusBarContentView(store: AppUpdateStatusBarStore.shared))
-    }
-
-    @MainActor
-    public func addMenuBarPopupView() -> AnyView? {
-        AnyView(AppUpdateStatusBarPopupView(store: AppUpdateStatusBarStore.shared))
+    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+        [
+            LumiMenuBarPopupItem(id: "\(info.id).popup", order: info.order) {
+                AppUpdateStatusBarPopupView(store: AppUpdateStatusBarStore.shared)
+            }
+        ]
     }
 }
 
@@ -58,9 +38,5 @@ enum PluginAppUpdateStatusBarLocalization {
 
     static func string(_ key: String) -> String {
         String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

@@ -26,7 +26,10 @@ let package = Package(
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
-            sources: ["Sources/PortManagerPlugin.swift"]
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "PortManagerPluginTests",

@@ -1,76 +1,31 @@
-import SwiftUI
 import LumiCoreKit
-import SuperLogKit
 import os
+import SwiftUI
 
-/// Agent Turn Notification Plugin
-///
-/// 在 AgentTurnService 一轮循环结束时发出 macOS 系统通知，
-/// 让用户在焦点离开应用时也能知道 Agent 完成了工作。
-public actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.turn-notification")
+/// Sends a system notification when an agent turn completes.
+public enum AgentTurnNotificationPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .agent
+    public static let iconName = "bell.badge"
 
-    public nonisolated static let emoji = "🔔"
-    public nonisolated static let verbose: Bool = false
+    public static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.turn-notification"
+    )
 
-    public static let id: String = "AgentTurnNotification"
-    public static let displayName: String = String(localized: "Turn Notification", bundle: .module)
-    public static let description: String = String(
-        localized: "Send a system notification when an Agent turn finishes.", bundle: .module)
-    public static let iconName: String = "bell.badge"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 99 }
-
-    public nonisolated var instanceLabel: String { Self.id }
-
-    public static let shared = AgentTurnNotificationPlugin()
-
-    public init() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 初始化完成")
-            }
-        }
-    }
-
-    // MARK: - Lifecycle
-
-    public nonisolated func onRegister() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)📝 AgentTurnNotificationPlugin 已注册")
-            }
-        }
-    }
-
-    public nonisolated func onEnable() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 已启用")
-            }
-        }
-    }
-
-    public nonisolated func onDisable() {
-        if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(Self.t)⛔️ AgentTurnNotificationPlugin 已禁用")
-            }
-        }
-    }
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.turn-notification",
+        displayName: String(localized: "Turn Notification", bundle: .module),
+        description: String(localized: "Send a system notification when an Agent turn finishes.", bundle: .module),
+        order: 99
+    )
 
     @MainActor
-    public func configureRuntime(context: PluginRuntimeContext) {
-        AgentTurnNotificationRuntime.selectConversation = { conversationId in
-            context.selectConversation(conversationId, PluginContext())
-        }
-    }
-
-    // MARK: - Root View
-
-    @MainActor public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(AgentTurnNotificationOverlay(content: content()))
+    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: info.id, order: info.order) { content in
+                AgentTurnNotificationOverlay(content: content)
+            }
+        ]
     }
 }

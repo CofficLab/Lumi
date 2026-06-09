@@ -1,70 +1,31 @@
-import SwiftUI
-import LumiUI
 import LumiCoreKit
-import SuperLogKit
 import os
+import SwiftUI
 
-public actor RClickPlugin: SuperPlugin, SuperLog {
-    // MARK: - Plugin Properties
-
-    public nonisolated static let emoji = "🖱️"
-    public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = false
-    
-    /// 插件专用 Logger
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
-
-    public static let id = "RClick"
-    public static let navigationId: String? = "rclick"
-    public static let displayName = String(localized: "Right Click", bundle: .module)
-    public static let description = String(localized: "Customize Finder right-click menu actions", bundle: .module)
+public enum RClickPlugin: LumiPlugin {
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
+    public static let verbose = false
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "cursorarrow.click.2"
-    public static var order: Int { 50 }
-    public nonisolated static let policy: PluginPolicy = .disabled
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = RClickPlugin()
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.rclick",
+        displayName: String(localized: "Right Click", bundle: .module),
+        description: String(localized: "Customize Finder right-click menu actions", bundle: .module),
+        order: 50
+    )
 
     @MainActor
-    public func addPosterViews() -> [AnyView] {
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
-            PluginPosterSupport.poster(
-                title: "Finder 右键动作",
-                subtitle: "配置文件右键菜单模板，把常用操作放进 Finder。",
-                icon: Self.iconName,
-                accent: .blue,
-                metrics: [
-                    PluginPosterSupport.metric("Menu", "右键菜单"),
-                    PluginPosterSupport.metric("Tpl", "模板"),
-                ],
-                rows: ["动作模板", "菜单预览", "Finder 集成"],
-                chips: ["Finder", "右键", "自动化"]
-            ),
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                RClickSettingsView()
+            }
         ]
     }
-
-    // MARK: - Lifecycle
-
-    public nonisolated func onRegister() {
-        Task { @MainActor in
-            _ = RClickConfigManager.shared
-        }
-    }
-
-    // MARK: - UI
-
-    @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(RClickSettingsView())
-        }
-    }
-}
-
-// MARK: - Preview
-
-#Preview("App") {
-    ContentLayout()
-        .inRootView()
-        .withDebugBar()
 }

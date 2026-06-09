@@ -14,19 +14,26 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/DiskManagerKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "DiskManagerPlugin",
             dependencies: [
+                .product(name: "DiskManagerKit", package: "DiskManagerKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
-            sources: ["Sources/DiskManagerPlugin.swift"]
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "DiskManagerPluginTests",

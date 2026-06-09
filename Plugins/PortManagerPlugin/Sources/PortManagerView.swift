@@ -192,7 +192,7 @@ public struct PortRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .navigationTitle(PortManagerPlugin.displayName)
+        .navigationTitle(PortManagerPlugin.info.displayName)
     }
 }
 

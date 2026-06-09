@@ -207,7 +207,7 @@ struct DockerImagesView: View {
                 Task { await viewModel.loadImage(from: url) }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Import failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("Import failed: \(error.localizedDescription)")
                 }
                 viewModel.reportFilePanelError(String(localized: "Import failed", bundle: .module), error: error)
             }
@@ -220,7 +220,7 @@ struct DockerImagesView: View {
                 }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Export failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("Export failed: \(error.localizedDescription)")
                 }
                 viewModel.reportFilePanelError(String(localized: "Export failed", bundle: .module), error: error)
             }
@@ -228,7 +228,7 @@ struct DockerImagesView: View {
         .onAppear {
             Task { await viewModel.refreshImages() }
         }
-        .navigationTitle(DockerManagerPlugin.displayName)
+        .navigationTitle(DockerManagerPlugin.info.displayName)
     }
 }
 
@@ -424,7 +424,7 @@ struct DockerImageDetailView: View {
         } message: {
             Text("Are you sure you want to delete image \(image.name)? This action cannot be undone.")
         }
-        .navigationTitle(DockerManagerPlugin.displayName)
+        .navigationTitle(DockerManagerPlugin.info.displayName)
     }
 }
 

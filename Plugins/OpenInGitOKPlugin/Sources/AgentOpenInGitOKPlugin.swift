@@ -4,6 +4,8 @@ import AppKit
 import SwiftUI
 import os
 
+private let gitOKPluginLogger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-in-gitok")
+
 /// 在 GitOK 中打开项目插件
 ///
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 GitOK 中打开当前项目。
@@ -17,33 +19,31 @@ import os
 /// ## 注意事项
 ///
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
-public actor AgentOpenInGitOKPlugin: SuperPlugin {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-in-gitok")
-    public nonisolated static let emoji = "✅"
-    public nonisolated static let verbose: Bool = false
-    public static let id = "AgentOpenInGitOK"
-    public static let displayName = String(localized: "Open in GitOK", bundle: .module)
-    public static let description = String(localized: "Open current project in GitOK", bundle: .module)
+public enum AgentOpenInGitOKPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
-    public static var category: PluginCategory { .integration }
-    public static var order: Int { 98 }
-    public static let policy: PluginPolicy = .optOut
 
-    /// 始终启用，用户不可关闭
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-in-gitok",
+        displayName: String(localized: "Open in GitOK", bundle: .module),
+        description: String(localized: "Open current project in GitOK", bundle: .module),
+        order: 98
+    )
 
-    public static let shared = AgentOpenInGitOKPlugin()
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenInGitOKStatusBarView())
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenInGitOKStatusBarView()
+                }
+            )
+        ]
     }
 }
 
@@ -212,7 +212,7 @@ public enum GitOKLauncher {
     /// - Parameter projectURL: 项目目录 URL
     public static func openProject(_ projectURL: URL) {
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
-            AgentOpenInGitOKPlugin.logger.error("GitOK 未安装")
+            gitOKPluginLogger.error("GitOK is not installed")
             return
         }
 
@@ -220,7 +220,7 @@ public enum GitOKLauncher {
         config.activates = true
         NSWorkspace.shared.open([projectURL], withApplicationAt: appURL, configuration: config) { _, error in
             if let error {
-                AgentOpenInGitOKPlugin.logger.error("在 GitOK 中打开项目失败: \(error.localizedDescription)")
+                gitOKPluginLogger.error("Failed to open project in GitOK: \(error.localizedDescription)")
             }
         }
     }

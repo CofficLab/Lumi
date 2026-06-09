@@ -16,32 +16,31 @@ import SwiftUI
 /// ## 注意事项
 ///
 /// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
-public actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
-    public nonisolated static let emoji = "🐙"
-    public nonisolated static let verbose: Bool = false
-    public static let id = "AgentOpenInGitHubDesktop"
-    public static let displayName = String(localized: "Open in GitHub Desktop", bundle: .module)
-    public static let description = String(localized: "Open current project in GitHub Desktop", bundle: .module)
+public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "desktopcomputer"
-    public static var category: PluginCategory { .integration }
-    public static var order: Int { 97 }
-    public static let policy: PluginPolicy = .optOut
 
-    /// 始终启用，用户不可关闭
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-in-github-desktop",
+        displayName: String(localized: "Open in GitHub Desktop", bundle: .module),
+        description: String(localized: "Open current project in GitHub Desktop", bundle: .module),
+        order: 97
+    )
 
-    public static let shared = AgentOpenInGitHubDesktopPlugin()
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenInGitHubDesktopStatusBarView())
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenInGitHubDesktopStatusBarView()
+                }
+            )
+        ]
     }
 }
 

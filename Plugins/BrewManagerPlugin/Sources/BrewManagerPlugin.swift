@@ -1,39 +1,32 @@
-import AgentToolKit
-import Foundation
 import LumiCoreKit
-import SuperLogKit
-import SwiftUI
 import os
+import SwiftUI
 
-public actor BrewManagerPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
-
-    public nonisolated static let emoji = "🍺"
-    public nonisolated static let policy: PluginPolicy = .optOut
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "BrewManager"
-    public static let navigationId = "brew_manager"
-    public static let displayName = PluginBrewManagerLocalization.string("Package Management")
-    public static let description = PluginBrewManagerLocalization.string("Manage Homebrew packages and casks")
-
-    public static func description(for language: LanguagePreference) -> String {
-        PluginBrewManagerLocalization.string("Manage Homebrew packages and casks", for: language)
-    }
+public enum BrewManagerPlugin: LumiPlugin {
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
+    public static let verbose = false
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "mug.fill"
-    public static var category: PluginCategory { .developerTool }
-    public static var order: Int { 60 }
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = BrewManagerPlugin()
-
-    private init() {}
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.brew-manager",
+        displayName: PluginBrewManagerLocalization.string("Package Management"),
+        description: PluginBrewManagerLocalization.string("Manage Homebrew packages and casks"),
+        order: 60
+    )
 
     @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(BrewManagerView())
-        }
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+        [
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                BrewManagerView()
+            }
+        ]
     }
 }
 
@@ -43,9 +36,5 @@ enum PluginBrewManagerLocalization {
 
     static func string(_ key: String) -> String {
         String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

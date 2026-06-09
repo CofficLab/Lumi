@@ -1,41 +1,34 @@
 import AppKit
 import LumiCoreKit
-import SuperLogKit
 import LumiUI
 import SwiftUI
-import Foundation
-import os
 
 /// 在 Xcode 中打开项目插件
-///
-/// 在 Agent 模式的状态栏左侧添加图标，点击后在 Xcode 中打开当前项目。
-public actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
-    // MARK: - Plugin Properties
+public enum AgentOpenInXcodePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
+    public static let iconName = "hammer"
 
-    public nonisolated static let emoji = "💻"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-in-xcode",
+        displayName: String(localized: "Open in Xcode", bundle: .module),
+        description: String(localized: "Displays a button in the header to open the current project in Xcode", bundle: .module),
+        order: 95
+    )
 
-    public nonisolated static let verbose: Bool = false
-
-    public static let id: String = "AgentOpenInXcode"
-    public static let displayName: String = String(localized: "Open in Xcode", bundle: .module)
-    public static let description: String = String(localized: "Displays a button in the header to open the current project in Xcode", bundle: .module)
-    public static let iconName: String = "hammer"
-    public static var category: PluginCategory { .integration }
-    public static var order: Int { 95 }
-    public static let policy: PluginPolicy = .optOut
-
-    // MARK: - Instance
-
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = AgentOpenInXcodePlugin()
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenInXcodeStatusBarView())
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenInXcodeStatusBarView()
+                }
+            )
+        ]
     }
 }
 

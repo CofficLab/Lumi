@@ -6,32 +6,31 @@ import SwiftUI
 /// 在 Antigravity 中打开项目插件
 ///
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Antigravity 编辑器中打开当前项目。
-public actor AgentOpenInAntigravityPlugin: SuperPlugin {
-    public nonisolated static let emoji = "🚀"
-    public nonisolated static let verbose: Bool = false
-    public static let id = "AgentOpenInAntigravity"
-    public static let displayName = String(localized: "Open in Antigravity", bundle: .module)
-    public static let description = String(localized: "Open current project in Antigravity editor", bundle: .module)
+public enum AgentOpenInAntigravityPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "paperplane"
-    public static var category: PluginCategory { .integration }
-    public static var order: Int { 83 }
 
-    /// 始终启用，用户不可关闭
-    public static let policy: PluginPolicy = .optOut
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-in-antigravity",
+        displayName: String(localized: "Open in Antigravity", bundle: .module),
+        description: String(localized: "Open current project in Antigravity editor", bundle: .module),
+        order: 83
+    )
 
-    public static let shared = AgentOpenInAntigravityPlugin()
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenInAntigravityStatusBarView())
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenInAntigravityStatusBarView()
+                }
+            )
+        ]
     }
 }
 

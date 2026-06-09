@@ -1,13 +1,10 @@
 import AppKit
-import SuperLogKit
+import LumiCoreKit
 import SwiftUI
 import UserNotifications
 
 /// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
-public struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
-    public nonisolated static var emoji: String { "🔔" }
-    public nonisolated static var verbose: Bool { false }
-
+public struct AgentTurnNotificationOverlay<Content: View>: View {
     public let content: Content
     @StateObject private var handler = AgentTurnNotificationHandler()
 
@@ -16,8 +13,8 @@ public struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
             .onAppear {
                 handler.bind()
             }
-            .onReceive(NotificationCenter.default.publisher(for: AgentTurnNotificationRuntime.turnFinishedNotificationName)) { notification in
-                guard let conversationId = AgentTurnNotificationRuntime.conversationId(from: notification) else {
+            .onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { notification in
+                guard let conversationId = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID else {
                     return
                 }
                 handler.postTurnFinishedNotification(conversationId: conversationId)
@@ -27,10 +24,7 @@ public struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 
 /// 实际执行通知发送逻辑的 Handler
 @MainActor
-public final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
-    public nonisolated static var emoji: String { "🔔" }
-    public nonisolated static var verbose: Bool { false }
-
+public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
     private let center = UNUserNotificationCenter.current()
 
     // MARK: - Setup
@@ -38,9 +32,7 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject, Sup
     /// 注册为通知中心代理
     public func bind() {
         center.delegate = self
-        if Self.verbose {
-            AgentTurnNotificationPlugin.logger.info("\(Self.t)✅ 已设置通知中心代理")
-        }
+        AgentTurnNotificationPlugin.logger.debug("Notification center delegate configured")
     }
 
     // MARK: - Notification Posting
@@ -69,9 +61,7 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject, Sup
                 await deliverNotification(conversationId: conversationId)
             }
         } catch {
-            if Self.verbose {
-                AgentTurnNotificationPlugin.logger.error("\(Self.t)❌ 请求通知权限失败: \(error)")
-            }
+            AgentTurnNotificationPlugin.logger.error("Notification authorization failed: \(error.localizedDescription)")
         }
     }
 
@@ -90,13 +80,9 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject, Sup
 
         do {
             try await center.add(request)
-            if Self.verbose {
-                AgentTurnNotificationPlugin.logger.info("\(Self.t)📤 已发送 turn 结束通知: \(conversationId)")
-            }
+            AgentTurnNotificationPlugin.logger.debug("Posted turn completed notification for \(conversationId.uuidString)")
         } catch {
-            if Self.verbose {
-                AgentTurnNotificationPlugin.logger.error("\(Self.t)❌ 发送 turn 结束通知失败: \(error)")
-            }
+            AgentTurnNotificationPlugin.logger.error("Failed to post notification: \(error.localizedDescription)")
         }
     }
 }
@@ -116,12 +102,12 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
         // 从 userInfo 中提取 conversationId
         guard let conversationIdString = userInfo["conversationId"] as? String,
               let conversationId = UUID(uuidString: conversationIdString) else {
-            AgentTurnNotificationPlugin.logger.info("\(Self.t)⚠️ 通知中未找到有效的 conversationId")
+            AgentTurnNotificationPlugin.logger.warning("Notification missing conversationId")
             completionHandler()
             return
         }
 
-        AgentTurnNotificationPlugin.logger.info("\(Self.t)🖱️ 用户点击了通知，准备选中对话: \(conversationId)")
+        AgentTurnNotificationPlugin.logger.debug("User opened notification for conversation \(conversationId.uuidString)")
 
         Task { @MainActor in
             // 1. 激活应用
@@ -134,7 +120,7 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
 
             AgentTurnNotificationRuntime.selectConversation(conversationId)
 
-            AgentTurnNotificationPlugin.logger.info("\(Self.t)✅ 已选中对话: \(conversationId)")
+            AgentTurnNotificationPlugin.logger.debug("Selected conversation \(conversationId.uuidString)")
         }
         completionHandler()
     }

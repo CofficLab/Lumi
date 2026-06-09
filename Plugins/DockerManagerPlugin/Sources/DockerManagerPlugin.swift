@@ -1,40 +1,32 @@
-import AgentToolKit
-import Foundation
 import LumiCoreKit
-import SuperLogKit
-import SwiftUI
 import os
+import SwiftUI
 
-public actor DockerManagerPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
-
-    public nonisolated static let emoji = "🐳"
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "DockerManager"
-    public static let navigationId = "docker_manager"
-    public static let displayName = PluginDockerManagerLocalization.string("Docker")
-    public static let description = PluginDockerManagerLocalization.string("Local Docker image management and monitoring")
-
-    public static func description(for language: LanguagePreference) -> String {
-        PluginDockerManagerLocalization.string("Local Docker image management and monitoring", for: language)
-    }
+public enum DockerManagerPlugin: LumiPlugin {
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
+    public static let verbose = false
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "shippingbox"
-    public static var category: PluginCategory { .developerTool }
-    public static var order: Int { 50 }
 
-    public nonisolated var instanceLabel: String { Self.id }
-
-    public static let shared = DockerManagerPlugin()
-
-    private init() {}
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.docker-manager",
+        displayName: PluginDockerManagerLocalization.string("Docker"),
+        description: PluginDockerManagerLocalization.string("Local Docker image management and monitoring"),
+        order: 50
+    )
 
     @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(DockerImagesView())
-        }
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+        [
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                DockerImagesView()
+            }
+        ]
     }
 }
 
@@ -44,9 +36,5 @@ enum PluginDockerManagerLocalization {
 
     static func string(_ key: String) -> String {
         String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

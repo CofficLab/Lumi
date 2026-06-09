@@ -10,33 +10,32 @@ import ShellKit
 /// 在浏览器中打开远程仓库插件
 ///
 /// 在 Agent 模式的状态栏添加一个图标，点击后在浏览器中打开当前项目的远程仓库地址。
-public actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
-    // MARK: - Plugin Properties
+public enum AgentOpenRemotePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let category: LumiPluginCategory = .general
+    public static let iconName = "safari"
 
-    public nonisolated static let emoji = "🌐"
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.open-remote",
+        displayName: String(localized: "Open Remote Repository", bundle: .module),
+        description: String(localized: "Displays a button in the header to open the current project's remote repository in browser", bundle: .module),
+        order: 90
+    )
 
-    public nonisolated static let verbose: Bool = false
-
-    public static let id: String = "AgentOpenRemote"
-    public static let displayName: String = String(localized: "Open Remote Repository", bundle: .module)
-    public static let description: String = String(localized: "Displays a button in the header to open the current project's remote repository in browser", bundle: .module)
-    public static let iconName: String = "safari"
-    public static var category: PluginCategory { .general }
-    public static var order: Int { 90 }
-    public static let policy: PluginPolicy = .optOut
-
-    // MARK: - Instance
-
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = AgentOpenRemotePlugin()
-
-    // MARK: - Status Bar
-
-    /// 添加状态栏左侧视图
     @MainActor
-    public func addStatusBarLeadingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(OpenRemoteStatusBarView(projectPath: context.currentProjectPath))
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath ?? ""
+        return [
+            LumiStatusBarItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .leading,
+                statusBarView: {
+                    OpenRemoteStatusBarView(projectPath: projectPath)
+                }
+            )
+        ]
     }
 }
 
