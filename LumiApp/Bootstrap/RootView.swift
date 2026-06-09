@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 struct RootView<Content: View>: View {
     @ObservedObject private var container: RootContainer

@@ -4,32 +4,8 @@
     ":%lld" : {
 
     },
-    "%lld" : {
-
-    },
-    "%lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld"
-          }
-        }
-      }
-    },
-    "• Auto：自动从所有可用模型中选择最优的" : {
-
-    },
-    "• 手动指定：固定使用某个供应商的特定模型" : {
-
-    },
-    "• 每日最多执行 5 次深度分析（节省成本）" : {
-
-    },
-    "Auto (自动选择)" : {
-
-    },
     "Click Scan Now to check for potential issues." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -58,6 +34,7 @@
       }
     },
     "Idle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -86,6 +63,7 @@
       }
     },
     "No issues found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -143,6 +121,7 @@
       }
     },
     "Project Issues" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -171,6 +150,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -199,6 +179,7 @@
       }
     },
     "Scan Now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -227,6 +208,7 @@
       }
     },
     "Scanning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -255,6 +237,7 @@
       }
     },
     "Scanning project issues..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -310,31 +293,6 @@
           }
         }
       }
-    },
-    "Showing top %lld of %lld issues, sorted by severity." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Showing top %1$lld of %2$lld issues, sorted by severity."
-          }
-        }
-      }
-    },
-    "供应商" : {
-
-    },
-    "手动指定" : {
-
-    },
-    "模型" : {
-
-    },
-    "模型选择" : {
-
-    },
-    "请选择" : {
-
     }
   },
   "version" : "1.0"

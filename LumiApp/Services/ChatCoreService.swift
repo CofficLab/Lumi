@@ -1,4 +1,5 @@
 import LumiChatKit
+import Foundation
 import LumiCoreKit
 import LumiPluginRegistry
 

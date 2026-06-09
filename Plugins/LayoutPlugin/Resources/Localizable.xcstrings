@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Bottom Panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -30,6 +31,7 @@
       }
     },
     "Content Panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -58,6 +60,7 @@
       }
     },
     "Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -84,9 +87,6 @@
           }
         }
       }
-    },
-    "Layout" : {
-
     },
     "Layout Persistence" : {
       "extractionState" : "stale",
@@ -147,6 +147,7 @@
       }
     },
     "Rail" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -175,6 +176,7 @@
       }
     },
     "Right Sidebar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

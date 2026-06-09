@@ -1,18 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ available" : {
+    "" : {
 
-    },
-    "%@ used of %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ used of %2$@"
-          }
-        }
-      }
     },
     "%@ 个项目" : {
       "extractionState" : "stale",
@@ -42,6 +32,32 @@
           }
         }
       }
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+
     },
     "Are you sure you want to clean %@ of Xcode cache? This action cannot be undone." : {
       "extractionState" : "stale",
@@ -420,7 +436,7 @@
         }
       }
     },
-    "Loading Disk Information" : {
+    "Inspect local disk capacity and usage." : {
 
     },
     "Macintosh HD" : {

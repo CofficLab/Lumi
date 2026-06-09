@@ -377,6 +377,7 @@
       }
     },
     "AI request failed, please check API key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1348,6 +1349,9 @@
         }
       }
     },
+    "Git version control panel, commit history, status bar, and agent tools." : {
+
+    },
     "Invalid Branch Name: " : {
 
     },
@@ -1435,6 +1439,9 @@
           }
         }
       }
+    },
+    "LLM not configured" : {
+
     },
     "Loading branches…" : {
       "extractionState" : "manual",
