@@ -1,5 +1,4 @@
 import SwiftUI
-import DiskManagerKit
 
 struct ProjectCleanerView: View {
     @StateObject private var viewModel = ProjectCleanerViewModel()

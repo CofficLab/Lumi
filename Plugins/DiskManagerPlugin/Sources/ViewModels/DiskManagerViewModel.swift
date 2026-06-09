@@ -1,7 +1,6 @@
 import Foundation
 import SuperLogKit
 import Combine
-import DiskManagerKit
 
 final class DiskManagerScanTaskHolder: @unchecked Sendable {
     var scanTask: Task<Void, Never>?

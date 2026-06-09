@@ -1,5 +1,4 @@
 import SwiftUI
-import DiskManagerKit
 
 /// 大文件扫描进度视图
 struct LargeFilesScanProgressView: View {

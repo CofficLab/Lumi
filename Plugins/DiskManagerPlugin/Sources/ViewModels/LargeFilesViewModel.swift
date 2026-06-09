@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import SuperLogKit
-import DiskManagerKit
 @MainActor
 final class LargeFilesViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📄"

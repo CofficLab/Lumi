@@ -1,5 +1,4 @@
 import SwiftUI
-import DiskManagerKit
 
 /// Xcode 清理分类节视图
 struct XcodeCategorySection: View {

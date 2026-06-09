@@ -1,5 +1,4 @@
 import SwiftUI
-import DiskManagerKit
 
 /// 缓存清理扫描进度视图
 struct CacheScanProgressView: View {

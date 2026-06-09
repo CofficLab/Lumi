@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/DiskManagerKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -23,7 +22,6 @@ let package = Package(
         .target(
             name: "DiskManagerPlugin",
             dependencies: [
-                .product(name: "DiskManagerKit", package: "DiskManagerKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

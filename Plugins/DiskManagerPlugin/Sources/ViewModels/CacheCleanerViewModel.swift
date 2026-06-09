@@ -1,7 +1,6 @@
 import Foundation
 import SuperLogKit
 import Combine
-import DiskManagerKit
 
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
