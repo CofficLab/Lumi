@@ -1,5 +1,4 @@
 import Foundation
-import ProjectProfileKit
 import Testing
 @testable import GitHubInsightPlugin
 

@@ -1,5 +1,4 @@
 import Foundation
-import ProjectProfileKit
 
 /// GitHubInsight 使用的项目分类兼容别名。
 public typealias GitHubInsightProjectType = ProjectType
