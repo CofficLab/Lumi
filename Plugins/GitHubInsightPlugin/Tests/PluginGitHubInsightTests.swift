@@ -4,7 +4,7 @@ import Testing
 @testable import GitHubInsightPlugin
 
 @Test func packageLoads() async throws {
-    #expect(GitHubInsightPlugin.id == "GitHubInsight")
+    #expect(GitHubInsightPlugin.info.id == "com.coffic.lumi.plugin.github-insight")
 }
 
 @Test func queryEcoKBToolSchemaClampsLimit() throws {

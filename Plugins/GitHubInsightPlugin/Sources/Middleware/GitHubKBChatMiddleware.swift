@@ -1,50 +1,32 @@
 import Foundation
-import AgentToolKit
 import LumiCoreKit
 
 /// 将相关的缓存 GitHub 生态参考注入到外发聊天上下文中。
-///
-/// 中间件仅在推荐、依赖、框架或生态相关提示中启用。它会读取当前项目的
-/// 本地知识库，并追加包含最相关缓存条目的临时系统提示。
-@MainActor
-public final class GitHubKBMiddleware: SuperSendMiddleware {
-    /// 发送流水线使用的稳定中间件标识。
-    public let id = "github-insight-kb"
-
-    /// 中间件在发送流水线中的执行顺序。
-    public let order = 60
-
-    /// 处理外发消息，并在相关时追加 GitHub 生态上下文。
-    public func handle(
-        ctx: SendMessageContext,
-        next: @escaping @MainActor (SendMessageContext) async -> Void
-    ) async {
-        let message = ctx.message.content
+struct GitHubKBChatMiddleware: LumiSendMiddleware {
+    func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
+        var updated = context
+        let message = context.messages.last(where: { $0.role == .user })?.content ?? ""
         guard shouldInject(for: message) else {
-            await next(ctx)
-            return
+            return updated
         }
 
-        let projectPath = ctx.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectPath = context.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectPath.isEmpty else {
-            await next(ctx)
-            return
+            return updated
         }
 
         let entries = await GitHubInsightKnowledgeBaseManager.shared.loadEntries(projectPath: projectPath)
         let relevant = filter(entries: entries, for: message).prefix(3)
         guard !relevant.isEmpty else {
-            await next(ctx)
-            return
+            return updated
         }
 
-        ctx.transientSystemPrompts.append(
-            buildPrompt(entries: Array(relevant), languagePreference: ctx.languagePreference)
+        updated.systemPromptFragments.append(
+            buildPrompt(entries: Array(relevant), language: context.conversationLanguage)
         )
-        await next(ctx)
+        return updated
     }
 
-    /// 判断消息是否看起来需要生态或依赖建议。
     private func shouldInject(for message: String) -> Bool {
         let lowercased = message.lowercased()
         let keywords = [
@@ -54,17 +36,14 @@ public final class GitHubKBMiddleware: SuperSendMiddleware {
         return keywords.contains { lowercased.contains($0) }
     }
 
-    /// 按相关性排序缓存条目。
     private func filter(entries: [GitHubInsightKBEntry], for message: String) -> [GitHubInsightKBEntry] {
-        return entries
-            .sorted { $0.relevanceScore > $1.relevanceScore }
+        entries.sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
-    /// 构建用于概括缓存生态参考的临时系统提示。
-    private func buildPrompt(entries: [GitHubInsightKBEntry], languagePreference: LanguagePreference) -> String {
+    private func buildPrompt(entries: [GitHubInsightKBEntry], language: LumiConversationLanguage) -> String {
         var lines: [String]
 
-        switch languagePreference {
+        switch language {
         case .chinese:
             lines = [
                 "## GitHub 生态洞察",
@@ -91,7 +70,7 @@ public final class GitHubKBMiddleware: SuperSendMiddleware {
         }
 
         lines.append("")
-        switch languagePreference {
+        switch language {
         case .chinese:
             lines.append("需要更多缓存的仓库详情时，使用 `query_eco_kb`。")
         case .english:

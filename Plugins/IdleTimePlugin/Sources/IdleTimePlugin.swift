@@ -1,43 +1,55 @@
-import SwiftUI
-import SuperLogKit
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
-public actor IdleTimePlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let emoji = "🌙"
-    public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = false
+public enum IdleTimePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .general
+    public static let iconName = "moon.zzz"
 
-    public static let id: String = "IdleTime"
-    public static let navigationId: String? = nil
-    public static let displayName: String = "Idle Time"
-    public static let description: String = "Infer rest windows for background scheduling"
-    public static let iconName: String = "moon.zzz"
-    public static var order: Int { 96 }
-
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = IdleTimePlugin()
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.idle-time",
+        displayName: "Idle Time",
+        description: "Infer rest windows for background scheduling",
+        order: 96
+    )
 
     @MainActor
-    public func configureRuntime(context: PluginRuntimeContext) {
-        context.registerIdleTimeSnapshotProvider { date in
-            await IdleTimeService.shared.currentSnapshot(for: date)
+    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+        bootstrapFromLumiCoreIfNeeded()
+        return [IdleTimeChatMiddleware()]
+    }
+
+    @MainActor
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.activeSectionID == "LumiEditor" else {
+            return []
         }
+
+        let projectPath = context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).status",
+                title: info.displayName,
+                systemImage: iconName,
+                placement: .trailing,
+                statusBarView: {
+                    IdleStatusBarView(projectPath: projectPath)
+                }
+            )
+        ]
     }
 
     @MainActor
-    public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(IdleTimeRootObserver(content: content()))
-    }
-
-    @MainActor
-    public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(IdleStatusBarView())
-    }
-
-    @MainActor
-    public func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(IdleTimeSendMiddleware())]
+    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        bootstrapFromLumiCoreIfNeeded()
+        let projectPathProvider = {
+            context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+        }
+        return [
+            LumiRootOverlayItem(id: "\(info.id).observer", order: 96) { content in
+                IdleTimeRootObserver(projectPathProvider: projectPathProvider, content: content)
+            }
+        ]
     }
 }

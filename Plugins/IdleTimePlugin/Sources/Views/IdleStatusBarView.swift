@@ -1,14 +1,18 @@
-import SwiftUI
 import LumiCoreKit
 import LumiUI
+import SwiftUI
 
 public struct IdleStatusBarView: View {
+    let projectPath: String
     @StateObject private var idleTimeVM = AppIdleTimeVM()
-    @EnvironmentObject private var projectVM: WindowProjectVM
+
+    public init(projectPath: String) {
+        self.projectPath = projectPath
+    }
 
     public var body: some View {
         Group {
-            if !projectVM.currentProjectPath.isEmpty {
+            if !projectPath.isEmpty {
                 StatusBarHoverContainer(
                     detailView: IdlePopoverView(snapshot: idleTimeVM.snapshot),
                     popoverWidth: 480,
@@ -22,5 +26,4 @@ public struct IdleStatusBarView: View {
             }
         }
     }
-
 }

@@ -1,43 +1,30 @@
 import Foundation
 import LumiCoreKit
 
-/// 问题提示注入中间件
-///
-/// 在用户发送消息时，读取 IssueStore 中未解决的问题，
-/// 按相关性筛选后注入到 transientSystemPrompts，供 LLM 参考。
-@MainActor
-public struct IssueHintSendMiddleware: SuperSendMiddleware {
-    public let id: String = "project-issue-scanner.hint"
-    public let order: Int = 9_900
+/// 在用户发送消息时，将未解决的项目问题注入 system prompt。
+struct IssueHintChatMiddleware: LumiSendMiddleware {
+    func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
+        var updated = context
+        let projectPath = context.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let message = context.messages.last(where: { $0.role == .user })?.content ?? ""
 
-    public func handle(
-        ctx: SendMessageContext,
-        next: @escaping @MainActor (SendMessageContext) async -> Void
-    ) async {
-        let projectPath = ctx.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let issues = projectPath.isEmpty
             ? await ProjectIssueStore.shared.fetchOpen()
             : await ProjectIssueStore.shared.fetchOpen(projectPath: projectPath)
 
         guard !issues.isEmpty else {
-            await next(ctx)
-            return
+            return updated
         }
 
         let relevantIssues = pickRelevantIssues(
             issues: issues,
-            message: ctx.message.content,
-            currentFileURL: ctx.currentFileURL,
+            message: message,
             projectPath: projectPath
         )
 
-        let prompt = buildPrompt(from: relevantIssues)
-        ctx.transientSystemPrompts.append(prompt)
-
-        await next(ctx)
+        updated.systemPromptFragments.append(buildPrompt(from: relevantIssues))
+        return updated
     }
-
-    // MARK: - Private
 
     private func buildPrompt(from issues: [ProjectIssue]) -> String {
         var lines = ["以下是你可能在处理此项目时需要注意的已知问题（仅供参考，不要主动提及除非用户提问相关内容）："]
@@ -54,20 +41,12 @@ public struct IssueHintSendMiddleware: SuperSendMiddleware {
     private func pickRelevantIssues(
         issues: [ProjectIssue],
         message: String,
-        currentFileURL: URL?,
         projectPath: String
     ) -> [ProjectIssue] {
         let messageTokens = Set(tokenize(message))
-        let currentRelativePath = currentFileURL.map { url in
-            relativePath(for: url, projectPath: projectPath)
-        }
 
         let scored = issues.map { issue in
             var score = severityScore(issue.severity)
-
-            if let currentRelativePath, issue.filePath == currentRelativePath {
-                score += 8
-            }
 
             let issuePathTokens = Set(tokenize(issue.filePath))
             let issueTextTokens = Set(tokenize([issue.title, issue.description, issue.suggestion ?? ""].joined(separator: " ")))
@@ -106,9 +85,5 @@ public struct IssueHintSendMiddleware: SuperSendMiddleware {
             .split { !$0.isLetter && !$0.isNumber }
             .map(String.init)
             .filter { $0.count >= 3 }
-    }
-
-    private func relativePath(for fileURL: URL, projectPath: String) -> String {
-        ProjectIssuePathFormatter.relativePath(for: fileURL, projectPath: projectPath)
     }
 }

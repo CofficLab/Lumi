@@ -62,7 +62,7 @@ public final class AppIdleTimeVM: ObservableObject {
             guard let self else { return }
             defer { self.refreshTask = nil }
 
-            let snapshot = await IdleTimeSnapshotProvider.shared.currentSnapshot()
+            let snapshot = await IdleTimeService.shared.currentSnapshot()
 
             self.snapshot = snapshot
             self.restWindow = snapshot.restWindow

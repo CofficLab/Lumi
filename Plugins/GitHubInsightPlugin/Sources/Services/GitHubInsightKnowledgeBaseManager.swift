@@ -24,9 +24,9 @@ public actor GitHubInsightKnowledgeBaseManager {
     private let encoder = JSONEncoder()
 
     public init() {
-        self.init(rootDirectory: AppConfig.getDBFolderURL()
+        let defaultRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("GitHubInsightPlugin", isDirectory: true)
-        )
+        self.init(rootDirectory: GitHubInsightRuntimeBridge.rootDirectory ?? defaultRoot)
     }
 
     init(rootDirectory: URL) {

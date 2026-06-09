@@ -9,20 +9,21 @@ import Testing
 struct AutoTaskPluginTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(AutoTaskPlugin.id == "AutoTask")
-        #expect(AutoTaskPlugin.displayName == "Auto Task")
-        #expect(AutoTaskPlugin.description.isEmpty == false)
+        #expect(AutoTaskPlugin.info.id == "com.coffic.lumi.plugin.auto-task")
+        #expect(AutoTaskPlugin.info.displayName == "Auto Task")
+        #expect(AutoTaskPlugin.info.description.isEmpty == false)
         #expect(AutoTaskPlugin.iconName == "checklist")
-        #expect(AutoTaskPlugin.isConfigurable == false)
+        #expect(AutoTaskPlugin.policy.isConfigurable == false)
         #expect(AutoTaskPlugin.category == .agent)
-        #expect(AutoTaskPlugin.order == 90)
+        #expect(AutoTaskPlugin.info.order == 90)
         #expect(AutoTaskPlugin.policy == .alwaysOn)
     }
 
     @MainActor
     @Test("plugin registers task tools and middleware")
     func pluginContributions() {
-        let tools = AutoTaskPlugin.shared.agentTools(context: ToolContext())
+        let context = LumiPluginContext(activeSectionID: "com.coffic.lumi.plugin.chat-panel", activeSectionTitle: "Chat")
+        let tools = AutoTaskPlugin.agentTools(context: context)
 
         #expect(tools.map(\.name) == [
             "create_task",
@@ -31,7 +32,7 @@ struct AutoTaskPluginTests {
             "list_tasks",
             "check_progress",
         ])
-        #expect(AutoTaskPlugin.shared.sendMiddlewares().count == 2)
+        #expect(AutoTaskPlugin.sendMiddlewares(context: context).count == 1)
     }
 }
 

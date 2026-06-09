@@ -31,7 +31,13 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md"],
+            exclude: [
+                "Tests",
+                "README.md",
+                "Sources/Views",
+                "Sources/Services/DeepIssueAnalyzer.swift",
+                "Sources/Services/IdleScannerService.swift",
+            ],
             sources: ["Sources"],
             resources: [
                 .process("Resources")

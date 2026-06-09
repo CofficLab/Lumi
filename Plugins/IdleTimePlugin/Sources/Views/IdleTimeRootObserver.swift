@@ -7,16 +7,21 @@ extension Notification.Name {
 }
 
 public struct IdleTimeRootObserver<Content: View>: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    let projectPathProvider: () -> String
     public let content: Content
+
+    public init(
+        projectPathProvider: @escaping () -> String = { "" },
+        content: Content
+    ) {
+        self.projectPathProvider = projectPathProvider
+        self.content = content
+    }
 
     public var body: some View {
         content
             .onAppear {
-                recordProjectIfNeeded(projectVM.currentProjectPath)
-            }
-            .onChange(of: projectVM.currentProjectPath) { _, newValue in
-                recordProjectIfNeeded(newValue)
+                recordProjectIfNeeded(projectPathProvider())
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 Task {

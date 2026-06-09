@@ -17,6 +17,8 @@ let package = Package(
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
@@ -25,6 +27,8 @@ let package = Package(
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

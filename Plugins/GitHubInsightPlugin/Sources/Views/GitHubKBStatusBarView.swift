@@ -73,14 +73,18 @@ public final class GitHubKBStatusBarViewModel: ObservableObject {
 ///
 /// 视图会在出现、当前项目变化以及应用变为活跃时自动尝试同步缓存。
 public struct GitHubKBStatusBarView: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    let projectPath: String
     @StateObject private var viewModel = GitHubKBStatusBarViewModel()
+
+    public init(projectPath: String) {
+        self.projectPath = projectPath
+    }
 
     public var body: some View {
         Group {
             if shouldShow {
                 StatusBarHoverContainer(
-                    detailView: GitHubKBPopover(viewModel: viewModel, projectPath: projectVM.currentProjectPath),
+                    detailView: GitHubKBPopover(viewModel: viewModel, projectPath: projectPath),
                     popoverWidth: 720,
                     id: "github-insight-kb"
                 ) {
@@ -98,20 +102,20 @@ public struct GitHubKBStatusBarView: View {
                 }
             }
         }
-        .onAppear { viewModel.load(projectPath: projectVM.currentProjectPath) }
-        .onChange(of: projectVM.currentProjectPath) { _, newValue in
+        .onAppear { viewModel.load(projectPath: projectPath) }
+        .onChange(of: projectPath) { _, newValue in
             viewModel.load(projectPath: newValue)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            viewModel.load(projectPath: projectVM.currentProjectPath)
+            viewModel.load(projectPath: projectPath)
         }
         .onReceive(NotificationCenter.default.publisher(for: .githubInsightDidSync)) { _ in
-            Task { await viewModel.loadCache(projectPath: projectVM.currentProjectPath) }
+            Task { await viewModel.loadCache(projectPath: projectPath) }
         }
     }
 
     private var shouldShow: Bool {
-        !projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && stateIsVisible
+        !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && stateIsVisible
     }
 
     private var stateIsVisible: Bool {

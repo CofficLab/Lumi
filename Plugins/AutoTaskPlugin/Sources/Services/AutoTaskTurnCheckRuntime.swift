@@ -1,65 +1,72 @@
 import Foundation
 import LumiCoreKit
-import SuperLogKit
 
-/// AutoTask Turn 结束检查中间件。
+/// Turn 结束后检查未完成任务，并在需要时入队跟进提示。
 ///
-/// 在一个 Agent Turn 正常结束后，检查当前对话是否存在未完成的任务。
-/// 如有需要，通过 `AutoTaskConfiguration.enqueueUserMessage` 让 App 侧入队一条提示消息。
+/// `LumiSendMiddleware` 仅覆盖发送前阶段；turn 完成逻辑通过 `lumiTurnCompleted` 通知触发。
 @MainActor
-struct AutoTaskTurnCheckMiddleware: SuperSendMiddleware, SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+enum AutoTaskTurnCheckRuntime {
+    private static var observer: NSObjectProtocol?
 
-    let id = "auto_task_turn_check"
-    let order: Int = 200
+    static func start(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?) {
+        guard observer == nil else { return }
 
-    func handle(
-        ctx: SendMessageContext,
-        next: @escaping @MainActor (SendMessageContext) async -> Void
-    ) async {
-        await next(ctx)
+        observer = NotificationCenter.default.addObserver(
+            forName: .lumiTurnCompleted,
+            object: nil,
+            queue: .main
+        ) { notification in
+            guard let conversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID else {
+                return
+            }
+            Task { @MainActor in
+                await handleTurnCompleted(
+                    conversationID: conversationID,
+                    chatServiceProvider: chatServiceProvider
+                )
+            }
+        }
     }
 
-    func handleTurnFinished(ctx: TurnFinishedContext) async {
-        guard ctx.endReason == .completed else { return }
+    private static func handleTurnCompleted(
+        conversationID: UUID,
+        chatServiceProvider: @MainActor () -> (any LumiChatServicing)?
+    ) async {
+        guard let chatService = chatServiceProvider() else {
+            return
+        }
 
-        let conversationId = ctx.conversationId
-        let conversationIdStr = conversationId.uuidString
         let manager = TaskStateManager.shared
-
+        let conversationIdStr = conversationID.uuidString
         let tasks = await manager.fetchTasks(conversationId: conversationIdStr)
         let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }
 
         guard !activeTasks.isEmpty else { return }
 
-        let hasUpdateCall = ctx.turnMessages.contains { message in
+        let turnMessages = turnMessages(for: conversationID, chatService: chatService)
+        let hasUpdateCall = turnMessages.contains { message in
             guard message.role == .assistant, let toolCalls = message.toolCalls else { return false }
             return toolCalls.contains { $0.name == "update_task" }
         }
 
-        guard !hasUpdateCall else {
-            if Self.verbose {
-                AutoTaskPlugin.logger.info("\(Self.t)本轮已调用 update_task，跳过任务检查提示")
-            }
-            return
-        }
+        guard !hasUpdateCall else { return }
 
         let prompt = buildTaskCheckPrompt(tasks: activeTasks)
-
-        if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)检测到 \(activeTasks.count) 个未完成任务（in_progress + pending），入队检查提示")
-        }
-
-        let message = ChatMessage(
-            role: .user,
-            conversationId: conversationId,
-            content: prompt
-        )
-        AutoTaskPlugin.configuration.enqueueUserMessage(message, turnContext: ctx)
+        chatService.enqueueText(prompt, in: conversationID)
     }
 
-    private func buildTaskCheckPrompt(tasks: [TaskItem]) -> String {
+    private static func turnMessages(
+        for conversationID: UUID,
+        chatService: any LumiChatServicing
+    ) -> [LumiChatMessage] {
+        let messages = chatService.messages(for: conversationID)
+        guard let lastUserIndex = messages.lastIndex(where: { $0.role == .user }) else {
+            return []
+        }
+        return Array(messages[(lastUserIndex + 1)...]).filter { $0.role != .status }
+    }
+
+    private static func buildTaskCheckPrompt(tasks: [TaskItem]) -> String {
         var lines: [String] = []
 
         let inProgressTasks = tasks.filter { $0.status == .inProgress }

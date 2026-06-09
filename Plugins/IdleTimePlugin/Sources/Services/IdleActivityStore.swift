@@ -16,8 +16,10 @@ public actor IdleActivityStore {
         directoryURL: URL? = nil
     ) {
         self.fileManager = fileManager
-        let root = directoryURL ?? AppConfig.getDBFolderURL()
-            .appendingPathComponent("IdleTimePlugin", isDirectory: true)
+        let root = directoryURL
+            ?? IdleTimeRuntimeBridge.directoryURL
+            ?? FileManager.default.temporaryDirectory
+                .appendingPathComponent("IdleTimePlugin", isDirectory: true)
         self.directoryURL = root
         self.eventsURL = root.appendingPathComponent("activity.json")
         self.snapshotURL = root.appendingPathComponent("snapshot.json")

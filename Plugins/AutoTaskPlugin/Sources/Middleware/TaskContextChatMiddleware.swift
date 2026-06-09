@@ -1,66 +1,47 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
-import SuperLogKit
+import os
 
-/// AutoTask 进度注入中间件
-///
-/// 在每轮对话中自动注入当前任务进度，保持 Agent 的全局视野。
-/// 注入内容包括：当前进行中的任务、下一个待办任务、整体进度。
-///
-/// - Order: 70（较早注入，在 SendPrepare 阶段优先于多数中间件）
-/// - 仅当该会话存在任务时才注入，无任务时不干扰正常对话
-@MainActor
-struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
-    nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
-
-    let id = "auto_task_context"
-    let order: Int = 70
-
-    func handle(
-        ctx: SendMessageContext,
-        next: @escaping @MainActor (SendMessageContext) async -> Void
-    ) async {
-        let conversationId = ctx.conversationId.uuidString
+/// AutoTask 进度注入中间件：在每轮对话中注入当前任务进度。
+struct TaskContextChatMiddleware: LumiSendMiddleware {
+    func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
+        var updated = context
+        let conversationId = context.conversationID.uuidString
         let manager = TaskStateManager.shared
 
         let tasks = await manager.fetchTasks(conversationId: conversationId)
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
-        // 无任务时不注入
         guard !summary.isEmpty else {
-            await next(ctx)
-            return
+            return updated
         }
 
-        let prompt = buildProgressPrompt(
-            tasks: tasks,
-            summary: summary
+        updated.systemPromptFragments.append(
+            buildProgressPrompt(
+                tasks: tasks,
+                summary: summary,
+                language: context.conversationLanguage
+            )
         )
-        ctx.transientSystemPrompts.append(prompt)
-
-        if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)注入任务进度：\(summary.completed)/\(summary.total) (\(summary.completionPercent)%)")
-        }
-
-        await next(ctx)
+        return updated
     }
 
-    // MARK: - Private
-
-    /// 构建进度注入 Prompt（默认中文）
     private func buildProgressPrompt(
         tasks: [TaskItem],
-        summary: TaskProgressSummary
+        summary: TaskProgressSummary,
+        language: LumiConversationLanguage
     ) -> String {
-        buildChineseProgressPrompt(tasks: tasks, summary: summary)
+        switch language {
+        case .english:
+            return buildEnglishProgressPrompt(tasks: tasks, summary: summary)
+        case .chinese:
+            return buildChineseProgressPrompt(tasks: tasks, summary: summary)
+        }
     }
 
     private func buildEnglishProgressPrompt(tasks: [TaskItem], summary: TaskProgressSummary) -> String {
         var prompt = "## Project Task Progress\n"
 
-        // 整体进度
         if summary.isAllDone {
             prompt += "**Status:** ✅ All \(summary.total) tasks completed!\n"
             prompt += "No further task action needed.\n"
@@ -69,7 +50,6 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
 
         prompt += "**Progress:** \(summary.completed + summary.skipped)/\(summary.total) tasks done (\(summary.completionPercent)%)\n\n"
 
-        // 当前焦点（进行中的任务）
         let inProgressTasks = tasks.filter { $0.status == .inProgress }
         if let current = inProgressTasks.first {
             prompt += "**Current Focus:** \(current.title)\n"
@@ -79,7 +59,6 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
             prompt += "\n"
         }
 
-        // 接下来的待办任务（最多显示 5 个）
         let pendingTasks = tasks.filter { $0.status == .pending }
         if !pendingTasks.isEmpty {
             prompt += "**Remaining:**\n"
@@ -92,7 +71,6 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
             prompt += "\n"
         }
 
-        // 强提醒指令
         prompt += "---\n"
         prompt += "**⚠️ CRITICAL RULE:**\n"
 
@@ -106,7 +84,6 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         prompt += "---\n"
-
         return prompt
     }
 
@@ -155,7 +132,6 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         prompt += "---\n"
-
         return prompt
     }
 }

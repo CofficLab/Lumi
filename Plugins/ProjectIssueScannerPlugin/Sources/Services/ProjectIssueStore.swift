@@ -17,8 +17,9 @@ public actor ProjectIssueStore {
     // MARK: - Initialization
 
     private init() {
-        let dir = AppConfig.getDBFolderURL()
-            .appendingPathComponent("ProjectIssueScanner", isDirectory: true)
+        let dir = ProjectIssueScannerRuntimeBridge.dataDirectory
+            ?? FileManager.default.temporaryDirectory
+                .appendingPathComponent("ProjectIssueScanner", isDirectory: true)
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         self.issuesFileURL = dir.appendingPathComponent("issues.json")
         self.issues = (try? Self.loadFromDisk(from: issuesFileURL)) ?? []
