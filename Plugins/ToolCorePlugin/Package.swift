@@ -15,12 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/WorkspaceFileKit"),
     ],
     targets: [
         .target(
             name: "ToolCorePlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "WorkspaceFileKit", package: "WorkspaceFileKit"),
             ],
             path: ".",
             exclude: [
@@ -40,6 +42,7 @@ let package = Package(
                 "Sources/Tools/ReadFileTool.swift",
                 "Sources/Tools/LumiShellTool.swift",
                 "Sources/Tools/LumiWriteFileTool.swift",
+                "Sources/Tools/LumiEditFileTool.swift",
             ],
             resources: [
                 .process("Resources")

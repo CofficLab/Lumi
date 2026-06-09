@@ -1,23 +1,19 @@
 import Foundation
-import LLMKit
 import LumiCoreKit
 
-/// 无状态的会话标题生成器。
-///
-/// 输入首条用户消息、LLM 配置和一次性发送函数，输出最终标题；不持有 LLM、
-/// 不读取/写入会话存储，也不触发 UI 或通知副作用。
-struct ConversationTitleGenerator {
-    typealias SendMessage = @Sendable ([ChatMessage], LLMConfig) async throws -> ChatMessage
+@MainActor
+enum ConversationTitleService {
+    static func generateTitle(userMessage: String, conversationID: UUID) async -> String? {
+        guard let chatService = ConversationTitleRuntimeBridge.chatServiceProvider?() else {
+            return nil
+        }
 
-    func generate(
-        userMessage: String,
-        conversationId: UUID,
-        config: LLMConfig,
-        sendMessage: SendMessage
-    ) async -> String {
+        guard let model = chatService.modelName(for: conversationID) ?? chatService.selectedModel else {
+            return String(userMessage.prefix(20))
+        }
+
         let trimmedMessage = userMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackTitle = String(trimmedMessage.prefix(20))
-
         guard trimmedMessage.count > 15 else {
             return fallbackTitle
         }
@@ -35,11 +31,13 @@ struct ConversationTitleGenerator {
         """
 
         do {
-            let titleMessages: [ChatMessage] = [
-                ChatMessage(role: .user, conversationId: conversationId, content: titlePrompt),
-            ]
-
-            let response = try await sendMessage(titleMessages, config)
+            let response = try await chatService.generateEphemeralCompletion(
+                messages: [
+                    LumiChatMessage(conversationID: conversationID, role: .user, content: titlePrompt),
+                ],
+                model: model,
+                conversationID: conversationID
+            )
             guard response.role == .assistant else {
                 return fallbackTitle
             }
@@ -48,7 +46,6 @@ struct ConversationTitleGenerator {
             guard !generatedTitle.isEmpty else {
                 return fallbackTitle
             }
-
             return String(generatedTitle.prefix(20))
         } catch {
             return fallbackTitle

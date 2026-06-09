@@ -1,19 +1,22 @@
 import Foundation
 import LumiCoreKit
 
-/// 无状态的自动会话命名策略。
-///
-/// 输入当前消息、现有标题和消息计数，输出是否应该生成标题以及清洗后的用户文本；
-/// 不访问数据库、不读取配置，也不执行标题更新。
+/// Stateless auto conversation naming policy.
 public struct AutoConversationTitlePolicy {
     public struct PreflightInput {
-        public let role: MessageRole
+        public let role: LumiChatMessageRole
         public let userText: String
         public let currentTitle: String
         public let newConversationTitle: String
         public let newChatTitlePrefix: String
 
-        public init(role: MessageRole, userText: String, currentTitle: String, newConversationTitle: String, newChatTitlePrefix: String) {
+        public init(
+            role: LumiChatMessageRole,
+            userText: String,
+            currentTitle: String,
+            newConversationTitle: String,
+            newChatTitlePrefix: String
+        ) {
             self.role = role
             self.userText = userText
             self.currentTitle = currentTitle
@@ -23,14 +26,21 @@ public struct AutoConversationTitlePolicy {
     }
 
     public struct Input {
-        public let role: MessageRole
+        public let role: LumiChatMessageRole
         public let userText: String
         public let currentTitle: String
         public let userMessageCount: Int
         public let newConversationTitle: String
         public let newChatTitlePrefix: String
 
-        public init(role: MessageRole, userText: String, currentTitle: String, userMessageCount: Int, newConversationTitle: String, newChatTitlePrefix: String) {
+        public init(
+            role: LumiChatMessageRole,
+            userText: String,
+            currentTitle: String,
+            userMessageCount: Int,
+            newConversationTitle: String,
+            newChatTitlePrefix: String
+        ) {
             self.role = role
             self.userText = userText
             self.currentTitle = currentTitle
@@ -49,6 +59,8 @@ public struct AutoConversationTitlePolicy {
             self.trimmedUserText = trimmedUserText
         }
     }
+
+    public init() {}
 
     public func evaluate(_ input: Input) -> Output {
         let preflight = preflight(

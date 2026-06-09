@@ -25,6 +25,7 @@ public enum ToolCorePlugin: LumiPlugin {
             ListDirectoryTool(),
             ReadFileTool(),
             LumiWriteFileTool(),
+            LumiEditFileTool(),
             LumiShellTool()
         ]
     }

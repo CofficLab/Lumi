@@ -15,24 +15,20 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ConversationTitlePlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: [
                 "Tests",
                 "README.md",
-                "Sources/TitleOrchestrator.swift",
-                "Sources/ConversationTitleRuntimeBridge.swift",
-                "Sources/ConversationTitleEventObserver.swift",
-                "Sources/Services",
                 "Sources/Tools",
-                "Sources/Policy",
             ],
             sources: ["Sources"],
             resources: [
@@ -43,7 +39,6 @@ let package = Package(
             name: "ConversationTitlePluginTests",
             dependencies: [
                 "ConversationTitlePlugin",
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
             ],
             path: "Tests"
         )

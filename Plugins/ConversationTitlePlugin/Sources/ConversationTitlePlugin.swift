@@ -19,6 +19,14 @@ public enum ConversationTitlePlugin: LumiPlugin {
     static var verbose: Bool { false }
 
     @MainActor
+    public static func bootstrap(
+        chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?
+    ) {
+        ConversationTitleRuntimeBridge.chatServiceProvider = chatServiceProvider
+        ConversationTitleNotificationObserver.start()
+    }
+
+    @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         [ConversationTitleChatMiddleware()]
     }
