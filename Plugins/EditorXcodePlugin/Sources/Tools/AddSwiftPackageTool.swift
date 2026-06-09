@@ -10,6 +10,8 @@ public struct AddSwiftPackageTool: SuperAgentTool {
     /// 暴露给 Agent 的工具名称。
     public let name = "add_xcode_package"
 
+    public init() {}
+
     /// Package Service 实例
     private let packageService = XcodePackageService()
 

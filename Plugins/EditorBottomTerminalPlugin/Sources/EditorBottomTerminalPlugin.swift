@@ -67,22 +67,18 @@ public actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
     }
 }
 
-/// Terminal 底部面板内容视图。
-///
-/// 使用独立的 ViewModel 实例，不与侧边栏 Terminal 共享会话。
-private struct EditorBottomTerminalContentView: View {
+/// Terminal 底部面板内容视图（Editor workspace 挂载点）。
+public struct EditorBottomTerminalPanelView: View {
     @LumiTheme private var theme: any LumiUITheme
-
-    let context: PluginContext
-
-    /// 底部面板专用共享实例，避免 bottom tab 内容视图重建时丢失终端会话。
     @ObservedObject private var viewModel = TerminalTabsViewModel.editorBottomShared
 
+    public init() {}
+
     private var workingDirectory: String? {
-        EditorBottomTerminalBridge.currentProjectPathProvider?(context)
+        EditorBottomTerminalBridge.currentProjectPathProvider?(PluginContext())
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             tabBar
 
@@ -162,6 +158,17 @@ private struct EditorBottomTerminalContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)
+    }
+}
+
+/// Terminal 底部面板内容视图。
+///
+/// 使用独立的 ViewModel 实例，不与侧边栏 Terminal 共享会话。
+private struct EditorBottomTerminalContentView: View {
+    let context: PluginContext
+
+    var body: some View {
+        EditorBottomTerminalPanelView()
     }
 }
 

@@ -8,6 +8,11 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
     @ObservedObject var service: EditorService
     public var showsToolbar: Bool = true
 
+    public init(service: EditorService, showsToolbar: Bool = true) {
+        self._service = ObservedObject(wrappedValue: service)
+        self.showsToolbar = showsToolbar
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             if showsToolbar {

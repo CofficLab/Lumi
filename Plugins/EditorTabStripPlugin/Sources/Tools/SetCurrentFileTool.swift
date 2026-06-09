@@ -9,6 +9,9 @@ public struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = false
     public let name = "set_current_file"
+
+    public init() {}
+
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:

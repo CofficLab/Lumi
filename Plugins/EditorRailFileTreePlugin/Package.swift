@@ -14,6 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/FileTreeKit"),
         .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
         .package(path: "../../Packages/LumiCoreKit"),
@@ -24,6 +25,7 @@ let package = Package(
         .target(
             name: "EditorRailFileTreePlugin",
             dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "FileTreeKit", package: "FileTreeKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),

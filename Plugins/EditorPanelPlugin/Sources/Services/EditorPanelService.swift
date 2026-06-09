@@ -39,21 +39,23 @@ public final class EditorPanelService: ObservableObject {
         projectRootPath: String?,
         currentProjectPath: String
     ) {
-        if EditorPlugin.verbose {
-                    EditorPlugin.logger.info("\(EditorPlugin.t)打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
+        if EditorPanelPlugin.verbose {
+            EditorPanelPlugin.logger.info(
+                "打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)"
+            )
         }
         service.projectRootPath = projectRootPath
 
         guard let fileURL else {
-            if EditorPlugin.verbose {
-                            EditorPlugin.logger.info("\(EditorPlugin.t)fileURL 为 nil → loadFile(nil)")
+            if EditorPanelPlugin.verbose {
+                EditorPanelPlugin.logger.info("fileURL 为 nil → loadFile(nil)")
             }
             service.loadFile(from: nil)
             return
         }
 
-        if EditorPlugin.verbose {
-                    EditorPlugin.logger.info("\(EditorPlugin.t)打开文件: \(fileURL.path, privacy: .public)")
+        if EditorPanelPlugin.verbose {
+            EditorPanelPlugin.logger.info("打开文件: \(fileURL.path, privacy: .public)")
         }
         service.open(at: fileURL)
     }

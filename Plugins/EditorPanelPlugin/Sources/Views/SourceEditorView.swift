@@ -429,6 +429,9 @@ public struct SourceEditorView: View, SuperLog {
         if let contributor = state.editorExtensions.theme(for: editorThemeId) {
             config.appearance.theme = contributor.createTheme()
             config.appearance.themeIdentifier = editorThemeId
+        } else {
+            config.appearance.theme = EditorThemeAdapter.fallbackTheme()
+            config.appearance.themeIdentifier = editorThemeId
         }
     }
 

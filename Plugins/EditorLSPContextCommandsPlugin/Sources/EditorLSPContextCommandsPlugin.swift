@@ -28,8 +28,13 @@ public actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
     public static let order = 15
     public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { false }
+    public nonisolated var providesEditorExtensions: Bool { true }
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-context-commands")
 
+    @MainActor
+    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerCommandContributor(EditorLSPContextCommandContributor())
+    }
 }

@@ -59,20 +59,20 @@ public final class EditorPanelCoordinator: ObservableObject {
     public func handleAppear() {
         guard let panelService, let service, let projectVM else { return }
 
-        if EditorPlugin.verbose {
-                    EditorPlugin.logger.info(
-                        "\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), activeSessionID=\(service.activeSessionID?.uuidString ?? "nil", privacy: .public), currentFileURL=\(service.currentFileURL?.path ?? "nil", privacy: .public)"
-                    )
+        if EditorPanelPlugin.verbose {
+            EditorPanelPlugin.logger.info(
+                "onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public)"
+            )
         }
 
-        service.projectRootPath = projectVM.currentProject?.path
+        service.projectRootPath = projectRootPath(from: projectVM)
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, service: service)
 
         if service.activeSessionID != nil || service.currentFileURL != nil {
             panelService.openOrActivateSession(
                 for: service.currentFileURL ?? service.activeSession?.fileURL,
                 service: service,
-                projectRootPath: projectVM.currentProject?.path,
+                projectRootPath: projectRootPath(from: projectVM),
                 currentProjectPath: projectVM.currentProjectPath
             )
             service.refreshDocumentOutline()
@@ -101,8 +101,10 @@ public final class EditorPanelCoordinator: ObservableObject {
     public func handleProjectPathChange(oldPath: String, newPath: String) {
         guard let panelService, let service else { return }
 
-        if EditorPlugin.verbose {
-                    EditorPlugin.logger.info("\(EditorPlugin.t)项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
+        if EditorPanelPlugin.verbose {
+            EditorPanelPlugin.logger.info(
+                "项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)"
+            )
         }
 
         // 保存未保存的变更后关闭所有编辑器会话
@@ -207,6 +209,11 @@ public final class EditorPanelCoordinator: ObservableObject {
             return true
         }
         return service?.state.windowId == targetWindowId
+    }
+
+    private func projectRootPath(from projectVM: WindowProjectVM) -> String? {
+        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : path
     }
 }
 

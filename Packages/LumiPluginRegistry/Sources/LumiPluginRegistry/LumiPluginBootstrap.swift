@@ -2,6 +2,7 @@ import AgentRAGPlugin
 import AgentRulesPlugin
 import AutoTaskPlugin
 import ConversationTitlePlugin
+import EditorPanelPlugin
 import FileLogPlugin
 import GitPlugin
 import GitHubInsightPlugin
@@ -35,5 +36,11 @@ public enum LumiPluginBootstrap {
             recentProjects: recentProjects
         )
         AgentRulesRuntime.currentProjectPathProvider = currentProjectPath
+        EditorPanelPlugin.bootstrap(
+            persistenceRootURL: { AppConfig.getDBFolderURL() },
+            recentProjects: {
+                recentProjects().map { Project(name: $0.name, path: $0.path) }
+            }
+        )
     }
 }

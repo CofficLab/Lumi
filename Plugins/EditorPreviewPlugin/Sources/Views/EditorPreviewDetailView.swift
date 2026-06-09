@@ -1,5 +1,6 @@
 import AppKit
 import LumiCoreKit
+import LumiUI
 import SuperLogKit
 import HTMLPreviewKit
 import LumiPreviewKit

@@ -81,13 +81,17 @@ public actor VueEditorPlugin: SuperPlugin, SuperLog {
                 priority: 2,
                 makeView: { [weak self] in
                     guard let self else { return AnyView(Color.clear) }
-                    return self.makeOutlineRailView()
+                    return self.makeOutlineRailViewPrivate()
                 }
             )
         ]
     }
 
-    @MainActor private func makeOutlineRailView() -> AnyView {
+    @MainActor public func makeOutlineRailView() -> AnyView {
+        makeOutlineRailViewPrivate()
+    }
+
+    @MainActor private func makeOutlineRailViewPrivate() -> AnyView {
         if outlineViewModel == nil {
             outlineViewModel = VueOutlineViewModel()
         }

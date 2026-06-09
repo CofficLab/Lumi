@@ -7,6 +7,8 @@ public struct ListSwiftPackagesTool: SuperAgentTool {
     /// 暴露给 Agent 的工具名称。
     public let name = "list_xcode_packages"
 
+    public init() {}
+
     /// Package Service 实例
     private let packageService = XcodePackageService()
 

@@ -8,6 +8,11 @@ public struct BottomEditorProblemsPanelView: View {
     @ObservedObject var service: EditorService
     public var showsHeader: Bool = true
 
+    public init(service: EditorService, showsHeader: Bool = true) {
+        self._service = ObservedObject(wrappedValue: service)
+        self.showsHeader = showsHeader
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             if showsHeader {

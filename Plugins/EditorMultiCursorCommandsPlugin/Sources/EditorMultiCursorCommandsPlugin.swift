@@ -16,17 +16,6 @@ public actor EditorMultiCursorCommandsPlugin: SuperPlugin {
 
     public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor
-    public func configureRuntime(context: PluginRuntimeContext) {
-        context.registerEditorTextInputInstaller { textView, state in
-            guard let textView = textView as? TextView,
-                  let state = state as? EditorState else {
-                return
-            }
-            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
-        }
-    }
-
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         // TODO: 暂时停用 Editor 右键菜单命令

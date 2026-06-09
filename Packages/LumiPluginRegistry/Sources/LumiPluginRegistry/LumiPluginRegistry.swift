@@ -97,6 +97,7 @@ import DatabaseManagerPlugin
 import CodeReviewPlugin
 import AgentDelayMessagePlugin
 import AppIconDesignerPlugin
+import EditorPanelPlugin
 import LLMAvailabilityPlugin
 
 @MainActor
@@ -179,6 +180,7 @@ public enum LumiPluginRegistry {
         RAGPlugin.self,
         ConversationTitlePlugin.self,
         ConversationListPlugin.self,
+        EditorPanelPlugin.self,
         AutoTaskPlugin.self,
         GitHubInsightPlugin.self,
         IdleTimePlugin.self,

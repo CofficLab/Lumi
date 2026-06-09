@@ -1,3 +1,4 @@
+import EditorService
 import os
 import LumiCoreKit
 import SuperLogKit
@@ -26,6 +27,8 @@ public struct EditorFileTreeView: View, SuperLog {
 
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
+
+    public init() {}
 
     /// 打开文件任务，连续点击时取消较早的请求，避免乱序完成。
     @State private var openFileTask: Task<Void, Never>?
@@ -108,10 +111,10 @@ public struct EditorFileTreeView: View, SuperLog {
         editorContext.setFileTreeHighlightedFileURL(url)
 
         let projectPath = projectVM.currentProjectPath
+        editorContext.openFile(at: url)
+
         openFileTask = Task { @MainActor in
             await editorContext.refreshProjectContext(for: projectPath)
-            guard !Task.isCancelled else { return }
-            editorContext.openFile(at: url)
         }
     }
 

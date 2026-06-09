@@ -1,5 +1,6 @@
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// 文件信息横幅视图。

@@ -48,7 +48,10 @@ public struct BreadcrumbNavPathView: View {
         let fullPath = normalizedFile.path
         let cleanFull = fullPath.hasSuffix("/") ? String(fullPath.dropLast()) : fullPath
 
-        if let rawProjectPath = projectVM.currentProject?.path {
+        if let rawProjectPath = Optional(projectVM.currentProjectPath).flatMap({ path -> String? in
+            let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }) {
             // 标准化项目路径
             let normalizedProject = URL(fileURLWithPath: rawProjectPath).resolvingSymlinksInPath()
             let projectPath = normalizedProject.path

@@ -1,63 +1,150 @@
-import Combine
-import Foundation
+import AgentToolKit
+import EditorMultiCursorCommandsPlugin
+import EditorService
+import EditorTabStripPlugin
+import EditorXcodePlugin
+import LSPServiceEditorPlugin
 import LumiCoreKit
 import LumiUI
 import os
-import SuperLogKit
 import SwiftUI
 
-/// 代码编辑器
-public actor EditorPlugin: SuperPlugin, SuperLog {
-    /// 插件专用 Logger
-    public nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
-
-    public nonisolated static let emoji = "✏️"
-    public nonisolated static let verbose: Bool = false
-    public static let id: String = "LumiEditor"
-    public static let displayName: String = String(localized: "Code Editor", bundle: .module)
-    public static let description: String = String(localized: "Code editor with file tree", bundle: .module)
+/// Unified code editor plugin for the Lumi activity bar.
+public enum EditorPanelPlugin: LumiPlugin {
+    public static var verbose: Bool { false }
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
-    public static var category: PluginCategory { .editor }
-    public static var order: Int { 77 }
-    public nonisolated static let policy: PluginPolicy = .optIn
 
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = EditorPlugin()
-
-    // MARK: - UI Contributions
+    public static let info = LumiPluginInfo(
+        id: "LumiEditor",
+        displayName: String(localized: "Code Editor", bundle: .module),
+        description: String(
+            localized: "Code editor with file tree, LSP, and workspace panels.",
+            bundle: .module
+        ),
+        order: 77
+    )
 
     @MainActor
-    public func addPosterViews() -> [AnyView] {
+    private static var sharedCore: EditorCore?
+
+    @MainActor
+    public static func bootstrap(
+        persistenceRootURL: @escaping @Sendable () -> URL,
+        themeRegistry: LumiUIThemeRegistry = .shared,
+        recentProjects: @escaping @Sendable () -> [Project] = { [] }
+    ) {
+        let core = EditorCore()
+        sharedCore = core
+
+        AppProjectsVM.recentProjectsProvider = recentProjects
+
+        EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
+        EditorSettingsLifecycle.onReinstallPlugins = { registry in
+            Task {
+                await EditorExtensionsBootstrap.registerAll(into: registry)
+            }
+        }
+        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { _ in
+            themeRegistry.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
+        }
+        EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
+            registerSyntaxThemes(from: themeRegistry, into: registry)
+        }
+        EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
+            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+        }
+
+        core.reinstallExtensions()
+        EditorRuntimeBridge.configure(core: core)
+    }
+
+    @MainActor
+    public static func sharedEditorCore() -> EditorCore? {
+        sharedCore
+    }
+
+    @MainActor
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+        guard
+            let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self) as? LumiCurrentProjectPathStore,
+            let core = sharedCore
+        else {
+            return []
+        }
+
+        return [
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                EditorPanelHostView(projectPathStore: projectPathStore, editorCore: core)
+            }
+        ]
+    }
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            PluginPosterSupport.poster(
-                title: "代码编辑器",
-                subtitle: "文件树、源码编辑和 AI 聊天入口集中在同一个工作区。",
-                icon: Self.iconName,
-                accent: .indigo,
-                metrics: [
-                    PluginPosterSupport.metric("Tree", "文件树"),
-                    PluginPosterSupport.metric("AI", "聊天支持"),
-                ],
-                rows: ["项目文件树", "源码编辑", "命令面板"],
-                chips: ["编辑器", "项目", "AI"]
+            GetCurrentFileTool().asLumiAgentTool(),
+            SetCurrentFileTool().asLumiAgentTool(),
+            AddSwiftPackageTool().asLumiAgentTool(),
+            ListSwiftPackagesTool().asLumiAgentTool(),
+            GenerateXcodeProjectTool().asLumiAgentTool(),
+        ]
+    }
+
+    @MainActor
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.activeSectionID == info.id, let service = EditorRuntimeBridge.editorService else {
+            return []
+        }
+
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).lsp",
+                title: "LSP",
+                systemImage: "waveform.path.ecg",
+                placement: .trailing,
+                statusBarView: {
+                    LSPDiagnosticStatusBarItem()
+                }
+            ),
+            LumiStatusBarItem(
+                id: "\(info.id).cursor",
+                title: "Cursor",
+                systemImage: "cursorarrow",
+                placement: .trailing,
+                statusBarView: {
+                    EditorCursorStatusBarView(service: service)
+                }
             ),
         ]
     }
 
-    /// 面板视图：编辑器
     @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(
-            id: Self.id,
-            title: Self.displayName,
-            icon: Self.iconName,
-            showsProjectToolbar: true,
-            showChat: .narrow,
-            showsRail: true,
-            showsBottomPanel: true
-        ) {
-            AnyView(EditorPanelView())
+    private static func registerSyntaxThemes(
+        from themeRegistry: LumiUIThemeRegistry,
+        into registry: EditorExtensionRegistry
+    ) {
+        EditorBuiltinSyntaxThemes.registerAll(into: registry)
+        for contribution in themeRegistry.themes {
+            if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
+                registry.registerThemeContributor(contributor)
+            }
         }
+    }
+}
+
+private struct EditorCursorStatusBarView: View {
+    @ObservedObject var service: EditorService
+
+    var body: some View {
+        Text("Ln \(service.cursorLine + 1), Col \(service.cursorColumn + 1)")
+            .font(.caption)
+            .monospacedDigit()
     }
 }

@@ -59,6 +59,7 @@ public final class EditorService: ObservableObject {
     let editorExtensionRegistry: EditorExtensionRegistry
 
     private var activeSessionChangedObserver: ((EditorSession) -> Void)?
+    private var nestedChangeCancellables = Set<AnyCancellable>()
 
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
@@ -68,7 +69,19 @@ public final class EditorService: ObservableObject {
         self.editorExtensionRegistry = editorExtensionRegistry
         self.state = state
         self.sessionStore = sessionStore
+        installNestedObservableForwarding()
         installActiveSessionSyncBridge()
+    }
+
+    /// Forwards nested `ObservableObject` changes so `@EnvironmentObject` hosts re-render.
+    private func installNestedObservableForwarding() {
+        state.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &nestedChangeCancellables)
+
+        sessionStore.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &nestedChangeCancellables)
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务

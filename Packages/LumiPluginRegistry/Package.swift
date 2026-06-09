@@ -112,6 +112,7 @@ let package = Package(
         .package(path: "../../Plugins/CodeReviewPlugin"),
         .package(path: "../../Plugins/AgentDelayMessagePlugin"),
         .package(path: "../../Plugins/LLMAvailabilityPlugin"),
+        .package(path: "../../Plugins/EditorPanelPlugin"),
         .package(path: "../../Plugins/AppIconDesignerPlugin")
     ],
     targets: [
@@ -217,6 +218,7 @@ let package = Package(
                 .product(name: "CodeReviewPlugin", package: "CodeReviewPlugin"),
                 .product(name: "AgentDelayMessagePlugin", package: "AgentDelayMessagePlugin"),
                 .product(name: "LLMAvailabilityPlugin", package: "LLMAvailabilityPlugin"),
+                .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
                 .product(name: "AppIconDesignerPlugin", package: "AppIconDesignerPlugin")
             ]
         )

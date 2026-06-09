@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiCoreKit
+import LumiUI
 import GoEditorCore
 
 /// Go 构建输出面板视图

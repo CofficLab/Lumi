@@ -10,6 +10,8 @@ public struct LSPDiagnosticStatusBarItem: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     
     @StateObject private var diagnosticsManager = DiagnosticsManager()
+
+    public init() {}
     
     public var body: some View {
         HStack(spacing: 12) {

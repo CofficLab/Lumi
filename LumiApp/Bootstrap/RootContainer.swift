@@ -1,4 +1,5 @@
 import SwiftUI
+import EditorPanelPlugin
 import LumiCoreKit
 
 @MainActor
@@ -31,6 +32,7 @@ final class RootContainer: ObservableObject {
             self.chatCoreService.reloadPluginContributions(from: self.pluginService)
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
+            EditorPanelPlugin.sharedEditorCore()?.reinstallExtensions()
         }
     }
 }

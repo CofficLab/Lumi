@@ -756,6 +756,7 @@
       }
     },
     "Code editor with file tree" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -782,6 +783,9 @@
           }
         }
       }
+    },
+    "Code editor with file tree, LSP, and workspace panels." : {
+
     },
     "Command Palette" : {
       "localizations" : {
@@ -1734,6 +1738,9 @@
           }
         }
       }
+    },
+    "Explorer" : {
+
     },
     "File name" : {
       "extractionState" : "manual",
@@ -2801,6 +2808,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行 %lld"
+          }
+        }
+      }
+    },
+    "Ln %lld, Col %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ln %1$lld, Col %2$lld"
           }
         }
       }

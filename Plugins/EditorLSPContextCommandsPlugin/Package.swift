@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
-            exclude: ["Tests", "README.md", "Sources/EditorLSPContextCommandContributor.swift"],
+            exclude: ["Tests", "README.md"],
             sources: ["Sources"],
             resources: [
                 .process("Resources")

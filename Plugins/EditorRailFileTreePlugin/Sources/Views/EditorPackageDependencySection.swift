@@ -1,4 +1,5 @@
 import AppKit
+import EditorService
 import LumiCoreKit
 import SwiftUI
 

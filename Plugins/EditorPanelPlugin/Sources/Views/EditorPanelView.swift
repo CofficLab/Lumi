@@ -14,12 +14,16 @@ import UniformTypeIdentifiers
 /// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
 public struct EditorPanelView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var service: EditorService
 
     /// 便利访问
     private var editorState: EditorState { service.state }
+
+    private var projectRootPath: String? {
+        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : path
+    }
 
     /// 面板业务逻辑
     @StateObject private var panelService = EditorPanelService()
@@ -121,7 +125,7 @@ public struct EditorPanelView: View {
                                     target: target,
                                     highlightLine: highlightLine,
                                     service: service,
-                                    projectRootPath: self.projectVM.currentProject?.path,
+                                    projectRootPath: self.projectRootPath,
                                     currentProjectPath: self.projectVM.currentProjectPath
                                 )
                             }

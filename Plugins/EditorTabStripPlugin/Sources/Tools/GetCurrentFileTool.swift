@@ -19,6 +19,8 @@ public struct GetCurrentFileTool: SuperAgentTool, SuperLog {
         }
     }
 
+    public init() {}
+
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",

@@ -9,6 +9,8 @@ public struct GenerateXcodeProjectTool: SuperAgentTool {
     /// 暴露给 Agent 的工具名称。
     public let name = "generate_xcode_project"
 
+    public init() {}
+
     /// Generator 实例
     private let generator = XcodeProjectGenerator()
 

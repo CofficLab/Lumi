@@ -1,16 +1,13 @@
-import Testing
 @testable import EditorPanelPlugin
+import Testing
 
-@Test func packageLoads() async throws {
-    #expect(EditorPlugin.id == "LumiEditor")
+@Test func editorPanelPluginInfo() async throws {
+    #expect(EditorPanelPlugin.info.id == "LumiEditor")
 }
 
-@MainActor
-@Test func editorContainerShowsBottomPanel() async throws {
-    let container = EditorPlugin.shared.addViewContainer()
-
-    #expect(container?.showsProjectToolbar == true)
-    #expect(container?.showChat == .narrow)
-    #expect(container?.showsRail == true)
-    #expect(container?.showsBottomPanel == true)
+@Test func editorPanelPluginViewContainerRequiresBootstrap() async throws {
+    let containers = await EditorPanelPlugin.viewContainers(
+        context: LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
+    )
+    #expect(containers.isEmpty)
 }
