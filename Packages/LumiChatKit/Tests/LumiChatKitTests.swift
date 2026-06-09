@@ -9,11 +9,11 @@ import Testing
         .appendingPathComponent("LumiChatKitTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let service = LumiChatService(configuration: .coreDatabase(directory: directory))
+    let service = ChatService(configuration: .coreDatabase(directory: directory))
     let id = service.createConversation(title: "Test")
     await service.send("Hello", in: id)
 
-    let reloaded = LumiChatService(configuration: .coreDatabase(directory: directory))
+    let reloaded = ChatService(configuration: .coreDatabase(directory: directory))
     #expect(reloaded.conversations.count == 1)
     #expect(reloaded.messages(for: id).count == 2)
     #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("Lumi.db").path))
@@ -25,13 +25,13 @@ import Testing
         .appendingPathComponent("LumiChatKitTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let service = LumiChatService(configuration: .coreDatabase(directory: directory))
+    let service = ChatService(configuration: .coreDatabase(directory: directory))
     let id = service.createConversation(title: "Verbose")
     service.setLanguage(.english, for: id)
     service.setAutomationLevel(.build, for: id)
     service.setVerbosity(.detailed, for: id)
 
-    let reloaded = LumiChatService(configuration: .coreDatabase(directory: directory))
+    let reloaded = ChatService(configuration: .coreDatabase(directory: directory))
     #expect(reloaded.language(for: id) == .english)
     #expect(reloaded.automationLevel(for: id) == .build)
     #expect(reloaded.verbosity(for: id) == .detailed)

@@ -5,7 +5,7 @@ import LumiPluginRegistry
 
 @MainActor
 final class ChatCoreService {
-    let chatService: LumiChatService
+    let chatService: ChatService
     let projectPathStore: LumiCurrentProjectPathStore
     private let toolService: ToolService
 
@@ -18,7 +18,7 @@ final class ChatCoreService {
         self.toolService = toolService
         self.projectPathStore = projectPathStore
         toolService.projectPathProvider = projectPathStore
-        self.chatService = LumiChatService(
+        self.chatService = ChatService(
             configuration: .coreDatabase(directory: lumiCoreService.coreDatabaseDirectory)
         )
         LumiPluginBootstrap.configurePluginRuntimes(

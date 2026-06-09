@@ -26,7 +26,7 @@ import Testing
         .appendingPathComponent("ConversationListPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: databaseDirectory) }
 
-    let chatService = LumiChatService(
+    let chatService = ChatService(
         configuration: .coreDatabase(directory: databaseDirectory)
     )
     let context = LumiPluginContext(

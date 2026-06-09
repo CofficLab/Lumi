@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 
 public struct ChatPanelView: View {
     @LumiTheme private var theme
-    @ObservedObject private var chatService: LumiChatService
+    @ObservedObject private var chatService: ChatService
     private let currentProjectPath: String?
     private let localStore: LocalStore?
 
@@ -22,7 +22,7 @@ public struct ChatPanelView: View {
     @State private var imageAttachments: [LumiImageAttachment] = []
     @State private var showCommandSuggestions = false
     public init(
-        chatService: LumiChatService,
+        chatService: ChatService,
         currentProjectPath: String? = nil,
         databaseDirectory: URL? = nil
     ) {

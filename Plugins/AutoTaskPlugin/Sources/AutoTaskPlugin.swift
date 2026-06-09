@@ -41,7 +41,7 @@ public enum AutoTaskPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == LumiChatPanelSection.id,
+        guard context.activeSectionID == ChatPanelSection.id,
               let chatService = context.resolve((any LumiChatServicing).self)
         else {
             return []

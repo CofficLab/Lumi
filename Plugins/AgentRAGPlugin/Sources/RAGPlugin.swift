@@ -23,7 +23,7 @@ public enum RAGPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == LumiChatPanelSection.id else {
+        guard context.activeSectionID == ChatPanelSection.id else {
             return []
         }
 

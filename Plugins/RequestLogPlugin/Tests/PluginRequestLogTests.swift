@@ -13,7 +13,7 @@ import Testing
 
 @MainActor
 @Test func requestLogPluginContributesSendMiddleware() {
-    let context = LumiPluginContext(activeSectionID: LumiChatPanelSection.id, activeSectionTitle: "Chat")
+    let context = LumiPluginContext(activeSectionID: ChatPanelSection.id, activeSectionTitle: "Chat")
     let middlewares = RequestLogPlugin.sendMiddlewares(context: context)
     #expect(middlewares.count == 1)
 }
@@ -21,7 +21,7 @@ import Testing
 @MainActor
 @Test func requestLogPluginContributesStatusBarOnChatPanel() {
     let context = LumiPluginContext(
-        activeSectionID: LumiChatPanelSection.id,
+        activeSectionID: ChatPanelSection.id,
         activeSectionTitle: "Chat",
         dependencies: LumiPluginDependencies { dependencies in
             dependencies.register((any LumiChatServicing).self, MockChatService())

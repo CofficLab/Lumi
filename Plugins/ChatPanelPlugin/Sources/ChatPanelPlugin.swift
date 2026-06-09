@@ -8,7 +8,7 @@ public enum ChatPanelPlugin: LumiPlugin {
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static let info = LumiPluginInfo(
-        id: LumiChatPanelSection.id,
+        id: ChatPanelSection.id,
         displayName: String(localized: "Chat", bundle: .module),
         description: String(localized: "Conversation list with chat surface", bundle: .module),
         order: 78
@@ -52,7 +52,7 @@ public enum ChatPanelPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                if let chatService = context.resolve(LumiChatServicing.self) as? LumiChatService {
+                if let chatService = context.resolve(LumiChatServicing.self) as? ChatService {
                     let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath
                     ChatPanelView(
                         chatService: chatService,
