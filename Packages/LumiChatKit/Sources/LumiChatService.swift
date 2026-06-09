@@ -20,6 +20,7 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
     private var providersByID: [String: any LumiLLMProvider] = [:]
     private var middlewares: [any LumiSendMiddleware] = []
     private weak var toolService: (any LumiToolServicing)?
+    private var projectPathProvider: (any LumiCurrentProjectPathProviding)?
     private let store: LumiChatStore
     private let statusState = LumiConversationStatusState()
     private var activeTasksByConversationID: [UUID: Task<Void, Never>] = [:]
@@ -75,6 +76,10 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
 
     public func registerToolService(_ toolService: (any LumiToolServicing)?) {
         self.toolService = toolService
+    }
+
+    public func registerProjectPathProvider(_ provider: any LumiCurrentProjectPathProviding) {
+        self.projectPathProvider = provider
     }
 
     public func isSending(for conversationID: UUID?) -> Bool {
@@ -530,7 +535,11 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         _ messages: [LumiChatMessage],
         conversationID: UUID
     ) async -> LumiSendContext {
-        var context = LumiSendContext(conversationID: conversationID, messages: messages)
+        var context = LumiSendContext(
+            conversationID: conversationID,
+            messages: messages,
+            currentProjectPath: projectPathProvider?.currentProjectPath ?? ""
+        )
         for middleware in middlewares {
             do {
                 context = try await middleware.prepare(context)
