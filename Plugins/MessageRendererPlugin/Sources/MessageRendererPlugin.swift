@@ -17,6 +17,24 @@ public enum MessageRendererPlugin: LumiPlugin {
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
         [
             LumiMessageRendererItem(
+                id: "core-turn-completed",
+                order: 330,
+                canRender: { $0.renderKind == "turn-completed" || $0.content == LumiChatMarkers.turnCompleted },
+                render: { message, _ in
+                    TurnCompletedDividerView(message: message)
+                }
+            ),
+            LumiMessageRendererItem(
+                id: "core-status-message",
+                order: 320,
+                canRender: {
+                    $0.role == .status && $0.renderKind != "turn-completed" && $0.content != LumiChatMarkers.turnCompleted
+                },
+                render: { message, showRawMessage in
+                    StatusMessageView(message: message)
+                }
+            ),
+            LumiMessageRendererItem(
                 id: "core-error-message",
                 order: 300,
                 canRender: { $0.role == .error || $0.isError },

@@ -1,3 +1,4 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -14,6 +15,45 @@ public enum ChatPanelPlugin: LumiPlugin {
     )
 
     @MainActor
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.activeSectionID == info.id,
+              let chatService = context.resolve(LumiChatServicing.self)
+        else {
+            return []
+        }
+
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).timeline",
+                title: "Conversation Timeline",
+                systemImage: "timeline.selection",
+                placement: .trailing,
+                statusBarView: {
+                    ChatTimelineStatusBarView(chatService: chatService)
+                }
+            ),
+            LumiStatusBarItem(
+                id: "\(info.id).request-log",
+                title: "Request Log",
+                systemImage: "doc.text.magnifyingglass",
+                placement: .trailing,
+                statusBarView: {
+                    ChatRequestLogStatusBarView()
+                }
+            ),
+            LumiStatusBarItem(
+                id: "\(info.id).tools",
+                title: "Available Tools",
+                systemImage: "wrench.and.screwdriver",
+                placement: .trailing,
+                statusBarView: {
+                    ChatAvailableToolsStatusBarView(chatService: chatService)
+                }
+            )
+        ]
+    }
+
+    @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
@@ -21,7 +61,7 @@ public enum ChatPanelPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                if let chatService = context.resolve(LumiChatServicing.self) {
+                if let chatService = context.resolve(LumiChatServicing.self) as? LumiChatService {
                     ChatPanelView(chatService: chatService)
                 } else {
                     MissingChatServiceView()

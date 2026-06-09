@@ -6,6 +6,7 @@ struct ChatProviderPicker: View {
     @LumiTheme private var theme
 
     let chatService: any LumiChatServicing
+    let conversationID: UUID?
     let onChange: () -> Void
     @State private var isPresented = false
 
@@ -33,6 +34,7 @@ struct ChatProviderPicker: View {
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ChatModelSelectorView(
                 chatService: chatService,
+                conversationID: conversationID,
                 onChange: onChange,
                 onClose: {
                     isPresented = false
@@ -43,13 +45,17 @@ struct ChatProviderPicker: View {
     }
 
     private var providerLabel: String {
-        guard let providerID = chatService.selectedProviderID,
+        if chatService.routingMode == .auto {
+            return "Auto · Router"
+        }
+
+        guard let providerID = chatService.providerID(for: conversationID),
               let provider = chatService.providerInfos.first(where: { $0.id == providerID })
         else {
             return "Local Placeholder"
         }
 
-        if let model = chatService.selectedModel {
+        if let model = chatService.modelName(for: conversationID) {
             return "\(provider.displayName) · \(model)"
         }
         return provider.displayName

@@ -9,6 +9,8 @@ struct ChatMessageBubble: View {
     let renderer: LumiMessageRendererItem?
     @Binding var showRawMessage: Bool
     let onUseAsDraft: () -> Void
+    let onResend: (() -> Void)?
+    let onDelete: () -> Void
 
     var body: some View {
         content
@@ -27,6 +29,18 @@ struct ChatMessageBubble: View {
                     onUseAsDraft()
                 } label: {
                     Label("Use as Draft", systemImage: "arrow.uturn.backward")
+                }
+
+                if let onResend {
+                    Button(action: onResend) {
+                        Label("Resend", systemImage: "arrow.clockwise")
+                    }
+                }
+            }
+
+            if message.role != .status {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete", systemImage: "trash")
                 }
             }
 
@@ -116,6 +130,8 @@ struct ChatMessageBubble: View {
             "Tool"
         case .error:
             "Error"
+        case .status:
+            "Status"
         }
     }
 

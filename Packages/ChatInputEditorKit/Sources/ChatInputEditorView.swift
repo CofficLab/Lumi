@@ -19,6 +19,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onArrowUp: (() -> Void)?
     private let onArrowDown: (() -> Void)?
     private let onEnter: (() -> Void)?
+    private let onEscape: (() -> Void)?
     private let onFileDrop: ((URL) -> Void)?
 
     public init(
@@ -32,6 +33,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onArrowUp: (() -> Void)? = nil,
         onArrowDown: (() -> Void)? = nil,
         onEnter: (() -> Void)? = nil,
+        onEscape: (() -> Void)? = nil,
         onFileDrop: ((URL) -> Void)? = nil,
         isFocused: Binding<Bool>,
         cursorPosition: Binding<Int>,
@@ -50,6 +52,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self.onArrowUp = onArrowUp
         self.onArrowDown = onArrowDown
         self.onEnter = onEnter
+        self.onEscape = onEscape
         self.onFileDrop = onFileDrop
     }
 
@@ -226,6 +229,11 @@ extension ChatInputEditorView {
 
         @MainActor
         func handleKeyDown(_ event: NSEvent) -> Bool {
+            if event.keyCode == 53, let onEscape = parent.onEscape {
+                onEscape()
+                return true
+            }
+
             guard ChatInputEditorRules.shouldHandleReturnKey(
                 keyCode: event.keyCode,
                 charactersIgnoringModifiers: event.charactersIgnoringModifiers,

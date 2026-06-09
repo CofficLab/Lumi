@@ -26,6 +26,8 @@ struct CoreMessageView: View {
                 utilityContent(tint: theme.textSecondary)
             case .error:
                 utilityContent(tint: theme.error)
+            case .status:
+                EmptyView()
             }
 
             if showRawMessage {
@@ -77,21 +79,7 @@ struct CoreMessageView: View {
 
     @ViewBuilder
     private var assistantContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideAssistantBody {
-                MarkdownBlockRenderer(markdown: message.content)
-                    .textSelection(.enabled)
-                    .font(.appBody)
-            }
-
-            if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-                ToolCallRowsView(toolCalls: toolCalls)
-                    .padding(.top, shouldHideAssistantBody ? 0 : 4)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 2)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        CollapsibleAssistantContent(message: message, shouldHideAssistantBody: shouldHideAssistantBody)
     }
 
     @ViewBuilder
@@ -198,6 +186,8 @@ struct CoreMessageView: View {
             "System"
         case .error:
             "Error"
+        case .status:
+            "Status"
         }
     }
 
@@ -213,6 +203,8 @@ struct CoreMessageView: View {
             "gearshape"
         case .error:
             "exclamationmark.triangle.fill"
+        case .status:
+            "ellipsis.message"
         }
     }
 
@@ -228,6 +220,8 @@ struct CoreMessageView: View {
             theme.textSecondary
         case .error:
             theme.error
+        case .status:
+            theme.textSecondary
         }
     }
 
@@ -646,6 +640,98 @@ private struct ToolSubtleCardModifier: ViewModifier {
 private extension View {
     func toolSubtleCard() -> some View {
         modifier(ToolSubtleCardModifier())
+    }
+}
+
+struct TurnCompletedDividerView: View {
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
+
+    var body: some View {
+        AppLabeledDivider(
+            title: "结束",
+            detail: message.createdAt.formatted(date: .omitted, time: .standard)
+        )
+        .padding(.vertical, 8)
+    }
+}
+
+struct StatusMessageView: View {
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.75)
+
+            Text(message.content)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .lineLimit(3)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 520, alignment: .leading)
+        .background(theme.surface.opacity(0.55), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+private struct CollapsibleAssistantContent: View {
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
+    let shouldHideAssistantBody: Bool
+    @State private var isCollapsed = true
+
+    private let collapseLineLimit = 40
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let thinking = message.metadata["thinkingContent"], !thinking.isEmpty {
+                DisclosureGroup("Thinking") {
+                    Text(thinking)
+                        .font(.appMonoCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .textSelection(.enabled)
+                }
+                .font(.appCaptionEmphasized)
+            }
+
+            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideAssistantBody {
+                let lines = message.content.components(separatedBy: .newlines)
+                let shouldCollapse = lines.count > collapseLineLimit
+                let rendered = shouldCollapse && isCollapsed
+                    ? lines.prefix(collapseLineLimit).joined(separator: "\n") + "\n..."
+                    : message.content
+
+                MarkdownBlockRenderer(markdown: rendered)
+                    .textSelection(.enabled)
+                    .font(.appBody)
+
+                if shouldCollapse {
+                    Button(isCollapsed ? "Show more" : "Show less") {
+                        isCollapsed.toggle()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.appCaption)
+                    .foregroundColor(theme.primary)
+                }
+            }
+
+            if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+                ToolCallRowsView(toolCalls: toolCalls)
+                    .padding(.top, shouldHideAssistantBody ? 0 : 4)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

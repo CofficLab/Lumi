@@ -1,3 +1,4 @@
+import ChatInputEditorKit
 import LumiUI
 import SwiftUI
 
@@ -5,6 +6,10 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
     @LumiTheme private var theme
 
     @Binding var text: String
+    @Binding var inputHeight: CGFloat
+    @Binding var isInputFocused: Bool
+    @Binding var inputCursorPosition: Int
+    @Binding var isImageDragHovering: Bool
     let isSending: Bool
     let hasConversation: Bool
     @ViewBuilder let languagePicker: () -> LanguagePicker
@@ -14,21 +19,27 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
     let onScreenshot: () -> Void
     let onAttachImage: () -> Void
     let onSend: () -> Void
+    let onStop: () -> Void
+    let onEscape: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            TextField("Message", text: $text, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.appBody)
-                .foregroundColor(theme.textPrimary)
-                .lineLimit(1...6)
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
-                .disabled(isSending)
-                .onSubmit {
-                    sendIfPossible()
-                }
+            ChatInputEditorView(
+                text: $text,
+                height: $inputHeight,
+                onSubmit: sendIfPossible,
+                onEnter: sendIfPossible,
+                onEscape: onEscape,
+                onFileDrop: { _ in onAttachImage() },
+                isFocused: $isInputFocused,
+                cursorPosition: $inputCursorPosition,
+                isImageDragHovering: $isImageDragHovering
+            )
+            .frame(height: inputHeight)
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .disabled(isSending && !canSend)
+            .opacity(isSending && !canSend ? 0.7 : 1)
 
             Rectangle()
                 .fill(theme.appSubtleBorder)
@@ -47,10 +58,13 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
 
                 Spacer(minLength: 10)
 
-                ChatComposerSendButton(isSending: isSending, canSend: canSend) {
-                    sendIfPossible()
+                if isSending {
+                    ChatComposerStopButton(action: onStop)
+                        .help("Stop")
+                } else {
+                    ChatComposerSendButton(isSending: false, canSend: canSend, action: sendIfPossible)
+                        .help("Send")
                 }
-                .help(isSending ? "Sending" : "Send")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -59,11 +73,11 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
     }
 
     private var canSend: Bool {
-        !isSending && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        hasConversation && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func sendIfPossible() {
-        guard canSend else {
+        guard canSend, !isSending else {
             return
         }
         onSend()
@@ -111,5 +125,22 @@ private struct ChatComposerSendButton: View {
 
     private var sendBackground: Color {
         canSend ? theme.primary : theme.textPrimary.opacity(0.05)
+    }
+}
+
+private struct ChatComposerStopButton: View {
+    @LumiTheme private var theme
+
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "stop.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 40, height: 40)
+                .background(Color.red.opacity(0.88), in: Circle())
+        }
+        .buttonStyle(.plain)
     }
 }

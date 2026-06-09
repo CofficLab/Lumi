@@ -4,6 +4,23 @@ import NetworkManagerPlugin
 import ChatPanelPlugin
 import LLMProviderOpenAIPlugin
 import LLMProviderZhipuPlugin
+import LLMProviderAiRouterPlugin
+import LLMProviderAliyunPlugin
+import LLMProviderAnthropicPlugin
+import LLMProviderDeepSeekPlugin
+import LLMProviderFeifeimiaoPlugin
+import LLMProviderFlyMuxPlugin
+import LLMProviderFreeModelPlugin
+import LLMProviderHappyCodePlugin
+import LLMProviderHyperAPIPlugin
+import LLMProviderLPgptPlugin
+import LLMProviderMegaLLMPlugin
+import LLMProviderOpenRouterPlugin
+import LLMProviderXiaomiPlugin
+import LLMProviderXybbzPlugin
+import LLMProviderCodexPlugin
+import LLMProviderMLXPlugin
+import ChatMiddlewarePlugin
 import ProjectsPlugin
 import AppManagerPlugin
 import DiskManagerPlugin
@@ -57,11 +74,28 @@ public enum LumiPluginRegistry {
         ChatPanelPlugin.self,
         OpenAIPlugin.self,
         ZhipuPlugin.self,
+        AiRouterPlugin.self,
+        AliyunPlugin.self,
+        AnthropicPlugin.self,
+        DeepSeekPlugin.self,
+        FeifeimiaoPlugin.self,
+        FlyMuxPlugin.self,
+        FreeModelPlugin.self,
+        HappyCodePlugin.self,
+        HyperAPIPlugin.self,
+        LPgptPlugin.self,
+        MegaLLMPlugin.self,
+        OpenRouterPlugin.self,
+        XiaomiPlugin.self,
+        XybbzPlugin.self,
+        CodexLumiPlugin.self,
+        MLXLumiPlugin.self,
         AppManagerPlugin.self,
         DiskManagerPlugin.self,
         PortManagerPlugin.self,
         ToolCorePlugin.self,
         MessageRendererPlugin.self,
+        ChatMiddlewarePlugin.self,
         ProjectsPlugin.self
     ]
 }

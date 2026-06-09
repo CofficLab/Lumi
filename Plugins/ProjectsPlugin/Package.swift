@@ -14,14 +14,16 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI")
+        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Plugins/ChatMiddlewarePlugin")
     ],
     targets: [
         .target(
             name: "ProjectsPlugin",
             dependencies: [
                 "LumiCoreKit",
-                "LumiUI"
+                "LumiUI",
+                .product(name: "ChatMiddlewarePlugin", package: "ChatMiddlewarePlugin")
             ]
         ),
         .testTarget(

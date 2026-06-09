@@ -23,7 +23,9 @@ public enum ToolCorePlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
             ListDirectoryTool(),
-            ReadFileTool()
+            ReadFileTool(),
+            LumiWriteFileTool(),
+            LumiShellTool()
         ]
     }
 }

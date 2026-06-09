@@ -38,6 +38,8 @@ let package = Package(
                 "Sources/ToolCorePlugin.swift",
                 "Sources/Tools/ListDirectoryTool.swift",
                 "Sources/Tools/ReadFileTool.swift",
+                "Sources/Tools/LumiShellTool.swift",
+                "Sources/Tools/LumiWriteFileTool.swift",
             ],
             resources: [
                 .process("Resources")

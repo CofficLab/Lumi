@@ -1,3 +1,4 @@
+import ChatMiddlewarePlugin
 import LumiCoreKit
 
 public enum ProjectsPlugin: LumiPlugin {

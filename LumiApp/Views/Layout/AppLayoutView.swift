@@ -49,7 +49,8 @@ struct AppLayoutView: View {
                 pluginService: pluginService,
                 activeID: activeID,
                 activeTitle: activeTitle,
-                lumiUIService: lumiUIService
+                lumiUIService: lumiUIService,
+                chatService: chatService
             )
         }
         .frame(minWidth: 860, minHeight: 560)

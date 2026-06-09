@@ -236,6 +236,9 @@
         }
       }
     },
+    "Show less" : {
+
+    },
     "Show Less" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -264,6 +267,9 @@
           }
         }
       }
+    },
+    "Show more" : {
+
     },
     "Show More" : {
       "extractionState" : "stale",
@@ -380,6 +386,9 @@
           }
         }
       }
+    },
+    "Thinking" : {
+
     },
     "Tool" : {
       "localizations" : {

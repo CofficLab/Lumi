@@ -1,13 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "(%lld)" : {
+
+    },
     "%lld" : {
+
+    },
+    "%lld models" : {
 
     },
     "Active" : {
 
     },
+    "Approve" : {
+
+    },
+    "Approve high-risk tool?" : {
+
+    },
     "Ask a question, paste context, or describe the task you want Lumi to handle." : {
+
+    },
+    "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing." : {
 
     },
     "Cancel" : {
@@ -69,11 +84,27 @@
     "Delete Conversation" : {
 
     },
+    "Enable automatic routing" : {
+
+    },
     "Hide Raw Message" : {
 
     },
-    "Message" : {
+    "Load earlier messages" : {
 
+    },
+    "Lumi will choose a provider and model based on tools, message size, and availability." : {
+
+    },
+    "Messages: %lld, system prompt: %lld chars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Messages: %1$lld, system prompt: %2$lld chars"
+          }
+        }
+      }
     },
     "New Chat" : {
 
@@ -104,6 +135,15 @@
     "Providers" : {
 
     },
+    "Registered Providers" : {
+
+    },
+    "Reject" : {
+
+    },
+    "Resend" : {
+
+    },
     "Search models or providers..." : {
 
     },
@@ -113,13 +153,13 @@
     "Send" : {
 
     },
-    "Sending" : {
-
-    },
     "Show Raw Message" : {
 
     },
     "Start a conversation" : {
+
+    },
+    "Stop" : {
 
     },
     "Thinking" : {
@@ -128,7 +168,13 @@
     "This conversation and its messages will be removed." : {
 
     },
+    "Usage Signals" : {
+
+    },
     "Use as Draft" : {
+
+    },
+    "Waiting to Send" : {
 
     },
     "自动化程度" : {

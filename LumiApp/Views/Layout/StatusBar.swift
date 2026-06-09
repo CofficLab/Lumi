@@ -9,6 +9,7 @@ struct StatusBar: View {
     let activeID: String
     let activeTitle: String
     let lumiUIService: LumiUIService
+    let chatService: any LumiChatServicing
 
     var body: some View {
         let context = LumiPluginContext(
@@ -16,6 +17,7 @@ struct StatusBar: View {
             activeSectionTitle: activeTitle,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiThemeServicing.self, lumiUIService)
+                dependencies.register(LumiChatServicing.self, chatService)
             }
         )
         let items = pluginService.statusBarItems(context: context)

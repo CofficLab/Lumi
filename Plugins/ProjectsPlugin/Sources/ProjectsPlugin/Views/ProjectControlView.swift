@@ -1,3 +1,4 @@
+import ChatMiddlewarePlugin
 import LumiUI
 import SwiftUI
 
@@ -40,6 +41,16 @@ struct ProjectControlView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ProjectsPopoverView(store: store)
         }
+        .onAppear {
+            syncProjectPath(store.currentProject?.path)
+        }
+        .onChange(of: store.currentProject?.path) { _, newPath in
+            syncProjectPath(newPath)
+        }
         .accessibilityLabel("Projects")
+    }
+
+    private func syncProjectPath(_ path: String?) {
+        ChatMiddlewareRuntime.currentProjectPath.set(path ?? "")
     }
 }

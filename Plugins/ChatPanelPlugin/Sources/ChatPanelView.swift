@@ -1,25 +1,34 @@
+import AppKit
+import ChatInputEditorKit
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 public struct ChatPanelView: View {
     @LumiTheme private var theme
-    private let chatService: any LumiChatServicing
+    @ObservedObject private var chatService: LumiChatService
 
     @State private var draft = ""
-    @State private var refreshToken = 0
     @State private var rawMessageIDs: Set<UUID> = []
-    @State private var isSending = false
-
-    public init(chatService: any LumiChatServicing) {
+    @State private var oldestVisibleMessageID: UUID?
+    @State private var inputHeight: CGFloat = ChatInputEditorView.minHeight
+    @State private var isInputFocused = false
+    @State private var inputCursorPosition = 0
+    @State private var isImageDragHovering = false
+    @State private var imageAttachments: [LumiImageAttachment] = []
+    @State private var showCommandSuggestions = false
+    public init(chatService: LumiChatService) {
         self.chatService = chatService
     }
 
     public var body: some View {
-        let _ = refreshToken
         let conversations = chatService.conversations
         let selectedID = chatService.selectedConversationID ?? conversations.first?.id
-        let messages = selectedID.map { chatService.messages(for: $0) } ?? []
+        let messages = selectedID.map { displayedMessages(for: $0) } ?? []
+        let isSending = chatService.isSending(for: selectedID)
+        let pending = selectedID.map { pendingMessages(for: $0) } ?? []
 
         HStack(spacing: 0) {
             ChatConversationListView(
@@ -44,54 +53,97 @@ public struct ChatPanelView: View {
                 ChatMessageListView(
                     messages: messages,
                     isSending: isSending,
+                    hasEarlierMessages: selectedID.map {
+                        chatService.hasEarlierMessages(for: $0, beforeMessageID: oldestVisibleMessageID)
+                    } ?? false,
                     rendererForMessage: { chatService.renderer(for: $0) },
                     rawMessageBinding: rawMessageBinding(for:),
                     onUseAsDraft: { message in
                         draft = message.content
-                    }
+                    },
+                    onResend: { message in
+                        guard let selectedID else { return }
+                        Task {
+                            await chatService.resendMessage(id: message.id, in: selectedID)
+                        }
+                    },
+                    onDelete: { message in
+                        guard let selectedID else { return }
+                        chatService.deleteMessage(id: message.id, in: selectedID)
+                    },
+                    onLoadEarlier: loadEarlierMessages,
+                    onQuickStart: { prompt in
+                        draft = prompt
+                        send(selectedID: selectedID)
+                    },
+                    automationLevel: chatService.automationLevel(for: selectedID)
                 )
 
                 ChatDivider(axis: .horizontal)
 
+                if !pending.isEmpty {
+                    ChatPendingMessagesView(
+                        messages: pending,
+                        onRemove: { chatService.removePendingMessage(id: $0) }
+                    )
+                    ChatDivider(axis: .horizontal)
+                }
+
+                ChatAttachmentPreviewView(
+                    attachments: imageAttachments,
+                    onRemove: { id in
+                        imageAttachments.removeAll { $0.id == id }
+                    }
+                )
+
+                ChatCommandSuggestionsView(
+                    suggestions: ChatSlashCommand.suggestions(for: draft),
+                    isVisible: showCommandSuggestions,
+                    onSelect: { suggestion in
+                        handleSlashCommand(suggestion, selectedID: selectedID)
+                    }
+                )
+                .padding(.horizontal, 12)
+                .padding(.bottom, 4)
+
                 ChatComposerView(
                     text: $draft,
+                    inputHeight: $inputHeight,
+                    isInputFocused: $isInputFocused,
+                    inputCursorPosition: $inputCursorPosition,
+                    isImageDragHovering: $isImageDragHovering,
                     isSending: isSending,
                     hasConversation: selectedID != nil || !conversations.isEmpty,
                     languagePicker: {
                         ChatLanguagePicker(
                             selectedLanguage: chatService.language(for: selectedID),
-                            onSelect: { language in
-                                chatService.setLanguage(language, for: selectedID)
-                                refresh()
-                            }
+                            onSelect: { chatService.setLanguage($0, for: selectedID) }
                         )
                     },
                     automationPicker: {
                         ChatAutomationLevelPicker(
                             selectedLevel: chatService.automationLevel(for: selectedID),
-                            onSelect: { level in
-                                chatService.setAutomationLevel(level, for: selectedID)
-                                refresh()
-                            }
+                            onSelect: { chatService.setAutomationLevel($0, for: selectedID) }
                         )
                     },
                     providerPicker: {
-                        ChatProviderPicker(chatService: chatService, onChange: refresh)
+                        ChatProviderPicker(
+                            chatService: chatService,
+                            conversationID: selectedID,
+                            onChange: {}
+                        )
                     },
                     verbosityPicker: {
                         ChatVerbosityPicker(
                             selectedLevel: chatService.verbosity(for: selectedID),
-                            onSelect: { level in
-                                chatService.setVerbosity(level, for: selectedID)
-                                refresh()
-                            }
+                            onSelect: { chatService.setVerbosity($0, for: selectedID) }
                         )
                     },
-                    onScreenshot: {},
-                    onAttachImage: {},
-                    onSend: {
-                        send(selectedID: selectedID)
-                    }
+                    onScreenshot: { captureScreenshot() },
+                    onAttachImage: { selectImageAttachment() },
+                    onSend: { send(selectedID: selectedID) },
+                    onStop: { chatService.cancelSending(for: selectedID) },
+                    onEscape: { chatService.cancelSending(for: selectedID) }
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -101,45 +153,171 @@ public struct ChatPanelView: View {
         .onAppear {
             ensureSelection(conversations: conversations)
         }
+        .onChange(of: selectedID) { _, _ in
+            oldestVisibleMessageID = nil
+        }
+        .onChange(of: draft) { _, newValue in
+            showCommandSuggestions = newValue.hasPrefix("/")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiFocusChatInput)) { _ in
+            isInputFocused = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiSendChatMessage)) { _ in
+            send(selectedID: selectedID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiStopChatGeneration)) { _ in
+            chatService.cancelSending(for: selectedID)
+        }
+        .alert(
+            "Approve high-risk tool?",
+            isPresented: Binding(
+                get: { chatService.pendingToolConfirmation != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        chatService.rejectPendingTool()
+                    }
+                }
+            ),
+            presenting: chatService.pendingToolConfirmation
+        ) { confirmation in
+            Button("Approve", role: .none) {
+                chatService.approvePendingTool()
+            }
+            Button("Reject", role: .cancel) {
+                chatService.rejectPendingTool()
+            }
+        } message: { confirmation in
+            Text(confirmation.displayDescription)
+        }
+    }
+
+    private func displayedMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        if let oldestVisibleMessageID {
+            return chatService.visibleMessages(
+                for: conversationID,
+                limit: 10,
+                beforeMessageID: oldestVisibleMessageID
+            ) + chatService.displayMessages(for: conversationID).filter { $0.role == .status }
+        }
+
+        let persisted = chatService.messages(for: conversationID).filter {
+            $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+        }
+        let page = persisted.suffix(10)
+        return Array(page) + chatService.displayMessages(for: conversationID).filter { $0.role == .status }
+    }
+
+    private func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {
+        chatService.pendingMessages.filter { $0.conversationID == conversationID }
+    }
+
+    private func loadEarlierMessages() {
+        guard let selectedID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
+            return
+        }
+        let persisted = chatService.messages(for: selectedID).filter { $0.role != .tool && $0.role != .status }
+        if let oldestVisibleMessageID {
+            if let index = persisted.firstIndex(where: { $0.id == oldestVisibleMessageID }), index > 0 {
+                self.oldestVisibleMessageID = persisted[max(0, index - 10)].id
+            }
+        } else if let first = persisted.first {
+            oldestVisibleMessageID = first.id
+        }
     }
 
     private func createConversation() {
         _ = chatService.createConversation(title: nil)
-        refresh()
     }
 
     private func selectConversation(_ id: UUID) {
         chatService.selectConversation(id: id)
-        refresh()
+        oldestVisibleMessageID = nil
     }
 
     private func deleteConversation(_ id: UUID) {
         chatService.deleteConversation(id: id)
-        refresh()
     }
 
     private func send(selectedID: UUID?) {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isSending else {
+        guard !text.isEmpty || !imageAttachments.isEmpty else {
             return
         }
-
-        draft = ""
-        isSending = true
-        refresh()
-
-        Task { @MainActor in
-            await chatService.send(text, in: selectedID)
-            isSending = false
-            refresh()
+        if text.hasPrefix("/") {
+            if let command = ChatSlashCommand.suggestions(for: text).first(where: { $0.command == text.lowercased() }) {
+                handleSlashCommand(command, selectedID: selectedID)
+                draft = ""
+                return
+            }
         }
+
+        let attachments = imageAttachments
+        draft = ""
+        imageAttachments = []
+        showCommandSuggestions = false
+        chatService.enqueueText(text, imageAttachments: attachments, in: selectedID)
+    }
+
+    private func handleSlashCommand(_ command: ChatSlashCommand, selectedID: UUID?) {
+        showCommandSuggestions = false
+        switch command.command {
+        case "/clear":
+            if let selectedID {
+                for message in chatService.messages(for: selectedID) {
+                    chatService.deleteMessage(id: message.id, in: selectedID)
+                }
+            }
+        case "/help", "/model":
+            draft = ""
+            isInputFocused = true
+        default:
+            draft = command.command + " "
+        }
+    }
+
+    private func selectImageAttachment() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+        panel.begin { response in
+            guard response == .OK else { return }
+            for url in panel.urls {
+                addImageAttachment(url: url)
+            }
+        }
+    }
+
+    private func captureScreenshot() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.png, .jpeg]
+        panel.message = "Select a screenshot image to attach."
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            addImageAttachment(url: url)
+        }
+    }
+
+    private func addImageAttachment(url: URL) {
+        guard let data = try? Data(contentsOf: url) else { return }
+        let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
+        imageAttachments.append(
+            LumiImageAttachment(
+                mimeType: mimeType,
+                base64Data: data.base64EncodedString(),
+                fileName: url.lastPathComponent
+            )
+        )
     }
 
     private func ensureSelection(conversations: [LumiConversationSummary]) {
         if chatService.selectedConversationID == nil,
            let first = conversations.first {
             chatService.selectConversation(id: first.id)
-            refresh()
         }
     }
 
@@ -163,9 +341,5 @@ public struct ChatPanelView: View {
                 }
             }
         )
-    }
-
-    private func refresh() {
-        refreshToken += 1
     }
 }
