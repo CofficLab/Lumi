@@ -28,7 +28,7 @@ import SkillPlugin
 import ConversationListPlugin
 import ConversationTitlePlugin
 import AutoTaskPlugin
-import GitHubInsightPlugin
+import GitHubPlugin
 import IdleTimePlugin
 import ProjectIssueScannerPlugin
 import ProjectsPlugin
@@ -40,7 +40,6 @@ import CaffeinatePlugin
 import BrowserPlugin
 import ProjectOverviewPlugin
 import ShowImagePlugin
-import GitHubCLIDetectPlugin
 import AppManagerPlugin
 import DiskManagerPlugin
 import PortManagerPlugin
@@ -182,7 +181,7 @@ public enum LumiPluginRegistry {
         ConversationListPlugin.self,
         EditorPanelPlugin.self,
         AutoTaskPlugin.self,
-        GitHubInsightPlugin.self,
+        GitHubPlugin.self,
         IdleTimePlugin.self,
         ProjectIssueScannerPlugin.self,
         AgentTurnNotificationPlugin.self,
@@ -195,7 +194,6 @@ public enum LumiPluginRegistry {
         BrowserPlugin.self,
         ProjectOverviewPlugin.self,
         ShowImagePlugin.self,
-        GitHubCLIDetectPlugin.self,
         GitHubToolsPlugin.self,
         MultiAgentPlugin.self,
         DatabaseManagerPlugin.self,

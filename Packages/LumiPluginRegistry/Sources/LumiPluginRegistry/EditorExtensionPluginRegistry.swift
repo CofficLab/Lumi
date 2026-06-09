@@ -1,11 +1,15 @@
-import CSSEditorPlugin
+import EditorCSSPlugin
+import EditorGoPlugin
+import EditorHTMLPlugin
+import EditorJSPlugin
+import EditorMarkdownPlugin
 import EditorPanelPlugin
 import EditorLSPContextCommandsPlugin
 import EditorMultiCursorCommandsPlugin
 import EditorSwiftKeywordHoverPlugin
-import GoEditorPlugin
-import HTMLEditorPlugin
-import JSEditorPlugin
+import EditorSwiftPrimitiveTypesPlugin
+import EditorSwiftSelectionCodeActionPlugin
+import EditorVuePlugin
 import LumiCoreKit
 import LSPCallHierarchyEditorPlugin
 import LSPCodeActionEditorPlugin
@@ -21,10 +25,6 @@ import LSPSheetsEditorPlugin
 import LSPSignatureHelpEditorPlugin
 import LSPToolbarEditorPlugin
 import LSPWorkspaceSymbolEditorPlugin
-import MarkdownEditorPlugin
-import SwiftPrimitiveTypesEditorPlugin
-import SwiftSelectionCodeActionEditorPlugin
-import VueEditorPlugin
 
 public enum EditorExtensionPluginRegistry {
     public static let plugins: [any LumiEditorExtensionRegistering.Type] = [
@@ -45,14 +45,14 @@ public enum EditorExtensionPluginRegistry {
         LSPSelectionRangeEditorPlugin.self,
         EditorLSPContextCommandsPlugin.self,
         EditorMultiCursorCommandsPlugin.self,
-        VueEditorPlugin.self,
-        JSEditorPlugin.self,
-        GoEditorPlugin.self,
-        HTMLEditorPlugin.self,
-        CSSEditorPlugin.self,
-        MarkdownEditorPlugin.self,
-        SwiftPrimitiveTypesEditorPlugin.self,
-        SwiftSelectionCodeActionEditorPlugin.self,
+        EditorVuePlugin.self,
+        EditorJSPlugin.self,
+        EditorGoPlugin.self,
+        EditorHTMLPlugin.self,
+        EditorCSSPlugin.self,
+        EditorMarkdownPlugin.self,
+        EditorSwiftPrimitiveTypesPlugin.self,
+        EditorSwiftSelectionCodeActionPlugin.self,
         EditorSwiftKeywordHoverPlugin.self,
     ]
 }

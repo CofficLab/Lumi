@@ -1,12 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld" : {
-
-    },
-    "%lld%%" : {
-
-    },
     "LSP Service" : {
       "localizations" : {
         "en" : {

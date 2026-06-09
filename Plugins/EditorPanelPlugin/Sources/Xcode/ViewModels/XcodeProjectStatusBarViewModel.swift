@@ -1,4 +1,5 @@
 import Combine
+import EditorService
 import SuperLogKit
 import SwiftUI
 import XcodeKit

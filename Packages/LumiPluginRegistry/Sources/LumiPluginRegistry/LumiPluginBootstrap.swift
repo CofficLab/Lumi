@@ -4,7 +4,7 @@ import AutoTaskPlugin
 import ConversationTitlePlugin
 import FileLogPlugin
 import GitPlugin
-import GitHubInsightPlugin
+import GitHubPlugin
 import IdleTimePlugin
 import LumiCoreKit
 import MemoryPlugin
@@ -21,7 +21,7 @@ public enum LumiPluginBootstrap {
         MemoryPlugin.bootstrapFromLumiCoreIfNeeded()
         FileLogPlugin.bootstrapIfNeeded()
         AutoTaskPlugin.bootstrapFromLumiCoreIfNeeded()
-        GitHubInsightPlugin.bootstrapFromLumiCoreIfNeeded()
+        GitHubPlugin.bootstrapFromLumiCoreIfNeeded()
         IdleTimePlugin.bootstrapFromLumiCoreIfNeeded()
         ProjectIssueScannerPlugin.bootstrapFromLumiCoreIfNeeded()
         if let chatServiceProvider {

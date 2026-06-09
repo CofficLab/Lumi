@@ -1,6 +1,17 @@
 # EditorPanelPlugin
 
-Editor panel plugin for Lumi. Provides a code editor interface with features like file browsing, editing, and command palette.
+Editor **UI shell** for Lumi: workspace layout, tabs, breadcrumb, file tree rail, bottom panels, preview, and Xcode integration.
+
+## Architecture layers
+
+| Layer | Responsibility | Location |
+|-------|----------------|----------|
+| Kernel | Editor state, extension registry, `LSPService` | `Packages/EditorService` |
+| UI shell | Workspace chrome, rails, bottom panels | `EditorPanelPlugin` (this package) |
+| Language plugins | Grammar, LSP config, language-specific UI | `EditorGoPlugin`, `EditorVuePlugin`, `EditorJSPlugin`, … |
+| LSP feature plugins | Cross-language LSP contributors | `LSP*EditorPlugin` packages |
+
+Language and LSP plugins register into `EditorExtensionRegistry` at runtime. This package must not embed language or LSP infrastructure sources.
 
 ## Features
 

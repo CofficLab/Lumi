@@ -191,16 +191,6 @@
         }
       }
     },
-    "%lld %@, %lld %@, %lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@, %3$lld %4$@, %5$lld %6$@"
-          }
-        }
-      }
-    },
     "%lld items" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -792,10 +782,8 @@
         }
       }
     },
-    "Browser" : {
-
-    },
     "Build" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -936,6 +924,7 @@
       }
     },
     "Build succeeded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -962,9 +951,6 @@
           }
         }
       }
-    },
-    "Building" : {
-
     },
     "building %@" : {
       "localizations" : {
@@ -993,9 +979,6 @@
           }
         }
       }
-    },
-    "Building..." : {
-
     },
     "cache" : {
       "localizations" : {
@@ -1109,6 +1092,9 @@
         }
       }
     },
+    "Calls" : {
+
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -1136,9 +1122,6 @@
           }
         }
       }
-    },
-    "Cancelled" : {
-
     },
     "Case Sensitive" : {
       "extractionState" : "stale",
@@ -2423,15 +2406,6 @@
         }
       }
     },
-    "Debug" : {
-
-    },
-    "Debug Current File" : {
-
-    },
-    "Debug Current Go File" : {
-
-    },
     "Default Localization" : {
       "localizations" : {
         "en" : {
@@ -3401,16 +3375,7 @@
         }
       }
     },
-    "errors" : {
-
-    },
-    "ESLint Current File" : {
-
-    },
     "Explorer" : {
-
-    },
-    "failed" : {
 
     },
     "Failed to capture preview screenshot." : {
@@ -3766,6 +3731,9 @@
           }
         }
       }
+    },
+    "Filter symbols" : {
+
     },
     "Find" : {
       "extractionState" : "stale",
@@ -4318,15 +4286,6 @@
         }
       }
     },
-    "Format with Prettier" : {
-
-    },
-    "Formatting" : {
-
-    },
-    "Formatting..." : {
-
-    },
     "Found references:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4385,6 +4344,7 @@
       }
     },
     "Go" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4413,6 +4373,7 @@
       }
     },
     "Go Build" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4441,6 +4402,7 @@
       }
     },
     "Go Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4469,6 +4431,7 @@
       }
     },
     "Go Format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4497,6 +4460,7 @@
       }
     },
     "Go language support: gopls integration, build, test, format, and module management." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4525,6 +4489,7 @@
       }
     },
     "Go Mod Tidy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4553,6 +4518,7 @@
       }
     },
     "Go Test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4636,9 +4602,6 @@
           }
         }
       }
-    },
-    "Highlights all references of the symbol at cursor position." : {
-
     },
     "HTML Preview" : {
       "localizations" : {
@@ -5154,9 +5117,6 @@
         }
       }
     },
-    "JavaScript" : {
-
-    },
     "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5185,18 +5145,6 @@
           }
         }
       }
-    },
-    "JS Build" : {
-
-    },
-    "JS Output" : {
-
-    },
-    "JS Test" : {
-
-    },
-    "JS Tests" : {
-
     },
     "JS/TS Editor" : {
       "extractionState" : "manual",
@@ -5407,12 +5355,6 @@
         }
       }
     },
-    "Linting" : {
-
-    },
-    "Linting..." : {
-
-    },
     "Ln %lld" : {
       "localizations" : {
         "en" : {
@@ -5536,6 +5478,9 @@
         }
       }
     },
+    "Loading Outline..." : {
+
+    },
     "Loading..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5652,9 +5597,6 @@
         }
       }
     },
-    "LSP Document Highlight" : {
-
-    },
     "LSP Not Initialized" : {
       "localizations" : {
         "en" : {
@@ -5683,10 +5625,8 @@
         }
       }
     },
-    "LSP Realtime Signals" : {
-
-    },
     "LSP Service" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5713,9 +5653,6 @@
           }
         }
       }
-    },
-    "LSP Signature Help" : {
-
     },
     "Markdown Preview" : {
       "localizations" : {
@@ -7115,6 +7052,9 @@
         }
       }
     },
+    "No Symbols" : {
+
+    },
     "No type definition found" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7143,9 +7083,6 @@
           }
         }
       }
-    },
-    "Node" : {
-
     },
     "None" : {
       "localizations" : {
@@ -7287,9 +7224,6 @@
           }
         }
       }
-    },
-    "npm Scripts" : {
-
     },
     "OK" : {
       "extractionState" : "stale",
@@ -7667,7 +7601,6 @@
       }
     },
     "Outline" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7695,10 +7628,10 @@
         }
       }
     },
-    "Package Dependencies" : {
+    "Outline not available" : {
 
     },
-    "passed" : {
+    "Package Dependencies" : {
 
     },
     "PDF Preview" : {
@@ -8296,6 +8229,7 @@
       }
     },
     "Provides the core Language Server Protocol integration including completion, hover, and diagnostics." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9323,10 +9257,8 @@
         }
       }
     },
-    "Run a JS task to see output" : {
-
-    },
     "Run go build to see output" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9355,6 +9287,7 @@
       }
     },
     "Run go test to see results" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9381,15 +9314,6 @@
           }
         }
       }
-    },
-    "Run JS tests to see results" : {
-
-    },
-    "Run Script: %@" : {
-
-    },
-    "Running" : {
-
     },
     "running · %@" : {
       "localizations" : {
@@ -9418,12 +9342,6 @@
           }
         }
       }
-    },
-    "Running tests..." : {
-
-    },
-    "Running..." : {
-
     },
     "Save" : {
       "extractionState" : "stale",
@@ -10117,12 +10035,6 @@
         }
       }
     },
-    "Shows function signature hints when typing parameters." : {
-
-    },
-    "skipped" : {
-
-    },
     "Sort Lines Ascending" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10270,9 +10182,6 @@
         }
       }
     },
-    "Stop" : {
-
-    },
     "stopping" : {
       "localizations" : {
         "en" : {
@@ -10356,6 +10265,9 @@
           }
         }
       }
+    },
+    "Symbols" : {
+
     },
     "Syntax highlighting limit: first %@ lines" : {
       "extractionState" : "stale",
@@ -10500,12 +10412,6 @@
         }
       }
     },
-    "Task failed" : {
-
-    },
-    "Task succeeded" : {
-
-    },
     "Terminal" : {
       "localizations" : {
         "en" : {
@@ -10562,13 +10468,8 @@
         }
       }
     },
-    "Testing" : {
-
-    },
-    "Testing..." : {
-
-    },
     "Tests" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10769,12 +10670,6 @@
     "This rewrites every .xcstrings file under the current project and removes entries marked as stale." : {
 
     },
-    "Tidying" : {
-
-    },
-    "Tidying module..." : {
-
-    },
     "TOC" : {
 
     },
@@ -10893,9 +10788,6 @@
           }
         }
       }
-    },
-    "Triggers realtime LSP updates for highlights, hints, and signature help." : {
-
     },
     "Trim Trailing Whitespace" : {
       "extractionState" : "stale",
@@ -11442,9 +11334,6 @@
           }
         }
       }
-    },
-    "warnings" : {
-
     },
     "Whole Word" : {
       "extractionState" : "stale",

@@ -47,6 +47,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ESV1000000000000000002 /* EditorService in Frameworks */,
+				EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */,
 				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
 				LUI1000000000000000002 /* LumiUI in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
@@ -86,6 +87,7 @@
 			name = Lumi;
 			packageProductDependencies = (
 				ESV1000000000000000001 /* EditorService */,
+				EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */,
 				LCK1000000000000000001 /* LumiChatKit */,
 				LUI1000000000000000001 /* LumiUI */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
@@ -122,6 +124,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
+				EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */,
 				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
 				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
