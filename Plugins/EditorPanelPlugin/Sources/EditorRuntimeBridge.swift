@@ -1,16 +1,4 @@
-import EditorBottomCallHierarchyPlugin
-import EditorBottomProblemsPlugin
-import EditorBottomReferencesPlugin
-import EditorBottomSearchPlugin
-import EditorBottomSymbolsPlugin
-import EditorBottomTerminalPlugin
-import EditorBreadcrumbPlugin
-import EditorPreviewPlugin
 import EditorService
-import EditorStickySymbolBarPlugin
-import EditorTabStripPlugin
-import GoEditorPlugin
-import JSEditorPlugin
 import Foundation
 import LumiCoreKit
 import LumiUI

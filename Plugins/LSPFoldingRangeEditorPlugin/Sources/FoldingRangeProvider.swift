@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import LSPServiceEditorPlugin
+import EditorPanelPlugin
 import EditorService
 import LanguageServerProtocol
 

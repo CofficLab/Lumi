@@ -1,4 +1,3 @@
-import EditorRailFileTreePlugin
 import EditorService
 import LumiCoreKit
 import LumiUI

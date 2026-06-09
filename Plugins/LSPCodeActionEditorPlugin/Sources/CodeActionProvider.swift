@@ -1,6 +1,6 @@
 import EditorService
 import EditorKernel
-import LSPServiceEditorPlugin
+import EditorPanelPlugin
 import Combine
 import CodeEditSourceEditor
 import CodeEditTextView

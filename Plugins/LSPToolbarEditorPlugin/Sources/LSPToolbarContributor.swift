@@ -1,5 +1,5 @@
 import Foundation
-import LSPServiceEditorPlugin
+import EditorPanelPlugin
 import EditorService
 import SwiftUI
 

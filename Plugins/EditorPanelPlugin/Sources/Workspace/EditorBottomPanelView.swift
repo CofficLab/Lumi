@@ -1,11 +1,3 @@
-import EditorBottomCallHierarchyPlugin
-import EditorBottomProblemsPlugin
-import EditorBottomReferencesPlugin
-import EditorBottomSearchPlugin
-import EditorBottomSymbolsPlugin
-import EditorBottomTerminalPlugin
-import EditorPreviewPlugin
-import EditorRailFileTreePlugin
 import EditorService
 import LumiCoreKit
 import LumiUI

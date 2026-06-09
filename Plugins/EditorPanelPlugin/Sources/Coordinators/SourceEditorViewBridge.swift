@@ -3,9 +3,6 @@ import EditorService
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
-import LSPDocumentHighlightEditorPlugin
-import LSPRealtimeSignalsEditorPlugin
-
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?
     public var cursorCoordinator: CursorCoordinator?

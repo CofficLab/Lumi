@@ -1,7 +1,4 @@
-import EditorBreadcrumbPlugin
 import EditorService
-import EditorStickySymbolBarPlugin
-import EditorTabStripPlugin
 import SwiftUI
 
 struct EditorHeaderView: View {
