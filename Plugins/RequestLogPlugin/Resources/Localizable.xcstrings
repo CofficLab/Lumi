@@ -203,6 +203,16 @@
         }
       }
     },
+    "Messages: %lld, system prompt: %lld chars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Messages: %1$lld, system prompt: %2$lld chars"
+          }
+        }
+      }
+    },
     "Method" : {
       "localizations" : {
         "en" : {

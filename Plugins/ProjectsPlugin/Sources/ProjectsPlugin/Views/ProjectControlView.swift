@@ -1,8 +1,9 @@
-import ChatMiddlewarePlugin
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ProjectControlView: View {
+    let projectPathStore: LumiCurrentProjectPathStoring?
     @StateObject private var store = ProjectsStore()
     @State private var isPopoverPresented = false
 
@@ -51,6 +52,6 @@ struct ProjectControlView: View {
     }
 
     private func syncProjectPath(_ path: String?) {
-        ChatMiddlewareRuntime.currentProjectPath.set(path ?? "")
+        projectPathStore?.setCurrentProjectPath(path ?? "")
     }
 }

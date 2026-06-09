@@ -5,12 +5,25 @@ import Foundation
 
 @MainActor
 @Test func projectsPluginContributesCenterToolbarItem() {
-    let context = LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+    let store = LumiCurrentProjectPathStore()
+    let context = LumiPluginContext(
+        activeSectionID: "editor",
+        activeSectionTitle: "Editor",
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(LumiCurrentProjectPathStoring.self, store)
+        }
+    )
     let items = ProjectsPlugin.titleToolbarItems(context: context)
 
     #expect(items.count == 1)
     #expect(items.first?.id == "com.coffic.lumi.plugin.projects.toolbar")
     #expect(items.first?.placement == .center)
+}
+
+@MainActor
+@Test func projectsPluginContributesConversationHintMiddleware() {
+    let context = LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+    #expect(ProjectsPlugin.sendMiddlewares(context: context).count == 1)
 }
 
 @MainActor

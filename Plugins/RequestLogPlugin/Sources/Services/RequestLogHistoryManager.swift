@@ -18,7 +18,7 @@ public actor RequestLogHistoryManager: SuperLog {
     private let maxRecords = 10000
 
     private init() {
-        self.container = Self.makeContainer(databaseRootURL: AppConfig.getDBFolderURL())
+        self.container = Self.makeInMemoryContainer(schema: Schema([RequestLogItem.self]))
     }
 
     init(databaseRootURL: URL) {

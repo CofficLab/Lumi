@@ -84,6 +84,9 @@
     "Delete Conversation" : {
 
     },
+    "Drag to select a screenshot region. Press ESC to cancel." : {
+
+    },
     "Enable automatic routing" : {
 
     },
@@ -95,16 +98,6 @@
     },
     "Lumi will choose a provider and model based on tools, message size, and availability." : {
 
-    },
-    "Messages: %lld, system prompt: %lld chars" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Messages: %1$lld, system prompt: %2$lld chars"
-          }
-        }
-      }
     },
     "New Chat" : {
 
@@ -132,6 +125,12 @@
         }
       }
     },
+    "OK" : {
+
+    },
+    "Open System Settings" : {
+
+    },
     "Providers" : {
 
     },
@@ -142,6 +141,24 @@
 
     },
     "Resend" : {
+
+    },
+    "Screen Recording Permission Required" : {
+
+    },
+    "Screen Recording Permission Required Hint" : {
+
+    },
+    "Screenshot Failed" : {
+
+    },
+    "Screenshot Failed Generic" : {
+
+    },
+    "Screenshot Failed No Image" : {
+
+    },
+    "Screenshot Failed No Screens" : {
 
     },
     "Search models or providers..." : {
@@ -184,33 +201,6 @@
 
     },
     "语言" : {
-
-    },
-    "Drag to select a screenshot region. Press ESC to cancel." : {
-
-    },
-    "OK" : {
-
-    },
-    "Open System Settings" : {
-
-    },
-    "Screen Recording Permission Required" : {
-
-    },
-    "Screen Recording Permission Required Hint" : {
-
-    },
-    "Screenshot Failed" : {
-
-    },
-    "Screenshot Failed Generic" : {
-
-    },
-    "Screenshot Failed No Image" : {
-
-    },
-    "Screenshot Failed No Screens" : {
 
     }
   },

@@ -8,7 +8,7 @@ public enum ChatPanelPlugin: LumiPlugin {
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.chat-panel",
+        id: LumiChatPanelSection.id,
         displayName: String(localized: "Chat", bundle: .module),
         description: String(localized: "Conversation list with chat surface", bundle: .module),
         order: 78
@@ -30,15 +30,6 @@ public enum ChatPanelPlugin: LumiPlugin {
                 placement: .trailing,
                 statusBarView: {
                     ChatTimelineStatusBarView(chatService: chatService)
-                }
-            ),
-            LumiStatusBarItem(
-                id: "\(info.id).request-log",
-                title: "Request Log",
-                systemImage: "doc.text.magnifyingglass",
-                placement: .trailing,
-                statusBarView: {
-                    ChatRequestLogStatusBarView()
                 }
             ),
             LumiStatusBarItem(

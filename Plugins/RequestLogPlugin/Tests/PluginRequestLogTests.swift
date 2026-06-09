@@ -1,12 +1,56 @@
 import Foundation
 import HttpKit
+import LumiChatKit
+import LumiCoreKit
 import SwiftData
 import Testing
 @testable import RequestLogPlugin
 
 @Test func pluginPolicyIsAlwaysOn() {
     #expect(RequestLogPlugin.policy == .alwaysOn)
-    #expect(RequestLogPlugin.isConfigurable == false)
+    #expect(RequestLogPlugin.policy.isConfigurable == false)
+}
+
+@MainActor
+@Test func requestLogPluginContributesSendMiddleware() {
+    let context = LumiPluginContext(activeSectionID: LumiChatPanelSection.id, activeSectionTitle: "Chat")
+    let middlewares = RequestLogPlugin.sendMiddlewares(context: context)
+    #expect(middlewares.count == 1)
+}
+
+@MainActor
+@Test func requestLogPluginContributesStatusBarOnChatPanel() {
+    let context = LumiPluginContext(
+        activeSectionID: LumiChatPanelSection.id,
+        activeSectionTitle: "Chat",
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register((any LumiChatServicing).self, MockChatService())
+        }
+    )
+    let items = RequestLogPlugin.statusBarItems(context: context)
+    #expect(items.count == 1)
+    #expect(items.first?.systemImage == "doc.text.magnifyingglass")
+}
+
+@MainActor
+@Test func requestLogPluginHidesStatusBarOutsideChatPanel() {
+    let context = LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+    #expect(RequestLogPlugin.statusBarItems(context: context).isEmpty)
+}
+
+@Test func requestLogSummaryStoreKeepsRecentEntries() {
+    RequestLogSummaryStore.append(
+        RequestLogSummaryStore.Entry(
+            conversationID: UUID(),
+            messageCount: 3,
+            systemPromptLength: 120
+        )
+    )
+
+    let entries = RequestLogSummaryStore.allEntries()
+    #expect(entries.count == 1)
+    #expect(entries.first?.messageCount == 3)
+    #expect(entries.first?.systemPromptLength == 120)
 }
 
 @Test func historyStoreRecoversWhenDatabaseDirectoryIsBlocked() throws {
@@ -152,6 +196,52 @@ import Testing
 
     #expect(viewModel.filterSuccess == false)
     #expect(viewModel.items.map(\.requestURL) == ["https://example.com/current"])
+}
+
+private final class MockChatService: LumiChatServicing {
+    var conversations: [LumiConversationSummary] = []
+    var selectedConversationID: UUID?
+    var providerInfos: [LumiLLMProviderInfo] = []
+    var selectedProviderID: String?
+    var selectedModel: String?
+    var messageRenderers: [LumiMessageRendererItem] = []
+    var revision = 0
+    var agentTools: [any LumiAgentTool] = []
+    var pendingMessages: [LumiPendingMessage] = []
+    var routingMode: LumiModelRoutingMode = .manual
+    var pendingToolConfirmation: LumiPendingToolConfirmation?
+
+    func isSending(for conversationID: UUID?) -> Bool { false }
+    func createConversation(title: String?) -> UUID { UUID() }
+    func selectConversation(id: UUID) {}
+    func deleteConversation(id: UUID) {}
+    func selectProvider(id: String, model: String?) {}
+    func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
+    func providerID(for conversationID: UUID?) -> String? { nil }
+    func modelName(for conversationID: UUID?) -> String? { nil }
+    func setRoutingMode(_ mode: LumiModelRoutingMode) {}
+    func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }
+    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+    func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
+    func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
+    func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
+    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
+    func registerToolService(_ toolService: (any LumiToolServicing)?) {}
+    func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
+    func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
+    func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }
+    func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage? { nil }
+    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] { [] }
+    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool { false }
+    func enqueueText(_ text: String, in conversationID: UUID?) {}
+    func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?) {}
+    func cancelSending(for conversationID: UUID?) {}
+    func approvePendingTool() {}
+    func rejectPendingTool() {}
+    func removePendingMessage(id: UUID) {}
+    func deleteMessage(id: UUID, in conversationID: UUID) {}
+    func resendMessage(id: UUID, in conversationID: UUID) async {}
+    func send(_ text: String, in conversationID: UUID?) async {}
 }
 
 private final class MockRequestLogHistory: RequestLogHistoryQuerying, @unchecked Sendable {

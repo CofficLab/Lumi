@@ -1,4 +1,3 @@
-import ChatMiddlewarePlugin
 import LumiCoreKit
 
 public enum ProjectsPlugin: LumiPlugin {
@@ -12,15 +11,21 @@ public enum ProjectsPlugin: LumiPlugin {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        [
+        let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
+        return [
             LumiTitleToolbarItem(
                 id: "\(info.id).toolbar",
                 title: "Projects",
                 placement: .center
             ) {
-                ProjectControlView()
+                ProjectControlView(projectPathStore: projectPathStore)
             }
         ]
+    }
+
+    @MainActor
+    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+        [ConversationHintMiddleware()]
     }
 
     @MainActor
