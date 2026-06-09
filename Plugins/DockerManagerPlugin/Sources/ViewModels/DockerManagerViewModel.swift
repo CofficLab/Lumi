@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import DockerKit
 import SuperLogKit
 
 protocol DockerManagerServicing: Sendable {

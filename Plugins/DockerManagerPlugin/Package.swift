@@ -14,18 +14,18 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/DockerKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "DockerManagerPlugin",
             dependencies: [
-                .product(name: "DockerKit", package: "DockerKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
@@ -39,7 +39,6 @@ let package = Package(
             name: "DockerManagerPluginTests",
             dependencies: [
                 "DockerManagerPlugin",
-                .product(name: "DockerKit", package: "DockerKit"),
             ],
             path: "Tests"
         )
