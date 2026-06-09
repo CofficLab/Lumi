@@ -11,14 +11,16 @@ struct PluginShowImageTests {
         #expect(ShowImagePlugin.id == "ShowImage")
         #expect(ShowImagePlugin.displayName == "Show Image")
         #expect(ShowImagePlugin.iconName == "photo.on.rectangle")
-        #expect(ShowImagePlugin.category == .integration)
+        #expect(ShowImagePlugin.category == .general)
         #expect(ShowImagePlugin.order == 97)
     }
 
     @MainActor
     @Test("plugin registers one show image tool")
     func pluginRegistersTool() {
-        let tools = ShowImagePlugin.shared.agentTools(context: ToolContext())
+        let tools = ShowImagePlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "show_image")

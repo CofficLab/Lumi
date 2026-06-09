@@ -11,14 +11,17 @@ struct PluginWebSearchTests {
         #expect(WebSearchPlugin.id == "WebSearch")
         #expect(WebSearchPlugin.displayName == "Web Search")
         #expect(WebSearchPlugin.iconName == "magnifyingglass")
-        #expect(WebSearchPlugin.category == .network)
+        #expect(WebSearchPlugin.category == .general)
         #expect(WebSearchPlugin.order == 101)
+        #expect(WebSearchPlugin.policy == .optIn)
     }
 
     @MainActor
     @Test("plugin registers one web search tool")
     func pluginRegistersTool() {
-        let tools = WebSearchPlugin.shared.agentTools(context: ToolContext())
+        let tools = WebSearchPlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "web_search")

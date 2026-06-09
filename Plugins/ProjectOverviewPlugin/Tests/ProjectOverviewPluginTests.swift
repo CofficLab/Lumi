@@ -19,7 +19,9 @@ struct PluginProjectOverviewTests {
     @MainActor
     @Test("plugin registers one tool")
     func pluginRegistersTool() {
-        let tools = ProjectOverviewPlugin.shared.agentTools(context: ToolContext())
+        let tools = ProjectOverviewPlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "project_overview")

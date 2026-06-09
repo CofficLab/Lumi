@@ -2,10 +2,10 @@ import Testing
 @testable import MultiAgentPlugin
 
 @Test func packageLoads() async throws {
-    #expect(MultiAgentPlugin.id == "MultiAgent")
-    #expect(MultiAgentPlugin.displayName.isEmpty == false)
+    #expect(MultiAgentPlugin.info.id == "com.coffic.lumi.plugin.multi-agent")
+    #expect(MultiAgentPlugin.info.displayName.isEmpty == false)
     #expect(MultiAgentPlugin.iconName == "person.3.fill")
-    #expect(MultiAgentPlugin.order == 88)
+    #expect(MultiAgentPlugin.info.order == 88)
 }
 
 @Test func collectAgentsToolNormalizesTimeout() throws {

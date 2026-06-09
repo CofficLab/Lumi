@@ -1,73 +1,43 @@
-import SwiftUI
-import LumiCoreKit
-import LumiUI
-import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 import os
+import SwiftUI
 
-public actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
-    /// 插件专用 Logger
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.database-manager")
-
-    // MARK: - Plugin Properties
-
-    public nonisolated static let emoji = "🗄️"
-    public static var category: PluginCategory { .general }
-    public nonisolated static let verbose: Bool = false
-
-    public static let id = "DatabaseManager"
-    public static let navigationId = "database_manager"
-    public static let displayName = String(localized: "Database", bundle: .module)
-    public static let description = String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module)
+public enum DatabaseManagerPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .general
     public static let iconName = "server.rack"
-    public static var order: Int { 50 }
+    public static let verbose: Bool = false
 
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated var instanceLabel: String { Self.id }
-    public static let shared = DatabaseManagerPlugin()
-    
-    /// 插件注册策略：可配置，默认不启用（可选功能）
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.database-manager")
 
-    // MARK: - UI Contributions
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.database-manager",
+        displayName: String(localized: "Database", bundle: .module),
+        description: String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module),
+        order: 50
+    )
 
     @MainActor
-    public func addPosterViews() -> [AnyView] {
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
-            PluginPosterSupport.poster(
-                title: "数据库工作台",
-                subtitle: "管理 SQLite、MySQL、PostgreSQL 和 Redis 连接，并让助手只读查询。",
-                icon: Self.iconName,
-                accent: .teal,
-                metrics: [
-                    PluginPosterSupport.metric("SQL", "查询"),
-                    PluginPosterSupport.metric("Redis", "缓存"),
-                ],
-                rows: ["连接列表", "Schema 查看", "只读查询工具"],
-                chips: ["数据库", "开发工具", "Agent 工具"]
-            ),
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                DatabaseMainView()
+            }
         ]
     }
 
     @MainActor
-    public func addViewContainer() -> ViewContainerItem? {
-        ViewContainerItem(id: Self.id, title: Self.displayName, icon: Self.iconName) {
-            AnyView(DatabaseMainView())
-        }
-    }
-
-    public nonisolated func onDisable() {
-        Task {
-            await DatabaseManager.shared.shutdown()
-        }
-    }
-
-    @MainActor
-    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            DatabaseListConnectionsTool(),
-            DatabaseDescribeSchemaTool(),
-            DatabaseReadonlyQueryTool(),
-            DatabaseSampleTableTool(),
+            DatabaseListConnectionsTool().asLumiAgentTool(),
+            DatabaseDescribeSchemaTool().asLumiAgentTool(),
+            DatabaseReadonlyQueryTool().asLumiAgentTool(),
+            DatabaseSampleTableTool().asLumiAgentTool(),
         ]
     }
 }

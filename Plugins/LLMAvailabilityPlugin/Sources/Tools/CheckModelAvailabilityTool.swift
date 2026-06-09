@@ -12,9 +12,9 @@ public struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     public nonisolated static let verbose: Bool = false
 
     public let name = "check_model_availability"
-    private let llmService: LLMService?
+    private let llmService: (any LLMAvailabilityLLMServicing)?
 
-    public init(llmService: LLMService? = nil) {
+    public init(llmService: (any LLMAvailabilityLLMServicing)? = nil) {
         self.llmService = llmService
     }
 

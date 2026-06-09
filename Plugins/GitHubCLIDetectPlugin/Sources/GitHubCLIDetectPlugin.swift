@@ -8,30 +8,27 @@ import os
 ///
 /// The package owns the tool and service implementation; the app keeps only
 /// a registration adapter while runtime plugin discovery is still module-based.
-public actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-cli-detect")
-    public nonisolated static let emoji = "🐚"
-    public nonisolated static let verbose: Bool = false
+public enum GitHubCLIDetectPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let category: LumiPluginCategory = .general
+    public static let iconName = "terminal"
+    public static var verbose: Bool { false }
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-cli-detect")
 
-    public static let id: String = "GitHubCLIDetect"
-    public static let displayName: String = PluginGitHubCLIDetectLocalization.string("GitHub CLI Detect")
-    public static let description: String = PluginGitHubCLIDetectLocalization.string("检测系统是否安装了 GitHub CLI (gh) 命令行工具。")
+    public static let info = LumiPluginInfo(
+        id: "GitHubCLIDetect",
+        displayName: PluginGitHubCLIDetectLocalization.string("GitHub CLI Detect"),
+        description: PluginGitHubCLIDetectLocalization.string("检测系统是否安装了 GitHub CLI (gh) 命令行工具。"),
+        order: 16
+    )
 
-    public static func description(for language: LanguagePreference) -> String {
-        PluginGitHubCLIDetectLocalization.string("检测系统是否安装了 GitHub CLI (gh) 命令行工具。", for: language)
-    }
-    public static let iconName: String = "terminal"
-    public static var category: PluginCategory { .general }
-    public static var order: Int { 16 }
-
-    public static let shared = GitHubCLIDetectPlugin()
-
-    private init() {}
+    public static var id: String { info.id }
+    public static var displayName: String { info.displayName }
+    public static var order: Int { info.order }
 
     @MainActor
-    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [GitHubCLICheckTool()]
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [GitHubCLICheckTool().asLumiAgentTool()]
     }
 }
 
@@ -41,9 +38,5 @@ enum PluginGitHubCLIDetectLocalization {
 
     static func string(_ key: String) -> String {
         String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

@@ -5,11 +5,11 @@ import GitHubKit
 @testable import AgentGitHubToolsPlugin
 
 @Test func packageLoads() async throws {
-    #expect(GitHubToolsPlugin.id == "GitHubTools")
-    #expect(GitHubToolsPlugin.displayName.isEmpty == false)
-    #expect(GitHubToolsPlugin.description.isEmpty == false)
+    #expect(GitHubToolsPlugin.info.id == "com.coffic.lumi.plugin.github-tools")
+    #expect(GitHubToolsPlugin.info.displayName.isEmpty == false)
+    #expect(GitHubToolsPlugin.info.description.isEmpty == false)
     #expect(GitHubToolsPlugin.iconName == "star.circle.fill")
-    #expect(GitHubToolsPlugin.category == .developerTool)
+    #expect(GitHubToolsPlugin.category == .development)
 }
 
 @Test func localStoreSavesAndReloadsToken() throws {

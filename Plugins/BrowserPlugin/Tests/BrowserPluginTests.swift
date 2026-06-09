@@ -18,7 +18,9 @@ struct PluginBrowserTests {
     @MainActor
     @Test("plugin registers browser tools")
     func pluginRegistersTools() {
-        let tools = BrowserPlugin.shared.agentTools(context: ToolContext())
+        let tools = BrowserPlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
         let toolNames = Set(tools.map(\.name))
 
         #expect(tools.count == 2)

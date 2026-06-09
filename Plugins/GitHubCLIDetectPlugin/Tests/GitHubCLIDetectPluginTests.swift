@@ -13,12 +13,15 @@ struct PluginGitHubCLIDetectTests {
         #expect(GitHubCLIDetectPlugin.iconName == "terminal")
         #expect(GitHubCLIDetectPlugin.category == .general)
         #expect(GitHubCLIDetectPlugin.order == 16)
+        #expect(GitHubCLIDetectPlugin.policy == .optIn)
     }
 
     @MainActor
     @Test("plugin registers one GitHub CLI check tool")
     func pluginRegistersTool() {
-        let tools = GitHubCLIDetectPlugin.shared.agentTools(context: ToolContext())
+        let tools = GitHubCLIDetectPlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "github_cli_check")

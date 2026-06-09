@@ -2,34 +2,15 @@ import Foundation
 import LumiCoreKit
 import SuperLogKit
 import AgentToolKit
-import LLMKit
 
-/// 创建子智能体工具
-///
-/// 创建一个在后台运行的子智能体，使用指定的 LLM 供应商和模型。
-/// 返回 agent_id 用于后续 collect_agents 收集结果。
-///
-/// 典型用法：主 Agent 在一次响应中并行调用多次 spawn_agent，
-/// 然后调用 collect_agents 一次性收集所有结果。
+/// 创建子智能体工具。
 public struct SpawnAgentTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = false
 
     public let name = "spawn_agent"
 
-    // MARK: - Dependencies
-
-    private let llmService: LLMService
-    private let llmVM: AppLLMVM
-    private let toolService: ToolService
-
-    public init(llmService: LLMService, llmVM: AppLLMVM, toolService: ToolService) {
-        self.llmService = llmService
-        self.llmVM = llmVM
-        self.toolService = toolService
-    }
-
-    // MARK: - SuperAgentTool
+    public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         switch language {
@@ -83,7 +64,7 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "启动子智能体"    }
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "启动子智能体" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
@@ -108,22 +89,6 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
             throw SubAgentError.missingArgument("description")
         }
 
-        // 验证供应商和模型
-        let allProviders = llmVM.allProviders
-        guard let provider = allProviders.first(where: { $0.id == providerId }) else {
-            let registeredIds = allProviders.map(\.id).joined(separator: ", ")
-            return "Error: Provider '\(providerId)' not found. Available providers: \(registeredIds)"
-        }
-
-        guard provider.availableModels.contains(modelId) else {
-            return "Error: Model '\(modelId)' not found in provider '\(providerId)'. Available models: \(provider.availableModels.joined(separator: ", "))"
-        }
-
-        guard llmVM.providerType(forId: providerId)?.hasApiKey == true else {
-            return "Error: API key not configured for provider '\(providerId)'. Please configure it in Settings first."
-        }
-
-        // 创建子智能体
         let runner = SubAgentRunner.shared
         let agentId: String
         do {
@@ -131,9 +96,7 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
                 task: task,
                 description: description,
                 providerId: providerId,
-                modelId: modelId,
-                llmService: llmService,
-                toolService: toolService
+                modelId: modelId
             )
         } catch {
             return "Error: \(error.localizedDescription)"

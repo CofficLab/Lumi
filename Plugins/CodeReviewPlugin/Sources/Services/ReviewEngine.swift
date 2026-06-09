@@ -1,6 +1,6 @@
 import Foundation
-import LumiCoreKit
 import LLMKit
+import LLMProviderKit
 
 public struct ReviewEngine: Sendable {
     public let config: LLMConfig
@@ -27,10 +27,9 @@ public struct ReviewEngine: Sendable {
             )
         }
 
-        let conversationId = UUID()
         let messages = [
-            ChatMessage(role: .system, conversationId: conversationId, content: systemPrompt),
-            ChatMessage(role: .user, conversationId: conversationId, content: userPrompt(context: context))
+            ChatMessage(role: .system, content: systemPrompt),
+            ChatMessage(role: .user, content: userPrompt(context: context))
         ]
 
         let response = try await sendMessage(messages, config)

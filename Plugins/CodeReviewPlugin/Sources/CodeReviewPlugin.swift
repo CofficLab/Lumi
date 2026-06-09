@@ -1,27 +1,20 @@
-import Foundation
-import LumiCoreKit
-import SuperLogKit
 import AgentToolKit
-import os
-import SwiftUI
+import LumiCoreKit
 
-public actor CodeReviewPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.code-review")
-    public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = false
+public enum CodeReviewPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .development
+    public static let iconName = "checklist"
 
-    public static let id: String = "CodeReview"
-    public static let displayName: String = "Code Review"
-    public static let description: String = "Reviews current Git changes and reports actionable issues."
-    public static let iconName: String = "checklist"
-    public static var category: PluginCategory { .developerTool }
-    public static var order: Int { 17 }
-
-    public static let shared = CodeReviewPlugin()
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.code-review",
+        displayName: "Code Review",
+        description: "Reviews current Git changes and reports actionable issues.",
+        order: 17
+    )
 
     @MainActor
-    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [RunReviewTool()]
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [RunReviewTool().asLumiAgentTool()]
     }
 }

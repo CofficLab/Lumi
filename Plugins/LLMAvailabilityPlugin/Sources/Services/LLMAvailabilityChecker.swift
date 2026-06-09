@@ -1,6 +1,7 @@
+import AgentToolKit
 import Foundation
-import LumiCoreKit
 import LLMKit
+import LLMProviderKit
 import os
 
 /// LLM 可用性检测服务
@@ -9,10 +10,10 @@ import os
 public final class LLMAvailabilityChecker {
     public static let verbose: Bool = false
 
-    private let llmService: LLMService
+    private let llmService: any LLMAvailabilityLLMServicing
     private let store = LLMAvailabilityStore.shared
 
-    public init(llmService: LLMService) {
+    public init(llmService: any LLMAvailabilityLLMServicing) {
         self.llmService = llmService
     }
 
@@ -202,13 +203,11 @@ public final class LLMAvailabilityChecker {
 
         // 构建最小测试请求（单条简短消息）
         let testMessages: [ChatMessage] = [
-            ChatMessage(role: .user, conversationId: UUID(), content: "Hi")
+            ChatMessage(role: .user, content: "Hi")
         ]
 
         do {
-            // 直接调用 sendMessage 进行连通性检测
-            // URLSession 已配置 300s 超时，对于 ping 场景已足够
-            _ = try await llmService.sendMessage(messages: testMessages, config: config)
+            _ = try await llmService.sendMessage(messages: testMessages, config: config, tools: nil)
 
             // 请求成功 → 模型可用
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)

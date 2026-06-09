@@ -16,12 +16,13 @@ struct PluginCaffeinateTests {
         #expect(CaffeinatePlugin.category == .system)
         #expect(CaffeinatePlugin.order == 7)
         #expect(CaffeinatePlugin.policy == .optOut)
-        #expect(CaffeinatePlugin.shared.instanceLabel == CaffeinatePlugin.id)
     }
 
     @Test
     func pluginRegistersCaffeinateTools() {
-        let tools = CaffeinatePlugin.shared.agentTools(context: ToolContext())
+        let tools = CaffeinatePlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.map(\.name) == [
             "caffeinate_activate",
@@ -29,7 +30,9 @@ struct PluginCaffeinateTests {
             "caffeinate_status",
             "caffeinate_turn_off_display",
         ])
-        #expect(CaffeinatePlugin.shared.addMenuBarPopupView() != nil)
+        #expect(CaffeinatePlugin.menuBarPopupItems(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        ).isEmpty == false)
     }
 
     @Test

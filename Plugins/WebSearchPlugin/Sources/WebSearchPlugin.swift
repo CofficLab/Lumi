@@ -1,39 +1,31 @@
 import AgentToolKit
 import Foundation
 import LumiCoreKit
-import SuperLogKit
-import os
 
 /// Web Search 插件。
 ///
 /// 提供基础的网页搜索工具。
 /// 主要用于满足阿里云 Qwen 系列模型对 Function Calling 的限制要求：
 /// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
-public actor WebSearchPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-search")
+public enum WebSearchPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let category: LumiPluginCategory = .general
+    public static let iconName = "magnifyingglass"
 
-    public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public static let info = LumiPluginInfo(
+        id: "WebSearch",
+        displayName: PluginWebSearchLocalization.string("Web Search"),
+        description: PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。"),
+        order: 101
+    )
 
-    public static let id: String = "WebSearch"
-    public static let displayName: String = PluginWebSearchLocalization.string("Web Search")
-    public static let description: String = PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。")
-
-    public static func description(for language: LanguagePreference) -> String {
-        PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。", for: language)
-    }
-    public static let iconName: String = "magnifyingglass"
-    public static var category: PluginCategory { .network }
-    public static var order: Int { 101 }
-
-    public static let shared = WebSearchPlugin()
-
-    private init() {}
+    public static var id: String { info.id }
+    public static var displayName: String { info.displayName }
+    public static var order: Int { info.order }
 
     @MainActor
-    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [WebSearchTool()]
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [WebSearchTool().asLumiAgentTool()]
     }
 }
 
@@ -43,9 +35,5 @@ enum PluginWebSearchLocalization {
 
     static func string(_ key: String) -> String {
         String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
-    }
-
-    static func string(_ key: String, for language: LanguagePreference) -> String {
-        PackageStringLocalization.string(key, table: table, bundle: bundle, language: language)
     }
 }

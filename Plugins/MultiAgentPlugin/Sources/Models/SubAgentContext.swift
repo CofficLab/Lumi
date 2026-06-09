@@ -1,5 +1,19 @@
 import Foundation
 
+public enum SubAgentError: LocalizedError, Sendable {
+    case missingArgument(String)
+    case concurrentLimit(Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingArgument(let name):
+            "Missing required argument: \(name)"
+        case .concurrentLimit(let limit):
+            "Concurrent sub-agent limit reached (\(limit))"
+        }
+    }
+}
+
 /// 子智能体状态
 public enum SubAgentStatus: String, Sendable {
     /// 正在运行

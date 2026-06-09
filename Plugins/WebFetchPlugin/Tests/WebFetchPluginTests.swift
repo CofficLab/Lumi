@@ -10,14 +10,17 @@ struct PluginWebFetchTests {
         #expect(WebFetchPlugin.id == "WebFetch")
         #expect(WebFetchPlugin.displayName == "Web Fetch")
         #expect(WebFetchPlugin.iconName == "globe")
-        #expect(WebFetchPlugin.category == .network)
+        #expect(WebFetchPlugin.category == .general)
         #expect(WebFetchPlugin.order == 100)
+        #expect(WebFetchPlugin.policy == .optIn)
     }
 
     @MainActor
     @Test("plugin registers one web fetch tool")
     func pluginRegistersTool() {
-        let tools = WebFetchPlugin.shared.agentTools(context: ToolContext())
+        let tools = WebFetchPlugin.agentTools(
+            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        )
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "web_fetch")
