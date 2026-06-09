@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import BrewKit
 import SuperLogKit
 
 protocol BrewManagerServicing: Sendable {

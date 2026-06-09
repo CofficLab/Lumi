@@ -1,7 +1,6 @@
 import os
 import SwiftUI
 import LumiUI
-import BrewKit
 import SuperLogKit
 
 struct BrewManagerView: View {

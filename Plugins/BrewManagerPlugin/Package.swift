@@ -14,18 +14,18 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/BrewKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "BrewManagerPlugin",
             dependencies: [
-                .product(name: "BrewKit", package: "BrewKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
