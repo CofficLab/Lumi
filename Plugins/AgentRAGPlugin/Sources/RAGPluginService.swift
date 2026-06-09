@@ -1,6 +1,5 @@
 import Foundation
 import os
-import RAGKit
 
 @MainActor
 enum RAGPluginService {

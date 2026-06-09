@@ -1,6 +1,5 @@
 import AgentToolKit
 import Foundation
-import RAGKit
 import SuperLogKit
 
 public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {

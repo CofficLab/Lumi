@@ -1,4 +1,3 @@
-import RAGKit
 import SwiftUI
 
 // MARK: - Notification Extension

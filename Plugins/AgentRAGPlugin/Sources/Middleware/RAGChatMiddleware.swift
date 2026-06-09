@@ -1,6 +1,5 @@
 import Foundation
 import LumiCoreKit
-import RAGKit
 
 enum RAGRetrievalRuntime {
     static func performRetrieval(projectPath: String, userMessage: String) async -> String? {
