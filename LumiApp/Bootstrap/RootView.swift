@@ -1,5 +1,6 @@
-import SwiftUI
+import EditorService
 import LumiCoreKit
+import SwiftUI
 
 struct RootView<Content: View>: View {
     @ObservedObject private var container: RootContainer
@@ -17,6 +18,7 @@ struct RootView<Content: View>: View {
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, container.chatCoreService.chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, container.projectPathStore)
+                dependencies.register(LumiEditorServicing.self, container.editorCoreService)
             }
         )
         let overlays = container.pluginService.rootOverlays(context: context)

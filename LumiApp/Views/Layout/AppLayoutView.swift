@@ -1,3 +1,4 @@
+import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -6,6 +7,7 @@ struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
     @ObservedObject var pluginService: PluginService
+    let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
     let chatService: any LumiChatServicing
     let projectPathStore: LumiCurrentProjectPathStore
@@ -47,6 +49,7 @@ struct AppLayoutView: View {
             AppDivider()
             StatusBar(
                 pluginService: pluginService,
+                editorCoreService: editorCoreService,
                 activeID: activeID,
                 activeTitle: activeTitle,
                 lumiUIService: lumiUIService,
@@ -66,6 +69,7 @@ struct AppLayoutView: View {
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+                dependencies.register(LumiEditorServicing.self, editorCoreService)
             }
         )
     }

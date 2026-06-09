@@ -26,6 +26,18 @@ final class PluginService: ObservableObject {
         registeredPlugins.filter { isPluginEnabled($0) }
     }
 
+    var editorExtensionPlugins: [any LumiEditorExtensionRegistering.Type] {
+        EditorExtensionPluginRegistry.plugins
+    }
+
+    var enabledEditorExtensionPluginIDs: Set<String> {
+        Set(
+            editorExtensionPlugins
+                .filter { isEditorExtensionEnabled($0) }
+                .map { $0.extensionPluginInfo.id }
+        )
+    }
+
     func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         enabledPlugins.flatMap { plugin in
             plugin.titleToolbarItems(context: context)
@@ -122,8 +134,28 @@ final class PluginService: ObservableObject {
         )
     }
 
+    func eligibility(for plugin: any LumiEditorExtensionRegistering.Type) -> LumiPluginEligibility {
+        LumiPluginEligibility(
+            policy: plugin.extensionPluginPolicy,
+            userEnabled: userEnabledValue(for: plugin)
+        )
+    }
+
     func isPluginEnabled(_ plugin: any LumiPlugin.Type) -> Bool {
         eligibility(for: plugin).isEligible
+    }
+
+    func isEditorExtensionEnabled(_ plugin: any LumiEditorExtensionRegistering.Type) -> Bool {
+        eligibility(for: plugin).isEligible
+    }
+
+    func setEditorExtensionPlugin(_ plugin: any LumiEditorExtensionRegistering.Type, enabled: Bool) {
+        guard plugin.extensionPluginPolicy.isConfigurable else { return }
+
+        enabledOverrides[plugin.extensionPluginInfo.id] = enabled
+        settingsStore.saveEnabledOverrides(enabledOverrides)
+        onEnabledPluginsChanged?()
+        objectWillChange.send()
     }
 
     func setPlugin(_ plugin: any LumiPlugin.Type, enabled: Bool) {
@@ -139,5 +171,9 @@ final class PluginService: ObservableObject {
 
     private func userEnabledValue(for plugin: any LumiPlugin.Type) -> Bool {
         enabledOverrides[plugin.info.id] ?? plugin.policy.enabledByDefault
+    }
+
+    private func userEnabledValue(for plugin: any LumiEditorExtensionRegistering.Type) -> Bool {
+        enabledOverrides[plugin.extensionPluginInfo.id] ?? plugin.extensionPluginPolicy.enabledByDefault
     }
 }

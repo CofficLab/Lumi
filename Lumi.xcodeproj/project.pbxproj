@@ -11,6 +11,8 @@
 		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
+		ESV1000000000000000002 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = ESV1000000000000000001 /* EditorService */; };
+		EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ESV1000000000000000002 /* EditorService in Frameworks */,
 				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
 				LUI1000000000000000002 /* LumiUI in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
@@ -82,6 +85,7 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
+				ESV1000000000000000001 /* EditorService */,
 				LCK1000000000000000001 /* LumiChatKit */,
 				LUI1000000000000000001 /* LumiUI */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
@@ -117,6 +121,7 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
 				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
@@ -380,6 +385,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
 		};
+		ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorService;
+		};
+		EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/EditorMultiCursorCommandsPlugin;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -397,6 +410,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
 			productName = LumiUI;
+		};
+		ESV1000000000000000001 /* EditorService */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */;
+			productName = EditorService;
+		};
+		EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */;
+			productName = EditorMultiCursorCommandsPlugin;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

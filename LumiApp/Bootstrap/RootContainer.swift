@@ -1,6 +1,5 @@
-import SwiftUI
-import EditorPanelPlugin
 import LumiCoreKit
+import SwiftUI
 
 @MainActor
 final class RootContainer: ObservableObject {
@@ -10,6 +9,7 @@ final class RootContainer: ObservableObject {
     let pluginService: PluginService
     let toolService: ToolService
     let projectPathStore: LumiCurrentProjectPathStore
+    let editorCoreService: EditorCoreService
     let chatCoreService: ChatCoreService
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
@@ -19,6 +19,11 @@ final class RootContainer: ObservableObject {
         self.pluginService = PluginService()
         self.toolService = ToolService()
         self.projectPathStore = LumiCurrentProjectPathStore()
+        self.editorCoreService = EditorCoreService(
+            pluginService: pluginService,
+            persistenceRootURL: { AppConfig.getDBFolderURL() },
+            recentProjects: { [] }
+        )
         self.chatCoreService = ChatCoreService(
             lumiCoreService: lumiCoreService,
             pluginService: pluginService,
@@ -32,7 +37,7 @@ final class RootContainer: ObservableObject {
             self.chatCoreService.reloadPluginContributions(from: self.pluginService)
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
-            EditorPanelPlugin.sharedEditorCore()?.reinstallExtensions()
+            self.editorCoreService.reinstallExtensions()
         }
     }
 }

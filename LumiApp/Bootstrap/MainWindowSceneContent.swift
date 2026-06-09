@@ -7,6 +7,7 @@ struct MainWindowSceneContent: View {
         RootView(container: container) {
             AppLayoutView(
                 pluginService: container.pluginService,
+                editorCoreService: container.editorCoreService,
                 lumiUIService: container.lumiUIService,
                 chatService: container.chatCoreService.chatService,
                 projectPathStore: container.projectPathStore

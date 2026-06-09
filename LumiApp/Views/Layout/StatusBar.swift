@@ -1,3 +1,4 @@
+import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -6,6 +7,7 @@ struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @ObservedObject var pluginService: PluginService
     @StateObject private var projectVM: WindowProjectVM
+    let editorCoreService: EditorCoreService
     let activeID: String
     let activeTitle: String
     let lumiUIService: LumiUIService
@@ -14,6 +16,7 @@ struct StatusBar: View {
 
     init(
         pluginService: PluginService,
+        editorCoreService: EditorCoreService,
         activeID: String,
         activeTitle: String,
         lumiUIService: LumiUIService,
@@ -21,6 +24,7 @@ struct StatusBar: View {
         projectPathStore: LumiCurrentProjectPathStore
     ) {
         self.pluginService = pluginService
+        self.editorCoreService = editorCoreService
         self.activeID = activeID
         self.activeTitle = activeTitle
         self.lumiUIService = lumiUIService
@@ -37,6 +41,7 @@ struct StatusBar: View {
                 dependencies.register(LumiThemeServicing.self, lumiUIService)
                 dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+                dependencies.register(LumiEditorServicing.self, editorCoreService)
             }
         )
         let items = pluginService.statusBarItems(context: context)
