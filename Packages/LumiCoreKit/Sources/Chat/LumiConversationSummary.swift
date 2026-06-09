@@ -238,6 +238,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var automationLevel: LumiAutomationLevel?
     public var providerID: String?
     public var modelName: String?
+    public var projectPath: String?
 
     public init(
         id: UUID = UUID(),
@@ -249,7 +250,8 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         language: LumiConversationLanguage? = nil,
         automationLevel: LumiAutomationLevel? = nil,
         providerID: String? = nil,
-        modelName: String? = nil
+        modelName: String? = nil,
+        projectPath: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -261,6 +263,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.automationLevel = automationLevel
         self.providerID = providerID
         self.modelName = modelName
+        self.projectPath = projectPath
     }
 }
 

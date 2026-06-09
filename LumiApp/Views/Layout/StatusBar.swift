@@ -4,13 +4,30 @@ import SwiftUI
 
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
-    let state: LayoutState
     @ObservedObject var pluginService: PluginService
+    @StateObject private var projectVM: WindowProjectVM
     let activeID: String
     let activeTitle: String
     let lumiUIService: LumiUIService
     let chatService: any LumiChatServicing
     let projectPathStore: LumiCurrentProjectPathStore
+
+    init(
+        pluginService: PluginService,
+        activeID: String,
+        activeTitle: String,
+        lumiUIService: LumiUIService,
+        chatService: any LumiChatServicing,
+        projectPathStore: LumiCurrentProjectPathStore
+    ) {
+        self.pluginService = pluginService
+        self.activeID = activeID
+        self.activeTitle = activeTitle
+        self.lumiUIService = lumiUIService
+        self.chatService = chatService
+        self.projectPathStore = projectPathStore
+        _projectVM = StateObject(wrappedValue: WindowProjectVM(store: projectPathStore))
+    }
 
     var body: some View {
         let context = LumiPluginContext(
@@ -54,6 +71,7 @@ struct StatusBar: View {
                 .fill(statusBarDividerColor)
                 .frame(height: 1)
         }
+        .environmentObject(projectVM)
     }
 
     private var chromeTheme: any LumiAppChromeTheme {

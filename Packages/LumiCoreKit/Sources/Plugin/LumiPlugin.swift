@@ -35,6 +35,9 @@ public protocol LumiPlugin {
 
     @MainActor
     static func settingsDetailView(context: LumiPluginContext) -> AnyView?
+
+    @MainActor
+    static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
 }
 
 public extension LumiPlugin {
@@ -94,5 +97,10 @@ public extension LumiPlugin {
     @MainActor
     static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
         nil
+    }
+
+    @MainActor
+    static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        []
     }
 }

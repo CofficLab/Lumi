@@ -4,11 +4,11 @@ import SwiftUI
 
 struct AppLayoutView: View {
     @LumiTheme private var theme
+    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
     @ObservedObject var pluginService: PluginService
     let lumiUIService: LumiUIService
     let chatService: any LumiChatServicing
     let projectPathStore: LumiCurrentProjectPathStore
-    @State private var state = LayoutState()
 
     var body: some View {
         let containers = pluginService.viewContainers(context: pluginContext)
@@ -18,7 +18,6 @@ struct AppLayoutView: View {
 
         VStack(spacing: 0) {
             AppTitleToolbar(
-                state: $state,
                 pluginService: pluginService,
                 activeID: activeID,
                 activeTitle: activeTitle,
@@ -29,7 +28,7 @@ struct AppLayoutView: View {
 
             HStack(spacing: 0) {
                 ActivityBar(
-                    state: $state,
+                    layoutState: layoutState,
                     containers: containers
                 )
 
@@ -47,7 +46,6 @@ struct AppLayoutView: View {
 
             AppDivider()
             StatusBar(
-                state: state,
                 pluginService: pluginService,
                 activeID: activeID,
                 activeTitle: activeTitle,
@@ -63,7 +61,7 @@ struct AppLayoutView: View {
 
     private var pluginContext: LumiPluginContext {
         LumiPluginContext(
-            activeSectionID: state.activeViewContainerID ?? "main",
+            activeSectionID: layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: "Main",
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)
@@ -73,7 +71,7 @@ struct AppLayoutView: View {
     }
 
     private func selectedContainer(from containers: [LumiViewContainerItem]) -> LumiViewContainerItem? {
-        if let activeID = state.activeViewContainerID,
+        if let activeID = layoutState.activeViewContainerID,
            let container = containers.first(where: { $0.id == activeID }) {
             return container
         }
@@ -83,15 +81,15 @@ struct AppLayoutView: View {
 
     private func selectDefaultContainerIfNeeded(_ containers: [LumiViewContainerItem]) {
         guard !containers.isEmpty else {
-            state.activeViewContainerID = nil
+            layoutState.activeViewContainerID = nil
             return
         }
 
-        if let activeID = state.activeViewContainerID,
+        if let activeID = layoutState.activeViewContainerID,
            containers.contains(where: { $0.id == activeID }) {
             return
         }
 
-        state.activeViewContainerID = containers[0].id
+        layoutState.activeViewContainerID = containers[0].id
     }
 }

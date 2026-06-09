@@ -91,11 +91,29 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
 
     @discardableResult
     public func createConversation(title: String? = nil) -> UUID {
+        createConversation(title: title, projectPath: nil, language: nil)
+    }
+
+    @discardableResult
+    public func createConversation(
+        title: String?,
+        projectPath: String?,
+        language: LumiConversationLanguage?
+    ) -> UUID {
         let now = Date()
+        let resolvedProjectPath = Self.normalizedOptionalPath(projectPath)
+            ?? Self.normalizedOptionalPath(projectPathProvider?.currentProjectPath)
+
         let conversation = LumiConversationSummary(
             title: normalizedTitle(title) ?? "New Chat",
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            verbosity: verbosity(for: selectedConversationID),
+            language: language ?? self.language(for: selectedConversationID),
+            automationLevel: automationLevel(for: selectedConversationID),
+            providerID: selectedProviderID,
+            modelName: selectedModel,
+            projectPath: resolvedProjectPath
         )
         conversations.insert(conversation, at: 0)
         messagesByConversationID[conversation.id] = []
@@ -136,6 +154,18 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         }
 
         conversations[index].title = trimmed
+        conversations[index].updatedAt = Date()
+        persist()
+        return true
+    }
+
+    @discardableResult
+    public func setConversationProjectPath(_ projectPath: String?, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+
+        conversations[index].projectPath = Self.normalizedOptionalPath(projectPath)
         conversations[index].updatedAt = Date()
         persist()
         return true
@@ -387,6 +417,26 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         }
     }
 
+    public func generateEphemeralCompletion(
+        messages: [LumiChatMessage],
+        model: String,
+        conversationID: UUID
+    ) async throws -> LumiChatMessage {
+        guard let providerID = providerID(for: conversationID),
+              let provider = providersByID[providerID]
+        else {
+            throw NSError(
+                domain: "LumiChatService",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "No LLM provider configured for conversation"]
+            )
+        }
+
+        return try await provider.send(
+            LumiLLMRequest(messages: messages, model: model, tools: [])
+        )
+    }
+
     private func attemptBeginNextSend() {
         guard let nextIndex = pendingMessages.firstIndex(where: { pending in
             activeTasksByConversationID[pending.conversationID] == nil
@@ -591,6 +641,11 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
                 renderKind: "turn-completed"
             )
         )
+        NotificationCenter.default.post(
+            name: .lumiTurnCompleted,
+            object: nil,
+            userInfo: [LumiMessageSavedNotification.conversationIDKey: conversationID]
+        )
     }
 
     private func makeAssistantMessage(
@@ -790,6 +845,19 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
         messagesByConversationID[message.conversationID, default: []].append(message)
         updateConversationSummary(for: message)
         persist()
+        postMessageSavedNotification(for: message)
+    }
+
+    private func postMessageSavedNotification(for message: LumiChatMessage) {
+        NotificationCenter.default.post(
+            name: .lumiMessageSaved,
+            object: nil,
+            userInfo: [
+                LumiMessageSavedNotification.messageIDKey: message.id,
+                LumiMessageSavedNotification.conversationIDKey: message.conversationID,
+                LumiMessageSavedNotification.roleKey: message.role.rawValue
+            ]
+        )
     }
 
     private func updateToolCallResult(
@@ -848,6 +916,14 @@ public final class LumiChatService: ObservableObject, LumiChatServicing {
             return nil
         }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func normalizedOptionalPath(_ path: String?) -> String? {
+        guard let path else {
+            return nil
+        }
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 

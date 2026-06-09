@@ -5,7 +5,6 @@ import SwiftUI
 
 struct AppTitleToolbar: View {
     @LumiTheme private var theme
-    @Binding var state: LayoutState
     @ObservedObject var pluginService: PluginService
     let activeID: String
     let activeTitle: String

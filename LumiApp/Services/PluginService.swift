@@ -86,6 +86,14 @@ final class PluginService: ObservableObject {
             .sorted { $0.order < $1.order }
     }
 
+    func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        enabledPlugins
+            .flatMap { plugin in
+                plugin.rootOverlays(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
     func themeContributions() -> [LumiUIThemeContribution] {
         enabledPlugins.flatMap { plugin -> [LumiUIThemeContribution] in
             guard let provider = plugin as? any LumiUIThemeProviding.Type else {

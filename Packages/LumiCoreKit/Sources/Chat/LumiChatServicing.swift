@@ -18,10 +18,18 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
 
     @discardableResult
     func createConversation(title: String?) -> UUID
+    @discardableResult
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        language: LumiConversationLanguage?
+    ) -> UUID
 
     func selectConversation(id: UUID)
     func deleteConversation(id: UUID)
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
+    @discardableResult
+    func setConversationProjectPath(_ projectPath: String?, for conversationID: UUID) -> Bool
     func selectProvider(id: String, model: String?)
     func selectProvider(id: String, model: String?, for conversationID: UUID?)
     func providerID(for conversationID: UUID?) -> String?
@@ -49,4 +57,9 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     func deleteMessage(id: UUID, in conversationID: UUID)
     func resendMessage(id: UUID, in conversationID: UUID) async
     func send(_ text: String, in conversationID: UUID?) async
+    func generateEphemeralCompletion(
+        messages: [LumiChatMessage],
+        model: String,
+        conversationID: UUID
+    ) async throws -> LumiChatMessage
 }

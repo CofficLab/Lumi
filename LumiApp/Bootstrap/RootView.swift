@@ -10,6 +10,17 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        content
+        let context = LumiPluginContext(
+            activeSectionID: "app.root",
+            activeSectionTitle: "Lumi",
+            dependencies: LumiPluginDependencies { dependencies in
+                dependencies.register(LumiChatServicing.self, container.chatCoreService.chatService)
+                dependencies.register(LumiCurrentProjectPathStoring.self, container.projectPathStore)
+            }
+        )
+        let overlays = container.pluginService.rootOverlays(context: context)
+        overlays.reduce(AnyView(content)) { wrapped, overlay in
+            overlay.apply(to: wrapped)
+        }
     }
 }

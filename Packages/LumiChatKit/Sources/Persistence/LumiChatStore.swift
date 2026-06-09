@@ -153,6 +153,7 @@ struct LumiChatStore {
             entity.languagePreference = conversation.language?.rawValue
             entity.providerId = conversation.providerID
             entity.model = conversation.modelName
+            entity.projectId = conversation.projectPath
         }
     }
 
@@ -218,7 +219,8 @@ struct LumiChatStore {
             language: entity.languagePreference.flatMap(LumiConversationLanguage.init(rawValue:)),
             automationLevel: entity.chatMode.flatMap(LumiAutomationLevel.init(rawValue:)),
             providerID: entity.providerId,
-            modelName: entity.model
+            modelName: entity.model,
+            projectPath: entity.projectId
         )
     }
 
