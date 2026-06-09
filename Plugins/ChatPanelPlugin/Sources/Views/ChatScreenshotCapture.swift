@@ -4,30 +4,24 @@ import ScreenCaptureKit
 import SwiftUI
 
 extension Notification.Name {
-    public static let screenshotCaptured = Notification.Name("screenshotCaptured")
+    static let screenshotCaptured = Notification.Name("screenshotCaptured")
 }
 
 @MainActor
-public enum ScreenshotBridge {
-    public static var activeWindowIdProvider: (() -> UUID?)?
-}
-
-@MainActor
-public final class ScreenshotState: ObservableObject {
-    public static let shared = ScreenshotState()
+final class ChatScreenshotState: ObservableObject {
+    static let shared = ChatScreenshotState()
 
     @Published private(set) var isCapturing = false
     @Published private(set) var isPreparing = false
     @Published fileprivate var selectionRect: CGRect = .zero
 
-    private var overlayWindows: [ScreenshotOverlayWindow] = []
+    private var overlayWindows: [ChatScreenshotOverlayWindow] = []
     private var captureImage: CGImage?
     private var captureFrame: CGRect = .zero
-    private var captureWindowId: UUID?
 
     private init() {}
 
-    public func startCapture(windowId: UUID? = nil) {
+    func startCapture() {
         guard !isCapturing else { return }
 
         guard Self.hasScreenCapturePermission() else {
@@ -37,7 +31,6 @@ public final class ScreenshotState: ObservableObject {
 
         isCapturing = true
         isPreparing = true
-        captureWindowId = windowId ?? ScreenshotBridge.activeWindowIdProvider?()
 
         Task {
             do {
@@ -58,11 +51,10 @@ public final class ScreenshotState: ObservableObject {
         }
     }
 
-    public func endCapture() {
+    func endCapture() {
         overlayWindows.forEach { $0.orderOut(nil) }
         overlayWindows.removeAll()
         captureImage = nil
-        captureWindowId = nil
         selectionRect = .zero
         isPreparing = false
         isCapturing = false
@@ -80,17 +72,15 @@ public final class ScreenshotState: ObservableObject {
               normalizedSelection.height >= 10,
               let image = captureImage,
               let cropped = Self.crop(image: image, captureFrame: captureFrame, selection: normalizedSelection),
-              let pngData = NSBitmapImageRep(cgImage: cropped).representation(using: .png, properties: [:]) else {
+              let pngData = NSBitmapImageRep(cgImage: cropped).representation(using: .png, properties: [:])
+        else {
             return
         }
 
         NotificationCenter.default.post(
             name: .screenshotCaptured,
             object: nil,
-            userInfo: [
-                "data": pngData,
-                "windowId": captureWindowId as Any,
-            ]
+            userInfo: ["data": pngData]
         )
     }
 
@@ -146,9 +136,9 @@ public final class ScreenshotState: ObservableObject {
         return image.cropping(to: cropRect)
     }
 
-    private static func makeOverlayWindows(state: ScreenshotState) -> [ScreenshotOverlayWindow] {
+    private static func makeOverlayWindows(state: ChatScreenshotState) -> [ChatScreenshotOverlayWindow] {
         NSScreen.screens.map { screen in
-            ScreenshotOverlayWindow(screenFrame: screen.frame, state: state)
+            ChatScreenshotOverlayWindow(screenFrame: screen.frame, state: state)
         }
     }
 
@@ -200,8 +190,8 @@ public final class ScreenshotState: ObservableObject {
     }
 }
 
-public final class ScreenshotOverlayWindow: NSWindow {
-    public init(screenFrame: CGRect, state: ScreenshotState) {
+private final class ChatScreenshotOverlayWindow: NSWindow {
+    init(screenFrame: CGRect, state: ChatScreenshotState) {
         super.init(
             contentRect: screenFrame,
             styleMask: [.borderless],
@@ -216,19 +206,21 @@ public final class ScreenshotOverlayWindow: NSWindow {
         ignoresMouseEvents = false
         acceptsMouseMovedEvents = true
         hasShadow = false
-        contentView = NSHostingView(rootView: ScreenshotOverlayRepresentable(state: state, screenFrame: screenFrame))
+        contentView = NSHostingView(
+            rootView: ChatScreenshotOverlayRepresentable(state: state, screenFrame: screenFrame)
+        )
     }
 
-    public override var canBecomeKey: Bool { true }
-    public override var canBecomeMain: Bool { true }
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
 }
 
-public struct ScreenshotOverlayRepresentable: NSViewRepresentable {
-    @ObservedObject var state: ScreenshotState
-    public let screenFrame: CGRect
+private struct ChatScreenshotOverlayRepresentable: NSViewRepresentable {
+    @ObservedObject var state: ChatScreenshotState
+    let screenFrame: CGRect
 
-    public func makeNSView(context: Context) -> ScreenshotOverlayContentView {
-        let view = ScreenshotOverlayContentView(screenFrame: screenFrame)
+    func makeNSView(context: Context) -> ChatScreenshotOverlayContentView {
+        let view = ChatScreenshotOverlayContentView(screenFrame: screenFrame)
         view.onSelectionChanged = { [weak state] rect in
             Task { @MainActor in
                 state?.updateSelection(rect)
@@ -247,27 +239,27 @@ public struct ScreenshotOverlayRepresentable: NSViewRepresentable {
         return view
     }
 
-    public func updateNSView(_ nsView: ScreenshotOverlayContentView, context: Context) {
+    func updateNSView(_ nsView: ChatScreenshotOverlayContentView, context: Context) {
         nsView.selectionRect = state.selectionRect
     }
 }
 
-public final class ScreenshotOverlayContentView: NSView {
-    public var onSelectionChanged: ((CGRect) -> Void)?
-    public var onSelectionCompleted: ((CGRect) -> Void)?
-    public var onCancel: (() -> Void)?
+private final class ChatScreenshotOverlayContentView: NSView {
+    var onSelectionChanged: ((CGRect) -> Void)?
+    var onSelectionCompleted: ((CGRect) -> Void)?
+    var onCancel: (() -> Void)?
 
-    public var selectionRect: CGRect = .zero {
+    var selectionRect: CGRect = .zero {
         didSet { needsDisplay = true }
     }
 
     private var dragStart: CGPoint?
     private let screenFrame: CGRect
 
-    public override var acceptsFirstResponder: Bool { true }
-    public override var isFlipped: Bool { false }
+    override var acceptsFirstResponder: Bool { true }
+    override var isFlipped: Bool { false }
 
-    public init(screenFrame: CGRect) {
+    init(screenFrame: CGRect) {
         self.screenFrame = screenFrame
         super.init(frame: CGRect(origin: .zero, size: screenFrame.size))
         wantsLayer = true
@@ -275,16 +267,16 @@ public final class ScreenshotOverlayContentView: NSView {
     }
 
     @available(*, unavailable)
-    public required init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public override func viewDidMoveToWindow() {
+    override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
     }
 
-    public override func draw(_ dirtyRect: NSRect) {
+    override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
         guard let context = NSGraphicsContext.current?.cgContext else { return }
@@ -307,18 +299,18 @@ public final class ScreenshotOverlayContentView: NSView {
         drawHint()
     }
 
-    public override func mouseDown(with event: NSEvent) {
+    override func mouseDown(with event: NSEvent) {
         let point = NSEvent.mouseLocation
         dragStart = point
         updateSelection(from: point, to: point)
     }
 
-    public override func mouseDragged(with event: NSEvent) {
+    override func mouseDragged(with event: NSEvent) {
         guard let dragStart else { return }
         updateSelection(from: dragStart, to: NSEvent.mouseLocation)
     }
 
-    public override func mouseUp(with event: NSEvent) {
+    override func mouseUp(with event: NSEvent) {
         guard let dragStart else { return }
         let endPoint = NSEvent.mouseLocation
         self.dragStart = nil
@@ -327,7 +319,7 @@ public final class ScreenshotOverlayContentView: NSView {
         onSelectionCompleted?(rect)
     }
 
-    public override func keyDown(with event: NSEvent) {
+    override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 {
             onCancel?()
         } else {
@@ -362,12 +354,15 @@ public final class ScreenshotOverlayContentView: NSView {
         let label = "\(Int(globalRect.width)) x \(Int(globalRect.height))"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium),
-            .foregroundColor: NSColor.white
+            .foregroundColor: NSColor.white,
         ]
         let attributed = NSAttributedString(string: label, attributes: attributes)
         let labelSize = attributed.size()
         let padding = CGSize(width: 8, height: 5)
-        let bubbleSize = CGSize(width: labelSize.width + padding.width * 2, height: labelSize.height + padding.height * 2)
+        let bubbleSize = CGSize(
+            width: labelSize.width + padding.width * 2,
+            height: labelSize.height + padding.height * 2
+        )
         let labelOrigin = CGPoint(
             x: max(8, min(rect.minX, bounds.maxX - bubbleSize.width - 8)),
             y: max(8, rect.minY - bubbleSize.height - 8)
@@ -380,10 +375,13 @@ public final class ScreenshotOverlayContentView: NSView {
     }
 
     private func drawHint() {
-        let hint = String(localized: "Drag to select a screenshot region. Press ESC to cancel.", bundle: .module)
+        let hint = String(
+            localized: "Drag to select a screenshot region. Press ESC to cancel.",
+            bundle: .module
+        )
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 13, weight: .medium),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.82)
+            .foregroundColor: NSColor.white.withAlphaComponent(0.82),
         ]
         let attributed = NSAttributedString(string: hint, attributes: attributes)
         let size = attributed.size()

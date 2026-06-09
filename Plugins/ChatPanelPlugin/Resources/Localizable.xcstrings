@@ -185,6 +185,33 @@
     },
     "语言" : {
 
+    },
+    "Drag to select a screenshot region. Press ESC to cancel." : {
+
+    },
+    "OK" : {
+
+    },
+    "Open System Settings" : {
+
+    },
+    "Screen Recording Permission Required" : {
+
+    },
+    "Screen Recording Permission Required Hint" : {
+
+    },
+    "Screenshot Failed" : {
+
+    },
+    "Screenshot Failed Generic" : {
+
+    },
+    "Screenshot Failed No Image" : {
+
+    },
+    "Screenshot Failed No Screens" : {
+
     }
   },
   "version" : "1.0"

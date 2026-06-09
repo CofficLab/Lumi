@@ -42,6 +42,7 @@ let package = Package(
                 "Sources/Views/ChatAvailabilityView.swift",
                 "Sources/Views/ChatCommandSuggestionsView.swift",
                 "Sources/Views/ChatComposerView.swift",
+                "Sources/Views/ChatScreenshotCapture.swift",
                 "Sources/Views/ChatConversationListView.swift",
                 "Sources/Views/ChatDivider.swift",
                 "Sources/Views/ChatHeaderView.swift",

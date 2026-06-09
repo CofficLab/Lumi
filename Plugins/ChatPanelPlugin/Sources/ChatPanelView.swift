@@ -115,6 +115,7 @@ public struct ChatPanelView: View {
                     isImageDragHovering: $isImageDragHovering,
                     isSending: isSending,
                     hasConversation: selectedID != nil || !conversations.isEmpty,
+                    hasAttachments: !imageAttachments.isEmpty,
                     languagePicker: {
                         ChatLanguagePicker(
                             selectedLanguage: chatService.language(for: selectedID),
@@ -140,8 +141,8 @@ public struct ChatPanelView: View {
                             onSelect: { chatService.setVerbosity($0, for: selectedID) }
                         )
                     },
-                    onScreenshot: { captureScreenshot() },
                     onAttachImage: { selectImageAttachment() },
+                    onFileDrop: handleFileDrop,
                     onSend: { send(selectedID: selectedID) },
                     onStop: { chatService.cancelSending(for: selectedID) },
                     onEscape: { chatService.cancelSending(for: selectedID) }
@@ -168,6 +169,12 @@ public struct ChatPanelView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiStopChatGeneration)) { _ in
             chatService.cancelSending(for: selectedID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .screenshotCaptured)) { notification in
+            guard let data = notification.userInfo?["data"] as? Data else {
+                return
+            }
+            addImageAttachment(data: data)
         }
         .alert(
             "Approve high-risk tool?",
@@ -298,29 +305,50 @@ public struct ChatPanelView: View {
         }
     }
 
-    private func captureScreenshot() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.png, .jpeg]
-        panel.message = "Select a screenshot image to attach."
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-            addImageAttachment(url: url)
+    private func handleFileDrop(_ url: URL) {
+        let fileURL = url.standardizedFileURL
+        if ChatInputEditorRules.isChatImageFileURL(fileURL) {
+            addImageAttachment(url: fileURL)
+        } else {
+            appendToDraft(fileURL.path)
         }
+    }
+
+    private func appendToDraft(_ value: String) {
+        if draft.isEmpty {
+            draft = value
+        } else {
+            draft += "\n" + value
+        }
+        inputCursorPosition = draft.count
+        isInputFocused = true
     }
 
     private func addImageAttachment(url: URL) {
         guard let data = try? Data(contentsOf: url) else { return }
         let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
+        addImageAttachment(
+            data: data,
+            mimeType: mimeType,
+            fileName: url.lastPathComponent
+        )
+    }
+
+    private func addImageAttachment(data: Data, mimeType: String = "image/png", fileName: String? = nil) {
+        let resolvedFileName = fileName ?? defaultScreenshotFileName()
         imageAttachments.append(
             LumiImageAttachment(
                 mimeType: mimeType,
                 base64Data: data.base64EncodedString(),
-                fileName: url.lastPathComponent
+                fileName: resolvedFileName
             )
         )
+    }
+
+    private func defaultScreenshotFileName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return "screenshot-\(formatter.string(from: Date())).png"
     }
 
     private func ensureSelection(conversations: [LumiConversationSummary]) {

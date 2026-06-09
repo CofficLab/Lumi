@@ -12,15 +12,18 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
     @Binding var isImageDragHovering: Bool
     let isSending: Bool
     let hasConversation: Bool
+    let hasAttachments: Bool
     @ViewBuilder let languagePicker: () -> LanguagePicker
     @ViewBuilder let automationPicker: () -> AutomationPicker
     @ViewBuilder let providerPicker: () -> ProviderPicker
     @ViewBuilder let verbosityPicker: () -> VerbosityPicker
-    let onScreenshot: () -> Void
     let onAttachImage: () -> Void
+    let onFileDrop: (URL) -> Void
     let onSend: () -> Void
     let onStop: () -> Void
     let onEscape: () -> Void
+
+    @StateObject private var screenshotState = ChatScreenshotState.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +33,7 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
                 onSubmit: sendIfPossible,
                 onEnter: sendIfPossible,
                 onEscape: onEscape,
-                onFileDrop: { _ in onAttachImage() },
+                onFileDrop: onFileDrop,
                 isFocused: $isInputFocused,
                 cursorPosition: $inputCursorPosition,
                 isImageDragHovering: $isImageDragHovering
@@ -53,7 +56,11 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
                 providerPicker()
                     .frame(maxWidth: 320, alignment: .leading)
 
-                ChatComposerToolbarButton(systemImage: "crop", help: "截图", action: onScreenshot)
+                ChatComposerScreenshotButton(
+                    screenshotState: screenshotState,
+                    canAttach: hasConversation,
+                    action: { screenshotState.startCapture() }
+                )
                 ChatComposerToolbarButton(systemImage: "photo", help: "图片", action: onAttachImage)
 
                 Spacer(minLength: 10)
@@ -73,7 +80,9 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
     }
 
     private var canSend: Bool {
-        hasConversation && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        hasConversation && (
+            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasAttachments
+        )
     }
 
     private func sendIfPossible() {
@@ -81,6 +90,42 @@ struct ChatComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPi
             return
         }
         onSend()
+    }
+}
+
+private struct ChatComposerScreenshotButton: View {
+    @LumiTheme private var theme
+    @ObservedObject var screenshotState: ChatScreenshotState
+
+    let canAttach: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if screenshotState.isPreparing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "crop")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+            }
+            .foregroundColor(theme.textSecondary)
+            .frame(width: 38, height: 38)
+            .background(theme.textPrimary.opacity(0.07), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canAttach || screenshotState.isCapturing)
+        .keyboardShortcut("S", modifiers: [.command, .shift])
+        .help(helpText)
+    }
+
+    private var helpText: String {
+        if screenshotState.isPreparing {
+            return "准备截图…"
+        }
+        return "区域截图 (⌘⇧S)"
     }
 }
 
