@@ -17,6 +17,5 @@ extension Notification.Name {
     static let lumiEditorFindPrevious = Notification.Name("LumiEditorFindPrevious")
     static let lumiEditorReplaceCurrent = Notification.Name("LumiEditorReplaceCurrent")
     static let lumiEditorReplaceAll = Notification.Name("LumiEditorReplaceAll")
-    static let lumiEditorToggleOutlinePanel = Notification.Name("LumiEditorToggleOutlinePanel")
     static let applicationDidResignActive = Notification.Name("applicationDidResignActive")
 }

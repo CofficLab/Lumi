@@ -169,8 +169,27 @@ struct AppLayoutView: View {
             ) {
                 column
             }
+            .modifier(PanelChromeCommandHandler(layoutState: panelLayoutState))
         } else {
             column
+        }
+    }
+
+    private struct PanelChromeCommandHandler: ViewModifier {
+        @ObservedObject var layoutState: PanelLayoutState
+
+        private var notifications: EditorHostEnvironment.Notifications {
+            EditorHostEnvironment.current.notifications
+        }
+
+        func body(content: Content) -> some View {
+            content
+                .onReceive(NotificationCenter.default.publisher(for: notifications.toggleOutlinePanel)) { _ in
+                    layoutState.presentRailTab(id: "outline")
+                }
+                .onReceive(NotificationCenter.default.publisher(for: notifications.toggleOpenEditorsPanel)) { _ in
+                    layoutState.presentRailTab(id: "explorer")
+                }
         }
     }
 

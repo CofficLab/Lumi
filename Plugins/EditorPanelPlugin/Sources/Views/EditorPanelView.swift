@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 
 /// 编辑器主视图
 ///
-/// 纯布局职责：组合编辑器内容区域、Banner、Sheet 等 UI 组件。
+/// 组合编辑器内容区域、Banner、Sheet 等 UI 组件。
 /// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
 public struct EditorPanelView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
@@ -54,12 +54,6 @@ public struct EditorPanelView: View {
         }
         .onChange(of: service.currentFileURL) {
             coordinator.handleCurrentFileURLChange()
-        }
-        .onChange(of: service.cursorLine) {
-            coordinator.handleCursorLineChange()
-        }
-        .onChange(of: service.documentSymbolProvider.symbols.map(\.id)) {
-            coordinator.handleDocumentSymbolsChange()
         }
         .onAppear {
             coordinator.configure(

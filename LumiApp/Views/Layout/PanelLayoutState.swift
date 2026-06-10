@@ -34,6 +34,13 @@ final class PanelLayoutState: ObservableObject {
     func persistActiveRailTabID() {
         store.saveSelectedRailTabID(activeRailTabID)
     }
+
+    func presentRailTab(id: String) {
+        railVisible = true
+        activeRailTabID = id
+        persistRailVisible()
+        persistActiveRailTabID()
+    }
 }
 
 private extension LayoutPluginLocalStore {

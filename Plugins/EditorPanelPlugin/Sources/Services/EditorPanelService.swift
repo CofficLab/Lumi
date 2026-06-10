@@ -21,9 +21,6 @@ public final class EditorPanelService: ObservableObject {
 
     // MARK: - 属性
 
-    /// 当前拖拽中的标签页 Session ID
-    @Published var draggedTabSessionID: UUID?
-
     /// 命令面板是否展示
     @Published var isCommandPalettePresented: Bool = false
 
@@ -60,30 +57,6 @@ public final class EditorPanelService: ObservableObject {
         service.open(at: fileURL)
     }
 
-    /// 激活指定标签页对应的会话
-    public func activateSession(
-        _ tab: EditorTab,
-        service: EditorService,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        _ = service.activateSession(id: tab.sessionID)
-        if let fileURL = tab.fileURL {
-            selectFile(fileURL)
-        }
-    }
-
-    /// 激活 Open Editor 列表中的条目
-    public func activateOpenEditor(
-        _ item: EditorOpenEditorItem,
-        service: EditorService,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        _ = service.activateSession(id: item.sessionID)
-        if let fileURL = item.fileURL {
-            selectFile(fileURL)
-        }
-    }
-
     /// 通过 Quick Open 打开文件
     public func openFileFromQuickOpen(
         _ url: URL,
@@ -104,97 +77,6 @@ public final class EditorPanelService: ObservableObject {
         service.performNavigation(.definition(url, target, highlightLine: highlightLine))
     }
 
-    /// 关闭指定标签页的会话
-    public func closeSession(
-        _ tab: EditorTab,
-        service: EditorService,
-        clearFileSelection: @MainActor () -> Void,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        guard let session = service.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == service.activeSessionID
-        if wasActive, service.hasUnsavedChanges {
-            service.saveNow()
-        }
-
-        let nextSession = service.closeSession(id: session.id)
-        guard wasActive else { return }
-
-        if let nextFileURL = nextSession?.fileURL {
-            selectFile(nextFileURL)
-        } else {
-            clearFileSelection()
-        }
-    }
-
-    /// 关闭除指定标签页外的所有会话
-    public func closeOtherSessions(
-        _ tab: EditorTab,
-        service: EditorService,
-        clearFileSelection: @MainActor () -> Void,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        guard let session = service.session(for: tab.sessionID) else { return }
-        if service.currentFileURL != session.fileURL, service.hasUnsavedChanges {
-            service.saveNow()
-        }
-
-        let keptSession = service.closeOtherSessions(keeping: session.id)
-        if let fileURL = keptSession?.fileURL {
-            selectFile(fileURL)
-        } else {
-            clearFileSelection()
-        }
-    }
-
-    /// 导航后退
-    public func navigateBack(
-        service: EditorService,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        guard let session = service.goBack(),
-              let fileURL = session.fileURL else { return }
-        selectFile(fileURL)
-        restoreInteractionState(for: session, service: service)
-    }
-
-    /// 导航前进
-    public func navigateForward(
-        service: EditorService,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        guard let session = service.goForward(),
-              let fileURL = session.fileURL else { return }
-        selectFile(fileURL)
-        restoreInteractionState(for: session, service: service)
-    }
-
-    /// 切换标签页固定状态
-    public func togglePinned(sessionID: UUID, service: EditorService) {
-        service.togglePinned(sessionID: sessionID)
-    }
-
-    /// 拖拽排序 — 开始拖拽
-    public func beginTabDrag(_ tab: EditorTab) {
-        draggedTabSessionID = tab.sessionID
-    }
-
-    /// 拖拽排序 — 放下
-    public func dropDraggedTabInActiveStrip(
-        before targetTab: EditorTab?,
-        service: EditorService
-    ) {
-        guard let draggedTabSessionID else { return }
-        defer { self.draggedTabSessionID = nil }
-
-        if targetTab?.sessionID == draggedTabSessionID { return }
-
-        _ = service.reorderSession(
-            sessionID: draggedTabSessionID,
-            before: targetTab?.sessionID
-        )
-    }
-
     // MARK: - 项目上下文
 
     /// 刷新项目上下文
@@ -207,29 +89,6 @@ public final class EditorPanelService: ObservableObject {
         Task { @MainActor in
             await service.refreshProjectContext(for: trimmedPath)
         }
-    }
-
-    // MARK: - 面包屑
-
-    /// 更新面包屑桥接
-    public func updateBreadcrumbBridge(service: EditorService) {
-        let activeSymbolTrail = service.documentSymbolProvider.activeItems(for: service.cursorLine)
-        EditorBreadcrumbContextBridge.shared.update(
-            currentFileURL: service.currentFileURL,
-            activeSymbolTrail: activeSymbolTrail,
-            openSymbol: { [weak service] symbol in
-                service?.performOpenItem(.documentSymbol(symbol))
-            }
-        )
-    }
-
-    /// 清空面包屑桥接
-    public func clearBreadcrumbBridge() {
-        EditorBreadcrumbContextBridge.shared.update(
-            currentFileURL: nil,
-            activeSymbolTrail: [],
-            openSymbol: nil
-        )
     }
 
     // MARK: - 打开的编辑器列表
@@ -303,28 +162,5 @@ public final class EditorPanelService: ObservableObject {
     ) {
         guard isFileSelected else { return }
         service.performCommand(id: commandID)
-    }
-
-    // MARK: - 私有方法
-
-    /// 恢复交互状态
-    private func restoreInteractionState(for session: EditorSession, service: EditorService) {
-        let snapshot = session
-
-        guard let fileURL = snapshot.fileURL else { return }
-
-        let canRestoreImmediately =
-            service.currentFileURL == fileURL &&
-            service.content != nil &&
-            service.focusedTextView != nil
-
-        if canRestoreImmediately {
-            service.applySessionRestore(snapshot)
-            return
-        }
-
-        if service.currentFileURL != fileURL {
-            service.loadFile(from: fileURL)
-        }
     }
 }

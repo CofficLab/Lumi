@@ -36,7 +36,7 @@ struct EditorScopeView<Content: View>: View {
             .environmentObject(editorContext)
             .environmentObject(editor.editorService)
             .background {
-                EditorWindowToolbarSuppressor()
+                WindowToolbarSuppressor()
             }
             .onAppear {
                 editor.currentProjectPathProvider = { [projectVM] in

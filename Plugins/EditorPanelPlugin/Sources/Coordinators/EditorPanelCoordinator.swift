@@ -7,8 +7,7 @@ import os
 /// 编辑器面板协调器
 ///
 /// 负责管理 EditorPanelView 的生命周期事件（`onAppear`/`onDisappear`/`onChange`）
-/// 和编辑器命令通知的路由。将视图层的副作用编排逻辑从 EditorPanelView 中提取出来，
-/// 使视图专注于纯布局。
+/// 和编辑器命令通知的路由。将视图层的副作用编排逻辑从 EditorPanelView 中提取出来。
 ///
 /// ## 职责
 ///
@@ -77,16 +76,13 @@ public final class EditorPanelCoordinator: ObservableObject {
             )
             service.refreshDocumentOutline()
         }
-
-        panelService.updateBreadcrumbBridge(service: service)
     }
 
     /// 视图消失时的清理逻辑
     public func handleDisappear() {
-        guard let panelService, let service else { return }
+        guard let service else { return }
 
         if service.hasUnsavedChanges { service.saveNow() }
-        panelService.clearBreadcrumbBridge()
     }
 
     /// App 切到后台时保存当前脏文件，匹配 VS Code 的 focus-change auto save 行为。
@@ -118,21 +114,8 @@ public final class EditorPanelCoordinator: ObservableObject {
 
     /// 处理当前文件 URL 变化（state 层面）
     public func handleCurrentFileURLChange() {
-        guard let panelService, let service else { return }
+        guard let service else { return }
         service.refreshDocumentOutline()
-        panelService.updateBreadcrumbBridge(service: service)
-    }
-
-    /// 处理光标行变化
-    public func handleCursorLineChange() {
-        guard let panelService, let service else { return }
-        panelService.updateBreadcrumbBridge(service: service)
-    }
-
-    /// 处理文档符号变化
-    public func handleDocumentSymbolsChange() {
-        guard let panelService, let service else { return }
-        panelService.updateBreadcrumbBridge(service: service)
     }
 
     // MARK: - 命令通知订阅
@@ -175,14 +158,7 @@ public final class EditorPanelCoordinator: ObservableObject {
             }
             .eraseToAnyPublisher()
 
-        let toggleOutlinePublisher = NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)
-            .compactMap { [weak self] notification -> EditorCommandEvent? in
-                guard self?.isTargeted(notification) == true else { return nil }
-                return EditorCommandEvent.toggleOutlinePanel
-            }
-            .eraseToAnyPublisher()
-
-        return Publishers.MergeMany(commandPublishers + [commandPalettePublisher, toggleOutlinePublisher])
+        return Publishers.MergeMany(commandPublishers + [commandPalettePublisher])
             .eraseToAnyPublisher()
     }
 
@@ -199,8 +175,6 @@ public final class EditorPanelCoordinator: ObservableObject {
             )
         case .showCommandPalette:
             panelService.isCommandPalettePresented = true
-        case .toggleOutlinePanel:
-            service.performPanelCommand(.toggleOutline)
         }
     }
 
@@ -223,5 +197,4 @@ public final class EditorPanelCoordinator: ObservableObject {
 public enum EditorCommandEvent {
     case command(String)
     case showCommandPalette
-    case toggleOutlinePanel
 }
