@@ -73,7 +73,12 @@ public struct EditorTabHeaderView: View {
                 }
             )
         }
-        .onCurrentFileDidChange { path in
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .currentFileDidChange)
+                .receive(on: RunLoop.main)
+        ) { notification in
+            guard let path = notification.userInfo?["path"] as? String else { return }
             handleCurrentFileDidChange(path: path)
         }
     }
