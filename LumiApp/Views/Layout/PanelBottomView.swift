@@ -51,18 +51,7 @@ struct PanelBottomView: View {
                 .buttonStyle(.plain)
             }
 
-            Spacer()
-
-            Button {
-                layoutState.bottomPanelVisible = false
-                layoutState.persistBottomPanelVisible()
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(theme.textSecondary)
-                    .frame(width: 24, height: 24)
-            }
-            .buttonStyle(.plain)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)
         .background(theme.surface.opacity(0.85))

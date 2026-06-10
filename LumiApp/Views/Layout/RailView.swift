@@ -37,44 +37,42 @@ struct RailView: View {
     }
 
     private var railTabBar: some View {
-        HStack(spacing: 8) {
-            ForEach(tabs) { tab in
-                Button {
-                    layoutState.activeRailTabID = tab.id
-                    layoutState.persistActiveRailTabID()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(tab.title)
-                            .font(
-                                .system(
-                                    size: 11,
-                                    weight: layoutState.activeRailTabID == tab.id ? .semibold : .medium
-                                )
-                            )
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(tabs) { tab in
+                        railTabButton(for: tab)
+                            .id(tab.id)
                     }
-                    .foregroundStyle(
-                        layoutState.activeRailTabID == tab.id ? theme.textPrimary : theme.textSecondary
-                    )
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
             }
-
-            Spacer()
-
-            Button {
-                layoutState.railVisible = false
-                layoutState.persistRailVisible()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(theme.textSecondary)
+            .onChange(of: layoutState.activeRailTabID) { _, tabID in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(tabID, anchor: .center)
+                }
             }
-            .buttonStyle(.plain)
+            .onAppear {
+                proxy.scrollTo(layoutState.activeRailTabID, anchor: .center)
+            }
         }
-        .padding(.horizontal, 10)
         .padding(.vertical, 8)
+    }
+
+    private func railTabButton(for tab: LumiPanelRailTabItem) -> some View {
+        Button {
+            layoutState.activeRailTabID = tab.id
+            layoutState.persistActiveRailTabID()
+        } label: {
+            Image(systemName: tab.systemImage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(
+                    layoutState.activeRailTabID == tab.id ? theme.textPrimary : theme.textSecondary
+                )
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.plain)
+        .help(tab.title)
     }
 
     @ViewBuilder

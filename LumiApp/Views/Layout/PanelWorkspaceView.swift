@@ -12,9 +12,7 @@ struct PanelWorkspaceView: View {
     @ObservedObject var layoutState: PanelLayoutState
 
     private var showBottomPanel: Bool {
-        showsPanelChrome
-            && layoutState.bottomPanelVisible
-            && !bottomTabs.isEmpty
+        showsPanelChrome && !bottomTabs.isEmpty
     }
 
     var body: some View {
@@ -43,9 +41,6 @@ struct PanelWorkspaceView: View {
                                 .id(item.id)
                             AppDivider()
                         }
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        PanelChromeControlsView(layoutState: layoutState)
                     }
                 }
 

@@ -35,9 +35,7 @@ struct AppLayoutView: View {
         let shouldShowChatSection = showsChatSection
             && layoutState.chatSectionVisible
             && !chatSectionItems.isEmpty
-        let showRail = showsPanelChrome
-            && panelLayoutState.railVisible
-            && !railTabs.isEmpty
+        let showRail = showsPanelChrome && !railTabs.isEmpty
         let autosaveName = layoutAutosaveName(showRail: showRail, showChatSection: shouldShowChatSection)
 
         VStack(spacing: 0) {
