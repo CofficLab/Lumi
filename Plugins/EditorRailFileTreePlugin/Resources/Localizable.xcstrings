@@ -1,0 +1,96 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+
+    },
+    "Add to Conversation" : {
+
+    },
+    "Are you sure you want to delete \"%@\"?" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Copy diagnostic text" : {
+
+    },
+    "Copy Path" : {
+
+    },
+    "Copy URL/path" : {
+
+    },
+    "Create" : {
+
+    },
+    "Empty folder" : {
+
+    },
+    "Enter the name for the new file." : {
+
+    },
+    "Enter the name for the new folder." : {
+
+    },
+    "Enter the new name for this item." : {
+
+    },
+    "Explorer" : {
+
+    },
+    "File name" : {
+
+    },
+    "Folder name" : {
+
+    },
+    "Loading..." : {
+
+    },
+    "Move to Trash" : {
+
+    },
+    "New File" : {
+
+    },
+    "New Folder" : {
+
+    },
+    "New name" : {
+
+    },
+    "No package dependencies" : {
+
+    },
+    "No project" : {
+
+    },
+    "Open in Terminal" : {
+
+    },
+    "Open in VS Code" : {
+
+    },
+    "Open Repository" : {
+
+    },
+    "Package Dependencies" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Retry refresh" : {
+
+    },
+    "Reveal in Finder" : {
+
+    },
+    "This item will be moved to the Trash." : {
+
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Close Others" : {
+
+    },
+    "Close Tab" : {
+
+    },
+    "Close Tabs to the Left" : {
+
+    },
+    "Close Tabs to the Right" : {
+
+    },
+    "Pin Tab" : {
+
+    },
+    "Unpin Tab" : {
+
+    }
+  },
+  "version" : "1.0"
+}

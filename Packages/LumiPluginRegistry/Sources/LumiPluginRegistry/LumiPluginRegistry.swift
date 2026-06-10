@@ -98,6 +98,23 @@ import CodeReviewPlugin
 import AgentDelayMessagePlugin
 import AppIconDesignerPlugin
 import EditorPanelPlugin
+import EditorBreadcrumbNavPlugin
+import EditorTabStripPlugin
+import EditorStickySymbolBarPlugin
+import EditorBottomProblemsPlugin
+import EditorBottomReferencesPlugin
+import EditorBottomSearchPlugin
+import EditorBottomSymbolsPlugin
+import EditorBottomCallHierarchyPlugin
+import EditorPreviewPlugin
+import EditorBottomTerminalPlugin
+import EditorRailFileTreePlugin
+import EditorOutlineRailPlugin
+import EditorRailProblemsPlugin
+import EditorRailReferencesPlugin
+import EditorRailSearchPlugin
+import EditorRailSymbolsPlugin
+import EditorRailCallHierarchyPlugin
 import LLMAvailabilityPlugin
 
 @MainActor
@@ -186,6 +203,23 @@ public enum LumiPluginRegistry {
         ConversationTitlePlugin.self,
         ConversationListPlugin.self,
         EditorPanelPlugin.self,
+        EditorBreadcrumbHeaderPlugin.self,
+        EditorTabStripHeaderPlugin.self,
+        EditorStickySymbolBarHeaderPlugin.self,
+        EditorBottomProblemsPanelPlugin.self,
+        EditorBottomReferencesPanelPlugin.self,
+        EditorBottomSearchPanelPlugin.self,
+        EditorBottomSymbolsPanelPlugin.self,
+        EditorBottomCallHierarchyPanelPlugin.self,
+        EditorPreviewBottomPanelPlugin.self,
+        EditorBottomTerminalPanelPlugin.self,
+        EditorRailFileTreePanelPlugin.self,
+        EditorRailOutlinePanelPlugin.self,
+        EditorRailProblemsPanelPlugin.self,
+        EditorRailReferencesPanelPlugin.self,
+        EditorRailSearchPanelPlugin.self,
+        EditorRailSymbolsPanelPlugin.self,
+        EditorRailCallHierarchyPanelPlugin.self,
         AutoTaskPlugin.self,
         GitHubPlugin.self,
         IdleTimePlugin.self,

@@ -1,0 +1,27 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Call Hierarchy" : {
+
+    },
+    "Call Hierarchy (%lld)" : {
+
+    },
+    "Empty" : {
+
+    },
+    "Incoming" : {
+
+    },
+    "Loading Call Hierarchy..." : {
+
+    },
+    "No Call Hierarchy" : {
+
+    },
+    "Outgoing" : {
+
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Diagnostics" : {
+
+    },
+    "No Problems" : {
+
+    },
+    "Problems" : {
+
+    },
+    "Problems (%lld)" : {
+
+    },
+    "Project" : {
+
+    },
+    "Project Context" : {
+
+    }
+  },
+  "version" : "1.0"
+}

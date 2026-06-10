@@ -1,4 +1,7 @@
+import EditorBottomTerminalPlugin
+import EditorPreviewPlugin
 import EditorService
+import EditorStickySymbolBarPlugin
 import Foundation
 import LumiCoreKit
 import LumiUI
@@ -19,13 +22,6 @@ public enum EditorRuntimeBridge {
         guard let editor else { return }
         let service = editor.editorService
 
-        EditorTabStripBridge.editorServiceProvider = { _ in service }
-        BreadcrumbNavBridge.editorServiceProvider = { _ in service }
-        EditorBottomProblemsBridge.editorServiceProvider = { _ in service }
-        EditorBottomReferencesBridge.editorServiceProvider = { _ in service }
-        EditorBottomSymbolsBridge.editorServiceProvider = { _ in service }
-        EditorBottomSearchBridge.editorServiceProvider = { _ in service }
-        EditorBottomCallHierarchyBridge.editorServiceProvider = { _ in service }
         EditorPreviewRuntimeBridge.editorServiceProvider = { _ in service }
         EditorStickySymbolBarBridge.editorServiceProvider = { _ in service }
 

@@ -1,12 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    " %@" : {
-
-    },
-    " = " : {
-
-    },
     " cursors" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -67,9 +61,6 @@
         }
       }
     },
-    "\"%@\"" : {
-
-    },
     "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
       "localizations" : {
         "en" : {
@@ -97,9 +88,6 @@
           }
         }
       }
-    },
-    "(%lld%%)" : {
-
     },
     "%@ -> %@" : {
       "extractionState" : "stale",
@@ -130,16 +118,6 @@
         }
       }
     },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
-    },
     "%@:%lld:%lld" : {
       "localizations" : {
         "en" : {
@@ -151,6 +129,7 @@
       }
     },
     "%d rows × %d columns" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -180,16 +159,6 @@
     },
     "%lld" : {
 
-    },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        }
-      }
     },
     "%lld items" : {
       "extractionState" : "stale",
@@ -221,6 +190,7 @@
       }
     },
     "%lld matches in %lld files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -248,17 +218,8 @@
         }
       }
     },
-    "%lld x %lld pt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld x %2$lld pt"
-          }
-        }
-      }
-    },
     "%lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -285,9 +246,6 @@
           }
         }
       }
-    },
-    "%lld%%" : {
-
     },
     "0/0" : {
       "extractionState" : "stale",
@@ -521,9 +479,6 @@
         }
       }
     },
-    "Add to Chat" : {
-
-    },
     "Add to Conversation" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -755,6 +710,7 @@
       }
     },
     "Breadcrumb Navigation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -896,6 +852,7 @@
       }
     },
     "Build log saved:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -953,6 +910,7 @@
       }
     },
     "building %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -981,6 +939,7 @@
       }
     },
     "cache" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1009,6 +968,7 @@
       }
     },
     "Call Hierarchy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1037,6 +997,7 @@
       }
     },
     "Call Hierarchy (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1065,6 +1026,7 @@
       }
     },
     "Call Hierarchy panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1092,10 +1054,8 @@
         }
       }
     },
-    "Calls" : {
-
-    },
     "Cancel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1153,6 +1113,7 @@
       }
     },
     "Choose which #Preview in the current Swift file to build and render." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1179,18 +1140,6 @@
           }
         }
       }
-    },
-    "Clean all stale String Catalog keys in this project?" : {
-
-    },
-    "Clean Project String Catalogs" : {
-
-    },
-    "Clean stale keys in every String Catalog file in the current project" : {
-
-    },
-    "Clean stale keys in the current String Catalog file" : {
-
     },
     "Clear Additional Cursors" : {
       "extractionState" : "stale",
@@ -1222,6 +1171,7 @@
       }
     },
     "Clear Inline Preview build cache" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1278,6 +1228,7 @@
       }
     },
     "Close Others" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1335,6 +1286,7 @@
       }
     },
     "Close Tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1363,6 +1315,7 @@
       }
     },
     "Close Tabs to the Left" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1391,6 +1344,7 @@
       }
     },
     "Close Tabs to the Right" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1507,6 +1461,7 @@
       }
     },
     "Compilation failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1589,18 +1544,6 @@
           }
         }
       }
-    },
-    "Copied" : {
-
-    },
-    "Copy" : {
-
-    },
-    "Copy diagnostic text" : {
-
-    },
-    "Copy error message to clipboard" : {
-
     },
     "Copy Line Down" : {
       "extractionState" : "stale",
@@ -1689,9 +1632,6 @@
         }
       }
     },
-    "Copy URL/path" : {
-
-    },
     "Create" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1722,6 +1662,7 @@
       }
     },
     "CSV Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1974,6 +1915,7 @@
       }
     },
     "Current Symbol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2002,6 +1944,7 @@
       }
     },
     "Current symbol breadcrumb for the editor panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2407,6 +2350,7 @@
       }
     },
     "Default Localization" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2435,6 +2379,7 @@
       }
     },
     "Default Localization (%@)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2461,9 +2406,6 @@
           }
         }
       }
-    },
-    "Delete" : {
-
     },
     "Delete Line" : {
       "extractionState" : "stale",
@@ -2553,6 +2495,7 @@
       }
     },
     "Dependency planning failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2637,6 +2580,7 @@
       }
     },
     "Diagnostics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2723,6 +2667,7 @@
       }
     },
     "Editor Bottom Call Hierarchy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2751,6 +2696,7 @@
       }
     },
     "Editor Bottom Problems" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2779,6 +2725,7 @@
       }
     },
     "Editor Bottom References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2807,6 +2754,7 @@
       }
     },
     "Editor Bottom Search" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2835,6 +2783,7 @@
       }
     },
     "Editor Bottom Symbols" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2863,6 +2812,7 @@
       }
     },
     "Editor Bottom Terminal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2891,6 +2841,7 @@
       }
     },
     "Editor Rail File Tree" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2918,10 +2869,8 @@
         }
       }
     },
-    "Editor service is not available." : {
-
-    },
     "Editor sidebar explorer tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2950,6 +2899,7 @@
       }
     },
     "Editor Sticky Symbol Bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2978,6 +2928,7 @@
       }
     },
     "Editor Tab Strip" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3006,6 +2957,7 @@
       }
     },
     "Embedded preview powered by LumiPreviewKit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3034,6 +2986,7 @@
       }
     },
     "Empty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3062,6 +3015,7 @@
       }
     },
     "Empty CSV data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3090,6 +3044,7 @@
       }
     },
     "Empty folder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3176,6 +3131,7 @@
       }
     },
     "Enter a query and press Return" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3320,6 +3276,7 @@
       }
     },
     "Entry debug state" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3375,10 +3332,8 @@
         }
       }
     },
-    "Explorer" : {
-
-    },
     "Failed to capture preview screenshot." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3406,13 +3361,8 @@
         }
       }
     },
-    "Failed to clean project String Catalogs: %@" : {
-
-    },
-    "Failed to clean String Catalog: %@" : {
-
-    },
     "Failed to load image: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3441,6 +3391,7 @@
       }
     },
     "Failed to load string catalog: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3468,13 +3419,8 @@
         }
       }
     },
-    "Failed to save file: %@" : {
-
-    },
-    "Failed to save file." : {
-
-    },
     "Failed to save screenshot: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3503,6 +3449,7 @@
       }
     },
     "failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3560,6 +3507,7 @@
       }
     },
     "File not found: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3644,6 +3592,7 @@
       }
     },
     "File path breadcrumb navigation below editor tabs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3670,9 +3619,6 @@
           }
         }
       }
-    },
-    "File saved to Downloads: %@" : {
-
     },
     "File too large. Preview is truncated." : {
       "extractionState" : "stale",
@@ -3731,9 +3677,6 @@
           }
         }
       }
-    },
-    "Filter symbols" : {
-
     },
     "Find" : {
       "extractionState" : "stale",
@@ -4604,6 +4547,7 @@
       }
     },
     "HTML Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4632,6 +4576,7 @@
       }
     },
     "Image Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4689,6 +4634,7 @@
       }
     },
     "Incoming" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4831,6 +4777,7 @@
       }
     },
     "Inline Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4946,6 +4893,7 @@
       }
     },
     "Invalid CSV" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4974,6 +4922,7 @@
       }
     },
     "Invalid JSON" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5002,6 +4951,7 @@
       }
     },
     "Invalid JSON data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5029,10 +4979,8 @@
         }
       }
     },
-    "Invalid JSONL at line %lld" : {
-
-    },
     "Invalid plist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5061,6 +5009,7 @@
       }
     },
     "Invalid plist data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5176,6 +5125,7 @@
       }
     },
     "JSON Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5233,6 +5183,7 @@
       }
     },
     "Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5284,16 +5235,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L%lld %@"
-          }
-        }
-      }
-    },
-    "L%lld:C%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "L%1$lld:C%2$lld"
           }
         }
       }
@@ -5356,6 +5297,7 @@
       }
     },
     "Ln %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5451,6 +5393,7 @@
       }
     },
     "Loading Call Hierarchy..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5477,9 +5420,6 @@
           }
         }
       }
-    },
-    "Loading Outline..." : {
-
     },
     "Loading..." : {
       "extractionState" : "manual",
@@ -5655,6 +5595,7 @@
       }
     },
     "Markdown Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5683,6 +5624,7 @@
       }
     },
     "Markdown TODO completion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5711,6 +5653,7 @@
       }
     },
     "match" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5767,6 +5710,7 @@
       }
     },
     "matches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6196,6 +6140,7 @@
       }
     },
     "New name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6224,6 +6169,7 @@
       }
     },
     "New Terminal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6252,6 +6198,7 @@
       }
     },
     "No #Preview in the current Swift file." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6338,6 +6285,7 @@
       }
     },
     "No Call Hierarchy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6451,6 +6399,7 @@
       }
     },
     "No CSV content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6479,6 +6428,7 @@
       }
     },
     "No data rows found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6679,6 +6629,7 @@
       }
     },
     "No JSON content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6707,6 +6658,7 @@
       }
     },
     "No Markdown content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6763,6 +6715,7 @@
       }
     },
     "No open terminals" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6790,10 +6743,8 @@
         }
       }
     },
-    "No package dependencies" : {
-
-    },
     "No plist content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6851,6 +6802,7 @@
       }
     },
     "No Problems" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6908,6 +6860,7 @@
       }
     },
     "No References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6965,6 +6918,7 @@
       }
     },
     "No results" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7021,10 +6975,8 @@
         }
       }
     },
-    "No stale String Catalog keys found." : {
-
-    },
     "No String Catalog content to preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7051,9 +7003,6 @@
           }
         }
       }
-    },
-    "No Symbols" : {
-
     },
     "No type definition found" : {
       "extractionState" : "stale",
@@ -7283,9 +7232,6 @@
         }
       }
     },
-    "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here." : {
-
-    },
     "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7316,6 +7262,7 @@
       }
     },
     "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7488,6 +7435,7 @@
       }
     },
     "Open Repository" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7516,6 +7464,7 @@
       }
     },
     "Open Search Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7573,6 +7522,7 @@
       }
     },
     "Outgoing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7601,6 +7551,7 @@
       }
     },
     "Outline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7628,13 +7579,8 @@
         }
       }
     },
-    "Outline not available" : {
-
-    },
-    "Package Dependencies" : {
-
-    },
     "PDF Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7721,6 +7667,7 @@
       }
     },
     "Pin Tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7749,6 +7696,7 @@
       }
     },
     "Plist Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7834,6 +7782,7 @@
       }
     },
     "Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7891,6 +7840,7 @@
       }
     },
     "Preview dylib failed to load" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7919,6 +7869,7 @@
       }
     },
     "Preview failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7975,6 +7926,7 @@
       }
     },
     "Problems" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8003,6 +7955,7 @@
       }
     },
     "Problems (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8031,6 +7984,7 @@
       }
     },
     "Problems panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8059,6 +8013,7 @@
       }
     },
     "Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8087,6 +8042,7 @@
       }
     },
     "Project Context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8427,6 +8383,7 @@
       }
     },
     "ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8483,6 +8440,7 @@
       }
     },
     "rebuilt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8568,6 +8526,7 @@
       }
     },
     "Reference" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8596,6 +8555,7 @@
       }
     },
     "References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8624,6 +8584,7 @@
       }
     },
     "References (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8652,6 +8613,7 @@
       }
     },
     "References panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8680,6 +8642,7 @@
       }
     },
     "Refresh entry debug state" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8795,6 +8758,7 @@
       }
     },
     "Removed %d stale key(s) from %d String Catalog file(s)." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8822,10 +8786,8 @@
         }
       }
     },
-    "Removed %d stale String Catalog key(s)." : {
-
-    },
     "Rename" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9142,6 +9104,7 @@
       }
     },
     "Retry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9170,6 +9133,7 @@
       }
     },
     "Retry preview build" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9196,9 +9160,6 @@
           }
         }
       }
-    },
-    "Retry refresh" : {
-
     },
     "Reveal in Finder" : {
       "extractionState" : "manual",
@@ -9316,6 +9277,7 @@
       }
     },
     "running · %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9430,9 +9392,6 @@
         }
       }
     },
-    "Scanned %d String Catalog file(s); no stale keys found." : {
-
-    },
     "Scheme" : {
       "localizations" : {
         "en" : {
@@ -9518,6 +9477,7 @@
       }
     },
     "Screenshot preview canvas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9574,10 +9534,8 @@
         }
       }
     },
-    "Screenshot saved to Downloads and copied to clipboard: %@" : {
-
-    },
     "SDK resolution failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9606,6 +9564,7 @@
       }
     },
     "Search" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9634,6 +9593,7 @@
       }
     },
     "Search in files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9691,6 +9651,7 @@
       }
     },
     "Search panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9719,6 +9680,7 @@
       }
     },
     "Searching workspace…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9773,9 +9735,6 @@
           }
         }
       }
-    },
-    "Select a project before cleaning String Catalogs." : {
-
     },
     "Select All Occurrences" : {
       "extractionState" : "stale",
@@ -9922,6 +9881,7 @@
       }
     },
     "Show entry debug state" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9979,6 +9939,7 @@
       }
     },
     "Show log file in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10034,9 +9995,6 @@
           }
         }
       }
-    },
-    "Show Sidebar" : {
-
     },
     "Sort Lines Ascending" : {
       "extractionState" : "stale",
@@ -10154,10 +10112,8 @@
         }
       }
     },
-    "Stale String Catalog keys in the current file" : {
-
-    },
     "starting" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10186,6 +10142,7 @@
       }
     },
     "stopping" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10214,6 +10171,7 @@
       }
     },
     "String Catalog Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10268,9 +10226,6 @@
           }
         }
       }
-    },
-    "Symbols" : {
-
     },
     "Syntax highlighting limit: first %@ lines" : {
       "extractionState" : "stale",
@@ -10360,6 +10315,7 @@
       }
     },
     "Tab bar for the editor panel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10416,6 +10372,7 @@
       }
     },
     "Terminal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10444,6 +10401,7 @@
       }
     },
     "Terminal panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10614,6 +10572,7 @@
       }
     },
     "This file type is not supported by Inline Preview yet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10669,15 +10628,6 @@
           }
         }
       }
-    },
-    "This rewrites every .xcstrings file under the current project and removes entries marked as stale." : {
-
-    },
-    "TOC" : {
-
-    },
-    "Toggle Bottom Panel" : {
-
     },
     "Toggle Line Comment" : {
       "extractionState" : "stale",
@@ -10938,9 +10888,6 @@
         }
       }
     },
-    "Unclosed quoted field" : {
-
-    },
     "Undetermined" : {
       "localizations" : {
         "en" : {
@@ -11085,6 +11032,7 @@
       }
     },
     "Unpin Tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11170,6 +11118,7 @@
       }
     },
     "Unsupported plist format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11314,6 +11263,7 @@
       }
     },
     "warming" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11399,6 +11349,7 @@
       }
     },
     "Workspace Symbols" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11427,6 +11378,7 @@
       }
     },
     "Workspace Symbols (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11455,6 +11407,7 @@
       }
     },
     "Workspace symbols not available" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11483,6 +11436,7 @@
       }
     },
     "Workspace Symbols panel in the editor bottom area" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11593,15 +11547,6 @@
           }
         }
       }
-    },
-    "工作区符号当前不可用" : {
-
-    },
-    "搜索符号..." : {
-
-    },
-    "未找到匹配的符号" : {
-
     }
   },
   "version" : "1.0"

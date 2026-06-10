@@ -1,0 +1,50 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld matches in %lld files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld matches in %2$lld files"
+          }
+        }
+      }
+    },
+    "Enter a query and press Return" : {
+
+    },
+    "L%lld:C%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld:C%2$lld"
+          }
+        }
+      }
+    },
+    "match" : {
+
+    },
+    "matches" : {
+
+    },
+    "No results" : {
+
+    },
+    "Open Search Editor" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search in files" : {
+
+    },
+    "Searching workspace…" : {
+
+    }
+  },
+  "version" : "1.0"
+}

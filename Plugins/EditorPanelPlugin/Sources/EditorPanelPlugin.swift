@@ -1,5 +1,6 @@
 import AgentToolKit
 import EditorService
+import EditorTabStripPlugin
 import LumiCoreKit
 import LumiUI
 import os
@@ -25,10 +26,7 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        guard
-            let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self) as? LumiCurrentProjectPathStore,
-            let editor = context.resolve(LumiEditorServicing.self)
-        else {
+        guard context.resolve(LumiEditorServicing.self) != nil else {
             return []
         }
 
@@ -37,9 +35,10 @@ public enum EditorPanelPlugin: LumiPlugin {
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
-                showsChatSection: true
+                showsChatSection: true,
+                showsPanelChrome: true
             ) {
-                EditorPanelHostView(projectPathStore: projectPathStore, editor: editor)
+                EditorPanelHostView()
             }
         ]
     }
