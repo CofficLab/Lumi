@@ -21,8 +21,12 @@ struct ChatSectionView: View {
         AnyView(
             VStack(spacing: 0) {
                 ForEach(Array(stackItems.enumerated()), id: \.element.id) { index, item in
+                    let isPrimaryStack = index == 0
+
                     item.makeView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                        .frame(maxHeight: isPrimaryStack ? .infinity : nil, alignment: .top)
+                        .layoutPriority(isPrimaryStack ? 1 : 0)
 
                     if index < stackItems.count - 1 {
                         GlassDivider()
@@ -42,7 +46,7 @@ struct ChatSectionView: View {
                     }
                 }
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxHeight: .infinity, alignment: .top)
         )
     }
 }

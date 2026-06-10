@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -47,12 +48,23 @@ public enum AutoTaskPlugin: LumiPlugin {
 
         return [
             LumiChatSectionItem(id: info.id, order: info.order) {
-                AutoTaskSidebarView(
-                    conversationIdProvider: { chatService.selectedConversationID },
-                    backgroundColorProvider: { Color.clear }
-                )
+                AutoTaskChatSectionView(chatService: chatService)
             }
         ]
+    }
+}
+
+private struct AutoTaskChatSectionView: View {
+    @LumiTheme private var theme
+    let chatService: any LumiChatServicing
+
+    var body: some View {
+        AutoTaskSidebarView(
+            conversationIdProvider: { chatService.selectedConversationID },
+            backgroundColorProvider: {
+                theme.background.opacity(0.94)
+            }
+        )
     }
 }
 
