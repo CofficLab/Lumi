@@ -1,7 +1,5 @@
 import AgentToolKit
-import LumiChatKit
 import LumiCoreKit
-import LumiUI
 import os
 import SwiftUI
 
@@ -40,23 +38,20 @@ public enum AutoTaskPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == ChatPanelSection.id,
+    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+        guard context.showsChatSection,
               let chatService = context.resolve((any LumiChatServicing).self)
         else {
             return []
         }
 
         return [
-            LumiStatusBarItem(
-                id: "\(info.id).tasks",
-                title: String(localized: "Tasks", bundle: .module),
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    AutoTaskStatusBarView(chatService: chatService)
-                }
-            )
+            LumiChatSectionItem(id: info.id, order: info.order) {
+                AutoTaskSidebarView(
+                    conversationIdProvider: { chatService.selectedConversationID },
+                    backgroundColorProvider: { Color.clear }
+                )
+            }
         ]
     }
 }

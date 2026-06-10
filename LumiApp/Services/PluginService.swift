@@ -106,6 +106,31 @@ final class PluginService: ObservableObject {
             .sorted { $0.order < $1.order }
     }
 
+    func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+        guard context.showsChatSection else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.chatSectionItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
+    func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
+        guard context.showsChatSection else { return content }
+        return enabledPlugins.reduce(content) { wrapped, plugin in
+            plugin.chatSectionRootWrapper(context: context, content: wrapped)
+        }
+    }
+
+    func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+        guard context.showsChatSection else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.chatSectionToolbarItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
     func themeContributions() -> [LumiUIThemeContribution] {
         enabledPlugins.flatMap { plugin -> [LumiUIThemeContribution] in
             guard let provider = plugin as? any LumiUIThemeProviding.Type else {

@@ -1,5 +1,6 @@
 import LumiCoreKit
 import SwiftUI
+import ChatPanelPlugin
 
 @MainActor
 final class RootContainer: ObservableObject {
@@ -11,6 +12,7 @@ final class RootContainer: ObservableObject {
     let projectPathStore: LumiCurrentProjectPathStore
     let editorCoreService: EditorCoreService
     let chatCoreService: ChatCoreService
+    let chatSectionCoordinator: ChatSectionCoordinator
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
 
@@ -29,6 +31,10 @@ final class RootContainer: ObservableObject {
             pluginService: pluginService,
             toolService: toolService,
             projectPathStore: projectPathStore
+        )
+        self.chatSectionCoordinator = ChatSectionCoordinator(
+            chatService: chatCoreService.chatService,
+            databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)

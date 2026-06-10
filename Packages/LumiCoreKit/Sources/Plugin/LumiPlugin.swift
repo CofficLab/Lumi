@@ -38,6 +38,15 @@ public protocol LumiPlugin {
 
     @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
+
+    @MainActor
+    static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem]
+
+    @MainActor
+    static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView
+
+    @MainActor
+    static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem]
 }
 
 public extension LumiPlugin {
@@ -101,6 +110,21 @@ public extension LumiPlugin {
 
     @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        []
+    }
+
+    @MainActor
+    static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+        []
+    }
+
+    @MainActor
+    static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
+        content
+    }
+
+    @MainActor
+    static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
         []
     }
 }

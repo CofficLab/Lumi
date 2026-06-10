@@ -22,15 +22,18 @@ public struct LumiPluginDependencies {
 public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
+    public let showsChatSection: Bool
     public let dependencies: LumiPluginDependencies
 
     public init(
         activeSectionID: String,
         activeSectionTitle: String,
+        showsChatSection: Bool = false,
         dependencies: LumiPluginDependencies = LumiPluginDependencies()
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
+        self.showsChatSection = showsChatSection
         self.dependencies = dependencies
     }
 

@@ -1,32 +1,9 @@
 import Foundation
 import LumiCoreKit
-import SwiftUI
 import Testing
 @testable import LayoutPlugin
 
-@MainActor
-@Test
-func toolbarViewRequiresLayoutControlCapability() {
-    let context = PluginContext(
-        activeIcon: "bubble.left.and.bubble.right.fill",
-        layoutControlContext: LayoutControlContext(
-            editorVisible: .constant(true),
-            contentPanelVisible: .constant(true),
-            bottomPanelVisible: .constant(false),
-            railVisible: .constant(true),
-            rightSidebarVisible: .constant(true)
-        )
-    )
-    let missingCapabilityContext = PluginContext(activeIcon: "bubble.left.and.bubble.right.fill")
-    let hiddenContext = PluginContext(activeIcon: "sidebar")
-
-    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: context) != nil)
-    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: missingCapabilityContext) == nil)
-    #expect(LayoutPlugin.shared.addToolBarTrailingView(context: hiddenContext) == nil)
-}
-
-@Test
-func localStorePersistsLayoutSettings() throws {
+@Test func localStorePersistsLayoutSettings() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -43,8 +20,7 @@ func localStorePersistsLayoutSettings() throws {
     #expect(store.loadEditorVisible() == false)
 }
 
-@Test
-func localStoreQuarantinesCorruptSettingsAndRecovers() throws {
+@Test func localStoreQuarantinesCorruptSettingsAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-Corrupt-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }

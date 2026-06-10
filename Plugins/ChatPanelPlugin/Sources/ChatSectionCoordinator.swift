@@ -1,0 +1,196 @@
+import AppKit
+import ChatInputEditorKit
+import LumiChatKit
+import LumiCoreKit
+import SwiftUI
+import UniformTypeIdentifiers
+
+@MainActor
+public final class ChatSectionCoordinator: ObservableObject {
+    @Published public var draft = ""
+    @Published public var rawMessageIDs: Set<UUID> = []
+    @Published public var oldestVisibleMessageID: UUID?
+    @Published public var inputHeight: CGFloat = ChatInputEditorView.minHeight
+    @Published public var isInputFocused = false
+    @Published public var inputCursorPosition = 0
+    @Published public var isImageDragHovering = false
+    @Published public var imageAttachments: [LumiImageAttachment] = []
+    @Published public var showCommandSuggestions = false
+
+    public let chatService: ChatService
+    private let localStore: LocalStore?
+
+    public init(chatService: ChatService, databaseDirectory: URL? = nil) {
+        self.chatService = chatService
+        self.localStore = databaseDirectory.map { LocalStore(databaseDirectory: $0) }
+    }
+
+    public var selectedConversationID: UUID? {
+        chatService.selectedConversationID ?? chatService.conversations.first?.id
+    }
+
+    public func displayedMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        let transientStatus = chatService.transientStatusMessage(for: conversationID)
+        let page: [LumiChatMessage]
+        if let oldestVisibleMessageID {
+            page = chatService.visibleMessages(
+                for: conversationID,
+                limit: 10,
+                beforeMessageID: oldestVisibleMessageID
+            )
+        } else {
+            let persisted = chatService.messages(for: conversationID).filter {
+                $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+            }
+            page = Array(persisted.suffix(10))
+        }
+
+        guard let transientStatus else {
+            return page
+        }
+        return page + [transientStatus]
+    }
+
+    public func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {
+        chatService.pendingMessages.filter { $0.conversationID == conversationID }
+    }
+
+    public func loadEarlierMessages() {
+        guard let selectedID = selectedConversationID else { return }
+        let persisted = chatService.messages(for: selectedID).filter { $0.role != .tool && $0.role != .status }
+        if let oldestVisibleMessageID {
+            if let index = persisted.firstIndex(where: { $0.id == oldestVisibleMessageID }), index > 0 {
+                self.oldestVisibleMessageID = persisted[max(0, index - 10)].id
+            }
+        } else if let first = persisted.first {
+            oldestVisibleMessageID = first.id
+        }
+    }
+
+    public func send() {
+        let selectedID = selectedConversationID
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty || !imageAttachments.isEmpty else { return }
+
+        if text.hasPrefix("/") {
+            if let command = ChatSlashCommand.suggestions(for: text).first(where: { $0.command == text.lowercased() }) {
+                handleSlashCommand(command, selectedID: selectedID)
+                draft = ""
+                return
+            }
+        }
+
+        let attachments = imageAttachments
+        draft = ""
+        imageAttachments = []
+        showCommandSuggestions = false
+        chatService.enqueueText(text, imageAttachments: attachments, in: selectedID)
+    }
+
+    func handleSlashCommand(_ command: ChatSlashCommand, selectedID: UUID?) {
+        showCommandSuggestions = false
+        switch command.command {
+        case "/clear":
+            if let selectedID {
+                for message in chatService.messages(for: selectedID) {
+                    chatService.deleteMessage(id: message.id, in: selectedID)
+                }
+            }
+        case "/help", "/model":
+            draft = ""
+            isInputFocused = true
+        default:
+            draft = command.command + " "
+        }
+    }
+
+    public func selectImageAttachment() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+        panel.begin { [weak self] response in
+            guard response == .OK, let self else { return }
+            for url in panel.urls {
+                self.addImageAttachment(url: url)
+            }
+        }
+    }
+
+    public func handleFileDrop(_ url: URL) {
+        let fileURL = url.standardizedFileURL
+        if ChatInputEditorRules.isChatImageFileURL(fileURL) {
+            addImageAttachment(url: fileURL)
+        } else {
+            appendToDraft(fileURL.path)
+        }
+    }
+
+    public func appendToDraft(_ value: String) {
+        if draft.isEmpty {
+            draft = value
+        } else {
+            draft += "\n" + value
+        }
+        inputCursorPosition = draft.count
+        isInputFocused = true
+    }
+
+    public func addImageAttachment(url: URL) {
+        guard let data = try? Data(contentsOf: url) else { return }
+        let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
+        addImageAttachment(
+            data: data,
+            mimeType: mimeType,
+            fileName: url.lastPathComponent
+        )
+    }
+
+    public func addImageAttachment(data: Data, mimeType: String = "image/png", fileName: String? = nil) {
+        let resolvedFileName = fileName ?? defaultScreenshotFileName()
+        imageAttachments.append(
+            LumiImageAttachment(
+                mimeType: mimeType,
+                base64Data: data.base64EncodedString(),
+                fileName: resolvedFileName
+            )
+        )
+    }
+
+    public func selectedTitle(for id: UUID?) -> String {
+        guard let id,
+              let conversation = chatService.conversations.first(where: { $0.id == id })
+        else {
+            return "Chat"
+        }
+        return conversation.title
+    }
+
+    public func rawMessageBinding(for id: UUID) -> Binding<Bool> {
+        Binding(
+            get: { self.rawMessageIDs.contains(id) },
+            set: { isPresented in
+                if isPresented {
+                    self.rawMessageIDs.insert(id)
+                } else {
+                    self.rawMessageIDs.remove(id)
+                }
+            }
+        )
+    }
+
+    public func resetOldestVisibleMessageID() {
+        oldestVisibleMessageID = nil
+    }
+
+    public func bindDraftChanges() {
+        showCommandSuggestions = draft.hasPrefix("/")
+    }
+
+    private func defaultScreenshotFileName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return "screenshot-\(formatter.string(from: Date())).png"
+    }
+}

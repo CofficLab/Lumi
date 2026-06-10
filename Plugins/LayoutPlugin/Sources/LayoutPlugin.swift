@@ -22,6 +22,26 @@ public enum LayoutPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(info.id).layout-menu",
+                title: String(localized: "Layout", bundle: .module),
+                placement: .trailing
+            ) {
+                LayoutMenuButton(
+                    layoutContext: LayoutControlContext(
+                        chatSectionVisible: Binding(
+                            get: { LumiLayoutStateStore.shared.chatSectionVisible },
+                            set: { LumiLayoutStateStore.shared.chatSectionVisible = $0 }
+                        )
+                    )
+                )
+            }
+        ]
+    }
 }
 
 private struct LayoutPersistenceAnchor: View {
@@ -44,6 +64,10 @@ private struct LayoutPersistenceAnchor: View {
             guard hasRestored else { return }
             LayoutPluginLocalStore.shared.saveActiveViewContainerID(newValue)
         }
+        .onChange(of: layoutState.chatSectionVisible) { _, newValue in
+            guard hasRestored else { return }
+            LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
+        }
     }
 
     private func restoreIfNeeded() {
@@ -52,6 +76,9 @@ private struct LayoutPersistenceAnchor: View {
 
         if let savedID = LayoutPluginLocalStore.shared.loadActiveViewContainerID() {
             layoutState.activeViewContainerID = savedID
+        }
+        if let savedVisible = LayoutPluginLocalStore.shared.loadRightSidebarVisible() {
+            layoutState.chatSectionVisible = savedVisible
         }
     }
 }

@@ -36,7 +36,8 @@ public enum EditorPanelPlugin: LumiPlugin {
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
-                systemImage: iconName
+                systemImage: iconName,
+                showsChatSection: true
             ) {
                 EditorPanelHostView(projectPathStore: projectPathStore, editor: editor)
             }

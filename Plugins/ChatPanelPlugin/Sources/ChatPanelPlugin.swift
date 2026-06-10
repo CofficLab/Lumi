@@ -50,7 +50,8 @@ public enum ChatPanelPlugin: LumiPlugin {
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
-                systemImage: iconName
+                systemImage: iconName,
+                showsChatSection: true
             ) {
                 if let chatService = context.resolve(LumiChatServicing.self) as? ChatService {
                     let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath

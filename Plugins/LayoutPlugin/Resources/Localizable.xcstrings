@@ -88,6 +88,9 @@
         }
       }
     },
+    "Layout" : {
+
+    },
     "Layout Persistence" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -176,7 +179,6 @@
       }
     },
     "Right Sidebar" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
