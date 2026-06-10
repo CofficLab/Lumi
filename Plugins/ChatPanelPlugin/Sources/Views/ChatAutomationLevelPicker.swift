@@ -13,16 +13,16 @@ struct ChatAutomationLevelPicker: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: ToolbarMetrics.chipSpacing) {
                 Image(systemName: selectedLevel.iconName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: ToolbarMetrics.iconWeight))
                 Text(selectedLevel.levelCode)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
             }
             .foregroundColor(.red)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .help(selectedLevel.description)

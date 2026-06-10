@@ -13,16 +13,16 @@ struct ChatVerbosityPicker: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: ToolbarMetrics.chipSpacing) {
                 Image(systemName: selectedLevel.iconName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
                 Text(selectedLevel.levelCode)
-                    .font(.appMicroEmphasized)
+                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
             }
             .foregroundColor(foregroundColor)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(backgroundColor, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .background(backgroundColor, in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .help(selectedLevel.description)

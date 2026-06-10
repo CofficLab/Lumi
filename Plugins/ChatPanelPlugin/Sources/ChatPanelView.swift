@@ -89,6 +89,7 @@ public struct ChatPanelView: View {
                     },
                     automationLevel: chatService.automationLevel(for: selectedID)
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 ChatDivider(axis: .horizontal)
 
@@ -117,7 +118,7 @@ public struct ChatPanelView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 4)
 
-                ChatComposerView(
+                ComposerView(
                     text: $draft,
                     inputHeight: $inputHeight,
                     isInputFocused: $isInputFocused,
@@ -158,9 +159,9 @@ public struct ChatPanelView: View {
                     onEscape: { chatService.cancelSending(for: selectedID) }
                 )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .appSurface(style: .panel, cornerRadius: 0)
         .onAppear {
             ensureSelection(conversations: conversations)

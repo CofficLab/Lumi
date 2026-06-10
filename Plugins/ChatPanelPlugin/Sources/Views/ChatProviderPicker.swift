@@ -14,21 +14,21 @@ struct ChatProviderPicker: View {
         Button {
             isPresented.toggle()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: ToolbarMetrics.chipSpacing) {
                 Image(systemName: "globe")
-                    .font(.system(size: 15))
+                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
                 Text(providerLabel)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: ToolbarMetrics.chevronSize, weight: ToolbarMetrics.chevronWeight))
                     .foregroundColor(theme.textSecondary)
             }
             .foregroundColor(theme.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 7)
-            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .contentShape(RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {

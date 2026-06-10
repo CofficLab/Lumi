@@ -26,11 +26,13 @@ struct ChatMessageListView: View {
                     automationLevel: automationLevel,
                     onQuickStart: onQuickStart
                 )
-                .frame(maxWidth: .infinity, minHeight: 320)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 messageListContent(visibleMessages: visibleMessages)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func messageListContent(visibleMessages: [LumiChatMessage]) -> some View {

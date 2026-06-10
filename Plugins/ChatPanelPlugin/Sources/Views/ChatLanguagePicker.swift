@@ -13,16 +13,16 @@ struct ChatLanguagePicker: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: ToolbarMetrics.chipSpacing) {
                 Image(systemName: selectedLanguage.iconName)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
                 Text(selectedLanguage.shortCode)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
             }
             .foregroundColor(.blue)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .help(selectedLanguage.displayName)
