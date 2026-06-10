@@ -1,3 +1,4 @@
+import EditorService
 import LumiCoreKit
 import LumiPluginRegistry
 import LumiUI
@@ -129,6 +130,53 @@ final class PluginService: ObservableObject {
                 plugin.chatSectionToolbarItems(context: context)
             }
             .sorted { $0.order < $1.order }
+    }
+
+    func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+        guard context.showsPanelChrome else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.panelHeaderItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
+    func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+        guard context.showsPanelChrome else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.panelBottomTabItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
+    func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
+        guard context.showsPanelChrome else { return [] }
+
+        var items = enabledPlugins.flatMap { plugin in
+            plugin.editorRailTabItems(context: context)
+        }
+
+        if let editor = context.resolve(LumiEditorServicing.self) {
+            let service = editor.editorService
+            if let languageId = service.detectedLanguage?.tsName,
+               let registration = editor.extensionRegistry.railOutlineRegistration(for: languageId),
+               !items.contains(where: { $0.id == registration.tabID }) {
+                items.append(
+                    LumiEditorRailTabItem(
+                        id: registration.tabID,
+                        order: 90,
+                        title: registration.title,
+                        systemImage: registration.systemImage,
+                        content: {
+                            registration.makeView()
+                        }
+                    )
+                )
+            }
+        }
+
+        return items.sorted { $0.order < $1.order }
     }
 
     func themeContributions() -> [LumiUIThemeContribution] {

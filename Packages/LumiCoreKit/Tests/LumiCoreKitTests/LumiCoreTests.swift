@@ -36,6 +36,74 @@ import Testing
 }
 
 @MainActor
+@Test func panelHeaderItemsRespectShowsPanelChromeGuard() {
+    struct HeaderPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "header", displayName: "Header", description: "", order: 70)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+            guard context.showsPanelChrome else { return [] }
+            return [LumiPanelHeaderItem(id: "header", order: 70) { Text("Header") }]
+        }
+    }
+
+    let hidden = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
+    let visible = LumiPluginContext(
+        activeSectionID: "LumiEditor",
+        activeSectionTitle: "Editor",
+        showsPanelChrome: true
+    )
+
+    #expect(HeaderPlugin.panelHeaderItems(context: hidden).isEmpty)
+    #expect(HeaderPlugin.panelHeaderItems(context: visible).map(\.id) == ["header"])
+}
+
+@MainActor
+@Test func panelBottomTabItemsSortByOrder() {
+    struct FirstBottomPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "first-bottom", displayName: "First", description: "", order: 0)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+            [
+                LumiPanelBottomTabItem(
+                    id: "first",
+                    order: 0,
+                    title: "First",
+                    systemImage: "1.circle"
+                ) { Text("First") }
+            ]
+        }
+    }
+
+    struct SecondBottomPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "second-bottom", displayName: "Second", description: "", order: 1)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+            [
+                LumiPanelBottomTabItem(
+                    id: "second",
+                    order: 1,
+                    title: "Second",
+                    systemImage: "2.circle"
+                ) { Text("Second") }
+            ]
+        }
+    }
+
+    let context = LumiPluginContext(
+        activeSectionID: "LumiEditor",
+        activeSectionTitle: "Editor",
+        showsPanelChrome: true
+    )
+
+    let plugins: [any LumiPlugin.Type] = [SecondBottomPlugin.self, FirstBottomPlugin.self]
+    let items = plugins
+        .flatMap { $0.panelBottomTabItems(context: context) }
+        .sorted { $0.order < $1.order }
+
+    #expect(items.map(\.id) == ["first", "second"])
+}
+
+@MainActor
 @Test func pluginDataDirectoryUsesSanitizedNameUnderConfiguredRoot() {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)

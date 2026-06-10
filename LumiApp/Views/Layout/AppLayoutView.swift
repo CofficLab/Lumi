@@ -7,6 +7,7 @@ import SwiftUI
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    @StateObject private var editorPanelLayoutState = EditorPanelLayoutState()
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
@@ -20,15 +21,24 @@ struct AppLayoutView: View {
         let activeID = selectedContainer?.id ?? "main"
         let activeTitle = selectedContainer?.title ?? "Main"
         let showsChatSection = selectedContainer?.showsChatSection ?? false
+        let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
         let pluginContext = basePluginContext(
             activeSectionID: activeID,
             activeSectionTitle: activeTitle,
-            showsChatSection: showsChatSection
+            showsChatSection: showsChatSection,
+            showsPanelChrome: showsPanelChrome
         )
         let chatSectionItems = pluginService.chatSectionItems(context: pluginContext)
+        let headerItems = pluginService.panelHeaderItems(context: pluginContext)
+        let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
+        let railTabs = pluginService.editorRailTabItems(context: pluginContext)
         let shouldShowChatSection = showsChatSection
             && layoutState.chatSectionVisible
             && !chatSectionItems.isEmpty
+        let showRail = showsPanelChrome
+            && editorPanelLayoutState.railVisible
+            && !railTabs.isEmpty
+        let autosaveName = layoutAutosaveName(showRail: showRail, showChatSection: shouldShowChatSection)
 
         VStack(spacing: 0) {
             AppTitleToolbar(
@@ -41,33 +51,41 @@ struct AppLayoutView: View {
             AppDivider()
 
             Group {
-                if shouldShowChatSection {
+                if shouldShowChatSection || showRail {
                     HSplitView {
                         ActivityBar(
                             layoutState: layoutState,
                             containers: containers
                         )
 
-                        ContentWorkspaceView(container: selectedContainer)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        editorPanelColumn(
+                            container: selectedContainer,
+                            headerItems: headerItems,
+                            bottomTabs: bottomTabs,
+                            showsPanelChrome: showsPanelChrome,
+                            showRail: showRail,
+                            railTabs: railTabs
+                        )
 
-                        ChatSectionView(
-                            stackItems: chatSectionItems.filter { $0.placement == .stack },
-                            bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
-                            rootContent: pluginService.chatSectionRootWrapper(
-                                context: pluginContext,
-                                content: ChatSectionView.makeRootContent(
-                                    stackItems: chatSectionItems.filter { $0.placement == .stack },
-                                    bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed }
+                        if shouldShowChatSection {
+                            ChatSectionView(
+                                stackItems: chatSectionItems.filter { $0.placement == .stack },
+                                bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
+                                rootContent: pluginService.chatSectionRootWrapper(
+                                    context: pluginContext,
+                                    content: ChatSectionView.makeRootContent(
+                                        stackItems: chatSectionItems.filter { $0.placement == .stack },
+                                        bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed }
+                                    )
                                 )
                             )
-                        )
-                        .background(
-                            SplitViewWidthPersistence(storageKey: "Layout.Main.ChatSection")
-                        )
+                            .background(
+                                SplitViewWidthPersistence(storageKey: "Layout.Main.ChatSection")
+                            )
+                        }
                     }
                     .background(
-                        SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_ChatSection")
+                        SplitViewAutosaveConfigurator(autosaveName: autosaveName)
                     )
                 } else {
                     HStack(spacing: 0) {
@@ -78,7 +96,14 @@ struct AppLayoutView: View {
 
                         AppDivider(.vertical)
 
-                        ContentWorkspaceView(container: selectedContainer)
+                        editorPanelColumn(
+                            container: selectedContainer,
+                            headerItems: headerItems,
+                            bottomTabs: bottomTabs,
+                            showsPanelChrome: showsPanelChrome,
+                            showRail: showRail,
+                            railTabs: railTabs
+                        )
                     }
                 }
             }
@@ -106,15 +131,73 @@ struct AppLayoutView: View {
         .ignoresSafeArea()
     }
 
+    @ViewBuilder
+    private func editorPanelColumn(
+        container: LumiViewContainerItem?,
+        headerItems: [LumiPanelHeaderItem],
+        bottomTabs: [LumiPanelBottomTabItem],
+        showsPanelChrome: Bool,
+        showRail: Bool,
+        railTabs: [LumiEditorRailTabItem]
+    ) -> some View {
+        let workspace = PanelWorkspaceView(
+            container: container,
+            headerItems: headerItems,
+            bottomTabs: bottomTabs,
+            showsPanelChrome: showsPanelChrome,
+            layoutState: editorPanelLayoutState
+        )
+
+        let column = Group {
+            if showRail {
+                HSplitView {
+                    EditorRailView(tabs: railTabs, layoutState: editorPanelLayoutState)
+                        .background(
+                            SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
+                        )
+                    workspace
+                }
+            } else {
+                workspace
+            }
+        }
+
+        if showsPanelChrome {
+            EditorPanelScopeView(
+                projectPathStore: projectPathStore,
+                editor: editorCoreService
+            ) {
+                column
+            }
+        } else {
+            column
+        }
+    }
+
+    private func layoutAutosaveName(showRail: Bool, showChatSection: Bool) -> String {
+        switch (showRail, showChatSection) {
+        case (true, true):
+            "Unified_MainSplit_Rail_ChatSection"
+        case (true, false):
+            "Unified_MainSplit_Rail"
+        case (false, true):
+            "Unified_MainSplit_ChatSection"
+        case (false, false):
+            "Unified_MainSplit"
+        }
+    }
+
     private func basePluginContext(
         activeSectionID: String? = nil,
         activeSectionTitle: String = "Main",
-        showsChatSection: Bool = false
+        showsChatSection: Bool = false,
+        showsPanelChrome: Bool = false
     ) -> LumiPluginContext {
         LumiPluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
             showsChatSection: showsChatSection,
+            showsPanelChrome: showsPanelChrome,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)

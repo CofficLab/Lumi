@@ -6,6 +6,7 @@ public struct LumiViewContainerItem: Identifiable {
     public let title: String
     public let systemImage: String
     public let showsChatSection: Bool
+    public let showsPanelChrome: Bool
     public let makeView: @MainActor () -> AnyView
 
     public init<Content: View>(
@@ -13,12 +14,14 @@ public struct LumiViewContainerItem: Identifiable {
         title: String,
         systemImage: String,
         showsChatSection: Bool = false,
+        showsPanelChrome: Bool = false,
         @ViewBuilder content: @escaping @MainActor () -> Content
     ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.showsChatSection = showsChatSection
+        self.showsPanelChrome = showsPanelChrome
         self.makeView = { AnyView(content()) }
     }
 }

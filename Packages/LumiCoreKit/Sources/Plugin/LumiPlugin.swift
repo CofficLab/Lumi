@@ -47,6 +47,15 @@ public protocol LumiPlugin {
 
     @MainActor
     static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem]
+
+    @MainActor
+    static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem]
+
+    @MainActor
+    static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem]
+
+    @MainActor
+    static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem]
 }
 
 public extension LumiPlugin {
@@ -125,6 +134,21 @@ public extension LumiPlugin {
 
     @MainActor
     static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+        []
+    }
+
+    @MainActor
+    static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+        []
+    }
+
+    @MainActor
+    static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+        []
+    }
+
+    @MainActor
+    static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
         []
     }
 }
