@@ -1,0 +1,17 @@
+import LumiCoreKit
+import LumiUI
+import SwiftUI
+
+struct PanelHeaderView: View {
+    let items: [LumiPanelHeaderItem]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(items) { item in
+                item.makeView()
+                    .id(item.id)
+                AppDivider()
+            }
+        }
+    }
+}

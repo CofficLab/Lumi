@@ -3,8 +3,6 @@ import LumiUI
 import SwiftUI
 
 struct PanelWorkspaceView: View {
-    @LumiTheme private var theme
-
     let container: LumiViewContainerItem?
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
@@ -20,6 +18,7 @@ struct PanelWorkspaceView: View {
             if showBottomPanel {
                 VSplitView {
                     contentPanel
+                        .layoutPriority(1)
                     PanelBottomView(tabs: bottomTabs, layoutState: layoutState)
                 }
             } else {
@@ -32,31 +31,16 @@ struct PanelWorkspaceView: View {
 
     @ViewBuilder
     private var contentPanel: some View {
-        if let container {
+        if container != nil {
             VStack(spacing: 0) {
                 if showsPanelChrome, !headerItems.isEmpty {
-                    VStack(spacing: 0) {
-                        ForEach(headerItems) { item in
-                            item.makeView()
-                                .id(item.id)
-                            AppDivider()
-                        }
-                    }
+                    PanelHeaderView(items: headerItems)
                 }
-
-                container.makeView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .id(container.id)
+                PanelBodyView(container: container)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            theme.surface
-
-            AppEmptyState(
-                icon: "rectangle.center.inset.filled",
-                title: "No content"
-            )
-            .padding(24)
+            PanelBodyView(container: nil)
         }
     }
 }

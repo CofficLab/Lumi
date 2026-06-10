@@ -15,8 +15,11 @@ struct PanelBottomView: View {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(height: layoutState.bottomPanelHeight)
+        .frame(minHeight: SplitViewHeightPersistence.minimumHeight)
         .background(theme.surface)
+        .background {
+            SplitViewHeightPersistence(layoutState: layoutState)
+        }
         .onAppear {
             ensureValidSelection()
         }
@@ -26,35 +29,49 @@ struct PanelBottomView: View {
     }
 
     private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs) { tab in
-                Button {
-                    layoutState.activeBottomTabID = tab.id
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(tab.title)
-                            .font(
-                                .system(
-                                    size: 11,
-                                    weight: layoutState.activeBottomTabID == tab.id ? .semibold : .medium
-                                )
-                            )
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(tabs) { tab in
+                        tabButton(for: tab)
+                            .id(tab.id)
                     }
-                    .foregroundStyle(
-                        layoutState.activeBottomTabID == tab.id ? theme.textPrimary : theme.textSecondary
-                    )
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 8)
             }
-
-            Spacer(minLength: 0)
+            .onChange(of: layoutState.activeBottomTabID) { _, tabID in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(tabID, anchor: .center)
+                }
+            }
+            .onAppear {
+                proxy.scrollTo(layoutState.activeBottomTabID, anchor: .center)
+            }
         }
-        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
         .background(theme.surface.opacity(0.85))
+    }
+
+    private func tabButton(for tab: LumiPanelBottomTabItem) -> some View {
+        let isSelected = layoutState.activeBottomTabID == tab.id
+
+        return Button {
+            layoutState.activeBottomTabID = tab.id
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: tab.systemImage)
+                    .font(.system(size: 10, weight: .semibold))
+                Text(tab.title)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+        .help(tab.title)
     }
 
     @ViewBuilder
