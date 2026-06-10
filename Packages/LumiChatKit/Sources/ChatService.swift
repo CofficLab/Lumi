@@ -28,7 +28,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
     weak var toolService: (any LumiToolServicing)?
     var projectPathProvider: (any LumiCurrentProjectPathProviding)?
-    private let store: ChatStore
+    let store: ChatStore
     let statusState = ConversationStatusState()
     var activeTasksByConversationID: [UUID: Task<Void, Never>] = [:]
     var sendingConversationIDs: Set<UUID> = []

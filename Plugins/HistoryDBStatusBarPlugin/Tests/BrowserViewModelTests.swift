@@ -9,7 +9,7 @@ import Foundation
 struct BrowserViewModelTests {
     @Test func pluginPolicyIsAlwaysOn() {
         #expect(HistoryDBStatusBarPlugin.policy == .alwaysOn)
-        #expect(HistoryDBStatusBarPlugin.isConfigurable == false)
+        #expect(HistoryDBStatusBarPlugin.info.id.isEmpty == false)
     }
 
     

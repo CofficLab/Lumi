@@ -272,4 +272,115 @@ struct ChatStore {
             try? fileManager.moveItem(at: url, to: quarantinedURL)
         }
     }
+
+    func historyMessageCount() -> Int {
+        (try? context.fetchCount(FetchDescriptor<ChatMessageEntity>())) ?? 0
+    }
+
+    func historyConversationCount() -> Int {
+        (try? context.fetchCount(FetchDescriptor<Conversation>())) ?? 0
+    }
+
+    func historyMessagePage(limit: Int, offset: Int) -> [HistoryMessageRow] {
+        let safeLimit = max(limit, 1)
+        let safeOffset = max(offset, 0)
+
+        do {
+            let titlesByConversationID = conversationTitlesByID()
+            let tokenCountsByMessageID = messageTokenCountsByID()
+
+            var descriptor = FetchDescriptor<ChatMessageEntity>(
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+            descriptor.fetchOffset = safeOffset
+            descriptor.fetchLimit = safeLimit
+
+            return try context.fetch(descriptor).map { entity in
+                let preview = entity.content
+                    .replacingOccurrences(of: "\n", with: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                return HistoryMessageRow(
+                    id: entity.id,
+                    conversationId: entity.conversationId,
+                    conversationTitle: titlesByConversationID[entity.conversationId] ?? "-",
+                    role: entity.role,
+                    model: entity.modelName ?? "-",
+                    tokens: tokenCountsByMessageID[entity.id] ?? 0,
+                    timestamp: entity.timestamp,
+                    contentPreview: preview
+                )
+            }
+        } catch {
+            return []
+        }
+    }
+
+    func historyConversationPage(limit: Int, offset: Int) -> [HistoryConversationRow] {
+        let safeLimit = max(limit, 1)
+        let safeOffset = max(offset, 0)
+
+        do {
+            var descriptor = FetchDescriptor<Conversation>(
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            )
+            descriptor.fetchOffset = safeOffset
+            descriptor.fetchLimit = safeLimit
+
+            let conversations = try context.fetch(descriptor)
+            let messageCounts = messageCountsByConversationID(for: conversations.map(\.id))
+
+            return conversations.map { conversation in
+                HistoryConversationRow(
+                    id: conversation.id,
+                    title: conversation.title.isEmpty ? "Untitled" : conversation.title,
+                    projectId: conversation.projectId ?? "-",
+                    createdAt: conversation.createdAt,
+                    updatedAt: conversation.updatedAt,
+                    messageCount: messageCounts[conversation.id] ?? 0,
+                    providerId: conversation.providerId,
+                    model: conversation.model,
+                    chatMode: conversation.chatMode
+                )
+            }
+        } catch {
+            return []
+        }
+    }
+
+    private func conversationTitlesByID() -> [UUID: String] {
+        guard let conversations = try? context.fetch(FetchDescriptor<Conversation>()) else {
+            return [:]
+        }
+
+        return Dictionary(uniqueKeysWithValues: conversations.map { conversation in
+            let title = conversation.title.isEmpty ? "Untitled" : conversation.title
+            return (conversation.id, title)
+        })
+    }
+
+    private func messageTokenCountsByID() -> [UUID: Int] {
+        guard let metrics = try? context.fetch(FetchDescriptor<MessageMetricsEntity>()) else {
+            return [:]
+        }
+
+        return Dictionary(uniqueKeysWithValues: metrics.compactMap { metric in
+            guard let totalTokens = metric.totalTokens else { return nil }
+            return (metric.messageId, totalTokens)
+        })
+    }
+
+    private func messageCountsByConversationID(for conversationIDs: [UUID]) -> [UUID: Int] {
+        guard !conversationIDs.isEmpty else { return [:] }
+
+        var counts: [UUID: Int] = [:]
+        for conversationID in conversationIDs {
+            let id = conversationID
+            var descriptor = FetchDescriptor<ChatMessageEntity>(
+                predicate: #Predicate { $0.conversationId == id }
+            )
+            counts[conversationID] = (try? context.fetchCount(descriptor)) ?? 0
+        }
+        return counts
+    }
 }

@@ -1,4 +1,5 @@
 import EditorService
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -40,6 +41,9 @@ struct StatusBar: View {
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiThemeServicing.self, lumiUIService)
                 dependencies.register(LumiChatServicing.self, chatService)
+                if let chatService = chatService as? ChatService {
+                    dependencies.register((any HistoryQueryService).self, chatService)
+                }
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
             }

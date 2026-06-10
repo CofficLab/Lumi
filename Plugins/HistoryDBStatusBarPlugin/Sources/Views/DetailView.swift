@@ -40,6 +40,9 @@ public struct DetailView: View {
         .task {
             await viewModel.reload()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessageSaved)) { _ in
+            Task { await viewModel.reload() }
+        }
     }
 
     // MARK: - Header

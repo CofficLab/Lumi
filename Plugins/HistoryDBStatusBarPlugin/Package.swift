@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiChatKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
