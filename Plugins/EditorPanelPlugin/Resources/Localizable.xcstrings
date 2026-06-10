@@ -10035,6 +10035,9 @@
         }
       }
     },
+    "Show Sidebar" : {
+
+    },
     "Sort Lines Ascending" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10671,6 +10674,9 @@
 
     },
     "TOC" : {
+
+    },
+    "Toggle Bottom Panel" : {
 
     },
     "Toggle Line Comment" : {

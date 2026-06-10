@@ -20,7 +20,7 @@ struct EditorWorkspaceView: View {
                 }
 
                 VStack(spacing: 0) {
-                    EditorHeaderView(service: service)
+                    EditorHeaderView(layoutState: layoutState, service: service)
                     Divider()
                     EditorPanelView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -34,23 +34,5 @@ struct EditorWorkspaceView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(theme.background)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                if !layoutState.railVisible {
-                    Button {
-                        layoutState.railVisible = true
-                        layoutState.persistRailVisible()
-                    } label: {
-                        Image(systemName: "sidebar.left")
-                    }
-                }
-                Button {
-                    layoutState.bottomPanelVisible.toggle()
-                    layoutState.persistBottomPanelVisible()
-                } label: {
-                    Image(systemName: "square.bottomthird.inset.filled")
-                }
-            }
-        }
     }
 }
