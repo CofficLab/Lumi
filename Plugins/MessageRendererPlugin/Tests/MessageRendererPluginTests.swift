@@ -27,6 +27,36 @@ import Testing
     #expect(renderers.first { $0.id == "core-error-message" }?.canRender(error) == true)
 }
 
+@MainActor
+@Test func coreErrorRendererDefersToZhipuRenderKind() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    let conversationID = UUID()
+    let zhipuError = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "failed",
+        providerID: "zhipu",
+        isError: true,
+        renderKind: "zhipu-http-403"
+    )
+
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(zhipuError) == false)
+}
+
+@MainActor
+@Test func coreErrorRendererMatchesGenericErrors() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    let conversationID = UUID()
+    let error = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "failed",
+        isError: true
+    )
+
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(error) == true)
+}
+
 private var testContext: LumiPluginContext {
     LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
 }

@@ -1,4 +1,5 @@
 import AppKit
+import AgentToolKit
 import LumiCoreKit
 import LumiUI
 import MarkdownKit
@@ -57,17 +58,27 @@ struct CoreMessageView: View {
                     title: formatTimestamp(message.createdAt),
                     titleColor: theme.textSecondary
                 )
+
+                MessageInfoButton(message: message)
             }
         }
     }
 
     private var userContent: some View {
-        Text(message.content)
-            .font(.appBody)
-            .foregroundColor(theme.textPrimary)
-            .lineSpacing(3)
-            .textSelection(.enabled)
-            .appMessageBubble(role: .user, isError: message.isError)
+        VStack(alignment: .leading, spacing: 8) {
+            if !message.userImageData.isEmpty {
+                AppImagePreviewGrid(imageDataList: message.userImageData)
+            }
+
+            if !message.content.isEmpty {
+                Text(message.content)
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
+                    .lineSpacing(3)
+                    .textSelection(.enabled)
+            }
+        }
+        .appMessageBubble(role: .user, isError: message.isError)
     }
 
     @ViewBuilder
@@ -302,15 +313,20 @@ private struct CompactMessageHeaderView<Leading: View, Trailing: View>: View {
 }
 
 private struct ToolCallRowsView: View {
-    let toolCalls: [LumiToolCall]
+    let message: LumiChatMessage
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
+
+    private var toolCalls: [LumiToolCall] {
+        message.toolCalls ?? []
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(toolCalls) { toolCall in
                 ToolCallRowView(
+                    message: message,
                     toolCall: toolCall,
                     parameterPopoverToolCallID: $parameterPopoverToolCallID,
                     resultPopoverToolCallID: $resultPopoverToolCallID
@@ -323,6 +339,7 @@ private struct ToolCallRowsView: View {
 private struct ToolCallRowView: View {
     @LumiTheme private var theme
 
+    let message: LumiChatMessage
     let toolCall: LumiToolCall
     @Binding var parameterPopoverToolCallID: String?
     @Binding var resultPopoverToolCallID: String?
@@ -346,6 +363,22 @@ private struct ToolCallRowView: View {
     }
 
     var body: some View {
+        Group {
+            if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
+                customRenderer.render(
+                    toolCall: toolCall.agentToolCall,
+                    message: ToolCallRowMessageContext(
+                        conversationId: message.conversationID,
+                        assistantMessageId: message.id
+                    )
+                )
+            } else {
+                defaultToolCallRow
+            }
+        }
+    }
+
+    private var defaultToolCallRow: some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "wrench.and.screwdriver")
@@ -686,10 +719,14 @@ struct StatusMessageView: View {
                     AppIdentityRow(title: "Status")
                 }
             } trailing: {
-                AppIdentityRow(
-                    title: Self.timestampFormatter.string(from: message.createdAt),
-                    titleColor: theme.textSecondary
-                )
+                HStack(alignment: .center, spacing: 12) {
+                    AppIdentityRow(
+                        title: Self.timestampFormatter.string(from: message.createdAt),
+                        titleColor: theme.textSecondary
+                    )
+
+                    MessageInfoButton(message: message)
+                }
             }
 
             HStack(spacing: 8) {
@@ -756,7 +793,7 @@ private struct CollapsibleAssistantContent: View {
             }
 
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-                ToolCallRowsView(toolCalls: toolCalls)
+                ToolCallRowsView(message: message)
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }

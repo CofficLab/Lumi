@@ -37,7 +37,15 @@ public enum MessageRendererPlugin: LumiPlugin {
             LumiMessageRendererItem(
                 id: "core-error-message",
                 order: 300,
-                canRender: { $0.role == .error || $0.isError },
+                canRender: { message in
+                    guard message.role == .error || message.isError else {
+                        return false
+                    }
+                    if let renderKind = message.renderKind, renderKind.hasPrefix("zhipu-") {
+                        return false
+                    }
+                    return true
+                },
                 render: { message, showRawMessage in
                     CoreMessageView(message: message, showRawMessage: showRawMessage)
                 }

@@ -14,6 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
@@ -22,24 +23,14 @@ let package = Package(
         .target(
             name: "MessageRendererPlugin",
             dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
             ],
             path: ".",
-            exclude: [
-                "Tests",
-                "README.md",
-                "Sources/Components",
-                "Sources/Message",
-                "Sources/MessageComponent",
-                "Sources/Renderers",
-                "Sources/MessageRendererRuntime.swift",
-            ],
-            sources: [
-                "Sources/MessageRendererPlugin.swift",
-                "Sources/Views/CoreMessageViews.swift",
-            ],
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

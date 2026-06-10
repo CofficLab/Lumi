@@ -631,6 +631,9 @@
         }
       }
     },
+    "消息详情" : {
+
+    },
     "点击结果后会在这里显示工具输出" : {
       "extractionState" : "stale",
       "localizations" : {
