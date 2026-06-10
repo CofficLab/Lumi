@@ -1,6 +1,14 @@
 import Foundation
 
 public enum EditorPackageDependencyResolver {
+    /// Swift Package Dependencies 仅适用于 Xcode 工程或 Swift Package 项目。
+    public static func shouldShowPackageDependencies(projectRootURL: URL) -> Bool {
+        let root = projectRootURL.standardizedFileURL
+        if findXcodeProject(in: root) != nil { return true }
+        if findXcodeWorkspace(in: root) != nil { return true }
+        return hasSwiftPackageManifest(at: root)
+    }
+
     public static func resolve(projectRootURL: URL) -> [EditorPackageDependency] {
         let projectRootURL = projectRootURL.standardizedFileURL
         guard let projectURL = findXcodeProject(in: projectRootURL) else {
@@ -34,6 +42,20 @@ public enum EditorPackageDependencyResolver {
     }
 
     public static func findXcodeProject(in projectRootURL: URL) -> URL? {
+        findProjectBundle(in: projectRootURL, pathExtension: "xcodeproj")
+    }
+
+    public static func findXcodeWorkspace(in projectRootURL: URL) -> URL? {
+        findProjectBundle(in: projectRootURL, pathExtension: "xcworkspace")
+    }
+
+    private static func hasSwiftPackageManifest(at projectRootURL: URL) -> Bool {
+        FileManager.default.fileExists(
+            atPath: projectRootURL.appendingPathComponent("Package.swift").path
+        )
+    }
+
+    private static func findProjectBundle(in projectRootURL: URL, pathExtension: String) -> URL? {
         let fileManager = FileManager.default
         guard let urls = try? fileManager.contentsOfDirectory(
             at: projectRootURL,
@@ -43,7 +65,7 @@ public enum EditorPackageDependencyResolver {
             return nil
         }
         return urls
-            .filter { $0.pathExtension == "xcodeproj" }
+            .filter { $0.pathExtension == pathExtension }
             .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
             .first
     }

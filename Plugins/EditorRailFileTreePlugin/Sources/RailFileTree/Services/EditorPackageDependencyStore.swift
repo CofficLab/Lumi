@@ -24,13 +24,21 @@ public final class EditorPackageDependencyStore: ObservableObject, SuperLog {
         projectRootPath = path
         dependencies = []
         diagnostic = nil
+        isLoading = false
+        refreshTask?.cancel()
+        guard shouldResolve(for: path) else { return }
         refresh()
     }
 
     public func refresh() {
         refreshTask?.cancel()
         let path = projectRootPath
-        guard !path.isEmpty else { return }
+        guard shouldResolve(for: path) else {
+            dependencies = []
+            diagnostic = nil
+            isLoading = false
+            return
+        }
 
         isLoading = true
         refreshTask = Task { @MainActor [weak self] in
@@ -42,5 +50,12 @@ public final class EditorPackageDependencyStore: ObservableObject, SuperLog {
             self.diagnostic = result.isEmpty ? "No Swift package dependencies found." : nil
             self.isLoading = false
         }
+    }
+
+    private func shouldResolve(for path: String) -> Bool {
+        guard !path.isEmpty else { return false }
+        return EditorPackageDependencyResolver.shouldShowPackageDependencies(
+            projectRootURL: URL(fileURLWithPath: path)
+        )
     }
 }

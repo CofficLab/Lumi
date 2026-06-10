@@ -37,6 +37,13 @@ public struct EditorFileTreeView: View, SuperLog {
         editorContext.fileTreeHighlightedFileURL ?? editorContext.currentFileURL
     }
 
+    private var showPackageDependencies: Bool {
+        guard !projectVM.currentProjectPath.isEmpty else { return false }
+        return EditorPackageDependencyResolver.shouldShowPackageDependencies(
+            projectRootURL: URL(fileURLWithPath: projectVM.currentProjectPath)
+        )
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             if projectVM.currentProjectPath.isEmpty {
@@ -63,16 +70,18 @@ public struct EditorFileTreeView: View, SuperLog {
                             gitStatusSnapshot: coordinator.gitStatusSnapshot
                         )
 
-                        Divider()
-                            .opacity(0.35)
+                        if showPackageDependencies {
+                            Divider()
+                                .opacity(0.35)
 
-                        EditorPackageDependencySection(
-                            projectRootPath: projectVM.currentProjectPath,
-                            dependencies: packageStore.dependencies,
-                            isLoading: packageStore.isLoading,
-                            diagnostic: packageStore.diagnostic,
-                            onRetry: { packageStore.refresh() }
-                        )
+                            EditorPackageDependencySection(
+                                projectRootPath: projectVM.currentProjectPath,
+                                dependencies: packageStore.dependencies,
+                                isLoading: packageStore.isLoading,
+                                diagnostic: packageStore.diagnostic,
+                                onRetry: { packageStore.refresh() }
+                            )
+                        }
                     }
                 }
             }
