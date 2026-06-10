@@ -2,11 +2,14 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct EditorRailView: View {
+struct RailView: View {
     @LumiTheme private var theme
 
-    let tabs: [LumiEditorRailTabItem]
-    @ObservedObject var layoutState: EditorPanelLayoutState
+    /// Set to `false` to hide the rail edge border.
+    static let showsBorder = true
+
+    let tabs: [LumiPanelRailTabItem]
+    @ObservedObject var layoutState: PanelLayoutState
 
     private static let minWidth: CGFloat = 200
     private static let maxWidth: CGFloat = 420
@@ -20,6 +23,11 @@ struct EditorRailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: Self.maxWidth)
         .background(theme.surface)
+        .overlay(alignment: .trailing) {
+            if Self.showsBorder {
+                AppDivider(.vertical)
+            }
+        }
         .onAppear {
             ensureValidSelection()
         }

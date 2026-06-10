@@ -41,7 +41,7 @@ public struct LumiPanelBottomTabItem: Identifiable {
 }
 
 @MainActor
-public struct LumiEditorRailTabItem: Identifiable {
+public struct LumiPanelRailTabItem: Identifiable {
     public let id: String
     public let order: Int
     public let title: String

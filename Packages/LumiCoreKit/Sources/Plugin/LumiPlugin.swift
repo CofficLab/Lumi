@@ -55,7 +55,7 @@ public protocol LumiPlugin {
     static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem]
 
     @MainActor
-    static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem]
+    static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem]
 }
 
 public extension LumiPlugin {
@@ -148,7 +148,7 @@ public extension LumiPlugin {
     }
 
     @MainActor
-    static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
+    static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         []
     }
 }

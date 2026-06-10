@@ -8,7 +8,7 @@ Editor Panel 子插件：Editor Rail 搜索（薄封装）。
 
 ## 挂载位置
 
-- **类型**：`LumiEditorRailTabItem`
+- **类型**：`LumiPanelRailTabItem`
 - **Slot**：`editorRail`
 - **Order**：4
 - **Activation**：optOut

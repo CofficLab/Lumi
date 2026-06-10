@@ -150,11 +150,11 @@ final class PluginService: ObservableObject {
             .sorted { $0.order < $1.order }
     }
 
-    func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
+    func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsPanelChrome else { return [] }
 
         var items = enabledPlugins.flatMap { plugin in
-            plugin.editorRailTabItems(context: context)
+            plugin.panelRailTabItems(context: context)
         }
 
         if let editor = context.resolve(LumiEditorServicing.self) {
@@ -163,7 +163,7 @@ final class PluginService: ObservableObject {
                let registration = editor.extensionRegistry.railOutlineRegistration(for: languageId),
                !items.contains(where: { $0.id == registration.tabID }) {
                 items.append(
-                    LumiEditorRailTabItem(
+                    LumiPanelRailTabItem(
                         id: registration.tabID,
                         order: 90,
                         title: registration.title,

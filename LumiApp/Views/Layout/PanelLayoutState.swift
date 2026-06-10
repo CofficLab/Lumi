@@ -2,7 +2,7 @@ import Foundation
 import LayoutPlugin
 
 @MainActor
-final class EditorPanelLayoutState: ObservableObject {
+final class PanelLayoutState: ObservableObject {
     @Published var railVisible: Bool
     @Published var bottomPanelVisible: Bool
     @Published var bottomPanelHeight: CGFloat

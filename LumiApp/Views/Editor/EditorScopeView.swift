@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct EditorPanelScopeView<Content: View>: View {
+struct EditorScopeView<Content: View>: View {
     @StateObject private var projectVM: WindowProjectVM
     @StateObject private var themeVM = AppThemeVM.shared
     @StateObject private var recentProjectsVM = AppProjectsVM.shared

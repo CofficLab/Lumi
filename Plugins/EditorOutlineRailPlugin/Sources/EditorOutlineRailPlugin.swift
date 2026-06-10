@@ -16,7 +16,7 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
+    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsPanelChrome,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {
@@ -24,7 +24,7 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
         }
 
         return [
-            LumiEditorRailTabItem(
+            LumiPanelRailTabItem(
                 id: "outline",
                 order: info.order,
                 title: String(localized: "Outline", bundle: .module),

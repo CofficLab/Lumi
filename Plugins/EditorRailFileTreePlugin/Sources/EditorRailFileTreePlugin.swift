@@ -15,11 +15,11 @@ public enum EditorRailFileTreePanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func editorRailTabItems(context: LumiPluginContext) -> [LumiEditorRailTabItem] {
+    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsPanelChrome else { return [] }
 
         return [
-            LumiEditorRailTabItem(
+            LumiPanelRailTabItem(
                 id: "explorer",
                 order: info.order,
                 title: String(localized: "Explorer", bundle: .module),

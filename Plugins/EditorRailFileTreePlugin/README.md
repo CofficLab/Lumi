@@ -8,7 +8,7 @@ Editor Panel 子插件：Editor Rail 文件树。
 
 ## 挂载位置
 
-- **类型**：`LumiEditorRailTabItem`
+- **类型**：`LumiPanelRailTabItem`
 - **Slot**：`editorRail`
 - **Order**：0
 - **Activation**：alwaysOn
@@ -39,4 +39,4 @@ EditorRailFileTreePlugin/
 
 ## 相关插件
 
-- App 级布局：`LumiApp/Views/Layout/EditorRailView.swift`
+- App 级布局：`LumiApp/Views/Layout/RailView.swift`

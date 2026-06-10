@@ -7,7 +7,7 @@ import SwiftUI
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
-    @StateObject private var editorPanelLayoutState = EditorPanelLayoutState()
+    @StateObject private var panelLayoutState = PanelLayoutState()
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
@@ -31,12 +31,12 @@ struct AppLayoutView: View {
         let chatSectionItems = pluginService.chatSectionItems(context: pluginContext)
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
-        let railTabs = pluginService.editorRailTabItems(context: pluginContext)
+        let railTabs = pluginService.panelRailTabItems(context: pluginContext)
         let shouldShowChatSection = showsChatSection
             && layoutState.chatSectionVisible
             && !chatSectionItems.isEmpty
         let showRail = showsPanelChrome
-            && editorPanelLayoutState.railVisible
+            && panelLayoutState.railVisible
             && !railTabs.isEmpty
         let autosaveName = layoutAutosaveName(showRail: showRail, showChatSection: shouldShowChatSection)
 
@@ -58,7 +58,7 @@ struct AppLayoutView: View {
                             containers: containers
                         )
 
-                        editorPanelColumn(
+                        panelColumn(
                             container: selectedContainer,
                             headerItems: headerItems,
                             bottomTabs: bottomTabs,
@@ -96,7 +96,7 @@ struct AppLayoutView: View {
 
                         AppDivider(.vertical)
 
-                        editorPanelColumn(
+                        panelColumn(
                             container: selectedContainer,
                             headerItems: headerItems,
                             bottomTabs: bottomTabs,
@@ -132,26 +132,26 @@ struct AppLayoutView: View {
     }
 
     @ViewBuilder
-    private func editorPanelColumn(
+    private func panelColumn(
         container: LumiViewContainerItem?,
         headerItems: [LumiPanelHeaderItem],
         bottomTabs: [LumiPanelBottomTabItem],
         showsPanelChrome: Bool,
         showRail: Bool,
-        railTabs: [LumiEditorRailTabItem]
+        railTabs: [LumiPanelRailTabItem]
     ) -> some View {
         let workspace = PanelWorkspaceView(
             container: container,
             headerItems: headerItems,
             bottomTabs: bottomTabs,
             showsPanelChrome: showsPanelChrome,
-            layoutState: editorPanelLayoutState
+            layoutState: panelLayoutState
         )
 
         let column = Group {
             if showRail {
                 HSplitView {
-                    EditorRailView(tabs: railTabs, layoutState: editorPanelLayoutState)
+                    RailView(tabs: railTabs, layoutState: panelLayoutState)
                         .background(
                             SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
                         )
@@ -163,7 +163,7 @@ struct AppLayoutView: View {
         }
 
         if showsPanelChrome {
-            EditorPanelScopeView(
+            EditorScopeView(
                 projectPathStore: projectPathStore,
                 editor: editorCoreService
             ) {

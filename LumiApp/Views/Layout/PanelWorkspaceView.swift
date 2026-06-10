@@ -9,7 +9,7 @@ struct PanelWorkspaceView: View {
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
     let showsPanelChrome: Bool
-    @ObservedObject var layoutState: EditorPanelLayoutState
+    @ObservedObject var layoutState: PanelLayoutState
 
     private var showBottomPanel: Bool {
         showsPanelChrome
@@ -45,7 +45,7 @@ struct PanelWorkspaceView: View {
                         }
                     }
                     .overlay(alignment: .topTrailing) {
-                        EditorLayoutChromeView(layoutState: layoutState)
+                        PanelChromeControlsView(layoutState: layoutState)
                     }
                 }
 

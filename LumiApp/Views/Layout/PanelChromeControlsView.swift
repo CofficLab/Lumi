@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct EditorLayoutChromeView: View {
-    @ObservedObject var layoutState: EditorPanelLayoutState
+struct PanelChromeControlsView: View {
+    @ObservedObject var layoutState: PanelLayoutState
 
     var body: some View {
         HStack(spacing: 4) {

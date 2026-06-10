@@ -81,6 +81,6 @@ import Testing
         showsPanelChrome: true
     )
 
-    let tabs = EditorRailFileTreePanelPlugin.editorRailTabItems(context: context)
+    let tabs = EditorRailFileTreePanelPlugin.panelRailTabItems(context: context)
     #expect(tabs.map(\.id) == ["explorer"])
 }

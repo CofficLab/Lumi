@@ -6,7 +6,7 @@ struct PanelBottomView: View {
     @LumiTheme private var theme
 
     let tabs: [LumiPanelBottomTabItem]
-    @ObservedObject var layoutState: EditorPanelLayoutState
+    @ObservedObject var layoutState: PanelLayoutState
 
     var body: some View {
         VStack(spacing: 0) {
