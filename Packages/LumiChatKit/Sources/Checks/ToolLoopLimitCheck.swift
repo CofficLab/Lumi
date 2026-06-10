@@ -21,7 +21,7 @@ public struct ToolLoopLimitCheck: LumiAgentTurnCheck, Sendable {
     /// Maximum number of iterations allowed before the loop is terminated.
     public let maxIterations: Int
 
-    public init(maxIterations: Int = 12) {
+    public init(maxIterations: Int = 120) {
         self.maxIterations = maxIterations
     }
 
