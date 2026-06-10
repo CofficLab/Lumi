@@ -47,6 +47,7 @@ struct ChatMessagesSectionView: View {
                 },
                 automationLevel: coordinator.chatService.automationLevel(for: selectedID)
             )
+            .id(selectedID)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

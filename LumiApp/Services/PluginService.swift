@@ -151,13 +151,15 @@ final class PluginService: ObservableObject {
     }
 
     func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsPanelChrome else { return [] }
+        guard context.showsRail else { return [] }
 
         var items = enabledPlugins.flatMap { plugin in
             plugin.panelRailTabItems(context: context)
         }
 
-        if let editor = context.resolve(LumiEditorServicing.self) {
+        if context.showsPanelChrome,
+           context.activeSectionID == LumiEditorPanelContainer.id,
+           let editor = context.resolve(LumiEditorServicing.self) {
             let service = editor.editorService
             if let languageId = service.detectedLanguage?.tsName,
                let registration = editor.extensionRegistry.railOutlineRegistration(for: languageId),

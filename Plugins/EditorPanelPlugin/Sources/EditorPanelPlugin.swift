@@ -36,6 +36,7 @@ public enum EditorPanelPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName,
                 chatSection: .narrow,
+                showsRail: true,
                 showsPanelChrome: true
             ) {
                 EditorPanelHostView()

@@ -23,6 +23,7 @@ public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
     public let chatSection: LumiChatSectionLayout
+    public let showsRail: Bool
     public let showsPanelChrome: Bool
     public let dependencies: LumiPluginDependencies
 
@@ -34,12 +35,14 @@ public struct LumiPluginContext {
         activeSectionID: String,
         activeSectionTitle: String,
         chatSection: LumiChatSectionLayout = .none,
+        showsRail: Bool = false,
         showsPanelChrome: Bool = false,
         dependencies: LumiPluginDependencies = LumiPluginDependencies()
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
         self.chatSection = chatSection
+        self.showsRail = showsRail
         self.showsPanelChrome = showsPanelChrome
         self.dependencies = dependencies
     }

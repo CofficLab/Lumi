@@ -12,7 +12,6 @@ struct RailView: View {
     @ObservedObject var layoutState: PanelLayoutState
 
     private static let minWidth: CGFloat = 200
-    private static let maxWidth: CGFloat = 420
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,7 +20,7 @@ struct RailView: View {
             railContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: Self.minWidth, maxWidth: Self.maxWidth)
+        .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
         .overlay(alignment: .trailing) {
             if Self.showsBorder {

@@ -46,6 +46,38 @@ import Testing
     #expect(toolNames.contains("set_conversation_project"))
 }
 
+@MainActor
+@Test func pluginProvidesChatRailTabWhenShowsRail() {
+    let hidden = ConversationListPlugin.panelRailTabItems(
+        context: LumiPluginContext(
+            activeSectionID: ChatPanelSection.id,
+            activeSectionTitle: "Chat"
+        )
+    )
+    #expect(hidden.isEmpty)
+
+    let withoutService = ConversationListPlugin.panelRailTabItems(
+        context: LumiPluginContext(
+            activeSectionID: ChatPanelSection.id,
+            activeSectionTitle: "Chat",
+            showsRail: true
+        )
+    )
+    #expect(withoutService.isEmpty)
+}
+
+@MainActor
+@Test func pluginIgnoresEditorSectionForRailTabs() {
+    let tabs = ConversationListPlugin.panelRailTabItems(
+        context: LumiPluginContext(
+            activeSectionID: LumiEditorPanelContainer.id,
+            activeSectionTitle: "Editor",
+            showsRail: true
+        )
+    )
+    #expect(tabs.isEmpty)
+}
+
 @Test func localStoreSavesAndReloadsSelectedConversationId() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ConversationListLocalStore-\(UUID().uuidString)", isDirectory: true)

@@ -16,7 +16,9 @@ public enum EditorRailFileTreePanelPlugin: LumiPlugin {
 
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsPanelChrome else { return [] }
+        guard context.showsRail,
+              context.activeSectionID == LumiEditorPanelContainer.id
+        else { return [] }
 
         return [
             LumiPanelRailTabItem(

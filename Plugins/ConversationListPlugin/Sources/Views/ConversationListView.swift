@@ -1,4 +1,5 @@
 import Combine
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SuperLogKit
@@ -59,6 +60,7 @@ public struct ConversationListView: View, SuperLog {
             }
             .onChange(of: context.statusVersion) { _, _ in }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -97,6 +99,7 @@ extension ConversationListView {
             }
             .listStyle(.plain)
             .environment(\.defaultMinListRowHeight, 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if isLoadingPage {
                 loadingIndicator
@@ -356,12 +359,14 @@ extension ConversationListView {
 
 // MARK: - Preview
 
+#if DEBUG
 #Preview("对话列表 - 标准尺寸") {
-    ConversationListView(context: ConversationListContext())
+    ConversationListView(context: ConversationListPreviewSupport.makeContext())
         .frame(width: 300, height: 600)
 }
 
 #Preview("对话列表 - 窄屏") {
-    ConversationListView(context: ConversationListContext())
+    ConversationListView(context: ConversationListPreviewSupport.makeContext())
         .frame(width: 250, height: 400)
 }
+#endif

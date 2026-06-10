@@ -10,7 +10,7 @@ public enum ChatPanelPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: ChatPanelSection.id,
         displayName: String(localized: "Chat", bundle: .module),
-        description: String(localized: "Conversation list with chat surface", bundle: .module),
+        description: String(localized: "Chat surface with conversation rail", bundle: .module),
         order: 78
     )
 
@@ -51,29 +51,12 @@ public enum ChatPanelPlugin: LumiPlugin {
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
-                chatSection: .wide
+                chatSection: .wide,
+                showsRail: true
             ) {
-                if let chatService = context.resolve(LumiChatServicing.self) as? ChatService {
-                    let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath
-                    ChatPanelView(
-                        chatService: chatService,
-                        currentProjectPath: projectPath,
-                        databaseDirectory: LumiCore.coreDataDirectory
-                    )
-                } else {
-                    MissingChatServiceView()
-                }
+                ChatPanelEmptyView()
             }
         ]
     }
 }
 
-private struct MissingChatServiceView: View {
-    var body: some View {
-        AppEmptyState(
-            icon: "exclamationmark.triangle",
-            title: "Chat service is not available"
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}

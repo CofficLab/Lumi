@@ -16,23 +16,22 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ConversationListPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: [
                 "Tests",
                 "README.md",
-                "Sources/Views",
-                "Sources/Tools/CreateNewConversationTool.swift",
-                "Sources/Tools/DeleteConversationTool.swift",
-                "Sources/Tools/GetConversationCountTool.swift",
-                "Sources/Tools/GetRecentConversationsTool.swift",
-                "Sources/Tools/SetConversationProjectTool.swift",
             ],
             sources: ["Sources"],
             resources: [

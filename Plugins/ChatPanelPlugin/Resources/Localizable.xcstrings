@@ -50,10 +50,11 @@
         }
       }
     },
-    "Chats" : {
+    "Chat surface with conversation rail" : {
 
     },
     "Conversation list with chat surface" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -81,9 +82,6 @@
     "Delete" : {
 
     },
-    "Delete Conversation" : {
-
-    },
     "Drag to select a screenshot region. Press ESC to cancel." : {
 
     },
@@ -97,9 +95,6 @@
 
     },
     "Lumi will choose a provider and model based on tools, message size, and availability." : {
-
-    },
-    "New Chat" : {
 
     },
     "No Conversations" : {
@@ -173,12 +168,6 @@
     "Send" : {
 
     },
-    "Show all conversations" : {
-
-    },
-    "Show current project only" : {
-
-    },
     "Show Raw Message" : {
 
     },
@@ -189,9 +178,6 @@
 
     },
     "Thinking" : {
-
-    },
-    "This conversation and its messages will be removed." : {
 
     },
     "Usage Signals" : {

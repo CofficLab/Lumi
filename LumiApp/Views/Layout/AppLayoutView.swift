@@ -21,11 +21,13 @@ struct AppLayoutView: View {
         let activeID = selectedContainer?.id ?? "main"
         let activeTitle = selectedContainer?.title ?? "Main"
         let chatSection = selectedContainer?.chatSection ?? .none
+        let showsRail = selectedContainer?.showsRail ?? false
         let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
         let pluginContext = basePluginContext(
             activeSectionID: activeID,
             activeSectionTitle: activeTitle,
             chatSection: chatSection,
+            showsRail: showsRail,
             showsPanelChrome: showsPanelChrome
         )
         let chatSectionItems = pluginService.chatSectionItems(context: pluginContext)
@@ -35,7 +37,8 @@ struct AppLayoutView: View {
         let shouldShowChatSection = chatSection.isVisible
             && layoutState.chatSectionVisible
             && !chatSectionItems.isEmpty
-        let showRail = showsPanelChrome && !railTabs.isEmpty
+        let showRail = showsRail && !railTabs.isEmpty
+        let isRailOnlyPanel = showRail && !showsPanelChrome
         let autosaveName = layoutAutosaveName(
             showRail: showRail,
             showChatSection: shouldShowChatSection,
@@ -68,8 +71,11 @@ struct AppLayoutView: View {
                             showRail: showRail,
                             railTabs: railTabs
                         )
-                        .layoutPriority(1)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .layoutPriority(isRailOnlyPanel ? 0 : 1)
+                        .frame(
+                            maxWidth: isRailOnlyPanel ? nil : .infinity,
+                            maxHeight: .infinity
+                        )
 
                         if shouldShowChatSection {
                             ChatSectionView(
@@ -85,7 +91,7 @@ struct AppLayoutView: View {
                                 )
                             )
                             .id(chatSection)
-                            .layoutPriority(0)
+                            .layoutPriority(isRailOnlyPanel ? 1 : 0)
                             .background(
                                 ChatSectionWidthPersistence(
                                     layout: chatSection,
@@ -160,12 +166,19 @@ struct AppLayoutView: View {
 
         let column = Group {
             if showRail {
-                HSplitView {
+                if showsPanelChrome {
+                    HSplitView {
+                        RailView(tabs: railTabs, layoutState: panelLayoutState)
+                            .background(
+                                SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
+                            )
+                        workspace
+                    }
+                } else {
                     RailView(tabs: railTabs, layoutState: panelLayoutState)
                         .background(
                             SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
                         )
-                    workspace
                 }
             } else {
                 workspace
@@ -225,12 +238,14 @@ struct AppLayoutView: View {
         activeSectionID: String? = nil,
         activeSectionTitle: String = "Main",
         chatSection: LumiChatSectionLayout = .none,
+        showsRail: Bool = false,
         showsPanelChrome: Bool = false
     ) -> LumiPluginContext {
         LumiPluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
+            showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)

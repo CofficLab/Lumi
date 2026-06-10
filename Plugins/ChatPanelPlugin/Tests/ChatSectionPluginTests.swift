@@ -53,3 +53,22 @@ import Testing
     #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).count == 1)
     #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).first?.placement == .bottomFixed)
 }
+
+@MainActor
+@Test func coordinatorForwardsChatServiceSelectionChanges() {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ChatSectionCoordinatorTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let coordinator = ChatSectionCoordinator(chatService: chatService)
+    let firstID = chatService.createConversation(title: "First")
+    let secondID = chatService.createConversation(title: "Second")
+
+    chatService.selectConversation(id: firstID)
+    #expect(coordinator.selectedConversationID == firstID)
+
+    chatService.selectConversation(id: secondID)
+    #expect(coordinator.selectedConversationID == secondID)
+    #expect(coordinator.displayedMessages(for: secondID) == coordinator.displayedMessages(for: coordinator.selectedConversationID!))
+}

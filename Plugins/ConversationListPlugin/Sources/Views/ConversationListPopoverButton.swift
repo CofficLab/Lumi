@@ -1,3 +1,4 @@
+import LumiChatKit
 import LumiUI
 import LumiCoreKit
 import SwiftUI
@@ -34,8 +35,10 @@ public struct ConversationListPopoverButton: View {
 
 // MARK: - Preview
 
+#if DEBUG
 #Preview("Conversation List Popover Button") {
-    ConversationListPopoverButton(context: ConversationListContext())
+    ConversationListPopoverButton(context: ConversationListPreviewSupport.makeContext())
         .padding()
         .inRootView()
 }
+#endif

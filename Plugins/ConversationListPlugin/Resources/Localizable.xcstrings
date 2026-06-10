@@ -117,6 +117,9 @@
         }
       }
     },
+    "•" : {
+
+    },
     "After the first user message is sent, generate a short title by calling the model according to the default title rule." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -232,6 +235,9 @@
           }
         }
       }
+    },
+    "Chats" : {
+
     },
     "Conversation History" : {
       "extractionState" : "manual",
@@ -552,8 +558,10 @@
         }
       }
     },
+    "Untitled" : {
+
+    },
     "会话列表" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

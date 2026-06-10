@@ -1,5 +1,6 @@
 import AppKit
 import ChatInputEditorKit
+import Combine
 import LumiChatKit
 import LumiCoreKit
 import SwiftUI
@@ -19,10 +20,12 @@ public final class ChatSectionCoordinator: ObservableObject {
 
     public let chatService: ChatService
     private let localStore: LocalStore?
+    private var cancellables = Set<AnyCancellable>()
 
     public init(chatService: ChatService, databaseDirectory: URL? = nil) {
         self.chatService = chatService
         self.localStore = databaseDirectory.map { LocalStore(databaseDirectory: $0) }
+        bindChatService()
     }
 
     public var selectedConversationID: UUID? {
@@ -186,6 +189,15 @@ public final class ChatSectionCoordinator: ObservableObject {
 
     public func bindDraftChanges() {
         showCommandSuggestions = draft.hasPrefix("/")
+    }
+
+    private func bindChatService() {
+        chatService.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     private func defaultScreenshotFileName() -> String {

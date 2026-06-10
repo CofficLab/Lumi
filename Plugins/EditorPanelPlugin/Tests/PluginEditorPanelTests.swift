@@ -26,4 +26,5 @@ import Testing
     )
     #expect(containers.count == 1)
     #expect(containers[0].showsPanelChrome == true)
+    #expect(containers[0].showsRail == true)
 }
