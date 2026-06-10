@@ -2,31 +2,55 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
+enum ApiKeyIssue {
+    case missing
+    case invalid
+}
+
 struct ApiKeyMissingView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
+    var issue: ApiKeyIssue = .missing
     @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
 
+    private var title: String {
+        switch issue {
+        case .missing:
+            String(localized: "Aliyun API Key required", bundle: .module)
+        case .invalid:
+            String(localized: "Aliyun API Key invalid or expired", bundle: .module)
+        }
+    }
+
+    private var subtitle: String {
+        switch issue {
+        case .missing:
+            String(localized: "Configure your Aliyun API Key below, then resend your message.", bundle: .module)
+        case .invalid:
+            String(localized: "Use a Coding Plan API Key (sk-sp-...) from Model Studio. Update it below, then resend your message.", bundle: .module)
+        }
+    }
+
     var body: some View {
         ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(String(localized: "Zhipu API Key required", bundle: .module))
+                Text(title)
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Configure your Zhipu API Key below, then resend your message.", bundle: .module))
+                Text(subtitle)
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
 
-                if let url = URL(string: ZhipuProvider.apiKeyHelpURL ?? "") {
+                if let url = URL(string: AliyunProvider.apiKeyHelpURL ?? "") {
                     Link(destination: url) {
                         Label(
-                            String(localized: "Get API Key on Zhipu Open Platform", bundle: .module),
+                            String(localized: "Get API Key on Aliyun Model Studio", bundle: .module),
                             systemImage: "arrow.up.right.square"
                         )
                         .font(.appCaption)
@@ -37,12 +61,12 @@ struct ApiKeyMissingView: View {
 
                 HStack(alignment: .center, spacing: 8) {
                     AppInputField(
-                        LocalizedStringKey(String(localized: "Enter Zhipu API Key", bundle: .module)),
+                        LocalizedStringKey(String(localized: "Enter Aliyun API Key", bundle: .module)),
                         text: Binding(
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                ZhipuProvider.setApiKey(newValue)
+                                AliyunProvider.setApiKey(newValue)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -65,7 +89,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = ZhipuProvider.getApiKey()
+            apiKey = AliyunProvider.getApiKey()
         }
     }
 }

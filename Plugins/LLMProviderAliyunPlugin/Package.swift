@@ -14,15 +14,19 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "LLMProviderAliyunPlugin",
             dependencies: [
+                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
@@ -33,7 +37,11 @@ let package = Package(
         ),
         .testTarget(
             name: "LLMProviderAliyunPluginTests",
-            dependencies: ["LLMProviderAliyunPlugin"],
+            dependencies: [
+                "LLMProviderAliyunPlugin",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+            ],
             path: "Tests"
         )
     ]

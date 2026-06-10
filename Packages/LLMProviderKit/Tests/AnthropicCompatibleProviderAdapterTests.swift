@@ -111,6 +111,30 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(body["stream"] as? Bool, true)
     }
 
+    func testBuildRequestBodyExcludesNonSendableRolesAfterPrepare() throws {
+        let adapter = makeAdapter()
+        let messages = LLMMessagePreparer.prepare([
+            ChatMessage(role: .user, content: "1"),
+            ChatMessage(role: .assistant, content: "Hi"),
+            ChatMessage(role: .error, content: "failed"),
+            ChatMessage(role: .status, content: "__lumi_turn_completed__"),
+            ChatMessage(role: .user, content: "Second"),
+        ])
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "qwen3.7-max",
+            tools: nil,
+            systemPrompt: "Be helpful"
+        )
+
+        let encodedMessages = try XCTUnwrap(body["messages"] as? [[String: Any]])
+        XCTAssertEqual(encodedMessages.count, 3)
+        XCTAssertEqual(encodedMessages[0]["role"] as? String, "user")
+        XCTAssertEqual(encodedMessages[1]["role"] as? String, "assistant")
+        XCTAssertEqual(encodedMessages[2]["role"] as? String, "user")
+    }
+
     func testTransformUserMessage() {
         let adapter = makeAdapter()
 

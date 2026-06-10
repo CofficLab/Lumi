@@ -7,6 +7,38 @@ import LumiCoreKit
 public typealias LumiOpenAICompatibleProviderConfiguration = OpenAICompatibleProviderConfiguration
 public typealias LumiAnthropicCompatibleProviderConfiguration = AnthropicCompatibleProviderConfiguration
 
+private enum LumiLLMRequestMessages {
+    static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMProviderKit.ChatMessage] {
+        LLMMessagePreparer.prepare(request.messages.map(convert))
+    }
+
+    static func convert(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
+        LLMProviderKit.ChatMessage(
+            role: convertRole(message.role),
+            content: message.content,
+            toolCalls: message.toolCalls?.map {
+                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            },
+            toolCallID: message.toolCallID
+        )
+    }
+
+    static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
+        switch role {
+        case .system:
+            .system
+        case .user:
+            .user
+        case .assistant:
+            .assistant
+        case .tool:
+            .tool
+        case .error, .status:
+            .error
+        }
+    }
+}
+
 open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     open class var info: LumiLLMProviderInfo {
         fatalError("Subclasses must override info")
@@ -53,7 +85,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
         let httpRequest = buildRequest(url: url, apiKey: try apiKey())
         let body = try adapter.buildStreamingRequestBody(
-            messages: request.messages.map(Self.convertMessage),
+            messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
@@ -100,32 +132,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-    }
-
-    private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
-        LLMProviderKit.ChatMessage(
-            role: convertRole(message.role),
-            content: message.content,
-            toolCalls: message.toolCalls?.map {
-                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            },
-            toolCallID: message.toolCallID
-        )
-    }
-
-    private static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
-        switch role {
-        case .system:
-            .system
-        case .user:
-            .user
-        case .assistant:
-            .assistant
-        case .tool:
-            .tool
-        case .error, .status:
-            .error
-        }
     }
 
     fileprivate static func processStreamChunk(
@@ -214,11 +220,11 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         adapter.buildRequest(url: url, apiKey: apiKey)
     }
 
-    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+    open func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }
 
-    public func sendStreaming(
+    open func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
@@ -232,7 +238,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
         let httpRequest = buildRequest(url: url, apiKey: try apiKey())
         let body = try adapter.buildStreamingRequestBody(
-            messages: request.messages.map(Self.convertMessage),
+            messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
@@ -279,32 +285,6 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         }
 
         throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-    }
-
-    private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
-        LLMProviderKit.ChatMessage(
-            role: convertRole(message.role),
-            content: message.content,
-            toolCalls: message.toolCalls?.map {
-                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            },
-            toolCallID: message.toolCallID
-        )
-    }
-
-    private static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
-        switch role {
-        case .system:
-            .system
-        case .user:
-            .user
-        case .assistant:
-            .assistant
-        case .tool:
-            .tool
-        case .error, .status:
-            .error
-        }
     }
 }
 

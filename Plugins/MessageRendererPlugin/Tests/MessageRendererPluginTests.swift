@@ -57,6 +57,22 @@ import Testing
     #expect(renderers.first { $0.id == "core-error-message" }?.canRender(error) == true)
 }
 
+@MainActor
+@Test func coreErrorRendererDefersToAliyunRenderKind() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    let conversationID = UUID()
+    let aliyunError = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "failed",
+        providerID: "aliyun",
+        isError: true,
+        renderKind: "aliyun-http-403"
+    )
+
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(aliyunError) == false)
+}
+
 private var testContext: LumiPluginContext {
     LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
 }

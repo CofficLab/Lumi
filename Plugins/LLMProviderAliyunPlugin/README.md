@@ -1,11 +1,21 @@
 # AliyunPlugin
 
-LLM provider plugin for Lumi. Integrates **阿里云** — Aliyun Qwen Models.
+LLM provider plugin for Lumi. Integrates **阿里云 DashScope Coding Plan**.
 
 ## Features
 
-- **LLM Provider** — registers 阿里云 in the model selector
-- **Model catalog** — provides available models for 阿里云
+- **LLM Provider** — registers Aliyun in the model selector
+- **Error renderers** — provider-specific UI for API Key missing, HTTP 401/403, and other request failures (same pattern as ZhipuPlugin)
+
+## Error render kinds
+
+| renderKind | UI |
+|---|---|
+| `aliyun-api-key-missing` | Inline API Key editor |
+| `aliyun-http-401` | API Key editor (auth failure) |
+| `aliyun-http-403` | HTTP 403 detail |
+| `aliyun-http-{code}` | Generic HTTP error |
+| `aliyun-request-failed` | Network / unknown failure |
 - **Streaming support** — SSE streaming for real-time token output
 - **Settings integration** — API key configuration via Lumi settings
 

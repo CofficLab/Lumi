@@ -41,7 +41,8 @@ public enum MessageRendererPlugin: LumiPlugin {
                     guard message.role == .error || message.isError else {
                         return false
                     }
-                    if let renderKind = message.renderKind, renderKind.hasPrefix("zhipu-") {
+                    if let renderKind = message.renderKind,
+                       renderKind.hasPrefix("zhipu-") || renderKind.hasPrefix("aliyun-") {
                         return false
                     }
                     return true
