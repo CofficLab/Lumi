@@ -35,7 +35,7 @@ public enum EditorPanelPlugin: LumiPlugin {
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
-                showsChatSection: true,
+                chatSection: .narrow,
                 showsPanelChrome: true
             ) {
                 EditorPanelHostView()
@@ -57,7 +57,7 @@ public enum EditorPanelPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         guard context.activeSectionID == info.id,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
+              context.resolve(LumiEditorServicing.self) != nil
         else {
             return []
         }
@@ -72,25 +72,6 @@ public enum EditorPanelPlugin: LumiPlugin {
                     LSPDiagnosticStatusBarItem()
                 }
             ),
-            LumiStatusBarItem(
-                id: "\(info.id).cursor",
-                title: "Cursor",
-                systemImage: "cursorarrow",
-                placement: .trailing,
-                statusBarView: {
-                    EditorCursorStatusBarView(service: service)
-                }
-            ),
         ]
-    }
-}
-
-private struct EditorCursorStatusBarView: View {
-    @ObservedObject var service: EditorService
-
-    var body: some View {
-        Text("Ln \(service.cursorLine + 1), Col \(service.cursorColumn + 1)")
-            .font(.caption)
-            .monospacedDigit()
     }
 }

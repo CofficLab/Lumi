@@ -5325,16 +5325,6 @@
         }
       }
     },
-    "Ln %lld, Col %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Ln %1$lld, Col %2$lld"
-          }
-        }
-      }
-    },
     "Load Full File" : {
       "localizations" : {
         "en" : {

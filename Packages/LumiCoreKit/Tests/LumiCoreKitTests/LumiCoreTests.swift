@@ -24,7 +24,7 @@ import Testing
     let context = LumiPluginContext(
         activeSectionID: "chat",
         activeSectionTitle: "Chat",
-        showsChatSection: true
+        chatSection: .narrow
     )
 
     let plugins: [any LumiPlugin.Type] = [SecondPlugin.self, FirstPlugin.self]

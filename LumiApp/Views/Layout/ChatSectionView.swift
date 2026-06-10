@@ -3,6 +3,7 @@ import LumiUI
 import SwiftUI
 
 struct ChatSectionView: View {
+    let layout: LumiChatSectionLayout
     let stackItems: [LumiChatSectionItem]
     let bottomItems: [LumiChatSectionItem]
     let rootContent: AnyView
@@ -10,7 +11,11 @@ struct ChatSectionView: View {
     var body: some View {
         rootContent
             .frame(maxHeight: .infinity)
-            .frame(minWidth: 320, idealWidth: 400)
+            .frame(
+                minWidth: layout.minWidth,
+                idealWidth: layout.idealWidth,
+                maxWidth: layout.maximumWidth
+            )
             .appSurface(style: .panel, cornerRadius: 0)
     }
 

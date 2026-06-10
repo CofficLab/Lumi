@@ -1,4 +1,5 @@
 import AppKit
+import LumiCoreKit
 import SwiftUI
 
 struct SplitViewAutosaveConfigurator: NSViewRepresentable {
@@ -23,6 +24,234 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+struct ChatSectionWidthPersistence: NSViewRepresentable {
+    let layout: LumiChatSectionLayout
+    let storageKey: String
+
+    func makeNSView(context: Context) -> ChatSectionWidthPersistenceView {
+        ChatSectionWidthPersistenceView(layout: layout, storageKey: storageKey)
+    }
+
+    func updateNSView(_ nsView: ChatSectionWidthPersistenceView, context: Context) {
+        nsView.updateConfiguration(layout: layout, storageKey: storageKey)
+    }
+
+    static func dismantleNSView(_ nsView: ChatSectionWidthPersistenceView, coordinator: ()) {
+        nsView.detach()
+    }
+}
+
+@MainActor
+final class ChatSectionWidthPersistenceView: NSView {
+    private static let maxApplyRetryCount = 20
+
+    private var layout: LumiChatSectionLayout
+    private var storageKey: String
+
+    private weak var observedSplitView: NSSplitView?
+    private var resizeObserver: NSObjectProtocol?
+    private var didApplyWidth = false
+    private var applyRetryCount = 0
+    private var pendingRetryWorkItem: DispatchWorkItem?
+
+    init(layout: LumiChatSectionLayout, storageKey: String) {
+        self.layout = layout
+        self.storageKey = storageKey
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func updateConfiguration(layout: LumiChatSectionLayout, storageKey: String) {
+        guard self.layout != layout || self.storageKey != storageKey else { return }
+        self.layout = layout
+        self.storageKey = storageKey
+        didApplyWidth = false
+        applyWidthIfPossible()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        attachIfPossible()
+    }
+
+    func detach() {
+        if let resizeObserver {
+            NotificationCenter.default.removeObserver(resizeObserver)
+            self.resizeObserver = nil
+        }
+        pendingRetryWorkItem?.cancel()
+        pendingRetryWorkItem = nil
+        observedSplitView = nil
+    }
+
+    private func attachIfPossible() {
+        guard window != nil else { return }
+        guard let splitView = enclosingSplitView() else {
+            scheduleRetry()
+            return
+        }
+        guard splitView !== observedSplitView else {
+            applyWidthIfPossible()
+            return
+        }
+
+        if let resizeObserver {
+            NotificationCenter.default.removeObserver(resizeObserver)
+        }
+
+        observedSplitView = splitView
+        didApplyWidth = false
+        applyRetryCount = 0
+        applyWidthIfPossible()
+
+        resizeObserver = NotificationCenter.default.addObserver(
+            forName: NSSplitView.didResizeSubviewsNotification,
+            object: splitView,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.persistCurrentWidth()
+            }
+        }
+    }
+
+    private func applyWidthIfPossible() {
+        guard !didApplyWidth else { return }
+        guard let splitView = observedSplitView ?? enclosingSplitView() else {
+            scheduleRetry()
+            return
+        }
+        guard containingColumnIndex(in: splitView) != nil,
+              splitView.arrangedSubviews.count >= 2,
+              splitView.isVertical
+        else {
+            scheduleRetry()
+            return
+        }
+
+        let totalWidth = splitView.bounds.width
+        guard totalWidth > 0 else {
+            scheduleRetry()
+            return
+        }
+
+        let savedWidth = UserDefaults.standard.object(forKey: storageKey) as? Double
+        let requestedWidth = savedWidth.map { CGFloat($0) } ?? layout.defaultWidth
+        let targetWidth = clampedWidth(
+            requestedWidth,
+            totalWidth: totalWidth,
+            dividerCount: splitView.arrangedSubviews.count - 1,
+            dividerThickness: splitView.dividerThickness
+        )
+
+        guard let columnIndex = containingColumnIndex(in: splitView) else { return }
+        setColumn(columnIndex, width: targetWidth, in: splitView)
+        splitView.layoutSubtreeIfNeeded()
+        didApplyWidth = true
+    }
+
+    private func persistCurrentWidth() {
+        guard let splitView = observedSplitView,
+              let columnIndex = containingColumnIndex(in: splitView),
+              splitView.arrangedSubviews.count > columnIndex,
+              splitView.isVertical
+        else { return }
+
+        let width = splitView.arrangedSubviews[columnIndex].frame.width
+        guard width.isFinite, width >= layout.minWidth else { return }
+
+        let clamped = min(max(width, layout.minWidth), layout.maximumWidth)
+        guard abs((UserDefaults.standard.object(forKey: storageKey) as? Double ?? 0) - Double(clamped)) > 0.5 else {
+            return
+        }
+        UserDefaults.standard.set(Double(clamped), forKey: storageKey)
+    }
+
+    private func clampedWidth(
+        _ requestedWidth: CGFloat,
+        totalWidth: CGFloat,
+        dividerCount: Int,
+        dividerThickness: CGFloat
+    ) -> CGFloat {
+        let dividersWidth = CGFloat(dividerCount) * dividerThickness
+        let usableWidth = max(1, totalWidth - dividersWidth)
+        let maximumAvailableWidth = max(
+            layout.minWidth,
+            usableWidth - layout.minimumRemainingWidth
+        )
+        return min(
+            max(requestedWidth, layout.minWidth),
+            min(layout.maximumWidth, maximumAvailableWidth)
+        )
+    }
+
+    private func setColumn(_ columnIndex: Int, width: CGFloat, in splitView: NSSplitView) {
+        let dividerIndex: Int
+        let position: CGFloat
+
+        if columnIndex == splitView.arrangedSubviews.count - 1 {
+            dividerIndex = max(0, columnIndex - 1)
+            position = max(
+                layout.minimumRemainingWidth,
+                splitView.bounds.width - width - splitView.dividerThickness
+            )
+        } else {
+            dividerIndex = columnIndex
+            var nextPosition: CGFloat = 0
+            for index in 0..<dividerIndex {
+                nextPosition += splitView.arrangedSubviews[index].frame.width
+                nextPosition += splitView.dividerThickness
+            }
+            nextPosition += width
+            position = nextPosition
+        }
+
+        splitView.setPosition(position, ofDividerAt: dividerIndex)
+    }
+
+    private func containingColumnIndex(in splitView: NSSplitView) -> Int? {
+        splitView.arrangedSubviews.firstIndex { arrangedSubview in
+            isContained(in: arrangedSubview)
+        }
+    }
+
+    private func isContained(in candidateAncestor: NSView) -> Bool {
+        var current: NSView? = self
+        while let view = current {
+            if view === candidateAncestor { return true }
+            current = view.superview
+        }
+        return false
+    }
+
+    private func enclosingSplitView() -> NSSplitView? {
+        var current = superview
+        while let view = current {
+            if let splitView = view as? NSSplitView {
+                return splitView
+            }
+            current = view.superview
+        }
+        return nil
+    }
+
+    private func scheduleRetry() {
+        guard applyRetryCount < Self.maxApplyRetryCount else { return }
+        pendingRetryWorkItem?.cancel()
+        applyRetryCount += 1
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.attachIfPossible()
+        }
+        pendingRetryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
+    }
 }
 
 struct SplitViewHeightPersistence: NSViewRepresentable {

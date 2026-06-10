@@ -16,27 +16,31 @@ struct AppLayoutView: View {
     let projectPathStore: LumiCurrentProjectPathStore
 
     var body: some View {
-        let containers = pluginService.viewContainers(context: basePluginContext(showsChatSection: false))
+        let containers = pluginService.viewContainers(context: basePluginContext())
         let selectedContainer = selectedContainer(from: containers)
         let activeID = selectedContainer?.id ?? "main"
         let activeTitle = selectedContainer?.title ?? "Main"
-        let showsChatSection = selectedContainer?.showsChatSection ?? false
+        let chatSection = selectedContainer?.chatSection ?? .none
         let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
         let pluginContext = basePluginContext(
             activeSectionID: activeID,
             activeSectionTitle: activeTitle,
-            showsChatSection: showsChatSection,
+            chatSection: chatSection,
             showsPanelChrome: showsPanelChrome
         )
         let chatSectionItems = pluginService.chatSectionItems(context: pluginContext)
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
         let railTabs = pluginService.panelRailTabItems(context: pluginContext)
-        let shouldShowChatSection = showsChatSection
+        let shouldShowChatSection = chatSection.isVisible
             && layoutState.chatSectionVisible
             && !chatSectionItems.isEmpty
         let showRail = showsPanelChrome && !railTabs.isEmpty
-        let autosaveName = layoutAutosaveName(showRail: showRail, showChatSection: shouldShowChatSection)
+        let autosaveName = layoutAutosaveName(
+            showRail: showRail,
+            showChatSection: shouldShowChatSection,
+            chatSection: chatSection
+        )
 
         VStack(spacing: 0) {
             AppTitleToolbar(
@@ -64,9 +68,12 @@ struct AppLayoutView: View {
                             showRail: showRail,
                             railTabs: railTabs
                         )
+                        .layoutPriority(1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                         if shouldShowChatSection {
                             ChatSectionView(
+                                layout: chatSection,
                                 stackItems: chatSectionItems.filter { $0.placement == .stack },
                                 bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
                                 rootContent: pluginService.chatSectionRootWrapper(
@@ -77,8 +84,13 @@ struct AppLayoutView: View {
                                     )
                                 )
                             )
+                            .id(chatSection)
+                            .layoutPriority(0)
                             .background(
-                                SplitViewWidthPersistence(storageKey: "Layout.Main.ChatSection")
+                                ChatSectionWidthPersistence(
+                                    layout: chatSection,
+                                    storageKey: "Layout.Main.ChatSection.\(chatSection.persistenceKeySuffix)"
+                                )
                             )
                         }
                     }
@@ -191,14 +203,19 @@ struct AppLayoutView: View {
         }
     }
 
-    private func layoutAutosaveName(showRail: Bool, showChatSection: Bool) -> String {
-        switch (showRail, showChatSection) {
+    private func layoutAutosaveName(
+        showRail: Bool,
+        showChatSection: Bool,
+        chatSection: LumiChatSectionLayout
+    ) -> String {
+        let chatSuffix = showChatSection ? "_\(chatSection.persistenceKeySuffix)" : ""
+        return switch (showRail, showChatSection) {
         case (true, true):
-            "Unified_MainSplit_Rail_ChatSection"
+            "Unified_MainSplit_Rail_ChatSection\(chatSuffix)"
         case (true, false):
             "Unified_MainSplit_Rail"
         case (false, true):
-            "Unified_MainSplit_ChatSection"
+            "Unified_MainSplit_ChatSection\(chatSuffix)"
         case (false, false):
             "Unified_MainSplit"
         }
@@ -207,13 +224,13 @@ struct AppLayoutView: View {
     private func basePluginContext(
         activeSectionID: String? = nil,
         activeSectionTitle: String = "Main",
-        showsChatSection: Bool = false,
+        chatSection: LumiChatSectionLayout = .none,
         showsPanelChrome: Bool = false
     ) -> LumiPluginContext {
         LumiPluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
-            showsChatSection: showsChatSection,
+            chatSection: chatSection,
             showsPanelChrome: showsPanelChrome,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)

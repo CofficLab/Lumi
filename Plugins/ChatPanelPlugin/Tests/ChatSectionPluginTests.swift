@@ -9,7 +9,7 @@ import Testing
     let context = LumiPluginContext(
         activeSectionID: "chat",
         activeSectionTitle: "Chat",
-        showsChatSection: false
+        chatSection: .none
     )
 
     #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
@@ -23,7 +23,7 @@ import Testing
     let context = LumiPluginContext(
         activeSectionID: "chat",
         activeSectionTitle: "Chat",
-        showsChatSection: true
+        chatSection: .wide
     )
 
     #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
@@ -41,7 +41,7 @@ import Testing
     let context = LumiPluginContext(
         activeSectionID: "chat",
         activeSectionTitle: "Chat",
-        showsChatSection: true,
+        chatSection: .wide,
         dependencies: LumiPluginDependencies { dependencies in
             dependencies.register(ChatSectionCoordinator.self, coordinator)
         }
