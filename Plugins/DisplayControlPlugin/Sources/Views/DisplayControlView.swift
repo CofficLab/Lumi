@@ -24,10 +24,10 @@ struct DisplayControlView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Display Control")
+                            Text("Display Control", bundle: .module)
                                 .font(.title.weight(.semibold))
                                 .foregroundColor(theme.textPrimary)
-                            Text("Brightness, Volume & Contrast")
+                            Text("Brightness, Volume & Contrast", bundle: .module)
                                 .font(.body)
                                 .foregroundColor(theme.textSecondary)
                         }
@@ -55,10 +55,10 @@ struct DisplayControlView: View {
                 Image(systemName: "display.trianglebadge.exclamationmark")
                     .font(.system(size: 32))
                     .foregroundStyle(theme.textSecondary)
-                Text("No displays detected")
+                Text("No displays detected", bundle: .module)
                     .font(.body)
                     .foregroundColor(theme.textSecondary)
-                Text("Connect an external display or check your display connections.")
+                Text("Connect an external display or check your display connections.", bundle: .module)
                     .font(.caption)
                     .foregroundColor(theme.textTertiary)
                     .multilineTextAlignment(.center)
@@ -101,7 +101,7 @@ struct DisplayControlCard: View {
 
                     Spacer()
 
-                    Text(display.isBuiltIn ? "Built-in" : "External")
+                    Text(display.isBuiltIn ? String(localized: "Built-in", bundle: .module) : String(localized: "External", bundle: .module))
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(theme.textSecondary)
                         .padding(.horizontal, 8)

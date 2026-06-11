@@ -4,8 +4,11 @@ import SwiftUI
 public enum DisplayControlPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.display-control",
-        displayName: "Display Control",
-        description: "Control brightness, volume, and contrast for external displays via DDC/CI.",
+        displayName: String(localized: "Display Control", bundle: .module),
+        description: String(
+            localized: "Control brightness, volume, and contrast for external displays via DDC/CI.",
+            bundle: .module
+        ),
         order: 21
     )
     public static let category: LumiPluginCategory = .system

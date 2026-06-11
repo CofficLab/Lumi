@@ -12,7 +12,7 @@ struct DisplayMenuBarPopupView: View {
                 Image(systemName: "display")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.primary)
-                Text("Displays")
+                Text("Displays", bundle: .module)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(theme.textPrimary)
                 Spacer()
@@ -22,7 +22,7 @@ struct DisplayMenuBarPopupView: View {
             }
 
             if service.displays.isEmpty {
-                Text("No displays detected")
+                Text("No displays detected", bundle: .module)
                     .font(.system(size: 10))
                     .foregroundColor(theme.textTertiary)
                     .onAppear { service.refresh() }

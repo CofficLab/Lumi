@@ -26,9 +26,9 @@ enum DisplayControlKind: Hashable, Sendable {
 
     var label: String {
         switch self {
-        case .brightness: "Brightness"
-        case .volume: "Volume"
-        case .contrast: "Contrast"
+        case .brightness: String(localized: "Brightness", bundle: .module)
+        case .volume: String(localized: "Volume", bundle: .module)
+        case .contrast: String(localized: "Contrast", bundle: .module)
         }
     }
 
