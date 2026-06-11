@@ -9,8 +9,8 @@ public enum EditorPreviewBottomPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-inline-preview",
-        displayName: "Inline Preview",
-        description: "Embedded preview in the editor bottom area.",
+        displayName: String(localized: "Inline Preview", bundle: .module),
+        description: String(localized: "Embedded preview in the editor bottom area.", bundle: .module),
         order: 84
     )
 

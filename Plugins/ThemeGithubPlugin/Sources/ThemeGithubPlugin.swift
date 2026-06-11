@@ -6,8 +6,8 @@ public enum ThemeGithubPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.github",
-        displayName: "GitHub Theme",
-        description: "GitHub style app theme",
+        displayName: String(localized: "GitHub Theme", bundle: .module),
+        description: String(localized: "GitHub style app theme", bundle: .module),
         order: 128
     )
 

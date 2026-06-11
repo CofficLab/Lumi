@@ -7,8 +7,8 @@ public enum AnthropicPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.anthropic",
-        displayName: "Anthropic",
-        description: "Contributes Anthropic Claude models to Lumi Chat.",
+        displayName: String(localized: "Anthropic", bundle: .module),
+        description: String(localized: "Contributes Anthropic Claude models to Lumi Chat.", bundle: .module),
         order: 104
     )
 
@@ -22,8 +22,8 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "anthropic",
-            displayName: "Anthropic",
-            description: "Claude AI by Anthropic",
+            displayName: String(localized: "Anthropic", bundle: .module),
+            description: String(localized: "Claude AI by Anthropic", bundle: .module),
             defaultModel: "claude-sonnet-4-20250514",
             availableModels: [
             "claude-sonnet-4-20250514",

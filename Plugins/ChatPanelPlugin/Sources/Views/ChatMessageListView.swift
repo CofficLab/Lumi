@@ -39,7 +39,7 @@ struct ChatMessageListView: View {
         List {
             if hasEarlierMessages {
                 Button(action: onLoadEarlier) {
-                    Text("Load earlier messages")
+                    Text("Load earlier messages", bundle: .module)
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                         .frame(maxWidth: .infinity)
@@ -116,11 +116,11 @@ private struct ChatEmptyMessagesView: View {
                 .font(.appLargeTitle)
                 .foregroundColor(theme.textSecondary)
 
-            Text("Start a conversation")
+            Text("Start a conversation", bundle: .module)
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
 
-            Text("Ask a question, paste context, or describe the task you want Lumi to handle.")
+            Text("Ask a question, paste context, or describe the task you want Lumi to handle.", bundle: .module)
                 .font(.appBody)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -157,7 +157,7 @@ private struct ChatTypingIndicator: View {
                 .controlSize(.small)
                 .scaleEffect(0.78)
 
-            Text("Thinking")
+            Text("Thinking", bundle: .module)
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
 

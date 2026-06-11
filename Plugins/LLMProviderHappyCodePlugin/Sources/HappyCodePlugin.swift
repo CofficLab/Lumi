@@ -7,8 +7,8 @@ public enum HappyCodePlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.happycode",
-        displayName: "HappyCode",
-        description: "Contributes HappyCode models to Lumi Chat.",
+        displayName: String(localized: "HappyCode", bundle: .module),
+        description: String(localized: "Contributes HappyCode models to Lumi Chat.", bundle: .module),
         order: 96
     )
 
@@ -22,8 +22,8 @@ public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked S
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "happycode",
-            displayName: "HappyCode",
-            description: "AI API Gateway by HappyCode",
+            displayName: String(localized: "HappyCode", bundle: .module),
+            description: String(localized: "AI API Gateway by HappyCode", bundle: .module),
             defaultModel: "gpt-5.5",
             availableModels: [
             "gpt-5.5"

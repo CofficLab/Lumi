@@ -91,7 +91,7 @@ private struct VerbosityLevelPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("详细级别")
+            Text("详细级别", bundle: .module)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(theme.textPrimary)
 

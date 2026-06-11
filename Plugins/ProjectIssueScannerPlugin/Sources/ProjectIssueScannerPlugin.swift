@@ -8,8 +8,8 @@ public enum ProjectIssueScannerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.project-issue-scanner",
-        displayName: "Project Issue Scanner",
-        description: "Scans for project issues during idle time and hints them to the LLM.",
+        displayName: String(localized: "Project Issue Scanner", bundle: .module),
+        description: String(localized: "Scans for project issues during idle time and hints them to the LLM.", bundle: .module),
         order: 97
     )
 

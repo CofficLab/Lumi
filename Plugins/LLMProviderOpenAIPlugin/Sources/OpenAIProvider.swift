@@ -7,8 +7,8 @@ import LumiCoreKit
 public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
         id: "openai",
-        displayName: "OpenAI",
-        description: "GPT by OpenAI",
+        displayName: String(localized: "OpenAI", bundle: .module),
+        description: String(localized: "GPT by OpenAI", bundle: .module),
         defaultModel: "gpt-4o",
         availableModels: [
             "gpt-4o",

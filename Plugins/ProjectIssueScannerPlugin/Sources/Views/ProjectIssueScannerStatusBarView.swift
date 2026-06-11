@@ -193,7 +193,7 @@ public struct ProjectIssueScannerPopover: View {
 
     private var modelPickerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("模型选择")
+            Text("模型选择", bundle: .module)
                 .font(.caption)
                 .foregroundColor(secondaryTextColor)
 

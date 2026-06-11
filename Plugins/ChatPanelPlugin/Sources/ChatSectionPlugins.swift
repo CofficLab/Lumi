@@ -9,8 +9,8 @@ public enum ChatMessagesSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-messages-section",
-        displayName: "Chat Messages",
-        description: "Agent chat messages timeline in the right ChatSection.",
+        displayName: String(localized: "Chat Messages", bundle: .module),
+        description: String(localized: "Agent chat messages timeline in the right ChatSection.", bundle: .module),
         order: 82
     )
 
@@ -37,8 +37,8 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-pending-section",
-        displayName: "Chat Pending Messages",
-        description: "Queued chat messages above the composer.",
+        displayName: String(localized: "Chat Pending Messages", bundle: .module),
+        description: String(localized: "Queued chat messages above the composer.", bundle: .module),
         order: 95
     )
 
@@ -65,8 +65,8 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-attachment-section",
-        displayName: "Chat Attachment",
-        description: "Pending chat attachments and sidebar drop handling.",
+        displayName: String(localized: "Chat Attachment", bundle: .module),
+        description: String(localized: "Pending chat attachments and sidebar drop handling.", bundle: .module),
         order: 94
     )
 
@@ -106,8 +106,8 @@ public enum ChatComposerSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-composer-section",
-        displayName: "Chat Composer",
-        description: "Chat input area with editor and command suggestions.",
+        displayName: String(localized: "Chat Composer", bundle: .module),
+        description: String(localized: "Chat input area with editor and command suggestions.", bundle: .module),
         order: 96
     )
 

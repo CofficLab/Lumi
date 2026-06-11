@@ -6,8 +6,8 @@ public enum ThemeAutumnPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.autumn",
-        displayName: "Autumn Theme",
-        description: "Autumn orange app theme",
+        displayName: String(localized: "Autumn Theme", bundle: .module),
+        description: String(localized: "Autumn orange app theme", bundle: .module),
         order: 126
     )
 

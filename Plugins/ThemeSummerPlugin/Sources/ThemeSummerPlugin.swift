@@ -6,8 +6,8 @@ public enum ThemeSummerPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.summer",
-        displayName: "Summer Theme",
-        description: "Summer blue app theme",
+        displayName: String(localized: "Summer Theme", bundle: .module),
+        description: String(localized: "Summer blue app theme", bundle: .module),
         order: 125
     )
 

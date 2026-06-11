@@ -325,7 +325,7 @@ private struct GitHubKBEntryRow: View {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Label("GitHub", systemImage: "arrow.up.right.square")
+                    Label("GitHub", bundle: .module, systemImage: "arrow.up.right.square")
                 }
                 .buttonStyle(.link)
             }

@@ -6,8 +6,8 @@ public enum ThemeStatusBarPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme-status-bar",
-        displayName: "Theme Status Bar",
-        description: "Adds a status bar theme switcher.",
+        displayName: String(localized: "Theme Status Bar", bundle: .module),
+        description: String(localized: "Adds a status bar theme switcher.", bundle: .module),
         order: 76
     )
 

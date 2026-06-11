@@ -9,8 +9,8 @@ public enum LayoutPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",
-        displayName: "Layout Persistence",
-        description: "Persist and restore layout state across app launches",
+        displayName: String(localized: "Layout Persistence", bundle: .module),
+        description: String(localized: "Persist and restore layout state across app launches", bundle: .module),
         order: 99
     )
 

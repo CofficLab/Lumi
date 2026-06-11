@@ -10,8 +10,8 @@ public enum EditorTabStripHeaderPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-tab-strip-header",
-        displayName: "Editor Tab Strip",
-        description: "Tab bar for the editor panel.",
+        displayName: String(localized: "Editor Tab Strip", bundle: .module),
+        description: String(localized: "Tab bar for the editor panel.", bundle: .module),
         order: 88
     )
 

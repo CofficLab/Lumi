@@ -10,8 +10,8 @@ public enum EditorBottomCallHierarchyPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-call-hierarchy",
-        displayName: "Editor Bottom Call Hierarchy",
-        description: "Call hierarchy panel in the editor bottom area.",
+        displayName: String(localized: "Editor Bottom Call Hierarchy", bundle: .module),
+        description: String(localized: "Call hierarchy panel in the editor bottom area.", bundle: .module),
         order: 4
     )
 

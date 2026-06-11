@@ -305,17 +305,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "brain",
                         title: "智能对话",
-                        description: "支持本地和云端 LLM，智能处理复杂任务"
+                        description: String(localized: "支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
                     ),
                     Feature(
                         icon: "hammer.circle",
                         title: "Agent 能力",
-                        description: "自动执行文件操作、命令行、Git 等任务"
+                        description: String(localized: "自动执行文件操作、命令行、Git 等任务", bundle: .module)
                     ),
                     Feature(
                         icon: "rectangle.3.group",
                         title: "多会话并行",
-                        description: "同时处理多个独立任务，互不干扰"
+                        description: String(localized: "同时处理多个独立任务，互不干扰", bundle: .module)
                     )
                 ],
                 tip: nil
@@ -330,17 +330,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "arrow.down.doc",
                         title: "拖拽添加项目",
-                        description: "将文件夹拖入对话区即可设为当前项目"
+                        description: String(localized: "将文件夹拖入对话区即可设为当前项目", bundle: .module)
                     ),
                     Feature(
                         icon: "doc.text.magnifyingglass",
                         title: "智能上下文",
-                        description: "自动分析项目结构、代码依赖和文件内容"
+                        description: String(localized: "自动分析项目结构、代码依赖和文件内容", bundle: .module)
                     ),
                     Feature(
                         icon: "chevron.left.slash.chevron.right",
                         title: "代码选区",
-                        description: "在编辑器中选中代码，Lumi 会自动获取选中内容"
+                        description: String(localized: "在编辑器中选中代码，Lumi 会自动获取选中内容", bundle: .module)
                     )
                 ],
                 tip: "最近使用的项目会自动保存，方便快速切换"
@@ -355,17 +355,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "terminal",
                         title: "命令执行",
-                        description: "在安全沙箱中执行 Shell 命令，自动处理权限请求"
+                        description: String(localized: "在安全沙箱中执行 Shell 命令，自动处理权限请求", bundle: .module)
                     ),
                     Feature(
                         icon: "doc.badge.gearshape",
                         title: "文件操作",
-                        description: "读取、创建、编辑文件，自动保存更改"
+                        description: String(localized: "读取、创建、编辑文件，自动保存更改", bundle: .module)
                     ),
                     Feature(
                         icon: "arrow.triangle.2.circlepath",
                         title: "Git 集成",
-                        description: "查看仓库状态、提交历史，协助代码管理"
+                        description: String(localized: "查看仓库状态、提交历史，协助代码管理", bundle: .module)
                     )
                 ],
                 tip: "高风险操作会请求你的确认，确保安全可靠"
@@ -380,17 +380,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "gearshape.2",
                         title: "内置插件",
-                        description: "文件浏览器、最近项目、设置中心等开箱即用"
+                        description: String(localized: "文件浏览器、最近项目、设置中心等开箱即用", bundle: .module)
                     ),
                     Feature(
                         icon: "arrow.up.bin",
                         title: "灵活启用/禁用",
-                        description: "在设置中按需管理插件，优化性能和体验"
+                        description: String(localized: "在设置中按需管理插件，优化性能和体验", bundle: .module)
                     ),
                     Feature(
                         icon: "square.and.arrow.up",
                         title: "Finder 集成",
-                        description: "右键菜单快速操作，与 Finder 无缝协作"
+                        description: String(localized: "右键菜单快速操作，与 Finder 无缝协作", bundle: .module)
                     )
                 ],
                 tip: "更多插件可在设置中心的「插件」标签页管理"
@@ -405,17 +405,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "cpu",
                         title: "选择模型",
-                        description: "配置本地模型或云端 API，选择适合你的 AI 引擎"
+                        description: String(localized: "配置本地模型或云端 API，选择适合你的 AI 引擎", bundle: .module)
                     ),
                     Feature(
                         icon: "paintpalette",
                         title: "自定义主题",
-                        description: "深色/浅色模式，多种主题风格随心切换"
+                        description: String(localized: "深色/浅色模式，多种主题风格随心切换", bundle: .module)
                     ),
                     Feature(
                         icon: "plus.circle",
                         title: "创建会话",
-                        description: "点击新建按钮或按 ⌘N，开始第一个对话"
+                        description: String(localized: "点击新建按钮或按 ⌘N，开始第一个对话", bundle: .module)
                     )
                 ],
                 tip: "所有设置均可随时在设置中心调整"

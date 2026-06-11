@@ -11,8 +11,8 @@ public enum EditorRailCallHierarchyPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-call-hierarchy",
-        displayName: "Editor Rail Call Hierarchy",
-        description: "Call hierarchy tab in the editor rail.",
+        displayName: String(localized: "Editor Rail Call Hierarchy", bundle: .module),
+        description: String(localized: "Call hierarchy tab in the editor rail.", bundle: .module),
         order: 14
     )
 

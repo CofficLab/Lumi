@@ -6,8 +6,8 @@ public enum ThemeMountainPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.mountain",
-        displayName: "Mountain Theme",
-        description: "Mountain gray app theme",
+        displayName: String(localized: "Mountain Theme", bundle: .module),
+        description: String(localized: "Mountain gray app theme", bundle: .module),
         order: 129
     )
 

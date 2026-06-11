@@ -27,9 +27,9 @@ public struct ProjectIssueScannerSettingsView: View {
                 AppSettingsSection(title: "说明", spacing: 6) {
                     AppSettingsRow {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("• Auto：自动从所有可用模型中选择最优的")
-                            Text("• 手动指定：固定使用某个供应商的特定模型")
-                            Text("• 每日最多执行 5 次深度分析（节省成本）")
+                            Text("• Auto：自动从所有可用模型中选择最优的", bundle: .module)
+                            Text("• 手动指定：固定使用某个供应商的特定模型", bundle: .module)
+                            Text("• 每日最多执行 5 次深度分析（节省成本）", bundle: .module)
                         }
                         .font(.appCaption)
                         .foregroundColor(.secondary)

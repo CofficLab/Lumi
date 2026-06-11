@@ -12,17 +12,17 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.codex")
 
     public static let id = "codex"
-    public static let displayName = "Codex"
+    public static let displayName = String(localized: "Codex", bundle: .module)
     public static let shortName = "CX"
-    public static let description = "通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）"
+    public static let description = String(localized: "通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）", bundle: .module)
     public static let websiteURL: String? = "https://github.com/openai/codex"
     public static let apiKeyStorageKey = ""
 
     public static let defaultModel = "gpt-5.5"
 
     public static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.5", description: "GPT-5.5，Codex 当前旗舰模型", spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-5.4-mini", description: "GPT-5.4 Mini，轻量快速模型", spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.5", description: String(localized: "GPT-5.5，Codex 当前旗舰模型", bundle: .module), spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", description: String(localized: "GPT-5.4 Mini，轻量快速模型", bundle: .module), spec: .init(contextWindowSize: 1_000_000, supportsVision: true, supportsTools: true)),
     ]
 
     private let cli: CodexCLI

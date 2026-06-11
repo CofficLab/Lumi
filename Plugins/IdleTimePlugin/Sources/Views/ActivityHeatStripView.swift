@@ -21,15 +21,15 @@ public struct ActivityHeatStripView: View {
             }
 
             HStack {
-                Text("00")
+                Text("00", bundle: .module)
                 Spacer()
-                Text("06")
+                Text("06", bundle: .module)
                 Spacer()
-                Text("12")
+                Text("12", bundle: .module)
                 Spacer()
-                Text("18")
+                Text("18", bundle: .module)
                 Spacer()
-                Text("24")
+                Text("24", bundle: .module)
             }
             .font(.appMicro)
             .foregroundColor(theme.textSecondary)

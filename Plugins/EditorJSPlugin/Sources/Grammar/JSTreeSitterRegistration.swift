@@ -11,14 +11,14 @@ public struct JSTreeSitterRegistration: Sendable {
     public static let javascript = LanguageDef(
         languageId: "javascript",
         extensions: ["js", "jsx", "mjs", "cjs"],
-        displayName: "JavaScript",
+        displayName: String(localized: "JavaScript", bundle: .module),
         embeddedLanguages: ["html", "css", "json"]
     )
 
     public static let typescript = LanguageDef(
         languageId: "typescript",
         extensions: ["ts", "tsx", "mts", "cts"],
-        displayName: "TypeScript",
+        displayName: String(localized: "TypeScript", bundle: .module),
         embeddedLanguages: ["javascript", "jsx", "json"]
     )
 

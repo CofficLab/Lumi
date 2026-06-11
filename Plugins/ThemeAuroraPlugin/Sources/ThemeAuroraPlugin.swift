@@ -6,8 +6,8 @@ public enum ThemeAuroraPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.aurora",
-        displayName: "Aurora Theme",
-        description: "Aurora purple app theme",
+        displayName: String(localized: "Aurora Theme", bundle: .module),
+        description: String(localized: "Aurora purple app theme", bundle: .module),
         order: 121
     )
 

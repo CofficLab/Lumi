@@ -27,7 +27,7 @@ public struct ConversationHandoffSidebarSection: View {
                             .font(.appCaptionEmphasized)
                             .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
 
-                        Text("上下文交接")
+                        Text("上下文交接", bundle: .module)
                             .font(.appCaptionEmphasized)
                             .foregroundStyle(themeVM.activeChromeTheme.workspaceTextColor())
 

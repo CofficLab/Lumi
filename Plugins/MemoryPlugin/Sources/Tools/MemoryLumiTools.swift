@@ -55,8 +55,8 @@ struct SaveMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "save_memory",
-        displayName: "Save Memory",
-        description: "Save a memory to the persistent memory system."
+        displayName: String(localized: "Save Memory", bundle: .module),
+        description: String(localized: "Save a memory to the persistent memory system.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -86,8 +86,8 @@ struct RecallMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "recall_memory",
-        displayName: "Recall Memory",
-        description: "Search for memories related to a query."
+        displayName: String(localized: "Recall Memory", bundle: .module),
+        description: String(localized: "Search for memories related to a query.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -117,8 +117,8 @@ struct ListMemoriesLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "list_memories",
-        displayName: "List Memories",
-        description: "List all saved memories."
+        displayName: String(localized: "List Memories", bundle: .module),
+        description: String(localized: "List all saved memories.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -148,8 +148,8 @@ struct DeleteMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "delete_memory",
-        displayName: "Delete Memory",
-        description: "Delete a memory from the persistent memory system."
+        displayName: String(localized: "Delete Memory", bundle: .module),
+        description: String(localized: "Delete a memory from the persistent memory system.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

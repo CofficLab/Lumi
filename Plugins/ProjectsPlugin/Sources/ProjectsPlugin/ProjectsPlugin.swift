@@ -5,8 +5,8 @@ public enum ProjectsPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.projects",
-        displayName: "Projects",
-        description: "Adds a project manager control to the title toolbar."
+        displayName: String(localized: "Projects", bundle: .module),
+        description: String(localized: "Adds a project manager control to the title toolbar.", bundle: .module)
     )
 
     @MainActor

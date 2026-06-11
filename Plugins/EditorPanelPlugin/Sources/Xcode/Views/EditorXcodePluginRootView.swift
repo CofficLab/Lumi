@@ -402,5 +402,5 @@ private enum EditorXcodeProjectPreloader {
 }
 
 #Preview("RootView Wrapper") {
-    EditorXcodePluginRootView(content: Text("Content View").padding())
+    EditorXcodePluginRootView(content: Text("Content View", bundle: .module).padding())
 }

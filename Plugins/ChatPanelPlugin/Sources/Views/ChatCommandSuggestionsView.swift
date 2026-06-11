@@ -14,9 +14,9 @@ struct ChatSlashCommand: Identifiable, Equatable {
     }
 
     private static let all: [ChatSlashCommand] = [
-        .init(command: "/clear", description: "Clear chat history"),
-        .init(command: "/help", description: "Show available commands"),
-        .init(command: "/model", description: "Open model selector"),
+        .init(command: "/clear", description: String(localized: "Clear chat history", bundle: .module)),
+        .init(command: "/help", description: String(localized: "Show available commands", bundle: .module)),
+        .init(command: "/model", description: String(localized: "Open model selector", bundle: .module)),
     ]
 }
 

@@ -11,8 +11,8 @@ public enum EditorRailSymbolsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-symbols",
-        displayName: "Editor Rail Symbols",
-        description: "Symbols tab in the editor rail.",
+        displayName: String(localized: "Editor Rail Symbols", bundle: .module),
+        description: String(localized: "Symbols tab in the editor rail.", bundle: .module),
         order: 13
     )
 

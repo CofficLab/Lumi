@@ -7,8 +7,8 @@ import LumiCoreKit
 public struct ReadFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "read_file",
-        displayName: "Read File",
-        description: "Read UTF-8 text contents from a file at the given path."
+        displayName: String(localized: "Read File", bundle: .module),
+        description: String(localized: "Read UTF-8 text contents from a file at the given path.", bundle: .module)
     )
 
     private let maxBytes = 50 * 1024

@@ -10,8 +10,8 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-outline",
-        displayName: "Editor Rail Outline",
-        description: "Outline tab in the editor rail.",
+        displayName: String(localized: "Editor Rail Outline", bundle: .module),
+        description: String(localized: "Outline tab in the editor rail.", bundle: .module),
         order: 1
     )
 

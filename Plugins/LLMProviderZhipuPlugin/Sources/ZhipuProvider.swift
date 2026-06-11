@@ -10,8 +10,8 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
 
     public static let info = LumiLLMProviderInfo(
         id: "zhipu",
-        displayName: "智谱",
-        description: "Zhipu AI GLM",
+        displayName: String(localized: "智谱", bundle: .module),
+        description: String(localized: "Zhipu AI GLM", bundle: .module),
         defaultModel: "glm-4.7",
         availableModels: [
             "glm-5.1",

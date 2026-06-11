@@ -134,7 +134,7 @@ extension ConversationItemView {
                     .foregroundColor(theme.textSecondary)
                     .lineLimit(1)
 
-                Text("•")
+                Text("•", bundle: .module)
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }

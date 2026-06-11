@@ -43,12 +43,12 @@ public struct RegistryCard: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundColor(theme.textSecondary)
-                        .help("Refresh")
+                        .help(String(localized: "Refresh", bundle: .module))
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Current Registry")
+                    Text("Current Registry", bundle: .module)
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
 
@@ -87,7 +87,7 @@ public struct RegistryCard: View {
                 } label: {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                        Text("Switch Source")
+                        Text("Switch Source", bundle: .module)
                     }
                     .frame(maxWidth: .infinity)
                 }

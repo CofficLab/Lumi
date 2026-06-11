@@ -23,10 +23,14 @@ func _IOAVServiceWriteI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafePointer<U
 @_silgen_name("IOAVServiceReadI2C")
 func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePointer<UInt8>, _: UInt32) -> Bool
 
-// IOAVServiceCreateWithService follows Create rule — returns a retained CFTypeRef (or NULL).
-// We declare it as returning an optional CFTypeRef directly, NOT Unmanaged.
-@_silgen_name("IOAVServiceCreateWithService")
-func _IOAVServiceCreateWithService(_: CFAllocator, _: io_service_t) -> CFTypeRef?
+// IOAVServiceCreateWithService is a private IOKit function.
+// It follows the Core Foundation "Create" rule — returns a retained CFTypeRef or NULL.
+// We use dlsym to call it dynamically to avoid @_silgen_name ABI issues that cause crashes.
+// Note: allocator param should be NULL (not kCFAllocatorDefault) since kCFAllocatorDefault is nil on macOS.
+private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?) = {
+    let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService")!
+    return unsafeBitCast(sym, to: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?).self)
+}()
 
 // MARK: - DDC VCP Codes
 
@@ -286,12 +290,16 @@ private final class Arm64DDCMatcher {
     }
 
     /// Safety wrapper for creating AV service — logs failures instead of crashing.
+    /// Passes NULL for the allocator (kCFAllocatorDefault is nil on macOS, meaning "use default").
     private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
-        guard let avService = _IOAVServiceCreateWithService(kCFAllocatorDefault, entry) else {
-            ddcLog.warning("DDC: _IOAVServiceCreateWithService returned nil for entry")
+        guard let rawPtr = ioAVServiceCreateWithService(nil, entry) else {
+            ddcLog.warning("DDC: IOAVServiceCreateWithService returned nil for entry")
             return nil
         }
-        return avService
+        // The C function follows Create rule — returns a retained CF object.
+        // We bridge it back to a CFTypeRef via Unmanaged.
+        let unmanaged = Unmanaged<CFTypeRef>.fromOpaque(rawPtr)
+        return unmanaged.takeRetainedValue()
     }
 
     private func registryServicesForMatching() -> [RegistryService] {

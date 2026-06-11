@@ -11,8 +11,8 @@ public enum EditorRailSearchPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-search",
-        displayName: "Editor Rail Search",
-        description: "Search tab in the editor rail.",
+        displayName: String(localized: "Editor Rail Search", bundle: .module),
+        description: String(localized: "Search tab in the editor rail.", bundle: .module),
         order: 12
     )
 

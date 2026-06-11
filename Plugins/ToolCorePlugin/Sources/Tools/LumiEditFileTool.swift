@@ -5,8 +5,8 @@ import WorkspaceFileKit
 public struct LumiEditFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "edit_file",
-        displayName: "Edit File",
-        description: "Perform exact string replacements in a file."
+        displayName: String(localized: "Edit File", bundle: .module),
+        description: String(localized: "Perform exact string replacements in a file.", bundle: .module)
     )
 
     private let editor = WorkspaceFileEditor()

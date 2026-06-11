@@ -41,7 +41,7 @@ public struct AskUserPendingView: View {
 
     public var body: some View {
         guard let response = parsePendingResponse(from: toolCall.result?.content ?? "") else {
-            return AnyView(Text("无法解析问题内容"))
+            return AnyView(Text("无法解析问题内容", bundle: .module))
         }
 
         return AnyView(
@@ -139,7 +139,7 @@ public struct AskUserPendingView: View {
                     }
 
                     // 提示文字
-                    Text("等待您的选择...")
+                    Text("等待您的选择...", bundle: .module)
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }

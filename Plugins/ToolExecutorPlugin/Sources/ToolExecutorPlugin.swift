@@ -10,8 +10,8 @@ public actor ToolExecutorPlugin: SuperPlugin, SuperLog {
     nonisolated public static let verbose = false
 
     public static let id = "ToolExecutor"
-    public static let displayName = "Tool Executor"
-    public static let description = "Execute Agent tool calls and write results to the database"
+    public static let displayName = String(localized: "Tool Executor", bundle: .module)
+    public static let description = String(localized: "Execute Agent tool calls and write results to the database", bundle: .module)
     public static let iconName = "wrench.and.screwdriver"
     public static var order: Int { 195 }
 

@@ -6,8 +6,8 @@ public enum ZhipuPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.zhipu",
-        displayName: "智谱",
-        description: "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.",
+        displayName: String(localized: "智谱", bundle: .module),
+        description: String(localized: "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
         order: 110
     )
 

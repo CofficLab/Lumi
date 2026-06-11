@@ -100,7 +100,7 @@ struct CPUHistoryGraphView: View {
                 }
 
                 // 底部 0 标签
-                Text("0")
+                Text("0", bundle: .module)
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "98989E"))
             }

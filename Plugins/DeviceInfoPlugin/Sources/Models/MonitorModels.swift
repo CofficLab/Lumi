@@ -47,7 +47,7 @@ public struct ResourceUsage: Equatable {
     }
 
     public static var empty: ResourceUsage {
-        ResourceUsage(percentage: 0, description: "--", history: [])
+        ResourceUsage(percentage: 0, description: String(localized: "--", bundle: .module), history: [])
     }
 }
 

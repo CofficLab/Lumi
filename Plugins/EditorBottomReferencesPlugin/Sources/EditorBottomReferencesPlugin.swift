@@ -10,8 +10,8 @@ public enum EditorBottomReferencesPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-references",
-        displayName: "Editor Bottom References",
-        description: "References panel in the editor bottom area.",
+        displayName: String(localized: "Editor Bottom References", bundle: .module),
+        description: String(localized: "References panel in the editor bottom area.", bundle: .module),
         order: 1
     )
 

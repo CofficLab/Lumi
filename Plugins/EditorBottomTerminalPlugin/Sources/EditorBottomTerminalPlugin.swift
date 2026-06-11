@@ -9,8 +9,8 @@ public enum EditorBottomTerminalPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-terminal",
-        displayName: "Editor Bottom Terminal",
-        description: "Terminal panel in the editor bottom area.",
+        displayName: String(localized: "Editor Bottom Terminal", bundle: .module),
+        description: String(localized: "Terminal panel in the editor bottom area.", bundle: .module),
         order: 100
     )
 

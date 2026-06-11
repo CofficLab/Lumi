@@ -4,8 +4,8 @@ import LumiCoreKit
 struct GetCurrentProjectTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "get_current_project",
-        displayName: "Get Current Project",
-        description: "Get the currently selected project name and path. Returns empty status if no project is selected."
+        displayName: String(localized: "Get Current Project", bundle: .module),
+        description: String(localized: "Get the currently selected project name and path. Returns empty status if no project is selected.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

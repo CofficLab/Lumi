@@ -43,7 +43,7 @@ private struct ChatAutomationLevelPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("自动化程度")
+            Text("自动化程度", bundle: .module)
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

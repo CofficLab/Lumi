@@ -7,8 +7,8 @@ public enum MLXLumiPlugin: LumiPlugin {
     public static let iconName = "desktopcomputer"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.mlx",
-        displayName: "MLX",
-        description: "Local MLX models for offline chat.",
+        displayName: String(localized: "MLX", bundle: .module),
+        description: String(localized: "Local MLX models for offline chat.", bundle: .module),
         order: 95
     )
 

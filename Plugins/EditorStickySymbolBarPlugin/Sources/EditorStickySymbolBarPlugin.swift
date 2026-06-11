@@ -10,8 +10,8 @@ public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header",
-        displayName: "Editor Sticky Symbol Bar",
-        description: "Current symbol breadcrumb for the editor panel.",
+        displayName: String(localized: "Editor Sticky Symbol Bar", bundle: .module),
+        description: String(localized: "Current symbol breadcrumb for the editor panel.", bundle: .module),
         order: 89
     )
 

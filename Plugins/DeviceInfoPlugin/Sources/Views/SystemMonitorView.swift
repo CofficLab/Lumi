@@ -90,7 +90,7 @@ struct SystemMonitorView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Health")
+                                Text("Health", bundle: .module)
                                     .font(.system(size: 8))
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 Text("\(Int(batteryService.healthPercentage))%")
@@ -99,7 +99,7 @@ struct SystemMonitorView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Cycles")
+                                Text("Cycles", bundle: .module)
                                     .font(.system(size: 8))
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 Text("\(batteryService.cycleCount)")
@@ -120,7 +120,7 @@ struct SystemMonitorView: View {
                             
                             if batteryService.watts > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Power")
+                                    Text("Power", bundle: .module)
                                         .font(.system(size: 8))
                                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                     Text(batteryService.wattsString)

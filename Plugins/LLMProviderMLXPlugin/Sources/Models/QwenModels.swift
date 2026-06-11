@@ -10,8 +10,8 @@ public enum QwenModels {
     public static let all: [LocalModelInfo] = [
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
-            displayName: "Qwen 3.5 0.8B OptiQ",
-            description: "极小体积，适合入门与低内存设备",
+            displayName: String(localized: "Qwen 3.5 0.8B OptiQ", bundle: .module),
+            description: String(localized: "极小体积，适合入门与低内存设备", bundle: .module),
             size: "~0.6 GB",
             minRAM: 4,
             expectedBytes: 600_000_000,
@@ -22,8 +22,8 @@ public enum QwenModels {
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-4B-OptiQ-4bit",
-            displayName: "Qwen 3.5 4B OptiQ",
-            description: "轻量中文模型，OptiQ 量化",
+            displayName: String(localized: "Qwen 3.5 4B OptiQ", bundle: .module),
+            description: String(localized: "轻量中文模型，OptiQ 量化", bundle: .module),
             size: "~2.5 GB",
             minRAM: 8,
             expectedBytes: 2_500_000_000,
@@ -34,8 +34,8 @@ public enum QwenModels {
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-9B-4bit",
-            displayName: "Qwen 3.5 9B",
-            description: "阿里云最新模型，中文能力强，支持工具调用",
+            displayName: String(localized: "Qwen 3.5 9B", bundle: .module),
+            description: String(localized: "阿里云最新模型，中文能力强，支持工具调用", bundle: .module),
             size: "~6 GB",
             minRAM: 16,
             expectedBytes: 6_000_000_000,
@@ -46,8 +46,8 @@ public enum QwenModels {
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-14B-4bit",
-            displayName: "Qwen 3.5 14B",
-            description: "更强的中文模型，适合复杂任务",
+            displayName: String(localized: "Qwen 3.5 14B", bundle: .module),
+            description: String(localized: "更强的中文模型，适合复杂任务", bundle: .module),
             size: "~9 GB",
             minRAM: 24,
             expectedBytes: 9_000_000_000,
@@ -58,8 +58,8 @@ public enum QwenModels {
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen2-VL-7B-Instruct-4bit",
-            displayName: "Qwen2 VL 7B",
-            description: "支持图片理解的视觉语言模型",
+            displayName: String(localized: "Qwen2 VL 7B", bundle: .module),
+            description: String(localized: "支持图片理解的视觉语言模型", bundle: .module),
             size: "~5 GB",
             minRAM: 16,
             expectedBytes: 5_000_000_000,

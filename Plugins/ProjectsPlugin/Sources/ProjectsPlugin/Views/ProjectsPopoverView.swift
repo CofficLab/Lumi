@@ -31,7 +31,7 @@ struct ProjectsPopoverView: View {
             Image(systemName: "folder")
                 .font(.system(size: 14, weight: .semibold))
 
-            Text("Projects")
+            Text("Projects", bundle: .module)
                 .font(.headline)
 
             Spacer()
@@ -43,7 +43,7 @@ struct ProjectsPopoverView: View {
     @ViewBuilder
     private var projectList: some View {
         if store.projects.isEmpty {
-            AppEmptyState(icon: "folder.badge.plus", title: "No Projects")
+            AppEmptyState(icon: "folder.badge.plus", title: String(localized: "No Projects", bundle: .module))
             .frame(maxWidth: .infinity, minHeight: 126)
         } else {
             ScrollView {
@@ -64,7 +64,7 @@ struct ProjectsPopoverView: View {
     }
 
     private var footer: some View {
-        AppButton("Open Folder...", systemImage: "folder.badge.plus", style: .ghost, size: .small, fillsWidth: true) {
+        AppButton(String(localized: "Open Folder...", bundle: .module), systemImage: "folder.badge.plus", style: .ghost, size: .small, fillsWidth: true) {
             isImporterPresented = true
         }
         .padding(.horizontal, 14)

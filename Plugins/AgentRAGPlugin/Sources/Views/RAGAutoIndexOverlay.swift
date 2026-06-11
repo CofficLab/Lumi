@@ -92,5 +92,5 @@ extension RAGAutoIndexOverlay {
 }
 
 #Preview("RAG Auto Index Overlay") {
-    RAGAutoIndexOverlay(content: Text("Content"))
+    RAGAutoIndexOverlay(content: Text("Content", bundle: .module))
 }

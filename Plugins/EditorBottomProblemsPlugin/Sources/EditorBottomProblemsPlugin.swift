@@ -10,8 +10,8 @@ public enum EditorBottomProblemsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-problems",
-        displayName: "Editor Bottom Problems",
-        description: "Problems panel in the editor bottom area.",
+        displayName: String(localized: "Editor Bottom Problems", bundle: .module),
+        description: String(localized: "Problems panel in the editor bottom area.", bundle: .module),
         order: 0
     )
 

@@ -6,8 +6,8 @@ public enum OpenAIPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.openai",
-        displayName: "OpenAI",
-        description: "Contributes OpenAI GPT models to Lumi Chat.",
+        displayName: String(localized: "OpenAI", bundle: .module),
+        description: String(localized: "Contributes OpenAI GPT models to Lumi Chat.", bundle: .module),
         order: 100
     )
 

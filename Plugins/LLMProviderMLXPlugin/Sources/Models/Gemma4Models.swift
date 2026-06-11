@@ -11,8 +11,8 @@ public enum Gemma4Models {
         // Gemma 4 E2B 系列 - 5B 参数
         LocalModelInfo(
             id: "mlx-community/gemma-4-E2B-it-4bit",
-            displayName: "Gemma 4 E2B Instruct",
-            description: "Google 轻量级模型，适合低内存设备",
+            displayName: String(localized: "Gemma 4 E2B Instruct", bundle: .module),
+            description: String(localized: "Google 轻量级模型，适合低内存设备", bundle: .module),
             size: "~1.5 GB",
             minRAM: 8,
             expectedBytes: 1_500_000_000,
@@ -23,8 +23,8 @@ public enum Gemma4Models {
         ),
         LocalModelInfo(
             id: "mlx-community/gemma-4-E2B-4bit",
-            displayName: "Gemma 4 E2B",
-            description: "Google 轻量级基础模型",
+            displayName: String(localized: "Gemma 4 E2B", bundle: .module),
+            description: String(localized: "Google 轻量级基础模型", bundle: .module),
             size: "~1.5 GB",
             minRAM: 8,
             expectedBytes: 1_500_000_000,
@@ -37,8 +37,8 @@ public enum Gemma4Models {
         // Gemma 4 E4B 系列 - 8B 参数
         LocalModelInfo(
             id: "mlx-community/gemma-4-E4B-it-4bit",
-            displayName: "Gemma 4 E4B Instruct",
-            description: "Google 轻量级指令模型",
+            displayName: String(localized: "Gemma 4 E4B Instruct", bundle: .module),
+            description: String(localized: "Google 轻量级指令模型", bundle: .module),
             size: "~2.5 GB",
             minRAM: 8,
             expectedBytes: 2_500_000_000,
@@ -49,8 +49,8 @@ public enum Gemma4Models {
         ),
         LocalModelInfo(
             id: "mlx-community/gemma-4-E4B-4bit",
-            displayName: "Gemma 4 E4B",
-            description: "Google 轻量级基础模型",
+            displayName: String(localized: "Gemma 4 E4B", bundle: .module),
+            description: String(localized: "Google 轻量级基础模型", bundle: .module),
             size: "~2.5 GB",
             minRAM: 8,
             expectedBytes: 2_500_000_000,
@@ -63,8 +63,8 @@ public enum Gemma4Models {
         // Gemma 4 26B-A4B 系列 - 27B 参数
         LocalModelInfo(
             id: "mlx-community/gemma-4-26B-A4B-it-4bit",
-            displayName: "Gemma 4 26B-A4B Instruct",
-            description: "Google 中端指令模型，支持多模态",
+            displayName: String(localized: "Gemma 4 26B-A4B Instruct", bundle: .module),
+            description: String(localized: "Google 中端指令模型，支持多模态", bundle: .module),
             size: "~16 GB",
             minRAM: 32,
             expectedBytes: 16_000_000_000,
@@ -75,8 +75,8 @@ public enum Gemma4Models {
         ),
         LocalModelInfo(
             id: "mlx-community/gemma-4-26B-A4B-4bit",
-            displayName: "Gemma 4 26B-A4B",
-            description: "Google 中端基础模型，支持多模态",
+            displayName: String(localized: "Gemma 4 26B-A4B", bundle: .module),
+            description: String(localized: "Google 中端基础模型，支持多模态", bundle: .module),
             size: "~16 GB",
             minRAM: 32,
             expectedBytes: 16_000_000_000,
@@ -89,8 +89,8 @@ public enum Gemma4Models {
         // Gemma 4 31B 系列 - 31B 参数
         LocalModelInfo(
             id: "mlx-community/gemma-4-31B-it-4bit",
-            displayName: "Gemma 4 31B Instruct",
-            description: "Google 大型指令模型，强大的多模态能力",
+            displayName: String(localized: "Gemma 4 31B Instruct", bundle: .module),
+            description: String(localized: "Google 大型指令模型，强大的多模态能力", bundle: .module),
             size: "~19 GB",
             minRAM: 32,
             expectedBytes: 19_000_000_000,
@@ -101,8 +101,8 @@ public enum Gemma4Models {
         ),
         LocalModelInfo(
             id: "mlx-community/gemma-4-31B-4bit",
-            displayName: "Gemma 4 31B",
-            description: "Google 大型基础模型，强大的多模态能力",
+            displayName: String(localized: "Gemma 4 31B", bundle: .module),
+            description: String(localized: "Google 大型基础模型，强大的多模态能力", bundle: .module),
             size: "~19 GB",
             minRAM: 32,
             expectedBytes: 19_000_000_000,

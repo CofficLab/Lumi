@@ -6,8 +6,8 @@ public enum ThemeOrchardPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.orchard",
-        displayName: "Orchard Theme",
-        description: "Orchard red app theme",
+        displayName: String(localized: "Orchard Theme", bundle: .module),
+        description: String(localized: "Orchard red app theme", bundle: .module),
         order: 128
     )
 

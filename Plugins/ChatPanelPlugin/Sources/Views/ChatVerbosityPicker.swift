@@ -65,7 +65,7 @@ private struct ChatVerbosityPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("详细级别")
+            Text("详细级别", bundle: .module)
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

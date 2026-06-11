@@ -14,7 +14,7 @@ public enum GitPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "GitPlugin",
-        displayName: "Git",
+        displayName: String(localized: "Git", bundle: .module),
         description: String(
             localized: "Git version control panel, commit history, status bar, and agent tools.",
             bundle: .module

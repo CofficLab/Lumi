@@ -6,8 +6,8 @@ import LumiCoreKit
 struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "create_new_conversation",
-        displayName: "Create New Conversation",
-        description: """
+        displayName: String(localized: "Create New Conversation", bundle: .module),
+        description: String(localized: "", bundle: .module)"
         Create a new conversation session.
 
         Parameters (all optional):
@@ -90,8 +90,8 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "delete_conversation",
-        displayName: "Delete Conversation",
-        description: """
+        displayName: String(localized: "Delete Conversation", bundle: .module),
+        description: String(localized: "", bundle: .module)"
         Delete a specified conversation session. This action is irreversible and will permanently remove the conversation and all its messages.
 
         Parameters:
@@ -191,8 +191,8 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_recent_conversations",
-        displayName: "Get Recent Conversations",
-        description: """
+        displayName: String(localized: "Get Recent Conversations", bundle: .module),
+        description: String(localized: "", bundle: .module)"
         Get the IDs and titles of the most recent conversations.
 
         Parameters:
@@ -291,8 +291,8 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
 struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_conversation_count",
-        displayName: "Get Conversation Count",
-        description: "Get the total number of conversation histories. Returns the total count of conversations."
+        displayName: String(localized: "Get Conversation Count", bundle: .module),
+        description: String(localized: "Get the total number of conversation histories. Returns the total count of conversations.", bundle: .module)
     )
 
     private let chatService: any LumiChatServicing
@@ -353,8 +353,8 @@ struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
 struct SetConversationProjectLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "set_conversation_project",
-        displayName: "Set Conversation Project",
-        description: """
+        displayName: String(localized: "Set Conversation Project", bundle: .module),
+        description: String(localized: "", bundle: .module)"
         Set or remove the project association for a specified conversation.
 
         Parameters:

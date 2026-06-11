@@ -40,7 +40,7 @@ struct AppRow: View {
                     }
 
                     if let version = app.version {
-                        Text("•")
+                        Text("•", bundle: .module)
                             .foregroundColor(theme.textTertiary)
 
                         Text(version)

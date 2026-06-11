@@ -6,8 +6,8 @@ public enum CodexLumiPlugin: LumiPlugin {
     public static let iconName = "terminal"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.codex",
-        displayName: "Codex CLI",
-        description: "OpenAI models through the Codex CLI.",
+        displayName: String(localized: "Codex CLI", bundle: .module),
+        description: String(localized: "OpenAI models through the Codex CLI.", bundle: .module),
         order: 105
     )
 

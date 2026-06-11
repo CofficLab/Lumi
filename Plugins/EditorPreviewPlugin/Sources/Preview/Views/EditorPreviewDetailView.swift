@@ -1192,7 +1192,7 @@ private struct EditorPreviewMarkdownView: View {
     ) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
-                Text("TOC")
+                Text("TOC", bundle: .module)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 12)

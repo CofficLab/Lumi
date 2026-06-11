@@ -7,8 +7,8 @@ public actor MLXPlugin: SuperPlugin {
 
     public static let shared = MLXPlugin()
     public static let id = "LLMProviderMLX"
-    public static let displayName = "MLX"
-    public static let description = "Local LLM via Apple MLX"
+    public static let displayName = String(localized: "MLX", bundle: .module)
+    public static let description = String(localized: "Local LLM via Apple MLX", bundle: .module)
     public static let iconName = "desktopcomputer"
     public static var order: Int { 10 }
     public static var category: PluginCategory { .llmProvider }

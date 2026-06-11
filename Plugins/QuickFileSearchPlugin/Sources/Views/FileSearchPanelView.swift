@@ -78,7 +78,7 @@ public struct FileSearchPanelView: View {
 
             // 快捷键提示（仅在无输入时显示）
             if searchService.searchQuery.isEmpty {
-                Text("Esc")
+                Text("Esc", bundle: .module)
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 6)

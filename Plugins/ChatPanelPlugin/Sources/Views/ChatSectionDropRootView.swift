@@ -52,7 +52,7 @@ struct ChatSectionDropRootView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(theme.textSecondary)
 
-                Text("Release to add image to chat")
+                Text("Release to add image to chat", bundle: .module)
                     .font(.appBodyEmphasized)
                     .foregroundStyle(theme.textPrimary)
                     .multilineTextAlignment(.center)

@@ -6,8 +6,8 @@ public enum ThemeDraculaPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.dracula",
-        displayName: "Dracula Theme",
-        description: "Dracula Official dark theme",
+        displayName: String(localized: "Dracula Theme", bundle: .module),
+        description: String(localized: "Dracula Official dark theme", bundle: .module),
         order: 132
     )
 

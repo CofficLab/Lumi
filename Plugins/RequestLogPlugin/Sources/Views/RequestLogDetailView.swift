@@ -186,7 +186,7 @@ public struct RequestLogDetailView: View {
                         .font(.appMicroEmphasized)
                         .foregroundColor(statusColor(code: code))
                 } else {
-                    Text("--")
+                    Text("--", bundle: .module)
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
@@ -200,7 +200,7 @@ public struct RequestLogDetailView: View {
                         .monospacedDigit()
                         .foregroundColor(theme.textPrimary)
                 } else {
-                    Text("--")
+                    Text("--", bundle: .module)
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
@@ -232,7 +232,7 @@ public struct RequestLogDetailView: View {
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 } else {
-                    Text("--")
+                    Text("--", bundle: .module)
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
@@ -247,7 +247,7 @@ public struct RequestLogDetailView: View {
                         .truncationMode(.tail)
                         .foregroundColor(theme.error)
                 } else {
-                    Text("--")
+                    Text("--", bundle: .module)
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }

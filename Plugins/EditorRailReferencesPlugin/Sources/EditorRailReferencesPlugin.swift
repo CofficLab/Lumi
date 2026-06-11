@@ -11,8 +11,8 @@ public enum EditorRailReferencesPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-references",
-        displayName: "Editor Rail References",
-        description: "References tab in the editor rail.",
+        displayName: String(localized: "Editor Rail References", bundle: .module),
+        description: String(localized: "References tab in the editor rail.", bundle: .module),
         order: 11
     )
 

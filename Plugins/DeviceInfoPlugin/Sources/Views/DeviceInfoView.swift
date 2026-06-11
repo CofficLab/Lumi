@@ -167,7 +167,7 @@ struct DeviceInfoView: View {
                                     HStack {
                                         Image(systemName: "powerplug.fill")
                                             .foregroundColor(.green)
-                                        Text("AC Power")
+                                        Text("AC Power", bundle: .module)
                                             .font(.body.weight(.medium))
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()

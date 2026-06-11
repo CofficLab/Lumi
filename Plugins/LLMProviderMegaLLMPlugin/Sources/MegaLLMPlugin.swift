@@ -7,8 +7,8 @@ public enum MegaLLMPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.megallm",
-        displayName: "MegaLLM",
-        description: "Contributes MegaLLM models to Lumi Chat.",
+        displayName: String(localized: "MegaLLM", bundle: .module),
+        description: String(localized: "Contributes MegaLLM models to Lumi Chat.", bundle: .module),
         order: 99
     )
 
@@ -22,8 +22,8 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "megallm",
-            displayName: "MegaLLM",
-            description: "MegaLLM AI",
+            displayName: String(localized: "MegaLLM", bundle: .module),
+            description: String(localized: "MegaLLM AI", bundle: .module),
             defaultModel: "gpt-5-mini",
             availableModels: [
             "alibaba-qwen3.5-397b",

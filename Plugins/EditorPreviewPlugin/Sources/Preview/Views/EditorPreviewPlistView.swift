@@ -181,7 +181,7 @@ private struct PlistTreeNode: View {
                 Text(key)
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(" = ")
+                Text(" = ", bundle: .module)
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }
@@ -252,7 +252,7 @@ private struct PlistTreeNode: View {
                 Text(key)
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(" = ")
+                Text(" = ", bundle: .module)
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }

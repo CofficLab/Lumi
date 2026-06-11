@@ -45,7 +45,7 @@ public struct FontConfigDetailView: View {
     }
 
     private var previewSection: some View {
-        Text("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~")
+        Text("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~", bundle: .module)
             .font(.custom(viewModel.selectedPostScriptName ?? "SF Mono", size: 12))
             .foregroundColor(theme.textPrimary)
             .lineSpacing(2)

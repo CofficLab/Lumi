@@ -43,7 +43,7 @@ struct ProjectRowView: View {
                         .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove Project")
+                .accessibilityLabel(String(localized: "Remove Project", bundle: .module))
             }
         }
     }

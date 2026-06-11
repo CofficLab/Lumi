@@ -12,9 +12,9 @@ public struct AutoTabContent: View {
                     .foregroundColor(.accentColor)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Auto")
+                    Text("Auto", bundle: .module)
                         .font(.system(size: 20, weight: .semibold))
-                    Text("根据消息内容、工具需求、模型能力和可用性自动选择模型。")
+                    Text("根据消息内容、工具需求、模型能力和可用性自动选择模型。", bundle: .module)
                         .font(.system(size: 12))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -25,7 +25,7 @@ public struct AutoTabContent: View {
 
             if let summary = llmVM.lastAutoRouteSummary, !summary.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("最近一次路由")
+                    Text("最近一次路由", bundle: .module)
                         .font(.system(size: 13, weight: .semibold))
                     Text(summary)
                         .font(.system(size: 12))
@@ -38,7 +38,7 @@ public struct AutoTabContent: View {
                 )
             }
 
-            Text("当前为基础路由版本：不可用模型会被排除，已检测可用模型优先；未检测模型仍可作为候选。")
+            Text("当前为基础路由版本：不可用模型会被排除，已检测可用模型优先；未检测模型仍可作为候选。", bundle: .module)
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 

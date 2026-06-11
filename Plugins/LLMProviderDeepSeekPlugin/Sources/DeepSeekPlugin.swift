@@ -7,8 +7,8 @@ public enum DeepSeekPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.deepseek",
-        displayName: "DeepSeek",
-        description: "Contributes DeepSeek models to Lumi Chat.",
+        displayName: String(localized: "DeepSeek", bundle: .module),
+        description: String(localized: "Contributes DeepSeek models to Lumi Chat.", bundle: .module),
         order: 92
     )
 
@@ -22,8 +22,8 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "deepseek",
-            displayName: "DeepSeek",
-            description: "DeepSeek AI",
+            displayName: String(localized: "DeepSeek", bundle: .module),
+            description: String(localized: "DeepSeek AI", bundle: .module),
             defaultModel: "deepseek-chat",
             availableModels: [
             "deepseek-chat",

@@ -205,7 +205,7 @@ public struct ModelSelectorView: View, SuperLog {
             AppEmptyState(
                 icon: "clock.arrow.circlepath",
                 title: "No Frequent Models",
-                description: "No Frequent Models Description"
+                description: String(localized: "No Frequent Models Description", bundle: .module)
             )
         } else {
             List {
@@ -237,7 +237,7 @@ public struct ModelSelectorView: View, SuperLog {
             AppEmptyState(
                 icon: "bolt.fill",
                 title: "No Fast Models",
-                description: "No Fast Models Description"
+                description: String(localized: "No Fast Models Description", bundle: .module)
             )
         } else {
             List {
@@ -365,7 +365,7 @@ extension ModelSelectorView {
     @ViewBuilder
     private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
-            Text("")
+            Text("", bundle: .module)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Text(provider.displayName)
                 .font(.system(size: 15, weight: .medium))

@@ -99,7 +99,7 @@ struct GPUHistoryGraphView: View {
                     }
                 }
 
-                Text("0")
+                Text("0", bundle: .module)
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "98989E"))
             }

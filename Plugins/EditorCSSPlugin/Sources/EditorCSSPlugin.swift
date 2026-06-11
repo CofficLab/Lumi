@@ -8,8 +8,8 @@ public actor EditorCSSPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = EditorCSSPlugin()
     public static let id = "CSSEditor"
-    public static let displayName = "CSS Language Tools"
-    public static let description = "Provides CSS completions and hover help for common properties and values."
+    public static let displayName = String(localized: "CSS Language Tools", bundle: .module)
+    public static let description = String(localized: "Provides CSS completions and hover help for common properties and values.", bundle: .module)
     public static let iconName = "paintpalette"
     public static let order = 32
     public static var category: PluginCategory { .editor }

@@ -10,8 +10,8 @@ public enum EditorBottomSymbolsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-symbols",
-        displayName: "Editor Bottom Symbols",
-        description: "Symbols panel in the editor bottom area.",
+        displayName: String(localized: "Editor Bottom Symbols", bundle: .module),
+        description: String(localized: "Symbols panel in the editor bottom area.", bundle: .module),
         order: 3
     )
 

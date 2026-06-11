@@ -72,7 +72,7 @@ public struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert(Text("Error"), isPresented: $showError, actions: {
+        .alert(Text("Error", bundle: .module), isPresented: $showError, actions: {
             Button(role: .cancel) {
             } label: {
                 Text(String(localized: "OK", bundle: .module))
@@ -147,7 +147,7 @@ public struct PortRowView: View {
                             .font(.caption)
                             .monospaced()
 
-                        Text("•")
+                        Text("•", bundle: .module)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         Text("PID: \(port.pid)")
@@ -157,7 +157,7 @@ public struct PortRowView: View {
                             .background(Color(hex: "98989E").opacity(0.2))
                             .cornerRadius(4)
 
-                        Text("•")
+                        Text("•", bundle: .module)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         Text(port.user)
@@ -181,14 +181,14 @@ public struct PortRowView: View {
                 Button(role: .destructive) {
                     onKill()
                 } label: {
-                    Text("Kill Process")
+                    Text("Kill Process", bundle: .module)
                 }
                 Button(role: .cancel) {
                 } label: {
                     Text(String(localized: "Cancel", bundle: .module))
                 }
             } message: {
-                Text("This action will force terminate the process, which may lead to data loss.")
+                Text("This action will force terminate the process, which may lead to data loss.", bundle: .module)
             }
         }
         .padding(.vertical, 4)

@@ -55,9 +55,9 @@ public struct ClipboardSettingsView: View {
                     systemImage: "clock.arrow.circlepath",
                     selection: $historySize
                 ) {
-                    Text("100").tag(100)
-                    Text("500").tag(500)
-                    Text("1000").tag(1000)
+                    Text("100", bundle: .module).tag(100)
+                    Text("500", bundle: .module).tag(500)
+                    Text("1000", bundle: .module).tag(1000)
                     Text(String(localized: "Unlimited", bundle: .module)).tag(Int.max)
                 }
                 .onChange(of: historySize) { _, newValue in

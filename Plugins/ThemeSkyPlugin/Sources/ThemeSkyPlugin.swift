@@ -6,8 +6,8 @@ public enum ThemeSkyPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.sky",
-        displayName: "Sky Theme",
-        description: "Sky inspired app theme that adapts to system appearance",
+        displayName: String(localized: "Sky Theme", bundle: .module),
+        description: String(localized: "Sky inspired app theme that adapts to system appearance", bundle: .module),
         order: 120
     )
 

@@ -7,8 +7,8 @@ public enum AiRouterPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.airouter",
-        displayName: "AiRouter",
-        description: "Contributes AiRouter models to Lumi Chat.",
+        displayName: String(localized: "AiRouter", bundle: .module),
+        description: String(localized: "Contributes AiRouter models to Lumi Chat.", bundle: .module),
         order: 91
     )
 
@@ -22,8 +22,8 @@ public final class AiRouterProvider: OpenAICompatibleLumiProvider, @unchecked Se
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "airouter",
-            displayName: "AiRouter",
-            description: "LLM Router by airouter.org",
+            displayName: String(localized: "AiRouter", bundle: .module),
+            description: String(localized: "LLM Router by airouter.org", bundle: .module),
             defaultModel: "gpt-5",
             availableModels: [
             "gpt-5.1-codex-max",

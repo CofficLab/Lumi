@@ -20,7 +20,7 @@ struct ChatMessageBubble: View {
                 Button {
                     copy(message.content)
                 } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
+                    Label("Copy", bundle: .module, systemImage: "doc.on.doc")
                 }
             }
 
@@ -28,19 +28,19 @@ struct ChatMessageBubble: View {
                 Button {
                     onUseAsDraft()
                 } label: {
-                    Label("Use as Draft", systemImage: "arrow.uturn.backward")
+                    Label("Use as Draft", bundle: .module, systemImage: "arrow.uturn.backward")
                 }
 
                 if let onResend {
                     Button(action: onResend) {
-                        Label("Resend", systemImage: "arrow.clockwise")
+                        Label("Resend", bundle: .module, systemImage: "arrow.clockwise")
                     }
                 }
             }
 
             if message.role != .status {
                 Button(role: .destructive, action: onDelete) {
-                    Label("Delete", systemImage: "trash")
+                    Label("Delete", bundle: .module, systemImage: "trash")
                 }
             }
 

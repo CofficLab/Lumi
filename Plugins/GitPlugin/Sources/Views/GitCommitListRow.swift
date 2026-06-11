@@ -39,7 +39,7 @@ public struct GitCommitListRow: View {
                     HStack(spacing: 4) {
                         Text(commit.author)
                             .lineLimit(1)
-                        Text("·")
+                        Text("·", bundle: .module)
                             .foregroundColor(.secondary.opacity(0.5))
                         Text(relativeTimeString(from: commit.date))
                             .lineLimit(1)

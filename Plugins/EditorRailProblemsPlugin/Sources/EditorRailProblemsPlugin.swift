@@ -11,8 +11,8 @@ public enum EditorRailProblemsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-problems",
-        displayName: "Editor Rail Problems",
-        description: "Problems tab in the editor rail.",
+        displayName: String(localized: "Editor Rail Problems", bundle: .module),
+        description: String(localized: "Problems tab in the editor rail.", bundle: .module),
         order: 10
     )
 

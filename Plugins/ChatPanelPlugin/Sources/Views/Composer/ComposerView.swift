@@ -67,10 +67,10 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker
 
                 if isSending {
                     StopButton(action: onStop)
-                        .help("Stop")
+                        .help(String(localized: "Stop", bundle: .module))
                 } else {
                     SendButton(isSending: false, canSend: canSend, action: sendIfPossible)
-                        .help("Send")
+                        .help(String(localized: "Send", bundle: .module))
                 }
             }
             .padding(.horizontal, 12)

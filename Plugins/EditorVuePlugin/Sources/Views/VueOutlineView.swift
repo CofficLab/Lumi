@@ -74,7 +74,7 @@ struct VueOutlineView: View {
             Image(systemName: "curlybraces")
                 .font(.system(size: 24))
                 .foregroundStyle(.quaternary)
-            Text("Open a .vue file to see outline")
+            Text("Open a .vue file to see outline", bundle: .module)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
