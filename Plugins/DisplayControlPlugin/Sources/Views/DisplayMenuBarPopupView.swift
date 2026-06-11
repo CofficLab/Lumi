@@ -1,7 +1,9 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct DisplayMenuBarPopupView: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
     @StateObject private var service = DisplayService.shared
 
@@ -12,7 +14,7 @@ struct DisplayMenuBarPopupView: View {
                 Image(systemName: "display")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.primary)
-                Text("Displays", bundle: .module)
+                Text(verbatim: L("Displays"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(theme.textPrimary)
                 Spacer()
@@ -22,7 +24,7 @@ struct DisplayMenuBarPopupView: View {
             }
 
             if service.displays.isEmpty {
-                Text("No displays detected", bundle: .module)
+                Text(verbatim: L("No displays detected"))
                     .font(.system(size: 10))
                     .foregroundColor(theme.textTertiary)
                     .onAppear { service.refresh() }
@@ -92,5 +94,9 @@ struct DisplayMenuBarPopupView: View {
                 .foregroundColor(theme.textSecondary)
                 .frame(width: 28, alignment: .trailing)
         }
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 // MARK: - Cache Cleanup Models
 
@@ -42,9 +43,9 @@ public struct CacheCategory: Identifiable, Hashable, Sendable {
 
         public var label: String {
             switch self {
-            case .safe: return String(localized: "Safe", bundle: .module)
-            case .medium: return String(localized: "Medium", bundle: .module)
-            case .risky: return String(localized: "Risky", bundle: .module)
+            case .safe: return LumiPluginLocalization.string("Safe", bundle: .module)
+            case .medium: return LumiPluginLocalization.string("Medium", bundle: .module)
+            case .risky: return LumiPluginLocalization.string("Risky", bundle: .module)
             }
         }
     }

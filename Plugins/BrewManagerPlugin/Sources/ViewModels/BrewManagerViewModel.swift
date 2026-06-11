@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 import SuperLogKit
+import LumiCoreKit
 
 protocol BrewManagerServicing: Sendable {
     func checkInstalled() async -> Bool
@@ -98,7 +99,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                             BrewManagerPlugin.logger.error("\(self.t) ❌ Homebrew not detected")
                     }
                 }
-                errorMessage = String(localized: "Homebrew not detected, please install Homebrew first.", bundle: .module)
+                errorMessage = LumiPluginLocalization.string("Homebrew not detected, please install Homebrew first.", bundle: .module)
             }
         }
     }
@@ -132,7 +133,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
                 }
             }
-            self.errorMessage = String(localized: "Refresh failed: \(error.localizedDescription)", bundle: .module)
+            self.errorMessage = LumiPluginLocalization.string("Refresh failed: \(error.localizedDescription)", bundle: .module)
         }
         
         isLoading = false
@@ -187,7 +188,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                         }
                     }
-                    self.errorMessage = String(localized: "Search failed: \(error.localizedDescription)", bundle: .module)
+                    self.errorMessage = LumiPluginLocalization.string("Search failed: \(error.localizedDescription)", bundle: .module)
                     self.isLoading = false
                 }
             }
@@ -215,7 +216,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = String(localized: "Installation failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = LumiPluginLocalization.string("Installation failed: \(error.localizedDescription)", bundle: .module)
         }
         isLoading = false
     }
@@ -241,7 +242,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = String(localized: "Uninstallation failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = LumiPluginLocalization.string("Uninstallation failed: \(error.localizedDescription)", bundle: .module)
         }
         isLoading = false
     }
@@ -267,7 +268,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = String(localized: "Update failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = LumiPluginLocalization.string("Update failed: \(error.localizedDescription)", bundle: .module)
         }
         isLoading = false
     }
@@ -301,7 +302,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = String(localized: "Batch update failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = LumiPluginLocalization.string("Batch update failed: \(error.localizedDescription)", bundle: .module)
         }
         isLoading = false
     }

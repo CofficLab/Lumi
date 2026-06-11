@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - Model Latency Progress Bar
 
@@ -79,7 +80,7 @@ public struct ModelLatencyProgressBar: View {
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         var text = """
         ⚡ TTFT: \(ModelSelectorFormatService.durationMilliseconds(ttft)) (\(ttftPercent)%)
-        🕐 \(String(localized: "Response Time", bundle: .module)): \(ModelSelectorFormatService.durationMilliseconds(totalLatency)) (\(responsePercent)%)
+        🕐 \(LumiPluginLocalization.string("Response Time", bundle: .module)): \(ModelSelectorFormatService.durationMilliseconds(totalLatency)) (\(responsePercent)%)
         """
 
         if tps > 0 {
@@ -89,8 +90,8 @@ public struct ModelLatencyProgressBar: View {
         text += """
 
 
-        \(String(localized: "TTFT Help", bundle: .module))
-        \(String(localized: "Response Time Help", bundle: .module))
+        \(LumiPluginLocalization.string("TTFT Help", bundle: .module))
+        \(LumiPluginLocalization.string("Response Time Help", bundle: .module))
         """
 
         if tps > 0 {

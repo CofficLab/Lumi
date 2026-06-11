@@ -7,8 +7,8 @@ public actor TurnLifecyclePlugin: SuperPlugin {
     nonisolated public static let policy: PluginPolicy = .alwaysOn
 
     public static let id = "TurnLifecycle"
-    public static let displayName = String(localized: "Turn Lifecycle", bundle: .module)
-    public static let description = String(localized: "Detect turn completion and run turn-finished pipeline", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Turn Lifecycle", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Detect turn completion and run turn-finished pipeline", bundle: .module)
     public static let iconName = "flag.checkered"
     public static var order: Int { 210 }
 

@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct RequestLogSummaryStatusBarView: View {
     var body: some View {
@@ -22,7 +23,7 @@ private struct RequestLogSummaryDetailView: View {
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Request Log", bundle: .module),
+            title: LumiPluginLocalization.string("Request Log", bundle: .module),
             systemImage: "doc.text.magnifyingglass",
             subtitle: "\(entries.count) recent sends",
             headerAccessory: { EmptyView() },

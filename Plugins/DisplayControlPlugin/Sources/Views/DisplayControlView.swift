@@ -1,9 +1,11 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - Main View
 
 struct DisplayControlView: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
     @StateObject private var service = DisplayService.shared
 
@@ -24,10 +26,10 @@ struct DisplayControlView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Display Control", bundle: .module)
+                            Text(verbatim: L("Display Control"))
                                 .font(.title.weight(.semibold))
                                 .foregroundColor(theme.textPrimary)
-                            Text("Brightness, Volume & Contrast", bundle: .module)
+                            Text(verbatim: L("Brightness, Volume & Contrast"))
                                 .font(.body)
                                 .foregroundColor(theme.textSecondary)
                         }
@@ -40,6 +42,7 @@ struct DisplayControlView: View {
                     emptyState
                 } else {
                     displaysList
+                    restoreDefaultsCard
                 }
             }
             .padding()
@@ -55,10 +58,10 @@ struct DisplayControlView: View {
                 Image(systemName: "display.trianglebadge.exclamationmark")
                     .font(.system(size: 32))
                     .foregroundStyle(theme.textSecondary)
-                Text("No displays detected", bundle: .module)
+                Text(verbatim: L("No displays detected"))
                     .font(.body)
                     .foregroundColor(theme.textSecondary)
-                Text("Connect an external display or check your display connections.", bundle: .module)
+                Text(verbatim: L("Connect an external display or check your display connections."))
                     .font(.caption)
                     .foregroundColor(theme.textTertiary)
                     .multilineTextAlignment(.center)
@@ -75,11 +78,33 @@ struct DisplayControlView: View {
             }
         }
     }
+
+    private var restoreDefaultsCard: some View {
+        AppCard {
+            HStack {
+                Text(verbatim: L("Restore Defaults"))
+                    .font(.body.weight(.medium))
+                    .foregroundColor(theme.textPrimary)
+                Spacer()
+                AppButton(
+                    L("Restore"),
+                    style: .secondary,
+                    action: { service.restoreDefaults() }
+                )
+                .frame(width: 100)
+            }
+        }
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
 }
 
 // MARK: - Display Control Card
 
 struct DisplayControlCard: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
     let display: ControlledDisplay
     @ObservedObject var service: DisplayService
@@ -101,7 +126,7 @@ struct DisplayControlCard: View {
 
                     Spacer()
 
-                    Text(display.isBuiltIn ? String(localized: "Built-in", bundle: .module) : String(localized: "External", bundle: .module))
+                    Text(verbatim: display.isBuiltIn ? L("Built-in") : L("External"))
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(theme.textSecondary)
                         .padding(.horizontal, 8)
@@ -132,7 +157,7 @@ struct DisplayControlCard: View {
                 .foregroundStyle(isEnabled ? theme.primary : theme.textTertiary)
                 .frame(width: 18)
 
-            Text(control.label)
+            Text(verbatim: control.label(locale: locale))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(isEnabled ? theme.textPrimary : theme.textTertiary)
                 .frame(width: 64, alignment: .leading)
@@ -156,5 +181,9 @@ struct DisplayControlCard: View {
                 .frame(width: 40, alignment: .trailing)
         }
         .opacity(isEnabled ? 1 : 0.4)
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
     }
 }

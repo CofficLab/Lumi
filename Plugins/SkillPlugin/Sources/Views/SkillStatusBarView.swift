@@ -105,12 +105,12 @@ public struct SkillListPopover: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "^[\(skills.count) Available Skill](inflect: true)", bundle: .module),
+            title: LumiPluginLocalization.string("^[\(skills.count) Available Skill](inflect: true)", bundle: .module),
             systemImage: "sparkles"
         ) {
             HStack {
                 Spacer()
-                Text(String(localized: "Skills are loaded from .agent/skills/", bundle: .module))
+                Text(LumiPluginLocalization.string("Skills are loaded from .agent/skills/", bundle: .module))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }
@@ -172,7 +172,7 @@ public struct SkillRow: View {
             id: "swiftui-expert",
             name: "swiftui-expert",
             title: "SwiftUI Expert",
-            description: String(localized: "Apple HIG compliant SwiftUI code generation with modern patterns", bundle: .module),
+            description: LumiPluginLocalization.string("Apple HIG compliant SwiftUI code generation with modern patterns", bundle: .module),
             triggers: ["swift", "swiftui"],
             version: "1.0.0",
             contentPath: "",
@@ -182,7 +182,7 @@ public struct SkillRow: View {
             id: "git-workflow",
             name: "git-workflow",
             title: "Git Workflow",
-            description: String(localized: "Strict git commit conventions and branch management", bundle: .module),
+            description: LumiPluginLocalization.string("Strict git commit conventions and branch management", bundle: .module),
             triggers: ["git"],
             version: "2.1.0",
             contentPath: "",

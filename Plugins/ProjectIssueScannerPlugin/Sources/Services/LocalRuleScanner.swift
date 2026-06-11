@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 /// 本地规则扫描器
 ///
@@ -137,7 +138,7 @@ public struct LocalRuleScanner: Sendable {
                 filePath: relativePath,
                 lineNumber: nil,
                 title: "Large file",
-                description: String(localized: "\(relativePath) has \(lines.count) lines.", bundle: .module),
+                description: LumiPluginLocalization.string("\(relativePath) has \(lines.count) lines.", bundle: .module),
                 suggestion: "Consider splitting this file into smaller focused types or modules.",
                 source: .localRule,
                 createdAt: now,
@@ -244,7 +245,7 @@ public struct LocalRuleScanner: Sendable {
                 filePath: relativePath,
                 lineNumber: index + 1,
                 title: "Empty catch block",
-                description: String(localized: "A catch block swallows errors without handling or logging them.", bundle: .module),
+                description: LumiPluginLocalization.string("A catch block swallows errors without handling or logging them.", bundle: .module),
                 suggestion: "Handle the error, log it, or document why ignoring it is intentional.",
                 source: .localRule,
                 createdAt: now,

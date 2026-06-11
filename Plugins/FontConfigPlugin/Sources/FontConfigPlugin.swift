@@ -8,8 +8,8 @@ public enum FontConfigPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.font-config",
-        displayName: String(localized: "Font Config", bundle: .module),
-        description: String(localized: "Quick font switching in status bar", bundle: .module),
+        displayName: LumiPluginLocalization.string("Font Config", bundle: .module),
+        description: LumiPluginLocalization.string("Quick font switching in status bar", bundle: .module),
         order: 78
     )
 

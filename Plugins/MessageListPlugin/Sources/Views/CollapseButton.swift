@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - Collapse Button
 
@@ -14,11 +15,11 @@ public struct CollapseButton: View {
     public var body: some View {
         AppIconButton(
             systemImage: "chevron.up",
-            label: String(localized: "Collapse", bundle: .module),
+            label: LumiPluginLocalization.string("Collapse", bundle: .module),
             tint: theme.textSecondary.opacity(0.8),
             size: .compact,
             action: action
         )
-        .help(String(localized: "Collapse Message", bundle: .module))
+        .help(LumiPluginLocalization.string("Collapse Message", bundle: .module))
     }
 }

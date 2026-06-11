@@ -11,8 +11,8 @@ public enum DelayMessagePlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.delay-message",
-        displayName: String(localized: "Delay Message", bundle: .module),
-        description: String(localized: "Schedule delayed messages to resume conversations automatically.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Delay Message", bundle: .module),
+        description: LumiPluginLocalization.string("Schedule delayed messages to resume conversations automatically.", bundle: .module),
         order: 98
     )
 

@@ -2,6 +2,7 @@ import LumiUI
 import SuperLogKit
 import os
 import SwiftUI
+import LumiCoreKit
 
 /// RAG 状态栏视图
 ///
@@ -229,7 +230,7 @@ public struct RAGStatusBarView: View, SuperLog {
 
             // 只在没有状态且不在索引中时才显示错误
             if indexStatus == nil && !isIndexing && !isNotInitialized {
-                errorMessage = String(localized: "Failed to get status", bundle: .module)
+                errorMessage = LumiPluginLocalization.string("Failed to get status", bundle: .module)
                 if RAGPlugin.verbose {
                                     RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
                 }
@@ -255,7 +256,7 @@ public struct RAGStatusDetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "RAG 索引状态", bundle: .module),
+            title: LumiPluginLocalization.string("RAG 索引状态", bundle: .module),
             systemImage: "doc.text.magnifyingglass"
         ) {
             if isIndexing {
@@ -279,21 +280,21 @@ public struct RAGStatusDetailView: View {
                 ProgressView()
                     .scaleEffect(0.8)
 
-                Text(String(localized: "正在索引...", bundle: .module))
+                Text(LumiPluginLocalization.string("正在索引...", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.primary)
             }
 
             if let event = progressEvent {
                 VStack(alignment: .leading, spacing: 8) {
-                    RAGProgressRow(label: String(localized: "已扫描", bundle: .module), value: "\(event.scannedFiles) / \(event.totalFiles) \(String(localized: "文件", bundle: .module))")
-                    RAGProgressRow(label: String(localized: "已索引", bundle: .module), value: "\(event.indexedFiles) \(String(localized: "文件", bundle: .module))")
-                    RAGProgressRow(label: String(localized: "已跳过", bundle: .module), value: "\(event.skippedFiles) \(String(localized: "文件", bundle: .module))")
-                    RAGProgressRow(label: String(localized: "文档块", bundle: .module), value: "\(event.chunkCount) \(String(localized: "个", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("已扫描", bundle: .module), value: "\(event.scannedFiles) / \(event.totalFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("已索引", bundle: .module), value: "\(event.indexedFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("已跳过", bundle: .module), value: "\(event.skippedFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("文档块", bundle: .module), value: "\(event.chunkCount) \(LumiPluginLocalization.string("个", bundle: .module))")
 
                     if !event.currentFilePath.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(String(localized: "当前文件", bundle: .module))
+                            Text(LumiPluginLocalization.string("当前文件", bundle: .module))
                                 .font(.appMicro)
                                 .foregroundColor(theme.textSecondary)
 
@@ -311,18 +312,18 @@ public struct RAGStatusDetailView: View {
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            RAGInfoRow(label: String(localized: "文件数量", bundle: .module), value: "\(status.fileCount)")
-            RAGInfoRow(label: String(localized: "文档块数量", bundle: .module), value: "\(status.chunkCount)")
-            RAGInfoRow(label: String(localized: "最后索引", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
-            RAGInfoRow(label: String(localized: "嵌入模型", bundle: .module), value: status.embeddingModel)
-            RAGInfoRow(label: String(localized: "向量维度", bundle: .module), value: "\(status.embeddingDimension)")
+            RAGInfoRow(label: LumiPluginLocalization.string("文件数量", bundle: .module), value: "\(status.fileCount)")
+            RAGInfoRow(label: LumiPluginLocalization.string("文档块数量", bundle: .module), value: "\(status.chunkCount)")
+            RAGInfoRow(label: LumiPluginLocalization.string("最后索引", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
+            RAGInfoRow(label: LumiPluginLocalization.string("嵌入模型", bundle: .module), value: status.embeddingModel)
+            RAGInfoRow(label: LumiPluginLocalization.string("向量维度", bundle: .module), value: "\(status.embeddingDimension)")
 
             if status.isStale {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(theme.warning)
 
-                    Text(String(localized: "索引已过期，建议重新索引", bundle: .module))
+                    Text(LumiPluginLocalization.string("索引已过期，建议重新索引", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.warning)
                 }
@@ -337,11 +338,11 @@ public struct RAGStatusDetailView: View {
                 .font(.system(size: 32, weight: .regular))
                 .foregroundColor(theme.textTertiary)
 
-            Text(String(localized: "RAG 索引未初始化", bundle: .module))
+            Text(LumiPluginLocalization.string("RAG 索引未初始化", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
 
-            Text(String(localized: "RAG 服务将在插件启用时自动初始化", bundle: .module))
+            Text(LumiPluginLocalization.string("RAG 服务将在插件启用时自动初始化", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }
@@ -356,7 +357,7 @@ public struct RAGStatusDetailView: View {
                 .font(.system(size: 32, weight: .regular))
                 .foregroundColor(theme.error)
 
-            Text(String(localized: "获取索引状态失败", bundle: .module))
+            Text(LumiPluginLocalization.string("获取索引状态失败", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.error)
 
@@ -376,7 +377,7 @@ public struct RAGStatusDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text(String(localized: "正在检查索引状态...", bundle: .module))
+            Text(LumiPluginLocalization.string("正在检查索引状态...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }

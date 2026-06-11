@@ -1,5 +1,6 @@
 import SwiftUI
 import LLMKit
+import LumiCoreKit
 
 /// 项目问题扫描器模型选择视图
 ///
@@ -23,8 +24,8 @@ public struct ScannerModelPickerView: View {
         VStack(alignment: .leading, spacing: 12) {
             // 自动/手动切换
             Picker("模型选择", selection: $preference) {
-                Text("Auto (自动选择)", bundle: .module).tag(ScannerModelPreference.auto)
-                Text("手动指定", bundle: .module).tag(ScannerModelPreference.manual(providerId: selectedProviderId, model: selectedModel))
+                Text(verbatim: LumiPluginLocalization.string("Auto (自动选择)", bundle: .module)).tag(ScannerModelPreference.auto)
+                Text(verbatim: LumiPluginLocalization.string("手动指定", bundle: .module)).tag(ScannerModelPreference.manual(providerId: selectedProviderId, model: selectedModel))
             }
             .pickerStyle(.segmented)
 
@@ -44,12 +45,12 @@ public struct ScannerModelPickerView: View {
         VStack(alignment: .leading, spacing: 8) {
             // 供应商选择
             VStack(alignment: .leading, spacing: 4) {
-                Text("供应商", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("供应商", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 Picker("供应商", selection: $selectedProviderId) {
-                    Text("请选择", bundle: .module).tag("")
+                    Text(verbatim: LumiPluginLocalization.string("请选择", bundle: .module)).tag("")
                     ForEach(providers.filter(\.isEnabled), id: \.id) { provider in
                         Text(provider.displayName).tag(provider.id)
                     }
@@ -62,12 +63,12 @@ public struct ScannerModelPickerView: View {
             // 模型选择
             if !selectedProviderId.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("模型", bundle: .module)
+                    Text(verbatim: LumiPluginLocalization.string("模型", bundle: .module))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
                     Picker("模型", selection: $selectedModel) {
-                        Text("请选择", bundle: .module).tag("")
+                        Text(verbatim: LumiPluginLocalization.string("请选择", bundle: .module)).tag("")
                         ForEach(availableModels, id: \.self) { model in
                             Text(model).tag(model)
                         }

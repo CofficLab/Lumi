@@ -70,11 +70,9 @@ let package = Package(
                 .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),
                 .product(name: "XcodeProj", package: "XcodeProj"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

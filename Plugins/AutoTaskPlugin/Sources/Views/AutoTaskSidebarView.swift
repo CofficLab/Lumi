@@ -1,5 +1,6 @@
 import SwiftUI
 import SuperLogKit
+import LumiCoreKit
 
 /// AutoTask 右侧栏视图
 ///
@@ -79,14 +80,14 @@ public struct AutoTaskSidebarView: View {
             viewModel.removeObserver()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Task List", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Task List", bundle: .module))
     }
 
     // MARK: - Header
 
     private var headerView: some View {
         HStack {
-            Label(String(localized: "Tasks", bundle: .module), systemImage: "checklist")
+            Label(LumiPluginLocalization.string("Tasks", bundle: .module), systemImage: "checklist")
                 .font(.headline)
 
             Spacer()
@@ -104,7 +105,7 @@ public struct AutoTaskSidebarView: View {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            .help(String(localized: "Refresh", bundle: .module))
+            .help(LumiPluginLocalization.string("Refresh", bundle: .module))
 
             Button {
                 withAnimation(.easeInOut(duration: 0.16)) {
@@ -116,8 +117,8 @@ public struct AutoTaskSidebarView: View {
             }
             .buttonStyle(.borderless)
             .help(isCollapsed
-                ? String(localized: "Expand", bundle: .module)
-                : String(localized: "Collapse", bundle: .module)
+                ? LumiPluginLocalization.string("Expand", bundle: .module)
+                : LumiPluginLocalization.string("Collapse", bundle: .module)
             )
         }
         .padding(.horizontal, 12)

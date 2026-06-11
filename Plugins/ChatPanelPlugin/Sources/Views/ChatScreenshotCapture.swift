@@ -2,6 +2,7 @@ import AppKit
 import CoreGraphics
 import ScreenCaptureKit
 import SwiftUI
+import LumiCoreKit
 
 extension Notification.Name {
     static let screenshotCaptured = Notification.Name("screenshotCaptured")
@@ -151,11 +152,11 @@ final class ChatScreenshotState: ObservableObject {
 
     private func presentPermissionAlert() {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Screen Recording Permission Required", bundle: .module)
-        alert.informativeText = String(localized: "Screen Recording Permission Required Hint", bundle: .module)
+        alert.messageText = LumiPluginLocalization.string("Screen Recording Permission Required", bundle: .module)
+        alert.informativeText = LumiPluginLocalization.string("Screen Recording Permission Required Hint", bundle: .module)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "Open System Settings", bundle: .module))
-        alert.addButton(withTitle: String(localized: "Cancel", bundle: .module))
+        alert.addButton(withTitle: LumiPluginLocalization.string("Open System Settings", bundle: .module))
+        alert.addButton(withTitle: LumiPluginLocalization.string("Cancel", bundle: .module))
 
         if alert.runModal() == .alertFirstButtonReturn,
            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
@@ -165,21 +166,21 @@ final class ChatScreenshotState: ObservableObject {
 
     private func presentCaptureFailureAlert(error: Error) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Screenshot Failed", bundle: .module)
+        alert.messageText = LumiPluginLocalization.string("Screenshot Failed", bundle: .module)
         alert.informativeText = captureFailureMessage(for: error)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "OK", bundle: .module))
+        alert.addButton(withTitle: LumiPluginLocalization.string("OK", bundle: .module))
         alert.runModal()
     }
 
     private func captureFailureMessage(for error: Error) -> String {
         switch error {
         case ScreenshotError.noScreens:
-            return String(localized: "Screenshot Failed No Screens", bundle: .module)
+            return LumiPluginLocalization.string("Screenshot Failed No Screens", bundle: .module)
         case ScreenshotError.captureFailed:
-            return String(localized: "Screenshot Failed No Image", bundle: .module)
+            return LumiPluginLocalization.string("Screenshot Failed No Image", bundle: .module)
         default:
-            let prefix = String(localized: "Screenshot Failed Generic", bundle: .module)
+            let prefix = LumiPluginLocalization.string("Screenshot Failed Generic", bundle: .module)
             return "\(prefix)\n\n\(error.localizedDescription)"
         }
     }

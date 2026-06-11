@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -19,6 +20,10 @@ public struct RawMessageToggleButton: View {
         ) {
             showRawMessage.toggle()
         }
-        .help(showRawMessage ? String(localized: "Show Rendered", bundle: .module, comment: "Toggle to show rendered markdown") : String(localized: "Show Source", bundle: .module, comment: "Toggle to show markdown source"))
+        .help(
+            showRawMessage
+                ? LumiPluginLocalization.string("Show Rendered", bundle: .module)
+                : LumiPluginLocalization.string("Show Source", bundle: .module)
+        )
     }
 }

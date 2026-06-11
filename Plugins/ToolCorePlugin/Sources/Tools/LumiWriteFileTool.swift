@@ -4,8 +4,8 @@ import LumiCoreKit
 public struct LumiWriteFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "write_file",
-        displayName: String(localized: "Write File", bundle: .module),
-        description: String(localized: "Write UTF-8 text content to a file.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Write File", bundle: .module),
+        description: LumiPluginLocalization.string("Write UTF-8 text content to a file.", bundle: .module)
     )
 
     public init() {}

@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Combine
+import LumiCoreKit
 
 /// 等宽字体数据项
 public struct MonospacedFontItem: Identifiable, Equatable {
@@ -31,7 +32,7 @@ public final class FontConfigViewModel: ObservableObject {
     /// 当前字体显示名
     public var displayName: String {
         guard let psName = selectedPostScriptName else {
-            return String(localized: "System", bundle: .module)
+            return LumiPluginLocalization.string("System", bundle: .module)
         }
         return availableFonts.first { $0.postScriptName == psName }?.displayName ?? psName
     }

@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// 显示文本选择菜单的实时预览效果。
 public struct TextActionPreviewView: View {
@@ -7,7 +8,7 @@ public struct TextActionPreviewView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text("Preview", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("Preview", bundle: .module))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -28,11 +29,11 @@ public struct TextActionPreviewView: View {
                         .frame(width: 160, height: 8)
 
                     HStack(spacing: 0) {
-                        Text("Select ", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string("Select ", bundle: .module))
                             .font(.system(size: 12))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                        Text("this text", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string("this text", bundle: .module))
                             .font(.system(size: 12))
                             .padding(.horizontal, 2)
                             .background(isEnabled ? Color(hex: "7C6FFF").opacity(0.3) : SwiftUI.Color.clear)
@@ -46,7 +47,7 @@ public struct TextActionPreviewView: View {
                                 }
                             )
 
-                        Text(" to see.", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string(" to see.", bundle: .module))
                             .font(.system(size: 12))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }

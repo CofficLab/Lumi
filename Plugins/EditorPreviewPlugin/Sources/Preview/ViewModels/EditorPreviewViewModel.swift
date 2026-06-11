@@ -81,15 +81,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         var title: String {
             switch kind {
             case .sdk:
-                return String(localized: "SDK resolution failed", bundle: .module)
+                return LumiPluginLocalization.string("SDK resolution failed", bundle: .module)
             case .compile:
-                return String(localized: "Compilation failed", bundle: .module)
+                return LumiPluginLocalization.string("Compilation failed", bundle: .module)
             case .dependency:
-                return String(localized: "Dependency planning failed", bundle: .module)
+                return LumiPluginLocalization.string("Dependency planning failed", bundle: .module)
             case .dylibLoad:
-                return String(localized: "Preview dylib failed to load", bundle: .module)
+                return LumiPluginLocalization.string("Preview dylib failed to load", bundle: .module)
             case .unknown:
-                return String(localized: "Preview failed", bundle: .module)
+                return LumiPluginLocalization.string("Preview failed", bundle: .module)
             }
         }
 

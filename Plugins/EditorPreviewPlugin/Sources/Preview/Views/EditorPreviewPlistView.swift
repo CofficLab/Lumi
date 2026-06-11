@@ -63,9 +63,9 @@ public struct EditorPreviewPlistView: View, SuperLog {
         var errorDescription: String? {
             switch self {
             case .invalidData:
-                return String(localized: "Invalid plist data", bundle: .module)
+                return LumiPluginLocalization.string("Invalid plist data", bundle: .module)
             case .invalidFormat:
-                return String(localized: "Unsupported plist format", bundle: .module)
+                return LumiPluginLocalization.string("Unsupported plist format", bundle: .module)
             }
         }
     }
@@ -77,7 +77,7 @@ public struct EditorPreviewPlistView: View, SuperLog {
             Image(systemName: "list.bullet.rectangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text(String(localized: "No plist content to preview.", bundle: .module))
+            Text(LumiPluginLocalization.string("No plist content to preview.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -90,7 +90,7 @@ public struct EditorPreviewPlistView: View, SuperLog {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.orange)
-            Text(String(localized: "Invalid plist", bundle: .module))
+            Text(LumiPluginLocalization.string("Invalid plist", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.primary)
             Text(error.localizedDescription)
@@ -181,7 +181,7 @@ private struct PlistTreeNode: View {
                 Text(key)
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(" = ", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string(" = ", bundle: .module))
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }
@@ -252,7 +252,7 @@ private struct PlistTreeNode: View {
                 Text(key)
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(" = ", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string(" = ", bundle: .module))
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }

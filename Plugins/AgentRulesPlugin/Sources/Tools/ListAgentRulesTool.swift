@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 
 /// 列出 Agent 规则文档工具
 ///
@@ -24,11 +25,11 @@ public struct ListAgentRulesTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", bundle: .module)
+                    "description": LumiPluginLocalization.string("Absolute path to the project directory containing .agent/rules folder.", bundle: .module)
                 ],
                 "limit": [
                     "type": "integer",
-                    "description": String(localized: "Maximum number of rules to return (default: all).", bundle: .module),
+                    "description": LumiPluginLocalization.string("Maximum number of rules to return (default: all).", bundle: .module),
                     "minimum": Self.minLimit,
                     "maximum": Self.maxLimit
                 ]

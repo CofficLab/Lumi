@@ -10,8 +10,8 @@ public struct QuickFileSearchSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "Quick File Search", bundle: .module),
-            subtitle: String(localized: "Fast file search with Cmd+P", bundle: .module),
+            title: LumiPluginLocalization.string("Quick File Search", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Fast file search with Cmd+P", bundle: .module),
             showHeader: false
         ) {
             statusCard
@@ -22,7 +22,7 @@ public struct QuickFileSearchSettingsView: View {
     private var statusCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Current Status", bundle: .module),
+                title: LumiPluginLocalization.string("Current Status", bundle: .module),
                 spacing: 12
             ) {
                 AppSettingsRow {
@@ -33,14 +33,14 @@ public struct QuickFileSearchSettingsView: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             if projectContext.currentProjectPath.isEmpty {
-                                Text(String(localized: "No project selected", bundle: .module))
+                                Text(LumiPluginLocalization.string("No project selected", bundle: .module))
                                     .font(.appBody)
                                     .foregroundColor(theme.textPrimary)
-                                Text(String(localized: "Please select a project to enable file search", bundle: .module))
+                                Text(LumiPluginLocalization.string("Please select a project to enable file search", bundle: .module))
                                     .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
                             } else {
-                                Text(String(localized: "Project indexed", bundle: .module))
+                                Text(LumiPluginLocalization.string("Project indexed", bundle: .module))
                                     .font(.appBody)
                                     .foregroundColor(theme.textPrimary)
                                 Text(projectContext.currentProjectName)
@@ -57,7 +57,7 @@ public struct QuickFileSearchSettingsView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle")
                             .foregroundColor(theme.info)
-                        Text(String(localized: "File indexing is automatic when switching projects", bundle: .module))
+                        Text(LumiPluginLocalization.string("File indexing is automatic when switching projects", bundle: .module))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                     }
@@ -70,13 +70,13 @@ public struct QuickFileSearchSettingsView: View {
     private var instructionsCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "How to Use", bundle: .module),
+                title: LumiPluginLocalization.string("How to Use", bundle: .module),
                 spacing: 8
             ) {
-                instructionRow(key: "Cmd+P", description: String(localized: "Open file search", bundle: .module))
-                instructionRow(key: "↑ ↓", description: String(localized: "Navigate results", bundle: .module))
-                instructionRow(key: "Enter", description: String(localized: "Select file", bundle: .module))
-                instructionRow(key: "Esc", description: String(localized: "Close search", bundle: .module))
+                instructionRow(key: "Cmd+P", description: LumiPluginLocalization.string("Open file search", bundle: .module))
+                instructionRow(key: "↑ ↓", description: LumiPluginLocalization.string("Navigate results", bundle: .module))
+                instructionRow(key: "Enter", description: LumiPluginLocalization.string("Select file", bundle: .module))
+                instructionRow(key: "Esc", description: LumiPluginLocalization.string("Close search", bundle: .module))
             }
         }
     }

@@ -4,6 +4,7 @@ import SystemExtensions
 import os
 import AppKit
 import SwiftUI
+import LumiCoreKit
 
 public enum FilterStatus: String, CaseIterable {
     case stopped = "Stopped"
@@ -191,15 +192,15 @@ extension FirewallService: AppCommunication {
 
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(localized: "New Connection Request", bundle: .module)
+        alert.messageText = LumiPluginLocalization.string("New Connection Request", bundle: .module)
         alert.informativeText = Self.connectionPromptMessage(
             appId: appId,
             hostname: hostname,
             port: port,
             direction: direction
         )
-        alert.addButton(withTitle: String(localized: "Allow", bundle: .module))
-        alert.addButton(withTitle: String(localized: "Block", bundle: .module))
+        alert.addButton(withTitle: LumiPluginLocalization.string("Allow", bundle: .module))
+        alert.addButton(withTitle: LumiPluginLocalization.string("Block", bundle: .module))
 
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -214,13 +215,13 @@ extension FirewallService: AppCommunication {
         let directionText: String
         switch direction {
         case .inbound:
-            directionText = String(localized: "Incoming", bundle: .module)
+            directionText = LumiPluginLocalization.string("Incoming", bundle: .module)
         case .outbound:
-            directionText = String(localized: "Outgoing", bundle: .module)
+            directionText = LumiPluginLocalization.string("Outgoing", bundle: .module)
         case .any:
-            directionText = String(localized: "Any", bundle: .module)
+            directionText = LumiPluginLocalization.string("Any", bundle: .module)
         @unknown default:
-            directionText = String(localized: "Unknown", bundle: .module)
+            directionText = LumiPluginLocalization.string("Unknown", bundle: .module)
         }
 
         return "\(appId)\n\(directionText): \(endpoint)"

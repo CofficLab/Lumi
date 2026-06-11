@@ -180,7 +180,7 @@ public struct GitHubKBPopover: View {
             HStack {
                 Image(systemName: "network")
                     .foregroundColor(primaryTextColor)
-                Text(String(localized: "GitHub Ecosystem KB", bundle: .module))
+                Text(LumiPluginLocalization.string("GitHub Ecosystem KB", bundle: .module))
                     .font(.headline)
                     .foregroundColor(primaryTextColor)
                 Spacer()
@@ -189,7 +189,7 @@ public struct GitHubKBPopover: View {
                     .foregroundColor(secondaryTextColor)
             }
             if let profile = viewModel.profile {
-                Text(String(format: String(localized: "Profile: %@", bundle: .module), profile.shortTitle))
+                Text(String(format: LumiPluginLocalization.string("Profile: %@", bundle: .module), profile.shortTitle))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
             }
@@ -218,15 +218,15 @@ public struct GitHubKBPopover: View {
         case .syncing:
             AppEmptyState(
                 icon: "arrow.triangle.2.circlepath",
-                title: LocalizedStringKey(String(localized: "Syncing GitHub ecosystem references...", bundle: .module))
+                title: LocalizedStringKey(LumiPluginLocalization.string("Syncing GitHub ecosystem references...", bundle: .module))
             )
             .frame(maxWidth: .infinity, minHeight: 220)
         default:
             AppEmptyState(
                 icon: "magnifyingglass",
-                title: LocalizedStringKey(String(localized: "No cached GitHub ecosystem references yet.", bundle: .module)),
-                description: LocalizedStringKey(String(localized: "Click Sync Now to discover related GitHub repositories.", bundle: .module)),
-                actionTitle: LocalizedStringKey(String(localized: "Sync Now", bundle: .module))
+                title: LocalizedStringKey(LumiPluginLocalization.string("No cached GitHub ecosystem references yet.", bundle: .module)),
+                description: LocalizedStringKey(LumiPluginLocalization.string("Click Sync Now to discover related GitHub repositories.", bundle: .module)),
+                actionTitle: LocalizedStringKey(LumiPluginLocalization.string("Sync Now", bundle: .module))
             ) {
                 viewModel.load(projectPath: projectPath, force: true)
             }
@@ -244,7 +244,7 @@ public struct GitHubKBPopover: View {
             Button {
                 viewModel.load(projectPath: projectPath, force: true)
             } label: {
-                Label(String(localized: "Sync Now", bundle: .module), systemImage: "arrow.clockwise")
+                Label(LumiPluginLocalization.string("Sync Now", bundle: .module), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -259,13 +259,13 @@ public struct GitHubKBPopover: View {
     private var statusText: String {
         switch viewModel.state {
         case .idle:
-            return String(localized: "Idle", bundle: .module)
+            return LumiPluginLocalization.string("Idle", bundle: .module)
         case .syncing:
-            return String(localized: "Syncing", bundle: .module)
+            return LumiPluginLocalization.string("Syncing", bundle: .module)
         case .ready(let count):
-            return String(format: String(localized: "Ready: %lld entries", bundle: .module), count)
+            return String(format: LumiPluginLocalization.string("Ready: %lld entries", bundle: .module), count)
         case .rateLimited:
-            return String(localized: "GitHub rate limited", bundle: .module)
+            return LumiPluginLocalization.string("GitHub rate limited", bundle: .module)
         case .failed(let message):
             return message
         }
@@ -325,7 +325,7 @@ private struct GitHubKBEntryRow: View {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Label(String(localized: "GitHub", bundle: .module), systemImage: "arrow.up.right.square")
+                    Label(LumiPluginLocalization.string("GitHub", bundle: .module), systemImage: "arrow.up.right.square")
                 }
                 .buttonStyle(.link)
             }

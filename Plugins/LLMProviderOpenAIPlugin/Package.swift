@@ -28,11 +28,9 @@ let package = Package(
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit")
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

@@ -2,6 +2,7 @@ import AppKit
 import LLMKit
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// 模型选择器中的单行模型视图
 /// 显示模型名称、供应商标签（可选）、上下文大小、能力 badge 和性能指标
@@ -63,22 +64,22 @@ public struct ModelSelectorModelRow: View {
                                 if let supportsVision {
                                     capabilityBadge(
                                         title: supportsVision
-                                            ? String(localized: "Image", bundle: .module)
-                                            : String(localized: "Text", bundle: .module),
+                                            ? LumiPluginLocalization.string("Image", bundle: .module)
+                                            : LumiPluginLocalization.string("Text", bundle: .module),
                                         systemImage: supportsVision ? "photo" : "text.bubble"
                                     )
                                 }
 
                                 if let supportsTools, supportsTools {
                                     capabilityBadge(
-                                        title: String(localized: "Tools", bundle: .module),
+                                        title: LumiPluginLocalization.string("Tools", bundle: .module),
                                         systemImage: "wrench.and.screwdriver"
                                     )
                                 }
 
                                 if let supportsTTS, supportsTTS {
                                     capabilityBadge(
-                                        title: String(localized: "TTS", bundle: .module),
+                                        title: LumiPluginLocalization.string("TTS", bundle: .module),
                                         systemImage: "waveform"
                                     )
                                 }
@@ -172,13 +173,13 @@ public struct ModelSelectorModelRow: View {
     private func availabilityHelpText(for status: LLMAvailabilityStatus) -> String {
         switch status {
         case .available:
-            return String(localized: "Available", bundle: .module)
+            return LumiPluginLocalization.string("Available", bundle: .module)
         case .unavailable(let reason):
             return reason
         case .checking:
-            return String(localized: "Checking...", bundle: .module)
+            return LumiPluginLocalization.string("Checking...", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", bundle: .module)
+            return LumiPluginLocalization.string("Unknown", bundle: .module)
         }
     }
 

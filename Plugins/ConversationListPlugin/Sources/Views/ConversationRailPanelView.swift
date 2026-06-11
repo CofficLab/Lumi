@@ -28,7 +28,7 @@ struct ConversationRailPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(String(localized: "Chats", bundle: .module))
+            Text(LumiPluginLocalization.string("Chats", bundle: .module))
                 .font(.appSectionTitle)
                 .foregroundColor(theme.textPrimary)
 
@@ -37,7 +37,7 @@ struct ConversationRailPanelView: View {
             AppIconButton(systemImage: "plus", size: .regular) {
                 _ = context.createConversation()
             }
-            .help(String(localized: "New Chat", bundle: .module))
+            .help(LumiPluginLocalization.string("New Chat", bundle: .module))
         }
         .padding(12)
     }

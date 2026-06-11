@@ -13,20 +13,20 @@ public struct DetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "History Database Browser", bundle: .module),
+            title: LumiPluginLocalization.string("History Database Browser", bundle: .module),
             systemImage: "tablecells"
         ) {
             AppIconButton(systemImage: "arrow.clockwise") {
                 Task { await viewModel.reload() }
             }
-            .help(String(localized: "Reload", bundle: .module))
+            .help(LumiPluginLocalization.string("Reload", bundle: .module))
         } content: {
             VStack(alignment: .leading, spacing: 0) {
                 modeTabs
 
                 if viewModel.isLoading {
                     Spacer()
-                    ProgressView(String(localized: "Loading...", bundle: .module))
+                    ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Spacer()
                 } else {
@@ -50,13 +50,13 @@ public struct DetailView: View {
     private var modeTabs: some View {
         HStack(spacing: 0) {
             tabButton(
-                title: String(localized: "Messages", bundle: .module),
+                title: LumiPluginLocalization.string("Messages", bundle: .module),
                 icon: "text.bubble",
                 mode: .messages
             )
 
             tabButton(
-                title: String(localized: "Conversations", bundle: .module),
+                title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 icon: "message.fill",
                 mode: .conversations
             )
@@ -107,31 +107,31 @@ public struct DetailView: View {
             emptyView
         } else {
             Table(viewModel.messageRows) {
-                TableColumn(String(localized: "Conversation", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Conversation", bundle: .module)) { row in
                     Text(row.conversationTitle)
                         .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 100)
 
-                TableColumn(String(localized: "Role", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Role", bundle: .module)) { row in
                     Text(row.role)
                         .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 60, max: 80)
 
-                TableColumn(String(localized: "Model", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Model", bundle: .module)) { row in
                     Text(row.model)
                         .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 100)
 
-                TableColumn(String(localized: "Tokens", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Tokens", bundle: .module)) { row in
                     Text("\(row.tokens)")
                         .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 50, max: 70)
 
-                TableColumn(String(localized: "Timestamp", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Timestamp", bundle: .module)) { row in
                     HStack(spacing: 4) {
                         Text(row.timestamp, style: .date)
                         Text(row.timestamp, style: .time)
@@ -140,7 +140,7 @@ public struct DetailView: View {
                 }
                 .width(min: 130)
 
-                TableColumn(String(localized: "Content", bundle: .module)) { row in
+                TableColumn(LumiPluginLocalization.string("Content", bundle: .module)) { row in
                     Text(row.contentPreview)
                         .foregroundColor(theme.textPrimary)
                 }
@@ -176,7 +176,7 @@ public struct DetailView: View {
         HStack(spacing: 12) {
             Text(
                 String(
-                    format: String(localized: "Rows: %lld", bundle: .module),
+                    format: LumiPluginLocalization.string("Rows: %lld", bundle: .module),
                     viewModel.totalCount
                 )
             )
@@ -185,14 +185,14 @@ public struct DetailView: View {
 
             Spacer()
 
-            AppButton(String(localized: "Prev", bundle: .module), size: .small) {
+            AppButton(LumiPluginLocalization.string("Prev", bundle: .module), size: .small) {
                 viewModel.previousPage()
             }
             .disabled(viewModel.currentPage <= 1)
 
             Text(
                 String(
-                    format: String(localized: "Page %lld / %lld", bundle: .module),
+                    format: LumiPluginLocalization.string("Page %lld / %lld", bundle: .module),
                     viewModel.currentPage,
                     viewModel.totalPages
                 )
@@ -200,7 +200,7 @@ public struct DetailView: View {
             .font(.appMicro)
             .foregroundColor(theme.textSecondary)
 
-            AppButton(String(localized: "Next", bundle: .module), size: .small) {
+            AppButton(LumiPluginLocalization.string("Next", bundle: .module), size: .small) {
                 viewModel.nextPage()
             }
             .disabled(viewModel.currentPage >= viewModel.totalPages)
@@ -213,7 +213,7 @@ public struct DetailView: View {
     private var emptyView: some View {
         AppEmptyState(
             icon: "tray",
-            title: LocalizedStringKey(String(localized: "No data", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("No data", bundle: .module))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

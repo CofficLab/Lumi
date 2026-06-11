@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import LumiCoreKit
 
 /// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱 + 电池指示器）
 struct DeviceInfoMenuBarContentView: View {
@@ -191,24 +192,24 @@ struct DeviceInfoMenuBarSnapshot {
     private static func cpuHelpText(_ cpu: DeviceInfoMenuBarCPUMetrics) -> String {
         let coreCount = cpu.perCoreUsagePercent.count
         if coreCount > 0 {
-            return String(format: PluginDeviceInfoLocalization.string("CPU %.0f%% · %d Cores"), Double(cpu.usagePercent), coreCount)
+            return String(format: LumiPluginLocalization.string("CPU %.0f%% · %d Cores", bundle: .module), Double(cpu.usagePercent), coreCount)
         } else {
-            return String(format: PluginDeviceInfoLocalization.string("CPU %.0f%%"), Double(cpu.usagePercent))
+            return String(format: LumiPluginLocalization.string("CPU %.0f%%", bundle: .module), Double(cpu.usagePercent))
         }
     }
 
     private static func memoryHelpText(_ memory: DeviceInfoMenuBarMemoryMetrics) -> String {
-        PluginDeviceInfoLocalization.string("Memory") + " \(memory.usagePercent)% · \(memory.usedMemory) / \(memory.totalMemory)"
+        String(format: LumiPluginLocalization.string("Memory %lld%% · %@ / %@", bundle: .module), Int64(memory.usagePercent), memory.usedMemory, memory.totalMemory)
     }
 
     private static func gpuHelpText(_ gpu: DeviceInfoMenuBarGPUMetrics) -> String {
-        let name = gpu.modelName.isEmpty ? "GPU" : gpu.modelName
+        let name = gpu.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpu.modelName
         return "\(name) \(gpu.usagePercent)%"
     }
 
     private static func batteryHelpText(_ battery: DeviceInfoMenuBarBatteryMetrics) -> String {
         guard battery.hasBattery else { return "" }
         let charging = battery.isCharging ? " ⚡" : ""
-        return "Battery \(battery.levelPercent)%\(charging)"
+        return String(format: LumiPluginLocalization.string("Battery %lld%%", bundle: .module), Int64(battery.levelPercent)) + charging
     }
 }

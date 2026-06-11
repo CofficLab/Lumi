@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import EditorCodeEditTextView
+import LumiCoreKit
 
 @MainActor
 public final class MultiCursorCommandContributor: SuperEditorCommandContributor {
@@ -16,7 +17,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
         return [
             .init(
                 id: "builtin.add-next-occurrence",
-                title: String(localized: "Add Next Occurrence", bundle: .module),
+                title: LumiPluginLocalization.string("Add Next Occurrence", bundle: .module),
                 systemImage: "plus.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 51,
@@ -31,7 +32,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.remove-last-occurrence-selection",
-                title: String(localized: "Remove Last Occurrence Selection", bundle: .module),
+                title: LumiPluginLocalization.string("Remove Last Occurrence Selection", bundle: .module),
                 systemImage: "minus.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 52,
@@ -45,7 +46,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.select-all-occurrences",
-                title: String(localized: "Select All Occurrences", bundle: .module),
+                title: LumiPluginLocalization.string("Select All Occurrences", bundle: .module),
                 systemImage: "text.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 53,
@@ -60,7 +61,7 @@ public final class MultiCursorCommandContributor: SuperEditorCommandContributor 
 
             .init(
                 id: "builtin.clear-additional-cursors",
-                title: String(localized: "Clear Additional Cursors", bundle: .module),
+                title: LumiPluginLocalization.string("Clear Additional Cursors", bundle: .module),
                 systemImage: "cursorarrow.motionlines",
                 category: EditorCommandCategory.multiCursor.rawValue,
                 order: 54,

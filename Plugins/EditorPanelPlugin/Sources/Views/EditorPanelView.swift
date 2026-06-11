@@ -182,7 +182,7 @@ public struct EditorPanelView: View {
                     MarkdownBlockRenderer(markdown: content)
                         .padding(20)
                 } else {
-                    Text(String(localized: "No content to preview", bundle: .module))
+                    Text(LumiPluginLocalization.string("No content to preview", bundle: .module))
                         .font(.system(size: 12))
                         .foregroundColor(Color(hex: "98989E"))
                         .padding(40)

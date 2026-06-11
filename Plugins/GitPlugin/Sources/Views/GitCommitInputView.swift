@@ -76,7 +76,7 @@ public struct GitCommitInputView: View {
         ZStack(alignment: .topLeading) {
             // 占位文本
             if commitMessage.isEmpty {
-                Text(String(localized: "Enter commit message...", bundle: .module))
+                Text(LumiPluginLocalization.string("Enter commit message...", bundle: .module))
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: "98989E"))
                     .padding(.horizontal, 4)
@@ -112,11 +112,11 @@ public struct GitCommitInputView: View {
                             .fill(Color(hex: "7C6FFF").opacity(0.08))
                     )
             } else {
-                AppButton(String(localized: "AI", bundle: .module), systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true, action: {
+                AppButton(LumiPluginLocalization.string("AI", bundle: .module), systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true, action: {
                     Task { await generateAICommitMessage() }
                 })
                 .disabled(isGenerating || isCommitting)
-                .help(String(localized: "AI generates commit message", bundle: .module))
+                .help(LumiPluginLocalization.string("AI generates commit message", bundle: .module))
             }
         }
     }
@@ -134,11 +134,11 @@ public struct GitCommitInputView: View {
                     )
                     .foregroundColor(.white)
             } else {
-                AppButton(String(localized: "Commit", bundle: .module), systemImage: "checkmark.circle.fill", style: .primary, size: .small, fillsWidth: true, action: {
+                AppButton(LumiPluginLocalization.string("Commit", bundle: .module), systemImage: "checkmark.circle.fill", style: .primary, size: .small, fillsWidth: true, action: {
                     Task { await performCommit() }
                 })
                 .disabled(!canCommit || isGenerating)
-                .help(String(localized: "Commit changes", bundle: .module))
+                .help(LumiPluginLocalization.string("Commit changes", bundle: .module))
             }
         }
     }
@@ -200,7 +200,7 @@ public struct GitCommitInputView: View {
         guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
             await MainActor.run {
                 resultType = .error
-                resultMessage = String(localized: "LLM not configured", bundle: .module)
+                resultMessage = LumiPluginLocalization.string("LLM not configured", bundle: .module)
             }
             return
         }
@@ -228,9 +228,9 @@ public struct GitCommitInputView: View {
                 if let ce = error as? GitCommitError {
                     switch ce {
                     case .noChanges:
-                        resultMessage = String(localized: "No changes to commit", bundle: .module)
+                        resultMessage = LumiPluginLocalization.string("No changes to commit", bundle: .module)
                     case .emptyResponse:
-                        resultMessage = String(localized: "AI returned empty response", bundle: .module)
+                        resultMessage = LumiPluginLocalization.string("AI returned empty response", bundle: .module)
                     default:
                         resultMessage = error.localizedDescription
                     }
@@ -257,7 +257,7 @@ public struct GitCommitInputView: View {
             await MainActor.run {
                 isCommitting = false
                 resultType = .success
-                resultMessage = String(localized: "Committed: \(hash)", bundle: .module)
+                resultMessage = LumiPluginLocalization.string("Committed: \(hash)", bundle: .module)
                 commitMessage = ""
 
                 // 通知父视图刷新

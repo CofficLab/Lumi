@@ -20,8 +20,8 @@ public actor EditorXcodePlugin: SuperPlugin, SuperLog {
 
     public static let shared = EditorXcodePlugin()
     public static let id = "EditorXcode"
-    public static let displayName = String(localized: "Xcode Project Editor", bundle: .module)
-    public static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Xcode Project Editor", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", bundle: .module)
     public static let iconName = "xmark.app"
     public static let order = 4 // 在 LSP Service 之前加载，确保 build context 就绪
     public static var category: PluginCategory { .editor }

@@ -98,7 +98,7 @@ public struct AvailabilityDetailView: View {
                 size: .compact,
                 action: refreshAvailability
             )
-            .help(String(localized: "Refresh", bundle: .module))
+            .help(LumiPluginLocalization.string("Refresh", bundle: .module))
             .disabled(isRefreshing || isChecking)
         }
         .padding(.horizontal, 24)
@@ -133,7 +133,7 @@ public struct AvailabilityDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Available", bundle: .module))
+                Text(LumiPluginLocalization.string("Available", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -148,7 +148,7 @@ public struct AvailabilityDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Total", bundle: .module))
+                Text(LumiPluginLocalization.string("Total", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -161,7 +161,7 @@ public struct AvailabilityDetailView: View {
     private var providerListSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             if filteredProviders.isEmpty {
-                Text(String(localized: "No providers found", bundle: .module))
+                Text(LumiPluginLocalization.string("No providers found", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(unknownColor)
                     .frame(maxWidth: .infinity)
@@ -192,7 +192,7 @@ public struct AvailabilityDetailView: View {
                         size: .compact,
                         action: { recheckProvider(provider) }
                     )
-                    .help(String(localized: "Recheck this provider", bundle: .module))
+                    .help(LumiPluginLocalization.string("Recheck this provider", bundle: .module))
                     .disabled(checkingProviderIds.contains(provider.providerId) || isRefreshing)
 
                     Text("\(provider.availableModels.count)/\(provider.models.count)")
@@ -292,7 +292,7 @@ public struct AvailabilityDetailView: View {
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView().scaleEffect(0.8)
-            Text(String(localized: "Loading provider information…", bundle: .module))
+            Text(LumiPluginLocalization.string("Loading provider information…", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -322,11 +322,11 @@ public struct AvailabilityDetailView: View {
                 .font(.appLargeTitle)
                 .foregroundColor(unknownColor)
 
-            Text(String(localized: "No LLM providers configured", bundle: .module))
+            Text(LumiPluginLocalization.string("No LLM providers configured", bundle: .module))
                 .font(.appBody)
                 .foregroundColor(theme.textSecondary)
 
-            Text(String(localized: "Please add LLM providers in Settings to enable AI features.", bundle: .module))
+            Text(LumiPluginLocalization.string("Please add LLM providers in Settings to enable AI features.", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textTertiary)
                 .multilineTextAlignment(.center)
@@ -340,7 +340,7 @@ public struct AvailabilityDetailView: View {
         HStack {
             ProgressView()
                 .scaleEffect(0.7)
-            Text(String(localized: "Checking availability…", bundle: .module))
+            Text(LumiPluginLocalization.string("Checking availability…", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
             Spacer()

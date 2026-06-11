@@ -9,8 +9,8 @@ public enum LayoutPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",
-        displayName: String(localized: "Layout Persistence", bundle: .module),
-        description: String(localized: "Persist and restore layout state across app launches", bundle: .module),
+        displayName: LumiPluginLocalization.string("Layout Persistence", bundle: .module),
+        description: LumiPluginLocalization.string("Persist and restore layout state across app launches", bundle: .module),
         order: 99
     )
 
@@ -28,7 +28,7 @@ public enum LayoutPlugin: LumiPlugin {
         [
             LumiTitleToolbarItem(
                 id: "\(info.id).layout-menu",
-                title: String(localized: "Layout", bundle: .module),
+                title: LumiPluginLocalization.string("Layout", bundle: .module),
                 placement: .trailing
             ) {
                 LayoutMenuButton(

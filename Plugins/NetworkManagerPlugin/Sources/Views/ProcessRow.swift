@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct ProcessRow: View {
     public let process: NetworkProcess
@@ -32,7 +33,7 @@ public struct ProcessRow: View {
                         .lineLimit(1)
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "PID: \(process.id)", bundle: .module))
+                    Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
                         .font(.system(size: 10))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }

@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct TextActionsSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -25,7 +26,7 @@ public struct TextActionsSettingsView: View {
                 .padding(24)
             }
         }
-        .navigationTitle(String(localized: "Text Actions", bundle: .module))
+        .navigationTitle(LumiPluginLocalization.string("Text Actions", bundle: .module))
         .onAppear(perform: handleOnAppear)
         .onChange(of: isEnabled, handleEnabledChanged)
     }
@@ -33,11 +34,11 @@ public struct TextActionsSettingsView: View {
     private var generalSettingsCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "General Settings", bundle: .module),
+                title: LumiPluginLocalization.string("General Settings", bundle: .module),
                 spacing: 12
             ) {
                 AppSettingsToggleRow(
-                    String(localized: "Enable Text Selection Menu", bundle: .module),
+                    LumiPluginLocalization.string("Enable Text Selection Menu", bundle: .module),
                     systemImage: "text.cursor",
                     isOn: $isEnabled
                 )
@@ -56,14 +57,14 @@ public struct TextActionsSettingsView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(theme.warning)
                     Text(
-                        String(localized: "Accessibility permission is required to detect text selection", bundle: .module)
+                        LumiPluginLocalization.string("Accessibility permission is required to detect text selection", bundle: .module)
                     )
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                 }
 
                 AppButton(
-                    String(localized: "Open System Settings", bundle: .module),
+                    LumiPluginLocalization.string("Open System Settings", bundle: .module),
                     style: .secondary,
                     fillsWidth: true,
                     action: openAccessibilitySettings
@@ -75,7 +76,7 @@ public struct TextActionsSettingsView: View {
     private var supportedActionsCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Supported Actions", bundle: .module),
+                title: LumiPluginLocalization.string("Supported Actions", bundle: .module),
                 spacing: 6
             ) {
                 ForEach(TextActionType.allCases) { action in

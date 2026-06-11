@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct IdlePopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -8,7 +9,7 @@ public struct IdlePopoverView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Idle Time", bundle: .module),
+            title: LumiPluginLocalization.string("Idle Time", bundle: .module),
             systemImage: "moon.zzz",
             showsHeaderDivider: false
         ) {
@@ -40,11 +41,11 @@ public struct IdlePopoverView: View {
 
     private var metrics: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: 8) {
-            metricRow(String(localized: "Coverage", bundle: .module), coverageText)
-            metricRow(String(localized: "Events", bundle: .module), "\(snapshot?.eventCount ?? 0)")
-            metricRow(String(localized: "Last active", bundle: .module), lastActiveText)
-            metricRow(String(localized: "Source", bundle: .module), sourceText)
-            metricRow(String(localized: "Confidence", bundle: .module), confidencePercentText)
+            metricRow(LumiPluginLocalization.string("Coverage", bundle: .module), coverageText)
+            metricRow(LumiPluginLocalization.string("Events", bundle: .module), "\(snapshot?.eventCount ?? 0)")
+            metricRow(LumiPluginLocalization.string("Last active", bundle: .module), lastActiveText)
+            metricRow(LumiPluginLocalization.string("Source", bundle: .module), sourceText)
+            metricRow(LumiPluginLocalization.string("Confidence", bundle: .module), confidencePercentText)
         }
         .font(.appCaption)
     }
@@ -60,23 +61,23 @@ public struct IdlePopoverView: View {
     }
 
     private var windowText: String {
-        guard let window = snapshot?.restWindow else { return String(localized: "Learning", bundle: .module) }
+        guard let window = snapshot?.restWindow else { return LumiPluginLocalization.string("Learning", bundle: .module) }
         let label = IdleConfidenceLabel.label(for: window.confidence, source: window.source)
         if label == .learning {
-            return String(localized: "Learning", bundle: .module)
+            return LumiPluginLocalization.string("Learning", bundle: .module)
         }
         return "\(formatMinute(window.startMinuteOfDay)) - \(formatMinute(window.endMinuteOfDay))"
     }
 
     private var confidenceText: String {
-        guard let window = snapshot?.restWindow else { return String(localized: "Learning", bundle: .module) }
+        guard let window = snapshot?.restWindow else { return LumiPluginLocalization.string("Learning", bundle: .module) }
         switch IdleConfidenceLabel.label(for: window.confidence, source: window.source) {
         case .learning:
-            return String(localized: "Learning", bundle: .module)
+            return LumiPluginLocalization.string("Learning", bundle: .module)
         case .medium:
-            return String(localized: "Medium", bundle: .module)
+            return LumiPluginLocalization.string("Medium", bundle: .module)
         case .high:
-            return String(localized: "High", bundle: .module)
+            return LumiPluginLocalization.string("High", bundle: .module)
         }
     }
 
@@ -94,25 +95,25 @@ public struct IdlePopoverView: View {
 
     private var coverageText: String {
         let count = snapshot?.observedDayCount ?? 0
-        return "\(count) / 28 \(String(localized: "days", bundle: .module))"
+        return "\(count) / 28 \(LumiPluginLocalization.string("days", bundle: .module))"
     }
 
     private var lastActiveText: String {
-        guard let date = snapshot?.lastActivityAt else { return String(localized: "None", bundle: .module) }
+        guard let date = snapshot?.lastActivityAt else { return LumiPluginLocalization.string("None", bundle: .module) }
         return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
     private var sourceText: String {
-        guard let source = snapshot?.restWindow?.source else { return String(localized: "Learning", bundle: .module) }
+        guard let source = snapshot?.restWindow?.source else { return LumiPluginLocalization.string("Learning", bundle: .module) }
         switch source {
         case .weekday:
-            return String(localized: "Weekday model", bundle: .module)
+            return LumiPluginLocalization.string("Weekday model", bundle: .module)
         case .weekend:
-            return String(localized: "Weekend model", bundle: .module)
+            return LumiPluginLocalization.string("Weekend model", bundle: .module)
         case .globalFallback:
-            return String(localized: "Global model", bundle: .module)
+            return LumiPluginLocalization.string("Global model", bundle: .module)
         case .defaultFallback:
-            return String(localized: "Default fallback", bundle: .module)
+            return LumiPluginLocalization.string("Default fallback", bundle: .module)
         }
     }
 

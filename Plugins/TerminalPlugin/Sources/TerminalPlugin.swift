@@ -8,8 +8,8 @@ public enum TerminalPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.terminal",
-        displayName: String(localized: "Terminal", bundle: .module),
-        description: String(localized: "Native interactive terminal powered by SwiftTerm", bundle: .module),
+        displayName: LumiPluginLocalization.string("Terminal", bundle: .module),
+        description: LumiPluginLocalization.string("Native interactive terminal powered by SwiftTerm", bundle: .module),
         order: 90
     )
 

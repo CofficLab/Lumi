@@ -90,10 +90,10 @@ public struct EditorBottomTerminalPanelView: View {
             Image(systemName: "terminal")
                 .font(.system(size: 24, weight: .thin))
                 .foregroundColor(theme.textTertiary)
-            Text(String(localized: "No open terminals", bundle: .module))
+            Text(LumiPluginLocalization.string("No open terminals", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
-            Button(String(localized: "New Terminal", bundle: .module)) {
+            Button(LumiPluginLocalization.string("New Terminal", bundle: .module)) {
                 viewModel.createSession(workingDirectory: workingDirectory)
             }
             .font(.appMicroEmphasized)

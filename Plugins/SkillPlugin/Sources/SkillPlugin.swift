@@ -9,8 +9,8 @@ public enum SkillPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.skill",
-        displayName: String(localized: "Skills", bundle: .module),
-        description: String(localized: "Load domain skills from .agent/skills/ directory", bundle: .module),
+        displayName: LumiPluginLocalization.string("Skills", bundle: .module),
+        description: LumiPluginLocalization.string("Load domain skills from .agent/skills/ directory", bundle: .module),
         order: 51
     )
 
@@ -29,7 +29,7 @@ public enum SkillPlugin: LumiPlugin {
         return [
             LumiStatusBarItem(
                 id: "\(info.id).skills",
-                title: String(localized: "Skills", bundle: .module),
+                title: LumiPluginLocalization.string("Skills", bundle: .module),
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {

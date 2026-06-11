@@ -6,8 +6,8 @@ public enum ThemeWinterPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.winter",
-        displayName: String(localized: "Winter Theme", bundle: .module),
-        description: String(localized: "Winter cool app theme", bundle: .module),
+        displayName: LumiPluginLocalization.string("Winter Theme", bundle: .module),
+        description: LumiPluginLocalization.string("Winter cool app theme", bundle: .module),
         order: 127
     )
 

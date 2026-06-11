@@ -2,6 +2,7 @@ import EditorService
 import SwiftUI
 import LumiUI
 import UniformTypeIdentifiers
+import LumiCoreKit
 
 /// 单个标签页的完整交互项
 ///
@@ -67,20 +68,20 @@ public struct EditorTabItemView: View {
         .contextMenu {
             Button(
                 tab.isPinned
-                    ? String(localized: "Unpin Tab", bundle: .module)
-                    : String(localized: "Pin Tab", bundle: .module)
+                    ? LumiPluginLocalization.string("Unpin Tab", bundle: .module)
+                    : LumiPluginLocalization.string("Pin Tab", bundle: .module)
             ) {
                 togglePinned()
             }
-            Button(String(localized: "Close Others", bundle: .module)) {
+            Button(LumiPluginLocalization.string("Close Others", bundle: .module)) {
                 closeOtherSessions()
             }
-            Button(String(localized: "Close Tabs to the Left", bundle: .module)) {
+            Button(LumiPluginLocalization.string("Close Tabs to the Left", bundle: .module)) {
                 closeTabsToLeft()
             }
             .disabled(!canCloseTabsToLeft)
 
-            Button(String(localized: "Close Tabs to the Right", bundle: .module)) {
+            Button(LumiPluginLocalization.string("Close Tabs to the Right", bundle: .module)) {
                 closeTabsToRight()
             }
             .disabled(!canCloseTabsToRight)
@@ -132,7 +133,7 @@ public struct EditorTabItemView: View {
             .buttonStyle(.plain)
             .opacity(showClose ? 1 : 0)
             .allowsHitTesting(showClose)
-            .help(String(localized: "Close Tab", bundle: .module))
+            .help(LumiPluginLocalization.string("Close Tab", bundle: .module))
             .simultaneousGesture(TapGesture().onEnded {
                 // Prevent the parent tap handler from also activating the tab.
             })

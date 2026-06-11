@@ -12,8 +12,8 @@ public enum AskUserPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "plugin-ask-user",
-        displayName: String(localized: "用户询问插件", bundle: .module),
-        description: String(localized: "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答", bundle: .module),
+        displayName: LumiPluginLocalization.string("用户询问插件", bundle: .module),
+        description: LumiPluginLocalization.string("提供 ask_user 工具，让 LLM 可以向用户提问并等待回答", bundle: .module),
         order: 100
     )
 

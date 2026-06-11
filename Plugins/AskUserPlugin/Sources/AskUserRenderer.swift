@@ -2,6 +2,7 @@ import SwiftUI
 import LumiUI
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 
 /// AskUser 的 ToolCall 行级渲染器
 ///
@@ -41,7 +42,7 @@ public struct AskUserPendingView: View {
 
     public var body: some View {
         guard let response = parsePendingResponse(from: toolCall.result?.content ?? "") else {
-            return AnyView(Text("无法解析问题内容", bundle: .module))
+            return AnyView(Text(verbatim: LumiPluginLocalization.string("无法解析问题内容", bundle: .module)))
         }
 
         return AnyView(
@@ -139,7 +140,7 @@ public struct AskUserPendingView: View {
                     }
 
                     // 提示文字
-                    Text("等待您的选择...", bundle: .module)
+                    Text(verbatim: LumiPluginLocalization.string("等待您的选择...", bundle: .module))
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }

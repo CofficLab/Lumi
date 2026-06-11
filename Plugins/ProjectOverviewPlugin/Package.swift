@@ -28,11 +28,9 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

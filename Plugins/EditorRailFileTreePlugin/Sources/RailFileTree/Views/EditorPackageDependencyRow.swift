@@ -72,16 +72,16 @@ public struct EditorPackageDependencyRow: View {
     private var contextMenuContent: some View {
         Button { openLocation() } label: {
             if dependency.kind == .local {
-                Label(String(localized: "Reveal in Finder", bundle: .module), systemImage: "finder")
+                Label(LumiPluginLocalization.string("Reveal in Finder", bundle: .module), systemImage: "finder")
             } else {
-                Label(String(localized: "Open Repository", bundle: .module), systemImage: "link")
+                Label(LumiPluginLocalization.string("Open Repository", bundle: .module), systemImage: "link")
             }
         }
         Button { copyLocation() } label: {
-            Label(String(localized: "Copy URL/path", bundle: .module), systemImage: "doc.on.doc")
+            Label(LumiPluginLocalization.string("Copy URL/path", bundle: .module), systemImage: "doc.on.doc")
         }
         Button { openInTerminal() } label: {
-            Label(String(localized: "Open in Terminal", bundle: .module), systemImage: "terminal")
+            Label(LumiPluginLocalization.string("Open in Terminal", bundle: .module), systemImage: "terminal")
         }
     }
 

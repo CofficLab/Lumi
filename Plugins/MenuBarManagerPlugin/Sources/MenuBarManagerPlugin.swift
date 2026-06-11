@@ -11,8 +11,8 @@ public enum MenuBarManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.menubar-manager",
-        displayName: String(localized: "Menu Bar Manager", bundle: .module),
-        description: String(localized: "Manage your menu bar items", bundle: .module),
+        displayName: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Manage your menu bar items", bundle: .module),
         order: 20
     )
 

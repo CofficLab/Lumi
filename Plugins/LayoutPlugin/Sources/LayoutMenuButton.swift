@@ -13,7 +13,7 @@ public struct LayoutMenuButton: View {
         Menu {
             Toggle(isOn: layoutContext.chatSectionVisible) {
                 Label(
-                    String(localized: "Right Sidebar", bundle: .module),
+                    LumiPluginLocalization.string("Right Sidebar", bundle: .module),
                     systemImage: "rectangle.rightthird.inset.filled"
                 )
             }
@@ -27,6 +27,6 @@ public struct LayoutMenuButton: View {
         .menuIndicator(.hidden)
         .frame(width: 22, height: 22)
         .fixedSize()
-        .help(String(localized: "Layout", bundle: .module))
+        .help(LumiPluginLocalization.string("Layout", bundle: .module))
     }
 }

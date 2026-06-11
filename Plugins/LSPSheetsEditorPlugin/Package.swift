@@ -30,11 +30,9 @@ let package = Package(
                 .product(name: "LSPCallHierarchyEditorPlugin", package: "LSPCallHierarchyEditorPlugin"),
                 .product(name: "LSPWorkspaceSymbolEditorPlugin", package: "LSPWorkspaceSymbolEditorPlugin"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

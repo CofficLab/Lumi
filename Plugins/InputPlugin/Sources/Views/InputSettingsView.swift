@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// 输入源插件设置视图
 public struct InputSettingsView: View {
@@ -7,14 +8,14 @@ public struct InputSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "Input Source", bundle: .module),
-            subtitle: String(localized: "Automatically switch input sources per application.", bundle: .module),
+            title: LumiPluginLocalization.string("Input Source", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Automatically switch input sources per application.", bundle: .module),
             showHeader: false
         ) {
             AppCard {
                 AppSettingsSection(spacing: 12) {
                     AppSettingsToggleRow(
-                        String(localized: "Enable Auto Input Source Switching", bundle: .module),
+                        LumiPluginLocalization.string("Enable Auto Input Source Switching", bundle: .module),
                         systemImage: "keyboard",
                         isOn: Binding(
                             get: { viewModel.isEnabled },
@@ -50,7 +51,7 @@ public struct InputSettingsView: View {
         } else {
             AppCard {
                 AppSettingsSection(
-                    title: String(localized: "Rules", bundle: .module),
+                    title: LumiPluginLocalization.string("Rules", bundle: .module),
                     spacing: 6
                 ) {
                     ForEach(Array(viewModel.rules.enumerated()), id: \.element.id) { index, rule in
@@ -59,7 +60,7 @@ public struct InputSettingsView: View {
                             availableSources: viewModel.availableSources
                         )
                         .contextMenu {
-                            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
+                            Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
                                 viewModel.removeRule(at: IndexSet(integer: index))
                             }
                         }

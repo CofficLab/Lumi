@@ -13,8 +13,8 @@ public actor AgentChatPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose: Bool = false
     public static let id = "AgentChat"
-    public static let displayName = String(localized: "Agent Chat", bundle: .module)
-    public static let description = String(localized: "Agent chat messages timeline", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Agent Chat", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Agent chat messages timeline", bundle: .module)
     public static let iconName = "text.bubble.fill"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 82 }

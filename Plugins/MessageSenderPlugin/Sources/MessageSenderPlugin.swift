@@ -13,8 +13,8 @@ public actor MessageSenderPlugin: SuperPlugin, SuperLog {
     nonisolated public static let policy: PluginPolicy = .alwaysOn
 
     public static let id: String = "MessageSender"
-    public static let displayName: String = String(localized: "Message Sender", bundle: .module)
-    public static let description: String = String(localized: "Listen for DB events, send LLM requests, and persist responses", bundle: .module)
+    public static let displayName: String = LumiPluginLocalization.string("Message Sender", bundle: .module)
+    public static let description: String = LumiPluginLocalization.string("Listen for DB events, send LLM requests, and persist responses", bundle: .module)
     public static let iconName: String = "antenna.radiowaves.left.and.right"
     public static var order: Int { 200 }
 

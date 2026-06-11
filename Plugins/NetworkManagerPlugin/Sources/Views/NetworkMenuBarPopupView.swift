@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// Menu bar popup view for Network Manager plugin
 public struct NetworkMenuBarPopupView: View {
@@ -80,7 +81,7 @@ public struct NetworkMenuBarPopupView: View {
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
 
-                Text(String(localized: "Last 60 seconds", bundle: .module))
+                Text(LumiPluginLocalization.string("Last 60 seconds", bundle: .module))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
 
@@ -92,7 +93,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(theme.success.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(String(localized: "Down", bundle: .module))
+                        Text(LumiPluginLocalization.string("Down", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
                     }
@@ -101,7 +102,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(theme.error.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(String(localized: "Up", bundle: .module))
+                        Text(LumiPluginLocalization.string("Up", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
                     }
@@ -169,7 +170,7 @@ public struct NetworkMenuBarPopupView: View {
                         )
                         .stroke(theme.error.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(String(localized: "Collecting...", bundle: .module))
+                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -213,7 +214,7 @@ public struct ProcessRowView: View {
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
 
-                Text(String(localized: "PID: \(process.id)", bundle: .module))
+                Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }

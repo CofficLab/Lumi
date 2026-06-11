@@ -2,6 +2,7 @@ import os
 import SwiftUI
 import LumiUI
 import SuperLogKit
+import LumiCoreKit
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()
@@ -16,9 +17,9 @@ struct BrewManagerView: View {
 
         var localizedName: String {
             switch self {
-            case .installed: return String(localized: "Installed", bundle: .module)
-            case .updates: return String(localized: "Updates", bundle: .module)
-            case .search: return String(localized: "Search", bundle: .module)
+            case .installed: return LumiPluginLocalization.string("Installed", bundle: .module)
+            case .updates: return LumiPluginLocalization.string("Updates", bundle: .module)
+            case .search: return LumiPluginLocalization.string("Search", bundle: .module)
             }
         }
 
@@ -51,8 +52,8 @@ struct BrewManagerView: View {
                 case .installed:
                     BrewListView(
                         packages: viewModel.installedPackages,
-                        emptyMessage: String(localized: "No packages installed", bundle: .module),
-                        actionButtonTitle: String(localized: "Uninstall", bundle: .module),
+                        emptyMessage: LumiPluginLocalization.string("No packages installed", bundle: .module),
+                        actionButtonTitle: LumiPluginLocalization.string("Uninstall", bundle: .module),
                         actionButtonColor: Color(hex: "FF453A")
                     ) { package in
                         Task { await viewModel.uninstall(package: package) }
@@ -70,8 +71,8 @@ struct BrewManagerView: View {
 
                         BrewListView(
                             packages: viewModel.outdatedPackages,
-                            emptyMessage: String(localized: "All packages are up to date", bundle: .module),
-                            actionButtonTitle: String(localized: "Update", bundle: .module),
+                            emptyMessage: LumiPluginLocalization.string("All packages are up to date", bundle: .module),
+                            actionButtonTitle: LumiPluginLocalization.string("Update", bundle: .module),
                             actionButtonColor: Color(hex: "0A84FF")
                         ) { package in
                             Task { await viewModel.upgrade(package: package) }
@@ -101,8 +102,8 @@ struct BrewManagerView: View {
 
                         BrewListView(
                             packages: viewModel.searchResults,
-                            emptyMessage: viewModel.searchText.isEmpty ? String(localized: "Enter keywords to start searching", bundle: .module) : String(localized: "No related packages found", bundle: .module),
-                            actionButtonTitle: String(localized: "Install", bundle: .module),
+                            emptyMessage: viewModel.searchText.isEmpty ? LumiPluginLocalization.string("Enter keywords to start searching", bundle: .module) : LumiPluginLocalization.string("No related packages found", bundle: .module),
+                            actionButtonTitle: LumiPluginLocalization.string("Install", bundle: .module),
                             actionButtonColor: Color(hex: "30D158"),
                             showInstalledStatus: true
                         ) { package in
@@ -117,17 +118,17 @@ struct BrewManagerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if viewModel.isLoading && selectedTab != .search {
-                ProgressView(String(localized: "Processing...", bundle: .module))
+                ProgressView(LumiPluginLocalization.string("Processing...", bundle: .module))
                     .padding()
                     .background(Material.regularMaterial)
                     .cornerRadius(8)
             }
         }
-        .alert(String(localized: "Error", bundle: .module), isPresented: Binding(
+        .alert(LumiPluginLocalization.string("Error", bundle: .module), isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button(String(localized: "OK", bundle: .module), role: .cancel) { }
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
@@ -190,7 +191,7 @@ struct BrewPackageRow: View {
                             .font(.system(size: 15, weight: .medium))
 
                         if package.isCask {
-                            AppTag(String(localized: "Cask", bundle: .module), style: .accent)
+                            AppTag(LumiPluginLocalization.string("Cask", bundle: .module), style: .accent)
                         }
 
                         if showInstalledStatus {
@@ -210,12 +211,12 @@ struct BrewPackageRow: View {
                     }
 
                     HStack(spacing: 8) {
-                        Text(String(localized: "Version: \(package.version)", bundle: .module))
+                        Text(LumiPluginLocalization.string("Version: \(package.version)", bundle: .module))
                             .font(.caption2)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         if let installedVer = package.installedVersion, installedVer != package.version {
-                            Text(String(localized: "Installed: \(installedVer)", bundle: .module))
+                            Text(LumiPluginLocalization.string("Installed: \(installedVer)", bundle: .module))
                                 .font(.caption2)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }

@@ -11,8 +11,8 @@ public actor TextActionsPlugin: SuperPlugin, SuperLog {
 
     public static let id = "TextActions"
     public static let navigationId = "text_actions"
-    public static let displayName = String(localized: "Text Actions", bundle: .module)
-    public static let description = String(localized: "Selected text actions menu", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Text Actions", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Selected text actions menu", bundle: .module)
     public static let iconName = "text.cursor"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 60 }

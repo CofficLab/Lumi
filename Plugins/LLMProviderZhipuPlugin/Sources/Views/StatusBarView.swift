@@ -1,6 +1,7 @@
 import LumiUI
 import SwiftUI
 import Foundation
+import LumiCoreKit
 
 /// 智谱 GLM 配额状态栏视图
 ///
@@ -52,7 +53,7 @@ struct StatusBarView: View {
                 Image(systemName: "chart.bar.fill")
                     .font(.appMicroEmphasized)
 
-                Text(String(localized: "加载中...", bundle: .module))
+                Text(LumiPluginLocalization.string("加载中...", bundle: .module))
                     .font(.appMicro)
             }
             .padding(.horizontal, 8)

@@ -6,7 +6,7 @@ import LumiCoreKit
 struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "create_new_conversation",
-        displayName: String(localized: "Create New Conversation", bundle: .module),
+        displayName: LumiPluginLocalization.string("Create New Conversation", bundle: .module),
         description: """
         Create a new conversation session.
 
@@ -40,7 +40,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     }
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
-        String(localized: "创建新对话", bundle: .module)
+        LumiPluginLocalization.string("创建新对话", bundle: .module)
     }
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
@@ -90,7 +90,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "delete_conversation",
-        displayName: String(localized: "Delete Conversation", bundle: .module),
+        displayName: LumiPluginLocalization.string("Delete Conversation", bundle: .module),
         description: """
         Delete a specified conversation session. This action is irreversible and will permanently remove the conversation and all its messages.
 
@@ -124,10 +124,10 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         guard let id = arguments["conversationId"]?.stringValue else {
-            return String(localized: "删除对话", bundle: .module)
+            return LumiPluginLocalization.string("删除对话", bundle: .module)
         }
         let shortId = String(id.prefix(8))
-        return String(localized: "删除对话 \(shortId)", bundle: .module)
+        return LumiPluginLocalization.string("删除对话 \(shortId)", bundle: .module)
     }
 
     func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
@@ -191,7 +191,7 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_recent_conversations",
-        displayName: String(localized: "Get Recent Conversations", bundle: .module),
+        displayName: LumiPluginLocalization.string("Get Recent Conversations", bundle: .module),
         description: """
         Get the IDs and titles of the most recent conversations.
 
@@ -224,7 +224,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
     }
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
-        String(localized: "获取最近的对话列表", bundle: .module)
+        LumiPluginLocalization.string("获取最近的对话列表", bundle: .module)
     }
 
     private struct ConversationInfo: Sendable {
@@ -291,8 +291,8 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
 struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_conversation_count",
-        displayName: String(localized: "Get Conversation Count", bundle: .module),
-        description: String(localized: "Get the total number of conversation histories. Returns the total count of conversations.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Get Conversation Count", bundle: .module),
+        description: LumiPluginLocalization.string("Get the total number of conversation histories. Returns the total count of conversations.", bundle: .module)
     )
 
     private let chatService: any LumiChatServicing
@@ -309,7 +309,7 @@ struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
     }
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
-        String(localized: "获取对话总数", bundle: .module)
+        LumiPluginLocalization.string("获取对话总数", bundle: .module)
     }
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
@@ -353,7 +353,7 @@ struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
 struct SetConversationProjectLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "set_conversation_project",
-        displayName: String(localized: "Set Conversation Project", bundle: .module),
+        displayName: LumiPluginLocalization.string("Set Conversation Project", bundle: .module),
         description: """
         Set or remove the project association for a specified conversation.
 
@@ -390,7 +390,7 @@ struct SetConversationProjectLumiTool: LumiAgentTool, @unchecked Sendable {
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         let convId = arguments["conversationId"]?.stringValue.map { String($0.prefix(8)) } ?? "unknown"
-        return String(localized: "设置对话项目: \(convId)", bundle: .module)
+        return LumiPluginLocalization.string("设置对话项目: \(convId)", bundle: .module)
     }
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {

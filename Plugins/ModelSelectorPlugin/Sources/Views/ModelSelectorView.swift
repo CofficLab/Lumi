@@ -100,7 +100,7 @@ public struct ModelSelectorView: View, SuperLog {
                                 searchText: searchText,
                                 localModelInfosByProvider: localModelInfosByProvider
                             ),
-                            emptyMessage: String(localized: "No Providers", bundle: .module)
+                            emptyMessage: LumiPluginLocalization.string("No Providers", bundle: .module)
                         )
                     case .provider(let providerId):
                         singleProviderList(providerId: providerId)
@@ -205,7 +205,7 @@ public struct ModelSelectorView: View, SuperLog {
             AppEmptyState(
                 icon: "clock.arrow.circlepath",
                 title: "No Frequent Models",
-                description: String(localized: "No Frequent Models Description", bundle: .module)
+                description: LumiPluginLocalization.string("No Frequent Models Description", bundle: .module)
             )
         } else {
             List {
@@ -237,7 +237,7 @@ public struct ModelSelectorView: View, SuperLog {
             AppEmptyState(
                 icon: "bolt.fill",
                 title: "No Fast Models",
-                description: String(localized: "No Fast Models Description", bundle: .module)
+                description: LumiPluginLocalization.string("No Fast Models Description", bundle: .module)
             )
         } else {
             List {
@@ -285,7 +285,7 @@ public struct ModelSelectorView: View, SuperLog {
                 provider: provider,
                 searchText: searchText
             )
-            let fallbackSeries = String(localized: "Other", bundle: .module)
+            let fallbackSeries = LumiPluginLocalization.string("Other", bundle: .module)
             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                 Section(header: Text(seriesName).font(.system(size: 13, weight: .regular)).foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))) {
@@ -365,7 +365,7 @@ extension ModelSelectorView {
     @ViewBuilder
     private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
-            Text("", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("", bundle: .module))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Text(provider.displayName)
                 .font(.system(size: 15, weight: .medium))

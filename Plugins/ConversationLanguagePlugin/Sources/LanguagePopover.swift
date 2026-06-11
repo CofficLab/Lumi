@@ -1,5 +1,6 @@
 import AgentToolKit
 import SwiftUI
+import LumiCoreKit
 
 struct LanguagePopover: View {
     let selectedLanguage: LanguagePreference
@@ -7,7 +8,7 @@ struct LanguagePopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "Response Language", bundle: .module))
+            Text(LumiPluginLocalization.string("Response Language", bundle: .module))
                 .font(.system(size: 13, weight: .semibold))
 
             ForEach(LanguagePreference.allCases) { language in

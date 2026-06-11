@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
+import LumiCoreKit
 
 /// 追加任务工具
 ///
@@ -64,17 +65,17 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         let conversationId = context.conversationId.uuidString
 
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
-            return String(localized: "Error: tasks array is required", bundle: .module)
+            return LumiPluginLocalization.string("Error: tasks array is required", bundle: .module)
         }
 
         guard !tasksArray.isEmpty else {
-            return String(localized: "Error: tasks array must not be empty", bundle: .module)
+            return LumiPluginLocalization.string("Error: tasks array must not be empty", bundle: .module)
         }
 
         let items = TaskToolInputNormalizer.normalize(tasksArray)
 
         guard !items.isEmpty else {
-            return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
+            return LumiPluginLocalization.string("Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
         }
 
         let manager = TaskStateManager.shared
@@ -84,7 +85,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         } catch {
             AutoTaskPlugin.logger.error("\(Self.t)Failed to append tasks for cid=\(conversationId.prefix(8)): \(error.localizedDescription)")
             return String(
-                format: String(localized: "Error: failed to save tasks: %@", bundle: .module),
+                format: LumiPluginLocalization.string("Error: failed to save tasks: %@", bundle: .module),
                 error.localizedDescription
             )
         }
@@ -94,7 +95,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         }
 
         guard !appendedTasks.isEmpty else {
-            return String(localized: "No tasks appended: task list already reached the maximum size.", bundle: .module)
+            return LumiPluginLocalization.string("No tasks appended: task list already reached the maximum size.", bundle: .module)
         }
 
         // 通知 UI 刷新
@@ -105,7 +106,7 @@ public struct AppendTaskTool: SuperAgentTool, SuperLog {
         )
 
         let appendedLabel = String(
-            format: String(localized: "Appended %lld tasks:", bundle: .module),
+            format: LumiPluginLocalization.string("Appended %lld tasks:", bundle: .module),
             appendedTasks.count
         )
         var result = "✅ \(appendedLabel)\n\n"

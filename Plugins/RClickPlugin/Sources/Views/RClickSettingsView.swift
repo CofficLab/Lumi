@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct RClickSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -10,7 +11,7 @@ public struct RClickSettingsView: View {
     public var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
-                Text(String(localized: "Preview", bundle: .module))
+                Text(LumiPluginLocalization.string("Preview", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textSecondary)
 
@@ -33,10 +34,10 @@ public struct RClickSettingsView: View {
                                     .foregroundColor(theme.primary)
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(String(localized: "Enable Finder Extension", bundle: .module))
+                                    Text(LumiPluginLocalization.string("Enable Finder Extension", bundle: .module))
                                         .font(.appTitle)
                                         .foregroundColor(theme.textPrimary)
-                                    Text(String(localized: "The right-click menu functionality requires the Finder extension to be enabled in System Settings.", bundle: .module))
+                                    Text(LumiPluginLocalization.string("The right-click menu functionality requires the Finder extension to be enabled in System Settings.", bundle: .module))
                                         .font(.appCaption)
                                         .foregroundColor(theme.textSecondary)
                                 }
@@ -45,12 +46,12 @@ public struct RClickSettingsView: View {
                             }
 
                             HStack(spacing: 8) {
-                                AppButton(localized: "Open System Settings", table: "Localizable", style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
+                                AppButton(localized: "Open System Settings", table: "Localizable", bundle: .module, style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
                                 .frame(width: 180)
 
                                 Spacer()
 
-                                Text(String(localized: "System Settings → Privacy & Security → Extensions → Added Extensions", bundle: .module))
+                                Text(LumiPluginLocalization.string("System Settings → Privacy & Security → Extensions → Added Extensions", bundle: .module))
                                     .font(.appMicro)
                                     .foregroundColor(theme.textTertiary)
                             }
@@ -59,7 +60,7 @@ public struct RClickSettingsView: View {
 
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "General Actions", bundle: .module))
+                            Text(LumiPluginLocalization.string("General Actions", bundle: .module))
                                 .font(.appTitle)
                                 .foregroundColor(theme.textPrimary)
 
@@ -91,11 +92,11 @@ public struct RClickSettingsView: View {
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text(String(localized: "New File Menu", bundle: .module))
+                                Text(LumiPluginLocalization.string("New File Menu", bundle: .module))
                                     .font(.appTitle)
                                     .foregroundColor(theme.textPrimary)
                                 Spacer()
-                                AppButton(localized: "Add Template", table: "Localizable", style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
+                                AppButton(localized: "Add Template", table: "Localizable", bundle: .module, style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
                                 .frame(width: 120)
                             }
 
@@ -105,7 +106,7 @@ public struct RClickSettingsView: View {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
                                             .foregroundColor(theme.textSecondary)
-                                        Text(String(localized: "Enable 'New File' Submenu", bundle: .module))
+                                        Text(LumiPluginLocalization.string("Enable 'New File' Submenu", bundle: .module))
                                             .font(.appBody)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -149,11 +150,11 @@ public struct RClickSettingsView: View {
 
                     AppCard {
                         HStack {
-                            Text(String(localized: "Reset to Defaults", bundle: .module))
+                            Text(LumiPluginLocalization.string("Reset to Defaults", bundle: .module))
                                 .font(.appBodyEmphasized)
                                 .foregroundColor(theme.error)
                             Spacer()
-                            AppButton(localized: "Reset", table: "Localizable", style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
+                            AppButton(localized: "Reset", table: "Localizable", bundle: .module, style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
                             .frame(width: 100)
                         }
                     }

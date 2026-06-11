@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 /// 编辑器无内容状态视图。
 ///
@@ -6,7 +7,7 @@ import SwiftUI
 /// 比面板级空态更细粒度的占位反馈。
 public struct EditorEmptyContentStateView: View {
     public var body: some View {
-        Text(String(localized: "No content available", bundle: .module))
+        Text(LumiPluginLocalization.string("No content available", bundle: .module))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

@@ -43,7 +43,7 @@ private struct ChatLanguagePopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("语言", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("语言", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

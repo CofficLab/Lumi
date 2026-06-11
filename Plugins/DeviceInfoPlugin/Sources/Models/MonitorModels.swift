@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 // MARK: - Monitoring Data Models
 
@@ -47,7 +48,7 @@ public struct ResourceUsage: Equatable {
     }
 
     public static var empty: ResourceUsage {
-        ResourceUsage(percentage: 0, description: String(localized: "--", bundle: .module), history: [])
+        ResourceUsage(percentage: 0, description: LumiPluginLocalization.string("--", bundle: .module), history: [])
     }
 }
 

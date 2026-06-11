@@ -14,8 +14,8 @@ public actor LSPInlayHintEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPInlayHintEditorPlugin()
     public static let id = "LSPInlayHintEditor"
-    public static let displayName = String(localized: "LSP Inlay Hints", bundle: .module)
-    public static let description = String(localized: "Displays type inference and parameter name hints inline.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("LSP Inlay Hints", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Displays type inference and parameter name hints inline.", bundle: .module)
     public static let iconName = "textformat.size"
     public static let order = 22
     public static var category: PluginCategory { .editor }

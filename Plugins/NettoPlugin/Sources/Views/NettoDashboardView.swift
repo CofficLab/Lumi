@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 public struct NettoDashboardView: View {
     @StateObject private var service = FirewallService.shared
@@ -8,7 +9,7 @@ public struct NettoDashboardView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(String(localized: "Netto Firewall", bundle: .module))
+                Text(LumiPluginLocalization.string("Netto Firewall", bundle: .module))
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 Spacer()
@@ -34,7 +35,7 @@ public struct NettoDashboardView: View {
             HSplitView {
                 // Left: Apps List
                 VStack(alignment: .leading) {
-                    Text(String(localized: "Apps", bundle: .module))
+                    Text(LumiPluginLocalization.string("Apps", bundle: .module))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)
@@ -51,7 +52,7 @@ public struct NettoDashboardView: View {
                 
                 // Right: Events
                 VStack(alignment: .leading) {
-                    Text(String(localized: "Recent Events", bundle: .module))
+                    Text(LumiPluginLocalization.string("Recent Events", bundle: .module))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)

@@ -8,8 +8,8 @@ public enum NettoPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.netto",
-        displayName: String(localized: "Netto Firewall", bundle: .module),
-        description: String(localized: "Manage network permissions for macOS applications.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
+        description: LumiPluginLocalization.string("Manage network permissions for macOS applications.", bundle: .module),
         order: 99
     )
 

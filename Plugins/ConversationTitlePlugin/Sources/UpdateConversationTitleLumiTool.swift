@@ -4,7 +4,7 @@ import LumiCoreKit
 struct UpdateConversationTitleLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "update_conversation_title",
-        displayName: String(localized: "Update Conversation Title", bundle: .module),
+        displayName: LumiPluginLocalization.string("Update Conversation Title", bundle: .module),
         description: """
         Update the title of a specified conversation. Provide conversationId (UUID) and title.
         """

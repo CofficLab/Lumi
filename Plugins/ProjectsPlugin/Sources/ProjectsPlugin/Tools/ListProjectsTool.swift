@@ -4,8 +4,8 @@ import LumiCoreKit
 struct ListProjectsTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "list_projects",
-        displayName: String(localized: "List Projects", bundle: .module),
-        description: String(localized: "List saved projects with project names, paths, and last used times.", bundle: .module)
+        displayName: LumiPluginLocalization.string("List Projects", bundle: .module),
+        description: LumiPluginLocalization.string("List saved projects with project names, paths, and last used times.", bundle: .module)
     )
 
     private let maxLimit = 500

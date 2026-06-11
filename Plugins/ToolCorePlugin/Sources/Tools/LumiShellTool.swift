@@ -4,8 +4,8 @@ import LumiCoreKit
 public struct LumiShellTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "run_command",
-        displayName: String(localized: "Run Command", bundle: .module),
-        description: String(localized: "Execute a shell command in the terminal.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Run Command", bundle: .module),
+        description: LumiPluginLocalization.string("Execute a shell command in the terminal.", bundle: .module)
     )
 
     private static let highRiskCommands: Set<String> = [

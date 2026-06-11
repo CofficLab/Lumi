@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import LumiCoreKit
 
 /// Vue 组件结构大纲视图
 ///
@@ -74,7 +75,7 @@ struct VueOutlineView: View {
             Image(systemName: "curlybraces")
                 .font(.system(size: 24))
                 .foregroundStyle(.quaternary)
-            Text("Open a .vue file to see outline", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("Open a .vue file to see outline", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }

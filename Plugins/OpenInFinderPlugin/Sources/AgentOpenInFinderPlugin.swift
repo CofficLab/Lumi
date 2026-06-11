@@ -11,8 +11,8 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-finder",
-        displayName: String(localized: "Open in Finder", bundle: .module),
-        description: String(localized: "Open current project in Finder", bundle: .module),
+        displayName: LumiPluginLocalization.string("Open in Finder", bundle: .module),
+        description: LumiPluginLocalization.string("Open current project in Finder", bundle: .module),
         order: 96
     )
 
@@ -67,7 +67,7 @@ public struct OpenInFinderStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Finder 中打开当前项目", bundle: .module))
+            .help(LumiPluginLocalization.string("在 Finder 中打开当前项目", bundle: .module))
         }
     }
 
@@ -77,13 +77,13 @@ public struct OpenInFinderStatusBarView: View {
             Image(systemName: "folder.fill")
                 .font(.appMicro)
 
-            Text(String(localized: "Finder", bundle: .module))
+            Text(LumiPluginLocalization.string("Finder", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", bundle: .module))
+        .help(LumiPluginLocalization.string("无项目", bundle: .module))
     }
 
     private func openInFinder() {
@@ -109,7 +109,7 @@ public struct OpenInFinderDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Finder", bundle: .module))
+                Text(LumiPluginLocalization.string("Finder", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -120,7 +120,7 @@ public struct OpenInFinderDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", bundle: .module))
+                        Text(LumiPluginLocalization.string("打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -131,7 +131,7 @@ public struct OpenInFinderDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", bundle: .module))
+                Text(LumiPluginLocalization.string("项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -152,7 +152,7 @@ public struct OpenInFinderDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", bundle: .module))
+                .help(LumiPluginLocalization.string("复制路径", bundle: .module))
             }
         }
         .padding()

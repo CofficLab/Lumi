@@ -2,6 +2,7 @@ import Foundation
 import os
 import SwiftUI
 import SuperLogKit
+import LumiCoreKit
 
 private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?
@@ -176,10 +177,10 @@ public struct TaskDisplayItem: Identifiable, Equatable {
 
     public var statusText: String {
         switch status {
-        case .pending: String(localized: "Pending", bundle: .module)
-        case .inProgress: String(localized: "In Progress", bundle: .module)
-        case .completed: String(localized: "Completed", bundle: .module)
-        case .skipped: String(localized: "Skipped", bundle: .module)
+        case .pending: LumiPluginLocalization.string("Pending", bundle: .module)
+        case .inProgress: LumiPluginLocalization.string("In Progress", bundle: .module)
+        case .completed: LumiPluginLocalization.string("Completed", bundle: .module)
+        case .skipped: LumiPluginLocalization.string("Skipped", bundle: .module)
         }
     }
 }

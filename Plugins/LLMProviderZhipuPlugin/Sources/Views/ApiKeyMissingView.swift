@@ -14,19 +14,19 @@ struct ApiKeyMissingView: View {
     var body: some View {
         ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(String(localized: "Zhipu API Key required", bundle: .module))
+                Text(LumiPluginLocalization.string("Zhipu API Key required", bundle: .module))
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundColor(theme.textPrimary)
 
-                Text(String(localized: "Configure your Zhipu API Key below, then resend your message.", bundle: .module))
+                Text(LumiPluginLocalization.string("Configure your Zhipu API Key below, then resend your message.", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
 
                 if let url = URL(string: ZhipuProvider.apiKeyHelpURL ?? "") {
                     Link(destination: url) {
                         Label(
-                            String(localized: "Get API Key on Zhipu Open Platform", bundle: .module),
+                            LumiPluginLocalization.string("Get API Key on Zhipu Open Platform", bundle: .module),
                             systemImage: "arrow.up.right.square"
                         )
                         .font(.appCaption)
@@ -37,7 +37,7 @@ struct ApiKeyMissingView: View {
 
                 HStack(alignment: .center, spacing: 8) {
                     AppInputField(
-                        LocalizedStringKey(String(localized: "Enter Zhipu API Key", bundle: .module)),
+                        LocalizedStringKey(LumiPluginLocalization.string("Enter Zhipu API Key", bundle: .module)),
                         text: Binding(
                             get: { apiKey },
                             set: { newValue in
@@ -58,8 +58,8 @@ struct ApiKeyMissingView: View {
                     }
                     .help(
                         isApiKeyVisible
-                            ? String(localized: "Hide API Key", bundle: .module)
-                            : String(localized: "Show API Key", bundle: .module)
+                            ? LumiPluginLocalization.string("Hide API Key", bundle: .module)
+                            : LumiPluginLocalization.string("Show API Key", bundle: .module)
                     )
                 }
             }

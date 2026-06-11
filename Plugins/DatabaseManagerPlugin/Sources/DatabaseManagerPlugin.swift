@@ -13,8 +13,8 @@ public enum DatabaseManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.database-manager",
-        displayName: String(localized: "Database", bundle: .module),
-        description: String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module),
+        displayName: LumiPluginLocalization.string("Database", bundle: .module),
+        description: LumiPluginLocalization.string("Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module),
         order: 50
     )
 

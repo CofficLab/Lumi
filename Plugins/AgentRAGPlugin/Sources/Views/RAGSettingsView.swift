@@ -1,6 +1,7 @@
 import LumiUI
 import SuperLogKit
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
@@ -20,8 +21,8 @@ public struct RAGSettingsView: View, SuperLog {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "RAG 索引状态", bundle: .module),
-            subtitle: String(localized: "Manage semantic indexes for tracked projects.", bundle: .module),
+            title: LumiPluginLocalization.string("RAG 索引状态", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Manage semantic indexes for tracked projects.", bundle: .module),
             showHeader: false
         ) {
             actionsCard
@@ -30,7 +31,7 @@ public struct RAGSettingsView: View, SuperLog {
                 AppCard {
                     AppEmptyState(
                         icon: "folder.badge.questionmark",
-                        title: String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", bundle: .module)
+                        title: LumiPluginLocalization.string("请先选择或添加项目，RAG 才能建立与展示索引。", bundle: .module)
                     )
                     .frame(minHeight: 160)
                 }
@@ -54,7 +55,7 @@ public struct RAGSettingsView: View, SuperLog {
         .onRAGIndexProgressDidChange { event in
             progressByPath[event.projectPath] = event
             if event.isFinished {
-                message = String(format: String(localized: "Index update completed: %@", bundle: .module), event.projectPath)
+                message = String(format: LumiPluginLocalization.string("Index update completed: %@", bundle: .module), event.projectPath)
                 Task { await loadStatus() }
             }
         }
@@ -62,10 +63,10 @@ public struct RAGSettingsView: View, SuperLog {
 
     private var actionsCard: some View {
         AppCard {
-            AppSettingsSection(title: String(localized: "Actions", bundle: .module), spacing: 12) {
+            AppSettingsSection(title: LumiPluginLocalization.string("Actions", bundle: .module), spacing: 12) {
                 HStack(spacing: 8) {
                     AppButton(
-                        String(localized: "刷新全部状态", bundle: .module),
+                        LumiPluginLocalization.string("刷新全部状态", bundle: .module),
                         style: .secondary,
                         fillsWidth: true
                     ) {
@@ -74,7 +75,7 @@ public struct RAGSettingsView: View, SuperLog {
                     .disabled(isLoading)
 
                     AppButton(
-                        String(localized: "重建全部索引", bundle: .module),
+                        LumiPluginLocalization.string("重建全部索引", bundle: .module),
                         style: .primary,
                         fillsWidth: true
                     ) {
@@ -89,9 +90,9 @@ public struct RAGSettingsView: View, SuperLog {
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
         AppCard {
-            AppSettingsSection(title: String(localized: "运行时", bundle: .module), spacing: 8) {
+            AppSettingsSection(title: LumiPluginLocalization.string("运行时", bundle: .module), spacing: 8) {
                 GlassKeyValueRow(
-                    label: String(localized: "Vector Backend", bundle: .module),
+                    label: LumiPluginLocalization.string("Vector Backend", bundle: .module),
                     value: info.vectorBackend.rawValue
                 )
             }
@@ -104,57 +105,57 @@ public struct RAGSettingsView: View, SuperLog {
             AppSettingsSection(title: project.name, subtitle: project.path, spacing: 12) {
                 if let status = statusesByPath[project.path] {
                     GlassKeyValueRow(
-                        label: String(localized: "最近索引", bundle: .module),
+                        label: LumiPluginLocalization.string("最近索引", bundle: .module),
                         value: relativeDate(status.lastIndexedAt)
                     )
                     GlassKeyValueRow(
-                        label: String(localized: "文件数", bundle: .module),
+                        label: LumiPluginLocalization.string("文件数", bundle: .module),
                         value: "\(status.fileCount)"
                     )
                     GlassKeyValueRow(
-                        label: String(localized: "片段数", bundle: .module),
+                        label: LumiPluginLocalization.string("片段数", bundle: .module),
                         value: "\(status.chunkCount)"
                     )
                     AppSettingsRow {
                         HStack {
-                            Text(String(localized: "状态", bundle: .module))
+                            Text(LumiPluginLocalization.string("状态", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundColor(theme.textSecondary)
                             Spacer()
                             GlassBadge(
                                 text: LocalizedStringKey(
                                     status.isStale
-                                        ? String(localized: "已过期", bundle: .module)
-                                        : String(localized: "最新", bundle: .module)
+                                        ? LumiPluginLocalization.string("已过期", bundle: .module)
+                                        : LumiPluginLocalization.string("最新", bundle: .module)
                                 ),
                                 style: status.isStale ? .warning : .success
                             )
                         }
                     }
                 } else if isLoading {
-                    Text(String(localized: "读取中…", bundle: .module))
+                    Text(LumiPluginLocalization.string("读取中…", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 } else {
-                    Text(String(localized: "尚未建立索引", bundle: .module))
+                    Text(LumiPluginLocalization.string("尚未建立索引", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
 
                 if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                     ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
-                    Text(String(format: String(localized: "Progress: %lld/%lld", bundle: .module), progress.scannedFiles, progress.totalFiles))
+                    Text(String(format: LumiPluginLocalization.string("Progress: %lld/%lld", bundle: .module), progress.scannedFiles, progress.totalFiles))
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
 
                 HStack(spacing: 8) {
-                    AppButton(String(localized: "刷新", bundle: .module), style: .secondary, fillsWidth: true) {
+                    AppButton(LumiPluginLocalization.string("刷新", bundle: .module), style: .secondary, fillsWidth: true) {
                         Task { await refreshProjectStatus(projectPath: project.path) }
                     }
                     .disabled(isLoading)
 
-                    AppButton(String(localized: "重建", bundle: .module), style: .primary, fillsWidth: true) {
+                    AppButton(LumiPluginLocalization.string("重建", bundle: .module), style: .primary, fillsWidth: true) {
                         Task { await rebuildProjectIndex(projectPath: project.path) }
                     }
                     .disabled(isLoading)
@@ -191,7 +192,7 @@ extension RAGSettingsView {
             statusesByPath = next
             message = nil
         } catch {
-            message = String(format: String(localized: "Failed to load index status: %@", bundle: .module), error.localizedDescription)
+            message = String(format: LumiPluginLocalization.string("Failed to load index status: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -200,7 +201,7 @@ extension RAGSettingsView {
         guard !projects.isEmpty else { return }
 
         isLoading = true
-        message = String(localized: "Rebuilding all indexes...", bundle: .module)
+        message = LumiPluginLocalization.string("Rebuilding all indexes...", bundle: .module)
         defer { isLoading = false }
 
         do {
@@ -209,9 +210,9 @@ extension RAGSettingsView {
                 try await service.ensureIndexed(projectPath: project.path, force: true)
             }
             await loadStatus()
-            message = String(localized: "All project indexes updated.", bundle: .module)
+            message = LumiPluginLocalization.string("All project indexes updated.", bundle: .module)
         } catch {
-            message = String(format: String(localized: "Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
+            message = String(format: LumiPluginLocalization.string("Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -225,9 +226,9 @@ extension RAGSettingsView {
             if status == nil {
                 statusesByPath.removeValue(forKey: projectPath)
             }
-            message = String(format: String(localized: "Refreshed: %@", bundle: .module), projectPath)
+            message = String(format: LumiPluginLocalization.string("Refreshed: %@", bundle: .module), projectPath)
         } catch {
-            message = String(format: String(localized: "Refresh failed: %@", bundle: .module), error.localizedDescription)
+            message = String(format: LumiPluginLocalization.string("Refresh failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -239,9 +240,9 @@ extension RAGSettingsView {
             try await service.ensureIndexed(projectPath: projectPath, force: true)
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status
-            message = String(format: String(localized: "Rebuilt: %@", bundle: .module), projectPath)
+            message = String(format: LumiPluginLocalization.string("Rebuilt: %@", bundle: .module), projectPath)
         } catch {
-            message = String(format: String(localized: "Rebuild failed: %@", bundle: .module), error.localizedDescription)
+            message = String(format: LumiPluginLocalization.string("Rebuild failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 }

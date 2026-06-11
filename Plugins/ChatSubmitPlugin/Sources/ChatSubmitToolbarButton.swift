@@ -9,7 +9,7 @@ struct ChatSubmitToolbarButton: View {
     var body: some View {
         sidebarToolbarButton(
             id: "chat-submit",
-            tooltip: String(localized: "Send Message", bundle: .module)
+            tooltip: LumiPluginLocalization.string("Send Message", bundle: .module)
         ) {
             submit()
         } content: {
@@ -21,7 +21,7 @@ struct ChatSubmitToolbarButton: View {
                 .clipShape(Circle())
         }
         .disabled(!canSubmit)
-        .accessibilityLabel(String(localized: "Send Message", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Send Message", bundle: .module))
     }
 
     private var canSubmit: Bool {

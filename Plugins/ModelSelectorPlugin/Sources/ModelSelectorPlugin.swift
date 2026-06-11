@@ -15,8 +15,8 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = false
     public static let id = "ModelSelector"
-    public static let displayName = String(localized: "Model Selector", bundle: .module)
-    public static let description = String(localized: "Select LLM provider and model", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Model Selector", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Select LLM provider and model", bundle: .module)
     public static let iconName = "globe"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 84 }
@@ -54,7 +54,7 @@ public actor ModelSelectorPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "model-selector",
-                title: String(localized: "Select Model", bundle: .module),
+                title: LumiPluginLocalization.string("Select Model", bundle: .module),
                 systemImage: "globe",
                 priority: 20
             )

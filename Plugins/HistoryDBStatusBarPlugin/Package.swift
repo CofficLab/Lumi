@@ -26,11 +26,9 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

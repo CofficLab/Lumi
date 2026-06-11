@@ -13,8 +13,8 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.network-manager",
-        displayName: String(localized: "Network Monitor", bundle: .module),
-        description: String(localized: "Real-time monitoring of network speed, traffic, and connection status", bundle: .module),
+        displayName: LumiPluginLocalization.string("Network Monitor", bundle: .module),
+        description: LumiPluginLocalization.string("Real-time monitoring of network speed, traffic, and connection status", bundle: .module),
         order: 30
     )
     public static let category: LumiPluginCategory = .system

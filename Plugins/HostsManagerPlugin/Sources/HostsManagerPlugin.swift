@@ -11,8 +11,8 @@ public enum HostsManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.hosts-manager",
-        displayName: String(localized: "Hosts Manager", bundle: .module),
-        description: String(localized: "Manage system hosts file configuration", bundle: .module),
+        displayName: LumiPluginLocalization.string("Hosts Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Manage system hosts file configuration", bundle: .module),
         order: 21
     )
 

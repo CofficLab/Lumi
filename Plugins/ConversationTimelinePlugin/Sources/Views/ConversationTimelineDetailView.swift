@@ -2,6 +2,7 @@ import Foundation
 import SuperLogKit
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - 详情视图
 
@@ -19,14 +20,14 @@ public struct ConversationTimelineDetailView: View, SuperLog {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "对话时间线", bundle: .module),
+            title: LumiPluginLocalization.string("对话时间线", bundle: .module),
             systemImage: "timeline.selection",
             subtitle: summaryText
         ) {
             AppIconButton(systemImage: "arrow.clockwise") {
                 loadTimelineItems()
             }
-            .help(String(localized: "刷新", bundle: .module))
+            .help(LumiPluginLocalization.string("刷新", bundle: .module))
         } content: {
             // 消息时间线
             if timelineItems.isEmpty {
@@ -68,7 +69,7 @@ public struct ConversationTimelineDetailView: View, SuperLog {
     }
 
     private var summaryText: String {
-        let messageText = String(format: String(localized: "%lld messages", bundle: .module), timelineItems.count)
+        let messageText = String(format: LumiPluginLocalization.string("%lld messages", bundle: .module), timelineItems.count)
         guard currentContextTokens > 0 else {
             return messageText
         }
@@ -77,9 +78,9 @@ public struct ConversationTimelineDetailView: View, SuperLog {
         let contextText: String
         if currentModelContextLimit > 0 {
             let limitText = timelineService.formatToken(currentModelContextLimit)
-            contextText = String(format: String(localized: "Context %@/%@", bundle: .module), currentText, limitText)
+            contextText = String(format: LumiPluginLocalization.string("Context %@/%@", bundle: .module), currentText, limitText)
         } else {
-            contextText = String(format: String(localized: "Context %@", bundle: .module), currentText)
+            contextText = String(format: LumiPluginLocalization.string("Context %@", bundle: .module), currentText)
         }
         return "\(messageText) · \(contextText)"
     }

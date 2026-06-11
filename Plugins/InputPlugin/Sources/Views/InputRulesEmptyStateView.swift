@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 输入源规则列表空状态视图
 public struct InputRulesEmptyStateView: View {
@@ -17,12 +18,12 @@ public struct InputRulesEmptyStateView: View {
                 .foregroundColor(theme.textSecondary)
 
             // 标题
-            Text(String(localized: "暂无输入源切换规则", bundle: .module))
+            Text(LumiPluginLocalization.string("暂无输入源切换规则", bundle: .module))
                 .font(.appSectionTitle)
                 .foregroundColor(theme.textPrimary)
 
             // 描述文字
-            Text(String(localized: "添加应用和对应的输入源，切换应用时自动切换输入法", bundle: .module))
+            Text(LumiPluginLocalization.string("添加应用和对应的输入源，切换应用时自动切换输入法", bundle: .module))
                 .font(.appBody)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)

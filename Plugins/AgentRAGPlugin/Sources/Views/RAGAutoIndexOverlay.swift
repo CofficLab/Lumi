@@ -1,5 +1,6 @@
 import SuperLogKit
 import SwiftUI
+import LumiCoreKit
 
 /// RAG 自动索引覆盖层
 ///
@@ -92,5 +93,5 @@ extension RAGAutoIndexOverlay {
 }
 
 #Preview("RAG Auto Index Overlay") {
-    RAGAutoIndexOverlay(content: Text("Content", bundle: .module))
+    RAGAutoIndexOverlay(content: Text(verbatim: LumiPluginLocalization.string("Content", bundle: .module)))
 }

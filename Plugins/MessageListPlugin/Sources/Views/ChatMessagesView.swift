@@ -27,6 +27,6 @@ public struct ChatMessagesView: View {
         .frame(maxHeight: .infinity)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor().opacity(0.6))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Chat Messages Area", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Chat Messages Area", bundle: .module))
     }
 }

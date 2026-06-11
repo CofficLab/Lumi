@@ -1,12 +1,17 @@
 import Foundation
-import LumiCoreKit
-import SuperLogKit
 import LLMKit
+import LLMProviderKit
+import LumiCoreKit
 import ModelRouterKit
+import SuperLogKit
+
+public protocol ProjectIssueScannerProviderType {
+    static var hasApiKey: Bool { get }
+}
 
 public protocol ProjectIssueScannerLLMService: Sendable {
     func allProviders() -> [LLMProviderInfo]
-    func providerType(forId id: String) -> (any SuperLLMProvider.Type)?
+    func providerType(forId id: String) -> (any ProjectIssueScannerProviderType.Type)?
     func sendMessage(messages: [ChatMessage], config: LLMConfig) async throws -> ChatMessage
 }
 
@@ -133,10 +138,9 @@ public actor DeepIssueAnalyzer: SuperLog {
         let context = collectProjectContext(projectPath: projectPath)
         guard !context.files.isEmpty else { return [] }
 
-        let conversationId = UUID()
         let messages = [
-            ChatMessage(role: .system, conversationId: conversationId, content: systemPrompt),
-            ChatMessage(role: .user, conversationId: conversationId, content: userPrompt(context: context))
+            ChatMessage(role: .system, content: systemPrompt),
+            ChatMessage(role: .user, content: userPrompt(context: context)),
         ]
 
         do {

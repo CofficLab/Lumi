@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
 struct QuotaDetailView: View {
@@ -17,7 +18,7 @@ struct QuotaDetailView: View {
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Zhipu GLM Quota", bundle: .module),
+            title: LumiPluginLocalization.string("Zhipu GLM Quota", bundle: .module),
             systemImage: "chart.bar.fill"
         ) {
             AppIconButton(systemImage: "arrow.clockwise") {
@@ -45,7 +46,7 @@ struct QuotaDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text(String(localized: "Loading...", bundle: .module))
+            Text(LumiPluginLocalization.string("Loading...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -58,7 +59,7 @@ struct QuotaDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             // 等级
             GlassKeyValueRow(
-                label: String(localized: "Level", bundle: .module),
+                label: LumiPluginLocalization.string("Level", bundle: .module),
                 value: data.levelDisplay,
                 labelWidth: 70
             )
@@ -66,7 +67,7 @@ struct QuotaDetailView: View {
             // 进度条
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "Usage Progress", bundle: .module))
+                    Text(LumiPluginLocalization.string("Usage Progress", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
 
@@ -81,13 +82,13 @@ struct QuotaDetailView: View {
                     .progressViewStyle(LinearProgressViewStyle(tint: progressColor(data.usedPercent)))
 
                 HStack {
-                    Text(String(localized: "Remaining \(data.leftPercent)%", bundle: .module))
+                    Text(LumiPluginLocalization.string("Remaining \(data.leftPercent)%", bundle: .module))
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
 
                     Spacer()
 
-                    Text(String(localized: "Total 5 hours", bundle: .module))
+                    Text(LumiPluginLocalization.string("Total 5 hours", bundle: .module))
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -98,7 +99,7 @@ struct QuotaDetailView: View {
             // 重置时间（显示完整日期和相对时间）
             VStack(alignment: .leading, spacing: 4) {
                 GlassKeyValueRow(
-                    label: String(localized: "Reset Time", bundle: .module),
+                    label: LumiPluginLocalization.string("Reset Time", bundle: .module),
                     value: data.resetTime,
                     labelWidth: 70
                 )
@@ -112,7 +113,7 @@ struct QuotaDetailView: View {
             // MCP 每月额度
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "MCP Monthly Quota", bundle: .module))
+                    Text(LumiPluginLocalization.string("MCP Monthly Quota", bundle: .module))
                         .font(.appCaptionEmphasized)
                         .foregroundColor(theme.textPrimary)
 
@@ -122,7 +123,7 @@ struct QuotaDetailView: View {
                 HStack(spacing: 16) {
                     // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "Remaining", bundle: .module))
+                        Text(LumiPluginLocalization.string("Remaining", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Text("\(data.mcpLeftPercent)%")
@@ -134,7 +135,7 @@ struct QuotaDetailView: View {
 
                     // 重置时间
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text(String(localized: "Reset", bundle: .module))
+                        Text(LumiPluginLocalization.string("Reset", bundle: .module))
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Text(data.mcpResetTime)
@@ -155,8 +156,8 @@ struct QuotaDetailView: View {
     private var authErrorContent: some View {
         AppEmptyState(
             icon: "exclamationmark.triangle.fill",
-            title: LocalizedStringKey(String(localized: "Auth expired", bundle: .module)),
-            description: LocalizedStringKey(String(localized: "Please check if Zhipu AI API Key is correctly configured", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("Auth expired", bundle: .module)),
+            description: LocalizedStringKey(LumiPluginLocalization.string("Please check if Zhipu AI API Key is correctly configured", bundle: .module))
         )
     }
 
@@ -164,8 +165,8 @@ struct QuotaDetailView: View {
     private var unavailableContent: some View {
         AppEmptyState(
             icon: "exclamationmark.triangle",
-            title: LocalizedStringKey(String(localized: "Quota unavailable", bundle: .module)),
-            description: LocalizedStringKey(String(localized: "Please check network connection or try again later", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("Quota unavailable", bundle: .module)),
+            description: LocalizedStringKey(LumiPluginLocalization.string("Please check network connection or try again later", bundle: .module))
         )
     }
 

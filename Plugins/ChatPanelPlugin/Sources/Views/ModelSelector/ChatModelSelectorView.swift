@@ -128,7 +128,7 @@ struct ChatModelSelectorView: View {
             .padding(.horizontal, 20)
             .padding(.top, 20)
 
-            Text("Lumi will choose a provider and model based on tools, message size, and availability.", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("Lumi will choose a provider and model based on tools, message size, and availability.", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 20)

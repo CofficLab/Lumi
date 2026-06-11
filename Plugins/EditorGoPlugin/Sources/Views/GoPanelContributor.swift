@@ -2,6 +2,7 @@ import Foundation
 import EditorService
 import EditorGoCore
 import SwiftUI
+import LumiCoreKit
 
 /// Go 面板贡献者
 ///
@@ -37,7 +38,7 @@ public final class GoPanelContributor: SuperEditorPanelContributor {
         return [
             EditorPanelSuggestion(
                 id: "go.build-output",
-                title: String(localized: "Build", bundle: .module),
+                title: LumiPluginLocalization.string("Build", bundle: .module),
                 systemImage: "hammer",
                 placement: .bottom,
                 order: 500,
@@ -59,7 +60,7 @@ public final class GoPanelContributor: SuperEditorPanelContributor {
             ),
             EditorPanelSuggestion(
                 id: "go.test-results",
-                title: String(localized: "Tests", bundle: .module),
+                title: LumiPluginLocalization.string("Tests", bundle: .module),
                 systemImage: "testtube.2",
                 placement: .bottom,
                 order: 510,

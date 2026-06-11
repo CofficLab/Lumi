@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct TerminalTabItem: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -23,7 +24,7 @@ public struct TerminalTabItem: View {
             }
             .contextMenu {
                 Button(action: onClose) {
-                    Label(String(localized: "Close Tab", bundle: .module), systemImage: "xmark")
+                    Label(LumiPluginLocalization.string("Close Tab", bundle: .module), systemImage: "xmark")
                 }
             }
     }

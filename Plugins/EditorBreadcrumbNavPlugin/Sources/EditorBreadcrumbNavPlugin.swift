@@ -10,8 +10,8 @@ public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-breadcrumb-header",
-        displayName: String(localized: "Editor Breadcrumb", bundle: .module),
-        description: String(localized: "File path breadcrumb navigation below editor tabs.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Breadcrumb", bundle: .module),
+        description: LumiPluginLocalization.string("File path breadcrumb navigation below editor tabs.", bundle: .module),
         order: 70
     )
 

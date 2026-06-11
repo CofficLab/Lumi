@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct MenuBarSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -8,17 +9,17 @@ public struct MenuBarSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "Menu Bar Manager", bundle: .module),
-            subtitle: String(localized: "Manage your menu bar items", bundle: .module),
+            title: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Manage your menu bar items", bundle: .module),
             showHeader: false
         ) {
             if !service.isPermissionGranted {
                 AppCard {
                     AppEmptyState(
                         icon: "lock.fill",
-                        title: LocalizedStringKey(String(localized: "Permission Required", bundle: .module)),
-                        description: LocalizedStringKey(String(localized: "Accessibility permission is required to manage menu bar items.", bundle: .module)),
-                        actionTitle: LocalizedStringKey(String(localized: "Grant Permission", bundle: .module)),
+                        title: LocalizedStringKey(LumiPluginLocalization.string("Permission Required", bundle: .module)),
+                        description: LocalizedStringKey(LumiPluginLocalization.string("Accessibility permission is required to manage menu bar items.", bundle: .module)),
+                        actionTitle: LocalizedStringKey(LumiPluginLocalization.string("Grant Permission", bundle: .module)),
                         action: { service.requestPermission() }
                     )
                     .frame(minHeight: 220)
@@ -36,7 +37,7 @@ public struct MenuBarSettingsView: View {
     private var itemsCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Menu Bar Items", bundle: .module),
+                title: LumiPluginLocalization.string("Menu Bar Items", bundle: .module),
                 spacing: 8
             ) {
                 ScrollView {
@@ -53,7 +54,7 @@ public struct MenuBarSettingsView: View {
                 HStack {
                     Spacer()
                     AppButton(
-                        String(localized: "Refresh", bundle: .module),
+                        LumiPluginLocalization.string("Refresh", bundle: .module),
                         systemImage: "arrow.clockwise",
                         style: .secondary,
                         size: .small

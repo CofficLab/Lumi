@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 /// 预览构建过程中的加载视图。
 ///
@@ -10,7 +11,7 @@ public struct PreviewBuildingView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "building \(fileName)", bundle: .module))
+            Text(LumiPluginLocalization.string("building \(fileName)", bundle: .module))
                 .font(.callout)
                 .foregroundStyle(.primary)
                 .lineLimit(1)

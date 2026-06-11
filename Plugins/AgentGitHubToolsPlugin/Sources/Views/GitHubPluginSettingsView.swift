@@ -1,6 +1,7 @@
 import LumiUI
 import SuperLogKit
 import SwiftUI
+import LumiCoreKit
 
 /// GitHub 插件设置视图 - 配置 GitHub Token 和 API 选项
 public struct GitHubPluginSettingsView: View, SuperLog {
@@ -19,7 +20,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: String(localized: "GitHub Tools", bundle: .module),
+            title: LumiPluginLocalization.string("GitHub Tools", bundle: .module),
             showHeader: false
         ) {
             tokenCard
@@ -34,12 +35,12 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     private var tokenCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "Personal Access Token", bundle: .module),
+                title: LumiPluginLocalization.string("Personal Access Token", bundle: .module),
                 spacing: 12
             ) {
                 AppSettingsSecureFieldRow(
-                    String(localized: "GitHub Token", bundle: .module),
-                    placeholder: String(localized: "Enter GitHub Token", bundle: .module),
+                    LumiPluginLocalization.string("GitHub Token", bundle: .module),
+                    placeholder: LumiPluginLocalization.string("Enter GitHub Token", bundle: .module),
                     text: $token
                 )
 
@@ -47,7 +48,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(theme.success)
-                        Text(String(localized: "已保存", bundle: .module))
+                        Text(LumiPluginLocalization.string("已保存", bundle: .module))
                             .font(.appCaption)
                             .foregroundColor(theme.success)
                     }
@@ -67,18 +68,18 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     private var apiLimitCard: some View {
         AppCard {
             AppSettingsSection(
-                title: String(localized: "API 限制", bundle: .module),
-                subtitle: String(localized: "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。", bundle: .module),
+                title: LumiPluginLocalization.string("API 限制", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。", bundle: .module),
                 spacing: 12
             ) {
                 limitRow(
-                    title: String(localized: "未认证用户", bundle: .module),
-                    value: String(localized: "60 次/小时", bundle: .module),
+                    title: LumiPluginLocalization.string("未认证用户", bundle: .module),
+                    value: LumiPluginLocalization.string("60 次/小时", bundle: .module),
                     isPositive: false
                 )
                 limitRow(
-                    title: String(localized: "已认证用户", bundle: .module),
-                    value: String(localized: "5,000 次/小时", bundle: .module),
+                    title: LumiPluginLocalization.string("已认证用户", bundle: .module),
+                    value: LumiPluginLocalization.string("5,000 次/小时", bundle: .module),
                     isPositive: true
                 )
 

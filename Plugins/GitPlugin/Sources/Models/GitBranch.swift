@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 /// Git 操作错误类型
 public enum GitError: LocalizedError {
@@ -13,17 +14,17 @@ public enum GitError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notGitRepository:
-            return String(localized: "Not a Git Repository", bundle: .module)
+            return LumiPluginLocalization.string("Not a Git Repository", bundle: .module)
         case .checkoutFailed(let msg):
-            return String(localized: "Checkout Failed: ", bundle: .module) + msg
+            return LumiPluginLocalization.string("Checkout Failed: ", bundle: .module) + msg
         case .createBranchFailed(let msg):
-            return String(localized: "Create Branch Failed: ", bundle: .module) + msg
+            return LumiPluginLocalization.string("Create Branch Failed: ", bundle: .module) + msg
         case .fetchFailed(let msg):
-            return String(localized: "Fetch Failed: ", bundle: .module) + msg
+            return LumiPluginLocalization.string("Fetch Failed: ", bundle: .module) + msg
         case .dirtyWorkingTree:
-            return String(localized: "Working tree has uncommitted changes", bundle: .module)
+            return LumiPluginLocalization.string("Working tree has uncommitted changes", bundle: .module)
         case .invalidBranchName(let msg):
-            return String(localized: "Invalid Branch Name: ", bundle: .module) + msg
+            return LumiPluginLocalization.string("Invalid Branch Name: ", bundle: .module) + msg
         case .unknown(let msg):
             return msg
         }

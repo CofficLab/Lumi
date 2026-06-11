@@ -1,5 +1,6 @@
 import AgentToolKit
 import SwiftUI
+import LumiCoreKit
 
 extension LanguagePreference {
     var shortDisplayName: String {
@@ -19,9 +20,9 @@ extension LanguagePreference {
     var descriptionText: String {
         switch self {
         case .chinese:
-            return String(localized: "Chinese Description", bundle: .module)
+            return LumiPluginLocalization.string("Chinese Description", bundle: .module)
         case .english:
-            return String(localized: "English Description", bundle: .module)
+            return LumiPluginLocalization.string("English Description", bundle: .module)
         }
     }
 }

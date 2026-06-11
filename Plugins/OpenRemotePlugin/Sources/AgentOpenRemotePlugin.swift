@@ -17,8 +17,8 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-remote",
-        displayName: String(localized: "Open Remote Repository", bundle: .module),
-        description: String(localized: "Displays a button in the header to open the current project's remote repository in browser", bundle: .module),
+        displayName: LumiPluginLocalization.string("Open Remote Repository", bundle: .module),
+        description: LumiPluginLocalization.string("Displays a button in the header to open the current project's remote repository in browser", bundle: .module),
         order: 90
     )
 
@@ -85,7 +85,7 @@ public struct OpenRemoteStatusBarView: View {
                     .scaleEffect(0.6)
                     .frame(width: 10, height: 10)
 
-                Text(String(localized: "加载中...", bundle: .module))
+                Text(LumiPluginLocalization.string("加载中...", bundle: .module))
                     .font(.appMicro)
             }
             .padding(.horizontal, 8)
@@ -111,7 +111,7 @@ public struct OpenRemoteStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在浏览器中打开远程仓库", bundle: .module))
+            .help(LumiPluginLocalization.string("在浏览器中打开远程仓库", bundle: .module))
         }
     }
 
@@ -121,13 +121,13 @@ public struct OpenRemoteStatusBarView: View {
             Image(systemName: "safari")
                 .font(.appMicro)
 
-            Text(String(localized: "无远程仓库", bundle: .module))
+            Text(LumiPluginLocalization.string("无远程仓库", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无远程仓库", bundle: .module))
+        .help(LumiPluginLocalization.string("无远程仓库", bundle: .module))
     }
 
     private func updateRemoteURL() {
@@ -216,7 +216,7 @@ public struct OpenRemoteDetailView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.primary)
 
-                Text(String(localized: "远程仓库", bundle: .module))
+                Text(LumiPluginLocalization.string("远程仓库", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -228,7 +228,7 @@ public struct OpenRemoteDetailView: View {
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.up.right.square")
-                            Text(String(localized: "打开", bundle: .module))
+                            Text(LumiPluginLocalization.string("打开", bundle: .module))
                         }
                         .font(.appCaption)
                     }
@@ -241,7 +241,7 @@ public struct OpenRemoteDetailView: View {
             if let url = url {
                 // URL 显示
                 HStack(spacing: 8) {
-                    Text(String(localized: "URL", bundle: .module))
+                    Text(LumiPluginLocalization.string("URL", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                         .frame(width: 60, alignment: .leading)
@@ -262,7 +262,7 @@ public struct OpenRemoteDetailView: View {
                             .font(.appCaption)
                     }
                     .buttonStyle(.plain)
-                    .help(String(localized: "复制 URL", bundle: .module))
+                    .help(LumiPluginLocalization.string("复制 URL", bundle: .module))
                 }
             } else {
                 // 无远程仓库
@@ -273,7 +273,7 @@ public struct OpenRemoteDetailView: View {
                             .font(.appTitle)
                             .foregroundColor(theme.warning)
 
-                        Text(String(localized: "当前项目没有远程仓库", bundle: .module))
+                        Text(LumiPluginLocalization.string("当前项目没有远程仓库", bundle: .module))
                             .font(.appCallout)
                             .foregroundColor(theme.textSecondary)
                     }

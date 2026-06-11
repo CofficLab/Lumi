@@ -42,7 +42,7 @@ public struct EditorPreviewJSONView: View, SuperLog {
             Image(systemName: "curlybraces")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text(String(localized: "No JSON content to preview.", bundle: .module))
+            Text(LumiPluginLocalization.string("No JSON content to preview.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -55,7 +55,7 @@ public struct EditorPreviewJSONView: View, SuperLog {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 28))
                 .foregroundStyle(.orange)
-            Text(String(localized: "Invalid JSON", bundle: .module))
+            Text(LumiPluginLocalization.string("Invalid JSON", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.primary)
             Text(error.localizedDescription)
@@ -142,9 +142,9 @@ enum JSONParseError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .invalidData:
-            return String(localized: "Invalid JSON data", bundle: .module)
+            return LumiPluginLocalization.string("Invalid JSON data", bundle: .module)
         case let .invalidJSONLLine(line):
-            return String(localized: "Invalid JSONL at line \(line)", bundle: .module)
+            return LumiPluginLocalization.string("Invalid JSONL at line \(line)", bundle: .module)
         }
     }
 }
@@ -215,7 +215,7 @@ private struct JSONTreeNode: View {
                 Text("\"\(key)\"")
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(": ", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string(": ", bundle: .module))
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }
@@ -287,7 +287,7 @@ private struct JSONTreeNode: View {
                 Text("\"\(key)\"")
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundColor(Self.keyColor)
-                Text(": ", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string(": ", bundle: .module))
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(theme.workspaceSecondaryTextColor())
             }

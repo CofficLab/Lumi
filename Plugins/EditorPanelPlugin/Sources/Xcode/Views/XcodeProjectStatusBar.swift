@@ -2,6 +2,7 @@ import SwiftUI
 import SuperLogKit
 import LumiUI
 import XcodeKit
+import LumiCoreKit
 
 /// Xcode 项目状态栏视图
 public struct XcodeProjectStatusBar: View, SuperLog {
@@ -86,7 +87,7 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                     }
                 }
             } label: {
-                Text(viewModel.activeScheme ?? String(localized: "Scheme", bundle: .module))
+                Text(viewModel.activeScheme ?? LumiPluginLocalization.string("Scheme", bundle: .module))
                     .lineLimit(1)
             }
         }
@@ -109,7 +110,7 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                     }
                 }
             } label: {
-                Text(viewModel.activeConfiguration ?? String(localized: "Config", bundle: .module))
+                Text(viewModel.activeConfiguration ?? LumiPluginLocalization.string("Config", bundle: .module))
                     .lineLimit(1)
             }
         }
@@ -120,7 +121,7 @@ public struct XcodeProjectStatusBar: View, SuperLog {
         if let destination = viewModel.activeDestination, !destination.isEmpty {
             Text(destination)
                 .lineLimit(1)
-                .help(String(localized: "Target platform for current editor semantic context", bundle: .module))
+                .help(LumiPluginLocalization.string("Target platform for current editor semantic context", bundle: .module))
         }
     }
 
@@ -139,16 +140,16 @@ public struct XcodeProjectStatusDetailView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(String(localized: "Xcode Context", bundle: .module))
+                Text(LumiPluginLocalization.string("Xcode Context", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 buildStatusBadge
             }
 
-            detailRow(String(localized: "Scheme", bundle: .module), viewModel.activeScheme ?? String(localized: "Not Selected", bundle: .module))
-            detailRow(String(localized: "Configuration", bundle: .module), viewModel.activeConfiguration ?? String(localized: "Not Selected", bundle: .module))
-            detailRow(String(localized: "Destination", bundle: .module), viewModel.activeDestination ?? String(localized: "Undetermined", bundle: .module))
-            detailRow(String(localized: "Build Context", bundle: .module), viewModel.buildContextStatusDescription)
+            detailRow(LumiPluginLocalization.string("Scheme", bundle: .module), viewModel.activeScheme ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
+            detailRow(LumiPluginLocalization.string("Configuration", bundle: .module), viewModel.activeConfiguration ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
+            detailRow(LumiPluginLocalization.string("Destination", bundle: .module), viewModel.activeDestination ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
+            detailRow(LumiPluginLocalization.string("Build Context", bundle: .module), viewModel.buildContextStatusDescription)
 
             HStack {
                 Spacer()
@@ -159,10 +160,10 @@ public struct XcodeProjectStatusDetailView: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "Re-resolving...", bundle: .module))
+                            Text(LumiPluginLocalization.string("Re-resolving...", bundle: .module))
                         }
                     } else {
-                        Text(String(localized: "Re-resolve Build Context", bundle: .module))
+                        Text(LumiPluginLocalization.string("Re-resolve Build Context", bundle: .module))
                     }
                 }
                 .buttonStyle(.plain)
@@ -174,21 +175,21 @@ public struct XcodeProjectStatusDetailView: View {
             Divider()
 
             if let snapshot = viewModel.latestEditorSnapshot {
-                detailRow(String(localized: "Workspace", bundle: .module), snapshot.workspaceName)
-                detailRow(String(localized: "Current File", bundle: .module), snapshot.currentFilePath ?? String(localized: "No File Open", bundle: .module))
-                detailRow(String(localized: "Preferred Target", bundle: .module), snapshot.currentFileTarget ?? String(localized: "Undetermined", bundle: .module))
+                detailRow(LumiPluginLocalization.string("Workspace", bundle: .module), snapshot.workspaceName)
+                detailRow(LumiPluginLocalization.string("Current File", bundle: .module), snapshot.currentFilePath ?? LumiPluginLocalization.string("No File Open", bundle: .module))
+                detailRow(LumiPluginLocalization.string("Preferred Target", bundle: .module), snapshot.currentFileTarget ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
                 detailRow(
-                    String(localized: "Matched Targets", bundle: .module),
-                    snapshot.currentFileMatchedTargets.isEmpty ? String(localized: "None", bundle: .module) : snapshot.currentFileMatchedTargets.joined(separator: ", ")
+                    LumiPluginLocalization.string("Matched Targets", bundle: .module),
+                    snapshot.currentFileMatchedTargets.isEmpty ? LumiPluginLocalization.string("None", bundle: .module) : snapshot.currentFileMatchedTargets.joined(separator: ", ")
                 )
                 detailRow(
-                    String(localized: "Scheme Targets", bundle: .module),
-                    snapshot.activeSchemeBuildableTargets.isEmpty ? String(localized: "None", bundle: .module) : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
+                    LumiPluginLocalization.string("Scheme Targets", bundle: .module),
+                    snapshot.activeSchemeBuildableTargets.isEmpty ? LumiPluginLocalization.string("None", bundle: .module) : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
                 )
                 if !viewModel.semanticReport.reasons.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "Semantic Availability", bundle: .module))
+                        Text(LumiPluginLocalization.string("Semantic Availability", bundle: .module))
                             .font(.system(size: 12, weight: .semibold))
                         ForEach(viewModel.semanticReport.reasons) { reason in
                             reasonRow(reason)
@@ -196,7 +197,7 @@ public struct XcodeProjectStatusDetailView: View {
                     }
                 }
             } else {
-                Text(String(localized: "No editor context snapshot available.", bundle: .module))
+                Text(LumiPluginLocalization.string("No editor context snapshot available.", bundle: .module))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -258,13 +259,13 @@ public struct XcodeFileNotInTargetWarning: View {
             HStack {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
-                Text(String(localized: "File Not Registered in Project", bundle: .module))
+                Text(LumiPluginLocalization.string("File Not Registered in Project", bundle: .module))
                     .font(.headline)
             }
 
             Text(
                 String(
-                    format: String(localized: "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", bundle: .module),
+                    format: LumiPluginLocalization.string("\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", bundle: .module),
                     fileName
                 )
             )
@@ -272,10 +273,10 @@ public struct XcodeFileNotInTargetWarning: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                Button(String(localized: "Got It", bundle: .module), action: onDismiss)
+                Button(LumiPluginLocalization.string("Got It", bundle: .module), action: onDismiss)
                     .buttonStyle(.bordered)
 
-                Button(String(localized: "Open in Xcode", bundle: .module)) {
+                Button(LumiPluginLocalization.string("Open in Xcode", bundle: .module)) {
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "")
                 }
                 .buttonStyle(.borderless)

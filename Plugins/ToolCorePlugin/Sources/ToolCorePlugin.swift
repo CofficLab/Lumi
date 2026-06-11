@@ -9,8 +9,8 @@ import os
 public enum ToolCorePlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "ToolCore",
-        displayName: String(localized: "Tool Core", bundle: .module),
-        description: String(localized: "提供 Lumi 的基础工具（文件/命令）。", bundle: .module),
+        displayName: LumiPluginLocalization.string("Tool Core", bundle: .module),
+        description: LumiPluginLocalization.string("提供 Lumi 的基础工具（文件/命令）。", bundle: .module),
         order: 0
     )
 

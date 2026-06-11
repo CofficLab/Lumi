@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/ModelRouterKit"),
@@ -25,22 +26,15 @@ let package = Package(
             name: "ProjectIssueScannerPlugin",
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ModelRouterKit", package: "ModelRouterKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: ".",
-            exclude: [
-                "Tests",
-                "README.md",
-                "Sources/Views",
-                "Sources/Services/DeepIssueAnalyzer.swift",
-                "Sources/Services/IdleScannerService.swift",
-            ],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

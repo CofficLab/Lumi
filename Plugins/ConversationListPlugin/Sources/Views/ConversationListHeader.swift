@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 会话列表头部视图
 /// 显示在会话列表顶部，包含折叠按钮、图标和标题文字
@@ -20,7 +21,7 @@ public struct ConversationListHeader: View {
                 .font(.appCallout)
                 .foregroundColor(theme.primary)
 
-            Text(String(localized: "Conversation History", bundle: .module))
+            Text(LumiPluginLocalization.string("Conversation History", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

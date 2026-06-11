@@ -11,8 +11,8 @@ public enum InputPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.input-manager",
-        displayName: String(localized: "Input Manager", bundle: .module),
-        description: String(localized: "Manage input-related behaviors", bundle: .module),
+        displayName: LumiPluginLocalization.string("Input Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Manage input-related behaviors", bundle: .module),
         order: 70
     )
 

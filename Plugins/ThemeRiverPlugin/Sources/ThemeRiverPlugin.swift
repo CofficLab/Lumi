@@ -6,8 +6,8 @@ public enum ThemeRiverPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.river",
-        displayName: String(localized: "River Theme", bundle: .module),
-        description: String(localized: "River cyan app theme", bundle: .module),
+        displayName: LumiPluginLocalization.string("River Theme", bundle: .module),
+        description: LumiPluginLocalization.string("River cyan app theme", bundle: .module),
         order: 130
     )
 

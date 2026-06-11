@@ -1,6 +1,7 @@
 import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
+import LumiCoreKit
 
 struct ProjectsPopoverView: View {
     @ObservedObject var store: ProjectsStore
@@ -31,7 +32,7 @@ struct ProjectsPopoverView: View {
             Image(systemName: "folder")
                 .font(.system(size: 14, weight: .semibold))
 
-            Text("Projects", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("Projects", bundle: .module))
                 .font(.headline)
 
             Spacer()
@@ -43,7 +44,7 @@ struct ProjectsPopoverView: View {
     @ViewBuilder
     private var projectList: some View {
         if store.projects.isEmpty {
-            AppEmptyState(icon: "folder.badge.plus", title: String(localized: "No Projects", bundle: .module))
+            AppEmptyState(icon: "folder.badge.plus", title: LumiPluginLocalization.string("No Projects", bundle: .module))
             .frame(maxWidth: .infinity, minHeight: 126)
         } else {
             ScrollView {
@@ -64,7 +65,7 @@ struct ProjectsPopoverView: View {
     }
 
     private var footer: some View {
-        AppButton(String(localized: "Open Folder...", bundle: .module), systemImage: "folder.badge.plus", style: .ghost, size: .small, fillsWidth: true) {
+        AppButton(LumiPluginLocalization.string("Open Folder...", bundle: .module), systemImage: "folder.badge.plus", style: .ghost, size: .small, fillsWidth: true) {
             isImporterPresented = true
         }
         .padding(.horizontal, 14)

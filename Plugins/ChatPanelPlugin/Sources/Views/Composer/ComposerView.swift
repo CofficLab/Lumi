@@ -1,6 +1,7 @@
 import EditorChatInputKit
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker: View, VerbosityPicker: View>: View {
     @LumiTheme private var theme
@@ -67,10 +68,10 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker
 
                 if isSending {
                     StopButton(action: onStop)
-                        .help(String(localized: "Stop", bundle: .module))
+                        .help(LumiPluginLocalization.string("Stop", bundle: .module))
                 } else {
                     SendButton(isSending: false, canSend: canSend, action: sendIfPossible)
-                        .help(String(localized: "Send", bundle: .module))
+                        .help(LumiPluginLocalization.string("Send", bundle: .module))
                 }
             }
             .padding(.horizontal, 12)

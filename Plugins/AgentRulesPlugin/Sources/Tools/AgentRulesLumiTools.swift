@@ -54,8 +54,8 @@ struct CreateAgentRuleLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "create_agent_rule",
-        displayName: String(localized: "Create Agent Rule", bundle: .module),
-        description: String(localized: "Create a new rule document in the .agent/rules directory.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Create Agent Rule", bundle: .module),
+        description: LumiPluginLocalization.string("Create a new rule document in the .agent/rules directory.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -85,8 +85,8 @@ struct ListAgentRulesLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "list_agent_rules",
-        displayName: String(localized: "List Agent Rules", bundle: .module),
-        description: String(localized: "List rule documents in the .agent/rules directory.", bundle: .module)
+        displayName: LumiPluginLocalization.string("List Agent Rules", bundle: .module),
+        description: LumiPluginLocalization.string("List rule documents in the .agent/rules directory.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

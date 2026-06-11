@@ -13,8 +13,8 @@ public enum AgentOpenInAntigravityPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-antigravity",
-        displayName: String(localized: "Open in Antigravity", bundle: .module),
-        description: String(localized: "Open current project in Antigravity editor", bundle: .module),
+        displayName: LumiPluginLocalization.string("Open in Antigravity", bundle: .module),
+        description: LumiPluginLocalization.string("Open current project in Antigravity editor", bundle: .module),
         order: 83
     )
 
@@ -90,7 +90,7 @@ public struct OpenInAntigravityStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 Antigravity 中打开当前项目", bundle: .module))
+            .help(LumiPluginLocalization.string("在 Antigravity 中打开当前项目", bundle: .module))
         }
     }
 
@@ -101,13 +101,13 @@ public struct OpenInAntigravityStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text(String(localized: "Antigravity", bundle: .module))
+            Text(LumiPluginLocalization.string("Antigravity", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", bundle: .module))
+        .help(LumiPluginLocalization.string("无项目", bundle: .module))
     }
 
     private func openInAntigravity() {
@@ -133,7 +133,7 @@ public struct OpenInAntigravityDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text(String(localized: "Antigravity", bundle: .module))
+                Text(LumiPluginLocalization.string("Antigravity", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -144,7 +144,7 @@ public struct OpenInAntigravityDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", bundle: .module))
+                        Text(LumiPluginLocalization.string("打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -155,7 +155,7 @@ public struct OpenInAntigravityDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", bundle: .module))
+                Text(LumiPluginLocalization.string("项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -176,7 +176,7 @@ public struct OpenInAntigravityDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", bundle: .module))
+                .help(LumiPluginLocalization.string("复制路径", bundle: .module))
             }
         }
         .padding()

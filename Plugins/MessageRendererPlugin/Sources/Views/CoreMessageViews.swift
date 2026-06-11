@@ -407,7 +407,7 @@ private struct ToolCallRowView: View {
             ) {
                 toggleParameterPopover()
             }
-            .help(String(localized: "调用参数", bundle: .module))
+            .help(LumiPluginLocalization.string("调用参数", bundle: .module))
             .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
                     title: "\(toolCall.name) · 调用参数",
@@ -427,7 +427,7 @@ private struct ToolCallRowView: View {
             ) {
                 toggleResultPopover()
             }
-            .help(String(localized: "调用结果", bundle: .module))
+            .help(LumiPluginLocalization.string("调用结果", bundle: .module))
             .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
                 ToolDetailPopoverView(
                     title: "调用结果",
@@ -600,7 +600,7 @@ private struct LoadingToolSectionView: View {
             ProgressView()
                 .controlSize(.small)
 
-            Text("查询结果中...", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("查询结果中...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -617,7 +617,7 @@ private struct ToolFailureNoticeView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(theme.error)
 
-            Text("工具执行失败", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("工具执行失败", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.error)
         }

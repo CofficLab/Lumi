@@ -37,8 +37,8 @@ enum TitleOrchestrator: SuperLog {
             return
         }
 
-        let newConversation = String(localized: "New Conversation", bundle: .module)
-        let newChat = String(localized: "New Chat", bundle: .module)
+        let newConversation = LumiPluginLocalization.string("New Conversation", bundle: .module)
+        let newChat = LumiPluginLocalization.string("New Chat", bundle: .module)
         let currentTitle = chatService.conversations.first(where: { $0.id == conversationID })?.title ?? ""
 
         let policy = AutoConversationTitlePolicy()

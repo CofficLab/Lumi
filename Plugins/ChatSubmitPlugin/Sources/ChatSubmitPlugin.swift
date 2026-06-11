@@ -11,8 +11,8 @@ public actor ChatSubmitPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = false
 
     public static let id = "ChatSubmit"
-    public static let displayName = String(localized: "Chat Submit", bundle: .module)
-    public static let description = String(localized: "Send or stop chat messages", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Chat Submit", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Send or stop chat messages", bundle: .module)
     public static let iconName = "paperplane"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 86 }
@@ -28,7 +28,7 @@ public actor ChatSubmitPlugin: SuperPlugin, SuperLog {
         return [
             SidebarToolbarItem(
                 id: "chat-submit",
-                title: String(localized: "Send Message", bundle: .module),
+                title: LumiPluginLocalization.string("Send Message", bundle: .module),
                 systemImage: "paperplane.fill",
                 priority: 50
             )

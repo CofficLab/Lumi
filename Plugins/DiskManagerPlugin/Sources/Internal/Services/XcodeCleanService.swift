@@ -1,5 +1,6 @@
 import Foundation
 import os
+import LumiCoreKit
 
 /// Xcode clean service - scans and cleans Xcode-related caches.
 public final class XcodeCleanService: @unchecked Sendable {
@@ -201,7 +202,7 @@ actor XcodeScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: String(localized: "Starting scan...", bundle: .module))
+        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: LumiPluginLocalization.string("Starting scan...", bundle: .module))
 
         let task = Task { await performScan(scanCategory: scanCategory, id: myID) }
         activeTask = task

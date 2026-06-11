@@ -2,6 +2,7 @@ import Foundation
 import EditorService
 import EditorService
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 public final class LSPToolbarContributor: SuperEditorStatusItemContributor {
@@ -75,22 +76,22 @@ private struct LSPStatusToolbarItem: View {
                     Image(systemName: "circle")
                         .font(.system(size: 6))
                         .foregroundColor(Color(hex: "98989E"))
-                        .help(String(localized: "LSP not available", bundle: .module))
+                        .help(LumiPluginLocalization.string("LSP not available", bundle: .module))
                 } else if lspService.isInitializing {
                     ProgressView()
                         .scaleEffect(0.5)
-                        .help(String(localized: "LSP initializing...", bundle: .module))
+                        .help(LumiPluginLocalization.string("LSP initializing...", bundle: .module))
                 } else {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "30D158"))
-                        .help(String(localized: "LSP active", bundle: .module))
+                        .help(LumiPluginLocalization.string("LSP active", bundle: .module))
                 }
             }
             .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !lspService.isAvailable ? 1 : 0.5)
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Toggle Problems", bundle: .module))
+        .help(LumiPluginLocalization.string("Toggle Problems", bundle: .module))
     }
 }
 
@@ -119,7 +120,7 @@ private struct LSPActionsToolbarItem: View {
     public var body: some View {
         Menu {
             if !presentationModel.recentCommands.isEmpty {
-                Section(String(localized: "Recently Used", bundle: .module)) {
+                Section(LumiPluginLocalization.string("Recently Used", bundle: .module)) {
                     ForEach(presentationModel.recentCommands) { command in
                         commandButton(for: command, emphasizeRecent: true)
                     }
@@ -143,7 +144,7 @@ private struct LSPActionsToolbarItem: View {
         .frame(width: 22, height: 20)
         .fixedSize()
         .frame(maxWidth: 200)
-        .help(String(localized: "LSP Actions", bundle: .module))
+        .help(LumiPluginLocalization.string("LSP Actions", bundle: .module))
     }
 
     private var presentationModel: EditorCommandPresentationModel {

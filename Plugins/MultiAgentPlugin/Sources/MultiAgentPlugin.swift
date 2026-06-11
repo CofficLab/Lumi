@@ -12,8 +12,8 @@ public enum MultiAgentPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.multi-agent",
-        displayName: String(localized: "Multi Agent", bundle: .module),
-        description: String(localized: "Spawn parallel sub-agents with independent LLM providers and models", bundle: .module),
+        displayName: LumiPluginLocalization.string("Multi Agent", bundle: .module),
+        description: LumiPluginLocalization.string("Spawn parallel sub-agents with independent LLM providers and models", bundle: .module),
         order: 88
     )
 

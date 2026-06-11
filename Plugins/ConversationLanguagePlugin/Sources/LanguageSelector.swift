@@ -32,7 +32,7 @@ struct LanguageToggleButton: View {
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .accessibilityLabel(String(localized: "Language Selector", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Language Selector", bundle: .module))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             LanguagePopover(selectedLanguage: currentLanguage, onSelect: selectLanguage)
         }
@@ -77,9 +77,9 @@ struct LanguageToggleButton: View {
     private var helpText: String {
         switch currentLanguage {
         case .chinese:
-            return String(localized: "Current Chinese Help", bundle: .module)
+            return LumiPluginLocalization.string("Current Chinese Help", bundle: .module)
         case .english:
-            return String(localized: "Current English Help", bundle: .module)
+            return LumiPluginLocalization.string("Current English Help", bundle: .module)
         }
     }
 }

@@ -6,8 +6,8 @@ public enum ZhipuPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.zhipu",
-        displayName: String(localized: "智谱", bundle: .module),
-        description: String(localized: "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
+        displayName: LumiPluginLocalization.string("智谱", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
         order: 110
     )
 
@@ -26,7 +26,7 @@ public enum ZhipuPlugin: LumiPlugin {
         return [
             LumiStatusBarItem(
                 id: "\(info.id).quota",
-                title: String(localized: "Zhipu GLM Quota", bundle: .module),
+                title: LumiPluginLocalization.string("Zhipu GLM Quota", bundle: .module),
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
                 statusBarView: {

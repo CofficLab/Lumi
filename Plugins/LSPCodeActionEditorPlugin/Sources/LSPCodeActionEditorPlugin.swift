@@ -24,8 +24,8 @@ public actor LSPCodeActionEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPCodeActionEditorPlugin()
     public static let id = "LSPCodeActionEditor"
-    public static let displayName = String(localized: "LSP Code Actions", bundle: .module)
-    public static let description = String(localized: "Provides quick-fix code actions and lightbulb suggestions for diagnostics.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("LSP Code Actions", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Provides quick-fix code actions and lightbulb suggestions for diagnostics.", bundle: .module)
     public static let iconName = "lightbulb"
     public static let order = 20
     public static var category: PluginCategory { .editor }

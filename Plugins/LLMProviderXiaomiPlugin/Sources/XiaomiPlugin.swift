@@ -7,8 +7,8 @@ public enum XiaomiPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.xiaomi",
-        displayName: String(localized: "Xiaomi", bundle: .module),
-        description: String(localized: "Contributes Xiaomi models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Xiaomi", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Xiaomi models to Lumi Chat.", bundle: .module),
         order: 102
     )
 
@@ -22,8 +22,8 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "xiaomi",
-            displayName: String(localized: "Xiaomi", bundle: .module),
-            description: String(localized: "Xiaomi AI Models", bundle: .module),
+            displayName: LumiPluginLocalization.string("Xiaomi", bundle: .module),
+            description: LumiPluginLocalization.string("Xiaomi AI Models", bundle: .module),
             defaultModel: "mimo-v2.5-pro",
             availableModels: [
             "mimo-v2.5-pro",

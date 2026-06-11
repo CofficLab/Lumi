@@ -78,7 +78,7 @@ public struct FileSearchPanelView: View {
 
             // 快捷键提示（仅在无输入时显示）
             if searchService.searchQuery.isEmpty {
-                Text("Esc", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("Esc", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 6)
@@ -117,7 +117,7 @@ public struct FileSearchPanelView: View {
     private var loadingView: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text(String(localized: "正在索引文件...", bundle: .module))
+            Text(LumiPluginLocalization.string("正在索引文件...", bundle: .module))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
@@ -130,7 +130,7 @@ public struct FileSearchPanelView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 32))
                 .foregroundColor(.secondary)
-            Text(String(localized: "未找到匹配文件", bundle: .module))
+            Text(LumiPluginLocalization.string("未找到匹配文件", bundle: .module))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
         }

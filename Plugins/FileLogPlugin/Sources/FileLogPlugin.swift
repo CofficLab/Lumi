@@ -8,8 +8,8 @@ public enum FileLogPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.file-log",
-        displayName: String(localized: "File Log", bundle: .module),
-        description: String(localized: "Collect OSLog entries to disk files with auto-rotation and cleanup", bundle: .module),
+        displayName: LumiPluginLocalization.string("File Log", bundle: .module),
+        description: LumiPluginLocalization.string("Collect OSLog entries to disk files with auto-rotation and cleanup", bundle: .module),
         order: 1
     )
 

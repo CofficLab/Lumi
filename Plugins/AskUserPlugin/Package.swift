@@ -24,11 +24,9 @@ let package = Package(
                 "LumiCoreKit",
                 "LumiUI",
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),

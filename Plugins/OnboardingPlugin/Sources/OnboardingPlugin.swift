@@ -9,8 +9,8 @@ public enum OnboardingPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.onboarding",
-        displayName: String(localized: "Onboarding", bundle: .module),
-        description: String(localized: "Show first-run onboarding and guidance entry points", bundle: .module),
+        displayName: LumiPluginLocalization.string("Onboarding", bundle: .module),
+        description: LumiPluginLocalization.string("Show first-run onboarding and guidance entry points", bundle: .module),
         order: 10
     )
 

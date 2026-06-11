@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 public final class JSStatusItemContributor: SuperEditorStatusItemContributor {
@@ -75,11 +76,11 @@ private struct JSStatusIndicatorView: View {
 
     private var label: String {
         switch taskManager.state {
-        case .building: return String(localized: "Building", bundle: .module)
-        case .testing: return String(localized: "Testing", bundle: .module)
-        case .linting: return String(localized: "Linting", bundle: .module)
-        case .formatting: return String(localized: "Formatting", bundle: .module)
-        default: return String(localized: "Running", bundle: .module)
+        case .building: return LumiPluginLocalization.string("Building", bundle: .module)
+        case .testing: return LumiPluginLocalization.string("Testing", bundle: .module)
+        case .linting: return LumiPluginLocalization.string("Linting", bundle: .module)
+        case .formatting: return LumiPluginLocalization.string("Formatting", bundle: .module)
+        default: return LumiPluginLocalization.string("Running", bundle: .module)
         }
     }
 }

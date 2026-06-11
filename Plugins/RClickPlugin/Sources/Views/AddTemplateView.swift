@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct AddTemplateView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -15,17 +16,17 @@ public struct AddTemplateView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "Add New Template", bundle: .module))
+            Text(LumiPluginLocalization.string("Add New Template", bundle: .module))
                 .font(.appBodyEmphasized)
                 .foregroundColor(theme.textPrimary)
 
             Form {
-                TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)", bundle: .module)), text: $name)
+                TextField(LocalizedStringKey(LumiPluginLocalization.string("Name (e.g. Python Script)", bundle: .module)), text: $name)
                     .onChange(of: name) { _, _ in showNameError = false }
-                TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)", bundle: .module)), text: $ext)
+                TextField(LocalizedStringKey(LumiPluginLocalization.string("Extension (e.g. py)", bundle: .module)), text: $ext)
                     .onChange(of: ext) { _, _ in showExtensionError = false }
 
-                Section(header: Text(String(localized: "Default Content", bundle: .module))) {
+                Section(header: Text(LumiPluginLocalization.string("Default Content", bundle: .module))) {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
@@ -35,17 +36,17 @@ public struct AddTemplateView: View {
             .formStyle(.grouped)
 
             if showNameError {
-                AppErrorBanner(message: LocalizedStringKey(String(localized: "Template name cannot be empty or contain path separators", bundle: .module)))
+                AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Template name cannot be empty or contain path separators", bundle: .module)))
             }
 
             if showExtensionError {
-                AppErrorBanner(message: LocalizedStringKey(String(localized: "Extension can only contain letters, numbers, hyphen, or underscore", bundle: .module)))
+                AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Extension can only contain letters, numbers, hyphen, or underscore", bundle: .module)))
             }
 
             HStack {
-                AppButton(localized: "Cancel", table: "Localizable", style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton(localized: "Cancel", table: "Localizable", bundle: .module, style: .ghost, fillsWidth: true, action: { isPresented = false })
                 Spacer()
-                AppButton(localized: "Add", table: "Localizable", style: .primary, fillsWidth: true, action: {
+                AppButton(localized: "Add", table: "Localizable", bundle: .module, style: .primary, fillsWidth: true, action: {
                     guard let normalizedName = NewFileTemplate.normalizedName(name) else {
                         showNameError = true
                         return

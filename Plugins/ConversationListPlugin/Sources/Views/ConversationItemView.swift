@@ -69,16 +69,16 @@ public struct ConversationItemView: View {
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
-                Label(String(localized: "Delete Conversation", bundle: .module), systemImage: "trash")
+                Label(LumiPluginLocalization.string("Delete Conversation", bundle: .module), systemImage: "trash")
             }
         }
-        .alert(String(localized: "Delete Conversation", bundle: .module), isPresented: $showDeleteConfirmation) {
-            Button(String(localized: "Cancel", bundle: .module), role: .cancel) { }
-            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
+        .alert(LumiPluginLocalization.string("Delete Conversation", bundle: .module), isPresented: $showDeleteConfirmation) {
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) { }
+            Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
                 onDelete()
             }
         } message: {
-            let format = String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", bundle: .module)
+            let format = LumiPluginLocalization.string("Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", bundle: .module)
             Text(String(format: format, conversation.displayTitle))
         }
     }
@@ -134,7 +134,7 @@ extension ConversationItemView {
                     .foregroundColor(theme.textSecondary)
                     .lineLimit(1)
 
-                Text("•", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }
@@ -154,32 +154,32 @@ extension ConversationItemView {
     /// - 1分钟以上：按分钟显示（比如"1分钟前"）
     public func coarseRelativeTime(from date: Date, now: Date = Date()) -> String {
         let delta = now.timeIntervalSince(date)
-        guard delta >= 0 else { return String(localized: "Just now", bundle: .module) }
+        guard delta >= 0 else { return LumiPluginLocalization.string("Just now", bundle: .module) }
 
         let seconds = Int(delta)
         if seconds < 60 {
             let bucket = (seconds / 10) * 10
             if bucket <= 0 {
-                return String(localized: "Just now", bundle: .module)
+                return LumiPluginLocalization.string("Just now", bundle: .module)
             }
-            let format = String(localized: "%d seconds ago", bundle: .module)
+            let format = LumiPluginLocalization.string("%d seconds ago", bundle: .module)
             return String(format: format, bucket)
         }
 
         let minutes = seconds / 60
         if minutes < 60 {
-            let format = String(localized: "%d minutes ago", bundle: .module)
+            let format = LumiPluginLocalization.string("%d minutes ago", bundle: .module)
             return String(format: format, minutes)
         }
 
         let hours = minutes / 60
         if hours < 24 {
-            let format = String(localized: "%d hours ago", bundle: .module)
+            let format = LumiPluginLocalization.string("%d hours ago", bundle: .module)
             return String(format: format, hours)
         }
 
         let days = hours / 24
-        let format = String(localized: "%d days ago", bundle: .module)
+        let format = LumiPluginLocalization.string("%d days ago", bundle: .module)
         return String(format: format, days)
     }
 }

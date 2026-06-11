@@ -9,8 +9,8 @@ public enum IdleTimePlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.idle-time",
-        displayName: String(localized: "Idle Time", bundle: .module),
-        description: String(localized: "Infer rest windows for background scheduling", bundle: .module),
+        displayName: LumiPluginLocalization.string("Idle Time", bundle: .module),
+        description: LumiPluginLocalization.string("Infer rest windows for background scheduling", bundle: .module),
         order: 96
     )
 

@@ -10,8 +10,8 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "aliyun",
-            displayName: String(localized: "阿里云 CodingPlan", bundle: .module),
-            description: String(localized: "阿里云 DashScope Coding Plan", bundle: .module),
+            displayName: LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module),
+            description: LumiPluginLocalization.string("阿里云 DashScope Coding Plan", bundle: .module),
             defaultModel: "qwen3.6-plus",
             availableModels: [
                 "qwen3.5-plus",

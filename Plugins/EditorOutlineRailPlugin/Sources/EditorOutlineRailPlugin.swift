@@ -10,8 +10,8 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-outline",
-        displayName: String(localized: "Editor Rail Outline", bundle: .module),
-        description: String(localized: "Outline tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail Outline", bundle: .module),
+        description: LumiPluginLocalization.string("Outline tab in the editor rail.", bundle: .module),
         order: 1
     )
 
@@ -28,7 +28,7 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "outline",
                 order: info.order,
-                title: String(localized: "Outline", bundle: .module),
+                title: LumiPluginLocalization.string("Outline", bundle: .module),
                 systemImage: "list.bullet.indent"
             ) {
                 if let provider = service.documentSymbolProvider as? DocumentSymbolProvider {
@@ -39,7 +39,7 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
                         showsResizeHandle: false
                     )
                 } else {
-                    Text(String(localized: "Outline not available", bundle: .module))
+                    Text(LumiPluginLocalization.string("Outline not available", bundle: .module))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }

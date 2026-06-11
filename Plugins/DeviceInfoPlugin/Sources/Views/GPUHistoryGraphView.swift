@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 struct GPUHistoryGraphView: View {
     let dataPoints: [GPUDataPoint]
@@ -41,7 +42,7 @@ struct GPUHistoryGraphView: View {
                             GPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .stroke(Color(hex: "BF5AF2"), lineWidth: 1.5)
                         } else {
-                            Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                            Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -99,7 +100,7 @@ struct GPUHistoryGraphView: View {
                     }
                 }
 
-                Text("0", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "98989E"))
             }

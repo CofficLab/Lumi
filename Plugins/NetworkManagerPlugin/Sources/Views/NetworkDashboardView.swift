@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct NetworkDashboardView: View {
     @ObservedObject private var viewModel = NetworkManagerViewModel.shared
@@ -11,7 +12,7 @@ public struct NetworkDashboardView: View {
                     // Header Stats
                     HStack(spacing: 20) {
                         SpeedCard(
-                            title: String(localized: "Download", bundle: .module),
+                            title: LumiPluginLocalization.string("Download", bundle: .module),
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
@@ -20,7 +21,7 @@ public struct NetworkDashboardView: View {
                         )
 
                         SpeedCard(
-                            title: String(localized: "Upload", bundle: .module),
+                            title: LumiPluginLocalization.string("Upload", bundle: .module),
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
@@ -34,12 +35,12 @@ public struct NetworkDashboardView: View {
 
                     // Info Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        NetworkInfoCard(title: String(localized: "Local IP", bundle: .module), value: viewModel.networkState.localIP ?? String(localized: "Unknown", bundle: .module), icon: "pc")
-                        NetworkInfoCard(title: String(localized: "Public IP", bundle: .module), value: viewModel.networkState.publicIP ?? String(localized: "Fetching...", bundle: .module), icon: "globe")
-                        NetworkInfoCard(title: String(localized: "Wi-Fi", bundle: .module), value: viewModel.networkState.wifiSSID ?? String(localized: "Not Connected", bundle: .module), icon: "wifi")
-                        NetworkInfoCard(title: String(localized: "Signal", bundle: .module), value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
-                        NetworkInfoCard(title: String(localized: "Latency (Ping)", bundle: .module), value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
-                        NetworkInfoCard(title: String(localized: "Interface", bundle: .module), value: viewModel.networkState.interfaceName, icon: "cable.connector")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Local IP", bundle: .module), value: viewModel.networkState.localIP ?? LumiPluginLocalization.string("Unknown", bundle: .module), icon: "pc")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Public IP", bundle: .module), value: viewModel.networkState.publicIP ?? LumiPluginLocalization.string("Fetching...", bundle: .module), icon: "globe")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Wi-Fi", bundle: .module), value: viewModel.networkState.wifiSSID ?? LumiPluginLocalization.string("Not Connected", bundle: .module), icon: "wifi")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Signal", bundle: .module), value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Latency (Ping)", bundle: .module), value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
+                        NetworkInfoCard(title: LumiPluginLocalization.string("Interface", bundle: .module), value: viewModel.networkState.interfaceName, icon: "cable.connector")
                     }
                     .padding(.horizontal)
                 }
@@ -84,7 +85,7 @@ public struct SpeedCard: View {
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(String(localized: "Total: \(Double(total).formattedBytes())", bundle: .module))
+                Text(LumiPluginLocalization.string("Total: \(Double(total).formattedBytes())", bundle: .module))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color(hex: "98989E"))
             }

@@ -17,8 +17,8 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "IP"
     public nonisolated static let verbose: Bool = false
     public static let id: String = "EditorPreview"
-    public static let displayName: String = String(localized: "Inline Preview", bundle: .module)
-    public static let description: String = String(localized: "Embedded preview powered by LumiPreviewKit", bundle: .module)
+    public static let displayName: String = LumiPluginLocalization.string("Inline Preview", bundle: .module)
+    public static let description: String = LumiPluginLocalization.string("Embedded preview powered by LumiPreviewKit", bundle: .module)
     public static let iconName: String = "rectangle.inset.filled"
     public static var category: PluginCategory { .editor }
     public static var order: Int { 84 }

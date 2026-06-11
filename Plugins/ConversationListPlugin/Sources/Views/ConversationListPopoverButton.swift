@@ -22,7 +22,7 @@ public struct ConversationListPopoverButton: View {
     private var conversationListButton: some View {
         AppIconButton(
             systemImage: "message.fill",
-            label: String(localized: "会话列表", bundle: .module)
+            label: LumiPluginLocalization.string("会话列表", bundle: .module)
         ) {
             isPresented.toggle()
         }

@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
+import LumiCoreKit
 
 /// 创建任务工具
 ///
@@ -66,17 +67,17 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
         let conversationId = context.conversationId.uuidString
 
         guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
-            return String(localized: "Error: tasks array is required", bundle: .module)
+            return LumiPluginLocalization.string("Error: tasks array is required", bundle: .module)
         }
 
         guard !tasksArray.isEmpty else {
-            return String(localized: "Error: tasks array must not be empty", bundle: .module)
+            return LumiPluginLocalization.string("Error: tasks array must not be empty", bundle: .module)
         }
 
         let items = TaskToolInputNormalizer.normalize(tasksArray)
 
         guard !items.isEmpty else {
-            return String(localized: "Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
+            return LumiPluginLocalization.string("Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
         }
 
         let manager = TaskStateManager.shared
@@ -86,7 +87,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
         } catch {
             AutoTaskPlugin.logger.error("\(Self.t)Failed to create tasks for cid=\(conversationId.prefix(8)): \(error.localizedDescription)")
             return String(
-                format: String(localized: "Error: failed to save tasks: %@", bundle: .module),
+                format: LumiPluginLocalization.string("Error: failed to save tasks: %@", bundle: .module),
                 error.localizedDescription
             )
         }
@@ -103,7 +104,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
         )
 
         let createdLabel = String(
-            format: String(localized: "Created %lld tasks:", bundle: .module),
+            format: LumiPluginLocalization.string("Created %lld tasks:", bundle: .module),
             createdTasks.count
         )
         var result = "✅ \(createdLabel)\n\n"
@@ -117,7 +118,7 @@ public struct CreateTaskTool: SuperAgentTool, SuperLog {
         let firstTask = createdTasks.first!
         let firstTaskLabel = "[\(firstTask.id)] \(firstTask.title)"
         let startLabel = String(
-            format: String(localized: "Now start working on task #1: %@", bundle: .module),
+            format: LumiPluginLocalization.string("Now start working on task #1: %@", bundle: .module),
             firstTaskLabel
         )
         result += "\n\(startLabel)"

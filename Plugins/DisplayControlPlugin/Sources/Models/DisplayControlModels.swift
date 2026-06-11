@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import LumiCoreKit
 
 // MARK: - Display Control Kind
 
@@ -24,12 +25,16 @@ enum DisplayControlKind: Hashable, Sendable {
         }
     }
 
-    var label: String {
+    var localizationKey: String {
         switch self {
-        case .brightness: String(localized: "Brightness", bundle: .module)
-        case .volume: String(localized: "Volume", bundle: .module)
-        case .contrast: String(localized: "Contrast", bundle: .module)
+        case .brightness: "Brightness"
+        case .volume: "Volume"
+        case .contrast: "Contrast"
         }
+    }
+
+    func label(locale: Locale = .current) -> String {
+        LumiPluginLocalization.string(localizationKey, bundle: .module, locale: locale)
     }
 
     var icon: String {

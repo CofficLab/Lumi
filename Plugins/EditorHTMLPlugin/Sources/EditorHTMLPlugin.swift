@@ -14,8 +14,8 @@ public actor EditorHTMLPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = EditorHTMLPlugin()
     public static let id = "HTMLEditor"
-    public static let displayName = String(localized: "HTML Editor", bundle: .module)
-    public static let description = String(localized: "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("HTML Editor", bundle: .module)
+    public static let description = LumiPluginLocalization.string("HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", bundle: .module)
     public static let iconName = "curlybraces"
     public static let order = 31
     public static var category: PluginCategory { .editor }

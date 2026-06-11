@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct DatabaseMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -11,7 +12,7 @@ public struct DatabaseMainView: View {
         HSplitView {
             // Sidebar
             VStack(alignment: .leading) {
-                Text(String(localized: "Connections", bundle: .module))
+                Text(LumiPluginLocalization.string("Connections", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .padding(.horizontal)
@@ -50,7 +51,7 @@ public struct DatabaseMainView: View {
                             AppCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text(String(localized: "Keys", bundle: .module))
+                                        Text(LumiPluginLocalization.string("Keys", bundle: .module))
                                             .font(.appBodyEmphasized)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -73,7 +74,7 @@ public struct DatabaseMainView: View {
                             AppCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text(String(localized: "Tables", bundle: .module))
+                                        Text(LumiPluginLocalization.string("Tables", bundle: .module))
                                             .font(.appBodyEmphasized)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
@@ -126,7 +127,7 @@ public struct DatabaseMainView: View {
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
-                            Text(String(localized: "No results", bundle: .module))
+                            Text(LumiPluginLocalization.string("No results", bundle: .module))
                                 .foregroundColor(theme.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
@@ -136,7 +137,7 @@ public struct DatabaseMainView: View {
                         Image(systemName: "database")
                             .font(.appLargeTitle)
                             .foregroundColor(theme.textSecondary)
-                        Text(String(localized: "Select a database to connect", bundle: .module))
+                        Text(LumiPluginLocalization.string("Select a database to connect", bundle: .module))
                             .font(.appTitle)
                             .foregroundColor(theme.textSecondary)
                     }
@@ -191,7 +192,7 @@ public struct QueryResultView: View {
                                     .frame(width: 160, alignment: .leading)
                                     .border(theme.appSubtleBorder.opacity(0.7))
                                     .contextMenu {
-                                        Button(String(localized: "Copy", bundle: .module)) {
+                                        Button(LumiPluginLocalization.string("Copy", bundle: .module)) {
                                             NSPasteboard.general.clearContents()
                                             NSPasteboard.general.setString(text, forType: .string)
                                         }
@@ -236,7 +237,7 @@ public struct AddConnectionView: View {
     
     public var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "Add Connection", bundle: .module))
+            Text(LumiPluginLocalization.string("Add Connection", bundle: .module))
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
             
@@ -245,7 +246,7 @@ public struct AddConnectionView: View {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
                     
                     HStack {
-                        Text(String(localized: "Database Type", bundle: .module))
+                        Text(LumiPluginLocalization.string("Database Type", bundle: .module))
                             .foregroundColor(theme.textSecondary)
                         Spacer()
                         Picker("", selection: $type) {

@@ -6,8 +6,8 @@ public enum ThemeVscodeLightPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.vscode-light",
-        displayName: String(localized: "VS Code 亮色 Theme", bundle: .module),
-        description: String(localized: "Visual Studio Code Light+ IDE theme", bundle: .module),
+        displayName: LumiPluginLocalization.string("VS Code 亮色 Theme", bundle: .module),
+        description: LumiPluginLocalization.string("Visual Studio Code Light+ IDE theme", bundle: .module),
         order: 130
     )
 

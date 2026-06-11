@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import AppKit
+import LumiCoreKit
 
 struct CPUHistoryGraphView: View {
     let dataPoints: [CPUDataPoint]
@@ -41,7 +42,7 @@ struct CPUHistoryGraphView: View {
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .stroke(Color(hex: "0A84FF"), lineWidth: 1.5)
                         } else {
-                            Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                            Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,7 +101,7 @@ struct CPUHistoryGraphView: View {
                 }
 
                 // 底部 0 标签
-                Text("0", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "98989E"))
             }

@@ -13,8 +13,8 @@ public enum ConversationListPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.conversation-list",
-        displayName: String(localized: "Conversation List", bundle: .module),
-        description: String(localized: "Show all conversation history", bundle: .module),
+        displayName: LumiPluginLocalization.string("Conversation List", bundle: .module),
+        description: LumiPluginLocalization.string("Show all conversation history", bundle: .module),
         order: 76
     )
 
@@ -38,7 +38,7 @@ public enum ConversationListPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "chats",
                 order: 0,
-                title: String(localized: "Chats", bundle: .module),
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 systemImage: "message.fill"
             ) {
                 ConversationRailPanelView(

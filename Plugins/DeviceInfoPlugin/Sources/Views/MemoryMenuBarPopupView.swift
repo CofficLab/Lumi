@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct MemoryMenuBarPopupView: View {
     @StateObject private var viewModel = MemoryManagerViewModel()
@@ -17,7 +18,7 @@ struct MemoryMenuBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(PluginDeviceInfoLocalization.string("Memory"))
+                Text(LumiPluginLocalization.string("Memory", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -58,7 +59,7 @@ struct MemoryMenuBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(PluginDeviceInfoLocalization.string("Last 60 Seconds"))
+                Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -69,7 +70,7 @@ struct MemoryMenuBarPopupView: View {
                         Circle()
                             .fill(Color(hex: "7C6FFF").opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(PluginDeviceInfoLocalization.string("Usage"))
+                        Text(LumiPluginLocalization.string("Usage", bundle: .module))
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "98989E"))
                     }
@@ -110,7 +111,7 @@ struct MemoryMenuBarPopupView: View {
                         )
                         .stroke(Color(hex: "7C6FFF").opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.system(size: 10))
                             .foregroundColor(Color(hex: "98989E"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

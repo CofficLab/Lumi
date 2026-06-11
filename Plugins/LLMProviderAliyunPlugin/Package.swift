@@ -28,11 +28,9 @@ let package = Package(
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

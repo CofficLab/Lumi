@@ -11,8 +11,8 @@ public enum PortManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.port-manager",
-        displayName: String(localized: "Port Manager", bundle: .module),
-        description: String(localized: "Inspect local listening ports.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Port Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Inspect local listening ports.", bundle: .module),
         order: 43
     )
 

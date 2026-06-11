@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LumiCoreKit
 
 /// 预览构建失败时显示的错误详情视图。
 ///
@@ -26,13 +27,13 @@ struct PreviewFailureView: View {
                 Button {
                     onRetry?()
                 } label: {
-                    Label(String(localized: "Retry", bundle: .module), systemImage: "arrow.clockwise")
+                    Label(LumiPluginLocalization.string("Retry", bundle: .module), systemImage: "arrow.clockwise")
                         .labelStyle(.titleAndIcon)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Retry preview build", bundle: .module))
+                .help(LumiPluginLocalization.string("Retry preview build", bundle: .module))
 
                 Button {
                     NSPasteboard.general.clearContents()
@@ -49,14 +50,14 @@ struct PreviewFailureView: View {
                         }
                     }
                 } label: {
-                    Label(isCopied ? String(localized: "Copied", bundle: .module) : String(localized: "Copy", bundle: .module),
+                    Label(isCopied ? LumiPluginLocalization.string("Copied", bundle: .module) : LumiPluginLocalization.string("Copy", bundle: .module),
                           systemImage: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
                         .labelStyle(.titleAndIcon)
                         .font(.caption)
                         .foregroundStyle(isCopied ? .green : .secondary)
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Copy error message to clipboard", bundle: .module))
+                .help(LumiPluginLocalization.string("Copy error message to clipboard", bundle: .module))
             }
 
             ScrollView {
@@ -71,7 +72,7 @@ struct PreviewFailureView: View {
                     Image(systemName: "doc.text")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(String(localized: "Build log saved:", bundle: .module))
+                    Text(LumiPluginLocalization.string("Build log saved:", bundle: .module))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button {
@@ -83,7 +84,7 @@ struct PreviewFailureView: View {
                             .underline()
                     }
                     .buttonStyle(.plain)
-                    .help(String(localized: "Show log file in Finder", bundle: .module))
+                    .help(LumiPluginLocalization.string("Show log file in Finder", bundle: .module))
                     .draggable(buildLogURL.path)
                 }
             }

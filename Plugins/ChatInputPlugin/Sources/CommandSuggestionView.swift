@@ -65,12 +65,12 @@ public struct CommandSuggestionView: View {
     }
 
     private static let allSuggestions: [CommandSuggestion] = [
-        CommandSuggestion(command: "/clear", description: String(localized: "Clear chat history", bundle: .module)),
-        CommandSuggestion(command: "/help", description: String(localized: "Show all commands", bundle: .module)),
-        CommandSuggestion(command: "/commands", description: String(localized: "List available commands", bundle: .module)),
-        CommandSuggestion(command: "/cmd", description: String(localized: "List available commands", bundle: .module)),
-        CommandSuggestion(command: "/plan", description: String(localized: "Plan a task", bundle: .module)),
-        CommandSuggestion(command: "/mcp list", description: String(localized: "List MCP servers", bundle: .module)),
+        CommandSuggestion(command: "/clear", description: LumiPluginLocalization.string("Clear chat history", bundle: .module)),
+        CommandSuggestion(command: "/help", description: LumiPluginLocalization.string("Show all commands", bundle: .module)),
+        CommandSuggestion(command: "/commands", description: LumiPluginLocalization.string("List available commands", bundle: .module)),
+        CommandSuggestion(command: "/cmd", description: LumiPluginLocalization.string("List available commands", bundle: .module)),
+        CommandSuggestion(command: "/plan", description: LumiPluginLocalization.string("Plan a task", bundle: .module)),
+        CommandSuggestion(command: "/mcp list", description: LumiPluginLocalization.string("List MCP servers", bundle: .module)),
     ]
 }
 

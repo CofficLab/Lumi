@@ -36,6 +36,6 @@ extension AvailabilityOverlay {
 // MARK: - Preview
 
 #Preview("Availability Overlay") {
-    AvailabilityOverlay(content: Text("Content", bundle: .module))
+    AvailabilityOverlay(content: Text(verbatim: LumiPluginLocalization.string("Content", bundle: .module)))
         .inRootView()
 }

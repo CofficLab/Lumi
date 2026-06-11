@@ -37,7 +37,7 @@ public struct EditorPreviewPDFView: View, SuperLog {
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
             Text(String(
-                format: String(localized: "File not found: %@", bundle: .module),
+                format: LumiPluginLocalization.string("File not found: %@", bundle: .module),
                 fileURL.lastPathComponent
             ))
             .font(.caption)

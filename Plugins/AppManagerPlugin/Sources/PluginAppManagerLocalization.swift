@@ -1,11 +1,12 @@
 import Foundation
+import LumiCoreKit
 
 enum PluginAppManagerLocalization {
-    static let table = "AppManager"
+    static let table = "Localizable"
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), table: table, bundle: bundle, comment: "")
+        LumiPluginLocalization.string(key, bundle: bundle, table: table)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {

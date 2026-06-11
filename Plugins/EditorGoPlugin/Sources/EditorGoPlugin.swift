@@ -31,8 +31,8 @@ public actor EditorGoPlugin: SuperPlugin, SuperLog {
     )
 
     public static let id = "GoEditor"
-    public static let displayName = String(localized: "Go Editor", bundle: .module)
-    public static let description = String(localized: "Go language support: gopls integration, build, test, format, and module management.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Go Editor", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Go language support: gopls integration, build, test, format, and module management.", bundle: .module)
     public static let iconName = "goforward"
     public static let order = 34
     public static var category: PluginCategory { .editor }

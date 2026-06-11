@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct NetworkHistoryDetailView: View {
     @ObservedObject private var historyService = NetworkHistoryService.shared
@@ -10,7 +11,7 @@ public struct NetworkHistoryDetailView: View {
         VStack(spacing: 0) {
             // Header with Picker (History Trend)
             HStack {
-                Text(String(localized: "History Trend", bundle: .module))
+                Text(LumiPluginLocalization.string("History Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "98989E"))
 

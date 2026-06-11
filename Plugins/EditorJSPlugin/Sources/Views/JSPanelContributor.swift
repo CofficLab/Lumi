@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import SwiftUI
+import LumiCoreKit
 
 @MainActor
 public final class JSPanelContributor: SuperEditorPanelContributor {
@@ -19,7 +20,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
         return [
             EditorPanelSuggestion(
                 id: "js.task-output",
-                title: String(localized: "JS Output", bundle: .module),
+                title: LumiPluginLocalization.string("JS Output", bundle: .module),
                 systemImage: "terminal",
                 placement: .bottom,
                 order: 520,
@@ -37,7 +38,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
             ),
             EditorPanelSuggestion(
                 id: "js.test-results",
-                title: String(localized: "JS Tests", bundle: .module),
+                title: LumiPluginLocalization.string("JS Tests", bundle: .module),
                 systemImage: "testtube.2",
                 placement: .bottom,
                 order: 530,
@@ -50,7 +51,7 @@ public final class JSPanelContributor: SuperEditorPanelContributor {
             ),
             EditorPanelSuggestion(
                 id: "js.debug-toolbar",
-                title: String(localized: "Debug", bundle: .module),
+                title: LumiPluginLocalization.string("Debug", bundle: .module),
                 systemImage: "ladybug",
                 placement: .bottom,
                 order: 540,

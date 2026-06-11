@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
+import LumiCoreKit
 
 /// 查询任务进度工具
 ///
@@ -45,11 +46,11 @@ public struct CheckProgressTool: SuperAgentTool, SuperLog {
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
         if summary.isEmpty {
-            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
+            return LumiPluginLocalization.string("No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
         }
 
         let doneCount = summary.completed + summary.skipped
-        let progressLabel = String(localized: "Task Progress", bundle: .module)
+        let progressLabel = LumiPluginLocalization.string("Task Progress", bundle: .module)
         var result = "## \(progressLabel): \(doneCount)/\(summary.total) (\(summary.completionPercent)%)\n\n"
 
         let statusIcons: [TaskItem.TaskStatus: String] = [
@@ -69,22 +70,22 @@ public struct CheckProgressTool: SuperAgentTool, SuperLog {
         }
 
         if summary.isAllDone {
-            result += "\n🎉 **\(String(localized: "All tasks completed!", bundle: .module))**"
+            result += "\n🎉 **\(LumiPluginLocalization.string("All tasks completed!", bundle: .module))**"
         } else if summary.inProgress > 0 {
             let current = tasks.first { $0.status == .inProgress }
             if let current {
-                let focusLabel = String(localized: "Current focus", bundle: .module)
+                let focusLabel = LumiPluginLocalization.string("Current focus", bundle: .module)
                 result += "\n📌 **\(focusLabel): \(current.title)**"
             }
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                let nextUpLabel = String(localized: "Next up", bundle: .module)
+                let nextUpLabel = LumiPluginLocalization.string("Next up", bundle: .module)
                 result += "\n⏭️ **\(nextUpLabel): \(next.title)**"
             }
         } else if summary.pending > 0 {
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                let nextTaskLabel = String(localized: "Next task — start by calling update_task with status 'in_progress'", bundle: .module)
+                let nextTaskLabel = LumiPluginLocalization.string("Next task — start by calling update_task with status 'in_progress'", bundle: .module)
                 result += "\n⏭️ **\(nextTaskLabel): \(next.title)**"
             }
         }

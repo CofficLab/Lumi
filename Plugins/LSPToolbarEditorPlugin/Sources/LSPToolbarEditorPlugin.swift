@@ -12,8 +12,8 @@ public actor LSPToolbarEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPToolbarEditorPlugin()
     public static let id = "LSPToolbarEditor"
-    public static let displayName = String(localized: "LSP Toolbar", bundle: .module)
-    public static let description = String(localized: "Adds diagnostics, progress, and quick action items to the editor toolbar.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("LSP Toolbar", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Adds diagnostics, progress, and quick action items to the editor toolbar.", bundle: .module)
     public static let iconName = "wrench.and.screwdriver"
     public static let order = 19
     public static var category: PluginCategory { .editor }

@@ -7,8 +7,8 @@ public enum FeifeimiaoPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.feifeimiao",
-        displayName: String(localized: "Feifeimiao", bundle: .module),
-        description: String(localized: "Contributes Feifeimiao models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Feifeimiao", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Feifeimiao models to Lumi Chat.", bundle: .module),
         order: 93
     )
 
@@ -22,8 +22,8 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "feifeimiao",
-            displayName: String(localized: "Feifeimiao", bundle: .module),
-            description: String(localized: "LLM API by feifeimiao", bundle: .module),
+            displayName: LumiPluginLocalization.string("Feifeimiao", bundle: .module),
+            description: LumiPluginLocalization.string("LLM API by feifeimiao", bundle: .module),
             defaultModel: "gpt-5.5",
             availableModels: [
             "gpt-5.5",

@@ -7,8 +7,8 @@ public actor EditorSwiftPrimitiveTypesPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = EditorSwiftPrimitiveTypesPlugin()
     public static let id = "SwiftPrimitiveTypesEditor"
-    public static let displayName = String(localized: "Swift Primitive Types", bundle: .module)
-    public static let description = String(localized: "Provides Swift primitive type completion suggestions.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Swift Primitive Types", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Provides Swift primitive type completion suggestions.", bundle: .module)
     public static let iconName = "square.and.pencil"
     public static let order = 10
     public static var category: PluginCategory { .editor }

@@ -4,8 +4,8 @@ import LumiCoreKit
 struct AddProjectTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "add_project",
-        displayName: String(localized: "Add Project", bundle: .module),
-        description: String(localized: "Add an existing local directory to the projects list without switching the current project.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Add Project", bundle: .module),
+        description: LumiPluginLocalization.string("Add an existing local directory to the projects list without switching the current project.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

@@ -48,7 +48,7 @@ struct ProjectControlView: View {
         .onChange(of: store.currentProject?.path) { _, newPath in
             syncProjectPath(newPath)
         }
-        .accessibilityLabel(String(localized: "Projects", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Projects", bundle: .module))
     }
 
     private func syncProjectPath(_ path: String?) {

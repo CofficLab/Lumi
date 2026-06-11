@@ -12,8 +12,8 @@ public enum AutoTaskPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.auto-task",
-        displayName: String(localized: "Auto Task", bundle: .module),
-        description: String(localized: "Break down complex goals into trackable tasks and drive Agent auto-progress.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Auto Task", bundle: .module),
+        description: LumiPluginLocalization.string("Break down complex goals into trackable tasks and drive Agent auto-progress.", bundle: .module),
         order: 90
     )
 

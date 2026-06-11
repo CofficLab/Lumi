@@ -16,7 +16,7 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "LumiEditor",
-        displayName: String(localized: "Code Editor", bundle: .module),
+        displayName: LumiPluginLocalization.string("Code Editor", bundle: .module),
         description: String(
             localized: "Code editor with file tree, LSP, and workspace panels.",
             bundle: .module

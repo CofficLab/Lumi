@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 项目问题扫描器设置视图
 ///
@@ -27,9 +28,9 @@ public struct ProjectIssueScannerSettingsView: View {
                 AppSettingsSection(title: "说明", spacing: 6) {
                     AppSettingsRow {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("• Auto：自动从所有可用模型中选择最优的", bundle: .module)
-                            Text("• 手动指定：固定使用某个供应商的特定模型", bundle: .module)
-                            Text("• 每日最多执行 5 次深度分析（节省成本）", bundle: .module)
+                            Text(verbatim: LumiPluginLocalization.string("• Auto：自动从所有可用模型中选择最优的", bundle: .module))
+                            Text(verbatim: LumiPluginLocalization.string("• 手动指定：固定使用某个供应商的特定模型", bundle: .module))
+                            Text(verbatim: LumiPluginLocalization.string("• 每日最多执行 5 次深度分析（节省成本）", bundle: .module))
                         }
                         .font(.appCaption)
                         .foregroundColor(.secondary)

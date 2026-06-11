@@ -1,6 +1,7 @@
 import AppKit
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 字体配置详情视图（Popover 内容）
 ///
@@ -21,7 +22,7 @@ public struct FontConfigDetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Editor Font", bundle: .module),
+            title: LumiPluginLocalization.string("Editor Font", bundle: .module),
             systemImage: "textformat"
         ) {
             currentFontBadge
@@ -45,7 +46,7 @@ public struct FontConfigDetailView: View {
     }
 
     private var previewSection: some View {
-        Text("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~", bundle: .module)
+        Text(verbatim: LumiPluginLocalization.string("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~", bundle: .module))
             .font(.custom(viewModel.selectedPostScriptName ?? "SF Mono", size: 12))
             .foregroundColor(theme.textPrimary)
             .lineSpacing(2)
@@ -57,7 +58,7 @@ public struct FontConfigDetailView: View {
     private var searchField: some View {
         AppSearchBar(
             text: $searchText,
-            placeholder: LocalizedStringKey(String(localized: "Search fonts...", bundle: .module))
+            placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search fonts...", bundle: .module))
         )
     }
 
@@ -66,7 +67,7 @@ public struct FontConfigDetailView: View {
             LazyVStack(spacing: 0) {
                 // MARK: 系统默认选项
                 FontRow(
-                    title: String(localized: "System Monospaced", bundle: .module),
+                    title: LumiPluginLocalization.string("System Monospaced", bundle: .module),
                     subtitle: "SF Mono",
                     isSelected: viewModel.selectedPostScriptName == nil,
                     previewFontName: nil

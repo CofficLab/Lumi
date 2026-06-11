@@ -8,9 +8,9 @@ public enum ConversationTitlePlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.conversation-title",
-        displayName: String(localized: "Auto Conversation Title", bundle: .module),
-        description: String(
-            localized: "Automatically generate conversation titles from the first user message",
+        displayName: LumiPluginLocalization.string("Auto Conversation Title", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Automatically generate conversation titles from the first user message",
             bundle: .module
         ),
         order: 77

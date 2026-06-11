@@ -174,14 +174,14 @@ public struct GitCommitDetailView: View {
                         .font(.appMicro)
                 }
 
-                Text(String(localized: "Working State", bundle: .module))
+                Text(LumiPluginLocalization.string("Working State", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
                 Spacer()
 
                 if !uncommittedFiles.isEmpty {
-                    Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", bundle: .module))
+                    Text(verbatim: fileCountLabel(uncommittedFiles.count))
                         .font(.appMicroEmphasized)
                         .foregroundColor(theme.warning)
                 }
@@ -195,7 +195,7 @@ public struct GitCommitDetailView: View {
     private var uncommittedFileListSection: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", bundle: .module))
+                Text(verbatim: fileCountLabel(uncommittedFiles.count))
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textSecondary)
                 Spacer()
@@ -225,8 +225,8 @@ public struct GitCommitDetailView: View {
                     // 无信息时的简单提示
                     AppEmptyState(
                         icon: "checkmark.circle.fill",
-                        title: LocalizedStringKey(String(localized: "Clean Workspace", bundle: .module)),
-                        description: LocalizedStringKey(String(localized: "All changes committed", bundle: .module))
+                        title: LocalizedStringKey(LumiPluginLocalization.string("Clean Workspace", bundle: .module)),
+                        description: LocalizedStringKey(LumiPluginLocalization.string("All changes committed", bundle: .module))
                     )
                     .padding(.top, 40)
                 }
@@ -307,7 +307,7 @@ public struct GitCommitDetailView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.appMicro)
                         .foregroundColor(theme.success)
-                    Text(String(localized: "Clean", bundle: .module))
+                    Text(LumiPluginLocalization.string("Clean", bundle: .module))
                         .font(.appMicroEmphasized)
                         .foregroundColor(theme.success)
                 }
@@ -325,13 +325,13 @@ public struct GitCommitDetailView: View {
         HStack(spacing: 10) {
             // Total Commits
             GlassKeyValueRow(
-                label: String(localized: "Total Commits", bundle: .module),
+                label: LumiPluginLocalization.string("Total Commits", bundle: .module),
                 value: "\(info.totalCommits)"
             )
 
             // Contributors
             GlassKeyValueRow(
-                label: String(localized: "Contributors", bundle: .module),
+                label: LumiPluginLocalization.string("Contributors", bundle: .module),
                 value: "\(info.contributors.count)"
             )
 
@@ -347,7 +347,7 @@ public struct GitCommitDetailView: View {
             // 区块标题
             GlassSectionHeader(
                 icon: "clock.arrow.circlepath",
-                title: String(localized: "Latest Commit", bundle: .module)
+                title: LumiPluginLocalization.string("Latest Commit", bundle: .module)
             )
 
             // Commit 内容卡片
@@ -401,7 +401,7 @@ public struct GitCommitDetailView: View {
                 Image(systemName: "person.2")
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
-                Text(String(localized: "Contributors", bundle: .module))
+                Text(LumiPluginLocalization.string("Contributors", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textSecondary)
 
@@ -537,7 +537,7 @@ public struct GitCommitDetailView: View {
 
     private func statsBadges(_ stats: GitDiffStats) -> some View {
         HStack(spacing: 8) {
-            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", bundle: .module), color: theme.textPrimary)
+            statBadge(value: "\(stats.filesChanged)", label: LumiPluginLocalization.string("files", bundle: .module), color: theme.textPrimary)
             statBadge(value: "+\(stats.insertions)", label: nil, color: theme.success)
             statBadge(value: "-\(stats.deletions)", label: nil, color: theme.error)
         }
@@ -559,7 +559,7 @@ public struct GitCommitDetailView: View {
     private func fileListSection(_ detail: GitCommitDetail) -> some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", bundle: .module))
+                Text(verbatim: fileCountLabel(commitChangedFiles.count))
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textSecondary)
                 Spacer()
@@ -592,7 +592,7 @@ public struct GitCommitDetailView: View {
     private var noFilesView: some View {
         AppEmptyState(
             icon: "doc.text",
-            title: LocalizedStringKey(String(localized: "No file changes in this commit", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("No file changes in this commit", bundle: .module))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -601,7 +601,7 @@ public struct GitCommitDetailView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "Loading...", bundle: .module))
+            Text(LumiPluginLocalization.string("Loading...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -617,7 +617,7 @@ public struct GitCommitDetailView: View {
     private var noSelectionView: some View {
         AppEmptyState(
             icon: "circle.circle",
-            title: LocalizedStringKey(String(localized: "Please select a commit from the sidebar", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("Please select a commit from the sidebar", bundle: .module))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -625,7 +625,7 @@ public struct GitCommitDetailView: View {
     private var noProjectView: some View {
         AppEmptyState(
             icon: "folder.badge.questionmark",
-            title: LocalizedStringKey(String(localized: "Please select a project first", bundle: .module))
+            title: LocalizedStringKey(LumiPluginLocalization.string("Please select a project first", bundle: .module))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -795,6 +795,11 @@ public struct GitCommitDetailView: View {
                 }
             }
         }
+    }
+
+    private func fileCountLabel(_ count: Int) -> String {
+        let unitKey = count == 1 ? "file" : "files"
+        return "\(count) \(LumiPluginLocalization.string(unitKey, bundle: .module))"
     }
 }
 

@@ -7,8 +7,8 @@ public enum FlyMuxPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.flymux",
-        displayName: String(localized: "FlyMux", bundle: .module),
-        description: String(localized: "Contributes FlyMux models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("FlyMux", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes FlyMux models to Lumi Chat.", bundle: .module),
         order: 94
     )
 
@@ -22,8 +22,8 @@ public final class FlyMuxProvider: OpenAICompatibleLumiProvider, @unchecked Send
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "flymux",
-            displayName: String(localized: "FlyMux", bundle: .module),
-            description: String(localized: "AI API Gateway by flymux.com", bundle: .module),
+            displayName: LumiPluginLocalization.string("FlyMux", bundle: .module),
+            description: LumiPluginLocalization.string("AI API Gateway by flymux.com", bundle: .module),
             defaultModel: "gpt-5.1-codex",
             availableModels: [
             "gpt-5.4",

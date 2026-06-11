@@ -6,8 +6,8 @@ public enum ThemeNebulaPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.nebula",
-        displayName: String(localized: "星云粉 Theme", bundle: .module),
-        description: String(localized: "浪漫的星云粉，柔和而温暖", bundle: .module),
+        displayName: LumiPluginLocalization.string("星云粉 Theme", bundle: .module),
+        description: LumiPluginLocalization.string("浪漫的星云粉，柔和而温暖", bundle: .module),
         order: 122
     )
 

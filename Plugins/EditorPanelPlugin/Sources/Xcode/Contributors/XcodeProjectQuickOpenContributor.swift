@@ -3,6 +3,7 @@ import EditorService
 import XcodeKit
 import CodeEditSourceEditor
 import os
+import LumiCoreKit
 
 // MARK: - Quick Open Contributor
 
@@ -64,7 +65,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
             let target = CursorPosition(start: .init(line: match.line, column: 1), end: nil)
             return EditorQuickOpenItemSuggestion(
                 id: "xcode-key:\(match.filePath):\(match.line):\(match.key)",
-                sectionTitle: String(localized: "Project Keys", bundle: .module),
+                sectionTitle: LumiPluginLocalization.string("Project Keys", bundle: .module),
                 title: match.key,
                 subtitle: "\(match.relativePath):\(match.line)",
                 systemImage: match.isXCConfig ? "slider.horizontal.3" : "list.bullet.rectangle",

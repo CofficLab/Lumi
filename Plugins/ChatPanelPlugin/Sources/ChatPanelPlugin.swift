@@ -9,8 +9,8 @@ public enum ChatPanelPlugin: LumiPlugin {
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static let info = LumiPluginInfo(
         id: ChatPanelSection.id,
-        displayName: String(localized: "Chat", bundle: .module),
-        description: String(localized: "Chat surface with conversation rail", bundle: .module),
+        displayName: LumiPluginLocalization.string("Chat", bundle: .module),
+        description: LumiPluginLocalization.string("Chat surface with conversation rail", bundle: .module),
         order: 78
     )
 

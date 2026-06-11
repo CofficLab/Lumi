@@ -3,6 +3,7 @@ import EditorService
 import SuperLogKit
 import EditorCodeEditTextView
 import os
+import LumiCoreKit
 
 @MainActor
 public final class EditorLSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
@@ -27,7 +28,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // TODO: 暂时停用以下右键菜单命令
             // .init(
             //     id: "builtin.rename-symbol",
-            //     title: String(localized: "Rename Symbol", bundle: .module),
+            //     title: LumiPluginLocalization.string("Rename Symbol", bundle: .module),
             //     systemImage: "pencil.and.list.clipboard",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 10,
@@ -38,7 +39,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.quick-fix",
-            //     title: String(localized: "Quick Fix", bundle: .module),
+            //     title: LumiPluginLocalization.string("Quick Fix", bundle: .module),
             //     systemImage: "lightbulb",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 15,
@@ -51,7 +52,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             .init(
                 id: "builtin.go-to-definition",
-                title: String(localized: "Go to Definition", bundle: .module),
+                title: LumiPluginLocalization.string("Go to Definition", bundle: .module),
                 systemImage: "arrow.right.square",
                 category: EditorCommandCategory.navigation.rawValue,
                 order: 20,
@@ -64,7 +65,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             ),
             // .init(
             //     id: "builtin.peek-definition",
-            //     title: String(localized: "Peek Definition", bundle: .module),
+            //     title: LumiPluginLocalization.string("Peek Definition", bundle: .module),
             //     systemImage: "arrow.turn.down.right",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 25,
@@ -77,7 +78,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.go-to-declaration",
-            //     title: String(localized: "Go to Declaration", bundle: .module),
+            //     title: LumiPluginLocalization.string("Go to Declaration", bundle: .module),
             //     systemImage: "doc.badge.plus",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 30,
@@ -90,7 +91,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.go-to-type-definition",
-            //     title: String(localized: "Go to Type Definition", bundle: .module),
+            //     title: LumiPluginLocalization.string("Go to Type Definition", bundle: .module),
             //     systemImage: "square.on.square",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 40,
@@ -103,7 +104,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.go-to-implementation",
-            //     title: String(localized: "Go to Implementation", bundle: .module),
+            //     title: LumiPluginLocalization.string("Go to Implementation", bundle: .module),
             //     systemImage: "arrowtriangle.right",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 50,
@@ -116,7 +117,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.find-references",
-            //     title: String(localized: "Find References", bundle: .module),
+            //     title: LumiPluginLocalization.string("Find References", bundle: .module),
             //     systemImage: "link",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 60,
@@ -129,7 +130,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.peek-references",
-            //     title: String(localized: "Peek References", bundle: .module),
+            //     title: LumiPluginLocalization.string("Peek References", bundle: .module),
             //     systemImage: "arrow.triangle.branch",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 65,
@@ -142,7 +143,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.format-document",
-            //     title: String(localized: "Format Document", bundle: .module),
+            //     title: LumiPluginLocalization.string("Format Document", bundle: .module),
             //     systemImage: "text.alignleft",
             //     category: EditorCommandCategory.format.rawValue,
             //     order: 70,
@@ -155,7 +156,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.workspace-symbols",
-            //     title: String(localized: "Workspace Symbols", bundle: .module),
+            //     title: LumiPluginLocalization.string("Workspace Symbols", bundle: .module),
             //     systemImage: "magnifyingglass.circle",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 80,
@@ -166,7 +167,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.call-hierarchy",
-            //     title: String(localized: "Call Hierarchy", bundle: .module),
+            //     title: LumiPluginLocalization.string("Call Hierarchy", bundle: .module),
             //     systemImage: "arrow.triangle.branch",
             //     category: EditorCommandCategory.navigation.rawValue,
             //     order: 90,
@@ -179,7 +180,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
             // ),
             // .init(
             //     id: "builtin.toggle-problems",
-            //     title: String(localized: "Toggle Problems", bundle: .module),
+            //     title: LumiPluginLocalization.string("Toggle Problems", bundle: .module),
             //     systemImage: "exclamationmark.triangle",
             //     category: EditorCommandCategory.lsp.rawValue,
             //     order: 100,

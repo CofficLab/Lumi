@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct ActivityHeatStripView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -8,7 +9,7 @@ public struct ActivityHeatStripView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(String(localized: "24-hour activity", bundle: .module))
+            Text(LumiPluginLocalization.string("24-hour activity", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
 
@@ -21,15 +22,15 @@ public struct ActivityHeatStripView: View {
             }
 
             HStack {
-                Text("00", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("00", bundle: .module))
                 Spacer()
-                Text("06", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("06", bundle: .module))
                 Spacer()
-                Text("12", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("12", bundle: .module))
                 Spacer()
-                Text("18", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("18", bundle: .module))
                 Spacer()
-                Text("24", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("24", bundle: .module))
             }
             .font(.appMicro)
             .foregroundColor(theme.textSecondary)

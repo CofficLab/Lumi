@@ -9,8 +9,8 @@ public enum EditorRailFileTreePanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-file-tree",
-        displayName: String(localized: "Editor Rail File Tree", bundle: .module),
-        description: String(localized: "Explorer tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail File Tree", bundle: .module),
+        description: LumiPluginLocalization.string("Explorer tab in the editor rail.", bundle: .module),
         order: 0
     )
 
@@ -24,7 +24,7 @@ public enum EditorRailFileTreePanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "explorer",
                 order: info.order,
-                title: String(localized: "Explorer", bundle: .module),
+                title: LumiPluginLocalization.string("Explorer", bundle: .module),
                 systemImage: "folder"
             ) {
                 EditorFileTreeView()

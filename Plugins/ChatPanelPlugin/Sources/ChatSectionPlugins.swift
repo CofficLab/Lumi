@@ -9,8 +9,8 @@ public enum ChatMessagesSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-messages-section",
-        displayName: String(localized: "Chat Messages", bundle: .module),
-        description: String(localized: "Agent chat messages timeline in the right ChatSection.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Chat Messages", bundle: .module),
+        description: LumiPluginLocalization.string("Agent chat messages timeline in the right ChatSection.", bundle: .module),
         order: 82
     )
 
@@ -37,8 +37,8 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-pending-section",
-        displayName: String(localized: "Chat Pending Messages", bundle: .module),
-        description: String(localized: "Queued chat messages above the composer.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Chat Pending Messages", bundle: .module),
+        description: LumiPluginLocalization.string("Queued chat messages above the composer.", bundle: .module),
         order: 95
     )
 
@@ -65,8 +65,8 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-attachment-section",
-        displayName: String(localized: "Chat Attachment", bundle: .module),
-        description: String(localized: "Pending chat attachments and sidebar drop handling.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Chat Attachment", bundle: .module),
+        description: LumiPluginLocalization.string("Pending chat attachments and sidebar drop handling.", bundle: .module),
         order: 94
     )
 
@@ -106,8 +106,8 @@ public enum ChatComposerSectionPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-composer-section",
-        displayName: String(localized: "Chat Composer", bundle: .module),
-        description: String(localized: "Chat input area with editor and command suggestions.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Chat Composer", bundle: .module),
+        description: LumiPluginLocalization.string("Chat input area with editor and command suggestions.", bundle: .module),
         order: 96
     )
 

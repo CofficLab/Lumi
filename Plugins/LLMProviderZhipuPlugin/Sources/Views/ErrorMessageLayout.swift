@@ -22,7 +22,7 @@ struct ErrorMessageLayout<Content: View>: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(theme.error)
 
-                Text("Error", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("Error", bundle: .module))
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textTertiary)
 
@@ -39,7 +39,7 @@ struct ErrorMessageLayout<Content: View>: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(theme.textSecondary)
-                .help(String(localized: "Copy", bundle: .module))
+                .help(LumiPluginLocalization.string("Copy", bundle: .module))
 
                 Button {
                     showRawMessage.toggle()
@@ -49,7 +49,7 @@ struct ErrorMessageLayout<Content: View>: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(theme.textSecondary)
-                .help(String(localized: "Toggle raw message", bundle: .module))
+                .help(LumiPluginLocalization.string("Toggle raw message", bundle: .module))
             }
 
             content()

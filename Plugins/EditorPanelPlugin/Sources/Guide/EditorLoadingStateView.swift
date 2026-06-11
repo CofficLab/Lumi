@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 /// 编辑器加载状态视图。
 ///
@@ -10,7 +11,7 @@ public struct EditorLoadingStateView: View {
             ProgressView()
                 .controlSize(.small)
 
-            Text(String(localized: "Loading...", bundle: .module))
+            Text(LumiPluginLocalization.string("Loading...", bundle: .module))
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "98989E"))
         }

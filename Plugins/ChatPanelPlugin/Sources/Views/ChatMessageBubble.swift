@@ -20,7 +20,7 @@ struct ChatMessageBubble: View {
                 Button {
                     copy(message.content)
                 } label: {
-                    Label(String(localized: "Copy", bundle: .module), systemImage: "doc.on.doc")
+                    Label(LumiPluginLocalization.string("Copy", bundle: .module), systemImage: "doc.on.doc")
                 }
             }
 
@@ -28,19 +28,19 @@ struct ChatMessageBubble: View {
                 Button {
                     onUseAsDraft()
                 } label: {
-                    Label(String(localized: "Use as Draft", bundle: .module), systemImage: "arrow.uturn.backward")
+                    Label(LumiPluginLocalization.string("Use as Draft", bundle: .module), systemImage: "arrow.uturn.backward")
                 }
 
                 if let onResend {
                     Button(action: onResend) {
-                        Label(String(localized: "Resend", bundle: .module), systemImage: "arrow.clockwise")
+                        Label(LumiPluginLocalization.string("Resend", bundle: .module), systemImage: "arrow.clockwise")
                     }
                 }
             }
 
             if message.role != .status {
                 Button(role: .destructive, action: onDelete) {
-                    Label(String(localized: "Delete", bundle: .module), systemImage: "trash")
+                    Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
                 }
             }
 

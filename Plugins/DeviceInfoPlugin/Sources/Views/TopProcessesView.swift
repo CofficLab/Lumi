@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LumiCoreKit
 
 struct TopProcessesView: View {
 
@@ -44,7 +45,7 @@ struct TopProcessesView: View {
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(PluginDeviceInfoLocalization.string("Top Processes"))
+                Text(LumiPluginLocalization.string("Top Processes", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
             }
@@ -52,7 +53,7 @@ struct TopProcessesView: View {
             .padding(.bottom, 6)
 
             if processes.isEmpty {
-                Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
                     .frame(maxWidth: .infinity, alignment: .center)

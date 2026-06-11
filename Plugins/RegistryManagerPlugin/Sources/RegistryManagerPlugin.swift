@@ -8,8 +8,8 @@ public enum RegistryManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.registry-manager",
-        displayName: String(localized: "Registry Manager", bundle: .module),
-        description: String(localized: "Manage Lumi registries", bundle: .module),
+        displayName: LumiPluginLocalization.string("Registry Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Manage Lumi registries", bundle: .module),
         order: 80
     )
 

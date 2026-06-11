@@ -71,6 +71,6 @@ extension FileSearchOverlay {
 // MARK: - Preview
 
 #Preview("File Search Overlay") {
-    FileSearchOverlay(content: Text(String(localized: "Content", bundle: .module)))
+    FileSearchOverlay(content: Text(LumiPluginLocalization.string("Content", bundle: .module)))
         .inRootView()
 }

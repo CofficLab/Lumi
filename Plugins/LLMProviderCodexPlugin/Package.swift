@@ -28,7 +28,7 @@ let package = Package(
                 "CodexProvider.swift",
             ],
             resources: [
-                .process("../Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

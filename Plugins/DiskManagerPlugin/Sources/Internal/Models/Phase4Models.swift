@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 // MARK: - Project Cleanup Models
 
@@ -29,11 +30,11 @@ public struct ProjectInfo: Identifiable, Hashable, Sendable {
 
         public var displayName: String {
             switch self {
-            case .node: return String(localized: "Node.js", bundle: .module)
-            case .rust: return String(localized: "Rust", bundle: .module)
-            case .swift: return String(localized: "Swift/Xcode", bundle: .module)
-            case .python: return String(localized: "Python", bundle: .module)
-            case .generic: return String(localized: "Generic", bundle: .module)
+            case .node: return LumiPluginLocalization.string("Node.js", bundle: .module)
+            case .rust: return LumiPluginLocalization.string("Rust", bundle: .module)
+            case .swift: return LumiPluginLocalization.string("Swift/Xcode", bundle: .module)
+            case .python: return LumiPluginLocalization.string("Python", bundle: .module)
+            case .generic: return LumiPluginLocalization.string("Generic", bundle: .module)
             }
         }
 

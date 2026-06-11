@@ -1,6 +1,7 @@
 import LumiUI
 import SwiftUI
 import Combine
+import LumiCoreKit
 
 /// Menu bar popup view for Device Info plugin
 /// Shows detailed CPU usage with progress bar and mini trend graph
@@ -32,7 +33,7 @@ struct DeviceInfoMenuBarPopupView: View {
     private var liveCpuView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(PluginDeviceInfoLocalization.string("CPU Usage"))
+                Text(LumiPluginLocalization.string("CPU Usage", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -70,7 +71,7 @@ struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(Color(hex: "30D158"))
                         .frame(width: 6, height: 6)
-                    Text(String(format: "User %.0f%%", viewModel.userUsage))
+                    Text(String(format: LumiPluginLocalization.string("User %.0f%%", bundle: .module), viewModel.userUsage))
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "98989E"))
                 }
@@ -78,7 +79,7 @@ struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(Color(hex: "FF9F0A"))
                         .frame(width: 6, height: 6)
-                    Text(String(format: "Sys %.0f%%", viewModel.systemUsage))
+                    Text(String(format: LumiPluginLocalization.string("Sys %.0f%%", bundle: .module), viewModel.systemUsage))
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "98989E"))
                 }
@@ -86,7 +87,7 @@ struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(Color(hex: "98989E").opacity(0.4))
                         .frame(width: 6, height: 6)
-                    Text(String(format: "Idle %.0f%%", viewModel.idleUsage))
+                    Text(String(format: LumiPluginLocalization.string("Idle %.0f%%", bundle: .module), viewModel.idleUsage))
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "98989E"))
                 }
@@ -107,7 +108,7 @@ struct DeviceInfoMenuBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(PluginDeviceInfoLocalization.string("Last 60 Seconds"))
+                Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -119,7 +120,7 @@ struct DeviceInfoMenuBarPopupView: View {
                         Circle()
                             .fill(cpuColor.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(PluginDeviceInfoLocalization.string("Usage"))
+                        Text(LumiPluginLocalization.string("Usage", bundle: .module))
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "98989E"))
                     }
@@ -164,7 +165,7 @@ struct DeviceInfoMenuBarPopupView: View {
                         )
                         .stroke(cpuColor.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.system(size: 10))
                             .foregroundColor(Color(hex: "98989E"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

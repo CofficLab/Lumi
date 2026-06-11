@@ -8,8 +8,8 @@ public enum AgentRulesPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.agent-rules",
-        displayName: String(localized: "Agent Rules", bundle: .module),
-        description: String(localized: "Manage rule documents in .agent/rules directory", bundle: .module),
+        displayName: LumiPluginLocalization.string("Agent Rules", bundle: .module),
+        description: LumiPluginLocalization.string("Manage rule documents in .agent/rules directory", bundle: .module),
         order: 50
     )
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 struct SystemMonitorView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()
@@ -27,13 +28,13 @@ struct SystemMonitorView: View {
                         value: String(format: "%.0f%%", gpuService.utilization),
                         color: gpuColor) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(gpuService.modelName.isEmpty ? "GPU" : gpuService.modelName)
+                    Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                         .font(.system(size: 9))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(PluginDeviceInfoLocalization.string("Memory"))
+                            Text(LumiPluginLocalization.string("Memory", bundle: .module))
                                 .font(.system(size: 8))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             Text(gpuService.usedMemoryString)
@@ -43,7 +44,7 @@ struct SystemMonitorView: View {
                         
                         if gpuService.temperature > 0 {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(PluginDeviceInfoLocalization.string("Temperature"))
+                                Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 Text(String(format: "%.0f°C", gpuService.temperature))
@@ -72,7 +73,7 @@ struct SystemMonitorView: View {
             
             // Disk Card
             MonitorCard(title: "Disk I/O", 
-                        value: String(format: PluginDeviceInfoLocalization.string("R: %@ W: %@"), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
+                        value: String(format: LumiPluginLocalization.string("R: %@ W: %@", bundle: .module), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
                         color: Color(hex: "FF9F0A")) {
                 ZStack {
                     WaveformView(data: viewModel.metrics.disk.readHistory, color: Color(hex: "FF9F0A"), maxVal: 1024*1024*50)
@@ -90,7 +91,7 @@ struct SystemMonitorView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Health", bundle: .module)
+                                Text(LumiPluginLocalization.string("Health", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 Text("\(Int(batteryService.healthPercentage))%")
@@ -99,7 +100,7 @@ struct SystemMonitorView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Cycles", bundle: .module)
+                                Text(LumiPluginLocalization.string("Cycles", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 Text("\(batteryService.cycleCount)")
@@ -109,7 +110,7 @@ struct SystemMonitorView: View {
                             
                             if batteryService.temperature > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(PluginDeviceInfoLocalization.string("Temperature"))
+                                    Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                         .font(.system(size: 8))
                                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                     Text(String(format: "%.1f°C", batteryService.temperature))
@@ -120,7 +121,7 @@ struct SystemMonitorView: View {
                             
                             if batteryService.watts > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Power", bundle: .module)
+                                    Text(LumiPluginLocalization.string("Power", bundle: .module))
                                         .font(.system(size: 8))
                                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                     Text(batteryService.wattsString)

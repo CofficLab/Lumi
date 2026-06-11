@@ -11,8 +11,8 @@ public enum EditorRailProblemsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-problems",
-        displayName: String(localized: "Editor Rail Problems", bundle: .module),
-        description: String(localized: "Problems tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail Problems", bundle: .module),
+        description: LumiPluginLocalization.string("Problems tab in the editor rail.", bundle: .module),
         order: 10
     )
 
@@ -29,7 +29,7 @@ public enum EditorRailProblemsPanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "problems",
                 order: info.order,
-                title: String(localized: "Problems", bundle: .module),
+                title: LumiPluginLocalization.string("Problems", bundle: .module),
                 systemImage: "exclamationmark.bubble"
             ) {
                 BottomEditorProblemsPanelView(service: service, showsHeader: false)

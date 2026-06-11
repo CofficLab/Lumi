@@ -26,8 +26,8 @@ public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose: Bool = false
 
     public static let id = "QuickFileSearch"
-    public static let displayName = String(localized: "Quick File Search", bundle: .module)
-    public static let description = String(localized: "Fast file search with Cmd+P", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Quick File Search", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Fast file search with Cmd+P", bundle: .module)
     public static let iconName = "magnifyingglass"
     public static var order: Int { 50 }
 
@@ -98,6 +98,6 @@ public actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
 // MARK: - Preview
 
 #Preview("File Search Overlay") {
-    FileSearchOverlay(content: Text(String(localized: "Content", bundle: .module)))
+    FileSearchOverlay(content: Text(LumiPluginLocalization.string("Content", bundle: .module)))
         .inRootView()
 }

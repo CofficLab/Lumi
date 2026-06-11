@@ -1,6 +1,7 @@
 import EditorService
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct EditorOutlinePanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -49,7 +50,7 @@ public struct EditorOutlinePanelView: View {
     private var header: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                Text(String(localized: "Outline", bundle: .module))
+                Text(LumiPluginLocalization.string("Outline", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -71,7 +72,7 @@ public struct EditorOutlinePanelView: View {
                 .buttonStyle(.plain)
             }
 
-            TextField(String(localized: "Filter symbols", bundle: .module), text: $filterText)
+            TextField(LumiPluginLocalization.string("Filter symbols", bundle: .module), text: $filterText)
                 .textFieldStyle(.roundedBorder)
                 .font(.appMicro)
         }
@@ -112,7 +113,7 @@ public struct EditorOutlinePanelView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text(provider.isLoading ? String(localized: "Loading Outline...", bundle: .module) : String(localized: "No Symbols", bundle: .module))
+            Text(provider.isLoading ? LumiPluginLocalization.string("Loading Outline...", bundle: .module) : LumiPluginLocalization.string("No Symbols", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
         }

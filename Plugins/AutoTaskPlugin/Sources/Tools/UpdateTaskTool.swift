@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
+import LumiCoreKit
 
 /// 更新任务状态工具
 ///
@@ -54,13 +55,13 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
         let conversationId = context.conversationId.uuidString
 
         guard let taskId = arguments["task_id"]?.value as? String else {
-            return String(localized: "Error: task_id is required", bundle: .module)
+            return LumiPluginLocalization.string("Error: task_id is required", bundle: .module)
         }
 
         guard let statusString = arguments["status"]?.value as? String,
               let status = TaskItem.TaskStatus(rawValue: statusString)
         else {
-            return String(localized: "Error: status must be one of: in_progress, completed, skipped", bundle: .module)
+            return LumiPluginLocalization.string("Error: status must be one of: in_progress, completed, skipped", bundle: .module)
         }
 
         let manager = TaskStateManager.shared
@@ -70,13 +71,13 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
         } catch {
             AutoTaskPlugin.logger.error("\(Self.t)Failed to update task \(taskId): \(error.localizedDescription)")
             return String(
-                format: String(localized: "Error: failed to save task status: %@", bundle: .module),
+                format: LumiPluginLocalization.string("Error: failed to save task status: %@", bundle: .module),
                 error.localizedDescription
             )
         }
 
         guard success else {
-            let notFoundLabel = String(localized: "Error: task not found", bundle: .module)
+            let notFoundLabel = LumiPluginLocalization.string("Error: task not found", bundle: .module)
             return "\(notFoundLabel) (id: \(taskId))"
         }
 
@@ -95,7 +96,7 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
         case .pending: statusEmoji = "📋"
         }
 
-        var result = "\(statusEmoji) \(String(localized: "Task status updated", bundle: .module)): **\(status.rawValue)**"
+        var result = "\(statusEmoji) \(LumiPluginLocalization.string("Task status updated", bundle: .module)): **\(status.rawValue)**"
 
         // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
         if status == .completed || status == .skipped {
@@ -110,7 +111,7 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
                 } catch {
                     AutoTaskPlugin.logger.error("\(Self.t)Failed to auto-start next task \(nextTask.id): \(error.localizedDescription)")
                     let failedAutoStartLabel = String(
-                        format: String(localized: "Failed to auto-start next task: %@", bundle: .module),
+                        format: LumiPluginLocalization.string("Failed to auto-start next task: %@", bundle: .module),
                         error.localizedDescription
                     )
                     result += "\n\n⚠️ \(failedAutoStartLabel)"
@@ -124,9 +125,9 @@ public struct UpdateTaskTool: SuperAgentTool, SuperLog {
                     userInfo: ["conversationId": conversationId]
                 )
 
-                let autoStartedLabel = String(localized: "Next task auto-started", bundle: .module)
+                let autoStartedLabel = LumiPluginLocalization.string("Next task auto-started", bundle: .module)
                 result += "\n\n📌 **\(autoStartedLabel): \(nextTask.title) (id: \(nextTask.id))**"
-                result += "\n\(String(localized: "Continue working on this task now.", bundle: .module))"
+                result += "\n\(LumiPluginLocalization.string("Continue working on this task now.", bundle: .module))"
 
                 if Self.verbose {
                     AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")

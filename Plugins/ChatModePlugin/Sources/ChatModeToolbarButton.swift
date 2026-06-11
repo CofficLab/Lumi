@@ -32,8 +32,8 @@ public struct ChatModeToolbarButton: View {
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .accessibilityLabel(String(localized: "Chat Mode", bundle: .module))
-        .accessibilityHint(String(localized: "Chat Mode Hint", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Chat Mode", bundle: .module))
+        .accessibilityHint(LumiPluginLocalization.string("Chat Mode Hint", bundle: .module))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ChatModeLevelPopover(
                 selectedMode: currentMode,
@@ -90,7 +90,7 @@ private struct ChatModeLevelPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "Autonomy Level", bundle: .module))
+            Text(LumiPluginLocalization.string("Autonomy Level", bundle: .module))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(theme.textPrimary)
 
@@ -182,33 +182,33 @@ private extension ChatMode {
     var localizedDisplayName: String {
         switch self {
         case .chat:
-            return String(localized: "Chat Mode Name", bundle: .module)
+            return LumiPluginLocalization.string("Chat Mode Name", bundle: .module)
         case .build:
-            return String(localized: "Build Mode Name", bundle: .module)
+            return LumiPluginLocalization.string("Build Mode Name", bundle: .module)
         case .autonomous:
-            return String(localized: "Autonomous Mode Name", bundle: .module)
+            return LumiPluginLocalization.string("Autonomous Mode Name", bundle: .module)
         }
     }
 
     var localizedDescription: String {
         switch self {
         case .chat:
-            return String(localized: "Chat Mode Description", bundle: .module)
+            return LumiPluginLocalization.string("Chat Mode Description", bundle: .module)
         case .build:
-            return String(localized: "Build Mode Description", bundle: .module)
+            return LumiPluginLocalization.string("Build Mode Description", bundle: .module)
         case .autonomous:
-            return String(localized: "Autonomous Mode Description", bundle: .module)
+            return LumiPluginLocalization.string("Autonomous Mode Description", bundle: .module)
         }
     }
 
     var localizedHelpText: String {
         switch self {
         case .chat:
-            return String(localized: "Chat Mode Help", bundle: .module)
+            return LumiPluginLocalization.string("Chat Mode Help", bundle: .module)
         case .build:
-            return String(localized: "Build Mode Help", bundle: .module)
+            return LumiPluginLocalization.string("Build Mode Help", bundle: .module)
         case .autonomous:
-            return String(localized: "Autonomous Mode Help", bundle: .module)
+            return LumiPluginLocalization.string("Autonomous Mode Help", bundle: .module)
         }
     }
 
@@ -216,18 +216,18 @@ private extension ChatMode {
         switch self {
         case .chat:
             return [
-                String(localized: "Tools Off", bundle: .module),
-                String(localized: "No Code Changes", bundle: .module)
+                LumiPluginLocalization.string("Tools Off", bundle: .module),
+                LumiPluginLocalization.string("No Code Changes", bundle: .module)
             ]
         case .build:
             return [
-                String(localized: "Tools On", bundle: .module),
-                String(localized: "Confirm Risk", bundle: .module)
+                LumiPluginLocalization.string("Tools On", bundle: .module),
+                LumiPluginLocalization.string("Confirm Risk", bundle: .module)
             ]
         case .autonomous:
             return [
-                String(localized: "Tools On", bundle: .module),
-                String(localized: "Auto Approve Risk", bundle: .module)
+                LumiPluginLocalization.string("Tools On", bundle: .module),
+                LumiPluginLocalization.string("Auto Approve Risk", bundle: .module)
             ]
         }
     }

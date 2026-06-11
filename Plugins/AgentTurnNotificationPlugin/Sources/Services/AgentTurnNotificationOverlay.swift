@@ -67,8 +67,8 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
 
     private func deliverNotification(conversationId: UUID) async {
         let notificationContent = UNMutableNotificationContent()
-        notificationContent.title = String(localized: "Lumi Agent", bundle: .module)
-        notificationContent.body = String(localized: "Agent 回合已结束", bundle: .module)
+        notificationContent.title = LumiPluginLocalization.string("Lumi Agent", bundle: .module)
+        notificationContent.body = LumiPluginLocalization.string("Agent 回合已结束", bundle: .module)
         notificationContent.sound = .default
         notificationContent.userInfo = ["conversationId": conversationId.uuidString]
 

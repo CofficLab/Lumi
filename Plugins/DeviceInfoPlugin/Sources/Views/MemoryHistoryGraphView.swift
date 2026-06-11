@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import LumiCoreKit
 
 struct MemoryHistoryGraphView: View {
     let dataPoints: [MemoryDataPoint]
@@ -39,7 +40,7 @@ struct MemoryHistoryGraphView: View {
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
                                 .stroke(Color(hex: "7C6FFF"), lineWidth: 1.5)
                         } else {
-                            Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                            Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -92,7 +93,7 @@ struct MemoryHistoryGraphView: View {
                     }
                 }
 
-                Text("0", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
                     .foregroundColor(Color(hex: "98989E"))
             }

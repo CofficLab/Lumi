@@ -27,30 +27,30 @@ public enum LLMProviderUsageStatus: Equatable {
     public var title: String {
         switch self {
         case .active:
-            return String(localized: "In Use", bundle: .module)
+            return LumiPluginLocalization.string("In Use", bundle: .module)
         case .idle:
-            return String(localized: "Idle", bundle: .module)
+            return LumiPluginLocalization.string("Idle", bundle: .module)
         case .checking:
-            return String(localized: "Checking", bundle: .module)
+            return LumiPluginLocalization.string("Checking", bundle: .module)
         case .unavailable:
-            return String(localized: "Unavailable", bundle: .module)
+            return LumiPluginLocalization.string("Unavailable", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", bundle: .module)
+            return LumiPluginLocalization.string("Unknown", bundle: .module)
         }
     }
 
     public var helpText: String {
         switch self {
         case .active:
-            return String(localized: "Current selected provider", bundle: .module)
+            return LumiPluginLocalization.string("Current selected provider", bundle: .module)
         case .idle:
-            return String(localized: "Provider has available models", bundle: .module)
+            return LumiPluginLocalization.string("Provider has available models", bundle: .module)
         case .checking:
-            return String(localized: "Checking provider availability", bundle: .module)
+            return LumiPluginLocalization.string("Checking provider availability", bundle: .module)
         case .unavailable(let reason):
-            return reason ?? String(localized: "Provider has no available models", bundle: .module)
+            return reason ?? LumiPluginLocalization.string("Provider has no available models", bundle: .module)
         case .unknown:
-            return String(localized: "Availability has not been checked", bundle: .module)
+            return LumiPluginLocalization.string("Availability has not been checked", bundle: .module)
         }
     }
 }

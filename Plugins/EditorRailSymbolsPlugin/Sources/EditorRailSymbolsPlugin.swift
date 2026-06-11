@@ -11,8 +11,8 @@ public enum EditorRailSymbolsPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-symbols",
-        displayName: String(localized: "Editor Rail Symbols", bundle: .module),
-        description: String(localized: "Symbols tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail Symbols", bundle: .module),
+        description: LumiPluginLocalization.string("Symbols tab in the editor rail.", bundle: .module),
         order: 13
     )
 
@@ -29,7 +29,7 @@ public enum EditorRailSymbolsPanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "symbols",
                 order: info.order,
-                title: String(localized: "Symbols", bundle: .module),
+                title: LumiPluginLocalization.string("Symbols", bundle: .module),
                 systemImage: "number"
             ) {
                 BottomEditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)

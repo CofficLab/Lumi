@@ -14,7 +14,7 @@ struct ChatPendingMessagesView: View {
                 Image(systemName: "clock")
                     .font(.system(size: 10))
                     .foregroundColor(theme.textSecondary)
-                Text("Waiting to Send", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("Waiting to Send", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(theme.textPrimary)
                 Text("(\(messages.count))")

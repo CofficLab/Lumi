@@ -24,10 +24,9 @@ let package = Package(
                 "LumiCoreKit",
                 "LumiUI"
             ],
-            path: ".",
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

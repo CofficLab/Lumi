@@ -72,8 +72,8 @@ final class DisplayService: ObservableObject {
                     supportsBrightness: isBuiltIn
                         ? appleBrightness != nil
                         : (ddcBrightness != nil || storedBrightness != nil || hasDDCService),
-                    supportsVolume: !isBuiltIn && (ddcVolume != nil || storedVolume != nil),
-                    supportsContrast: !isBuiltIn && (ddcContrast != nil || storedContrast != nil),
+                    supportsVolume: !isBuiltIn && (ddcVolume != nil || storedVolume != nil || hasDDCService),
+                    supportsContrast: !isBuiltIn && (ddcContrast != nil || storedContrast != nil || hasDDCService),
                     brightness: appleBrightness.map { Double($0 * 100) }
                         ?? ddcBrightness
                         ?? storedBrightness
@@ -109,6 +109,35 @@ final class DisplayService: ObservableObject {
 
     // MARK: - Write (debounced)
 
+    func restoreDefaults() {
+        debounceTimers.values.forEach { $0.cancel() }
+        debounceTimers.removeAll()
+        pendingValues.removeAll()
+
+        for display in displays {
+            for control in [DisplayControlKind.brightness, .volume, .contrast] {
+                Self.removeStoredValue(
+                    for: control,
+                    displayStorageID: display.storageID,
+                    defaults: defaults
+                )
+            }
+        }
+
+        for index in displays.indices {
+            var display = displays[index]
+            for control in [DisplayControlKind.brightness, .volume, .contrast] {
+                guard display.supports(control) else { continue }
+                let defaultValue = control.defaultValue
+                display.setValue(defaultValue, for: control)
+                fallbackValues[display.id, default: [:]][control] = defaultValue
+                let key = ControlKey(displayID: display.id, control: control)
+                performWrite(defaultValue, for: control, displayID: display.id, key: key)
+            }
+            displays[index] = display
+        }
+    }
+
     func setValue(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) {
         let clampedValue = min(100, max(0, value))
         guard let display = displays.first(where: { $0.id == displayID }) else { return }
@@ -124,7 +153,7 @@ final class DisplayService: ObservableObject {
         debounceTimers[key] = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
             guard !Task.isCancelled else { return }
-            self.performWrite(clampedValue, for: control, display: display, key: key)
+            self.performWrite(clampedValue, for: control, displayID: displayID, key: key)
         }
     }
 
@@ -133,9 +162,11 @@ final class DisplayService: ObservableObject {
     private func performWrite(
         _ value: Double,
         for control: DisplayControlKind,
-        display: ControlledDisplay,
+        displayID: CGDirectDisplayID,
         key: ControlKey
     ) {
+        guard let display = displays.first(where: { $0.id == displayID }) else { return }
+
         let success: Bool
         if display.isBuiltIn {
             switch control {
@@ -146,19 +177,28 @@ final class DisplayService: ObservableObject {
             }
         } else {
             success = ddc.write(value, for: control, displayID: display.id)
-            if success {
-                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, defaults: defaults)
-            }
         }
 
         let currentPendingValue = pendingValues[key.displayID]?[key.control]
         let isCurrentResult = currentPendingValue.map { abs($0 - value) < 0.001 } ?? false
 
         if success {
+            if !display.isBuiltIn {
+                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, defaults: defaults)
+            }
             updateLocalValue(value, for: control, displayID: key.displayID)
             fallbackValues[key.displayID, default: [:]][key.control] = value
-        } else if isCurrentResult {
-            markControlUnsupported(key.control, displayID: key.displayID)
+        } else {
+            // DDC writes can fail transiently (busy bus, monitor OSD, etc.).
+            // Keep the control enabled and persist the desired value locally.
+            if !display.isBuiltIn {
+                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, defaults: defaults)
+            }
+            updateLocalValue(value, for: control, displayID: key.displayID)
+            fallbackValues[key.displayID, default: [:]][key.control] = value
+            displayLog.warning(
+                "Display control write failed for \(control.storageKey, privacy: .public) on display \(displayID, privacy: .public)"
+            )
         }
 
         if isCurrentResult {
@@ -174,11 +214,6 @@ final class DisplayService: ObservableObject {
     private func updateLocalValue(_ value: Double, for control: DisplayControlKind, displayID: CGDirectDisplayID) {
         guard let index = displays.firstIndex(where: { $0.id == displayID }) else { return }
         displays[index].setValue(value, for: control)
-    }
-
-    private func markControlUnsupported(_ control: DisplayControlKind, displayID: CGDirectDisplayID) {
-        guard let index = displays.firstIndex(where: { $0.id == displayID }) else { return }
-        displays[index].setSupported(false, for: control)
     }
 
     private func seedFallbackValues(for display: ControlledDisplay) {
@@ -253,6 +288,16 @@ final class DisplayService: ObservableObject {
     ) {
         defaults.set(
             min(100, max(0, value)),
+            forKey: storedValueKey(for: control, displayStorageID: displayStorageID)
+        )
+    }
+
+    private nonisolated static func removeStoredValue(
+        for control: DisplayControlKind,
+        displayStorageID: String,
+        defaults: UserDefaults
+    ) {
+        defaults.removeObject(
             forKey: storedValueKey(for: control, displayStorageID: displayStorageID)
         )
     }

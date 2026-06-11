@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Sendable {
     case newFile = "newFile" // Acts as a submenu or category
@@ -14,14 +15,14 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
 
     public var title: String {
         switch self {
-        case .newFile: return String(localized: "New File", bundle: .module)
-        case .copyPath: return String(localized: "Copy Path", bundle: .module)
-        case .openInTerminal: return String(localized: "Open in Terminal", bundle: .module)
-        case .openInVSCode: return String(localized: "Open in VS Code", bundle: .module)
-        case .deleteFile: return String(localized: "Delete File", bundle: .module)
-        case .hideFile: return String(localized: "Hide File", bundle: .module)
-        case .showHiddenFiles: return String(localized: "Show Hidden Files", bundle: .module)
-        case .listHiddenFiles: return String(localized: "List Hidden Files", bundle: .module)
+        case .newFile: return LumiPluginLocalization.string("New File", bundle: .module)
+        case .copyPath: return LumiPluginLocalization.string("Copy Path", bundle: .module)
+        case .openInTerminal: return LumiPluginLocalization.string("Open in Terminal", bundle: .module)
+        case .openInVSCode: return LumiPluginLocalization.string("Open in VS Code", bundle: .module)
+        case .deleteFile: return LumiPluginLocalization.string("Delete File", bundle: .module)
+        case .hideFile: return LumiPluginLocalization.string("Hide File", bundle: .module)
+        case .showHiddenFiles: return LumiPluginLocalization.string("Show Hidden Files", bundle: .module)
+        case .listHiddenFiles: return LumiPluginLocalization.string("List Hidden Files", bundle: .module)
         }
     }
 

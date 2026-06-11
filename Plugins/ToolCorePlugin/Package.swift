@@ -45,7 +45,7 @@ let package = Package(
                 "Sources/Tools/LumiEditFileTool.swift",
             ],
             resources: [
-                .process("Resources")
+                .process("Sources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

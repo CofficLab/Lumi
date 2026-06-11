@@ -50,6 +50,6 @@ enum PluginAppLoadedPluginsLocalization {
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), bundle: .module, comment: "")
+        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import os
+import LumiCoreKit
 
 /// Project cleaner service - scans development directories for cleanable project dependencies.
 public final class ProjectCleanerService: @unchecked Sendable {
@@ -190,7 +191,7 @@ actor ProjectScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentProgress = String(localized: "Starting scan...", bundle: .module)
+        currentProgress = LumiPluginLocalization.string("Starting scan...", bundle: .module)
 
         let task = Task { await performScan(paths: paths, id: myID) }
         activeTask = task

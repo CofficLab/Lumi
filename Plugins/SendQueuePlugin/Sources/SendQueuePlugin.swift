@@ -13,8 +13,8 @@ public actor SendQueuePlugin: SuperPlugin, SuperLog {
     nonisolated public static let policy: PluginPolicy = .alwaysOn
 
     public static let id = "SendQueue"
-    public static let displayName = String(localized: "Send Queue", bundle: .module)
-    public static let description = String(localized: "Dequeue pending messages and run send prepare pipeline", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Send Queue", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Dequeue pending messages and run send prepare pipeline", bundle: .module)
     public static let iconName = "tray.and.arrow.down"
     public static var order: Int { 190 }
 

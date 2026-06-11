@@ -4,8 +4,8 @@ import Foundation
 public enum DeviceInfoPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.device-info",
-        displayName: String(localized: "Device Info", bundle: .module),
-        description: String(localized: "Shows basic device and system information.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Device Info", bundle: .module),
+        description: LumiPluginLocalization.string("Shows basic device and system information.", bundle: .module),
         order: 20
     )
     public static let category: LumiPluginCategory = .system
@@ -48,14 +48,5 @@ public enum DeviceInfoPlugin: LumiPlugin {
                 GPUMenuBarPopupView()
             }
         ]
-    }
-}
-
-enum PluginDeviceInfoLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        NSLocalizedString(key, tableName: table, bundle: bundle, value: key, comment: "")
     }
 }

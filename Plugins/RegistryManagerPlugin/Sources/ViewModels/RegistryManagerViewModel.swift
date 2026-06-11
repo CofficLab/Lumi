@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import LumiCoreKit
 
 public protocol RegistryManagerServicing: Sendable {
     func getCurrentRegistry(for type: RegistryType) async throws -> String
@@ -105,19 +106,19 @@ public class RegistryManagerViewModel: ObservableObject {
             registries[type] = source.url
             
             if type == .docker {
-                showToast(message: String(localized: "Docker registry updated. Please restart Docker Desktop.", bundle: .module))
+                showToast(message: LumiPluginLocalization.string("Docker registry updated. Please restart Docker Desktop.", bundle: .module))
             } else {
-                let message = String(localized: "Switched {type} registry to {name}", bundle: .module)
+                let message = LumiPluginLocalization.string("Switched {type} registry to {name}", bundle: .module)
                     .replacingOccurrences(of: "{type}", with: type.name)
                     .replacingOccurrences(of: "{name}", with: source.name)
                 showToast(message: message)
             }
         } catch {
             guard isCurrentOperation(operationID, for: type) else { return }
-            errorMsg = String(localized: "Failed to set {type}: {error}", bundle: .module)
+            errorMsg = LumiPluginLocalization.string("Failed to set {type}: {error}", bundle: .module)
                 .replacingOccurrences(of: "{type}", with: type.name)
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
-            let message = String(localized: "Failed: {error}", bundle: .module)
+            let message = LumiPluginLocalization.string("Failed: {error}", bundle: .module)
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
             showToast(message: message)
         }

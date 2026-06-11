@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 会话列表空状态视图
 public struct ConversationListEmptyView: View {
@@ -11,7 +12,7 @@ public struct ConversationListEmptyView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text(String(localized: "No conversations", bundle: .module))
+            Text(LumiPluginLocalization.string("No conversations", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }

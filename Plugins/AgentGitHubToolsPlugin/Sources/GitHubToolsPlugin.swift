@@ -14,8 +14,8 @@ public enum GitHubToolsPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.github-tools",
-        displayName: String(localized: "GitHub Tools", bundle: .module),
-        description: String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", bundle: .module),
+        displayName: LumiPluginLocalization.string("GitHub Tools", bundle: .module),
+        description: LumiPluginLocalization.string("提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。", bundle: .module),
         order: 15
     )
 

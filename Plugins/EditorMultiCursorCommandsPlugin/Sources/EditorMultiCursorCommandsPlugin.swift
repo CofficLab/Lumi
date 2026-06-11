@@ -8,8 +8,8 @@ public actor EditorMultiCursorCommandsPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = EditorMultiCursorCommandsPlugin()
     public static let id = "EditorMultiCursorCommands"
-    public static let displayName = String(localized: "Multi-Cursor Commands", bundle: .module)
-    public static let description = String(localized: "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Multi-Cursor Commands", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).", bundle: .module)
     public static let iconName = "cursorarrow.and.square.on.square.dashed"
     public static let order = 13
     public static var category: PluginCategory { .editor }

@@ -5,8 +5,8 @@ import SwiftUI
 public enum RequestLogPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.request-log",
-        displayName: String(localized: "PluginName", bundle: .module),
-        description: String(localized: "PluginDescription", bundle: .module),
+        displayName: LumiPluginLocalization.string("PluginName", bundle: .module),
+        description: LumiPluginLocalization.string("PluginDescription", bundle: .module),
         order: 100
     )
     public static let policy: LumiPluginPolicy = .alwaysOn
@@ -29,7 +29,7 @@ public enum RequestLogPlugin: LumiPlugin {
         return [
             LumiStatusBarItem(
                 id: "\(info.id).summary",
-                title: String(localized: "Request Log", bundle: .module),
+                title: LumiPluginLocalization.string("Request Log", bundle: .module),
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {

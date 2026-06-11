@@ -7,8 +7,8 @@ public actor SampleDecorationEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = SampleDecorationEditorPlugin()
     public static let id = "SampleDecorationEditor"
-    public static let displayName = String(localized: "Sample Decoration", bundle: .module)
-    public static let description = String(localized: "Demonstrates sample gutter decorations for the editor extension surface.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Sample Decoration", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Demonstrates sample gutter decorations for the editor extension surface.", bundle: .module)
     public static let iconName = "signpost.right.and.left"
     public static let order = 90
     public static var category: PluginCategory { .editor }

@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 public struct NetworkHistoryGraphView: View {
     public let dataPoints: [NetworkDataPoint]
@@ -51,7 +52,7 @@ public struct NetworkHistoryGraphView: View {
                             GraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .stroke(Color(hex: "FF453A"), lineWidth: 1.5)
                         } else {
-                            Text(String(localized: "收集数据中...", bundle: .module))
+                            Text(LumiPluginLocalization.string("收集数据中...", bundle: .module))
                                 .font(.caption)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -110,7 +111,7 @@ public struct NetworkHistoryGraphView: View {
                 }
 
                 // 底部 0 标签
-                Text("0", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }

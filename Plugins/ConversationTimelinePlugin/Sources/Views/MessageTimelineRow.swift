@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - 消息时间线行
 
@@ -114,7 +115,7 @@ public struct MessageTimelineRow: View {
                                 .font(.system(size: 10))
                         }
                         if totalTokens > 0 {
-                            Text(String(format: String(localized: "Total %@", bundle: .module), timelineService.formatToken(totalTokens)))
+                            Text(String(format: LumiPluginLocalization.string("Total %@", bundle: .module), timelineService.formatToken(totalTokens)))
                                 .font(.system(size: 10))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -131,7 +132,7 @@ public struct MessageTimelineRow: View {
     private var messagePreview: String {
         let content = item.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if content.isEmpty {
-            return String(localized: "[Empty]", bundle: .module)
+            return LumiPluginLocalization.string("[Empty]", bundle: .module)
         }
         if content.count <= 50 {
             return content
@@ -171,19 +172,19 @@ public struct MessageTimelineRow: View {
     private var roleLabel: String {
         switch item.role {
         case .user:
-            return String(localized: "User", bundle: .module)
+            return LumiPluginLocalization.string("User", bundle: .module)
         case .assistant:
-            return String(localized: "Assistant", bundle: .module)
+            return LumiPluginLocalization.string("Assistant", bundle: .module)
         case .system:
-            return String(localized: "System", bundle: .module)
+            return LumiPluginLocalization.string("System", bundle: .module)
         case .tool:
-            return String(localized: "Tool", bundle: .module)
+            return LumiPluginLocalization.string("Tool", bundle: .module)
         case .status:
-            return String(localized: "Status", bundle: .module)
+            return LumiPluginLocalization.string("Status", bundle: .module)
         case .error:
-            return String(localized: "Error", bundle: .module)
+            return LumiPluginLocalization.string("Error", bundle: .module)
         case .unknown:
-            return String(localized: "Unknown", bundle: .module)
+            return LumiPluginLocalization.string("Unknown", bundle: .module)
         }
     }
 

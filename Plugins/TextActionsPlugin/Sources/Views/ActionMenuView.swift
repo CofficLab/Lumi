@@ -1,6 +1,7 @@
 import SwiftUI
 import LumiUI
 import AppKit
+import LumiCoreKit
 
 public struct ActionMenuView: View {
     public let text: String
@@ -30,7 +31,7 @@ public struct ActionMenuView: View {
                         .fontWeight(.medium)
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(format: String(localized: "Version %@", bundle: .module), appVersion))
+                    Text(String(format: LumiPluginLocalization.string("Version %@", bundle: .module), appVersion))
                         .font(.caption2)
                         .foregroundColor(Color(hex: "98989E"))
                 }

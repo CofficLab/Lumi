@@ -4,8 +4,8 @@ import LumiCoreKit
 public struct ListDirectoryTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "ls",
-        displayName: String(localized: "List Directory", bundle: .module),
-        description: String(localized: "List files and directories at a given path. Useful for exploring the project structure.", bundle: .module)
+        displayName: LumiPluginLocalization.string("List Directory", bundle: .module),
+        description: LumiPluginLocalization.string("List files and directories at a given path. Useful for exploring the project structure.", bundle: .module)
     )
 
     private let maxItems = 500

@@ -1,6 +1,7 @@
 import LumiUI
 import SwiftUI
 import EditorService
+import LumiCoreKit
 
 /// 代码动作弹窗。
 ///
@@ -22,13 +23,13 @@ public struct CodeActionPanel: View {
             HStack {
                 Image(systemName: "lightbulb.fill")
                     .foregroundColor(theme.warning)
-                Text(String(localized: "Code Actions", bundle: .module))
+                Text(LumiPluginLocalization.string("Code Actions", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
                 Spacer()
                 if actions.indices.contains(selectedIndex),
                    actions[selectedIndex].isPreferred {
-                    Text(String(localized: "Preferred", bundle: .module))
+                    Text(LumiPluginLocalization.string("Preferred", bundle: .module))
                         .font(.appMicroEmphasized)
                         .foregroundColor(theme.warning)
                         .padding(.horizontal, 6)

@@ -17,8 +17,8 @@ public actor LSPServiceEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPServiceEditorPlugin()
     public static let id = "LSPServiceEditor"
-    public static let displayName = String(localized: "LSP Service", bundle: .module)
-    public static let description = String(localized: "Provides the core Language Server Protocol integration including completion, hover, and diagnostics.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("LSP Service", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Provides the core Language Server Protocol integration including completion, hover, and diagnostics.", bundle: .module)
     public static let iconName = "server.rack"
     public static let order = 5
     public static var category: PluginCategory { .editor }

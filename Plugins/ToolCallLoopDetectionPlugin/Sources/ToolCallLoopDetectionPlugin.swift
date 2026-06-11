@@ -13,8 +13,8 @@ public actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🔄"
     public nonisolated static let verbose: Bool = false
     public static let id = "tool-call-loop-detection"
-    public static let displayName: String = String(localized: "工具调用循环检测", bundle: .module)
-    public static let description: String = String(localized: "检测并防止工具调用进入无限循环。", bundle: .module)
+    public static let displayName: String = LumiPluginLocalization.string("工具调用循环检测", bundle: .module)
+    public static let description: String = LumiPluginLocalization.string("检测并防止工具调用进入无限循环。", bundle: .module)
     public static let iconName: String = "arrow.triangle.2.circlepath"
     public static var category: PluginCategory { .agent }
     /// 位于 ToolExecutor(195) 与 MessageSender(200) 之间，先于 MessageSender 响应 DB 事件。

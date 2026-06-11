@@ -55,8 +55,8 @@ struct SaveMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "save_memory",
-        displayName: String(localized: "Save Memory", bundle: .module),
-        description: String(localized: "Save a memory to the persistent memory system.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Save Memory", bundle: .module),
+        description: LumiPluginLocalization.string("Save a memory to the persistent memory system.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -86,8 +86,8 @@ struct RecallMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "recall_memory",
-        displayName: String(localized: "Recall Memory", bundle: .module),
-        description: String(localized: "Search for memories related to a query.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Recall Memory", bundle: .module),
+        description: LumiPluginLocalization.string("Search for memories related to a query.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -117,8 +117,8 @@ struct ListMemoriesLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "list_memories",
-        displayName: String(localized: "List Memories", bundle: .module),
-        description: String(localized: "List all saved memories.", bundle: .module)
+        displayName: LumiPluginLocalization.string("List Memories", bundle: .module),
+        description: LumiPluginLocalization.string("List all saved memories.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {
@@ -148,8 +148,8 @@ struct DeleteMemoryLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "delete_memory",
-        displayName: String(localized: "Delete Memory", bundle: .module),
-        description: String(localized: "Delete a memory from the persistent memory system.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Delete Memory", bundle: .module),
+        description: LumiPluginLocalization.string("Delete a memory from the persistent memory system.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

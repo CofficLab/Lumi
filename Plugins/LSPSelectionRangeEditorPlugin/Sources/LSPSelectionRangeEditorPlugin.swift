@@ -12,8 +12,8 @@ public actor LSPSelectionRangeEditorPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .disabled
     public static let shared = LSPSelectionRangeEditorPlugin()
     public static let id = "LSPSelectionRangeEditor"
-    public static let displayName = String(localized: "LSP Selection Ranges", bundle: .module)
-    public static let description = String(localized: "Provides smart expand/shrink selection via LSP selection ranges.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("LSP Selection Ranges", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Provides smart expand/shrink selection via LSP selection ranges.", bundle: .module)
     public static let iconName = "rectangle.on.rectangle"
     public static let order = 27
     public static var category: PluginCategory { .editor }

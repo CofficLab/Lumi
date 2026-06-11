@@ -1,5 +1,6 @@
 import SwiftUI
 import SuperLogKit
+import LumiCoreKit
 
 @MainActor
 public struct RAGSettingsPopoverView: View, SuperLog {
@@ -16,16 +17,16 @@ public struct RAGSettingsPopoverView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Label(String(localized: "RAG 索引状态", bundle: .module), systemImage: "doc.text.magnifyingglass")
+                Label(LumiPluginLocalization.string("RAG 索引状态", bundle: .module), systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
-                Button(String(localized: "刷新全部", bundle: .module)) {
+                Button(LumiPluginLocalization.string("刷新全部", bundle: .module)) {
                     Task { await loadStatus() }
                 }
                 .disabled(isLoading)
                 .controlSize(.small)
 
-                Button(String(localized: "重建全部", bundle: .module)) {
+                Button(LumiPluginLocalization.string("重建全部", bundle: .module)) {
                     Task { await rebuildAll() }
                 }
                 .disabled(isLoading)
@@ -46,7 +47,7 @@ public struct RAGSettingsPopoverView: View, SuperLog {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if trackedProjects.isEmpty {
-                        Text(String(localized: "暂无项目", bundle: .module))
+                        Text(LumiPluginLocalization.string("暂无项目", bundle: .module))
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(trackedProjects) { project in
@@ -92,13 +93,13 @@ extension RAGSettingsPopoverView {
                 HStack(spacing: 10) {
                     Label("\(status.fileCount)", systemImage: "doc")
                     Label("\(status.chunkCount)", systemImage: "square.stack.3d.up")
-                    Label(status.isStale ? String(localized: "已过期", bundle: .module) : String(localized: "最新", bundle: .module), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    Label(status.isStale ? LumiPluginLocalization.string("已过期", bundle: .module) : LumiPluginLocalization.string("最新", bundle: .module), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                         .foregroundStyle(status.isStale ? .orange : .green)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             } else {
-                Text(String(localized: "尚未建立索引", bundle: .module))
+                Text(LumiPluginLocalization.string("尚未建立索引", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -108,12 +109,12 @@ extension RAGSettingsPopoverView {
             }
 
             HStack(spacing: 8) {
-                Button(String(localized: "刷新", bundle: .module)) {
+                Button(LumiPluginLocalization.string("刷新", bundle: .module)) {
                     Task { await refreshProjectStatus(projectPath: project.path) }
                 }
                 .disabled(isLoading)
 
-                Button(String(localized: "重建", bundle: .module)) {
+                Button(LumiPluginLocalization.string("重建", bundle: .module)) {
                     Task { await rebuildProject(projectPath: project.path) }
                 }
                 .disabled(isLoading)

@@ -72,7 +72,7 @@ public struct GoBuildOutputView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "stop.circle.fill")
                         .font(.system(size: 10))
-                    Text(String(localized: "Cancelled", bundle: .module))
+                    Text(LumiPluginLocalization.string("Cancelled", bundle: .module))
                         .font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
@@ -81,7 +81,7 @@ public struct GoBuildOutputView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "FF453A"))
-                    Text("\(buildManager.errorCount) \(String(localized: "errors", bundle: .module))")
+                    Text("\(buildManager.errorCount) \(LumiPluginLocalization.string("errors", bundle: .module))")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "FF453A"))
                 }
@@ -90,7 +90,7 @@ public struct GoBuildOutputView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "FF9F0A"))
-                    Text("\(buildManager.warningCount) \(String(localized: "warnings", bundle: .module))")
+                    Text("\(buildManager.warningCount) \(LumiPluginLocalization.string("warnings", bundle: .module))")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "FF9F0A"))
                 }
@@ -99,7 +99,7 @@ public struct GoBuildOutputView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "30D158"))
-                    Text(String(localized: "Build succeeded", bundle: .module))
+                    Text(LumiPluginLocalization.string("Build succeeded", bundle: .module))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "30D158"))
                 }
@@ -116,7 +116,7 @@ public struct GoBuildOutputView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
-                .help(String(localized: "Stop", bundle: .module))
+                .help(LumiPluginLocalization.string("Stop", bundle: .module))
             }
 
             if buildManager.lastBuildDuration > 0 {
@@ -137,13 +137,13 @@ public struct GoBuildOutputView: View {
     private var runningTitle: String {
         switch buildManager.state {
         case .building:
-            String(localized: "Building...", bundle: .module)
+            LumiPluginLocalization.string("Building...", bundle: .module)
         case .formatting:
-            String(localized: "Formatting...", bundle: .module)
+            LumiPluginLocalization.string("Formatting...", bundle: .module)
         case .tidying:
-            String(localized: "Tidying module...", bundle: .module)
+            LumiPluginLocalization.string("Tidying module...", bundle: .module)
         default:
-            String(localized: "Running...", bundle: .module)
+            LumiPluginLocalization.string("Running...", bundle: .module)
         }
     }
 
@@ -194,7 +194,7 @@ public struct GoBuildOutputView: View {
                 .foregroundColor(
                     themeVM.activeChromeTheme.workspaceTertiaryTextColor()
                 )
-            Text(String(localized: "Run go build to see output", bundle: .module))
+            Text(LumiPluginLocalization.string("Run go build to see output", bundle: .module))
                 .font(.system(size: 11))
                 .foregroundColor(
                     themeVM.activeChromeTheme.workspaceSecondaryTextColor()

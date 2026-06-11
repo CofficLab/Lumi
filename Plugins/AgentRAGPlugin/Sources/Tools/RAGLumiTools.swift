@@ -54,8 +54,8 @@ struct RAGCodeSearchLumiTool: LumiAgentTool, @unchecked Sendable {
 
     static let info = LumiAgentToolInfo(
         id: "search_code",
-        displayName: String(localized: "Search Code", bundle: .module),
-        description: String(localized: "Search code snippets in the current project.", bundle: .module)
+        displayName: LumiPluginLocalization.string("Search Code", bundle: .module),
+        description: LumiPluginLocalization.string("Search code snippets in the current project.", bundle: .module)
     )
 
     var inputSchema: LumiJSONValue {

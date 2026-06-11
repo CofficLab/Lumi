@@ -10,7 +10,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
 
     public var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? String(localized: "Untitled", bundle: .module) : trimmed
+        return trimmed.isEmpty ? LumiPluginLocalization.string("Untitled", bundle: .module) : trimmed
     }
 
     public init(

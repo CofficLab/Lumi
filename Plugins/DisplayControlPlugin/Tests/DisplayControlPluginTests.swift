@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 import LumiCoreKit
 @testable import DisplayControlPlugin
@@ -9,7 +10,8 @@ func pluginInfoIdentifier() {
 
 @Test("Plugin info has correct display name")
 func pluginInfoDisplayName() {
-    #expect(DisplayControlPlugin.info.displayName == "Display Control")
+    let expected = LumiPluginLocalization.string("Display Control", bundle: .module, locale: Locale(identifier: "en"))
+    #expect(DisplayControlPlugin.info.displayName == expected)
 }
 
 @Test("Plugin category is system")

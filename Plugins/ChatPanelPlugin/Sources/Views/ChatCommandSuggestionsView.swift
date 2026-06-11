@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct ChatSlashCommand: Identifiable, Equatable {
     var id: String { command }
@@ -14,9 +15,9 @@ struct ChatSlashCommand: Identifiable, Equatable {
     }
 
     private static let all: [ChatSlashCommand] = [
-        .init(command: "/clear", description: String(localized: "Clear chat history", bundle: .module)),
-        .init(command: "/help", description: String(localized: "Show available commands", bundle: .module)),
-        .init(command: "/model", description: String(localized: "Open model selector", bundle: .module)),
+        .init(command: "/clear", description: LumiPluginLocalization.string("Clear chat history", bundle: .module)),
+        .init(command: "/help", description: LumiPluginLocalization.string("Show available commands", bundle: .module)),
+        .init(command: "/model", description: LumiPluginLocalization.string("Open model selector", bundle: .module)),
     ]
 }
 

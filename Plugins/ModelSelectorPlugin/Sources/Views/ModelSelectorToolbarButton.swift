@@ -32,8 +32,8 @@ public struct ModelSelectorToolbarButton: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .accessibilityLabel(String(localized: "Select Model", bundle: .module))
-        .accessibilityHint(String(localized: "Select Model Hint", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Select Model", bundle: .module))
+        .accessibilityHint(LumiPluginLocalization.string("Select Model Hint", bundle: .module))
     }
 
 }

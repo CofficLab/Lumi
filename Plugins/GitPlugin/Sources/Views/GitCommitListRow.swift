@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// Shared Git commit row used by the panel sidebar and compact status bar popover.
 public struct GitCommitListRow: View {
@@ -32,14 +33,14 @@ public struct GitCommitListRow: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 11))
                                 .foregroundColor(.orange)
-                                .help(String(localized: "Not pushed to remote repository", bundle: .module))
+                                .help(LumiPluginLocalization.string("Not pushed to remote repository", bundle: .module))
                         }
                     }
 
                     HStack(spacing: 4) {
                         Text(commit.author)
                             .lineLimit(1)
-                        Text("·", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string("·", bundle: .module))
                             .foregroundColor(.secondary.opacity(0.5))
                         Text(relativeTimeString(from: commit.date))
                             .lineLimit(1)

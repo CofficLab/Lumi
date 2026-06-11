@@ -6,8 +6,8 @@ public enum AliyunPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.aliyun",
-        displayName: String(localized: "阿里云 CodingPlan", bundle: .module),
-        description: String(localized: "Contributes Aliyun CodingPlan models and Aliyun-specific chat error renderers.", bundle: .module),
+        displayName: LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Aliyun CodingPlan models and Aliyun-specific chat error renderers.", bundle: .module),
         order: 105
     )
 

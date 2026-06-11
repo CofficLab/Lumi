@@ -38,11 +38,9 @@ let package = Package(
                 .product(name: "StringCatalogKit", package: "StringCatalogKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: ".",
-            exclude: ["Tests", "README.md"],
-            sources: ["Sources"],
+            path: "Sources",
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

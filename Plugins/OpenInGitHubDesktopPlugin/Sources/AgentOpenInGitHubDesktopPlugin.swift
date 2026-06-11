@@ -23,8 +23,8 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-github-desktop",
-        displayName: String(localized: "Open in GitHub Desktop", bundle: .module),
-        description: String(localized: "Open current project in GitHub Desktop", bundle: .module),
+        displayName: LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module),
+        description: LumiPluginLocalization.string("Open current project in GitHub Desktop", bundle: .module),
         order: 97
     )
 
@@ -91,7 +91,7 @@ public struct OpenInGitHubDesktopStatusBarView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "在 GitHub Desktop 中打开当前项目", bundle: .module))
+            .help(LumiPluginLocalization.string("在 GitHub Desktop 中打开当前项目", bundle: .module))
         }
     }
 
@@ -101,13 +101,13 @@ public struct OpenInGitHubDesktopStatusBarView: View {
             Image(systemName: "desktopcomputer")
                 .font(.appMicro)
 
-            Text(String(localized: "GitHub Desktop", bundle: .module))
+            Text(LumiPluginLocalization.string("GitHub Desktop", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", bundle: .module))
+        .help(LumiPluginLocalization.string("无项目", bundle: .module))
     }
 
     private func openInGitHubDesktop() {
@@ -132,7 +132,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                 Image(systemName: "desktopcomputer")
                     .font(.appBodyEmphasized)
 
-                Text(String(localized: "GitHub Desktop", bundle: .module))
+                Text(LumiPluginLocalization.string("GitHub Desktop", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -143,7 +143,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", bundle: .module))
+                        Text(LumiPluginLocalization.string("打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -154,7 +154,7 @@ public struct OpenInGitHubDesktopDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", bundle: .module))
+                Text(LumiPluginLocalization.string("项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -175,7 +175,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", bundle: .module))
+                .help(LumiPluginLocalization.string("复制路径", bundle: .module))
             }
         }
         .padding()

@@ -15,9 +15,9 @@ public struct SpawnAgentTool: SuperAgentTool, SuperLog {
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return String(localized: "Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
+            return LumiPluginLocalization.string("Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
         case .english:
-            return String(localized: "Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
+            return LumiPluginLocalization.string("Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
         }
     }
 

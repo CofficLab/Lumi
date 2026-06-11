@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
     case all
@@ -11,10 +12,10 @@ private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return String(localized: "All", bundle: .module)
-        case .dark: return String(localized: "Dark", bundle: .module)
-        case .light: return String(localized: "Light", bundle: .module)
-        case .system: return String(localized: "System", bundle: .module)
+        case .all: return LumiPluginLocalization.string("All", bundle: .module)
+        case .dark: return LumiPluginLocalization.string("Dark", bundle: .module)
+        case .light: return LumiPluginLocalization.string("Light", bundle: .module)
+        case .system: return LumiPluginLocalization.string("System", bundle: .module)
         }
     }
 
@@ -45,13 +46,13 @@ struct ThemePickerDetailView: View {
 
     var body: some View {
         StatusBarPopoverScaffold(
-            title: String(localized: "Theme", bundle: .module),
+            title: LumiPluginLocalization.string("Theme", bundle: .module),
             systemImage: "paintbrush"
         ) {
             if registry.themes.isEmpty {
                 AppEmptyState(
                     icon: "paintbrush",
-                    title: LocalizedStringKey(String(localized: "No themes available", bundle: .module))
+                    title: LocalizedStringKey(LumiPluginLocalization.string("No themes available", bundle: .module))
                 )
             } else {
                 VStack(spacing: 8) {
@@ -67,7 +68,7 @@ struct ThemePickerDetailView: View {
                         AppEmptyState(
                             icon: "line.3.horizontal.decrease.circle",
                             title: LocalizedStringKey(
-                                String(localized: "No themes in this category", bundle: .module)
+                                LumiPluginLocalization.string("No themes in this category", bundle: .module)
                             )
                         )
                         .frame(minHeight: 180)

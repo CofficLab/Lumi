@@ -15,7 +15,7 @@ public struct EditorEmptyStateView: View {
                 .font(.system(size: 32, weight: .thin))
                 .foregroundColor(Color(hex: "98989E"))
 
-            Text(String(localized: "Select a file to start editing", bundle: .module))
+            Text(LumiPluginLocalization.string("Select a file to start editing", bundle: .module))
                 .font(.system(size: 13))
                 .foregroundColor(Color(hex: "98989E"))
         }

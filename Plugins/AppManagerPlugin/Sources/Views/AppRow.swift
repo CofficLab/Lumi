@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 应用行视图
 struct AppRow: View {
@@ -40,7 +41,7 @@ struct AppRow: View {
                     }
 
                     if let version = app.version {
-                        Text("•", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
                             .foregroundColor(theme.textTertiary)
 
                         Text(version)

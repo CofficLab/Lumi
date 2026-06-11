@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct DeviceInfoView: View {
     @LumiTheme private var theme
@@ -42,7 +43,7 @@ struct DeviceInfoView: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         DeviceInfoCard(title: "CPU", icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(data.processorName.isEmpty ? "\(data.coreCount) cores" : data.processorName)
+                                Text(data.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), data.coreCount) : data.processorName)
                                     .font(.caption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
@@ -110,7 +111,7 @@ struct DeviceInfoView: View {
 
                         DeviceInfoCard(title: "Disk", icon: "internaldrive", color: theme.warning) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("\(diskUsedText) \(PluginDeviceInfoLocalization.string("used"))")
+                                Text("\(diskUsedText) \(LumiPluginLocalization.string("used", bundle: .module))")
                                     .font(.caption)
                                     .foregroundColor(theme.textSecondary)
 
@@ -153,7 +154,7 @@ struct DeviceInfoView: View {
                                         }
                                         if batteryService.cycleCount > 0 {
                                             Label {
-                                                Text("\(batteryService.cycleCount) cycles")
+                                                Text(String(format: LumiPluginLocalization.string("%d cycles", bundle: .module), batteryService.cycleCount))
                                                     .font(.caption2)
                                             } icon: {
                                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -167,13 +168,13 @@ struct DeviceInfoView: View {
                                     HStack {
                                         Image(systemName: "powerplug.fill")
                                             .foregroundColor(.green)
-                                        Text("AC Power", bundle: .module)
+                                        Text(LumiPluginLocalization.string("AC Power", bundle: .module))
                                             .font(.body.weight(.medium))
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
                                     }
                                     if batteryService.adapterWatts > 0 {
-                                        Text("Adapter: \(batteryService.adapterWattsString)")
+                                        Text(String(format: LumiPluginLocalization.string("Adapter: %@", bundle: .module), batteryService.adapterWattsString))
                                             .font(.caption)
                                             .foregroundColor(theme.textSecondary)
                                     }
@@ -183,7 +184,7 @@ struct DeviceInfoView: View {
 
                         DeviceInfoCard(title: "GPU", icon: "gpu", color: Color(hex: "BF5AF2")) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(gpuService.modelName.isEmpty ? "GPU" : gpuService.modelName)
+                                Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                                     .font(.caption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
@@ -252,7 +253,7 @@ struct DeviceInfoView: View {
                     HStack {
                         Image(systemName: "clock")
                             .foregroundColor(theme.textSecondary)
-                        Text("\(PluginDeviceInfoLocalization.string("Uptime")): \(formatUptime(data.uptime))")
+                        Text("\(LumiPluginLocalization.string("Uptime", bundle: .module)): \(formatUptime(data.uptime))")
                             .font(.caption)
                             .foregroundColor(theme.textSecondary)
                         Spacer()
@@ -263,7 +264,7 @@ struct DeviceInfoView: View {
                 GlassDivider()
 
                 VStack(alignment: .leading, spacing: 16) {
-                    Label(PluginDeviceInfoLocalization.string("Real-time Monitor"), systemImage: "chart.xyaxis.line")
+                    Label(LumiPluginLocalization.string("Real-time Monitor", bundle: .module), systemImage: "chart.xyaxis.line")
                         .font(.body.weight(.semibold))
                         .foregroundColor(theme.textPrimary)
                         .padding(.horizontal)

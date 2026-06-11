@@ -40,23 +40,23 @@ public struct ChatBubble: View {
                 Button {
                     conversationVM.enqueueText(message.content)
                 } label: {
-                    Label(String(localized: "Resend", bundle: .module), systemImage: "arrow.clockwise")
+                    Label(LumiPluginLocalization.string("Resend", bundle: .module), systemImage: "arrow.clockwise")
                 }
             }
 
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
-                Label(String(localized: "Delete Message", bundle: .module), systemImage: "trash")
+                Label(LumiPluginLocalization.string("Delete Message", bundle: .module), systemImage: "trash")
             }
         }
-        .alert(String(localized: "Delete Message", bundle: .module), isPresented: $showDeleteConfirmation) {
-            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
+        .alert(LumiPluginLocalization.string("Delete Message", bundle: .module), isPresented: $showDeleteConfirmation) {
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
+            Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
                 timelineViewModel.deleteMessage(message.id)
             }
         } message: {
-            Text(String(localized: "Are you sure you want to delete this message? This action cannot be undone.", bundle: .module))
+            Text(LumiPluginLocalization.string("Are you sure you want to delete this message? This action cannot be undone.", bundle: .module))
         }
     }
 

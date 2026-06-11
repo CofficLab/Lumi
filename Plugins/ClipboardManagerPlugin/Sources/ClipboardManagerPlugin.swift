@@ -11,8 +11,8 @@ public enum ClipboardManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.clipboard-manager",
-        displayName: String(localized: "Clipboard", bundle: .module),
-        description: String(localized: "Manage clipboard history and snippets", bundle: .module),
+        displayName: LumiPluginLocalization.string("Clipboard", bundle: .module),
+        description: LumiPluginLocalization.string("Manage clipboard history and snippets", bundle: .module),
         order: 70
     )
 

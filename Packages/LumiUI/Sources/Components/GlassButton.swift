@@ -35,6 +35,7 @@ public struct GlassButton: View {
             appButton = AppButton(
                 localized: title,
                 table: tableName,
+                bundle: .module,
                 style: Self.mapStyle(style),
                 fillsWidth: true,
                 action: action

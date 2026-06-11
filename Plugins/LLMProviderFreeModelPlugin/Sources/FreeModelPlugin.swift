@@ -7,8 +7,8 @@ public enum FreeModelPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.freemodel",
-        displayName: String(localized: "FreeModel", bundle: .module),
-        description: String(localized: "Contributes FreeModel models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("FreeModel", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes FreeModel models to Lumi Chat.", bundle: .module),
         order: 95
     )
 
@@ -22,8 +22,8 @@ public final class FreeModelProvider: OpenAICompatibleLumiProvider, @unchecked S
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "freemodel",
-            displayName: String(localized: "FreeModel", bundle: .module),
-            description: String(localized: "Free LLM Gateway by freemodel.dev", bundle: .module),
+            displayName: LumiPluginLocalization.string("FreeModel", bundle: .module),
+            description: LumiPluginLocalization.string("Free LLM Gateway by freemodel.dev", bundle: .module),
             defaultModel: "gpt-5.4",
             availableModels: [
             "gpt-5.5",

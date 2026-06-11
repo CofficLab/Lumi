@@ -2,6 +2,7 @@ import EditorService
 import LSPWorkspaceSymbolEditorPlugin
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct BottomEditorWorkspaceSymbolsPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -26,7 +27,7 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Text(String(localized: "Workspace symbols not available", bundle: .module))
+                Text(LumiPluginLocalization.string("Workspace symbols not available", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,6 +60,6 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
 
     private var panelTitle: String {
         let count = service.workspaceSymbolProvider.symbols.count
-        return count > 0 ? String(localized: "Workspace Symbols (\(count))", bundle: .module) : String(localized: "Workspace Symbols", bundle: .module)
+        return count > 0 ? LumiPluginLocalization.string("Workspace Symbols (\(count))", bundle: .module) : LumiPluginLocalization.string("Workspace Symbols", bundle: .module)
     }
 }

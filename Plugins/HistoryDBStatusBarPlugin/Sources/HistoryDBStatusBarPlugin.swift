@@ -6,8 +6,8 @@ import SwiftUI
 public enum HistoryDBStatusBarPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.history-db-status-bar",
-        displayName: String(localized: "History Database Browser", bundle: .module),
-        description: String(localized: "Browse message and conversation history in status bar popover", bundle: .module),
+        displayName: LumiPluginLocalization.string("History Database Browser", bundle: .module),
+        description: LumiPluginLocalization.string("Browse message and conversation history in status bar popover", bundle: .module),
         order: 98
     )
     public static let policy: LumiPluginPolicy = .alwaysOn
@@ -25,7 +25,7 @@ public enum HistoryDBStatusBarPlugin: LumiPlugin {
         return [
             LumiStatusBarItem(
                 id: "\(info.id).browser",
-                title: String(localized: "History Database Browser", bundle: .module),
+                title: LumiPluginLocalization.string("History Database Browser", bundle: .module),
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {

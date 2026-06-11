@@ -7,8 +7,8 @@ public enum HyperAPIPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.hyperapi",
-        displayName: String(localized: "HyperAPI", bundle: .module),
-        description: String(localized: "Contributes HyperAPI models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("HyperAPI", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes HyperAPI models to Lumi Chat.", bundle: .module),
         order: 97
     )
 
@@ -22,8 +22,8 @@ public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "hyperapi",
-            displayName: String(localized: "HyperAPI", bundle: .module),
-            description: String(localized: "LLM Router by hyperapi.cc", bundle: .module),
+            displayName: LumiPluginLocalization.string("HyperAPI", bundle: .module),
+            description: LumiPluginLocalization.string("LLM Router by hyperapi.cc", bundle: .module),
             defaultModel: "gpt-5",
             availableModels: [
             "gpt-5.1-codex-max",

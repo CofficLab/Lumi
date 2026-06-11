@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct RegistryCard: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -43,12 +44,12 @@ public struct RegistryCard: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundColor(theme.textSecondary)
-                        .help(String(localized: "Refresh", bundle: .module))
+                        .help(LumiPluginLocalization.string("Refresh", bundle: .module))
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Current Registry", bundle: .module)
+                    Text(verbatim: LumiPluginLocalization.string("Current Registry", bundle: .module))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
 
@@ -87,7 +88,7 @@ public struct RegistryCard: View {
                 } label: {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                        Text("Switch Source", bundle: .module)
+                        Text(verbatim: LumiPluginLocalization.string("Switch Source", bundle: .module))
                     }
                     .frame(maxWidth: .infinity)
                 }

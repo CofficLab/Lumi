@@ -11,8 +11,8 @@ public enum EditorRailReferencesPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-references",
-        displayName: String(localized: "Editor Rail References", bundle: .module),
-        description: String(localized: "References tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail References", bundle: .module),
+        description: LumiPluginLocalization.string("References tab in the editor rail.", bundle: .module),
         order: 11
     )
 
@@ -29,7 +29,7 @@ public enum EditorRailReferencesPanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "references",
                 order: info.order,
-                title: String(localized: "References", bundle: .module),
+                title: LumiPluginLocalization.string("References", bundle: .module),
                 systemImage: "arrow.triangle.branch"
             ) {
                 BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)

@@ -2,6 +2,7 @@ import SwiftUI
 import SuperLogKit
 import LumiUI
 import XcodeKit
+import LumiCoreKit
 
 /// Xcode 项目状态栏尾部视图
 public struct XcodeStatusBarTrailingView: View, SuperLog {
@@ -66,7 +67,7 @@ public struct XcodeStatusBarDetailView: View {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 14))
                     .foregroundStyle(.blue)
-                Text(String(localized: "Xcode Build Context", bundle: .module))
+                Text(LumiPluginLocalization.string("Xcode Build Context", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 buildStatusBadge
@@ -77,7 +78,7 @@ public struct XcodeStatusBarDetailView: View {
             if let snapshot = viewModel.latestEditorSnapshot {
                 infoSection(snapshot: snapshot)
             } else {
-                Text(String(localized: "No editor context snapshot available.", bundle: .module))
+                Text(LumiPluginLocalization.string("No editor context snapshot available.", bundle: .module))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -93,11 +94,11 @@ public struct XcodeStatusBarDetailView: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "Re-resolving...", bundle: .module))
+                            Text(LumiPluginLocalization.string("Re-resolving...", bundle: .module))
                         }
                     } else {
                         Label(
-                            String(localized: "Re-resolve", bundle: .module),
+                            LumiPluginLocalization.string("Re-resolve", bundle: .module),
                             systemImage: "arrow.clockwise"
                         )
                     }
@@ -128,35 +129,35 @@ public struct XcodeStatusBarDetailView: View {
     private func infoSection(snapshot: XcodeEditorContextSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             detailRow(
-                String(localized: "Scheme", bundle: .module),
-                viewModel.activeScheme ?? String(localized: "Not Selected", bundle: .module)
+                LumiPluginLocalization.string("Scheme", bundle: .module),
+                viewModel.activeScheme ?? LumiPluginLocalization.string("Not Selected", bundle: .module)
             )
             detailRow(
-                String(localized: "Configuration", bundle: .module),
-                viewModel.activeConfiguration ?? String(localized: "Not Selected", bundle: .module)
+                LumiPluginLocalization.string("Configuration", bundle: .module),
+                viewModel.activeConfiguration ?? LumiPluginLocalization.string("Not Selected", bundle: .module)
             )
             detailRow(
-                String(localized: "Destination", bundle: .module),
-                viewModel.activeDestination ?? String(localized: "Undetermined", bundle: .module)
+                LumiPluginLocalization.string("Destination", bundle: .module),
+                viewModel.activeDestination ?? LumiPluginLocalization.string("Undetermined", bundle: .module)
             )
             detailRow(
-                String(localized: "Workspace", bundle: .module),
+                LumiPluginLocalization.string("Workspace", bundle: .module),
                 snapshot.workspaceName
             )
             detailRow(
-                String(localized: "Current File", bundle: .module),
-                snapshot.currentFilePath ?? String(localized: "No File Open", bundle: .module)
+                LumiPluginLocalization.string("Current File", bundle: .module),
+                snapshot.currentFilePath ?? LumiPluginLocalization.string("No File Open", bundle: .module)
             )
             detailRow(
-                String(localized: "Preferred Target", bundle: .module),
-                snapshot.currentFileTarget ?? String(localized: "Undetermined", bundle: .module)
+                LumiPluginLocalization.string("Preferred Target", bundle: .module),
+                snapshot.currentFileTarget ?? LumiPluginLocalization.string("Undetermined", bundle: .module)
             )
         }
 
         if !viewModel.semanticReport.reasons.isEmpty {
             Divider()
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "Semantic Availability", bundle: .module))
+                Text(LumiPluginLocalization.string("Semantic Availability", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                 ForEach(viewModel.semanticReport.reasons) { reason in
                     reasonRow(reason)

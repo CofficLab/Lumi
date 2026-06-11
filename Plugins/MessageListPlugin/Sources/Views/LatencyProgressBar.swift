@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 // MARK: - Latency Progress Bar
 
@@ -67,10 +68,10 @@ public struct LatencyProgressBar: View {
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         return """
         ⚡ TTFT: \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 \(String(localized: "Response Time", bundle: .module)): \(formatLatency(totalLatency)) (\(responsePercent)%)
+        🕐 \(LumiPluginLocalization.string("Response Time", bundle: .module)): \(formatLatency(totalLatency)) (\(responsePercent)%)
 
-        \(String(localized: "TTFT Help", bundle: .module))
-        \(String(localized: "Response Time Help", bundle: .module))
+        \(LumiPluginLocalization.string("TTFT Help", bundle: .module))
+        \(LumiPluginLocalization.string("Response Time Help", bundle: .module))
         """
     }
 }

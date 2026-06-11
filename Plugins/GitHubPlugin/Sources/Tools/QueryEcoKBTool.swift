@@ -1,5 +1,6 @@
 import Foundation
 import AgentToolKit
+import LumiCoreKit
 
 /// 用于搜索本地 GitHub 生态知识库的 Agent 工具。
 ///
@@ -55,7 +56,7 @@ public struct QueryEcoKBTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         let query = (arguments["query"]?.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
-            return String(localized: "Missing required parameter: query", bundle: .module)
+            return LumiPluginLocalization.string("Missing required parameter: query", bundle: .module)
         }
 
         let limit = Self.normalizedLimit(arguments["limit"]?.value)
@@ -81,7 +82,7 @@ public struct QueryEcoKBTool: SuperAgentTool {
             .prefix(limit)
 
         guard !matches.isEmpty else {
-            return String(format: String(localized: "No cached GitHub ecosystem entries matched `%@`.", bundle: .module), query)
+            return String(format: LumiPluginLocalization.string("No cached GitHub ecosystem entries matched `%@`.", bundle: .module), query)
         }
 
         var lines = ["## GitHub Ecosystem KB Results", ""]

@@ -10,8 +10,8 @@ public enum RAGPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.rag",
-        displayName: String(localized: "RAG", bundle: .module),
-        description: String(localized: "Retrieval-Augmented Generation", bundle: .module),
+        displayName: LumiPluginLocalization.string("RAG", bundle: .module),
+        description: LumiPluginLocalization.string("Retrieval-Augmented Generation", bundle: .module),
         order: 200
     )
 
@@ -30,7 +30,7 @@ public enum RAGPlugin: LumiPlugin {
         return [
             LumiStatusBarItem(
                 id: "\(info.id).status",
-                title: String(localized: "RAG", bundle: .module),
+                title: LumiPluginLocalization.string("RAG", bundle: .module),
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {

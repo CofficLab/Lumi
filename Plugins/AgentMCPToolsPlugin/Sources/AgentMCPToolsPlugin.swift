@@ -12,8 +12,8 @@ public actor AgentMCPToolsPlugin: SuperPlugin {
     public nonisolated static let emoji = "🐘"
     public nonisolated static let verbose: Bool = false
     public static let id = "AgentMCPTools"
-    public static let displayName = String(localized: "MCP Tools", bundle: .module)
-    public static let description = String(localized: "MCP-backed tools (hidden)", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("MCP Tools", bundle: .module)
+    public static let description = LumiPluginLocalization.string("MCP-backed tools (hidden)", bundle: .module)
     public static let iconName = "server.rack"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 60 }

@@ -12,8 +12,8 @@ public enum LLMAvailabilityPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-availability",
-        displayName: String(localized: "LLM Availability", bundle: .module),
-        description: String(localized: "Detect available LLM providers and models via health checks", bundle: .module),
+        displayName: LumiPluginLocalization.string("LLM Availability", bundle: .module),
+        description: LumiPluginLocalization.string("Detect available LLM providers and models via health checks", bundle: .module),
         order: 15
     )
 

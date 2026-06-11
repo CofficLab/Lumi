@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import LumiUI
+import LumiCoreKit
 
 /// 添加新规则表单视图
 public struct AddRuleFormView: View {
@@ -36,7 +37,7 @@ public struct AddRuleFormView: View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题
             HStack {
-                Text("Add New Rule", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("Add New Rule", bundle: .module))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 Spacer()
@@ -46,7 +47,7 @@ public struct AddRuleFormView: View {
             HStack {
                 // 应用选择器
                 Picker("Application", selection: $selectedApp) {
-                    Text("Select Application", bundle: .module).tag(nil as NSRunningApplication?)
+                    Text(verbatim: LumiPluginLocalization.string("Select Application", bundle: .module)).tag(nil as NSRunningApplication?)
                     ForEach(runningApps, id: \.bundleIdentifier) { app in
                         Text(app.localizedName ?? "Unknown").tag(app as NSRunningApplication?)
                     }
@@ -55,7 +56,7 @@ public struct AddRuleFormView: View {
 
                 // 输入源选择器
                 Picker("Input Source", selection: $selectedSourceID) {
-                    Text("Select Input Source", bundle: .module).tag("")
+                    Text(verbatim: LumiPluginLocalization.string("Select Input Source", bundle: .module)).tag("")
                     ForEach(availableSources) { source in
                         Text(source.name).tag(source.id)
                     }

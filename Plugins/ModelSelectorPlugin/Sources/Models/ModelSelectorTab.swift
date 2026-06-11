@@ -1,3 +1,4 @@
+import LumiCoreKit
 /// 模型选择器 Tab 类型
 public enum ModelSelectorTab: Equatable {
     // MARK: - 快捷 Tab
@@ -26,17 +27,17 @@ public enum ModelSelectorTab: Equatable {
     public var displayTitle: String {
         switch self {
         case .current:
-            return String(localized: "Current Provider", bundle: .module)
+            return LumiPluginLocalization.string("Current Provider", bundle: .module)
         case .frequent:
-            return String(localized: "Frequent", bundle: .module)
+            return LumiPluginLocalization.string("Frequent", bundle: .module)
         case .fast:
-            return String(localized: "Fast", bundle: .module)
+            return LumiPluginLocalization.string("Fast", bundle: .module)
         case .auto:
             return "Auto"
         case .availability:
-            return String(localized: "Availability", bundle: .module)
+            return LumiPluginLocalization.string("Availability", bundle: .module)
         case .all:
-            return String(localized: "All", bundle: .module)
+            return LumiPluginLocalization.string("All", bundle: .module)
         case .provider:
             return ""  // 供应商标题由外部传入
         }

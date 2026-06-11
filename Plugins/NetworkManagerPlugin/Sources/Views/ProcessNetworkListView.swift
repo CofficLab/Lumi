@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct ProcessNetworkListView: View {
     @ObservedObject var viewModel: NetworkManagerViewModel
@@ -8,7 +9,7 @@ public struct ProcessNetworkListView: View {
         VStack(spacing: 0) {
             // Toolbar
             HStack {
-                Text(String(localized: "Process Monitor", bundle: .module))
+                Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -36,15 +37,15 @@ public struct ProcessNetworkListView: View {
                 let availableWidth = max(0, geometry.size.width - (horizontalPadding * 2) - scrollBarWidth)
                 
                 HStack(spacing: 0) {
-                    Text(String(localized: "App", bundle: .module))
+                    Text(LumiPluginLocalization.string("App", bundle: .module))
                         .frame(width: availableWidth * 0.50, alignment: .leading)
 
                     Spacer()
 
-                    Text(String(localized: "Down", bundle: .module))
+                    Text(LumiPluginLocalization.string("Down", bundle: .module))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
 
-                    Text(String(localized: "Up", bundle: .module))
+                    Text(LumiPluginLocalization.string("Up", bundle: .module))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
@@ -62,7 +63,7 @@ public struct ProcessNetworkListView: View {
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
-                    Text(String(localized: "No active processes", bundle: .module))
+                    Text(LumiPluginLocalization.string("No active processes", bundle: .module))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
                 }

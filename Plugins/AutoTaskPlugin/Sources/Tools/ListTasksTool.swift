@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import SuperLogKit
+import LumiCoreKit
 
 /// 获取任务列表工具
 ///
@@ -59,7 +60,7 @@ public struct ListTasksTool: SuperAgentTool, SuperLog {
         }
 
         if tasks.isEmpty {
-            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
+            return LumiPluginLocalization.string("No tasks found for this conversation. Use create_task to plan your work.", bundle: .module)
         }
 
         let statusLabels: [TaskItem.TaskStatus: String] = [
@@ -69,7 +70,7 @@ public struct ListTasksTool: SuperAgentTool, SuperLog {
             .skipped: "skipped",
         ]
 
-        var result = "📋 \(String(localized: "Tasks (\(tasks.count) total)", bundle: .module))\n\n"
+        var result = "📋 \(LumiPluginLocalization.string("Tasks (\(tasks.count) total)", bundle: .module))\n\n"
         for task in tasks {
             let statusLabel = statusLabels[task.status] ?? "unknown"
             result += "#\(task.order) `\(task.id)` [\(statusLabel)] **\(task.title)**"

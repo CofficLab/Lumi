@@ -7,8 +7,8 @@ public enum LPgptPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.lpgpt",
-        displayName: String(localized: "LPgpt", bundle: .module),
-        description: String(localized: "Contributes LPgpt models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("LPgpt", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes LPgpt models to Lumi Chat.", bundle: .module),
         order: 98
     )
 
@@ -22,8 +22,8 @@ public final class LPgptProvider: OpenAICompatibleLumiProvider, @unchecked Senda
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "lpgpt",
-            displayName: String(localized: "LPgpt", bundle: .module),
-            description: String(localized: "Free LLM Gateway by lpgpt.us", bundle: .module),
+            displayName: LumiPluginLocalization.string("LPgpt", bundle: .module),
+            description: LumiPluginLocalization.string("Free LLM Gateway by lpgpt.us", bundle: .module),
             defaultModel: "gpt-5.4",
             availableModels: [
             "gpt-5.4",

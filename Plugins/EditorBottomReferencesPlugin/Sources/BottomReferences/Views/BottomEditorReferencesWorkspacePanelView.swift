@@ -1,6 +1,7 @@
 import EditorService
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 public struct BottomEditorReferencesWorkspacePanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -47,14 +48,14 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
 
     private var panelTitle: String {
         let count = service.panelState.referenceResults.count
-        return count > 0 ? String(localized: "References (\(count))", bundle: .module) : String(localized: "References", bundle: .module)
+        return count > 0 ? LumiPluginLocalization.string("References (\(count))", bundle: .module) : LumiPluginLocalization.string("References", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if service.panelState.referenceResults.isEmpty {
-                    emptyState(String(localized: "No References", bundle: .module), systemImage: "arrow.triangle.branch")
+                    emptyState(LumiPluginLocalization.string("No References", bundle: .module), systemImage: "arrow.triangle.branch")
                 } else {
                     ForEach(service.panelState.referenceResults) { item in
                         Button {
@@ -73,7 +74,7 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
                             panelCard(
                                 title: "\(item.path):\(item.line):\(item.column)",
                                 subtitle: item.preview,
-                                badge: String(localized: "Reference", bundle: .module),
+                                badge: LumiPluginLocalization.string("Reference", bundle: .module),
                                 isSelected: service.panelState.selectedReferenceResult == item
                             )
                         }

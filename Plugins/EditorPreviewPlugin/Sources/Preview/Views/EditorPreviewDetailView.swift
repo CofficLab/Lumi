@@ -125,16 +125,16 @@ public struct EditorPreviewDetailView: View, SuperLog {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .confirmationDialog(
-            String(localized: "Clean all stale String Catalog keys in this project?", bundle: .module),
+            LumiPluginLocalization.string("Clean all stale String Catalog keys in this project?", bundle: .module),
             isPresented: $isConfirmingProjectStringCatalogClean,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "Clean Project String Catalogs", bundle: .module), role: .destructive) {
+            Button(LumiPluginLocalization.string("Clean Project String Catalogs", bundle: .module), role: .destructive) {
                 cleanProjectStringCatalogs()
             }
-            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
         } message: {
-            Text(String(localized: "This rewrites every .xcstrings file under the current project and removes entries marked as stale.", bundle: .module))
+            Text(LumiPluginLocalization.string("This rewrites every .xcstrings file under the current project and removes entries marked as stale.", bundle: .module))
         }
     }
 
@@ -142,35 +142,35 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private var staticPreviewModeBadge: some View {
         switch viewModel.previewMode {
         case .image:
-            Label(String(localized: "Image Preview", bundle: .module), systemImage: "photo")
+            Label(LumiPluginLocalization.string("Image Preview", bundle: .module), systemImage: "photo")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .markdown:
-            Label(String(localized: "Markdown Preview", bundle: .module), systemImage: "doc.richtext")
+            Label(LumiPluginLocalization.string("Markdown Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .stringCatalog:
-            Label(String(localized: "String Catalog Preview", bundle: .module), systemImage: "character.book.closed")
+            Label(LumiPluginLocalization.string("String Catalog Preview", bundle: .module), systemImage: "character.book.closed")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .json:
-            Label(String(localized: "JSON Preview", bundle: .module), systemImage: "curlybraces")
+            Label(LumiPluginLocalization.string("JSON Preview", bundle: .module), systemImage: "curlybraces")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .plist:
-            Label(String(localized: "Plist Preview", bundle: .module), systemImage: "list.bullet.rectangle")
+            Label(LumiPluginLocalization.string("Plist Preview", bundle: .module), systemImage: "list.bullet.rectangle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .csv:
-            Label(String(localized: "CSV Preview", bundle: .module), systemImage: "tablecells")
+            Label(LumiPluginLocalization.string("CSV Preview", bundle: .module), systemImage: "tablecells")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .html:
-            Label(String(localized: "HTML Preview", bundle: .module), systemImage: "globe")
+            Label(LumiPluginLocalization.string("HTML Preview", bundle: .module), systemImage: "globe")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .pdf:
-            Label(String(localized: "PDF Preview", bundle: .module), systemImage: "doc.richtext")
+            Label(LumiPluginLocalization.string("PDF Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case let .unsupported(url):
@@ -197,7 +197,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .font(.caption)
             .foregroundStyle(.green)
             .lineLimit(1)
-            .help(String(localized: "Markdown TODO completion", bundle: .module))
+            .help(LumiPluginLocalization.string("Markdown TODO completion", bundle: .module))
         }
     }
 
@@ -209,7 +209,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundStyle(.orange)
-                        .help(String(localized: "Stale String Catalog keys in the current file", bundle: .module))
+                        .help(LumiPluginLocalization.string("Stale String Catalog keys in the current file", bundle: .module))
                 }
 
                 Button {
@@ -224,7 +224,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 }
                 .buttonStyle(.borderless)
                 .disabled(isCleaningCurrentStringCatalog || catalog.staleEntryCount == 0)
-                .help(String(localized: "Clean stale keys in the current String Catalog file", bundle: .module))
+                .help(LumiPluginLocalization.string("Clean stale keys in the current String Catalog file", bundle: .module))
             }
 
             Button {
@@ -242,7 +242,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 isCleaningProjectStringCatalogs ||
                 projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
-            .help(String(localized: "Clean stale keys in every String Catalog file in the current project", bundle: .module))
+            .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
     }
 
@@ -258,7 +258,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private var entryControls: some View {
         if viewModel.availablePreviews.count > 1 {
             Picker(
-                String(localized: "Preview", bundle: .module),
+                LumiPluginLocalization.string("Preview", bundle: .module),
                 selection: Binding(
                     get: { viewModel.selectedPreviewIndex },
                     set: { viewModel.selectPreview(index: $0) }
@@ -271,7 +271,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .pickerStyle(.menu)
             .labelsHidden()
             .frame(maxWidth: 180)
-            .help(String(localized: "Choose which #Preview in the current Swift file to build and render.", bundle: .module))
+            .help(LumiPluginLocalization.string("Choose which #Preview in the current Swift file to build and render.", bundle: .module))
         }
     }
 
@@ -288,8 +288,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func buildInfoText(_ info: EditorPreviewViewModel.BuildInfo) -> String {
         let mode = info.usedCache
-            ? String(localized: "cache", bundle: .module)
-            : String(localized: "rebuilt", bundle: .module)
+            ? LumiPluginLocalization.string("cache", bundle: .module)
+            : LumiPluginLocalization.string("rebuilt", bundle: .module)
         let time = Self.buildTimeFormatter.string(from: info.completedAt)
         return "\(mode) · \(time) · \(info.previewCount) preview(s)"
     }
@@ -300,7 +300,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         if !summary.isEmpty {
             HStack(spacing: 4) {
                 Label(
-                    "\(String(localized: "cache", bundle: .module)) · \(summary.formattedByteCount)",
+                    "\(LumiPluginLocalization.string("cache", bundle: .module)) · \(summary.formattedByteCount)",
                     systemImage: "externaldrive"
                 )
                 .labelStyle(.titleAndIcon)
@@ -311,7 +311,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Clear Inline Preview build cache", bundle: .module))
+                .help(LumiPluginLocalization.string("Clear Inline Preview build cache", bundle: .module))
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -333,7 +333,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 }
             }
             .buttonStyle(.borderless)
-            .help(String(localized: "Refresh entry debug state", bundle: .module))
+            .help(LumiPluginLocalization.string("Refresh entry debug state", bundle: .module))
         }
     }
 
@@ -361,7 +361,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
         .buttonStyle(.borderless)
         .disabled(canTakeScreenshot == false)
-        .help(String(localized: "Screenshot preview canvas", bundle: .module))
+        .help(LumiPluginLocalization.string("Screenshot preview canvas", bundle: .module))
     }
 
     /// 当前是否可以截图：swift 预览正在运行且已加载 entry，或非 swift 静态预览（image、markdown 等）。
@@ -399,7 +399,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         isTakingScreenshot = false
 
         guard let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
-            alert_warning(String(localized: "Failed to save file.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Failed to save file.", bundle: .module))
             return
         }
 
@@ -414,7 +414,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
             alert_success(
                 String(
-                    format: String(localized: "File saved to Downloads: %@", bundle: .module),
+                    format: LumiPluginLocalization.string("File saved to Downloads: %@", bundle: .module),
                     finalURL.lastPathComponent
                 )
             )
@@ -425,7 +425,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to save file: %@", bundle: .module),
+                    format: LumiPluginLocalization.string("Failed to save file: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -443,7 +443,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         isTakingScreenshot = false
 
         guard let image else {
-            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -459,13 +459,13 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
         guard let canvasView = previewCanvasView else {
             isTakingScreenshot = false
-            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
         guard let image = renderImage(from: canvasView) else {
             isTakingScreenshot = false
-            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -483,7 +483,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             } catch {
                 isTakingScreenshot = false
                 Self.logger.error("\(Self.t)📸 HTML 截图失败：\(error.localizedDescription)")
-                alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
+                alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
             }
         }
     }
@@ -514,7 +514,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
               let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
-            alert_warning(String(localized: "Failed to capture preview screenshot.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
             return
         }
 
@@ -536,7 +536,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
             alert_success(
                 String(
-                    format: String(localized: "Screenshot saved to Downloads and copied to clipboard: %@", bundle: .module),
+                    format: LumiPluginLocalization.string("Screenshot saved to Downloads and copied to clipboard: %@", bundle: .module),
                     fileURL.lastPathComponent
                 )
             )
@@ -547,7 +547,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to save screenshot: %@", bundle: .module),
+                    format: LumiPluginLocalization.string("Failed to save screenshot: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -568,7 +568,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
         do {
             guard let editorService else {
-                alert_warning(String(localized: "Editor service is not available.", bundle: .module))
+                alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
                 return
             }
             let removedCount = try viewModel.cleanCurrentStringCatalog(
@@ -579,17 +579,17 @@ public struct EditorPreviewDetailView: View, SuperLog {
             if removedCount > 0 {
                 alert_success(
                     String(
-                        format: String(localized: "Removed %d stale String Catalog key(s).", bundle: .module),
+                        format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
                         removedCount
                     )
                 )
             } else {
-                alert_info(String(localized: "No stale String Catalog keys found.", bundle: .module))
+                alert_info(LumiPluginLocalization.string("No stale String Catalog keys found.", bundle: .module))
             }
         } catch {
             alert_error(
                 String(
-                    format: String(localized: "Failed to clean String Catalog: %@", bundle: .module),
+                    format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
                     error.localizedDescription
                 )
             )
@@ -600,11 +600,11 @@ public struct EditorPreviewDetailView: View, SuperLog {
         guard !isCleaningProjectStringCatalogs else { return }
         let projectRootPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
-            alert_warning(String(localized: "Select a project before cleaning String Catalogs.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return
         }
         guard let editorService else {
-            alert_warning(String(localized: "Editor service is not available.", bundle: .module))
+            alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
             return
         }
 
@@ -622,7 +622,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 if summary.removedEntryCount > 0 {
                     alert_success(
                         String(
-                            format: String(localized: "Removed %d stale key(s) from %d String Catalog file(s).", bundle: .module),
+                            format: LumiPluginLocalization.string("Removed %d stale key(s) from %d String Catalog file(s).", bundle: .module),
                             summary.removedEntryCount,
                             summary.changedFileCount
                         )
@@ -630,7 +630,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 } else {
                     alert_info(
                         String(
-                            format: String(localized: "Scanned %d String Catalog file(s); no stale keys found.", bundle: .module),
+                            format: LumiPluginLocalization.string("Scanned %d String Catalog file(s); no stale keys found.", bundle: .module),
                             summary.scannedFileCount
                         )
                     )
@@ -639,7 +639,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 isCleaningProjectStringCatalogs = false
                 alert_error(
                     String(
-                        format: String(localized: "Failed to clean project String Catalogs: %@", bundle: .module),
+                        format: LumiPluginLocalization.string("Failed to clean project String Catalogs: %@", bundle: .module),
                         error.localizedDescription
                     )
                 )
@@ -653,17 +653,17 @@ public struct EditorPreviewDetailView: View, SuperLog {
         case .idle:
             EmptyView()
         case .warming:
-            Text(String(localized: "warming", bundle: .module)).font(.caption).foregroundStyle(.orange)
+            Text(LumiPluginLocalization.string("warming", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case .ready:
-            Text(String(localized: "ready", bundle: .module)).font(.caption).foregroundStyle(.secondary)
+            Text(LumiPluginLocalization.string("ready", bundle: .module)).font(.caption).foregroundStyle(.secondary)
         case .starting:
-            Text(String(localized: "starting", bundle: .module)).font(.caption).foregroundStyle(.orange)
+            Text(LumiPluginLocalization.string("starting", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case .running:
-            Text(String(localized: "running · \(viewModel.policy.rawValue)", bundle: .module)).font(.caption).foregroundStyle(.green)
+            Text(LumiPluginLocalization.string("running · \(viewModel.policy.rawValue)", bundle: .module)).font(.caption).foregroundStyle(.green)
         case .stopping:
-            Text(String(localized: "stopping", bundle: .module)).font(.caption).foregroundStyle(.orange)
+            Text(LumiPluginLocalization.string("stopping", bundle: .module)).font(.caption).foregroundStyle(.orange)
         case let .failed(message):
-            Text(String(localized: "failed: \(message)", bundle: .module))
+            Text(LumiPluginLocalization.string("failed: \(message)", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -736,7 +736,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                             Image(systemName: "bolt.slash")
                                 .font(.system(size: 36))
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "No #Preview in the current Swift file.", bundle: .module))
+                            Text(LumiPluginLocalization.string("No #Preview in the current Swift file.", bundle: .module))
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
@@ -744,7 +744,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                             Image(systemName: "rectangle.dashed")
                                 .font(.system(size: 36))
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", bundle: .module))
+                            Text(LumiPluginLocalization.string("Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", bundle: .module))
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
@@ -823,8 +823,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     .font(.system(size: 36))
                     .foregroundStyle(.secondary)
                 Text(url == nil
-                     ? String(localized: "Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here.", bundle: .module)
-                     : String(localized: "This file type is not supported by Inline Preview yet.", bundle: .module))
+                     ? LumiPluginLocalization.string("Open a Swift file with a `#Preview`, an image, Markdown, JSON, or String Catalog file to preview it here.", bundle: .module)
+                     : LumiPluginLocalization.string("This file type is not supported by Inline Preview yet.", bundle: .module))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -862,7 +862,7 @@ private struct EditorPreviewDebugStateView: View {
             HStack(spacing: 8) {
                 Image(systemName: "stethoscope")
                     .foregroundStyle(.blue)
-                Text(String(localized: "Entry debug state", bundle: .module))
+                Text(LumiPluginLocalization.string("Entry debug state", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 8)
                 Button {
@@ -871,7 +871,7 @@ private struct EditorPreviewDebugStateView: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Show entry debug state", bundle: .module))
+                .help(LumiPluginLocalization.string("Show entry debug state", bundle: .module))
             }
 
             if isExpanded {
@@ -1160,7 +1160,7 @@ private struct EditorPreviewMarkdownView: View {
                 Image(systemName: "doc.richtext")
                     .font(.system(size: 28))
                     .foregroundStyle(.secondary)
-                Text(String(localized: "No Markdown content to preview.", bundle: .module))
+                Text(LumiPluginLocalization.string("No Markdown content to preview.", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1192,7 +1192,7 @@ private struct EditorPreviewMarkdownView: View {
     ) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
-                Text("TOC", bundle: .module)
+                Text(verbatim: LumiPluginLocalization.string("TOC", bundle: .module))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(themeVM.activeChromeTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 12)
@@ -1220,13 +1220,13 @@ private struct EditorPreviewMarkdownView: View {
                         Button {
                             addToChat(heading: heading)
                         } label: {
-                            Label(String(localized: "Add to Chat", bundle: .module), systemImage: "bubble.left")
+                            Label(LumiPluginLocalization.string("Add to Chat", bundle: .module), systemImage: "bubble.left")
                         }
                         Divider()
                         Button(role: .destructive) {
                             deleteHeadingAndContent(heading: heading)
                         } label: {
-                            Label(String(localized: "Delete", bundle: .module), systemImage: "trash")
+                            Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
                         }
                     }
                 }
@@ -1345,7 +1345,7 @@ private struct EditorPreviewStringCatalogContainer: View {
             if sourceText.isEmpty {
                 messageView(
                     systemImage: "character.book.closed",
-                    text: String(localized: "No String Catalog content to preview.", bundle: .module)
+                    text: LumiPluginLocalization.string("No String Catalog content to preview.", bundle: .module)
                 )
             } else {
                 switch parseResult {
@@ -1356,7 +1356,7 @@ private struct EditorPreviewStringCatalogContainer: View {
                     messageView(
                         systemImage: "exclamationmark.triangle",
                         text: String(
-                            format: String(localized: "Failed to load string catalog: %@", bundle: .module),
+                            format: LumiPluginLocalization.string("Failed to load string catalog: %@", bundle: .module),
                             error.localizedDescription
                         )
                     )
@@ -1479,7 +1479,7 @@ private struct EditorPreviewStringCatalogView: View {
                     .lineLimit(1)
 
                 if language.isSourceLanguage {
-                    Text(String(localized: "Default Localization", bundle: .module))
+                    Text(LumiPluginLocalization.string("Default Localization", bundle: .module))
                         .font(.system(size: 11))
                         .foregroundColor(secondaryColor)
                         .lineLimit(1)
@@ -1522,7 +1522,7 @@ private struct EditorPreviewStringCatalogView: View {
 
     private var tableHeader: some View {
         HStack(spacing: 0) {
-            headerCell(String(localized: "Key", bundle: .module), width: 340)
+            headerCell(LumiPluginLocalization.string("Key", bundle: .module), width: 340)
             headerCell(sourceColumnTitle, width: 360)
             if selectedLanguage.id != sourceLanguage.id {
                 headerCell(selectedLanguageColumnTitle, width: 360)
@@ -1588,7 +1588,7 @@ private struct EditorPreviewStringCatalogView: View {
 
     private var sourceColumnTitle: String {
         String(
-            format: String(localized: "Default Localization (%@)", bundle: .module),
+            format: LumiPluginLocalization.string("Default Localization (%@)", bundle: .module),
             sourceLanguage.id
         )
     }
@@ -1745,11 +1745,11 @@ private struct EditorPreviewImageView: View {
         image = nil
         loadError = nil
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            loadError = String(format: String(localized: "File not found: %@", bundle: .module), fileURL.lastPathComponent)
+            loadError = String(format: LumiPluginLocalization.string("File not found: %@", bundle: .module), fileURL.lastPathComponent)
             return
         }
         guard let loadedImage = NSImage(contentsOf: fileURL) else {
-            loadError = String(format: String(localized: "Failed to load image: %@", bundle: .module), fileURL.lastPathComponent)
+            loadError = String(format: LumiPluginLocalization.string("Failed to load image: %@", bundle: .module), fileURL.lastPathComponent)
             return
         }
         image = loadedImage

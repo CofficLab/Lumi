@@ -15,8 +15,8 @@ public actor ChatInputPlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "⌨️"
     public nonisolated static let verbose: Bool = false
     public static let id = "ChatInput"
-    public static let displayName = String(localized: "Chat Input", bundle: .module)
-    public static let description = String(localized: "Chat input area with editor and command suggestions", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Chat Input", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Chat input area with editor and command suggestions", bundle: .module)
     public static let iconName = "keyboard"
     public static var category: PluginCategory { .agent }
     public static var order: Int { 96 }

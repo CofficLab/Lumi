@@ -26,8 +26,8 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-gitok",
-        displayName: String(localized: "Open in GitOK", bundle: .module),
-        description: String(localized: "Open current project in GitOK", bundle: .module),
+        displayName: LumiPluginLocalization.string("Open in GitOK", bundle: .module),
+        description: LumiPluginLocalization.string("Open current project in GitOK", bundle: .module),
         order: 98
     )
 
@@ -88,8 +88,8 @@ public struct OpenInGitOKStatusBarView: View {
             }
             .buttonStyle(.plain)
             .help(isGitOKInstalled
-                ? String(localized: "在 GitOK 中打开当前项目", bundle: .module)
-                : String(localized: "GitOK 未安装", bundle: .module))
+                ? LumiPluginLocalization.string("在 GitOK 中打开当前项目", bundle: .module)
+                : LumiPluginLocalization.string("GitOK 未安装", bundle: .module))
         }
     }
 
@@ -100,13 +100,13 @@ public struct OpenInGitOKStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text(String(localized: "GitOK", bundle: .module))
+            Text(LumiPluginLocalization.string("GitOK", bundle: .module))
                 .font(.appMicro)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .foregroundColor(theme.textSecondary.opacity(0.5))
-        .help(String(localized: "无项目", bundle: .module))
+        .help(LumiPluginLocalization.string("无项目", bundle: .module))
     }
 
     private func openInGitOK() {
@@ -133,7 +133,7 @@ public struct OpenInGitOKDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text(String(localized: "GitOK", bundle: .module))
+                Text(LumiPluginLocalization.string("GitOK", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
 
@@ -144,7 +144,7 @@ public struct OpenInGitOKDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text(String(localized: "打开", bundle: .module))
+                        Text(LumiPluginLocalization.string("打开", bundle: .module))
                     }
                     .font(.appCaption)
                 }
@@ -155,7 +155,7 @@ public struct OpenInGitOKDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text(String(localized: "项目", bundle: .module))
+                Text(LumiPluginLocalization.string("项目", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
@@ -176,7 +176,7 @@ public struct OpenInGitOKDetailView: View {
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "复制路径", bundle: .module))
+                .help(LumiPluginLocalization.string("复制路径", bundle: .module))
             }
         }
         .padding()

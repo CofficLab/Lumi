@@ -3,6 +3,7 @@ import EditorService
 import EditorGoCore
 import SwiftUI
 import EditorCodeEditTextView
+import LumiCoreKit
 
 /// Go 命令贡献者
 ///
@@ -40,9 +41,9 @@ public final class GoCommandContributor: SuperEditorCommandContributor {
     private func buildCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "go.build",
-            title: String(localized: "Go Build", bundle: .module),
+            title: LumiPluginLocalization.string("Go Build", bundle: .module),
             systemImage: "hammer",
-            category: String(localized: "Go", bundle: .module),
+            category: LumiPluginLocalization.string("Go", bundle: .module),
             shortcut: EditorCommandShortcut(key: "b", modifiers: [.command]),
             order: 100,
             isEnabled: true
@@ -57,9 +58,9 @@ public final class GoCommandContributor: SuperEditorCommandContributor {
     private func testCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "go.test",
-            title: String(localized: "Go Test", bundle: .module),
+            title: LumiPluginLocalization.string("Go Test", bundle: .module),
             systemImage: "testtube.2",
-            category: String(localized: "Go", bundle: .module),
+            category: LumiPluginLocalization.string("Go", bundle: .module),
             order: 200,
             isEnabled: true
         ) { [weak self, weak state] in
@@ -73,9 +74,9 @@ public final class GoCommandContributor: SuperEditorCommandContributor {
     private func fmtCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "go.fmt",
-            title: String(localized: "Go Format", bundle: .module),
+            title: LumiPluginLocalization.string("Go Format", bundle: .module),
             systemImage: "text.alignleft",
-            category: String(localized: "Go", bundle: .module),
+            category: LumiPluginLocalization.string("Go", bundle: .module),
             shortcut: EditorCommandShortcut(key: "l", modifiers: [.shift, .command]),
             order: 300,
             isEnabled: true
@@ -90,9 +91,9 @@ public final class GoCommandContributor: SuperEditorCommandContributor {
     private func modTidyCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "go.mod.tidy",
-            title: String(localized: "Go Mod Tidy", bundle: .module),
+            title: LumiPluginLocalization.string("Go Mod Tidy", bundle: .module),
             systemImage: "arrow.triangle.2.circlepath",
-            category: String(localized: "Go", bundle: .module),
+            category: LumiPluginLocalization.string("Go", bundle: .module),
             order: 400,
             isEnabled: true
         ) { [weak self, weak state] in
@@ -106,9 +107,9 @@ public final class GoCommandContributor: SuperEditorCommandContributor {
     private func debugCommand(state: EditorState) -> EditorCommandSuggestion {
         EditorCommandSuggestion(
             id: "go.debug.current-file",
-            title: String(localized: "Debug Current Go File", bundle: .module),
+            title: LumiPluginLocalization.string("Debug Current Go File", bundle: .module),
             systemImage: "ladybug",
-            category: String(localized: "Go", bundle: .module),
+            category: LumiPluginLocalization.string("Go", bundle: .module),
             order: 500,
             isEnabled: state.currentFileURL != nil
         ) { [weak self, weak state] in

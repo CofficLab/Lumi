@@ -11,8 +11,8 @@ public enum QuickLauncherPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.quick-launcher",
-        displayName: String(localized: "Quick Launcher", bundle: .module),
-        description: String(localized: "Quick access to system apps and utilities", bundle: .module),
+        displayName: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
+        description: LumiPluginLocalization.string("Quick access to system apps and utilities", bundle: .module),
         order: 8
     )
 

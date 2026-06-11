@@ -4,8 +4,8 @@ import SwiftUI
 public enum MessageRendererPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "CoreMessageRenderer",
-        displayName: String(localized: "核心消息渲染器", bundle: .module),
-        description: String(localized: "提供内置消息类型的渲染支持", bundle: .module),
+        displayName: LumiPluginLocalization.string("核心消息渲染器", bundle: .module),
+        description: LumiPluginLocalization.string("提供内置消息类型的渲染支持", bundle: .module),
         order: 10
     )
 

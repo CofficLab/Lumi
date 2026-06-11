@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct ProjectRowView: View {
     let project: LumiProject
@@ -43,7 +44,7 @@ struct ProjectRowView: View {
                         .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Remove Project", bundle: .module))
+                .accessibilityLabel(LumiPluginLocalization.string("Remove Project", bundle: .module))
             }
         }
     }

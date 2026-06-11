@@ -11,9 +11,9 @@ struct HttpErrorView: View {
 
     private var title: String {
         if let statusCode {
-            return String(localized: "Aliyun HTTP \(statusCode)", bundle: .module)
+            return LumiPluginLocalization.string("Aliyun HTTP \(statusCode)", bundle: .module)
         }
-        return String(localized: "Aliyun request failed", bundle: .module)
+        return LumiPluginLocalization.string("Aliyun request failed", bundle: .module)
     }
 
     private var displayText: String {

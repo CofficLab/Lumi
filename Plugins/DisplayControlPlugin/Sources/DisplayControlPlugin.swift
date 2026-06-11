@@ -4,9 +4,9 @@ import SwiftUI
 public enum DisplayControlPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.display-control",
-        displayName: String(localized: "Display Control", bundle: .module),
-        description: String(
-            localized: "Control brightness, volume, and contrast for external displays via DDC/CI.",
+        displayName: LumiPluginLocalization.string("Display Control", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Control brightness, volume, and contrast for external displays via DDC/CI.",
             bundle: .module
         ),
         order: 21
@@ -21,12 +21,17 @@ public enum DisplayControlPlugin: LumiPlugin {
         [
             LumiViewContainerItem(
                 id: info.id,
-                title: info.displayName,
+                title: LumiPluginLocalization.string("Display Control", bundle: .module),
                 systemImage: iconName
             ) {
                 DisplayControlView()
             }
         ]
+    }
+
+    @MainActor
+    public static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
+        AnyView(DisplayControlView())
     }
 
     @MainActor

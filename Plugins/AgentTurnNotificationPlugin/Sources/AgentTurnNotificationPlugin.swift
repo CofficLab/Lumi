@@ -15,8 +15,8 @@ public enum AgentTurnNotificationPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.turn-notification",
-        displayName: String(localized: "Turn Notification", bundle: .module),
-        description: String(localized: "Send a system notification when an Agent turn finishes.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Turn Notification", bundle: .module),
+        description: LumiPluginLocalization.string("Send a system notification when an Agent turn finishes.", bundle: .module),
         order: 99
     )
 

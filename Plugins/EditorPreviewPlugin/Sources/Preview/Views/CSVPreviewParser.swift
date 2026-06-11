@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 enum CSVPreviewParser {
     struct ParsedTable: Equatable {
@@ -14,11 +15,11 @@ enum CSVPreviewParser {
         var errorDescription: String? {
             switch self {
             case .emptyData:
-                return String(localized: "Empty CSV data", bundle: .module)
+                return LumiPluginLocalization.string("Empty CSV data", bundle: .module)
             case .noData:
-                return String(localized: "No data rows found", bundle: .module)
+                return LumiPluginLocalization.string("No data rows found", bundle: .module)
             case .unclosedQuote:
-                return String(localized: "Unclosed quoted field", bundle: .module)
+                return LumiPluginLocalization.string("Unclosed quoted field", bundle: .module)
             }
         }
     }

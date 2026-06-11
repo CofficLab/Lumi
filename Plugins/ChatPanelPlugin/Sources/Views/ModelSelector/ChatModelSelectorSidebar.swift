@@ -20,7 +20,7 @@ struct ChatModelSelectorSidebar: View {
             ChatDivider(axis: .horizontal)
                 .padding(.vertical, 4)
 
-            Text("Providers", bundle: .module)
+            Text(verbatim: LumiPluginLocalization.string("Providers", bundle: .module))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(theme.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -79,7 +79,7 @@ struct ChatModelSelectorSidebar: View {
                 Spacer()
 
                 if selectedProviderID == provider.id {
-                    Text("Active", bundle: .module)
+                    Text(verbatim: LumiPluginLocalization.string("Active", bundle: .module))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(theme.primary)
                         .lineLimit(1)

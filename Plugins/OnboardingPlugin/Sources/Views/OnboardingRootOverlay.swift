@@ -57,7 +57,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
     public func show(forceReset: Bool) {
         if forceReset {
             guard store.setCompleted(false) else {
-                persistenceErrorMessage = String(localized: "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
+                persistenceErrorMessage = LumiPluginLocalization.string("无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
                 return
             }
         }
@@ -70,7 +70,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
 
     public func complete() {
         guard store.setCompleted(true) else {
-            persistenceErrorMessage = String(localized: "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
+            persistenceErrorMessage = LumiPluginLocalization.string("无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
             return
         }
         isPresentingOnboarding = false
@@ -305,17 +305,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "brain",
                         title: "智能对话",
-                        description: String(localized: "支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
+                        description: LumiPluginLocalization.string("支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
                     ),
                     Feature(
                         icon: "hammer.circle",
                         title: "Agent 能力",
-                        description: String(localized: "自动执行文件操作、命令行、Git 等任务", bundle: .module)
+                        description: LumiPluginLocalization.string("自动执行文件操作、命令行、Git 等任务", bundle: .module)
                     ),
                     Feature(
                         icon: "rectangle.3.group",
                         title: "多会话并行",
-                        description: String(localized: "同时处理多个独立任务，互不干扰", bundle: .module)
+                        description: LumiPluginLocalization.string("同时处理多个独立任务，互不干扰", bundle: .module)
                     )
                 ],
                 tip: nil
@@ -330,17 +330,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "arrow.down.doc",
                         title: "拖拽添加项目",
-                        description: String(localized: "将文件夹拖入对话区即可设为当前项目", bundle: .module)
+                        description: LumiPluginLocalization.string("将文件夹拖入对话区即可设为当前项目", bundle: .module)
                     ),
                     Feature(
                         icon: "doc.text.magnifyingglass",
                         title: "智能上下文",
-                        description: String(localized: "自动分析项目结构、代码依赖和文件内容", bundle: .module)
+                        description: LumiPluginLocalization.string("自动分析项目结构、代码依赖和文件内容", bundle: .module)
                     ),
                     Feature(
                         icon: "chevron.left.slash.chevron.right",
                         title: "代码选区",
-                        description: String(localized: "在编辑器中选中代码，Lumi 会自动获取选中内容", bundle: .module)
+                        description: LumiPluginLocalization.string("在编辑器中选中代码，Lumi 会自动获取选中内容", bundle: .module)
                     )
                 ],
                 tip: "最近使用的项目会自动保存，方便快速切换"
@@ -355,17 +355,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "terminal",
                         title: "命令执行",
-                        description: String(localized: "在安全沙箱中执行 Shell 命令，自动处理权限请求", bundle: .module)
+                        description: LumiPluginLocalization.string("在安全沙箱中执行 Shell 命令，自动处理权限请求", bundle: .module)
                     ),
                     Feature(
                         icon: "doc.badge.gearshape",
                         title: "文件操作",
-                        description: String(localized: "读取、创建、编辑文件，自动保存更改", bundle: .module)
+                        description: LumiPluginLocalization.string("读取、创建、编辑文件，自动保存更改", bundle: .module)
                     ),
                     Feature(
                         icon: "arrow.triangle.2.circlepath",
                         title: "Git 集成",
-                        description: String(localized: "查看仓库状态、提交历史，协助代码管理", bundle: .module)
+                        description: LumiPluginLocalization.string("查看仓库状态、提交历史，协助代码管理", bundle: .module)
                     )
                 ],
                 tip: "高风险操作会请求你的确认，确保安全可靠"
@@ -380,17 +380,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "gearshape.2",
                         title: "内置插件",
-                        description: String(localized: "文件浏览器、最近项目、设置中心等开箱即用", bundle: .module)
+                        description: LumiPluginLocalization.string("文件浏览器、最近项目、设置中心等开箱即用", bundle: .module)
                     ),
                     Feature(
                         icon: "arrow.up.bin",
                         title: "灵活启用/禁用",
-                        description: String(localized: "在设置中按需管理插件，优化性能和体验", bundle: .module)
+                        description: LumiPluginLocalization.string("在设置中按需管理插件，优化性能和体验", bundle: .module)
                     ),
                     Feature(
                         icon: "square.and.arrow.up",
                         title: "Finder 集成",
-                        description: String(localized: "右键菜单快速操作，与 Finder 无缝协作", bundle: .module)
+                        description: LumiPluginLocalization.string("右键菜单快速操作，与 Finder 无缝协作", bundle: .module)
                     )
                 ],
                 tip: "更多插件可在设置中心的「插件」标签页管理"
@@ -405,17 +405,17 @@ private struct OnboardingSheetView: View {
                     Feature(
                         icon: "cpu",
                         title: "选择模型",
-                        description: String(localized: "配置本地模型或云端 API，选择适合你的 AI 引擎", bundle: .module)
+                        description: LumiPluginLocalization.string("配置本地模型或云端 API，选择适合你的 AI 引擎", bundle: .module)
                     ),
                     Feature(
                         icon: "paintpalette",
                         title: "自定义主题",
-                        description: String(localized: "深色/浅色模式，多种主题风格随心切换", bundle: .module)
+                        description: LumiPluginLocalization.string("深色/浅色模式，多种主题风格随心切换", bundle: .module)
                     ),
                     Feature(
                         icon: "plus.circle",
                         title: "创建会话",
-                        description: String(localized: "点击新建按钮或按 ⌘N，开始第一个对话", bundle: .module)
+                        description: LumiPluginLocalization.string("点击新建按钮或按 ⌘N，开始第一个对话", bundle: .module)
                     )
                 ],
                 tip: "所有设置均可随时在设置中心调整"
@@ -429,10 +429,10 @@ private struct OnboardingSheetView: View {
                     id: "plugin-selection",
                     icon: "puzzlepiece.extension.fill",
                     iconGradient: [Color.indigo, Color.cyan],
-                    title: String(localized: "选择你的插件", bundle: .module),
-                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", bundle: .module),
+                    title: LumiPluginLocalization.string("选择你的插件", bundle: .module),
+                    subtitle: LumiPluginLocalization.string("先启用常用扩展，之后也可以在设置中调整", bundle: .module),
                     features: [],
-                    tip: String(localized: "插件选择会在完成引导后立即生效", bundle: .module)
+                    tip: LumiPluginLocalization.string("插件选择会在完成引导后立即生效", bundle: .module)
                 ),
                 at: quickStartIndex
             )
@@ -505,7 +505,7 @@ private struct OnboardingSheetView: View {
                 loadPluginSelectionIfNeeded()
             }
             .alert(
-                String(localized: "无法保存新手引导状态", bundle: .module),
+                LumiPluginLocalization.string("无法保存新手引导状态", bundle: .module),
                 isPresented: Binding(
                     get: { viewModel.persistenceErrorMessage != nil },
                     set: { isPresented in
@@ -515,7 +515,7 @@ private struct OnboardingSheetView: View {
                     }
                 )
             ) {
-                Button(String(localized: "好", bundle: .module), role: .cancel) {}
+                Button(LumiPluginLocalization.string("好", bundle: .module), role: .cancel) {}
             } message: {
                 Text(viewModel.persistenceErrorMessage ?? "")
             }
@@ -541,7 +541,7 @@ private struct OnboardingSheetView: View {
     /// 顶部导航栏
     private var topBar: some View {
         HStack {
-            Label(String(localized: "新手引导", bundle: .module), systemImage: "graduationcap.fill")
+            Label(LumiPluginLocalization.string("新手引导", bundle: .module), systemImage: "graduationcap.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -553,7 +553,7 @@ private struct OnboardingSheetView: View {
             Spacer()
 
             // 跳过按钮
-            Button(String(localized: "跳过", bundle: .module)) {
+            Button(LumiPluginLocalization.string("跳过", bundle: .module)) {
                 viewModel.skip()
             }
             .font(.system(size: 13, weight: .medium))
@@ -795,7 +795,7 @@ private struct OnboardingSheetView: View {
                 Button {
                     viewModel.previousStep()
                 } label: {
-                    Label(String(localized: "上一步", bundle: .module), systemImage: "chevron.left")
+                    Label(LumiPluginLocalization.string("上一步", bundle: .module), systemImage: "chevron.left")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.plain)
@@ -818,8 +818,8 @@ private struct OnboardingSheetView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(isLastPage
-                        ? String(localized: "开始使用", bundle: .module)
-                        : String(localized: "下一步", bundle: .module))
+                        ? LumiPluginLocalization.string("开始使用", bundle: .module)
+                        : LumiPluginLocalization.string("下一步", bundle: .module))
                         .font(.system(size: 13, weight: .semibold))
 
                     if !isLastPage {

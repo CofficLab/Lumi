@@ -1,6 +1,7 @@
 import EditorService
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 public struct CallHierarchyTreeView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -33,7 +34,7 @@ public struct CallHierarchyTreeView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 4)
             if calls.isEmpty {
-                Text(String(localized: "无", bundle: .module) + direction.title)
+                Text(LumiPluginLocalization.string("无", bundle: .module) + direction.title)
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                     .padding()

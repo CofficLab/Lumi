@@ -26,7 +26,7 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("../Resources")
+                .process("Localizable.xcstrings")
             ],
             linkerSettings: [
                 .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])

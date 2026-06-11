@@ -11,8 +11,8 @@ public enum DiskManagerPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.disk-manager",
-        displayName: String(localized: "Disk Manager", bundle: .module),
-        description: String(localized: "Inspect local disk capacity and usage.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Disk Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Inspect local disk capacity and usage.", bundle: .module),
         order: 44
     )
 

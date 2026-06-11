@@ -2,6 +2,7 @@ import SwiftUI
 import CodeEditSourceEditor
 import EditorService
 import LumiUI
+import LumiCoreKit
 
 /// 编辑器命令面板视图。
 ///
@@ -62,7 +63,7 @@ public struct EditorCommandPaletteView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(String(localized: "Command Palette", bundle: .module))
+                Text(LumiPluginLocalization.string("Command Palette", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -78,7 +79,7 @@ public struct EditorCommandPaletteView: View {
             }
 
             TextField(
-                String(localized: "Quick Open: files, @symbols, #workspace, :line, >commands", bundle: .module),
+                LumiPluginLocalization.string("Quick Open: files, @symbols, #workspace, :line, >commands", bundle: .module),
                 text: $query
             )
             .textFieldStyle(.roundedBorder)
@@ -97,7 +98,7 @@ public struct EditorCommandPaletteView: View {
     private var categoryFilterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                categoryFilterChip(title: String(localized: "All", bundle: .module), category: nil)
+                categoryFilterChip(title: LumiPluginLocalization.string("All", bundle: .module), category: nil)
 
                 ForEach(EditorCommandCategory.orderedCases.filter { $0 != .other }, id: \.rawValue) { category in
                     categoryFilterChip(title: category.displayTitle, category: category)
@@ -117,7 +118,7 @@ public struct EditorCommandPaletteView: View {
 
                         if !recentCommands.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(String(localized: "Recently Used", bundle: .module))
+                                Text(LumiPluginLocalization.string("Recently Used", bundle: .module))
                                     .font(.system(size: 10, weight: .semibold))
                                     .foregroundColor(Color(hex: "98989E"))
                                     .padding(.horizontal, 4)
@@ -143,7 +144,7 @@ public struct EditorCommandPaletteView: View {
 
                         if !frequentCommands.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(String(localized: "Frequently Used", bundle: .module))
+                                Text(LumiPluginLocalization.string("Frequently Used", bundle: .module))
                                     .font(.system(size: 10, weight: .semibold))
                                     .foregroundColor(Color(hex: "98989E"))
                                     .padding(.horizontal, 4)
@@ -236,9 +237,9 @@ public struct EditorCommandPaletteView: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            footerHint("↑↓", String(localized: "Navigate", bundle: .module))
-            footerHint("Enter", String(localized: "Run", bundle: .module))
-            footerHint("Esc", String(localized: "Close", bundle: .module))
+            footerHint("↑↓", LumiPluginLocalization.string("Navigate", bundle: .module))
+            footerHint("Enter", LumiPluginLocalization.string("Run", bundle: .module))
+            footerHint("Esc", LumiPluginLocalization.string("Close", bundle: .module))
 
             Spacer(minLength: 0)
 
@@ -256,7 +257,7 @@ public struct EditorCommandPaletteView: View {
                 .font(.system(size: 24, weight: .thin))
                 .foregroundColor(Color(hex: "98989E"))
 
-            Text(String(localized: "No Matching Results", bundle: .module))
+            Text(LumiPluginLocalization.string("No Matching Results", bundle: .module))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

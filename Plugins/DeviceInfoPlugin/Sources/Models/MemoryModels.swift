@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public enum MemoryTimeRange: String, CaseIterable, Identifiable {
     case hour1
@@ -10,10 +11,10 @@ public enum MemoryTimeRange: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .hour1: return "1h"
-        case .hour4: return "4h"
-        case .hour24: return "24h"
-        case .month1: return "30d"
+        case .hour1: return LumiPluginLocalization.string("1h", bundle: .module)
+        case .hour4: return LumiPluginLocalization.string("4h", bundle: .module)
+        case .hour24: return LumiPluginLocalization.string("24h", bundle: .module)
+        case .month1: return LumiPluginLocalization.string("30d", bundle: .module)
         }
     }
 

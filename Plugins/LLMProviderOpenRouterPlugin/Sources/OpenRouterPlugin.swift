@@ -7,8 +7,8 @@ public enum OpenRouterPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.openrouter",
-        displayName: String(localized: "OpenRouter", bundle: .module),
-        description: String(localized: "Contributes OpenRouter models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("OpenRouter", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes OpenRouter models to Lumi Chat.", bundle: .module),
         order: 101
     )
 
@@ -22,8 +22,8 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "openrouter",
-            displayName: String(localized: "OpenRouter", bundle: .module),
-            description: String(localized: "Multi-Provider LLM Router", bundle: .module),
+            displayName: LumiPluginLocalization.string("OpenRouter", bundle: .module),
+            description: LumiPluginLocalization.string("Multi-Provider LLM Router", bundle: .module),
             defaultModel: "alibaba/qwen3.5-397b",
             availableModels: [
             "alibaba/qwen3.5-397b",

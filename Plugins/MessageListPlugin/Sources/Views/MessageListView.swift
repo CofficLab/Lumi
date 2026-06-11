@@ -85,8 +85,8 @@ private extension MessageListView {
                 }
             }
             .environment(\.preferOuterScroll, true)
-            .accessibilityLabel(String(localized: "Message List", bundle: .module))
-            .accessibilityHint(String(localized: "Message List Hint", bundle: .module))
+            .accessibilityLabel(LumiPluginLocalization.string("Message List", bundle: .module))
+            .accessibilityHint(LumiPluginLocalization.string("Message List Hint", bundle: .module))
             .onAppear {
                 scrollToBottom(proxy: proxy, animated: false, settleLayout: true)
                 shouldScrollToBottomOnRowsChange = false
@@ -145,7 +145,7 @@ private extension MessageListView {
     var loadingOverlay: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text(String(localized: "Loading History", bundle: .module))
+            Text(LumiPluginLocalization.string("Loading History", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -165,8 +165,8 @@ private extension MessageListView {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .appSurface(style: .subtle, cornerRadius: 8)
-                .accessibilityLabel(String(localized: "Load Earlier Messages", bundle: .module))
-                .accessibilityHint(String(localized: "Load Earlier Messages Hint", bundle: .module))
+                .accessibilityLabel(LumiPluginLocalization.string("Load Earlier Messages", bundle: .module))
+                .accessibilityHint(LumiPluginLocalization.string("Load Earlier Messages Hint", bundle: .module))
             } else {
                 AppButton(
                     loadMoreButtonText,
@@ -176,8 +176,8 @@ private extension MessageListView {
                 ) {
                     timelineViewModel.handleLoadMore()
                 }
-                .accessibilityLabel(String(localized: "Load Earlier Messages", bundle: .module))
-                .accessibilityHint(String(localized: "Load Earlier Messages Hint", bundle: .module))
+                .accessibilityLabel(LumiPluginLocalization.string("Load Earlier Messages", bundle: .module))
+                .accessibilityHint(LumiPluginLocalization.string("Load Earlier Messages Hint", bundle: .module))
             }
             Spacer()
         }
@@ -186,11 +186,11 @@ private extension MessageListView {
 
     var loadMoreButtonText: String {
         if timelineViewModel.isLoadingMore {
-            return String(localized: "Loading More Messages", bundle: .module)
+            return LumiPluginLocalization.string("Loading More Messages", bundle: .module)
         }
         let loadedCount = timelineViewModel.persistedMessages.count
         return String(
-            format: String(localized: "Load More Messages (%lld of %lld)", bundle: .module),
+            format: LumiPluginLocalization.string("Load More Messages (%lld of %lld)", bundle: .module),
             loadedCount,
             timelineViewModel.totalMessageCount
         )

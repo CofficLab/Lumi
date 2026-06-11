@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// Menu bar popup view for GPU monitoring.
 /// Shows live GPU utilization with progress bar and mini trend graph.
@@ -21,7 +22,7 @@ struct GPUMenuBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(PluginDeviceInfoLocalization.string("GPU"))
+                Text(LumiPluginLocalization.string("GPU", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -68,7 +69,7 @@ struct GPUMenuBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
-                Text(PluginDeviceInfoLocalization.string("Last 60 Seconds"))
+                Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -79,7 +80,7 @@ struct GPUMenuBarPopupView: View {
                         Circle()
                             .fill(Color(hex: "BF5AF2").opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(PluginDeviceInfoLocalization.string("Usage"))
+                        Text(LumiPluginLocalization.string("Usage", bundle: .module))
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "98989E"))
                     }
@@ -120,7 +121,7 @@ struct GPUMenuBarPopupView: View {
                         )
                         .stroke(Color(hex: "BF5AF2").opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(PluginDeviceInfoLocalization.string("Collecting..."))
+                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.system(size: 10))
                             .foregroundColor(Color(hex: "98989E"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

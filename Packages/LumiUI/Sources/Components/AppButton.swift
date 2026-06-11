@@ -1,3 +1,4 @@
+import LumiCoreKit
 import SwiftUI
 
 public struct AppButton: View {
@@ -90,13 +91,14 @@ public struct AppButton: View {
     public init(
         localized title: String,
         table: String,
+        bundle: Bundle,
         systemImage: String? = nil,
         style: Style = .secondary,
         size: Size = .medium,
         fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
-        self.title = Text(String(localized: String.LocalizationValue(title), bundle: .module))
+        self.title = Text(verbatim: LumiPluginLocalization.string(title, bundle: bundle, table: table))
         self.systemImage = systemImage
         self.showsTitle = true
         self.style = style

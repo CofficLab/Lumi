@@ -2,6 +2,7 @@ import Foundation
 import EditorService
 import EditorGoCore
 import SwiftUI
+import LumiCoreKit
 
 /// Go 状态栏贡献者
 ///
@@ -63,7 +64,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Building", bundle: .module))
+                Text(LumiPluginLocalization.string("Building", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -71,7 +72,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Testing", bundle: .module))
+                Text(LumiPluginLocalization.string("Testing", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -79,7 +80,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Formatting", bundle: .module))
+                Text(LumiPluginLocalization.string("Formatting", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -87,7 +88,7 @@ private struct GoStatusIndicatorView: View {
                 ProgressView()
                     .scaleEffect(0.5)
                     .frame(width: 10, height: 10)
-                Text(String(localized: "Tidying", bundle: .module))
+                Text(LumiPluginLocalization.string("Tidying", bundle: .module))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 

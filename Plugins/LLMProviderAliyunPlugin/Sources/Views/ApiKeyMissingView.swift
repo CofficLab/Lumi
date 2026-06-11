@@ -20,18 +20,18 @@ struct ApiKeyMissingView: View {
     private var title: String {
         switch issue {
         case .missing:
-            String(localized: "Aliyun API Key required", bundle: .module)
+            LumiPluginLocalization.string("Aliyun API Key required", bundle: .module)
         case .invalid:
-            String(localized: "Aliyun API Key invalid or expired", bundle: .module)
+            LumiPluginLocalization.string("Aliyun API Key invalid or expired", bundle: .module)
         }
     }
 
     private var subtitle: String {
         switch issue {
         case .missing:
-            String(localized: "Configure your Aliyun API Key below, then resend your message.", bundle: .module)
+            LumiPluginLocalization.string("Configure your Aliyun API Key below, then resend your message.", bundle: .module)
         case .invalid:
-            String(localized: "Use a Coding Plan API Key (sk-sp-...) from Model Studio. Update it below, then resend your message.", bundle: .module)
+            LumiPluginLocalization.string("Use a Coding Plan API Key (sk-sp-...) from Model Studio. Update it below, then resend your message.", bundle: .module)
         }
     }
 
@@ -50,7 +50,7 @@ struct ApiKeyMissingView: View {
                 if let url = URL(string: AliyunProvider.apiKeyHelpURL ?? "") {
                     Link(destination: url) {
                         Label(
-                            String(localized: "Get API Key on Aliyun Model Studio", bundle: .module),
+                            LumiPluginLocalization.string("Get API Key on Aliyun Model Studio", bundle: .module),
                             systemImage: "arrow.up.right.square"
                         )
                         .font(.appCaption)
@@ -61,7 +61,7 @@ struct ApiKeyMissingView: View {
 
                 HStack(alignment: .center, spacing: 8) {
                     AppInputField(
-                        LocalizedStringKey(String(localized: "Enter Aliyun API Key", bundle: .module)),
+                        LocalizedStringKey(LumiPluginLocalization.string("Enter Aliyun API Key", bundle: .module)),
                         text: Binding(
                             get: { apiKey },
                             set: { newValue in
@@ -82,8 +82,8 @@ struct ApiKeyMissingView: View {
                     }
                     .help(
                         isApiKeyVisible
-                            ? String(localized: "Hide API Key", bundle: .module)
-                            : String(localized: "Show API Key", bundle: .module)
+                            ? LumiPluginLocalization.string("Hide API Key", bundle: .module)
+                            : LumiPluginLocalization.string("Show API Key", bundle: .module)
                     )
                 }
             }

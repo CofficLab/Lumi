@@ -6,6 +6,7 @@ import CodeEditSourceEditor
 import EditorCodeEditTextView
 import LanguageServerProtocol
 import AppKit
+import LumiCoreKit
 
 /// Code Action 提供者
 /// 为诊断问题提供快速修复建议（灯泡图标）
@@ -168,7 +169,7 @@ public final class CodeActionProvider: ObservableObject, SuperEditorCodeActionPr
             return
         }
 
-        onFailureMessage(String(localized: "This code action has no edit or command", bundle: .module))
+        onFailureMessage(LumiPluginLocalization.string("This code action has no edit or command", bundle: .module))
     }
 
     /// 清除
@@ -206,20 +207,20 @@ public final class CodeActionProvider: ObservableObject, SuperEditorCodeActionPr
         onFailureMessage: (String) -> Void
     ) {
         guard let textView else {
-            onFailureMessage(String(localized: "No active editor", bundle: .module))
+            onFailureMessage(LumiPluginLocalization.string("No active editor", bundle: .module))
             return
         }
         guard let selection = textView.selectionManager.textSelections.first else {
-            onFailureMessage(String(localized: "No selection to transform", bundle: .module))
+            onFailureMessage(LumiPluginLocalization.string("No selection to transform", bundle: .module))
             return
         }
         let range = selection.range
         guard range.location != NSNotFound, range.length > 0 else {
-            onFailureMessage(String(localized: "No selection to transform", bundle: .module))
+            onFailureMessage(LumiPluginLocalization.string("No selection to transform", bundle: .module))
             return
         }
         guard let textRange = Range(range, in: textView.string) else {
-            onFailureMessage(String(localized: "Invalid selection", bundle: .module))
+            onFailureMessage(LumiPluginLocalization.string("Invalid selection", bundle: .module))
             return
         }
         let selectedText = String(textView.string[textRange])
@@ -235,7 +236,7 @@ public final class CodeActionProvider: ObservableObject, SuperEditorCodeActionPr
             #endif
             """
         default:
-            onFailureMessage(String(localized: "Unsupported editor plugin action", bundle: .module))
+            onFailureMessage(LumiPluginLocalization.string("Unsupported editor plugin action", bundle: .module))
             return
         }
 
@@ -266,9 +267,9 @@ public final class CodeActionProvider: ObservableObject, SuperEditorCodeActionPr
         }
         if !applied {
             if edit.changes == nil && (edit.documentChanges == nil || edit.documentChanges?.isEmpty == true) {
-                onFailureMessage(String(localized: "Empty workspace edit", bundle: .module))
+                onFailureMessage(LumiPluginLocalization.string("Empty workspace edit", bundle: .module))
             } else {
-                onFailureMessage(String(localized: "No applicable edits for this file", bundle: .module))
+                onFailureMessage(LumiPluginLocalization.string("No applicable edits for this file", bundle: .module))
             }
         }
     }

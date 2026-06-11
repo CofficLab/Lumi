@@ -7,8 +7,8 @@ public enum XybbzPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.xybbz",
-        displayName: String(localized: "Xybbz", bundle: .module),
-        description: String(localized: "Contributes Xybbz models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Xybbz", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Xybbz models to Lumi Chat.", bundle: .module),
         order: 103
     )
 
@@ -22,8 +22,8 @@ public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Senda
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "xybbz",
-            displayName: String(localized: "Xybbz", bundle: .module),
-            description: String(localized: "AI API Gateway by xybbz", bundle: .module),
+            displayName: LumiPluginLocalization.string("Xybbz", bundle: .module),
+            description: LumiPluginLocalization.string("AI API Gateway by xybbz", bundle: .module),
             defaultModel: "gpt-5.5",
             availableModels: [
             "gpt-5.5",

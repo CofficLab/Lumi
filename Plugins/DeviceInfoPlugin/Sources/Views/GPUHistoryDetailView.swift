@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 struct GPUHistoryDetailView: View {
     @ObservedObject private var historyService = GPUHistoryService.shared
@@ -9,7 +10,7 @@ struct GPUHistoryDetailView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text(PluginDeviceInfoLocalization.string("GPU Usage Trend"))
+                Text(LumiPluginLocalization.string("GPU Usage Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -39,38 +40,38 @@ struct GPUHistoryDetailView: View {
             // GPU detail metrics cards
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Utilization"),
+                    title: LumiPluginLocalization.string("Utilization", bundle: .module),
                     value: viewModel.utilizationString,
                     color: viewModel.utilizationColor
                 )
 
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Memory"),
+                    title: LumiPluginLocalization.string("Memory", bundle: .module),
                     value: viewModel.usedMemory,
                     subtitle: viewModel.totalMemory,
                     color: viewModel.memoryColor
                 )
 
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Renderer"),
+                    title: LumiPluginLocalization.string("Renderer", bundle: .module),
                     value: viewModel.rendererUtilizationString,
                     color: Color(hex: "BF5AF2")
                 )
 
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Tiler"),
+                    title: LumiPluginLocalization.string("Tiler", bundle: .module),
                     value: viewModel.tilerUtilizationString,
                     color: Color(hex: "FF9F0A")
                 )
 
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Temperature"),
+                    title: LumiPluginLocalization.string("Temperature", bundle: .module),
                     value: viewModel.temperatureString,
                     color: viewModel.temperatureColor
                 )
 
                 GPUMetricCard(
-                    title: PluginDeviceInfoLocalization.string("Model"),
+                    title: LumiPluginLocalization.string("Model", bundle: .module),
                     value: viewModel.modelName,
                     color: Color(hex: "98989E")
                 )

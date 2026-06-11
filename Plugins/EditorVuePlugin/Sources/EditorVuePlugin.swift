@@ -29,8 +29,8 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
     )
 
     public static let id = "VueEditor"
-    public static let displayName = String(localized: "Vue Editor", bundle: .module)
-    public static let description = String(localized: "Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Vue Editor", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", bundle: .module)
     public static let iconName = "curlybraces"
     public static let order = 35
     public static var category: PluginCategory { .editor }
@@ -71,7 +71,7 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
         registry.registerRailOutlineProvider(
             languageId: "vue",
             tabID: "vue-outline",
-            title: String(localized: "Vue", bundle: .module),
+            title: LumiPluginLocalization.string("Vue", bundle: .module),
             systemImage: "curlybraces"
         ) { [weak self] in
             guard let self else { return AnyView(Color.clear) }
@@ -86,7 +86,7 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
         return [
             RailItem(
                 id: "vue-outline",
-                title: String(localized: "Vue Outline", bundle: .module),
+                title: LumiPluginLocalization.string("Vue Outline", bundle: .module),
                 systemImage: "curlybraces",
                 priority: 2,
                 makeView: { [weak self] in

@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import AgentToolKit
+import LumiCoreKit
 
 /// 收集子智能体结果工具
 ///
@@ -17,9 +18,9 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return String(localized: "Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
+            return LumiPluginLocalization.string("Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
         case .english:
-            return String(localized: "Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
+            return LumiPluginLocalization.string("Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
         }
     }
 
@@ -29,11 +30,11 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
 
         switch language {
         case .chinese:
-            agentIdsDesc = String(localized: "Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
-            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
+            agentIdsDesc = LumiPluginLocalization.string("Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
+            timeoutDesc = LumiPluginLocalization.string("Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
         case .english:
-            agentIdsDesc = String(localized: "Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
-            timeoutDesc = String(localized: "Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
+            agentIdsDesc = LumiPluginLocalization.string("Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
+            timeoutDesc = LumiPluginLocalization.string("Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
         }
 
         return [

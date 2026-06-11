@@ -6,8 +6,8 @@ public enum ThemeSpringPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.spring",
-        displayName: String(localized: "Spring Theme", bundle: .module),
-        description: String(localized: "Spring green app theme", bundle: .module),
+        displayName: LumiPluginLocalization.string("Spring Theme", bundle: .module),
+        description: LumiPluginLocalization.string("Spring green app theme", bundle: .module),
         order: 124
     )
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 struct MemoryHistoryDetailView: View {
     @ObservedObject private var historyService = MemoryHistoryService.shared
@@ -8,7 +9,7 @@ struct MemoryHistoryDetailView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text(PluginDeviceInfoLocalization.string("Memory Usage Trend"))
+                Text(LumiPluginLocalization.string("Memory Usage Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "98989E"))
 

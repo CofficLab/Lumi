@@ -4,8 +4,8 @@ import LumiCoreKit
 public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
         id: "codex",
-        displayName: String(localized: "Codex", bundle: .module),
-        description: String(localized: "OpenAI models via Codex CLI", bundle: .module),
+        displayName: LumiPluginLocalization.string("Codex", bundle: .module),
+        description: LumiPluginLocalization.string("OpenAI models via Codex CLI", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: ["gpt-5.5", "gpt-5.4-mini"]
     )

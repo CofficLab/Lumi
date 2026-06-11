@@ -21,13 +21,13 @@ public struct FileInfoBannerView: View {
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "FF9F0A"))
                         Text(
-                            String(localized: "Preview Truncated for Large File", bundle: .module)
+                            LumiPluginLocalization.string("Preview Truncated for Large File", bundle: .module)
                         )
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "FF9F0A"))
                     }
                     if service.canLoadFullFile {
-                        Button(String(localized: "Load Full File", bundle: .module)) {
+                        Button(LumiPluginLocalization.string("Load Full File", bundle: .module)) {
                             service.loadFullFile()
                         }
                         .buttonStyle(.link)
@@ -39,7 +39,7 @@ public struct FileInfoBannerView: View {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "FF9F0A"))
-                        Text(String(localized: "Large File Read-Only Preview", bundle: .module))
+                        Text(LumiPluginLocalization.string("Large File Read-Only Preview", bundle: .module))
                             .font(.system(size: 9))
                             .foregroundColor(Color(hex: "FF9F0A"))
                     }

@@ -11,8 +11,8 @@ public enum RClickPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.rclick",
-        displayName: String(localized: "Right Click", bundle: .module),
-        description: String(localized: "Customize Finder right-click menu actions", bundle: .module),
+        displayName: LumiPluginLocalization.string("Right Click", bundle: .module),
+        description: LumiPluginLocalization.string("Customize Finder right-click menu actions", bundle: .module),
         order: 50
     )
 

@@ -7,8 +7,8 @@ public actor EditorChatIntegrationPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = EditorChatIntegrationPlugin()
     public static let id = "EditorChatIntegration"
-    public static let displayName = String(localized: "Chat Integration", bundle: .module)
-    public static let description = String(localized: "Adds context menu actions to send code and locations to the AI chat.", bundle: .module)
+    public static let displayName = LumiPluginLocalization.string("Chat Integration", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Adds context menu actions to send code and locations to the AI chat.", bundle: .module)
     public static let iconName = "bubble.left"
     public static var category: PluginCategory { .editor }
     public static let order = 12

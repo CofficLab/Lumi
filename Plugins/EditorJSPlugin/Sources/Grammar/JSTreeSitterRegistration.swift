@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public struct JSTreeSitterRegistration: Sendable {
     public struct LanguageDef: Sendable {
@@ -11,14 +12,14 @@ public struct JSTreeSitterRegistration: Sendable {
     public static let javascript = LanguageDef(
         languageId: "javascript",
         extensions: ["js", "jsx", "mjs", "cjs"],
-        displayName: String(localized: "JavaScript", bundle: .module),
+        displayName: LumiPluginLocalization.string("JavaScript", bundle: .module),
         embeddedLanguages: ["html", "css", "json"]
     )
 
     public static let typescript = LanguageDef(
         languageId: "typescript",
         extensions: ["ts", "tsx", "mts", "cts"],
-        displayName: String(localized: "TypeScript", bundle: .module),
+        displayName: LumiPluginLocalization.string("TypeScript", bundle: .module),
         embeddedLanguages: ["javascript", "jsx", "json"]
     )
 

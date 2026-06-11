@@ -58,7 +58,7 @@ public struct ChatAttachmentDropRootView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(theme.textSecondary)
 
-                Text(String(localized: "Release to add image to chat", bundle: .module))
+                Text(LumiPluginLocalization.string("Release to add image to chat", bundle: .module))
                     .font(.appBodyEmphasized)
                     .foregroundStyle(theme.textPrimary)
                     .multilineTextAlignment(.center)

@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
     case derivedData = "Derived Data"
@@ -13,13 +14,13 @@ public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .derivedData: return String(localized: "Derived Data", bundle: .module)
-        case .archives: return String(localized: "Archives", bundle: .module)
-        case .iOSDeviceSupport: return String(localized: "iOS Device Support", bundle: .module)
-        case .watchOSDeviceSupport: return String(localized: "watchOS Device Support", bundle: .module)
-        case .tvOSDeviceSupport: return String(localized: "tvOS Device Support", bundle: .module)
-        case .simulatorCaches: return String(localized: "Simulator Caches", bundle: .module)
-        case .logs: return String(localized: "Logs", bundle: .module)
+        case .derivedData: return LumiPluginLocalization.string("Derived Data", bundle: .module)
+        case .archives: return LumiPluginLocalization.string("Archives", bundle: .module)
+        case .iOSDeviceSupport: return LumiPluginLocalization.string("iOS Device Support", bundle: .module)
+        case .watchOSDeviceSupport: return LumiPluginLocalization.string("watchOS Device Support", bundle: .module)
+        case .tvOSDeviceSupport: return LumiPluginLocalization.string("tvOS Device Support", bundle: .module)
+        case .simulatorCaches: return LumiPluginLocalization.string("Simulator Caches", bundle: .module)
+        case .logs: return LumiPluginLocalization.string("Logs", bundle: .module)
         }
     }
 
@@ -37,13 +38,13 @@ public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
 
     public var description: String {
         switch self {
-        case .derivedData: return String(localized: "Intermediate files and indices from the build process, safe to delete.", bundle: .module)
-        case .archives: return String(localized: "App packaging archive files.", bundle: .module)
-        case .iOSDeviceSupport: return String(localized: "Symbol files generated when debugging connected devices.", bundle: .module)
-        case .watchOSDeviceSupport: return String(localized: "Apple Watch debug symbol files.", bundle: .module)
-        case .tvOSDeviceSupport: return String(localized: "Apple TV debug symbol files.", bundle: .module)
-        case .simulatorCaches: return String(localized: "Simulator runtime cache.", bundle: .module)
-        case .logs: return String(localized: "Old simulator logs and debug records.", bundle: .module)
+        case .derivedData: return LumiPluginLocalization.string("Intermediate files and indices from the build process, safe to delete.", bundle: .module)
+        case .archives: return LumiPluginLocalization.string("App packaging archive files.", bundle: .module)
+        case .iOSDeviceSupport: return LumiPluginLocalization.string("Symbol files generated when debugging connected devices.", bundle: .module)
+        case .watchOSDeviceSupport: return LumiPluginLocalization.string("Apple Watch debug symbol files.", bundle: .module)
+        case .tvOSDeviceSupport: return LumiPluginLocalization.string("Apple TV debug symbol files.", bundle: .module)
+        case .simulatorCaches: return LumiPluginLocalization.string("Simulator runtime cache.", bundle: .module)
+        case .logs: return LumiPluginLocalization.string("Old simulator logs and debug records.", bundle: .module)
         }
     }
 }

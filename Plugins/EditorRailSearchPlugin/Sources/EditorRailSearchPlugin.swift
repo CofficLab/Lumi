@@ -11,8 +11,8 @@ public enum EditorRailSearchPanelPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-rail-search",
-        displayName: String(localized: "Editor Rail Search", bundle: .module),
-        description: String(localized: "Search tab in the editor rail.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Editor Rail Search", bundle: .module),
+        description: LumiPluginLocalization.string("Search tab in the editor rail.", bundle: .module),
         order: 12
     )
 
@@ -29,7 +29,7 @@ public enum EditorRailSearchPanelPlugin: LumiPlugin {
             LumiPanelRailTabItem(
                 id: "search",
                 order: info.order,
-                title: String(localized: "Search", bundle: .module),
+                title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"
             ) {
                 BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
