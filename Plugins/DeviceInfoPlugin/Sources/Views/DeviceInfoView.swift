@@ -5,6 +5,7 @@ import SwiftUI
 struct DeviceInfoView: View {
     @LumiTheme private var theme
     @StateObject private var data = DeviceData()
+    @ObservedObject private var gpuService = GPUService.shared
 
     var body: some View {
         ScrollView {
@@ -100,6 +101,30 @@ struct DeviceInfoView: View {
 
                                 ProgressView(value: data.batteryLevel)
                                     .tint(theme.info)
+                            }
+                        }
+
+                        DeviceInfoCard(title: "GPU", icon: "gpu", color: Color(hex: "BF5AF2")) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(gpuService.modelName.isEmpty ? "GPU" : gpuService.modelName)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                    .foregroundColor(theme.textSecondary)
+
+                                HStack(alignment: .bottom) {
+                                    Text(String(format: "%.0f%%", gpuService.utilization))
+                                        .font(.largeTitle.weight(.bold))
+                                        .foregroundColor(theme.textPrimary)
+                                    Spacer()
+                                    Capsule()
+                                        .fill(Color(hex: "BF5AF2").opacity(0.2))
+                                        .frame(width: 40, height: 6)
+                                        .overlay(alignment: .leading) {
+                                            Capsule()
+                                                .fill(Color(hex: "BF5AF2"))
+                                                .frame(width: 40 * min(max(gpuService.utilization / 100, 0), 1), height: 6)
+                                        }
+                                }
                             }
                         }
                     }

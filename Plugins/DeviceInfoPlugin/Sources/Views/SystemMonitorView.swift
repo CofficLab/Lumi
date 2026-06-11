@@ -3,6 +3,7 @@ import LumiUI
 
 struct SystemMonitorView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()
+    @ObservedObject private var gpuService = GPUService.shared
     
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
@@ -18,6 +19,42 @@ struct SystemMonitorView: View {
                         value: viewModel.metrics.memoryUsage.description,
                         color: viewModel.memoryColor) {
                 WaveformView(data: viewModel.metrics.memoryUsage.history, color: viewModel.memoryColor)
+            }
+            
+            // GPU Card
+            MonitorCard(title: "GPU", 
+                        value: String(format: "%.0f%%", gpuService.utilization),
+                        color: gpuColor) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(gpuService.modelName.isEmpty ? "GPU" : gpuService.modelName)
+                        .font(.system(size: 9))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(PluginDeviceInfoLocalization.string("Memory"))
+                                .font(.system(size: 8))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            Text(gpuService.usedMemoryString)
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .foregroundColor(gpuColor)
+                        }
+                        
+                        if gpuService.temperature > 0 {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(PluginDeviceInfoLocalization.string("Temperature"))
+                                    .font(.system(size: 8))
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                Text(String(format: "%.0f°C", gpuService.temperature))
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundColor(gpuColor)
+                            }
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding(8)
             }
             
             // Network Card
@@ -47,10 +84,19 @@ struct SystemMonitorView: View {
         .padding()
         .onAppear {
             viewModel.startMonitoring()
+            gpuService.startMonitoring()
         }
         .onDisappear {
             viewModel.stopMonitoring()
+            gpuService.stopMonitoring()
         }
+    }
+    
+    private var gpuColor: Color {
+        let value = gpuService.utilization
+        if value < 60 { return Color(hex: "BF5AF2") }
+        if value < 85 { return Color(hex: "FF9F0A") }
+        return Color(hex: "FF453A")
     }
 }
 

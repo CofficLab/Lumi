@@ -43,6 +43,9 @@ public enum DeviceInfoPlugin: LumiPlugin {
             },
             LumiMenuBarPopupItem(id: "\(info.id).memory", order: info.order + 1) {
                 MemoryMenuBarPopupView()
+            },
+            LumiMenuBarPopupItem(id: "\(info.id).gpu", order: info.order + 2) {
+                GPUMenuBarPopupView()
             }
         ]
     }
