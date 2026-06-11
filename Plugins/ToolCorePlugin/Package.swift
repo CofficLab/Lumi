@@ -24,29 +24,9 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "WorkspaceFileKit", package: "WorkspaceFileKit"),
             ],
-            path: ".",
-            exclude: [
-                "Tests",
-                "Resources",
-                "README.md",
-                "Sources/CommandRiskEvaluator.swift",
-                "Sources/Services",
-                "Sources/Tools/EditFileTool.swift",
-                "Sources/Tools/SharedFileUtils.swift",
-                "Sources/Tools/ShellTool.swift",
-                "Sources/Tools/ToolCoreToolRisk.swift",
-                "Sources/Tools/WriteFileTool.swift",
-            ],
-            sources: [
-                "Sources/ToolCorePlugin.swift",
-                "Sources/Tools/ListDirectoryTool.swift",
-                "Sources/Tools/ReadFileTool.swift",
-                "Sources/Tools/LumiShellTool.swift",
-                "Sources/Tools/LumiWriteFileTool.swift",
-                "Sources/Tools/LumiEditFileTool.swift",
-            ],
+            path: "Sources",
             resources: [
-                .process("Sources/Localizable.xcstrings")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

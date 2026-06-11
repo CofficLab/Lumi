@@ -2,7 +2,7 @@ import Foundation
 import LumiCoreKit
 import WorkspaceFileKit
 
-public struct LumiEditFileTool: LumiAgentTool {
+public struct EditFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "edit_file",
         displayName: LumiPluginLocalization.string("Edit File", bundle: .module),
@@ -59,7 +59,7 @@ public struct LumiEditFileTool: LumiAgentTool {
               let newString = arguments["new_string"]?.stringValue
         else {
             throw NSError(
-                domain: "LumiEditFileTool",
+                domain: "EditFileTool",
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "Missing required arguments (file_path, old_string, new_string)."]
             )
@@ -67,7 +67,7 @@ public struct LumiEditFileTool: LumiAgentTool {
 
         if !context.isPathAllowed(filePath) {
             throw NSError(
-                domain: "LumiEditFileTool",
+                domain: "EditFileTool",
                 code: 403,
                 userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(filePath)"]
             )
@@ -95,7 +95,7 @@ public struct LumiEditFileTool: LumiAgentTool {
             }
         } catch let error as WorkspaceFileError {
             throw NSError(
-                domain: "LumiEditFileTool",
+                domain: "EditFileTool",
                 code: 500,
                 userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
             )

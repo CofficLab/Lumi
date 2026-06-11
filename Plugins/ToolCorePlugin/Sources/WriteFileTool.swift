@@ -1,7 +1,7 @@
 import Foundation
 import LumiCoreKit
 
-public struct LumiWriteFileTool: LumiAgentTool {
+public struct WriteFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "write_file",
         displayName: LumiPluginLocalization.string("Write File", bundle: .module),
@@ -42,11 +42,11 @@ public struct LumiWriteFileTool: LumiAgentTool {
         guard let path = arguments["path"]?.stringValue,
               let content = arguments["content"]?.stringValue
         else {
-            throw NSError(domain: "LumiWriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing path or content"])
+            throw NSError(domain: "WriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing path or content"])
         }
 
         if !context.isPathAllowed(path) {
-            throw NSError(domain: "LumiWriteFileTool", code: 403, userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)"])
+            throw NSError(domain: "WriteFileTool", code: 403, userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)"])
         }
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)

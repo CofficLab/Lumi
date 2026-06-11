@@ -1,7 +1,7 @@
 import Foundation
 import LumiCoreKit
 
-public struct LumiShellTool: LumiAgentTool {
+public struct ShellTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "run_command",
         displayName: LumiPluginLocalization.string("Run Command", bundle: .module),
@@ -52,7 +52,7 @@ public struct LumiShellTool: LumiAgentTool {
         guard let command = arguments["command"]?.stringValue,
               !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
-            throw NSError(domain: "LumiShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing command"])
+            throw NSError(domain: "ShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing command"])
         }
 
         let process = Process()
