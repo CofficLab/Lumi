@@ -162,7 +162,7 @@ final class SplitDimensionPersistenceView: NSView {
     private static let maxApplyRetryCount = 20
 
     private var storageKey: String
-    private var constraints: SplitDimensionConstraints
+    private var dimensionConstraints: SplitDimensionConstraints
     private var axis: SplitDimensionPersistence.Axis
 
     private weak var observedSplitView: NSSplitView?
@@ -177,7 +177,7 @@ final class SplitDimensionPersistenceView: NSView {
         axis: SplitDimensionPersistence.Axis
     ) {
         self.storageKey = storageKey
-        self.constraints = constraints
+        self.dimensionConstraints = constraints
         self.axis = axis
         super.init(frame: .zero)
     }
@@ -193,12 +193,12 @@ final class SplitDimensionPersistenceView: NSView {
         axis: SplitDimensionPersistence.Axis
     ) {
         guard self.storageKey != storageKey
-            || self.constraints != constraints
+            || self.dimensionConstraints != constraints
             || self.axis != axis
         else { return }
 
         self.storageKey = storageKey
-        self.constraints = constraints
+        self.dimensionConstraints = constraints
         self.axis = axis
         didApplySize = false
         applySizeIfPossible()
@@ -271,7 +271,7 @@ final class SplitDimensionPersistenceView: NSView {
         }
 
         let savedSize = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey)
-        let requestedSize = savedSize.map { CGFloat($0) } ?? constraints.defaultSize
+        let requestedSize = savedSize.map { CGFloat($0) } ?? dimensionConstraints.defaultSize
         let targetSize = clampedSize(
             requestedSize,
             totalSize: totalSize,
@@ -295,9 +295,9 @@ final class SplitDimensionPersistenceView: NSView {
         let paneSize = axis == .horizontal
             ? splitView.arrangedSubviews[paneIndex].frame.width
             : splitView.arrangedSubviews[paneIndex].frame.height
-        guard paneSize.isFinite, paneSize >= constraints.minSize else { return }
+        guard paneSize.isFinite, paneSize >= dimensionConstraints.minSize else { return }
 
-        let clamped = min(max(paneSize, constraints.minSize), constraints.maxSize)
+        let clamped = min(max(paneSize, dimensionConstraints.minSize), dimensionConstraints.maxSize)
         let saved = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey) ?? 0
         guard abs(saved - Double(clamped)) > 0.5 else { return }
         LayoutPluginLocalStore.shared.saveSplitDimension(Double(clamped), forKey: storageKey)
@@ -312,12 +312,12 @@ final class SplitDimensionPersistenceView: NSView {
         let dividersSize = CGFloat(dividerCount) * dividerThickness
         let usableSize = max(1, totalSize - dividersSize)
         let maximumAvailableSize = max(
-            constraints.minSize,
-            usableSize - constraints.minimumOppositeSize
+            dimensionConstraints.minSize,
+            usableSize - dimensionConstraints.minimumOppositeSize
         )
         return min(
-            max(requestedSize, constraints.minSize),
-            min(constraints.maxSize, maximumAvailableSize)
+            max(requestedSize, dimensionConstraints.minSize),
+            min(dimensionConstraints.maxSize, maximumAvailableSize)
         )
     }
 
@@ -329,13 +329,13 @@ final class SplitDimensionPersistenceView: NSView {
         if paneIndex == splitView.arrangedSubviews.count - 1 {
             dividerIndex = max(0, paneIndex - 1)
             position = max(
-                constraints.minimumOppositeSize,
+                dimensionConstraints.minimumOppositeSize,
                 totalSize - size - splitView.dividerThickness
             )
         } else if axis == .vertical {
             dividerIndex = max(0, paneIndex - 1)
             position = max(
-                constraints.minimumOppositeSize,
+                dimensionConstraints.minimumOppositeSize,
                 totalSize - size - splitView.dividerThickness
             )
         } else {
