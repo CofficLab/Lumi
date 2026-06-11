@@ -205,6 +205,12 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private var stringCatalogControls: some View {
         if case .stringCatalog = viewModel.previewMode {
             if let catalog = currentStringCatalog {
+                let issues = catalog.translationIssues
+
+                if !issues.isEmpty {
+                    aiFixTranslationButton(issues: issues)
+                }
+
                 if catalog.staleEntryCount > 0 {
                     Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
                         .font(.caption)
@@ -244,6 +250,47 @@ public struct EditorPreviewDetailView: View, SuperLog {
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
+    }
+
+    @ViewBuilder
+    private func aiFixTranslationButton(issues: StringCatalog.TranslationIssuesSummary) -> some View {
+        Button {
+            sendFixTranslationMessage(issues: issues)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkle")
+                Text("\(issues.totalCount)")
+            }
+            .font(.caption)
+            .foregroundStyle(.purple)
+        }
+        .buttonStyle(.borderless)
+        .help(LumiPluginLocalization.string("Ask AI to fix translation issues", bundle: .module))
+    }
+
+    private func sendFixTranslationMessage(issues: StringCatalog.TranslationIssuesSummary) {
+        guard let fileURL = currentFileURL else { return }
+
+        let untranslated = issues.issues.filter { $0.kind == .untranslated }
+        let missing = issues.issues.filter { $0.kind == .missing }
+
+        var parts: [String] = []
+        parts.append("请修复文件 `\(fileURL.lastPathComponent)` 的翻译问题。")
+
+        if !untranslated.isEmpty {
+            let keys = Set(untranslated.map(\.key)).sorted()
+            parts.append("以下键值未翻译（翻译值与英文 key 相同）：\(keys.joined(separator: "、"))。")
+        }
+
+        if !missing.isEmpty {
+            let keys = Set(missing.map(\.key)).sorted()
+            parts.append("以下键值缺少翻译：\(keys.joined(separator: "、"))。")
+        }
+
+        parts.append("请将所有非源语言的翻译值替换为正确的中/繁体翻译，保持格式化字符串占位符不变。")
+
+        let message = parts.joined(separator: " ")
+        EditorPreviewRuntimeBridge.addToChatHandler?(message, pluginContext)
     }
 
     private var currentStringCatalog: StringCatalog? {

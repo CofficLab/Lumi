@@ -55,6 +55,47 @@ public struct StringCatalog: Equatable, Sendable {
         }
     }
 
+    // MARK: - Translation Issues
+
+    /// 翻译问题类型。
+    public enum TranslationIssueKind: String, Sendable {
+        /// 非源语言翻译值与 key 完全相同（未实际翻译）。
+        case untranslated
+        /// 非源语言缺少翻译条目。
+        case missing
+    }
+
+    /// 单个翻译问题。
+    public struct TranslationIssue: Equatable, Sendable {
+        public let key: String
+        public let language: String
+        public let kind: TranslationIssueKind
+
+        public init(key: String, language: String, kind: TranslationIssueKind) {
+            self.key = key
+            self.language = language
+            self.kind = kind
+        }
+    }
+
+    /// 翻译问题摘要。
+    public struct TranslationIssuesSummary: Equatable, Sendable {
+        public let issues: [TranslationIssue]
+
+        public init(issues: [TranslationIssue]) {
+            self.issues = issues
+        }
+
+        public var isEmpty: Bool { issues.isEmpty }
+
+        public var totalCount: Int { issues.count }
+
+        /// 按语言分组的问题数量。
+        public var countByLanguage: [String: Int] {
+            Dictionary(grouping: issues, by: \.language).mapValues { $0.count }
+        }
+    }
+
     public let sourceLanguage: String
     public let languages: [Language]
     public let entries: [Entry]
@@ -67,5 +108,35 @@ public struct StringCatalog: Equatable, Sendable {
 
     public var staleEntryCount: Int {
         entries.filter { $0.extractionState == "stale" }.count
+    }
+
+    /// 检测翻译问题：未翻译和缺失翻译。
+    public var translationIssues: TranslationIssuesSummary {
+        let nonSourceLanguages = languages.filter { !$0.isSourceLanguage }.map(\.id)
+        var issues: [TranslationIssue] = []
+
+        for entry in entries where entry.extractionState != "stale" {
+            for language in nonSourceLanguages {
+                if let value = entry.valuesByLanguage[language] {
+                    // 有条目但值和 key 一样 → 未翻译
+                    if let text = value.text, !text.isEmpty, text == entry.key {
+                        issues.append(TranslationIssue(
+                            key: entry.key,
+                            language: language,
+                            kind: .untranslated
+                        ))
+                    }
+                } else {
+                    // 完全没有这个语言的条目 → 缺失
+                    issues.append(TranslationIssue(
+                        key: entry.key,
+                        language: language,
+                        kind: .missing
+                    ))
+                }
+            }
+        }
+
+        return TranslationIssuesSummary(issues: issues)
     }
 }

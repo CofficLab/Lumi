@@ -3333,6 +3333,40 @@
           }
         }
       }
+    },
+    "Ask AI to fix translation issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI to fix translation issues"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让 AI 修复翻译问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
