@@ -1,176 +1,179 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Auto Conversation Title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Conversation Title"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Auto Conversation Title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Conversation Title"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Conversation Title"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Conversation Title"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Conversation Title"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Conversation Title"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Conversation Title"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Conversation Title"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Conversation Title"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Conversation Title"
           }
         }
       }
     },
-    "Automatically generate conversation titles from the first user message": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatically generate conversation titles from the first user message"
+    "Automatically generate conversation titles from the first user message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically generate conversation titles from the first user message"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatically generate conversation titles from the first user message"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically generate conversation titles from the first user message"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatically generate conversation titles from the first user message"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically generate conversation titles from the first user message"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatically generate conversation titles from the first user message"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically generate conversation titles from the first user message"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatically generate conversation titles from the first user message"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically generate conversation titles from the first user message"
           }
         }
       }
     },
-    "New Chat": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Chat"
+    "New Chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Chat"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Chat"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Chat"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Chat"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Chat"
           }
         }
       }
     },
-    "New Conversation": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Conversation"
+    "New Conversation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Conversation"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Conversation"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Conversation"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Conversation"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
           }
         }
       }
     },
-    "更新对话标题: %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新对话标题: %@"
+    "Update Conversation Title" : {
+
+    },
+    "更新对话标题: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对话标题: %@"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新对话标题: %@"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对话标题: %@"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新对話标题: %@"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对話标题: %@"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新对話标题: %@"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对話标题: %@"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新对話标题: %@"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对話标题: %@"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

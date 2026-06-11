@@ -1,74 +1,77 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "FlyMux": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FlyMux"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "AI API Gateway by flymux.com" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI API Gateway by flymux.com"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FlyMux"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "flymux.com 提供的 AI API 网关"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FlyMux"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "flymux.com 提供的 AI API 網關"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FlyMux"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "flymux.com 提供的 AI API 網關"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FlyMux"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "flymux.com 提供的 AI API 網關"
           }
         }
       }
     },
-    "AI API Gateway by flymux.com": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI API Gateway by flymux.com"
+    "Contributes FlyMux models to Lumi Chat." : {
+
+    },
+    "FlyMux" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlyMux"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "flymux.com 提供的 AI API 网关"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlyMux"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "flymux.com 提供的 AI API 網關"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlyMux"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "flymux.com 提供的 AI API 網關"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlyMux"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "flymux.com 提供的 AI API 網關"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlyMux"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

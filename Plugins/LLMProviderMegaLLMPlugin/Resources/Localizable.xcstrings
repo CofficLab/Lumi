@@ -1,74 +1,77 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "MegaLLM": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Contributes MegaLLM models to Lumi Chat." : {
+
+    },
+    "MegaLLM" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM"
           }
         }
       }
     },
-    "MegaLLM AI": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM AI"
+    "MegaLLM AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM AI"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM AI"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM AI"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM AI"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM AI"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM AI"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM AI"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MegaLLM AI"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MegaLLM AI"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

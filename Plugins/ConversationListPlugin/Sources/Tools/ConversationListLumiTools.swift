@@ -7,7 +7,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "create_new_conversation",
         displayName: String(localized: "Create New Conversation", bundle: .module),
-        description: String(localized: "", bundle: .module)"
+        description: """
         Create a new conversation session.
 
         Parameters (all optional):
@@ -91,7 +91,7 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "delete_conversation",
         displayName: String(localized: "Delete Conversation", bundle: .module),
-        description: String(localized: "", bundle: .module)"
+        description: """
         Delete a specified conversation session. This action is irreversible and will permanently remove the conversation and all its messages.
 
         Parameters:
@@ -192,7 +192,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_recent_conversations",
         displayName: String(localized: "Get Recent Conversations", bundle: .module),
-        description: String(localized: "", bundle: .module)"
+        description: """
         Get the IDs and titles of the most recent conversations.
 
         Parameters:
@@ -354,7 +354,7 @@ struct SetConversationProjectLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "set_conversation_project",
         displayName: String(localized: "Set Conversation Project", bundle: .module),
-        description: String(localized: "", bundle: .module)"
+        description: """
         Set or remove the project association for a specified conversation.
 
         Parameters:

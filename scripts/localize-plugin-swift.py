@@ -10,8 +10,9 @@ from pathlib import Path
 DISPLAY_NAME_RE = re.compile(
     r'(?P<prefix>displayName:\s*)"(?P<value>(?:\\.|[^"\\])*)"(?!\s*,\s*bundle:)'
 )
+# Skip multiline tool descriptions (`description: """..."""`).
 DESCRIPTION_RE = re.compile(
-    r'(?P<prefix>description:\s*)"(?P<value>(?:\\.|[^"\\])*)"(?!\s*,\s*bundle:)'
+    r'(?P<prefix>description:\s*)"(?!"")(?P<value>(?:\\.|[^"\\])*)"(?!\s*,\s*bundle:)'
 )
 STATIC_DISPLAY_NAME_RE = re.compile(
     r'(?P<prefix>static let displayName(?:\s*:\s*String)?\s*=\s*)"(?P<value>(?:\\.|[^"\\])*)"(?!\s*,\s*bundle:)'
@@ -73,7 +74,7 @@ def replace_label(match: re.Match[str]) -> str:
     value = match.group("value")
     if "\\(" in value:
         return match.group(0)
-    return f'Label("{value}", bundle: .module, systemImage:'
+    return f'Label(String(localized: "{value}", bundle: .module), systemImage:'
 
 
 def replace_button(match: re.Match[str]) -> str:

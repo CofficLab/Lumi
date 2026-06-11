@@ -1,74 +1,77 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "LPgpt": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LPgpt"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Contributes LPgpt models to Lumi Chat." : {
+
+    },
+    "Free LLM Gateway by lpgpt.us" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free LLM Gateway by lpgpt.us"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LPgpt"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LPgpt"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LPgpt"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LPgpt"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lpgpt.us 提供的免费 LLM 网关服务"
           }
         }
       }
     },
-    "Free LLM Gateway by lpgpt.us": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free LLM Gateway by lpgpt.us"
+    "LPgpt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPgpt"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPgpt"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPgpt"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPgpt"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lpgpt.us 提供的免费 LLM 网关服务"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPgpt"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

@@ -26,6 +26,9 @@ let package = Package(
             exclude: [
                 "CodexPlugin.swift",
                 "CodexProvider.swift",
+            ],
+            resources: [
+                .process("../Resources")
             ]
         ),
         .testTarget(

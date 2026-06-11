@@ -28,7 +28,10 @@ let package = Package(
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
     ]
 )
