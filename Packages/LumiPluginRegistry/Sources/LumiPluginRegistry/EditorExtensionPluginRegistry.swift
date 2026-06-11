@@ -1,3 +1,4 @@
+import EditorChatIntegrationPlugin
 import EditorCSSPlugin
 import EditorGoPlugin
 import EditorHTMLPlugin
@@ -44,6 +45,7 @@ public enum EditorExtensionPluginRegistry {
         LSPDocumentLinkEditorPlugin.self,
         LSPSelectionRangeEditorPlugin.self,
         EditorLSPContextCommandsPlugin.self,
+        EditorChatIntegrationPlugin.self,
         EditorMultiCursorCommandsPlugin.self,
         EditorVuePlugin.self,
         EditorJSPlugin.self,

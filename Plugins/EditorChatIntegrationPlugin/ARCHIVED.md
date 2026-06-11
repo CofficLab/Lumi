@@ -1,7 +1,5 @@
-# Archived
+# Re-enabled
 
-This plugin integrated Chat into the legacy Editor shell (`showChat: .narrow`).
+Previously archived when the Editor shell no longer embedded Chat UI.
 
-The Editor migration uses a standalone `EditorPanelPlugin` with **no Chat UI** in the editor workspace. Chat remains available via the separate Chat activity bar container.
-
-Do not re-register this plugin unless explicitly reviving editor-embedded chat.
+Re-registered via `EditorExtensionPluginRegistry` so editor context menu actions can send code/locations to the separate Chat panel (`addToChat` notification).
