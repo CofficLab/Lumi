@@ -13,8 +13,9 @@ func _DisplayServicesGetBrightness(_: CGDirectDisplayID, _: UnsafeMutablePointer
 @_silgen_name("DisplayServicesSetBrightness")
 func _DisplayServicesSetBrightness(_: CGDirectDisplayID, _: Float) -> Int32
 
+// CoreDisplay_DisplayCreateInfoDictionary follows Create rule — returns retained CFDictionary (or NULL).
 @_silgen_name("CoreDisplay_DisplayCreateInfoDictionary")
-func _CoreDisplay_DisplayCreateInfoDictionary(_: CGDirectDisplayID) -> Unmanaged<CFDictionary>?
+func _CoreDisplay_DisplayCreateInfoDictionary(_: CGDirectDisplayID) -> CFDictionary?
 
 @_silgen_name("IOAVServiceWriteI2C")
 func _IOAVServiceWriteI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafePointer<UInt8>, _: UInt32) -> Bool
@@ -22,8 +23,10 @@ func _IOAVServiceWriteI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafePointer<U
 @_silgen_name("IOAVServiceReadI2C")
 func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePointer<UInt8>, _: UInt32) -> Bool
 
+// IOAVServiceCreateWithService follows Create rule — returns a retained CFTypeRef (or NULL).
+// We declare it as returning an optional CFTypeRef directly, NOT Unmanaged.
 @_silgen_name("IOAVServiceCreateWithService")
-func _IOAVServiceCreateWithService(_: CFAllocator, _: io_service_t) -> Unmanaged<CFTypeRef>?
+func _IOAVServiceCreateWithService(_: CFAllocator, _: io_service_t) -> CFTypeRef?
 
 // MARK: - DDC VCP Codes
 
@@ -282,6 +285,15 @@ private final class Arm64DDCMatcher {
         return matched
     }
 
+    /// Safety wrapper for creating AV service — logs failures instead of crashing.
+    private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
+        guard let avService = _IOAVServiceCreateWithService(kCFAllocatorDefault, entry) else {
+            ddcLog.warning("DDC: _IOAVServiceCreateWithService returned nil for entry")
+            return nil
+        }
+        return avService
+    }
+
     private func registryServicesForMatching() -> [RegistryService] {
         var services: [RegistryService] = []
         var serviceLocation = 0
@@ -386,7 +398,7 @@ private final class Arm64DDCMatcher {
             IOOptionBits(kIORegistryIterateRecursively)
         ), let location = unmanagedLocation.takeRetainedValue() as? String,
            location == "External",
-           let avService = _IOAVServiceCreateWithService(kCFAllocatorDefault, entry)?.takeRetainedValue()
+           let avService = safeCreateAVService(entry: entry)
         else {
             return
         }
@@ -395,10 +407,10 @@ private final class Arm64DDCMatcher {
     }
 
     private func matchScore(displayID: CGDirectDisplayID, registryService: RegistryService) -> Int {
-        guard let unmanagedInfo = _CoreDisplay_DisplayCreateInfoDictionary(displayID) else {
+        guard let infoDict = _CoreDisplay_DisplayCreateInfoDictionary(displayID) else {
             return 0
         }
-        let info = unmanagedInfo.takeRetainedValue() as NSDictionary
+        let info = infoDict as NSDictionary
         var score = 0
 
         if let location = info[kIODisplayLocationKey] as? String,

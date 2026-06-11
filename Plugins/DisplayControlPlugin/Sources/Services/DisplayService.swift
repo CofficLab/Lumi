@@ -201,7 +201,8 @@ final class DisplayService: ObservableObject {
     }
 
     private nonisolated static func displayName(for id: CGDirectDisplayID, isBuiltIn: Bool) -> String {
-        if let info = _CoreDisplay_DisplayCreateInfoDictionary(id)?.takeRetainedValue() as? [String: Any],
+        if let rawInfo = _CoreDisplay_DisplayCreateInfoDictionary(id),
+           let info = rawInfo as? [String: Any],
            let localizedNames = info["DisplayProductName"] as? [String: String]
         {
             let name = localizedNames[Locale.current.identifier]
