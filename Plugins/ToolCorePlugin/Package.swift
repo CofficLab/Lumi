@@ -27,6 +27,7 @@ let package = Package(
             path: ".",
             exclude: [
                 "Tests",
+                "Resources",
                 "README.md",
                 "Sources/CommandRiskEvaluator.swift",
                 "Sources/Services",
