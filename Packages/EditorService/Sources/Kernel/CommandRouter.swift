@@ -1,5 +1,5 @@
 import AppKit
-import CodeEditTextView
+import EditorCodeEditTextView
 import Foundation
 
 // MARK: - Command Router

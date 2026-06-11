@@ -1,6 +1,6 @@
 import Foundation
 import SuperLogKit
-import GoEditorCore
+import EditorGoCore
 import os
 
 @MainActor

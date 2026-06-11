@@ -1,4 +1,4 @@
-import ChatInputEditorKit
+import EditorChatInputKit
 import LumiUI
 import SwiftUI
 

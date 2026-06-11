@@ -2,8 +2,8 @@ import Foundation
 import SwiftUI
 import AppKit
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 
 @MainActor
 public struct SourceEditorAdapter {

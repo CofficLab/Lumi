@@ -99,17 +99,17 @@ cd Lumi
 
 ### 2. Generate CodeLanguagesContainer
 
-`CodeEditLanguages` depends on a local binary framework that is not checked into Git
+`EditorCodeEditLanguages` depends on a local binary framework that is not checked into Git
 (GitHub's 100 MB file limit). After a fresh clone, generate it before resolving
 Swift packages in Xcode (first run may take ~15 minutes):
 
 ```bash
-cd Packages/CodeEditLanguages
+cd Packages/EditorCodeEditLanguages
 ./build_framework.sh
 cd ../..
 ```
 
-See [Packages/CodeEditLanguages/README.md](Packages/CodeEditLanguages/README.md) for details.
+See [Packages/EditorCodeEditLanguages/README.md](Packages/EditorCodeEditLanguages/README.md) for details.
 
 ### 3. Open in Xcode
 

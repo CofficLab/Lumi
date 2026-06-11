@@ -1,6 +1,6 @@
 import Foundation
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 
 @MainActor
 final class EditorRuntimeModeController {

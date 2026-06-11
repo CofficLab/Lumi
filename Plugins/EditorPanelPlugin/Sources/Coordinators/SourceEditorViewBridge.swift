@@ -4,7 +4,7 @@ import LSPDocumentHighlightEditorPlugin
 import LSPRealtimeSignalsEditorPlugin
 import SwiftUI
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?
     public var cursorCoordinator: CursorCoordinator?

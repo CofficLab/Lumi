@@ -15,8 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/CodeEditLanguages"),
-        .package(path: "../../Packages/CodeEditTextView"),
+        .package(path: "../../Packages/EditorCodeEditLanguages"),
+        .package(path: "../../Packages/EditorCodeEditTextView"),
         .package(path: "../../Packages/LumiCoreKit"),
     ],
     targets: [
@@ -24,8 +24,8 @@ let package = Package(
             name: "EditorMarkdownPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "EditorCodeEditLanguages", package: "EditorCodeEditLanguages"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: ".",

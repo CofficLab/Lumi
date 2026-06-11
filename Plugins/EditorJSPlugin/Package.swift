@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/CodeEditTextView"),
+        .package(path: "../../Packages/EditorCodeEditTextView"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -25,7 +25,7 @@ let package = Package(
         .target(
             name: "EditorJSPlugin",
             dependencies: [
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

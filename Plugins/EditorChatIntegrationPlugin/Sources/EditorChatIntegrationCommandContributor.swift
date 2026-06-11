@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import CodeEditTextView
+import EditorCodeEditTextView
 
 @MainActor
 public final class EditorChatIntegrationCommandContributor: SuperEditorCommandContributor {

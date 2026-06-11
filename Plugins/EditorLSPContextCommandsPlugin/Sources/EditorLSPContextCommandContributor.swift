@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import SuperLogKit
-import CodeEditTextView
+import EditorCodeEditTextView
 import os
 
 @MainActor

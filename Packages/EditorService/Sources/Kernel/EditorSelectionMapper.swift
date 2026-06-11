@@ -1,6 +1,6 @@
 import AppKit
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import Foundation
 
 // MARK: - Selection Mapper

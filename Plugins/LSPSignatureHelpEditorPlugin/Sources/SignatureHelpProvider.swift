@@ -3,7 +3,7 @@ import EditorKernel
 import EditorService
 import Combine
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import LanguageServerProtocol
 import LSPServiceEditorPlugin
 

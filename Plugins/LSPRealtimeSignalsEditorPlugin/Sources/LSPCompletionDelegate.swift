@@ -3,7 +3,7 @@ import EditorService
 import SuperLogKit
 import SwiftUI
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import LanguageServerProtocol
 import os
 

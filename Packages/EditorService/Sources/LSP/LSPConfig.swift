@@ -1,7 +1,7 @@
 import Foundation
 import SuperLogKit
 import os
-import GoEditorCore
+import EditorGoCore
 import ShellKit
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数

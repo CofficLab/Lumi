@@ -2,8 +2,8 @@ import Foundation
 import AppKit
 import Combine
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import LanguageServerProtocol
 
 // MARK: - Editor LSP Provider Protocols

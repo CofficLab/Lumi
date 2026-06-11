@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/CodeEditTextView"),
+        .package(path: "../../Packages/EditorCodeEditTextView"),
         .package(path: "../../Packages/EditorService"),
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
@@ -25,7 +25,7 @@ let package = Package(
         .target(
             name: "EditorVuePlugin",
             dependencies: [
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),

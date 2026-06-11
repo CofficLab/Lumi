@@ -1,8 +1,8 @@
 import Foundation
 import EditorService
-import GoEditorCore
+import EditorGoCore
 import SwiftUI
-import CodeEditTextView
+import EditorCodeEditTextView
 
 /// Go 命令贡献者
 ///

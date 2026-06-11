@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import GoEditorCore
+import EditorGoCore
 import SwiftUI
 
 /// Go 状态栏贡献者

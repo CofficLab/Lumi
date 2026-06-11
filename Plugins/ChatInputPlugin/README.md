@@ -20,7 +20,7 @@
 
 | Package | 说明 |
 | --- | --- |
-| `ChatInputEditorKit` | 聊天输入编辑能力 |
+| `EditorChatInputKit` | 聊天输入编辑能力 |
 | `LumiCoreKit` | 插件协议与窗口对话上下文 |
 | `SuperLogKit` | 日志能力 |
 

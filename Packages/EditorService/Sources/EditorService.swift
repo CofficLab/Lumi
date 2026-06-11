@@ -2,8 +2,8 @@ import Combine
 import Foundation
 import AppKit
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import LanguageServerProtocol
 
 // MARK: - EditorService

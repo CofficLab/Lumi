@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import GoEditorCore
+import EditorGoCore
 import SwiftUI
 
 /// Go 面板贡献者

@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import CodeEditLanguages
+import EditorCodeEditLanguages
 import EditorKernel
 import LanguageServerProtocol
 

@@ -116,6 +116,7 @@ import EditorRailSearchPlugin
 import EditorRailSymbolsPlugin
 import EditorRailCallHierarchyPlugin
 import LLMAvailabilityPlugin
+import DisplayControlPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -240,6 +241,7 @@ public enum LumiPluginRegistry {
         CodeReviewPlugin.self,
         DelayMessagePlugin.self,
         LLMAvailabilityPlugin.self,
-        AppIconDesignerPlugin.self
+        AppIconDesignerPlugin.self,
+        DisplayControlPlugin.self
     ]
 }

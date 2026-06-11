@@ -1,6 +1,6 @@
 import Foundation
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import SwiftUI
 import SuperLogKit
 import os

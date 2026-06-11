@@ -4,8 +4,8 @@ import Combine
 import EditorKernel
 import MagicAlert
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import LanguageServerProtocol
 import UniformTypeIdentifiers
 import SuperLogKit

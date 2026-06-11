@@ -4,7 +4,7 @@ import EditorService
 import EditorService
 import Combine
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import LanguageServerProtocol
 
 /// Inlay Hint 提供者

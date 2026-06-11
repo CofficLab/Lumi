@@ -3,8 +3,8 @@ import EditorKernel
 import SuperLogKit
 import AppKit
 @preconcurrency import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os

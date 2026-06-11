@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import os
 
 @MainActor

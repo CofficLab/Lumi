@@ -1,8 +1,8 @@
 import SwiftUI
 import SuperLogKit
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import EditorOverlayKit
 import EditorService
 import LSPDocumentHighlightEditorPlugin
@@ -138,7 +138,7 @@ public struct SourceEditorView: View, SuperLog {
            textCoordinator != nil,
            cursorCoordinator != nil,
            contextMenuCoordinator != nil {
-            let config = buildConfiguration()
+            let config = cachedConfig ?? buildConfiguration()
             VStack(spacing: 0) {
                 SourceEditor(
                     content,

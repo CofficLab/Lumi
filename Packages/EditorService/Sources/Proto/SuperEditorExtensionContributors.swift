@@ -1,7 +1,7 @@
 import Foundation
 import EditorKernel
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import SwiftUI
 
 // MARK: - Contribution Context

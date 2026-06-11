@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/ChatInputEditorKit"),
+        .package(path: "../../Packages/EditorChatInputKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "ChatInputPlugin",
             dependencies: [
-                .product(name: "ChatInputEditorKit", package: "ChatInputEditorKit"),
+                .product(name: "EditorChatInputKit", package: "EditorChatInputKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

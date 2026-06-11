@@ -16,10 +16,10 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../EditorKernel"),
-        .package(path: "../LumiCodeEditSourceEditor"),
-        .package(path: "../CodeEditTextView"),
-        .package(path: "../CodeEditLanguages"),
-        .package(path: "../GoEditorCore"),
+        .package(path: "../EditorCodeEditSourceEditor"),
+        .package(path: "../EditorCodeEditTextView"),
+        .package(path: "../EditorCodeEditLanguages"),
+        .package(path: "../EditorGoCore"),
         .package(path: "../LumiCoreKit"),
         .package(path: "../ShellKit"),
         .package(path: "../SuperLogKit"),
@@ -35,10 +35,10 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
-                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
-                .product(name: "GoEditorCore", package: "GoEditorCore"),
+                .product(name: "CodeEditSourceEditor", package: "EditorCodeEditSourceEditor"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
+                .product(name: "EditorCodeEditLanguages", package: "EditorCodeEditLanguages"),
+                .product(name: "EditorGoCore", package: "EditorGoCore"),
                 .product(name: "JSONRPC", package: "JSONRPC"),
                 .product(name: "LanguageClient", package: "LanguageClient"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
@@ -60,7 +60,7 @@ let package = Package(
             dependencies: [
                 "EditorService",
                 .product(name: "EditorKernel", package: "EditorKernel"),
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
             ],
             path: "Tests"
         ),

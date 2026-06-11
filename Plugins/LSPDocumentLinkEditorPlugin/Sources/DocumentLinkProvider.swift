@@ -2,7 +2,7 @@ import Foundation
 import EditorKernel
 import EditorService
 import Combine
-import CodeEditTextView
+import EditorCodeEditTextView
 import LanguageServerProtocol
 
 /// 文档链接提供者

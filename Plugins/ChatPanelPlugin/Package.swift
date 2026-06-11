@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/ChatInputEditorKit")
+        .package(path: "../../Packages/EditorChatInputKit")
     ],
     targets: [
         .target(
@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ChatInputEditorKit", package: "ChatInputEditorKit")
+                .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

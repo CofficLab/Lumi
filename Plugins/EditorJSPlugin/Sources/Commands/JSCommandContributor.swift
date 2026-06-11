@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import SwiftUI
-import CodeEditTextView
+import EditorCodeEditTextView
 
 @MainActor
 public final class JSCommandContributor: SuperEditorCommandContributor {

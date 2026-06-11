@@ -2,7 +2,7 @@ import Foundation
 import CoreGraphics
 import SwiftUI
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import LanguageServerProtocol
 
 @MainActor

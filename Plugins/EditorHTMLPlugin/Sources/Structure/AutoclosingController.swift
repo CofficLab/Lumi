@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import AppKit
 
 /// HTML 自动闭合控制器

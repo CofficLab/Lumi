@@ -2,7 +2,7 @@ import Foundation
 import SuperLogKit
 import AppKit
 import CodeEditSourceEditor
-import CodeEditTextView
+import EditorCodeEditTextView
 import SwiftUI
 import LanguageServerProtocol
 import os
@@ -180,7 +180,7 @@ public final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 /// 在编辑器的右键菜单中注入「添加到对话」操作
 ///
 /// **方案原理：**
-/// CodeEditTextView 的 `TextView` 重写了 `menu(for:)`，每次右键时动态创建
+/// EditorCodeEditTextView 的 `TextView` 重写了 `menu(for:)`，每次右键时动态创建
 /// 一个只含 Cut/Copy/Paste 的新 NSMenu。直接设置 `textView.menu` 属性无效，
 /// 因为 AppKit 调用的是 `menu(for:)` 而非读取 `self.menu`。
 ///

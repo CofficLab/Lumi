@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import SwiftUI
-import CodeEditTextView
+import EditorCodeEditTextView
 
 /// Vue 命令贡献器
 ///

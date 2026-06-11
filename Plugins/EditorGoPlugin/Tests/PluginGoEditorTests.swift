@@ -1,5 +1,5 @@
 import Foundation
-import GoEditorCore
+import EditorGoCore
 import Testing
 @testable import EditorGoPlugin
 

@@ -3,8 +3,8 @@ import AppKit
 import SwiftUI
 import Combine
 import CodeEditSourceEditor
-import CodeEditTextView
-import CodeEditLanguages
+import EditorCodeEditTextView
+import EditorCodeEditLanguages
 import SwiftTreeSitter
 import LanguageServerProtocol
 import MagicAlert

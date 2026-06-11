@@ -1,10 +1,10 @@
 import AppKit
-import CodeEditTextView
+import EditorCodeEditTextView
 import EditorService
 
 // MARK: - Native Input Adapter
 //
-// 当前文件仍通过 swizzle 拦截 CodeEditTextView 的原生输入回调，
+// 当前文件仍通过 swizzle 拦截 EditorCodeEditTextView 的原生输入回调，
 // 但业务决策已下沉到 EditorState / command system：
 // - 多光标快捷键走统一 command id
 // - insert/delete/newline/tab/backtab 的输入规则走 EditorState 入口

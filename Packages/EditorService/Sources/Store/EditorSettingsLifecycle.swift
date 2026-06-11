@@ -1,4 +1,4 @@
-import CodeEditTextView
+import EditorCodeEditTextView
 import Foundation
 
 /// 由宿主（LumiApp）注入：在插件启用状态变化时重新向 `EditorExtensionRegistry` 注册扩展。

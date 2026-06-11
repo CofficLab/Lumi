@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditTextView
+import EditorCodeEditTextView
 import EditorService
 import LumiCoreKit
 

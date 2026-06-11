@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/CodeEditLanguages"),
+        .package(path: "../../Packages/EditorCodeEditLanguages"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "EditorBreadcrumbNavPlugin",
             dependencies: [
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
+                .product(name: "EditorCodeEditLanguages", package: "EditorCodeEditLanguages"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

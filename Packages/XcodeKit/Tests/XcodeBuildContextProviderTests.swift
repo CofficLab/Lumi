@@ -49,7 +49,7 @@ final class XcodeBuildContextProviderTests: XCTestCase {
         let schemes = [
             XcodeSchemeContext(id: "s1", name: "SomeLib-Package", buildableTargets: [], defaultConfiguration: "Debug"),
             XcodeSchemeContext(id: "s2", name: "SwiftTreeSitter", buildableTargets: [], defaultConfiguration: "Debug"),
-            XcodeSchemeContext(id: "s3", name: "CodeEditLanguages", buildableTargets: [], defaultConfiguration: "Debug"),
+            XcodeSchemeContext(id: "s3", name: "EditorCodeEditLanguages", buildableTargets: [], defaultConfiguration: "Debug"),
             XcodeSchemeContext(id: "s4", name: "TextStory", buildableTargets: [], defaultConfiguration: "Debug"),
             XcodeSchemeContext(id: "s5", name: "GoodScheme", buildableTargets: ["GoodScheme"], defaultConfiguration: "Debug"),
         ]
