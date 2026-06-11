@@ -11,6 +11,7 @@ struct PluginSettingsPage: View {
 
     private var pluginRows: [PluginSettingsRowModel] {
         pluginService.plugins
+            .filter { $0.policy != .alwaysOn }
             .map { PluginSettingsRowModel(plugin: $0) }
             .sorted { lhs, rhs in
                 if lhs.category.sortOrder != rhs.category.sortOrder {
