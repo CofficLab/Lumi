@@ -13,6 +13,37 @@ import Testing
 }
 
 @MainActor
+@Test func titleToolbarItemsRequireChatSectionAndService() {
+    let hiddenChatContext = LumiPluginContext(
+        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionTitle: "Editor",
+        chatSection: .none
+    )
+    let visibleWithoutService = LumiPluginContext(
+        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionTitle: "Editor",
+        chatSection: .narrow
+    )
+    let databaseDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ConversationListToolbarTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: databaseDirectory) }
+
+    let chatService = ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+    let visibleWithService = LumiPluginContext(
+        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionTitle: "Editor",
+        chatSection: .narrow,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register((any LumiChatServicing).self, chatService)
+        }
+    )
+
+    #expect(ConversationListPlugin.titleToolbarItems(context: hiddenChatContext).isEmpty)
+    #expect(ConversationListPlugin.titleToolbarItems(context: visibleWithoutService).isEmpty)
+    #expect(ConversationListPlugin.titleToolbarItems(context: visibleWithService).count == 1)
+}
+
+@MainActor
 @Test func pluginRegistersProjectSwitchMiddleware() {
     let middlewares = ConversationListPlugin.sendMiddlewares(
         context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")

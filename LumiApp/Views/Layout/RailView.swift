@@ -13,10 +13,16 @@ struct RailView: View {
 
     private static let minWidth: CGFloat = 200
 
+    private var showsTabBar: Bool {
+        tabs.count > 1
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            railTabBar
-            AppDivider()
+            if showsTabBar {
+                railTabBar
+                AppDivider()
+            }
             railContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

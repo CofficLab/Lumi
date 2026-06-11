@@ -8,11 +8,19 @@ import SwiftUI
 /// 在窗口工具栏右上角显示一个聊天气泡图标，点击后弹出 Popover
 /// 展示完整的会话列表，支持选择、删除、分页加载等操作。
 public struct ConversationListPopoverButton: View {
-    @ObservedObject private var context: ConversationListContext
+    @StateObject private var context: ConversationListContext
     @State private var isPresented = false
 
-    public init(context: ConversationListContext) {
-        self.context = context
+    public init(
+        chatService: ChatService,
+        projectPathStore: (any LumiCurrentProjectPathStoring)? = nil
+    ) {
+        _context = StateObject(
+            wrappedValue: ConversationListContext(
+                chatService: chatService,
+                projectPathStore: projectPathStore
+            )
+        )
     }
 
     public var body: some View {
@@ -37,7 +45,9 @@ public struct ConversationListPopoverButton: View {
 
 #if DEBUG
 #Preview("Conversation List Popover Button") {
-    ConversationListPopoverButton(context: ConversationListPreviewSupport.makeContext())
+    ConversationListPopoverButton(
+        chatService: ConversationListPreviewSupport.makeChatService()
+    )
         .padding()
         .inRootView()
 }

@@ -560,6 +560,7 @@
       }
     },
     "New Chat" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

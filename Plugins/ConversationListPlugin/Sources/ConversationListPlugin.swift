@@ -1,6 +1,7 @@
 import LumiChatKit
 import LumiCoreKit
 import os
+import SwiftUI
 
 /// Conversation List Plugin: rail conversation list, project switch guidance, and agent tools.
 public enum ConversationListPlugin: LumiPlugin {
@@ -21,6 +22,29 @@ public enum ConversationListPlugin: LumiPlugin {
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         [ProjectSwitchChatMiddleware()]
+    }
+
+    @MainActor
+    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        guard context.showsChatSection,
+              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
+        else {
+            return []
+        }
+
+        let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
+        return [
+            LumiTitleToolbarItem(
+                id: "\(info.id).conversation-list",
+                title: LumiPluginLocalization.string("会话列表", bundle: .module),
+                placement: .trailing
+            ) {
+                ConversationListPopoverButton(
+                    chatService: chatService,
+                    projectPathStore: projectPathStore
+                )
+            }
+        ]
     }
 
     @MainActor

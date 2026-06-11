@@ -4,11 +4,15 @@ import Foundation
 
 enum ConversationListPreviewSupport {
     @MainActor
-    static func makeContext() -> ConversationListContext {
+    static func makeChatService() -> ChatService {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ConversationListPreview-\(UUID().uuidString)", isDirectory: true)
-        let chatService = ChatService(configuration: .coreDatabase(directory: directory))
-        return ConversationListContext(chatService: chatService)
+        return ChatService(configuration: .coreDatabase(directory: directory))
+    }
+
+    @MainActor
+    static func makeContext() -> ConversationListContext {
+        ConversationListContext(chatService: makeChatService())
     }
 }
 #endif
