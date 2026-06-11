@@ -1,3 +1,4 @@
+import LayoutPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -7,6 +8,7 @@ struct PanelBottomView: View {
 
     let tabs: [LumiPanelBottomTabItem]
     @ObservedObject var layoutState: PanelLayoutState
+    let viewContainerID: String
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,7 +20,9 @@ struct PanelBottomView: View {
         .frame(minHeight: SplitViewHeightPersistence.minimumHeight)
         .background(theme.surface)
         .background {
-            SplitViewHeightPersistence(layoutState: layoutState)
+            SplitViewHeightPersistence(
+                storageKey: LayoutStorageKey.bottomPanelHeight(viewContainerID: viewContainerID)
+            )
         }
         .onAppear {
             ensureValidSelection()

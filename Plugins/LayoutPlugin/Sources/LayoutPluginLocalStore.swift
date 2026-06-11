@@ -113,6 +113,34 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         set(id, forKey: Keys.selectedAgentDetailId)
     }
 
+    // MARK: - Split Dimensions
+
+    /// 加载已保存的分栏尺寸（宽度或高度）
+    public func loadSplitDimension(forKey key: String) -> Double? {
+        loadSplitDimensions()[key]
+    }
+
+    /// 保存分栏尺寸（宽度或高度）
+    public func saveSplitDimension(_ value: Double, forKey key: String) {
+        queue.async { [self] in
+            var dict = self.readDict()
+            var dimensions = dict[Keys.splitDimensions] as? [String: Double] ?? [:]
+            dimensions[key] = value
+            dict[Keys.splitDimensions] = dimensions
+            self.writeDict(dict)
+        }
+    }
+
+    /// 加载全部分栏尺寸
+    public func loadSplitDimensions() -> [String: Double] {
+        queue.sync {
+            guard let dict = readDict()[Keys.splitDimensions] as? [String: Any] else {
+                return [:]
+            }
+            return dict.compactMapValues { $0 as? Double }
+        }
+    }
+
     // MARK: - Layout Ratios
 
     /// 加载已保存的分栏布局比例
@@ -229,6 +257,7 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         static let legacyActivePanelIcon = "activePanelIcon"
         static let selectedAgentSidebarTabId = "selectedAgentSidebarTabId"
         static let selectedAgentDetailId = "selectedAgentDetailId"
+        static let splitDimensions = "splitDimensions"
         static let layoutRatios = "layoutRatios"
         static let editorBottomPanelHeight = "editorBottomPanelHeight"
         static let bottomPanelVisible = "bottomPanelVisible"

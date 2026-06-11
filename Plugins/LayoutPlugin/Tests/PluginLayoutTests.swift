@@ -3,6 +3,22 @@ import LumiCoreKit
 import Testing
 @testable import LayoutPlugin
 
+@Test func localStorePersistsSplitDimensions() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginLayoutLocalStore-SplitDimensions-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = LayoutPluginLocalStore(pluginDirectory: directory)
+    let railKey = LayoutStorageKey.railWidth(viewContainerID: "LumiEditor")
+    store.saveSplitDimension(312, forKey: railKey)
+
+    #expect(store.loadSplitDimension(forKey: railKey) == 312)
+    #expect(store.loadSplitDimensions()[railKey] == 312)
+
+    let reloadedStore = LayoutPluginLocalStore(pluginDirectory: directory)
+    #expect(reloadedStore.loadSplitDimension(forKey: railKey) == 312)
+}
+
 @Test func localStorePersistsLayoutSettings() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-\(UUID().uuidString)", isDirectory: true)

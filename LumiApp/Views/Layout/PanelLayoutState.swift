@@ -3,20 +3,14 @@ import LayoutPlugin
 
 @MainActor
 final class PanelLayoutState: ObservableObject {
-    @Published var bottomPanelHeight: CGFloat
     @Published var activeRailTabID: String
     @Published var activeBottomTabID: String
 
     private let store = LayoutPluginLocalStore.shared
 
     init() {
-        bottomPanelHeight = CGFloat(store.loadEditorBottomPanelHeight() ?? 200)
         activeRailTabID = store.loadSelectedRailTabID() ?? "explorer"
         activeBottomTabID = "editor-bottom-problems"
-    }
-
-    func persistBottomPanelHeight() {
-        store.saveEditorBottomPanelHeight(Double(bottomPanelHeight))
     }
 
     func persistActiveRailTabID() {

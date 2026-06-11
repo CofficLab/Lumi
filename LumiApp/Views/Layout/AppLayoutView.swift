@@ -1,5 +1,6 @@
 import EditorService
 import ChatPanelPlugin
+import LayoutPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -88,12 +89,15 @@ struct AppLayoutView: View {
                                     )
                                 )
                             )
-                            .id(chatSection)
+                            .id("\(activeID)-\(chatSection.persistenceKeySuffix)")
                             .layoutPriority(isRailOnlyPanel ? 1 : 0)
                             .background(
                                 ChatSectionWidthPersistence(
                                     layout: chatSection,
-                                    storageKey: "Layout.Main.ChatSection.\(chatSection.persistenceKeySuffix)"
+                                    storageKey: LayoutStorageKey.chatSectionWidth(
+                                        viewContainerID: activeID,
+                                        layout: chatSection
+                                    )
                                 )
                             )
                         }
@@ -154,29 +158,34 @@ struct AppLayoutView: View {
         showRail: Bool,
         railTabs: [LumiPanelRailTabItem]
     ) -> some View {
+        let viewContainerID = container?.id ?? "main"
         let workspace = PanelWorkspaceView(
             container: container,
             headerItems: headerItems,
             bottomTabs: bottomTabs,
             showsPanelChrome: showsPanelChrome,
-            layoutState: panelLayoutState
+            layoutState: panelLayoutState,
+            viewContainerID: viewContainerID
         )
 
+        let railStorageKey = LayoutStorageKey.railWidth(viewContainerID: viewContainerID)
         let column = Group {
             if showRail {
                 if showsPanelChrome {
                     HSplitView {
                         RailView(tabs: railTabs, layoutState: panelLayoutState)
                             .background(
-                                SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
+                                SplitViewWidthPersistence(storageKey: railStorageKey)
                             )
                         workspace
                     }
+                    .id(viewContainerID)
                 } else {
                     RailView(tabs: railTabs, layoutState: panelLayoutState)
                         .background(
-                            SplitViewWidthPersistence(storageKey: "Layout.Main.Rail")
+                            SplitViewWidthPersistence(storageKey: railStorageKey)
                         )
+                        .id(viewContainerID)
                 }
             } else {
                 workspace

@@ -1,6 +1,37 @@
 import AppKit
+import LayoutPlugin
 import LumiCoreKit
 import SwiftUI
+
+struct SplitDimensionConstraints: Equatable {
+    var defaultSize: CGFloat
+    var minSize: CGFloat
+    var maxSize: CGFloat
+    var minimumOppositeSize: CGFloat
+
+    static let rail = SplitDimensionConstraints(
+        defaultSize: 240,
+        minSize: 180,
+        maxSize: 480,
+        minimumOppositeSize: 280
+    )
+
+    static let bottomPanel = SplitDimensionConstraints(
+        defaultSize: 200,
+        minSize: 80,
+        maxSize: 600,
+        minimumOppositeSize: 120
+    )
+
+    static func chatSection(_ layout: LumiChatSectionLayout) -> SplitDimensionConstraints {
+        SplitDimensionConstraints(
+            defaultSize: layout.defaultWidth,
+            minSize: layout.minWidth,
+            maxSize: layout.maximumWidth,
+            minimumOppositeSize: layout.minimumRemainingWidth
+        )
+    }
+}
 
 struct SplitViewAutosaveConfigurator: NSViewRepresentable {
     let autosaveName: String
@@ -16,49 +47,138 @@ struct SplitViewAutosaveConfigurator: NSViewRepresentable {
     }
 }
 
-struct SplitViewWidthPersistence: NSViewRepresentable {
-    let storageKey: String
-
-    func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
+struct SplitDimensionPersistence: NSViewRepresentable {
+    enum Axis {
+        case horizontal
+        case vertical
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    let storageKey: String
+    let constraints: SplitDimensionConstraints
+    let axis: Axis
+
+    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
+        SplitDimensionPersistenceView(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: axis
+        )
+    }
+
+    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
+        nsView.updateConfiguration(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: axis
+        )
+    }
+
+    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
+        nsView.detach()
+    }
+}
+
+struct SplitViewWidthPersistence: NSViewRepresentable {
+    let storageKey: String
+    var constraints: SplitDimensionConstraints = .rail
+
+    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
+        SplitDimensionPersistenceView(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: .horizontal
+        )
+    }
+
+    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
+        nsView.updateConfiguration(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: .horizontal
+        )
+    }
+
+    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
+        nsView.detach()
+    }
 }
 
 struct ChatSectionWidthPersistence: NSViewRepresentable {
     let layout: LumiChatSectionLayout
     let storageKey: String
 
-    func makeNSView(context: Context) -> ChatSectionWidthPersistenceView {
-        ChatSectionWidthPersistenceView(layout: layout, storageKey: storageKey)
+    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
+        SplitDimensionPersistenceView(
+            storageKey: storageKey,
+            constraints: .chatSection(layout),
+            axis: .horizontal
+        )
     }
 
-    func updateNSView(_ nsView: ChatSectionWidthPersistenceView, context: Context) {
-        nsView.updateConfiguration(layout: layout, storageKey: storageKey)
+    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
+        nsView.updateConfiguration(
+            storageKey: storageKey,
+            constraints: .chatSection(layout),
+            axis: .horizontal
+        )
     }
 
-    static func dismantleNSView(_ nsView: ChatSectionWidthPersistenceView, coordinator: ()) {
+    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
+        nsView.detach()
+    }
+}
+
+struct SplitViewHeightPersistence: NSViewRepresentable {
+    static let minimumHeight = SplitDimensionConstraints.bottomPanel.minSize
+    static let maximumHeight = SplitDimensionConstraints.bottomPanel.maxSize
+    static let minimumOppositeHeight = SplitDimensionConstraints.bottomPanel.minimumOppositeSize
+
+    let storageKey: String
+    var constraints: SplitDimensionConstraints = .bottomPanel
+
+    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
+        SplitDimensionPersistenceView(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: .vertical
+        )
+    }
+
+    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
+        nsView.updateConfiguration(
+            storageKey: storageKey,
+            constraints: constraints,
+            axis: .vertical
+        )
+    }
+
+    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
         nsView.detach()
     }
 }
 
 @MainActor
-final class ChatSectionWidthPersistenceView: NSView {
+final class SplitDimensionPersistenceView: NSView {
     private static let maxApplyRetryCount = 20
 
-    private var layout: LumiChatSectionLayout
     private var storageKey: String
+    private var constraints: SplitDimensionConstraints
+    private var axis: SplitDimensionPersistence.Axis
 
     private weak var observedSplitView: NSSplitView?
     private var resizeObserver: NSObjectProtocol?
-    private var didApplyWidth = false
+    private var didApplySize = false
     private var applyRetryCount = 0
     private var pendingRetryWorkItem: DispatchWorkItem?
 
-    init(layout: LumiChatSectionLayout, storageKey: String) {
-        self.layout = layout
+    init(
+        storageKey: String,
+        constraints: SplitDimensionConstraints,
+        axis: SplitDimensionPersistence.Axis
+    ) {
         self.storageKey = storageKey
+        self.constraints = constraints
+        self.axis = axis
         super.init(frame: .zero)
     }
 
@@ -67,12 +187,21 @@ final class ChatSectionWidthPersistenceView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func updateConfiguration(layout: LumiChatSectionLayout, storageKey: String) {
-        guard self.layout != layout || self.storageKey != storageKey else { return }
-        self.layout = layout
+    func updateConfiguration(
+        storageKey: String,
+        constraints: SplitDimensionConstraints,
+        axis: SplitDimensionPersistence.Axis
+    ) {
+        guard self.storageKey != storageKey
+            || self.constraints != constraints
+            || self.axis != axis
+        else { return }
+
         self.storageKey = storageKey
-        didApplyWidth = false
-        applyWidthIfPossible()
+        self.constraints = constraints
+        self.axis = axis
+        didApplySize = false
+        applySizeIfPossible()
     }
 
     override func viewDidMoveToWindow() {
@@ -97,7 +226,7 @@ final class ChatSectionWidthPersistenceView: NSView {
             return
         }
         guard splitView !== observedSplitView else {
-            applyWidthIfPossible()
+            applySizeIfPossible()
             return
         }
 
@@ -106,9 +235,9 @@ final class ChatSectionWidthPersistenceView: NSView {
         }
 
         observedSplitView = splitView
-        didApplyWidth = false
+        didApplySize = false
         applyRetryCount = 0
-        applyWidthIfPossible()
+        applySizeIfPossible()
 
         resizeObserver = NotificationCenter.default.addObserver(
             forName: NSSplitView.didResizeSubviewsNotification,
@@ -116,314 +245,114 @@ final class ChatSectionWidthPersistenceView: NSView {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.persistCurrentWidth()
+                self?.persistCurrentSize()
             }
         }
     }
 
-    private func applyWidthIfPossible() {
-        guard !didApplyWidth else { return }
+    private func applySizeIfPossible() {
+        guard !didApplySize else { return }
         guard let splitView = observedSplitView ?? enclosingSplitView() else {
             scheduleRetry()
             return
         }
-        guard containingColumnIndex(in: splitView) != nil,
+        guard containingPaneIndex(in: splitView) != nil,
               splitView.arrangedSubviews.count >= 2,
-              splitView.isVertical
+              splitView.isVertical == (axis == .horizontal)
         else {
             scheduleRetry()
             return
         }
 
-        let totalWidth = splitView.bounds.width
-        guard totalWidth > 0 else {
+        let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
+        guard totalSize > 0 else {
             scheduleRetry()
             return
         }
 
-        let savedWidth = UserDefaults.standard.object(forKey: storageKey) as? Double
-        let requestedWidth = savedWidth.map { CGFloat($0) } ?? layout.defaultWidth
-        let targetWidth = clampedWidth(
-            requestedWidth,
-            totalWidth: totalWidth,
+        let savedSize = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey)
+        let requestedSize = savedSize.map { CGFloat($0) } ?? constraints.defaultSize
+        let targetSize = clampedSize(
+            requestedSize,
+            totalSize: totalSize,
             dividerCount: splitView.arrangedSubviews.count - 1,
             dividerThickness: splitView.dividerThickness
         )
 
-        guard let columnIndex = containingColumnIndex(in: splitView) else { return }
-        setColumn(columnIndex, width: targetWidth, in: splitView)
+        guard let paneIndex = containingPaneIndex(in: splitView) else { return }
+        setPane(paneIndex, size: targetSize, in: splitView)
         splitView.layoutSubtreeIfNeeded()
-        didApplyWidth = true
+        didApplySize = true
     }
 
-    private func persistCurrentWidth() {
+    private func persistCurrentSize() {
         guard let splitView = observedSplitView,
-              let columnIndex = containingColumnIndex(in: splitView),
-              splitView.arrangedSubviews.count > columnIndex,
-              splitView.isVertical
+              let paneIndex = containingPaneIndex(in: splitView),
+              splitView.arrangedSubviews.count > paneIndex,
+              splitView.isVertical == (axis == .horizontal)
         else { return }
 
-        let width = splitView.arrangedSubviews[columnIndex].frame.width
-        guard width.isFinite, width >= layout.minWidth else { return }
+        let paneSize = axis == .horizontal
+            ? splitView.arrangedSubviews[paneIndex].frame.width
+            : splitView.arrangedSubviews[paneIndex].frame.height
+        guard paneSize.isFinite, paneSize >= constraints.minSize else { return }
 
-        let clamped = min(max(width, layout.minWidth), layout.maximumWidth)
-        guard abs((UserDefaults.standard.object(forKey: storageKey) as? Double ?? 0) - Double(clamped)) > 0.5 else {
-            return
-        }
-        UserDefaults.standard.set(Double(clamped), forKey: storageKey)
+        let clamped = min(max(paneSize, constraints.minSize), constraints.maxSize)
+        let saved = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey) ?? 0
+        guard abs(saved - Double(clamped)) > 0.5 else { return }
+        LayoutPluginLocalStore.shared.saveSplitDimension(Double(clamped), forKey: storageKey)
     }
 
-    private func clampedWidth(
-        _ requestedWidth: CGFloat,
-        totalWidth: CGFloat,
+    private func clampedSize(
+        _ requestedSize: CGFloat,
+        totalSize: CGFloat,
         dividerCount: Int,
         dividerThickness: CGFloat
     ) -> CGFloat {
-        let dividersWidth = CGFloat(dividerCount) * dividerThickness
-        let usableWidth = max(1, totalWidth - dividersWidth)
-        let maximumAvailableWidth = max(
-            layout.minWidth,
-            usableWidth - layout.minimumRemainingWidth
+        let dividersSize = CGFloat(dividerCount) * dividerThickness
+        let usableSize = max(1, totalSize - dividersSize)
+        let maximumAvailableSize = max(
+            constraints.minSize,
+            usableSize - constraints.minimumOppositeSize
         )
         return min(
-            max(requestedWidth, layout.minWidth),
-            min(layout.maximumWidth, maximumAvailableWidth)
+            max(requestedSize, constraints.minSize),
+            min(constraints.maxSize, maximumAvailableSize)
         )
     }
 
-    private func setColumn(_ columnIndex: Int, width: CGFloat, in splitView: NSSplitView) {
+    private func setPane(_ paneIndex: Int, size: CGFloat, in splitView: NSSplitView) {
         let dividerIndex: Int
         let position: CGFloat
+        let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
 
-        if columnIndex == splitView.arrangedSubviews.count - 1 {
-            dividerIndex = max(0, columnIndex - 1)
+        if paneIndex == splitView.arrangedSubviews.count - 1 {
+            dividerIndex = max(0, paneIndex - 1)
             position = max(
-                layout.minimumRemainingWidth,
-                splitView.bounds.width - width - splitView.dividerThickness
+                constraints.minimumOppositeSize,
+                totalSize - size - splitView.dividerThickness
+            )
+        } else if axis == .vertical {
+            dividerIndex = max(0, paneIndex - 1)
+            position = max(
+                constraints.minimumOppositeSize,
+                totalSize - size - splitView.dividerThickness
             )
         } else {
-            dividerIndex = columnIndex
+            dividerIndex = paneIndex
             var nextPosition: CGFloat = 0
             for index in 0..<dividerIndex {
                 nextPosition += splitView.arrangedSubviews[index].frame.width
                 nextPosition += splitView.dividerThickness
             }
-            nextPosition += width
+            nextPosition += size
             position = nextPosition
         }
 
         splitView.setPosition(position, ofDividerAt: dividerIndex)
     }
 
-    private func containingColumnIndex(in splitView: NSSplitView) -> Int? {
-        splitView.arrangedSubviews.firstIndex { arrangedSubview in
-            isContained(in: arrangedSubview)
-        }
-    }
-
-    private func isContained(in candidateAncestor: NSView) -> Bool {
-        var current: NSView? = self
-        while let view = current {
-            if view === candidateAncestor { return true }
-            current = view.superview
-        }
-        return false
-    }
-
-    private func enclosingSplitView() -> NSSplitView? {
-        var current = superview
-        while let view = current {
-            if let splitView = view as? NSSplitView {
-                return splitView
-            }
-            current = view.superview
-        }
-        return nil
-    }
-
-    private func scheduleRetry() {
-        guard applyRetryCount < Self.maxApplyRetryCount else { return }
-        pendingRetryWorkItem?.cancel()
-        applyRetryCount += 1
-
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.attachIfPossible()
-        }
-        pendingRetryWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
-    }
-}
-
-struct SplitViewHeightPersistence: NSViewRepresentable {
-    static let minimumHeight: CGFloat = 80
-    static let maximumHeight: CGFloat = 600
-    static let minimumOppositeHeight: CGFloat = 120
-
-    @ObservedObject var layoutState: PanelLayoutState
-
-    func makeNSView(context: Context) -> SplitViewHeightPersistenceView {
-        SplitViewHeightPersistenceView(layoutState: layoutState)
-    }
-
-    func updateNSView(_ nsView: SplitViewHeightPersistenceView, context: Context) {
-        nsView.layoutState = layoutState
-    }
-
-    static func dismantleNSView(_ nsView: SplitViewHeightPersistenceView, coordinator: ()) {
-        nsView.detach()
-    }
-}
-
-@MainActor
-final class SplitViewHeightPersistenceView: NSView {
-    private static let maxApplyRetryCount = 20
-
-    var layoutState: PanelLayoutState {
-        didSet {
-            didApplyHeight = false
-            applyHeightIfPossible()
-        }
-    }
-
-    private weak var observedSplitView: NSSplitView?
-    private var resizeObserver: NSObjectProtocol?
-    private var didApplyHeight = false
-    private var applyRetryCount = 0
-    private var pendingRetryWorkItem: DispatchWorkItem?
-
-    init(layoutState: PanelLayoutState) {
-        self.layoutState = layoutState
-        super.init(frame: .zero)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        attachIfPossible()
-    }
-
-    func detach() {
-        if let resizeObserver {
-            NotificationCenter.default.removeObserver(resizeObserver)
-            self.resizeObserver = nil
-        }
-        pendingRetryWorkItem?.cancel()
-        pendingRetryWorkItem = nil
-        observedSplitView = nil
-    }
-
-    private func attachIfPossible() {
-        guard window != nil else { return }
-        guard let splitView = enclosingSplitView() else {
-            scheduleRetry()
-            return
-        }
-        guard splitView !== observedSplitView else {
-            applyHeightIfPossible()
-            return
-        }
-
-        if let resizeObserver {
-            NotificationCenter.default.removeObserver(resizeObserver)
-        }
-
-        observedSplitView = splitView
-        didApplyHeight = false
-        applyRetryCount = 0
-        applyHeightIfPossible()
-
-        resizeObserver = NotificationCenter.default.addObserver(
-            forName: NSSplitView.didResizeSubviewsNotification,
-            object: splitView,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.persistCurrentHeight()
-            }
-        }
-    }
-
-    private func applyHeightIfPossible() {
-        guard !didApplyHeight else { return }
-        guard let splitView = observedSplitView ?? enclosingSplitView() else {
-            scheduleRetry()
-            return
-        }
-        guard containingRowIndex(in: splitView) != nil,
-              splitView.arrangedSubviews.count >= 2,
-              !splitView.isVertical
-        else {
-            scheduleRetry()
-            return
-        }
-
-        let totalHeight = splitView.bounds.height
-        guard totalHeight > 0 else {
-            scheduleRetry()
-            return
-        }
-
-        let targetHeight = clampedHeight(
-            layoutState.bottomPanelHeight,
-            totalHeight: totalHeight,
-            dividerCount: splitView.arrangedSubviews.count - 1,
-            dividerThickness: splitView.dividerThickness
-        )
-
-        guard let rowIndex = containingRowIndex(in: splitView) else { return }
-        setRow(rowIndex, height: targetHeight, in: splitView)
-        splitView.layoutSubtreeIfNeeded()
-        didApplyHeight = true
-    }
-
-    private func persistCurrentHeight() {
-        guard let splitView = observedSplitView,
-              let rowIndex = containingRowIndex(in: splitView),
-              splitView.arrangedSubviews.count > rowIndex,
-              !splitView.isVertical
-        else { return }
-
-        let height = splitView.arrangedSubviews[rowIndex].frame.height
-        guard height.isFinite, height >= SplitViewHeightPersistence.minimumHeight else { return }
-
-        let clamped = min(max(height, SplitViewHeightPersistence.minimumHeight), SplitViewHeightPersistence.maximumHeight)
-        guard abs(layoutState.bottomPanelHeight - clamped) > 0.5 else { return }
-        layoutState.bottomPanelHeight = clamped
-        layoutState.persistBottomPanelHeight()
-    }
-
-    private func clampedHeight(
-        _ requestedHeight: CGFloat,
-        totalHeight: CGFloat,
-        dividerCount: Int,
-        dividerThickness: CGFloat
-    ) -> CGFloat {
-        let dividersHeight = CGFloat(dividerCount) * dividerThickness
-        let usableHeight = max(1, totalHeight - dividersHeight)
-        let maximumAvailableHeight = max(
-            SplitViewHeightPersistence.minimumHeight,
-            usableHeight - SplitViewHeightPersistence.minimumOppositeHeight
-        )
-        return min(
-            max(requestedHeight, SplitViewHeightPersistence.minimumHeight),
-            min(SplitViewHeightPersistence.maximumHeight, maximumAvailableHeight)
-        )
-    }
-
-    private func setRow(_ rowIndex: Int, height: CGFloat, in splitView: NSSplitView) {
-        let dividerIndex = max(0, rowIndex - 1)
-        let position = max(
-            SplitViewHeightPersistence.minimumOppositeHeight,
-            splitView.bounds.height - height - splitView.dividerThickness
-        )
-        splitView.setPosition(position, ofDividerAt: dividerIndex)
-    }
-
-    private func containingRowIndex(in splitView: NSSplitView) -> Int? {
+    private func containingPaneIndex(in splitView: NSSplitView) -> Int? {
         splitView.arrangedSubviews.firstIndex { arrangedSubview in
             isContained(in: arrangedSubview)
         }

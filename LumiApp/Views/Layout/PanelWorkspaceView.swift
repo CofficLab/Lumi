@@ -8,6 +8,7 @@ struct PanelWorkspaceView: View {
     let bottomTabs: [LumiPanelBottomTabItem]
     let showsPanelChrome: Bool
     @ObservedObject var layoutState: PanelLayoutState
+    let viewContainerID: String
 
     private var showBottomPanel: Bool {
         showsPanelChrome && !bottomTabs.isEmpty
@@ -19,7 +20,11 @@ struct PanelWorkspaceView: View {
                 VSplitView {
                     contentPanel
                         .layoutPriority(1)
-                    PanelBottomView(tabs: bottomTabs, layoutState: layoutState)
+                    PanelBottomView(
+                        tabs: bottomTabs,
+                        layoutState: layoutState,
+                        viewContainerID: viewContainerID
+                    )
                 }
             } else {
                 contentPanel
