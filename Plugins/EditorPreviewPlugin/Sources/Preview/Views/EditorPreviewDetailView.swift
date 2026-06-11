@@ -275,7 +275,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         let missing = issues.issues.filter { $0.kind == .missing }
 
         var parts: [String] = []
-        parts.append("请修复文件 `\(fileURL.lastPathComponent)` 的翻译问题。")
+        parts.append("请修复文件 \(fileURL.path) 的翻译问题。")
 
         if !untranslated.isEmpty {
             let keys = Set(untranslated.map(\.key)).sorted()
