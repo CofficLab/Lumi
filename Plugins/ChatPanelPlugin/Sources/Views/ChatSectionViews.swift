@@ -164,6 +164,12 @@ struct ChatComposerSectionView: View {
             guard let data = notification.userInfo?["data"] as? Data else { return }
             coordinator.addImageAttachment(data: data)
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addToChat"))) { notification in
+            guard let userInfo = notification.userInfo,
+                  let text = userInfo["text"] as? String,
+                  !text.isEmpty else { return }
+            coordinator.appendToDraft(text)
+        }
         .alert(
             "Approve high-risk tool?",
             isPresented: Binding(
