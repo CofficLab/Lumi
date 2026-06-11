@@ -82,11 +82,11 @@ sysctlbyname("vm.swapusage", &usage, &size, nil, 0)  // xsw_usage 结构体
 
 > 参考来源：`hagimi-monitor/HagimiMonitor/Samplers/StorageSampler.swift`
 
-- [ ] 扫描所有挂载卷（`FileManager.default.mountedVolumeURLs`）
-- [ ] 用 `volumeIsInternal == false` 过滤外置卷
-- [ ] 显示每个外置卷的：名称、已用、可用、总量、使用百分比
-- [ ] 最多显示 3 个外置卷（避免面板过高）
-- [ ] 外置卷独立展示区域（带外置硬盘图标）
+- [x] 扫描所有挂载卷（`FileManager.default.mountedVolumeURLs`）
+- [x] 用 `volumeIsInternal == false` 过滤外置卷
+- [x] 显示每个外置卷的：名称、已用、可用、总量、使用百分比
+- [x] 最多显示 3 个外置卷（避免面板过高）
+- [x] 外置卷独立展示区域（带外置硬盘图标）
 
 关键技术点：
 ```swift

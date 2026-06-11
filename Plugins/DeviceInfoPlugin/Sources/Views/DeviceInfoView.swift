@@ -7,6 +7,7 @@ struct DeviceInfoView: View {
     @StateObject private var data = DeviceData()
     @ObservedObject private var gpuService = GPUService.shared
     @ObservedObject private var batteryService = BatteryService.shared
+    @ObservedObject private var storageService = StorageService.shared
 
     var body: some View {
         ScrollView {
@@ -171,6 +172,49 @@ struct DeviceInfoView: View {
                         }
                     }
 
+                    // External Volumes
+                    if !storageService.externalVolumes.isEmpty {
+                        VStack(spacing: 12) {
+                            ForEach(storageService.externalVolumes) { volume in
+                                AppCard {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "externaldrive")
+                                            .font(.title3)
+                                            .foregroundStyle(theme.warning)
+
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(volume.name)
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundColor(theme.textPrimary)
+
+                                            Text("\(volume.usedString) / \(volume.totalString)")
+                                                .font(.caption2)
+                                                .foregroundColor(theme.textSecondary)
+
+                                            GeometryReader { geo in
+                                                ZStack(alignment: .leading) {
+                                                    RoundedRectangle(cornerRadius: 3)
+                                                        .fill(theme.primary.opacity(0.1))
+                                                    RoundedRectangle(cornerRadius: 3)
+                                                        .fill(volumeUsageColor(volume.usagePercent))
+                                                        .frame(width: geo.size.width * min(max(volume.usageFraction, 0), 1))
+                                                }
+                                            }
+                                            .frame(height: 6)
+                                        }
+
+                                        Spacer()
+
+                                        Text("\(volume.usagePercent)%")
+                                            .font(.title3.weight(.bold))
+                                            .foregroundColor(theme.textPrimary)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+
                     HStack {
                         Image(systemName: "clock")
                             .foregroundColor(theme.textSecondary)
@@ -195,8 +239,12 @@ struct DeviceInfoView: View {
             }
             .padding()
         }
+        .onAppear {
+            storageService.startMonitoring()
+        }
         .onDisappear {
             data.stopMonitoring()
+            storageService.stopMonitoring()
         }
     }
 
@@ -252,6 +300,14 @@ struct DeviceInfoView: View {
         formatter.allowedUnits = [.day, .hour, .minute]
         formatter.unitsStyle = .abbreviated
         return formatter.string(from: interval) ?? ""
+    }
+
+    // MARK: - Storage Helpers
+
+    private func volumeUsageColor(_ percent: Int) -> Color {
+        if percent < 70 { return theme.success }
+        if percent < 90 { return theme.warning }
+        return theme.error
     }
 }
 
