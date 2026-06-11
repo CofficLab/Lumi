@@ -14,7 +14,7 @@ extension LumiToolCall {
                     content: lumiResult.content,
                     isError: lumiResult.isError,
                     duration: lumiResult.duration,
-                    awaitingUserResponse: lumiResult.content.hasPrefix("__ASK_USER_PENDING__")
+                    awaitingUserResponse: LumiAskUserMarkers.isPendingResponse(lumiResult.content)
                 )
             },
             displayName: displayName

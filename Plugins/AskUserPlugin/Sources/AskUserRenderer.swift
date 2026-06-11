@@ -164,8 +164,8 @@ public struct AskUserPendingView: View {
     }
 
     private func parsePendingResponse(from content: String) -> AskUserPendingResponse? {
-        guard content.hasPrefix("__ASK_USER_PENDING__\n") else { return nil }
-        let jsonString = content.dropFirst("__ASK_USER_PENDING__\n".count)
+        guard LumiAskUserMarkers.isPendingResponse(content) else { return nil }
+        let jsonString = content.dropFirst(LumiAskUserMarkers.pendingPrefix.count + 1)
         guard let jsonData = jsonString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(AskUserPendingResponse.self, from: jsonData)
     }

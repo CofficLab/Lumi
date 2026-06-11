@@ -28,7 +28,8 @@ final class ChatCoreService {
                 guard !path.isEmpty else { return "" }
                 return URL(fileURLWithPath: path).lastPathComponent
             },
-            chatServiceProvider: { [chatService] in chatService }
+            chatServiceProvider: { [chatService] in chatService },
+            askUserResumer: chatService
         )
         chatService.registerProjectPathProvider(projectPathStore)
         reloadPluginContributions(from: pluginService)

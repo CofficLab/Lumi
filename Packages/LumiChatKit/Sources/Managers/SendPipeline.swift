@@ -157,11 +157,13 @@ final class SendPipeline {
         service.revision += 1
 
         do {
-            try await service.runAgentTurn(
+            let outcome = try await service.runAgentTurn(
                 conversationID: conversationID,
                 imageAttachments: pending.imageAttachments
             )
-            service.appendTurnCompletedMarker(conversationID: conversationID)
+            if outcome == .completed {
+                service.appendTurnCompletedMarker(conversationID: conversationID)
+            }
         } catch is CancellationError {
             return
         } catch {
@@ -272,6 +274,39 @@ final class SendPipeline {
             isError: true,
             rawErrorDetail: lastError?.localizedDescription
         )
+    }
+
+
+    func continueAgentTurn(conversationID: UUID) async {
+        guard let service else { return }
+
+        service.sendingConversationIDs.insert(conversationID)
+        service.revision += 1
+
+        defer {
+            service.activeTasksByConversationID[conversationID] = nil
+            service.sendingConversationIDs.remove(conversationID)
+            service.statusState.clearStatus(conversationID: conversationID)
+            service.revision += 1
+        }
+
+        do {
+            let outcome = try await service.runAgentTurn(conversationID: conversationID)
+            if outcome == .completed {
+                appendTurnCompletedMarker(conversationID: conversationID)
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            service.append(
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .error,
+                    content: error.localizedDescription,
+                    isError: true
+                )
+            )
+        }
     }
 
     func appendTurnCompletedMarker(conversationID: UUID) {

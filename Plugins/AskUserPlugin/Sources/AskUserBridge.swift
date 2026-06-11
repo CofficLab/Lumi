@@ -3,16 +3,16 @@ import LumiCoreKit
 
 /// AskUser 插件桥接器
 ///
-/// 保存内核通过 `PluginRuntimeContext.resumeToolCall` 注入的恢复回调，
+/// 保存 `AskUserPlugin.configureAskUserResume` 注入的恢复回调，
 /// 供渲染器在用户做出选择后调用。
 ///
 /// 数据流：
 /// ```
-/// PluginRuntimeContext.resumeToolCall (内核注入)
-///         ↓ (AskUserPlugin.configureRuntime 保存)
+/// LumiAskUserResuming.resumeAfterAskUser (ChatService)
+///         ↓ (AskUserPlugin.configureAskUserResume 保存)
 /// AskUserBridge.resume
 ///         ↓ (渲染器用户点击后调用)
-/// 内核写回 ToolCall.result + 触发 AgentTurnService.run()
+/// ChatService 写回 tool result 并继续 runAgentTurn
 /// ```
 @MainActor
 public final class AskUserBridge: ObservableObject {

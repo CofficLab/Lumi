@@ -3,7 +3,7 @@ import LumiCoreKit
 import ModelRouterKit
 
 @MainActor
-public final class ChatService: ObservableObject, LumiChatServicing {
+public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
     public static weak var shared: ChatService?
 
     // MARK: - Published State
@@ -417,7 +417,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     func runAgentTurn(
         conversationID: UUID,
         imageAttachments: [LumiImageAttachment] = []
-    ) async throws {
+    ) async throws -> LumiAgentTurnOutcome {
         var iteration = 0
 
         while true {
@@ -454,7 +454,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                             isError: true
                         )
                     )
-                    return
+                    return .completed
                 }
             }
 
@@ -464,7 +464,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                   !toolCalls.isEmpty,
                   let toolService
             else {
-                return
+                return .completed
             }
 
             for toolCall in toolCalls {
@@ -517,10 +517,61 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                     assistantMessageID: assistantMessage.id,
                     conversationID: conversationID
                 )
+
+                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                    statusState.setStatus(conversationID: conversationID, content: "等待您的选择…")
+                    incrementRevision()
+                    return .awaitingUserResponse
+                }
             }
 
             iteration += 1
         }
+    }
+
+    public func resumeAfterAskUser(conversationID: UUID, toolCallID: String, answer: String) async {
+        guard let (assistantMessageID, toolCall) = Self.assistantMessage(
+            containingToolCallID: toolCallID,
+            in: messages(for: conversationID)
+        ),
+        let result = toolCall.result,
+        LumiAskUserMarkers.isPendingResponse(result.content)
+        else {
+            return
+        }
+
+        let trimmedAnswer = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedAnswer.isEmpty else { return }
+
+        updateToolCallResult(
+            LumiToolResult(content: trimmedAnswer, duration: result.duration),
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            conversationID: conversationID
+        )
+        incrementRevision()
+
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.sendPipeline.continueAgentTurn(conversationID: conversationID)
+        }
+        activeTasksByConversationID[conversationID] = task
+    }
+
+    static func assistantMessage(
+        containingToolCallID toolCallID: String,
+        in messages: [LumiChatMessage]
+    ) -> (assistantMessageID: UUID, toolCall: LumiToolCall)? {
+        for message in messages.reversed() {
+            guard message.role == .assistant,
+                  let toolCalls = message.toolCalls,
+                  let toolCall = toolCalls.first(where: { $0.id == toolCallID })
+            else {
+                continue
+            }
+            return (message.id, toolCall)
+        }
+        return nil
     }
 
     /// Expands tool results from assistant messages into separate tool-role messages.
@@ -541,7 +592,9 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             }
 
             for toolCall in toolCalls {
-                guard let result = toolCall.result else {
+                guard let result = toolCall.result,
+                      !LumiAskUserMarkers.isPendingResponse(result.content)
+                else {
                     continue
                 }
 

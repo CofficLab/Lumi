@@ -1,5 +1,6 @@
 import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import os
 
@@ -35,7 +36,7 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
     /// 工具返回值中用于标记等待用户回答的前缀。
     ///
     /// `ToolCallExecutor` 检测到此前缀后会设置 `awaitingUserResponse = true`。
-    public static let pendingPrefix = "__ASK_USER_PENDING__"
+    public static let pendingPrefix = LumiAskUserMarkers.pendingPrefix
 
     public init() {}
 
@@ -134,9 +135,9 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
         let encoder = JSONEncoder()
         do {
             let jsonData = try encoder.encode(error)
-            return "__ASK_USER_ERROR__\n\(String(decoding: jsonData, as: UTF8.self))"
+            return "\(LumiAskUserMarkers.errorPrefix)\n\(String(decoding: jsonData, as: UTF8.self))"
         } catch {
-            return "__ASK_USER_ERROR__\n{\"error\":\"Failed to encode ask_user error response\"}"
+            return "\(LumiAskUserMarkers.errorPrefix)\n{\"error\":\"Failed to encode ask_user error response\"}"
         }
     }
 }

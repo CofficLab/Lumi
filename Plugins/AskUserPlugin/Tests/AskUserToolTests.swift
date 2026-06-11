@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import Testing
 @testable import AskUserPlugin
 
@@ -6,7 +7,7 @@ import Testing
     let result = AskUserTool.errorResult(message: "question is required")
     let parts = result.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
 
-    #expect(parts.first == "__ASK_USER_ERROR__")
+    #expect(String(parts.first ?? "") == LumiAskUserMarkers.errorPrefix)
     #expect(parts.count == 2)
 
     let data = try #require(parts.last?.data(using: .utf8))

@@ -1,4 +1,5 @@
 import AgentToolKit
+import Foundation
 import LumiCoreKit
 
 /// 用户询问插件
@@ -32,5 +33,13 @@ public enum AskUserPlugin: LumiPlugin {
             ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
         }
         return []
+    }
+
+    @MainActor
+    public static func configureAskUserResume(_ resumer: any LumiAskUserResuming) {
+        AskUserBridge.shared.resumeHandler = { conversationId, toolCallId, answer in
+            guard let conversationID = UUID(uuidString: conversationId) else { return }
+            Task { await resumer.resumeAfterAskUser(conversationID: conversationID, toolCallID: toolCallId, answer: answer) }
+        }
     }
 }

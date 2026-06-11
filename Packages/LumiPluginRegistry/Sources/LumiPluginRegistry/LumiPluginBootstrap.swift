@@ -1,5 +1,6 @@
 import AgentRAGPlugin
 import AgentRulesPlugin
+import AskUserPlugin
 import AutoTaskPlugin
 import ConversationTitlePlugin
 import FileLogPlugin
@@ -16,7 +17,8 @@ public enum LumiPluginBootstrap {
         currentProjectPath: @escaping @Sendable () -> String,
         currentProjectName: @escaping @Sendable () -> String = { "" },
         recentProjects: @escaping @Sendable () -> [RAGRuntimeProject] = { [] },
-        chatServiceProvider: (@MainActor () -> (any LumiChatServicing)?)? = nil
+        chatServiceProvider: (@MainActor () -> (any LumiChatServicing)?)? = nil,
+        askUserResumer: (any LumiAskUserResuming)? = nil
     ) {
         MemoryPlugin.bootstrapFromLumiCoreIfNeeded()
         FileLogPlugin.bootstrapIfNeeded()
@@ -35,5 +37,8 @@ public enum LumiPluginBootstrap {
             recentProjects: recentProjects
         )
         AgentRulesRuntime.currentProjectPathProvider = currentProjectPath
+        if let askUserResumer {
+            AskUserPlugin.configureAskUserResume(askUserResumer)
+        }
     }
 }
