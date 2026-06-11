@@ -3,6 +3,8 @@ import LumiUI
 import SwiftUI
 
 struct ChatMessageListView: View {
+    private static let bottomAnchorID = "chat-message-list-bottom"
+
     @LumiTheme private var theme
 
     let messages: [LumiChatMessage]
@@ -36,48 +38,95 @@ struct ChatMessageListView: View {
     }
 
     private func messageListContent(visibleMessages: [LumiChatMessage]) -> some View {
-        List {
-            if hasEarlierMessages {
-                Button(action: onLoadEarlier) {
-                    Text(verbatim: LumiPluginLocalization.string("Load earlier messages", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+        ScrollViewReader { proxy in
+            List {
+                if hasEarlierMessages {
+                    Button(action: onLoadEarlier) {
+                        Text(verbatim: LumiPluginLocalization.string("Load earlier messages", bundle: .module))
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowSeparator(.hidden)
                 }
-                .buttonStyle(.plain)
-                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                .listRowSeparator(.hidden)
-            }
 
-            ForEach(visibleMessages) { message in
-                ChatMessageBubble(
-                    message: message,
-                    renderer: rendererForMessage(message),
-                    showRawMessage: rawMessageBinding(message.id),
-                    onUseAsDraft: {
-                        onUseAsDraft(message)
-                    },
-                    onResend: message.role == .user ? { onResend(message) } : nil,
-                    onDelete: { onDelete(message) }
-                )
-                .id(message.id)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 4)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparator(.hidden)
-            }
-
-            if isSending,
-               !visibleMessages.contains(where: { $0.metadata["isTransientStatus"] == "true" }) {
-                ChatTypingIndicator()
-                    .id("typing-indicator")
+                ForEach(visibleMessages) { message in
+                    ChatMessageBubble(
+                        message: message,
+                        renderer: rendererForMessage(message),
+                        showRawMessage: rawMessageBinding(message.id),
+                        onUseAsDraft: {
+                            onUseAsDraft(message)
+                        },
+                        onResend: message.role == .user ? { onResend(message) } : nil,
+                        onDelete: { onDelete(message) }
+                    )
+                    .id(message.id)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowSeparator(.hidden)
+                }
+
+                if isSending,
+                   !visibleMessages.contains(where: { $0.metadata["isTransientStatus"] == "true" }) {
+                    ChatTypingIndicator()
+                        .id("typing-indicator")
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowSeparator(.hidden)
+                }
+
+                bottomAnchor
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .onAppear {
+                scrollToBottom(proxy: proxy, animated: false, settleLayout: true)
+            }
+            .onChange(of: visibleMessages.last?.id) { _, _ in
+                scrollToBottom(proxy: proxy, animated: true, settleLayout: true)
+            }
+            .onChange(of: isSending) { _, sending in
+                guard sending else { return }
+                scrollToBottom(proxy: proxy, animated: true, settleLayout: true)
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+    }
+
+    private var bottomAnchor: some View {
+        Color.clear
+            .frame(height: 1)
+            .id(Self.bottomAnchorID)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .accessibilityHidden(true)
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool, settleLayout: Bool = false) {
+        func performScroll(animated: Bool) {
+            if animated {
+                withAnimation(.easeOut(duration: 0.18)) {
+                    proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+                }
+            } else {
+                proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+            }
+        }
+
+        DispatchQueue.main.async {
+            performScroll(animated: animated)
+            guard settleLayout else { return }
+
+            DispatchQueue.main.async {
+                performScroll(animated: false)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                performScroll(animated: false)
+            }
+        }
     }
 }
 
