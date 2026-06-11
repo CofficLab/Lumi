@@ -5,6 +5,10 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
     case narrow
     case wide
 
+    private static let resizableMinWidth: CGFloat = 280
+    private static let resizableMaxWidth: CGFloat = 960
+    private static let minimumMainContentWidth: CGFloat = 360
+
     public var isVisible: Bool {
         self != .none
     }
@@ -12,8 +16,7 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
     public var minWidth: CGFloat {
         switch self {
         case .none: 0
-        case .narrow: 280
-        case .wide: 400
+        case .narrow, .wide: Self.resizableMinWidth
         }
     }
 
@@ -32,8 +35,7 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
     public var maximumWidth: CGFloat {
         switch self {
         case .none: 0
-        case .narrow: 420
-        case .wide: 960
+        case .narrow, .wide: Self.resizableMaxWidth
         }
     }
 
@@ -41,8 +43,7 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
     public var minimumRemainingWidth: CGFloat {
         switch self {
         case .none: 0
-        case .narrow: 560
-        case .wide: 360
+        case .narrow, .wide: Self.minimumMainContentWidth
         }
     }
 

@@ -117,3 +117,11 @@ import Testing
 
     try? FileManager.default.removeItem(at: root)
 }
+
+@Test func chatSectionLayoutsShareResizeBoundsButKeepDistinctDefaults() {
+    #expect(LumiChatSectionLayout.narrow.minWidth == LumiChatSectionLayout.wide.minWidth)
+    #expect(LumiChatSectionLayout.narrow.maximumWidth == LumiChatSectionLayout.wide.maximumWidth)
+    #expect(LumiChatSectionLayout.narrow.minimumRemainingWidth == LumiChatSectionLayout.wide.minimumRemainingWidth)
+    #expect(LumiChatSectionLayout.narrow.defaultWidth == 320)
+    #expect(LumiChatSectionLayout.wide.defaultWidth == 480)
+}
