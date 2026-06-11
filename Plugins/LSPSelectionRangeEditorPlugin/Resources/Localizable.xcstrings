@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "LSP 選區範圍"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 選區範圍"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通過 LSP 選區範圍提供智能擴展/收縮選區功能。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "通過 LSP 選區範圍提供智能擴展/收縮選區功能。"

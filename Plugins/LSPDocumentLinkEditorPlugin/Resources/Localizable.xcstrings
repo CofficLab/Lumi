@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "LSP 文件連結"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 檔案連結"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使編輯器中的 URL 和檔案路徑可點擊。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "使編輯器中的 URL 和檔案路徑可點擊。"

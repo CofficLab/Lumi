@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "提供基於選區的 Swift 代碼操作。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供基於選區的 Swift 代碼操作。"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 選區代碼操作"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Swift 選區代碼操作"
@@ -82,6 +94,12 @@
             "state": "translated",
             "value": "使用 #if DEBUG 包裹選區"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 #if DEBUG 包裹選區"
+          }
         }
       }
     },
@@ -106,6 +124,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 print(...) 包裹選區"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "使用 print(...) 包裹選區"

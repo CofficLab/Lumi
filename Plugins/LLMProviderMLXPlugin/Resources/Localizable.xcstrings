@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Local LLM via Apple MLX": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "通過 Apple MLX 運行本地 LLM"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通過 Apple MLX 運行本地 LLM"
+          }
         }
       }
     },
     "MLX": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLX"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "MLX"

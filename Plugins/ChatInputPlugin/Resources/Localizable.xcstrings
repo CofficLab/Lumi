@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Chat Input": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "聊天輸入"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天輸入"
+          }
         }
       }
     },
     "Chat input area with editor and command suggestions": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,14 +60,50 @@
             "state": "translated",
             "value": "包含編輯器和命令建議的聊天輸入區域"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含編輯器和命令建議的聊天輸入區域"
+          }
         }
       }
     },
     "Clear chat history": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        }
+      }
     },
     "Input Area": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -88,17 +128,84 @@
             "state": "translated",
             "value": "輸入區域"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入區域"
+          }
         }
       }
     },
     "List available commands": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List available commands"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List available commands"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List available commands"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List available commands"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List available commands"
+          }
+        }
+      }
     },
     "List MCP servers": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List MCP servers"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List MCP servers"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List MCP servers"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List MCP servers"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List MCP servers"
+          }
+        }
+      }
     },
     "Message Input": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -123,11 +230,16 @@
             "state": "translated",
             "value": "訊息輸入框"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訊息輸入框"
+          }
         }
       }
     },
     "Message Input Hint": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -152,11 +264,16 @@
             "state": "translated",
             "value": "輸入問題或命令，按 Command + Enter 傳送，Shift + Enter 換行"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入問題或命令，按 Command + Enter 傳送，Shift + Enter 換行"
+          }
         }
       }
     },
     "No active conversation": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -181,14 +298,50 @@
             "state": "translated",
             "value": "沒有活躍的會話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有活躍的會話"
+          }
         }
       }
     },
     "Plan a task": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a task"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a task"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a task"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a task"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a task"
+          }
+        }
+      }
     },
     "Please create or select a conversation first": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -213,11 +366,16 @@
             "state": "translated",
             "value": "請先建立或選擇對話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先建立或選擇對話"
+          }
         }
       }
     },
     "Release to add image to the chat": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -242,11 +400,48 @@
             "state": "translated",
             "value": "鬆開即可將圖片加入聊天"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鬆開即可將圖片加入聊天"
+          }
         }
       }
     },
     "Show all commands": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all commands"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all commands"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all commands"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all commands"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all commands"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

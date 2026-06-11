@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Language Selector": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "語言選擇器"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言選擇器"
+          }
         }
       }
     },
     "AI response language in header": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "聊天頂部的語言選擇器"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天頂部的語言選擇器"
+          }
         }
       }
     },
     "Chinese": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -85,11 +94,16 @@
             "state": "translated",
             "value": "中文"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文"
+          }
         }
       }
     },
     "Current Chinese Help": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -114,11 +128,16 @@
             "state": "translated",
             "value": "目前：中文。點擊更改回覆語言。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前：中文。點擊更改回覆語言。"
+          }
         }
       }
     },
     "Current English Help": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -143,11 +162,16 @@
             "state": "translated",
             "value": "目前：English。點擊更改回覆語言。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前：English。點擊更改回覆語言。"
+          }
         }
       }
     },
     "Chinese Description": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -172,11 +196,16 @@
             "state": "translated",
             "value": "AI 會使用中文回覆。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 會使用中文回覆。"
+          }
         }
       }
     },
     "English": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -201,11 +230,16 @@
             "state": "translated",
             "value": "English"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
         }
       }
     },
     "English Description": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -230,11 +264,16 @@
             "state": "translated",
             "value": "AI will respond in English."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI will respond in English."
+          }
         }
       }
     },
     "Response Language": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -255,6 +294,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回覆語言"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "回覆語言"

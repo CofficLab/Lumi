@@ -15,13 +15,19 @@
             "value": "Chat Attachment"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Attachment"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Chat Attachment"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Chat Attachment"
@@ -43,13 +49,19 @@
             "value": "Pending chat attachments and sidebar drop handling"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending chat attachments and sidebar drop handling"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Pending chat attachments and sidebar drop handling"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Pending chat attachments and sidebar drop handling"
@@ -71,13 +83,19 @@
             "value": "Release to add image to chat"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to add image to chat"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Release to add image to chat"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Release to add image to chat"
@@ -99,13 +117,19 @@
             "value": "Upload Image"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload Image"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Upload Image"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Upload Image"
@@ -127,13 +151,19 @@
             "value": "Upload Image Hint"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload Image Hint"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Upload Image Hint"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Upload Image Hint"

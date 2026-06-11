@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Web Fetch": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "Web 獲取"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web 獲取"
+          }
         }
       }
     },
     "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"

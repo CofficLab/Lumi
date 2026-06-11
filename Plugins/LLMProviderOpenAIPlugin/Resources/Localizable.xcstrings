@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "OpenAI": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "OpenAI"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI"
+          }
         }
       }
     },
     "GPT by OpenAI": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI 的 GPT"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "OpenAI 的 GPT"

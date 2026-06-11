@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Tool Core": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -16,13 +15,19 @@
             "value": "核心工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "核心工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "核心工具"
@@ -31,7 +36,6 @@
       }
     },
     "提供 Lumi 的基础工具（文件/命令）。": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,16 +49,22 @@
             "value": "提供 Lumi 的基础工具（文件/命令）。"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 Lumi 的基礎工具（文件/命令）。"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提供 Lumi 的基礎工具（檔案/命令）。"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供 Lumi 的基礎工具（文件/命令）。"
+            "value": "提供 Lumi 的基礎工具（檔案/命令）。"
           }
         }
       }

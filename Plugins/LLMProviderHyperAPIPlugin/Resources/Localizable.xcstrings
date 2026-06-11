@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "HyperAPI"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HyperAPI"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hyperapi.cc 提供的 LLM 路由服務"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "hyperapi.cc 提供的 LLM 路由服務"

@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "FlyMux"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FlyMux"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "flymux.com 提供的 AI API 網關"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "flymux.com 提供的 AI API 網關"

@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Tools": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -16,13 +15,19 @@
             "value": "工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "工具"
@@ -31,7 +36,6 @@
       }
     },
     "Show all available tools": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,22 +49,27 @@
             "value": "展示所有可用工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展示所有可用工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "顯示所有可用工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "展示所有可用工具"
+            "value": "顯示所有可用工具"
           }
         }
       }
     },
     "Show tools": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -74,22 +83,27 @@
             "value": "查看工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "檢視工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看工具"
+            "value": "檢視工具"
           }
         }
       }
     },
     "%lld tools available": {
-      "extractionState": "manual",
       "comment": "Count of available tools",
       "localizations": {
         "en": {
@@ -104,13 +118,19 @@
             "value": "可用工具：%lld 个"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用工具：%lld 個"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "可用工具：%lld 個"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "可用工具：%lld 個"
@@ -119,7 +139,6 @@
       }
     },
     "Search tools": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -133,13 +152,19 @@
             "value": "搜索工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "搜尋工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "搜尋工具"
@@ -148,7 +173,6 @@
       }
     },
     "Language": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -162,13 +186,19 @@
             "value": "语言"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "語言"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "語言"
@@ -177,7 +207,6 @@
       }
     },
     "Done": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -191,13 +220,19 @@
             "value": "完成"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "完成"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "完成"
@@ -206,7 +241,6 @@
       }
     },
     "No tools found": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -220,22 +254,27 @@
             "value": "未找到工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "找不到工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "未找到工具"
+            "value": "找不到工具"
           }
         }
       }
     },
     "Try a different search keyword.": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -249,16 +288,22 @@
             "value": "试试其他关键词。"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "試試其他關鍵詞。"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "請試試其他關鍵字。"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "試試其他關鍵詞。"
+            "value": "請試試其他關鍵字。"
           }
         }
       }

@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LLMProviderCodexPlugin",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],

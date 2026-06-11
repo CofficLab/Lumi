@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProjectsPlugin",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -22,6 +23,11 @@ let package = Package(
             dependencies: [
                 "LumiCoreKit",
                 "LumiUI"
+            ],
+            path: ".",
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(

@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "LSP 實時信號"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 實時信號"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "觸發高亮、提示和簽名幫助等 LSP 實時更新。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "觸發高亮、提示和簽名幫助等 LSP 實時更新。"

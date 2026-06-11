@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     " to see.": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "以查看效果。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以查看效果。"
+          }
         }
       }
     },
     "Accessibility permission is required to detect text selection": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "檢測文本選擇需要辅助功能權限"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測文本選擇需要辅助功能權限"
+          }
         }
       }
     },
     "Copy": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -85,11 +94,16 @@
             "state": "translated",
             "value": "拷貝"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拷貝"
+          }
         }
       }
     },
     "Enable Text Selection Menu": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -114,11 +128,16 @@
             "state": "translated",
             "value": "啟用文本選擇菜单"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用文本選擇菜单"
+          }
         }
       }
     },
     "General Settings": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -143,11 +162,16 @@
             "state": "translated",
             "value": "通用設定"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用設定"
+          }
         }
       }
     },
     "Open System Settings": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -172,11 +196,16 @@
             "state": "translated",
             "value": "打开系統設定"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系統設定"
+          }
         }
       }
     },
     "Preview": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -201,11 +230,16 @@
             "state": "translated",
             "value": "預覽"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽"
+          }
         }
       }
     },
     "Search": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -230,11 +264,16 @@
             "state": "translated",
             "value": "搜尋"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
+          }
         }
       }
     },
     "Select ": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -259,11 +298,16 @@
             "state": "translated",
             "value": "選擇"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇"
+          }
         }
       }
     },
     "Selected text actions menu": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -288,11 +332,16 @@
             "state": "translated",
             "value": "選取文本操作菜单"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選取文本操作菜单"
+          }
         }
       }
     },
     "Supported Actions": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -317,11 +366,16 @@
             "state": "translated",
             "value": "支援的操作"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援的操作"
+          }
         }
       }
     },
     "Text Actions": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -346,11 +400,16 @@
             "state": "translated",
             "value": "文本操作"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本操作"
+          }
         }
       }
     },
     "this text": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -375,6 +434,12 @@
             "state": "translated",
             "value": "这段文字"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这段文字"
+          }
         }
       }
     },
@@ -392,13 +457,19 @@
             "value": "版本 %@"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本 %@"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "版本 %@"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "版本 %@"

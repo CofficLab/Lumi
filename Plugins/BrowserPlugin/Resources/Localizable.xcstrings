@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Browser": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "瀏覽器"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽器"
+          }
         }
       }
     },
     "提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁截圖與瀏覽器自動化功能，包括 WKWebView 截圖和 agent-browser CLI 自動化。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁截圖與瀏覽器自動化功能，包括 WKWebView 截圖和 agent-browser CLI 自動化。"

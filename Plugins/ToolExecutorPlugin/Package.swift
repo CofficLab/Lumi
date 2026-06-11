@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ToolExecutorPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "ToolExecutorPlugin", targets: ["ToolExecutorPlugin"])

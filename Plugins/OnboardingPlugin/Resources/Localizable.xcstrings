@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "After switching modes, check the top tip to see available capabilities": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "模式切換後，建議先看頂部提示了解可用能力"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模式切換後，建議先看頂部提示了解可用能力"
+          }
         }
       }
     },
     "Agent / App Two Modes": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "Agent / App 兩種模式"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent / App 兩種模式"
+          }
         }
       }
     },
     "Agent Mode: For complex tasks with tool calls and multi-step reasoning": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -85,11 +94,16 @@
             "state": "translated",
             "value": "Agent 模式：面向複雜任務，支持工具調用與多步驟推理"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 模式：面向複雜任務，支持工具調用與多步驟推理"
+          }
         }
       }
     },
     "An AI workspace designed for developers": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -114,11 +128,16 @@
             "state": "translated",
             "value": "一個為開發者設計的 AI 工作台"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一個為開發者設計的 AI 工作台"
+          }
         }
       }
     },
     "App Mode: For plugin capabilities with quick single-point operations": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -143,11 +162,16 @@
             "state": "translated",
             "value": "App 模式：面向插件能力，快速執行單點操作"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App 模式：面向插件能力，快速執行單點操作"
+          }
         }
       }
     },
     "Ask, execute, and review in one window": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -172,11 +196,16 @@
             "state": "translated",
             "value": "在一個窗口完成提問、執行與覆盤"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一個窗口完成提問、執行與覆盤"
+          }
         }
       }
     },
     "Choose the best approach for your task": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -201,11 +230,16 @@
             "state": "translated",
             "value": "根據任務目標選擇最合適的工作方式"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根據任務目標選擇最合適的工作方式"
+          }
         }
       }
     },
     "Click \"View Guide\" in empty state to review anytime": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -230,11 +264,16 @@
             "state": "translated",
             "value": "在空狀態點擊「查看新手引導」可隨時回看"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在空狀態點擊「查看新手引導」可隨時回看"
+          }
         }
       }
     },
     "Common shortcuts: Cmd+N new conversation, Cmd+, open settings": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -259,11 +298,16 @@
             "state": "translated",
             "value": "常用快捷鍵：Cmd+N 新建會話，Cmd+, 打開設置"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用快捷鍵：Cmd+N 新建會話，Cmd+, 打開設定"
+          }
         }
       }
     },
     "Context is preserved by task, reducing repetitive communication": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -288,11 +332,16 @@
             "state": "translated",
             "value": "按任務維度沈澱上下文，減少重複溝通"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按任務維度沈澱上下文，減少重複溝通"
+          }
         }
       }
     },
     "Create a new conversation and start with a real question": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -317,11 +366,16 @@
             "state": "translated",
             "value": "新建會話，輸入一個真實問題開始"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建會話，輸入一個真實問題開始"
+          }
         }
       }
     },
     "Do these 3 things to get into the workflow": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -346,11 +400,16 @@
             "state": "translated",
             "value": "先做 3 件事就能進入工作流"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先做 3 件事就能進入工作流"
+          }
         }
       }
     },
     "Get Started": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -375,11 +434,16 @@
             "state": "translated",
             "value": "開始使用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用"
+          }
         }
       }
     },
     "Guide": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -404,11 +468,16 @@
             "state": "translated",
             "value": "新手引導"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新手引導"
+          }
         }
       }
     },
     "Next": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -429,6 +498,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "下一步"
@@ -461,11 +536,16 @@
             "state": "translated",
             "value": "首次引導"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首次引導"
+          }
         }
       }
     },
     "Previous": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -490,11 +570,16 @@
             "state": "translated",
             "value": "上一步"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
         }
       }
     },
     "Quick Start": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -515,6 +600,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速上手"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "快速上手"
@@ -547,11 +638,16 @@
             "state": "translated",
             "value": "顯示首次運行引導和功能入口"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示首次運行引導和功能入口"
+          }
         }
       }
     },
     "Skip": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -576,11 +672,16 @@
             "state": "translated",
             "value": "跳過"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳過"
+          }
         }
       }
     },
     "Support for parallel conversations without interference": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -605,11 +706,16 @@
             "state": "translated",
             "value": "支持多會話並行，互不幹擾"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持多會話並行，互不幹擾"
+          }
         }
       }
     },
     "Welcome to Lumi": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -630,6 +736,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 Lumi"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "歡迎使用 Lumi"
@@ -662,6 +774,12 @@
             "state": "translated",
             "value": "上一步"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
         }
       }
     },
@@ -686,6 +804,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "下一步"
@@ -718,11 +842,48 @@
             "state": "translated",
             "value": "先啟用常用擴展，之後也可以在設定中調整"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先啟用常用擴展，之後也可以在設定中調整"
+          }
         }
       }
     },
     "好": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        }
+      }
     },
     "开始使用": {
       "localizations": {
@@ -749,11 +910,16 @@
             "state": "translated",
             "value": "開始使用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用"
+          }
         }
       }
     },
     "打开设置": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -774,6 +940,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開設定"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "打開設定"
@@ -806,11 +978,16 @@
             "state": "translated",
             "value": "插件選擇會在完成引導後立即生效"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件選擇會在完成引導後立即生效"
+          }
         }
       }
     },
     "新建会话": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -831,6 +1008,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建會話"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "新建會話"
@@ -863,17 +1046,116 @@
             "state": "translated",
             "value": "新手引導"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新手引導"
+          }
         }
       }
     },
     "无法保存新手引导状态": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存新手引导状态"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存新手引导状态"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態"
+          }
+        }
+      }
     },
     "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        }
+      }
     },
     "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法重置新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法重置新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法重置新手引导狀態，請檢查 Lumi 的数据目錄是否可寫。"
+          }
+        }
+      }
     },
     "跳过": {
       "localizations": {
@@ -896,6 +1178,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳過"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "跳過"
@@ -924,6 +1212,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇你的插件"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "選擇你的插件"

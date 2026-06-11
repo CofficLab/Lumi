@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "示範編輯器延伸表面的範例 gutter 裝飾。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "示範編輯器延伸表面的範例 gutter 裝飾。"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "範例裝飾"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "範例裝飾"

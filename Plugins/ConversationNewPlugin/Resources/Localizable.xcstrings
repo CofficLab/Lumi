@@ -3,7 +3,6 @@
   "version": "1.1",
   "strings": {
     "Create new chat from header": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -28,11 +27,16 @@
             "state": "translated",
             "value": "從頂部創建新對話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從頂部創建新對話"
+          }
         }
       }
     },
     "New Chat Button": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -57,11 +61,16 @@
             "state": "translated",
             "value": "新建對話按鈕"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建對話按鈕"
+          }
         }
       }
     },
     "New Chat": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -86,11 +95,16 @@
             "state": "translated",
             "value": "新建對話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建對話"
+          }
         }
       }
     },
     "Start New Conversation": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -115,11 +129,16 @@
             "state": "translated",
             "value": "開啟新會話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟新會話"
+          }
         }
       }
     },
     "Cannot Create Conversation": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -144,11 +163,16 @@
             "state": "translated",
             "value": "無法創建對話"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法創建對話"
+          }
         }
       }
     },
     "New conversation is unavailable in the current environment.": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -173,11 +197,16 @@
             "state": "translated",
             "value": "目前環境不支援新建對話。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前環境不支援新建對話。"
+          }
         }
       }
     },
     "OK": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -198,6 +227,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "確定"

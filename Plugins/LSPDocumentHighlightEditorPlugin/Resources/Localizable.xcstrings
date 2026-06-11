@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "高亮顯示光標位置符號的所有引用。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高亮顯示光標位置符號的所有引用。"
+          }
         }
       }
     },
@@ -53,6 +59,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "LSP 文件高亮"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 檔案高亮"
           }
         }
       }

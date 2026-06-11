@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "SendQueuePlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "SendQueuePlugin", targets: ["SendQueuePlugin"])

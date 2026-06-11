@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Anthropic": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "Anthropic"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic"
+          }
         }
       }
     },
     "Claude AI by Anthropic": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic 的 Claude AI"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Anthropic 的 Claude AI"

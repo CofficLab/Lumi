@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "DeepSeek": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,6 +22,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DeepSeek"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "DeepSeek"
@@ -31,7 +36,6 @@
       }
     },
     "DeepSeek AI": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DeepSeek AI"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "DeepSeek AI"

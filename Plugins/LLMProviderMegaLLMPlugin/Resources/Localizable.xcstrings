@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "MegaLLM": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,6 +22,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MegaLLM"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "MegaLLM"
@@ -31,7 +36,6 @@
       }
     },
     "MegaLLM AI": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MegaLLM AI"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "MegaLLM AI"

@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Project Overview": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "項目概覽"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目概覽"
+          }
         }
       }
     },
     "Provides project overview tool, returning project type, top-level structure, Git information, and key files.": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 資訊與關鍵檔案。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 資訊與關鍵檔案。"

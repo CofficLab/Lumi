@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Availability": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "可用性"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用性"
+          }
         }
       }
     },
     "Availability has not been checked": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "尚未檢測可用性"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未檢測可用性"
+          }
         }
       }
     },
     "Available": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -85,11 +94,16 @@
             "state": "translated",
             "value": "可用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用"
+          }
         }
       }
     },
     "Checking": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -114,11 +128,16 @@
             "state": "translated",
             "value": "檢測中"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測中"
+          }
         }
       }
     },
     "Checking availability…": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -143,11 +162,16 @@
             "state": "translated",
             "value": "正在檢測可用性…"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在檢測可用性…"
+          }
         }
       }
     },
     "Checking provider availability": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -172,11 +196,16 @@
             "state": "translated",
             "value": "正在檢測供應商可用性"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在檢測供應商可用性"
+          }
         }
       }
     },
     "Checking...": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -201,11 +230,16 @@
             "state": "translated",
             "value": "檢查中..."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查中..."
+          }
         }
       }
     },
     "Current selected provider": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -226,6 +260,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前選中的供應商"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "當前選中的供應商"
@@ -258,11 +298,16 @@
             "state": "translated",
             "value": "通過健康檢查檢測可用的 LLM 提供商和模型"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通過健康檢查檢測可用的 LLM 提供商和模型"
+          }
         }
       }
     },
     "Idle": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -287,11 +332,16 @@
             "state": "translated",
             "value": "空閒"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空閒"
+          }
         }
       }
     },
     "In Use": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -312,6 +362,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "使用中"
@@ -344,11 +400,16 @@
             "state": "translated",
             "value": "LLM 可用性檢測"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 可用性檢測"
+          }
         }
       }
     },
     "Loading provider information…": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -373,11 +434,16 @@
             "state": "translated",
             "value": "正在加載供應商信息…"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加載供應商資訊…"
+          }
         }
       }
     },
     "No LLM": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -402,11 +468,16 @@
             "state": "translated",
             "value": "無 LLM"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無 LLM"
+          }
         }
       }
     },
     "No LLM providers configured": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -431,11 +502,16 @@
             "state": "translated",
             "value": "未配置 LLM 供應商"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未配置 LLM 供應商"
+          }
         }
       }
     },
     "No providers found": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -460,11 +536,16 @@
             "state": "translated",
             "value": "未找到供應商"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到供應商"
+          }
         }
       }
     },
     "Please add LLM providers in Settings to enable AI features.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -489,11 +570,16 @@
             "state": "translated",
             "value": "請在設置中添加 LLM 供應商以啟用 AI 功能。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在設定中添加 LLM 供應商以啟用 AI 功能。"
+          }
         }
       }
     },
     "Provider has available models": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -518,11 +604,16 @@
             "state": "translated",
             "value": "供應商有可用模型"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "供應商有可用模型"
+          }
         }
       }
     },
     "Provider has no available models": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -547,11 +638,16 @@
             "state": "translated",
             "value": "供應商沒有可用模型"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "供應商沒有可用模型"
+          }
         }
       }
     },
     "Recheck this provider": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -576,11 +672,16 @@
             "state": "translated",
             "value": "重新檢查此供應商"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新檢查此供應商"
+          }
         }
       }
     },
     "Refresh": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -605,11 +706,16 @@
             "state": "translated",
             "value": "刷新"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
+          }
         }
       }
     },
     "Search providers or models…": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -634,11 +740,16 @@
             "state": "translated",
             "value": "搜索供應商或模型…"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索供應商或模型…"
+          }
         }
       }
     },
     "Total": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -663,11 +774,16 @@
             "state": "translated",
             "value": "總計"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "總計"
+          }
         }
       }
     },
     "Unknown": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -688,6 +804,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "未知"

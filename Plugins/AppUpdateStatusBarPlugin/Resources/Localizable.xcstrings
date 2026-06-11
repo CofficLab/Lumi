@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "App Update Status": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -16,13 +15,19 @@
             "value": "应用更新状态"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "应用更新状态"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "应用更新状态"
@@ -31,7 +36,6 @@
       }
     },
     "Lumi %@ downloaded": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,13 +49,19 @@
             "value": "Lumi %@ 已下载完成"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi %@ 已下载完成"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Lumi %@ 已下载完成"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Lumi %@ 已下载完成"
@@ -60,7 +70,6 @@
       }
     },
     "New version is ready": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -74,13 +83,19 @@
             "value": "新版本已准备好"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新版本已准备好"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "新版本已准备好"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "新版本已准备好"
@@ -89,7 +104,6 @@
       }
     },
     "Restart to Update": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -103,13 +117,19 @@
             "value": "重启更新"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重启更新"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "重启更新"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "重启更新"
@@ -118,7 +138,6 @@
       }
     },
     "Shows a menu bar reminder when an app update is ready to install.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -132,13 +151,19 @@
             "value": "当应用更新准备安装时显示菜单栏提醒。"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当应用更新准备安装时显示菜单栏提醒。"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "当应用更新准备安装时显示菜单栏提醒。"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "当应用更新准备安装时显示菜单栏提醒。"
@@ -147,7 +172,6 @@
       }
     },
     "Update": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -161,13 +185,19 @@
             "value": "更新"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "更新"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "更新"

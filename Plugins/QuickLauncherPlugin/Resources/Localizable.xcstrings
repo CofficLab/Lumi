@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Apps": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -16,13 +15,19 @@
             "value": "应用"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "應用"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "應用"
@@ -31,7 +36,6 @@
       }
     },
     "Dev": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,13 +49,19 @@
             "value": "开发"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開發"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "開發"
@@ -73,13 +83,19 @@
             "value": "快速访问系统应用和工具"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速訪問系統應用和工具"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "快速訪問系統應用和工具"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "快速訪問系統應用和工具"
@@ -101,13 +117,19 @@
             "value": "快速启动器"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速啟動器"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "快速啟動器"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "快速啟動器"
@@ -116,7 +138,6 @@
       }
     },
     "Search apps...": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -130,13 +151,19 @@
             "value": "搜索应用..."
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索應用..."
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "搜索應用..."
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "搜索應用..."
@@ -145,7 +172,6 @@
       }
     },
     "Settings": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -159,13 +185,19 @@
             "value": "设置"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "設定"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "設定"
@@ -174,7 +206,6 @@
       }
     },
     "System": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -188,13 +219,19 @@
             "value": "系统"
           }
         },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "系統"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "系統"

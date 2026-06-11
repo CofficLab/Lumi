@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TurnLifecyclePlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "TurnLifecyclePlugin", targets: ["TurnLifecyclePlugin"])

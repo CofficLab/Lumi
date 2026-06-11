@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Web Search": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "網頁搜索"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
+          }
         }
       }
     },
     "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -52,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"

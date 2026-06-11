@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "1 Hour": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "1 小時"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 小時"
+          }
         }
       }
     },
     "2 Hours": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "2 小時"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 小時"
+          }
         }
       }
     },
     "5 Hours": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -85,11 +94,16 @@
             "state": "translated",
             "value": "5 小時"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 小時"
+          }
         }
       }
     },
     "10 Min": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -114,11 +128,16 @@
             "state": "translated",
             "value": "10 分鐘"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 分鐘"
+          }
         }
       }
     },
     "Anti-Sleep": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -143,11 +162,16 @@
             "state": "translated",
             "value": "Anti-Sleep"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-Sleep"
+          }
         }
       }
     },
     "Indefinite": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -172,11 +196,16 @@
             "state": "translated",
             "value": "無限期"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無限期"
+          }
         }
       }
     },
     "Prevent sleep & Allow screen off": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -201,11 +230,16 @@
             "state": "translated",
             "value": "防止休眠並允許關閉螢幕"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防止休眠並允許關閉螢幕"
+          }
         }
       }
     },
     "Prevent sleep & Keep screen on": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -230,11 +264,16 @@
             "state": "translated",
             "value": "防止休眠並保持螢幕開啟"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防止休眠並保持螢幕開啟"
+          }
         }
       }
     },
     "Prevent sleep & Turn off screen": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -259,11 +298,16 @@
             "state": "translated",
             "value": "防止休眠並關閉螢幕"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防止休眠並關閉螢幕"
+          }
         }
       }
     },
     "Prevent system sleep with timer and manual control": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -284,6 +328,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevent system sleep with timer and manual control"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Prevent system sleep with timer and manual control"

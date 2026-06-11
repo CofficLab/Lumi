@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "在行內顯示類型推斷和參數名提示。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在行內顯示類型推斷和參數名提示。"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 內聯提示"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "LSP 內聯提示"

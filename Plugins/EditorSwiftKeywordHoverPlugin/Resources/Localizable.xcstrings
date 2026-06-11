@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "為常見 Swift 關鍵字顯示內聯懸停文檔。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為常見 Swift 關鍵字顯示內聯懸停文檔。"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器 Swift 關鍵字懸停"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "編輯器 Swift 關鍵字懸停"

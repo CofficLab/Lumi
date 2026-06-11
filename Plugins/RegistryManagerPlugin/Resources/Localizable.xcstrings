@@ -1,211 +1,346 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Current Registry" : {
-
-    },
-    "Docker registry updated. Please restart Docker Desktop." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Docker registry updated. Please restart Docker Desktop."
+  "sourceLanguage": "en",
+  "strings": {
+    "Current Registry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Registry"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Docker 仓库已更新。请重启 Docker Desktop。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Registry"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Docker 倉庫已更新。請重啟 Docker Desktop。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Registry"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Docker 倉庫已更新。請重啟 Docker Desktop。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Registry"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Registry"
           }
         }
       }
     },
-    "Failed to set {type}: {error}" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to set {type}: {error}"
+    "Docker registry updated. Please restart Docker Desktop.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker registry updated. Please restart Docker Desktop."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置 {type} 失败：{error}"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker 仓库已更新。请重启 Docker Desktop。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設置 {type} 失敗：{error}"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker 倉庫已更新。請重啟 Docker Desktop。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設置 {type} 失敗：{error}"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker 倉庫已更新。請重啟 Docker Desktop。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker 倉庫已更新。請重啟 Docker Desktop。"
           }
         }
       }
     },
-    "Failed: {error}" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed: {error}"
+    "Failed to set {type}: {error}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to set {type}: {error}"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失败：{error}"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置 {type} 失败：{error}"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失敗：{error}"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設置 {type} 失敗：{error}"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失敗：{error}"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設置 {type} 失敗：{error}"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定 {type} 失敗：{error}"
           }
         }
       }
     },
-    "Manage all your package registries in one place" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage all your package registries in one place"
+    "Failed: {error}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed: {error}"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在一个地方管理所有包仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败：{error}"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在一個地方管理所有包倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗：{error}"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在一個地方管理所有包倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗：{error}"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗：{error}"
           }
         }
       }
     },
-    "Manage Lumi registries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage Lumi registries"
+    "Manage all your package registries in one place": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage all your package registries in one place"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 Lumi 镜像仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一个地方管理所有包仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 Lumi 映像倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一個地方管理所有包倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 Lumi 映像倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一個地方管理所有包倉庫"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一個地方管理所有包倉庫"
           }
         }
       }
     },
-    "Refresh" : {
-
-    },
-    "Registry Manager" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Registry Manager"
+    "Manage Lumi registries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Lumi registries"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "镜像仓库管理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Lumi 镜像仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "映像倉庫管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Lumi 映像倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "映像倉庫管理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Lumi 映像倉庫"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Lumi 映像倉庫"
           }
         }
       }
     },
-    "Switch Source" : {
-
+    "Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
     },
-    "Switched {type} registry to {name}" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Switched {type} registry to {name}"
+    "Registry Manager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registry Manager"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切换 {type} 仓库到 {name}"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "镜像仓库管理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切換 {type} 倉庫到 {name}"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映像倉庫管理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切換 {type} 倉庫到 {name}"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映像倉庫管理"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映像倉庫管理"
+          }
+        }
+      }
+    },
+    "Switch Source": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Source"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Source"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Source"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Source"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Source"
+          }
+        }
+      }
+    },
+    "Switched {type} registry to {name}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switched {type} registry to {name}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切换 {type} 仓库到 {name}"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換 {type} 倉庫到 {name}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換 {type} 倉庫到 {name}"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換 {type} 倉庫到 {name}"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

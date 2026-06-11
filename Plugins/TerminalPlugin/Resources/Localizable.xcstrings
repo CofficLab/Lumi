@@ -26,11 +26,16 @@
             "state": "translated",
             "value": "關閉分頁"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉分頁"
+          }
         }
       }
     },
     "Interactive terminal emulator": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -51,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互動式終端機模擬器"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "互動式終端機模擬器"
@@ -83,6 +94,12 @@
             "state": "translated",
             "value": "由 SwiftTerm 驅動的原生互動式終端"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 SwiftTerm 驅動的原生互動式終端"
+          }
         }
       }
     },
@@ -111,6 +128,12 @@
             "state": "translated",
             "value": "沒有打開的終端"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有打開的終端"
+          }
         }
       }
     },
@@ -135,6 +158,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "終端機"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "終端機"

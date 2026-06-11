@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "A short 3-5 word description of what this agent will do": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,6 +22,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於此智能體任務的簡短描述（3-5 個詞）"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "關於此智能體任務的簡短描述（3-5 個詞）"
@@ -55,11 +60,16 @@
             "state": "translated",
             "value": "由 spawn_agent 返回的智能體 ID，多個以逗號分隔"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 spawn_agent 返回的智能體 ID，多個以逗號分隔"
+          }
         }
       }
     },
     "LLM provider ID (e.g., openai, anthropic, deepseek). If omitted, uses the current provider.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -84,14 +94,50 @@
             "state": "translated",
             "value": "LLM 供應商 ID（如 openai、anthropic、deepseek）。若省略則使用當前供應商。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 供應商 ID（如 openai、anthropic、deepseek）。若省略則使用當前供應商。"
+          }
         }
       }
     },
     "Maximum seconds to wait for each agent (default: 120, range: 1-3600)": {
-      "localizations": {}
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum seconds to wait for each agent (default: 120, range: 1-3600)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum seconds to wait for each agent (default: 120, range: 1-3600)"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum seconds to wait for each agent (default: 120, range: 1-3600)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum seconds to wait for each agent (default: 120, range: 1-3600)"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum seconds to wait for each agent (default: 120, range: 1-3600)"
+          }
+        }
+      }
     },
     "Maximum seconds to wait for each agent (default: 120)": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -116,11 +162,16 @@
             "state": "translated",
             "value": "等待每個智能體的最大秒數（預設 120）"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待每個智能體的最大秒數（預設 120）"
+          }
         }
       }
     },
     "Model ID (e.g., gpt-4o, claude-sonnet-4-20250514). If omitted, uses the current model.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -141,6 +192,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型 ID（如 gpt-4o、claude-sonnet-4-20250514）。若省略則使用當前模型。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "模型 ID（如 gpt-4o、claude-sonnet-4-20250514）。若省略則使用當前模型。"
@@ -173,6 +230,12 @@
             "state": "translated",
             "value": "多智能體"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多智能體"
+          }
         }
       }
     },
@@ -197,6 +260,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創建一個在背景執行的新子智能體。返回 agent_id 用於後續收集結果。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "創建一個在背景執行的新子智能體。返回 agent_id 用於後續收集結果。"
@@ -229,11 +298,16 @@
             "state": "translated",
             "value": "創建並行子智能體，各自使用獨立的 LLM 供應商和模型"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創建並行子智能體，各自使用獨立的 LLM 供應商和模型"
+          }
         }
       }
     },
     "The task description for the sub-agent to perform": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -254,6 +328,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "子智能體需要執行的任務描述"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "子智能體需要執行的任務描述"
@@ -282,6 +362,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待子智能體完成並收集它們的結果。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "等待子智能體完成並收集它們的結果。"

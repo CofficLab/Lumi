@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "Displays a button in the header to open the current project's remote repository in browser": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -27,11 +26,16 @@
             "state": "translated",
             "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
+          }
         }
       }
     },
     "Open Remote Repository": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -56,11 +60,16 @@
             "state": "translated",
             "value": "打開遠程倉庫"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開遠程倉庫"
+          }
         }
       }
     },
     "Open current project's remote repository in browser": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -81,6 +90,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開當前項目的遠程倉庫"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "在瀏覽器中打開當前項目的遠程倉庫"
@@ -113,6 +128,12 @@
             "state": "translated",
             "value": "URL"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
         }
       }
     },
@@ -141,11 +162,16 @@
             "state": "translated",
             "value": "載入中..."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
+          }
         }
       }
     },
     "在浏览器中打开远程仓库": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -166,6 +192,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開遠程倉庫"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "在瀏覽器中打開遠程倉庫"
@@ -198,6 +230,12 @@
             "state": "translated",
             "value": "複製 URL"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製 URL"
+          }
         }
       }
     },
@@ -222,6 +260,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前項目沒有遠端倉庫"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "當前項目沒有遠端倉庫"
@@ -254,6 +298,12 @@
             "state": "translated",
             "value": "打開"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
         }
       }
     },
@@ -282,6 +332,12 @@
             "state": "translated",
             "value": "無遠端倉庫"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無遠端倉庫"
+          }
         }
       }
     },
@@ -306,6 +362,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遠端倉庫"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "遠端倉庫"

@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "提供 Swift 基礎類型補全建議。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 Swift 基礎類型補全建議。"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 基礎類型"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Swift 基礎類型"

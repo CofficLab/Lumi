@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "LPgpt"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LPgpt"
+          }
         }
       }
     },
@@ -43,10 +49,10 @@
             "value": "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
-        "zh-Hk": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "lpgpt.us 提供的免費 LLM 網關服務"
+            "value": "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
         "zh-Hant": {
@@ -55,7 +61,7 @@
             "value": "lpgpt.us 提供的免费 LLM 网关服务"
           }
         },
-        "zh-HK": {
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "lpgpt.us 提供的免费 LLM 网关服务"

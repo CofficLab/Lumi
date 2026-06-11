@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -26,6 +25,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "HTML 編輯增強：標籤補全、懸浮文件、自動閉合和標籤匹配。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯增強：標籤補全、懸浮檔案、自動閉合和標籤匹配。"
           }
         }
       }
@@ -55,6 +60,12 @@
             "state": "translated",
             "value": "HTML 編輯增強：標籤補全、懸停文檔、自動閉合、標籤匹配和 Emmet。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯增強：標籤補全、懸停文檔、自動閉合、標籤匹配和 Emmet。"
+          }
         }
       }
     },
@@ -79,6 +90,12 @@
           }
         },
         "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯器"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "HTML 編輯器"

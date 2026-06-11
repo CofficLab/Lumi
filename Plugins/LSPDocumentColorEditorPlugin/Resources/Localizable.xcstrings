@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "顯示來自語言伺服器的顏色字面量的色塊。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示來自語言伺服器的顏色字面量的色塊。"
+          }
         }
       }
     },
@@ -53,6 +59,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "LSP 文件顏色"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 檔案顏色"
           }
         }
       }
