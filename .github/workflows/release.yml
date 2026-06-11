@@ -190,22 +190,22 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Restore CodeEditLanguages Framework
+      - name: Restore EditorCodeEditLanguages Framework
         id: codeedit-languages-cache
         uses: actions/cache@v5
         with:
           path: |
-            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
-            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework.zip
-          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
+            Packages/EditorCodeEditLanguages/CodeLanguagesContainer.xcframework
+            Packages/EditorCodeEditLanguages/CodeLanguagesContainer.xcframework.zip
+          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/EditorCodeEditLanguages/Package.resolved', 'Packages/EditorCodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/EditorCodeEditLanguages/build_framework.sh') }}
 
-      - name: Build CodeEditLanguages Framework
+      - name: Build EditorCodeEditLanguages Framework
         if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
         run: |
-          cd Packages/CodeEditLanguages
-          ./build_framework.sh
+          cd Packages/EditorCodeEditLanguages
+          ./build_framework.sh --quiet
 
-      - name: Check CodeEditLanguages Framework
+      - name: Check EditorCodeEditLanguages Framework
         run: scripts/check-codeedit-languages-framework.sh
 
       - name: Cache SPM Packages
